@@ -16,6 +16,12 @@ Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip*
 | sv10-82 | T.R.'s Wobbuffet — Headbutt Bounce | Twinleaf printing has no attack by that name (`UNKNOWN_ATTACK`). Needs printing/name check. | investigate |
 | sv5-136 | Minccino — Beat | Twinleaf's Beat throws `CANNOT_PLAY_THIS_CARD` when used. | **Twinleaf** (attack wiring) |
 
+### Additional findings (interpreter / count work)
+
+| printing | attack | finding | likely owner |
+|---|---|---|---|
+| sv6-122 | Aggron — Angry Slam | IR encodes `forEach pokemonInPlay` (all your Pokémon); the real attack (and Twinleaf) counts only Pokémon **with damage on them** — a `countOf` with a predicate flattened to a plain `forEach`. | **Rotomancer** (IR drops the predicate) |
+
 Notes:
 - "Owner" is a hypothesis from reading both sides, not a verdict. Confirm against
   `~/projects/pokemon-cards/docs/vendor/por_rulebook.md` + the card's printed text before

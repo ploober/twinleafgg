@@ -264,9 +264,11 @@ Dartrix SFA-4) to guarantee validity.
 | 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended (next) |
 | 6. Differential mode | native-vs-interpreted post-state comparison (3 multi-op cards + 19-card scale loop) | ✅ done |
 
-Phase 4 covers the imperative ops the corpus needs. Still ▢ within Phase 4: non-const counts
-(forEach/perCount/upTo), choice-bearing selectors (anyOwnPokemon → prompt), predicates, and
-flow.control — needed before the interpreter can run the conditional/scaling attacks.
+Phase 4 covers the imperative ops + const/forEach/perCount counts the corpus needs. Still ▢
+within Phase 4: `upTo`/`coinFlip*` counts, choice-bearing selectors (anyOwnPokemon → prompt),
+predicates, and flow.control — needed before the interpreter can run the conditional attacks.
+Note: many `forEach` attacks carry a predicate (e.g. Aggron counts only damaged Pokémon) that
+the IR currently flattens — see FINDINGS.md — so `countOf` + predicate is the faithful form.
 
 Deferred decision points (no user input needed to proceed elsewhere):
 - **`me*` set-code map** — Mega-Evolution prefixes unmapped; 29 corpus scenarios skip on it.

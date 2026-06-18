@@ -17,14 +17,25 @@ import { costToCardType } from './bridge';
  * A minimal interpreter that executes a Rotomancer IR program as a Twinleaf card. Each ATTACK
  * fragment becomes an Attack whose printed damage is 0; the fragment `body` is the program and
  * is executed op-by-op into Twinleaf effects when the attack is used. This is the Phase-4 core:
- * imperative ops (damage.deal, damage.placeCounters, condition.apply, heal), const counts, and
- * direct selectors (self / ownActive / opponentActive). Anything else throws — visible gaps.
+ * imperative ops (damage.deal, damage.placeCounters, condition.apply, heal); count forms const,
+ * forEach (pokemonInPlay/benchedPokemon/energyAttached/discardCards), and perCount; and direct
+ * selectors (self / ownActive / opponentActive). Anything else throws — visible gaps.
  */
+
+export interface CountForm {
+  kind: string;        // const | forEach | perCount
+  value?: number;      // const
+  of?: string;         // forEach: pokemonInPlay | benchedPokemon | energyAttached | discardCards
+  who?: string;        // forEach: self | opponent
+  base?: number;       // perCount
+  per?: number;        // perCount
+  count?: CountForm;   // perCount inner count
+}
 
 export interface IrOp {
   kind: string;
-  amount?: { kind: string; value?: number };
-  count?: number;
+  amount?: CountForm;
+  count?: number | CountForm;
   condition?: string;
   removeMode?: boolean;
   target?: { selector?: string };
@@ -44,18 +55,36 @@ const CONDITIONS: Record<string, SpecialCondition> = {
   CONFUSED: SpecialCondition.CONFUSED,
 };
 
-function constValue(op: IrOp): number {
-  const amount = op.amount;
-  if (amount) {
-    if (amount.kind !== 'const' || amount.value === undefined) {
-      throw new Error(`[ir-interpreter] unsupported count form "${amount.kind}" for ${op.kind}`);
-    }
-    return amount.value;
+function countOf(effect: AttackEffect, of?: string, who?: string): number {
+  const p = who === 'opponent' ? effect.opponent : effect.player;
+  const bench = p.bench.filter(b => b.getPokemonCard() !== undefined).length;
+  switch (of) {
+    case 'pokemonInPlay': return (p.active.getPokemonCard() ? 1 : 0) + bench;
+    case 'benchedPokemon': return bench;
+    case 'energyAttached': return p.active.energies.cards.length;
+    case 'discardCards': return p.discard.cards.length;
+    default: throw new Error(`[ir-interpreter] unsupported forEach.of "${of}"`);
   }
-  if (op.count === undefined) {
-    throw new Error(`[ir-interpreter] missing count for ${op.kind}`);
+}
+
+function evalAmount(effect: AttackEffect, amount?: number | CountForm): number {
+  if (typeof amount === 'number') {
+    return amount;
   }
-  return op.count;
+  if (!amount) {
+    throw new Error('[ir-interpreter] missing count/amount');
+  }
+  switch (amount.kind) {
+    case 'const':
+      if (amount.value === undefined) throw new Error('[ir-interpreter] const missing value');
+      return amount.value;
+    case 'forEach':
+      return countOf(effect, amount.of, amount.who);
+    case 'perCount':
+      return (amount.base ?? 0) + (amount.per ?? 0) * evalAmount(effect, amount.count);
+    default:
+      throw new Error(`[ir-interpreter] unsupported count form "${amount.kind}"`);
+  }
 }
 
 function resolveTarget(effect: AttackEffect, selector?: string): { player: Player; list: PokemonCardList } {
@@ -74,7 +103,7 @@ function resolveTarget(effect: AttackEffect, selector?: string): { player: Playe
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   switch (op.kind) {
     case 'damage.deal': {
-      const value = constValue(op);
+      const value = evalAmount(effect, op.amount);
       const selector = op.target?.selector;
       if (selector === 'opponentActive' || selector === 'defendingPokemon') {
         // Let the engine deal it (applies weakness/resistance), matching native attacks.
@@ -89,7 +118,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'damage.placeCounters': {
       // Damage counters bypass weakness/resistance; 1 counter = 10 HP.
       const { list } = resolveTarget(effect, op.target?.selector);
-      const put = new PutDamageEffect(effect, constValue(op) * 10);
+      const put = new PutDamageEffect(effect, evalAmount(effect, op.count) * 10);
       put.target = list;
       return store.reduceEffect(state, put);
     }
@@ -108,7 +137,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     }
     case 'heal': {
       const { player, list } = resolveTarget(effect, op.target?.selector);
-      return store.reduceEffect(state, new HealEffect(player, list, constValue(op)));
+      return store.reduceEffect(state, new HealEffect(player, list, evalAmount(effect, op.amount)));
     }
     default:
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);

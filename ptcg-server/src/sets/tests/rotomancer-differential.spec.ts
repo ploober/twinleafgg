@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { setupGame, padDeck, getCardByName } from './test-helpers';
-import { useAttack } from './card-test-helpers';
+import { useAttack, getDamage } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
@@ -96,6 +96,34 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       const interpreted = buildAndAttack(res.fullName!, energies, c.attackerDamage, c.attackLabel, c.fragments);
       expect(interpreted).toEqual(native);
     });
+  });
+
+  it('evaluates perCount/forEach counts (30 damage per benched Pokémon)', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon'); // 130 HP, weak to Psychic → mirror-safe
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: { card: res.fullName!, energy: ['Water Energy SVE'] },
+        bench: [{ card: res.fullName! }, { card: res.fullName! }, { card: res.fullName! }],
+        deck: padDeck(10),
+      },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Bench Beat', cost: ['Colorless'],
+      body: [{
+        kind: 'damage.deal',
+        amount: { kind: 'perCount', base: 0, per: 30, count: { kind: 'forEach', of: 'benchedPokemon', who: 'self' } },
+        target: { selector: 'opponentActive' },
+      }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+
+    useAttack(game.store, game.state, 0, 'Bench Beat');
+    expect(getDamage(game.state, 1, 'active')).toBe(90); // 30 × 3 benched
   });
 
   it('matches native on the agreeing pure-damage corpus (damage.deal/const)', () => {
