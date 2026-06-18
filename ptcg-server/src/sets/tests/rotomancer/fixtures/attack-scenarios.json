@@ -1,0 +1,10611 @@
+{
+ "meta": {
+  "source": "rotomancer effect-programs",
+  "snapshot": "ir/2026-05-17/effect-programs",
+  "shape": "every ATTACK fragment body (support decided at runtime)",
+  "count": 318
+ },
+ "scenarios": [
+  {
+   "printingId": "me1-10",
+   "name": "Meganium",
+   "attackLabel": "Solar Beam",
+   "cost": [
+    "Grass",
+    "Grass",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-101",
+   "name": "Latios",
+   "attackLabel": "Dragon Claw",
+   "cost": [
+    "Water",
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-105",
+   "name": "Delibird",
+   "attackLabel": "Gentle Slap",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-105",
+   "name": "Delibird",
+   "attackLabel": "Quick Gift",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "visibility": "search"
+    }
+   ]
+  },
+  {
+   "printingId": "me1-106",
+   "name": "Miltank",
+   "attackLabel": "Bellyful of Milk",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "else": [],
+       "kind": "flow.control",
+       "kind2": "coinFlip",
+       "then": [
+        {
+         "amount": {
+          "kind": "all"
+         },
+         "kind": "heal",
+         "mode": "damage",
+         "target": {
+          "selector": "anyOwnPokemon"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-106",
+   "name": "Miltank",
+   "attackLabel": "Tackle",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-112",
+   "name": "Bewear",
+   "attackLabel": "Hyper Lariat",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 100
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "flow.control",
+       "else": [
+        {
+         "kind": "damage.deal",
+         "amount": {
+          "kind": "const",
+          "value": 100
+         },
+         "modifiers": [],
+         "target": {
+          "selector": "opponentActive"
+         }
+        }
+       ],
+       "kind2": "coinFlip",
+       "then": [
+        {
+         "kind": "damage.deal",
+         "amount": {
+          "kind": "const",
+          "value": 200
+         },
+         "modifiers": [],
+         "target": {
+          "selector": "opponentActive"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-112",
+   "name": "Bewear",
+   "attackLabel": "Knuckle Punch",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-142",
+   "name": "Inteleon",
+   "attackLabel": "Bring Down",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "pokemon.knockOut",
+     "target": {
+      "excludeSelf": true,
+      "extremum": {
+       "attr": "hpRemaining",
+       "dir": "min"
+      },
+      "selector": "anyPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-142",
+   "name": "Inteleon",
+   "attackLabel": "Water Shot",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-145",
+   "name": "Houndstone",
+   "attackLabel": "Hammer In",
+   "cost": [
+    "Psychic",
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-145",
+   "name": "Houndstone",
+   "attackLabel": "Horrifying Bite",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "count": {
+      "kind": "coinFlipsUntilTails"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "kind": "cards.move",
+     "select": {
+      "kind": "random"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "deck"
+     },
+     "visibility": "reveal"
+    }
+   ]
+  },
+  {
+   "printingId": "me1-158",
+   "name": "Mega Manectric ex",
+   "attackLabel": "Flash Ray",
+   "cost": [
+    "Lightning",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "preventDamage",
+      "predicate": {
+       "subtype": "Basic"
+      }
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-158",
+   "name": "Mega Manectric ex",
+   "attackLabel": "Riotous Blasting",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 200
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "energy.attachOrDiscard",
+       "action": "discard",
+       "card": {
+        "from": {
+         "owner": "self",
+         "zone": "attached"
+        },
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "count": {
+        "kind": "all"
+       },
+       "countsAsTurnAttach": false,
+       "target": {
+        "selector": "self"
+       }
+      },
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 330
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-20",
+   "name": "Ninetales",
+   "attackLabel": "Combustion",
+   "cost": [
+    "Fire",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-20",
+   "name": "Ninetales",
+   "attackLabel": "Supernatural Shapeshifter",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "auto"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "discard"
+     }
+    },
+    {
+     "kind": "effect.invoke",
+     "source": "discardedTrainer"
+    }
+   ]
+  },
+  {
+   "printingId": "me1-25",
+   "name": "Volcanion",
+   "attackLabel": "Backfire",
+   "cost": [
+    "Fire",
+    "Fire",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 2
+     },
+     "from": {
+      "owner": "self",
+      "zone": "attached"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "energyType": "Fire",
+       "supertype": "Energy"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-25",
+   "name": "Volcanion",
+   "attackLabel": "Singe",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "condition.apply",
+     "condition": "BURNED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-28",
+   "name": "Cinderace",
+   "attackLabel": "Turbo Flare",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "deck"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "upTo",
+      "max": 3,
+      "searchTyped": true
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "ownBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-30",
+   "name": "Centiskorch",
+   "attackLabel": "Coiling Crush",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "coinFlipHeads",
+      "n": 2
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-30",
+   "name": "Centiskorch",
+   "attackLabel": "Heat Crawler",
+   "cost": [
+    "Fire",
+    "Fire",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-31",
+   "name": "Chi-Yu",
+   "attackLabel": "Scorching Earth",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "stadiumInPlay": true
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "self",
+        "zone": "stadium"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "discard"
+       }
+      },
+      {
+       "kind": "attack.lockOrModify",
+       "effect": {
+        "kind": "stadiumPlayRestriction"
+       },
+       "scope": "opponentNextTurn",
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-56",
+   "name": "Alakazam",
+   "attackLabel": "Powerful Hand",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "kind2": "iterate",
+     "else": [],
+     "count": {
+      "kind": "forEach",
+      "of": "handCards",
+      "who": "self"
+     },
+     "then": [
+      {
+       "kind": "damage.placeCounters",
+       "count": 2,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-75",
+   "name": "Solrock",
+   "attackLabel": "Cosmic Beam",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "cardInZone": {
+       "zone": "bench",
+       "owner": "self",
+       "predicate": {
+        "nameEquals": "Lunatone"
+       }
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 70
+       },
+       "modifiers": [
+        "applyWeakness:false",
+        "applyResistance:false"
+       ],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-85",
+   "name": "Crawdaunt",
+   "attackLabel": "Cutting Riposte",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-85",
+   "name": "Crawdaunt",
+   "attackLabel": "Cutting Riposte",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "attackName": "Cutting Riposte",
+      "cost": [
+       "Darkness"
+      ],
+      "kind": "attackCostOverride",
+      "predicate": {
+       "damageState": {
+        "hasAny": true,
+        "selector": {
+         "selector": "self"
+        }
+       }
+      }
+     },
+     "scope": "passive",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-85",
+   "name": "Crawdaunt",
+   "attackLabel": "Vise Grip",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-94",
+   "name": "Mega Mawile ex",
+   "attackLabel": "Gobble Down",
+   "cost": [
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "prizesTaken",
+       "who": "self"
+      },
+      "per": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-94",
+   "name": "Mega Mawile ex",
+   "attackLabel": "Huge Bite",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "kind2": "predicate",
+     "predicate": {
+      "damageState": {
+       "hasAny": true,
+       "selector": {
+        "selector": "opponentActive"
+       }
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 30
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 260
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me1-95",
+   "name": "Dialga",
+   "attackLabel": "Beam",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me1-95",
+   "name": "Dialga",
+   "attackLabel": "Chrono Burst",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "else": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 80
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "count": {
+        "kind": "all"
+       },
+       "from": {
+        "owner": "self",
+        "zone": "attached"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "auto",
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "to": {
+        "owner": "self",
+        "zone": "deck"
+       }
+      },
+      {
+       "amount": {
+        "kind": "const",
+        "value": 160
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2-10",
+   "name": "Lokix",
+   "attackLabel": "Jumping Shot",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "pokemon.return",
+     "target": {
+      "selector": "self"
+     },
+     "zone": "deck"
+    }
+   ]
+  },
+  {
+   "printingId": "me2-10",
+   "name": "Lokix",
+   "attackLabel": "Low Kick",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-13",
+   "name": "Mega Charizard X ex",
+   "attackLabel": "Inferno X",
+   "cost": [
+    "Fire",
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "bindAs": "discarded",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "energyType": "Fire"
+      }
+     },
+     "count": {
+      "kind": "anyAmount"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "anyOwnPokemon"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "countOf",
+       "ref": "discarded"
+      },
+      "per": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-2",
+   "name": "Gloom",
+   "attackLabel": "Disperse Drool",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-34",
+   "name": "Pawmot",
+   "attackLabel": "Voltaic Fist",
+   "cost": [
+    "Lightning",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 60
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "self"
+       }
+      },
+      {
+       "condition": "PARALYZED",
+       "kind": "condition.apply",
+       "removeMode": false,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2-40",
+   "name": "Meloetta",
+   "attackLabel": "Magical Shot",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-40",
+   "name": "Meloetta",
+   "attackLabel": "Soothing Melody",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "ownBench",
+      "predicate": {
+       "energyType": "Psychic"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-42",
+   "name": "Mimikyu",
+   "attackLabel": "Call for Family",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 1,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Pok\u00e9mon"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "bench"
+     },
+     "visibility": "search"
+    }
+   ]
+  },
+  {
+   "printingId": "me2-42",
+   "name": "Mimikyu",
+   "attackLabel": "Scratch",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-44",
+   "name": "Alcremie",
+   "attackLabel": "Sweet Circle",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self"
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-45",
+   "name": "Zacian",
+   "attackLabel": "Limit Break",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 90,
+      "when": {
+       "prize": {
+        "cmp": "le",
+        "n": 3,
+        "who": "opponent"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-46",
+   "name": "Bramblin",
+   "attackLabel": "Sneaky Placement",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": 1,
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-48",
+   "name": "Paldean Tauros",
+   "attackLabel": "Double-Edge",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-48",
+   "name": "Paldean Tauros",
+   "attackLabel": "Raging Charge",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "and": [
+         {
+          "nameTag": {
+           "substring": "Tauros"
+          }
+         },
+         {
+          "damageState": {
+           "hasAny": true
+          }
+         }
+        ]
+       }
+      },
+      "per": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-72",
+   "name": "Bronzong",
+   "attackLabel": "Tool Drop",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "toolsAttached",
+       "who": "self",
+       "bothSides": true
+      },
+      "per": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-72",
+   "name": "Bronzong",
+   "attackLabel": "Triple Draw",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-1",
+   "name": "Erika's Oddish",
+   "attackLabel": "Reckless Charge",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-100",
+   "name": "Team Rocket's Diglett",
+   "attackLabel": "Relentless Burrowing",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "coinFlipsUntilTails"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-104",
+   "name": "Medicham",
+   "attackLabel": "Seventh Kick",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "handSize": {
+       "cmp": "eq",
+       "n": 7,
+       "who": "self"
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 150
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-105",
+   "name": "Lunatone",
+   "attackLabel": "Power Gem",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-116",
+   "name": "Mega Hawlucha ex",
+   "attackLabel": "Somersault Dive",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 120,
+      "bonus": 140,
+      "when": {
+       "stadiumInPlay": true
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "stadiumInPlay": true
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "self",
+        "zone": "stadium"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "discard"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-119",
+   "name": "Carkol",
+   "attackLabel": "Guard Press",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 20
+      },
+      "kind": "damageReduction"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-119",
+   "name": "Carkol",
+   "attackLabel": "Power Gem",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-12",
+   "name": "Silcoon",
+   "attackLabel": "Tackle",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-122",
+   "name": "Okidogi",
+   "attackLabel": "Light Punch",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-122",
+   "name": "Okidogi",
+   "attackLabel": "Settle the Score",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 80,
+      "count": {
+       "kind": "forEach",
+       "of": "prizesTakenLastTurn",
+       "who": "opponent"
+      },
+      "kind": "perCount",
+      "per": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-142",
+   "name": "Fezandipiti ex",
+   "attackLabel": "Cruel Arrow",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-143",
+   "name": "Pecharunt",
+   "attackLabel": "Mochi Rush",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 50
+      },
+      "attackName": "Mochi Rush",
+      "kind": "damageBuff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-148",
+   "name": "Kingambit",
+   "attackLabel": "Double-Edged Slash",
+   "cost": [
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 180
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-162",
+   "name": "Team Rocket's Kangaskhan ex",
+   "attackLabel": "Comet Punch",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 4
+      },
+      "per": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-162",
+   "name": "Team Rocket's Kangaskhan ex",
+   "attackLabel": "Wicked Impact",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 120,
+      "bonus": 100,
+      "when": {
+       "cardPlayed": {
+        "predicate": {
+         "and": [
+          {
+           "subtype": "Supporter"
+          },
+          {
+           "nameTag": {
+            "substring": "Team Rocket"
+           }
+          }
+         ]
+        },
+        "who": "self",
+        "window": "thisTurn"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-170",
+   "name": "Larry's Staraptor",
+   "attackLabel": "Facade",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 60,
+      "bonus": 100,
+      "when": {
+       "or": [
+        {
+         "conditionOn": {
+          "condition": "BURNED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "POISONED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        }
+       ]
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-170",
+   "name": "Larry's Staraptor",
+   "attackLabel": "Feathery Strike",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 2
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "opponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-177",
+   "name": "Hop's Cramorant",
+   "attackLabel": "Fickle Spitting",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "or": [
+       {
+        "prize": {
+         "cmp": "eq",
+         "n": 3,
+         "who": "opponent"
+        }
+       },
+       {
+        "prize": {
+         "cmp": "eq",
+         "n": 4,
+         "who": "opponent"
+        }
+       }
+      ]
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 120
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-19",
+   "name": "Team Rocket's Spidops",
+   "attackLabel": "Rocket Rush",
+   "cost": [
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "nameTag": {
+         "owner": "Team Rocket's"
+        }
+       }
+      },
+      "per": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-2",
+   "name": "Erika's Gloom",
+   "attackLabel": "Poison Spray",
+   "cost": [
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "POISONED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-242",
+   "name": "Carbink",
+   "attackLabel": "Counter Jewel",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 70,
+      "bonus": 100,
+      "when": {
+       "prize": {
+        "cmp": "le",
+        "n": 2,
+        "who": "opponent"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-26",
+   "name": "Ethan's Ho-Oh ex",
+   "attackLabel": "Shining Feathers",
+   "cost": [
+    "Fire",
+    "Fire",
+    "Fire",
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "ownActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-27",
+   "name": "Numel",
+   "attackLabel": "Combustion",
+   "cost": [
+    "Fire",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-35",
+   "name": "Salazzle",
+   "attackLabel": "Flamethrower",
+   "cost": [
+    "Fire",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-35",
+   "name": "Salazzle",
+   "attackLabel": "Sudden Scorching",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "kind": "cards.move",
+     "select": {
+      "kind": "opponent"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "predicate",
+     "predicate": {
+      "history": {
+       "event": "evolved",
+       "fromName": "Salandit",
+       "subject": {
+        "selector": "self"
+       },
+       "window": "thisTurn"
+      }
+     },
+     "then": [
+      {
+       "count": {
+        "kind": "exactly",
+        "n": 2
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "hand"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "opponent"
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "discard"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-4",
+   "name": "Erika's Bellsprout",
+   "attackLabel": "Vine Slap",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-57",
+   "name": "Pikachu ex",
+   "attackLabel": "Topaz Bolt",
+   "cost": [
+    "Grass",
+    "Lightning",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 300
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-70",
+   "name": "Iono's Bellibolt ex",
+   "attackLabel": "Thunderous Bolt",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 230
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-75",
+   "name": "Clefable",
+   "attackLabel": "Magical Shot",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-75",
+   "name": "Clefable",
+   "attackLabel": "Metronome",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "effect.invoke",
+     "source": "copyDefendingAttack"
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-78",
+   "name": "Team Rocket's Exeggutor",
+   "attackLabel": "Double-Edge",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-78",
+   "name": "Team Rocket's Exeggutor",
+   "attackLabel": "Tri Kinesis",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "flow.control",
+       "else": [],
+       "kind2": "coinFlip",
+       "then": [
+        {
+         "kind": "flow.control",
+         "else": [],
+         "kind2": "coinFlip",
+         "then": [
+          {
+           "kind": "pokemon.knockOut",
+           "target": {
+            "selector": "anyOpponentPokemon"
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-82",
+   "name": "Togekiss",
+   "attackLabel": "Speed Wing",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-86",
+   "name": "Mismagius",
+   "attackLabel": "Assassin's Magic",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "or": [
+       {
+        "conditionOn": {
+         "condition": "ASLEEP",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       },
+       {
+        "conditionOn": {
+         "condition": "BURNED",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       },
+       {
+        "conditionOn": {
+         "condition": "CONFUSED",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       },
+       {
+        "conditionOn": {
+         "condition": "PARALYZED",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       },
+       {
+        "conditionOn": {
+         "condition": "POISONED",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       }
+      ]
+     },
+     "then": [
+      {
+       "kind": "damage.placeCounters",
+       "count": 6,
+       "target": {
+        "selector": "opponentBench"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-91",
+   "name": "Banette",
+   "attackLabel": "Cursed Words",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "select": {
+      "kind": "opponent"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "deck"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-91",
+   "name": "Banette",
+   "attackLabel": "Spooky Shot",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-97",
+   "name": "Team Rocket's Mimikyu",
+   "attackLabel": "Gemstone Mimicry",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "effect.invoke",
+     "predicate": {
+      "subtype": "Tera"
+     },
+     "source": "copyDefendingAttack"
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-98",
+   "name": "Spectrier",
+   "attackLabel": "Phantasmal Barrage",
+   "cost": [
+    "Psychic",
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "all"
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "count": 12,
+     "kind": "damage.placeCounters",
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-98",
+   "name": "Spectrier",
+   "attackLabel": "Spooky Shot",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-12",
+   "name": "Decidueye ex",
+   "attackLabel": "Crushing Arrow",
+   "cost": [
+    "Grass",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 240
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-39",
+   "name": "Hippopotas",
+   "attackLabel": "Bite",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-39",
+   "name": "Hippopotas",
+   "attackLabel": "Sand Attack",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "coinGate",
+      "onTails": "attackDoesNothing",
+      "predicate": {
+       "attackByDefending": true
+      }
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "defendingPokemonAtTriggerTime"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-40",
+   "name": "Hippowdon",
+   "attackLabel": "Heavy Impact",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-40",
+   "name": "Hippowdon",
+   "attackLabel": "Twister Spewing",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "cardPlayed": {
+       "predicate": {
+        "nameEquals": "Tarragon"
+       },
+       "who": "self",
+       "window": "thisTurn"
+      }
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 3
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "deck"
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "discard"
+       },
+       "select": {
+        "kind": "auto"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "me3-49",
+   "name": "Haunter",
+   "attackLabel": "Haunt",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": 3,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-53",
+   "name": "Yveltal ex",
+   "attackLabel": "Dark Strike",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 210
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "attackName": "Dark Strike",
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-53",
+   "name": "Yveltal ex",
+   "attackLabel": "Soul Destroyer",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "pokemon.knockOut",
+     "target": {
+      "predicate": {
+       "hpRemaining": {
+        "cmp": "le",
+        "n": 50
+       }
+      },
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "pokemon.knockOut",
+     "target": {
+      "predicate": {
+       "hpRemaining": {
+        "cmp": "le",
+        "n": 50
+       }
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-57",
+   "name": "Doublade",
+   "attackLabel": "Weaponized Swords",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "handCards",
+       "predicate": {
+        "or": [
+         {
+          "nameEquals": "Honedge"
+         },
+         {
+          "nameEquals": "Doublade"
+         },
+         {
+          "nameEquals": "Aegislash"
+         }
+        ]
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-58",
+   "name": "Aegislash",
+   "attackLabel": "Metal Slash",
+   "cost": [
+    "Metal",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 230
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-58",
+   "name": "Aegislash",
+   "attackLabel": "Slash",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-62",
+   "name": "Meowth ex",
+   "attackLabel": "Tuck Tail",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "self",
+      "zone": "attached"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "active"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-63",
+   "name": "Snorlax",
+   "attackLabel": "Collapse",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "ASLEEP",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-63",
+   "name": "Snorlax",
+   "attackLabel": "Gormandizer",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "deck"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "coinFlipsUntilTails"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-66",
+   "name": "Fletchling",
+   "attackLabel": "Chirp",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 2,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "resistanceType": {
+        "energyType": "Fighting",
+        "selector": {
+         "selector": "self"
+        }
+       },
+       "supertype": "Pok\u00e9mon"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "visibility": "reveal"
+    }
+   ]
+  },
+  {
+   "printingId": "me3-66",
+   "name": "Fletchling",
+   "attackLabel": "Peck",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-67",
+   "name": "Furfrou",
+   "attackLabel": "Hand Trim",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "untilHandSizeTrim",
+      "target": 5,
+      "who": "opponent"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "kind": "cards.move",
+     "select": {
+      "kind": "random"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-67",
+   "name": "Furfrou",
+   "attackLabel": "Headbutt",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-127",
+   "name": "Roggenrola",
+   "attackLabel": "Harden",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "effect": {
+      "kind": "preventDamage",
+      "preventAtMostDamage": 40
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-127",
+   "name": "Roggenrola",
+   "attackLabel": "Rolling Rocks",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-135",
+   "name": "Terrakion",
+   "attackLabel": "Land Crush",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-135",
+   "name": "Terrakion",
+   "attackLabel": "Retaliate",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 80,
+      "when": {
+       "history": {
+        "cause": "attackDamage",
+        "event": "ko",
+        "who": "self",
+        "window": "lastTurn"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-153",
+   "name": "Watchog",
+   "attackLabel": "Focus Energy",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 240
+      },
+      "attackName": "Hyper Fang",
+      "kind": "attackBaseDamageOverride"
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-153",
+   "name": "Watchog",
+   "attackLabel": "Hyper Fang",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 80
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-16",
+   "name": "Litwick",
+   "attackLabel": "Brighten and Burn",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "self",
+        "zone": "deck"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "auto"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "discard"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-40",
+   "name": "Cofagrigus",
+   "attackLabel": "Extended Damagriiigus",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "selector": "ownBench"
+     },
+     "to": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-40",
+   "name": "Cofagrigus",
+   "attackLabel": "Perplex",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-44",
+   "name": "Frillish",
+   "attackLabel": "Oceanic Gloom",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "itemPlayRestriction"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-78",
+   "name": "Tornadus",
+   "attackLabel": "Hurricane",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "move",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "source": {
+      "selector": "self"
+     },
+     "target": {
+      "selector": "ownBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-78",
+   "name": "Tornadus",
+   "attackLabel": "Wrapped in Wind",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "hand"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-100",
+   "name": "Medicham",
+   "attackLabel": "Harmonious Spirit Palm",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 120,
+      "when": {
+       "compare": {
+        "lhs": {
+         "attr": "energyAttached",
+         "selector": {
+          "selector": "self"
+         }
+        },
+        "op": "eq",
+        "rhs": {
+         "attr": "energyAttached",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-106",
+   "name": "Hippowdon",
+   "attackLabel": "Ram",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-106",
+   "name": "Hippowdon",
+   "attackLabel": "Super Sandstorm",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "eachOwnBench"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-113",
+   "name": "Team Rocket's Arbok",
+   "attackLabel": "Spinning Tail",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-123",
+   "name": "Team Rocket's Grimer",
+   "attackLabel": "Corrosive Sludge",
+   "cost": [
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "pokemon.discard",
+     "target": {
+      "selector": "defendingPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-14",
+   "name": "Lurantis",
+   "attackLabel": "Petal Blade Dance",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "costGate",
+     "preimage": {
+      "count": {
+       "kind": "exactly",
+       "n": 2
+      },
+      "kind": "discardFromHand",
+      "predicate": {
+       "energyType": "Grass",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "then": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 130
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-14",
+   "name": "Lurantis",
+   "attackLabel": "Razor Leaf",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-148",
+   "name": "Team Rocket's Raticate",
+   "attackLabel": "Reckless Abandon",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "flow.control",
+       "else": [
+        {
+         "kind": "damage.deal",
+         "amount": {
+          "kind": "const",
+          "value": 90
+         },
+         "modifiers": [],
+         "target": {
+          "selector": "self"
+         }
+        }
+       ],
+       "kind2": "coinFlip",
+       "then": []
+      }
+     ],
+     "kind2": "coinFlip",
+     "then": []
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-160",
+   "name": "Squawkabilly",
+   "attackLabel": "Push Down",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "bench"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "opponent"
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-18",
+   "name": "Hydrapple",
+   "attackLabel": "Hydra Breath",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "costGate",
+     "preimage": {
+      "count": {
+       "kind": "exactly",
+       "n": 6
+      },
+      "kind": "discardFromHand",
+      "predicate": {
+       "energyType": "Grass",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "then": [
+      {
+       "kind": "pokemon.knockOut",
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-18",
+   "name": "Hydrapple",
+   "attackLabel": "Whip Smash",
+   "cost": [
+    "Grass",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-199",
+   "name": "Team Rocket's Weezing",
+   "attackLabel": "Explode Together Now",
+   "cost": [
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "bothSides": true,
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "predicate": {
+        "or": [
+         {
+          "nameTag": {
+           "substring": "Koffing"
+          }
+         },
+         {
+          "nameTag": {
+           "substring": "Weezing"
+          }
+         }
+        ]
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-201",
+   "name": "Zamazenta",
+   "attackLabel": "Strong Bash",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-201",
+   "name": "Zamazenta",
+   "attackLabel": "Strong Bash",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "history": {
+       "attackName": "Strong Bash",
+       "event": "attackUsed",
+       "subject": {
+        "selector": "self"
+       },
+       "window": "lastTurn"
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.placeCounters",
+       "count": {
+        "kind": "incomingDamageCounters"
+       },
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-219",
+   "name": "Team Rocket's Persian ex",
+   "attackLabel": "Cruel Slash",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-219",
+   "name": "Team Rocket's Persian ex",
+   "attackLabel": "Haughty Order",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "effect.invoke",
+     "n": 10,
+     "source": "opponentDeckTopN"
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-65",
+   "name": "Cetitan ex",
+   "attackLabel": "Crushing Press",
+   "cost": [
+    "Water",
+    "Water",
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 140
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "flow.control",
+       "else": [
+        {
+         "kind": "damage.deal",
+         "amount": {
+          "kind": "const",
+          "value": 140
+         },
+         "modifiers": [],
+         "target": {
+          "selector": "opponentActive"
+         }
+        }
+       ],
+       "kind2": "costGate",
+       "preimage": {
+        "kind": "discardStadiumInPlay"
+       },
+       "then": [
+        {
+         "kind": "damage.deal",
+         "amount": {
+          "kind": "const",
+          "value": 280
+         },
+         "modifiers": [],
+         "target": {
+          "selector": "opponentActive"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-74",
+   "name": "Team Rocket's Ampharos",
+   "attackLabel": "Head Bolt",
+   "cost": [
+    "Lightning",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-76",
+   "name": "Manectric",
+   "attackLabel": "Flash Impact",
+   "cost": [
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "ownBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-76",
+   "name": "Manectric",
+   "attackLabel": "Zap Kick",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-78",
+   "name": "Zeraora",
+   "attackLabel": "Scratch",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-78",
+   "name": "Zeraora",
+   "attackLabel": "Thunder Raid",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 210
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "subtype": "ex"
+      },
+      "selector": "opponentBench"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "all"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-82",
+   "name": "Team Rocket's Wobbuffet",
+   "attackLabel": "Headbutt Bounce",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-82",
+   "name": "Team Rocket's Wobbuffet",
+   "attackLabel": "Rocket Mirror",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "selector": "ownBench",
+      "predicate": {
+       "nameTag": {
+        "owner": "Team Rocket's"
+       }
+      }
+     },
+     "to": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-85",
+   "name": "Team Rocket's Chingling",
+   "attackLabel": "Chiming Commotion",
+   "cost": [],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "select": {
+      "kind": "random"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-104",
+   "name": "Gengar ex",
+   "attackLabel": "Tricky Steps",
+   "cost": [
+    "Darkness",
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "energy.attachOrDiscard",
+       "action": "move",
+       "card": {
+        "from": {
+         "owner": "opponent",
+         "zone": "attached"
+        },
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "countsAsTurnAttach": false,
+       "source": {
+        "selector": "opponentActive"
+       },
+       "target": {
+        "selector": "opponentBench"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-13",
+   "name": "Shaymin",
+   "attackLabel": "Pinpoint Dive",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "or": [
+        {
+         "subtype": "ex"
+        },
+        {
+         "subtype": "V"
+        }
+       ]
+      },
+      "selector": "opponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-13",
+   "name": "Shaymin",
+   "attackLabel": "Rear Kick",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-136",
+   "name": "Minccino",
+   "attackLabel": "Beat",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-136",
+   "name": "Minccino",
+   "attackLabel": "Cleaning Up",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "attack": true,
+      "kind": "upTo",
+      "max": 2
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "attached"
+     },
+     "kind": "cards.move",
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "subtype": "Pok\u00e9mon Tool",
+       "supertype": "Trainer"
+      }
+     },
+     "source": {
+      "selector": "opponentPokemon"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-138",
+   "name": "Drampa",
+   "attackLabel": "Gentle Slap",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-138",
+   "name": "Drampa",
+   "attackLabel": "Raging Cannon",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 100,
+      "bonus": 120,
+      "kind": "plusIf",
+      "when": {
+       "not": {
+        "damageState": {
+         "full": true,
+         "selector": {
+          "selector": "eachOwnBench"
+         }
+        }
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-175",
+   "name": "Mudsdale",
+   "attackLabel": "High Horsepower",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-175",
+   "name": "Mudsdale",
+   "attackLabel": "Mud Stock",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "discard"
+      },
+      "predicate": {
+       "energyType": "Fighting",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-191",
+   "name": "Iron Crown ex",
+   "attackLabel": "Twin Shotels",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [
+      "splashDamage"
+     ],
+     "target": {
+      "selector": "anyOpponentPokemon"
+     },
+     "targetCount": 2
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-31",
+   "name": "Heatmor",
+   "attackLabel": "Licking Flames",
+   "cost": [
+    "Fire",
+    "Fire",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "count": {
+      "kind": "coinFlipTails",
+      "n": 3
+     },
+     "else": [],
+     "kind2": "iterate",
+     "then": [
+      {
+       "kind": "energy.attachOrDiscard",
+       "action": "discard",
+       "card": {
+        "from": {
+         "owner": "self",
+         "zone": "attached"
+        },
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "countsAsTurnAttach": false,
+       "target": {
+        "selector": "self"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-31",
+   "name": "Heatmor",
+   "attackLabel": "Live Coal",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-43",
+   "name": "Sharpedo",
+   "attackLabel": "Chew Off",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "coinFlipHeads",
+      "n": 3
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "random"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-43",
+   "name": "Sharpedo",
+   "attackLabel": "Jet Headbutt",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-49",
+   "name": "Palafin",
+   "attackLabel": "Double Hit",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 2
+      },
+      "per": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-49",
+   "name": "Palafin",
+   "attackLabel": "Vanguard Punch",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "damageCounters",
+       "who": "self"
+      },
+      "per": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-52",
+   "name": "Raichu",
+   "attackLabel": "Collateral Bolts",
+   "cost": [
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "eachOwnBench"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-52",
+   "name": "Raichu",
+   "attackLabel": "Electric Ball",
+   "cost": [
+    "Lightning",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-61",
+   "name": "Iron Hands",
+   "attackLabel": "Superalloy Hands",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 80,
+      "bonus": 80,
+      "when": {
+       "subtype": "ex"
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-61",
+   "name": "Iron Hands",
+   "attackLabel": "Volt Wave",
+   "cost": [
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "condition.apply",
+       "condition": "PARALYZED",
+       "removeMode": false,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-69",
+   "name": "Bronzong",
+   "attackLabel": "Evolution Jammer",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "evolvePlayRestriction"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-69",
+   "name": "Bronzong",
+   "attackLabel": "Super Psy Bolt",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-77",
+   "name": "Scream Tail",
+   "attackLabel": "Hyper Voice",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-77",
+   "name": "Scream Tail",
+   "attackLabel": "Supportive Singing",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "ownBench",
+      "predicate": {
+       "subtype": "Ancient"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-92",
+   "name": "Mudsdale",
+   "attackLabel": "High Horsepower",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-92",
+   "name": "Mudsdale",
+   "attackLabel": "Mud Stock",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "discard"
+      },
+      "predicate": {
+       "energyType": "Fighting",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-104",
+   "name": "Gurdurr",
+   "attackLabel": "Knuckle Punch",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-104",
+   "name": "Gurdurr",
+   "attackLabel": "Superpower",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 50
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 80
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      },
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 30
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "self"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-105",
+   "name": "Conkeldurr",
+   "attackLabel": "Gutsy Swing",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 250
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-105",
+   "name": "Conkeldurr",
+   "attackLabel": "Gutsy Swing",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "attackName": "Gutsy Swing",
+      "cost": [],
+      "kind": "attackCostOverride",
+      "predicate": {
+       "or": [
+        {
+         "conditionOn": {
+          "condition": "ASLEEP",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "BURNED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "CONFUSED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "PARALYZED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "POISONED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        }
+       ]
+      }
+     },
+     "scope": "passive",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-105",
+   "name": "Conkeldurr",
+   "attackLabel": "Tantrum",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-107",
+   "name": "Hawlucha",
+   "attackLabel": "Prize Count",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 90,
+      "when": {
+       "compare": {
+        "lhs": {
+         "attr": "prizeRemaining",
+         "who": "self"
+        },
+        "op": "gt",
+        "rhs": {
+         "attr": "prizeRemaining",
+         "who": "opponent"
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-110",
+   "name": "Ting-Lu",
+   "attackLabel": "Ground Crasher",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "stadiumInPlay": true
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 30
+       },
+       "modifiers": [
+        "applyWeakness:false",
+        "applyResistance:false"
+       ],
+       "target": {
+        "selector": "eachOpponentBench"
+       }
+      },
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "self",
+        "zone": "stadium"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "discard"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-110",
+   "name": "Ting-Lu",
+   "attackLabel": "Hammer In",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-119",
+   "name": "Skarmory",
+   "attackLabel": "Big Storm",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "stadium"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "discard"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-119",
+   "name": "Skarmory",
+   "attackLabel": "Cutting Wind",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-122",
+   "name": "Aggron",
+   "attackLabel": "Angry Slam",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "damageState": {
+         "hasAny": true
+        }
+       }
+      },
+      "per": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-122",
+   "name": "Aggron",
+   "attackLabel": "Guard Claw",
+   "cost": [
+    "Metal",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 50
+      },
+      "kind": "damageReduction"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-133",
+   "name": "Chansey",
+   "attackLabel": "Boundless Power",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-133",
+   "name": "Chansey",
+   "attackLabel": "Lucky Attachment",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "hand"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "anyOwnPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-135",
+   "name": "Eevee",
+   "attackLabel": "Ascension",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 1,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "evolvesFrom": "Eevee",
+       "supertype": "Pok\u00e9mon"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "active"
+     },
+     "visibility": "search"
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-135",
+   "name": "Eevee",
+   "attackLabel": "Quick Attack",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 20,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-179",
+   "name": "Chimecho",
+   "attackLabel": "Homeward Chime",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "kind": "pokemon.return",
+     "target": {
+      "selector": "ownBench"
+     },
+     "zone": "deck"
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-179",
+   "name": "Chimecho",
+   "attackLabel": "Hyper Voice",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-187",
+   "name": "Chansey",
+   "attackLabel": "Boundless Power",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-187",
+   "name": "Chansey",
+   "attackLabel": "Lucky Attachment",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "hand"
+      },
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "anyOwnPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-22",
+   "name": "Sinistcha",
+   "attackLabel": "Cursed Drop",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "exactly",
+      "n": 4
+     },
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "iterate",
+     "then": [
+      {
+       "count": 1,
+       "kind": "damage.placeCounters",
+       "target": {
+        "selector": "anyOpponentPokemon"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-22",
+   "name": "Sinistcha",
+   "attackLabel": "Spill the Tea",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "action": "discard",
+     "bindAs": "discarded",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "energyType": "Grass"
+      }
+     },
+     "count": {
+      "attack": true,
+      "kind": "upTo",
+      "max": 3
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "selector": "anyOwnPokemon"
+     }
+    },
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "countOf",
+       "ref": "discarded"
+      },
+      "kind": "perCount",
+      "per": 70
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-23",
+   "name": "Sinistcha ex",
+   "attackLabel": "Matcha Splash",
+   "cost": [
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "ownActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-23",
+   "name": "Sinistcha ex",
+   "attackLabel": "Re-Brew",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": {
+      "kind": "scaled",
+      "factor": 2,
+      "of": {
+       "kind": "forEach",
+       "of": "discardCards",
+       "who": "self",
+       "predicate": {
+        "energyType": "Grass",
+        "subtype": "Basic",
+        "supertype": "Energy"
+       }
+      }
+     },
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "self",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto",
+      "predicate": {
+       "energyType": "Grass",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "deck"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-43",
+   "name": "Poliwrath",
+   "attackLabel": "Hypnosis",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "condition": "ASLEEP",
+     "kind": "condition.apply",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-43",
+   "name": "Poliwrath",
+   "attackLabel": "Jumping Uppercut",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "else": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 120
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 240
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      },
+      {
+       "kind": "pokemon.return",
+       "target": {
+        "selector": "self"
+       },
+       "zone": "deck"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-48",
+   "name": "Crawdaunt",
+   "attackLabel": "Rampaging Hammer",
+   "cost": [
+    "Water",
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 180
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-48",
+   "name": "Crawdaunt",
+   "attackLabel": "Snip Snip",
+   "cost": [
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "coinFlipHeads",
+      "n": 2
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-63",
+   "name": "Walking Wake",
+   "attackLabel": "Aurora Gain",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-63",
+   "name": "Walking Wake",
+   "attackLabel": "Undulating Slice",
+   "cost": [
+    "Water",
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "bindAs": "placed",
+     "count": {
+      "kind": "upTo",
+      "max": 9,
+      "attack": true
+     },
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "countOf",
+       "ref": "placed"
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-69",
+   "name": "Emolga",
+   "attackLabel": "Sky Wave",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-76",
+   "name": "Kilowattrel",
+   "attackLabel": "Strong Volt",
+   "cost": [
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-76",
+   "name": "Kilowattrel",
+   "attackLabel": "Wind Power Charge",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 120
+      },
+      "kind": "damageBuff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-83",
+   "name": "Girafarig",
+   "attackLabel": "Dual Headbutt",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "ownBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-93",
+   "name": "Enamorus",
+   "attackLabel": "Heart Sign",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-93",
+   "name": "Enamorus",
+   "attackLabel": "Love Resonance",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 80,
+      "bonus": 120,
+      "kind": "plusIf",
+      "when": {
+       "sharedTypeInPlay": true
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-15",
+   "name": "Revavroom ex",
+   "attackLabel": "Accelerator Flash",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 20,
+      "bonus": 120,
+      "when": {
+       "movedToActive": {
+        "selector": {
+         "selector": "self"
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-15",
+   "name": "Revavroom ex",
+   "attackLabel": "Shattering Speed",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 250
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "pokemon.discard",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-32",
+   "name": "Zoroark",
+   "attackLabel": "Claw Slash",
+   "cost": [
+    "Darkness",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-32",
+   "name": "Zoroark",
+   "attackLabel": "Illusory Hijacking",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "opponent",
+       "predicate": {
+        "or": [
+         {
+          "subtype": "ex"
+         },
+         {
+          "subtype": "V"
+         }
+        ]
+       }
+      },
+      "per": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-35",
+   "name": "Yveltal",
+   "attackLabel": "Corrosive Winds",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "count": 2,
+     "kind": "damage.placeCounters",
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "count": 2,
+     "kind": "damage.placeCounters",
+     "target": {
+      "predicate": {
+       "damageState": {
+        "hasAny": true
+       }
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-35",
+   "name": "Yveltal",
+   "attackLabel": "Destructive Beam",
+   "cost": [
+    "Darkness",
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "action": "discard",
+       "card": {
+        "from": {
+         "owner": "opponent",
+         "zone": "attached"
+        },
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "countsAsTurnAttach": false,
+       "kind": "energy.attachOrDiscard",
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-4",
+   "name": "Dartrix",
+   "attackLabel": "Cutting Wind",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-4",
+   "name": "Dartrix",
+   "attackLabel": "United Wings",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "discardCards",
+       "predicate": {
+        "hasAttack": {
+         "name": "United Wings"
+        }
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-46",
+   "name": "Haxorus",
+   "attackLabel": "Bring Down the Axe",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "kind2": "predicate",
+     "else": [],
+     "predicate": {
+      "energyAttachedCount": {
+       "cmp": "ge",
+       "n": 1,
+       "predicate": {
+        "subtype": "Special"
+       },
+       "selector": {
+        "selector": "opponentActive"
+       }
+      }
+     },
+     "then": [
+      {
+       "kind": "pokemon.knockOut",
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-46",
+   "name": "Haxorus",
+   "attackLabel": "Dragon Pulse",
+   "cost": [
+    "Fighting",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 230
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "discard"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-5",
+   "name": "Decidueye",
+   "attackLabel": "Power Shot",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 170
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-5",
+   "name": "Decidueye",
+   "attackLabel": "Stock Up on Feathers",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "untilHandSize",
+      "target": 7,
+      "who": "self"
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "kind": "cards.move",
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-123",
+   "name": "Talonflame",
+   "attackLabel": "Aero Chase",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 110,
+      "bonus": 110,
+      "when": {
+       "retreatCost": {
+        "selector": {
+         "selector": "opponentActive"
+        },
+        "cmp": "ge",
+        "n": 2
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-128",
+   "name": "Terapagos ex",
+   "attackLabel": "Crown Opal",
+   "cost": [
+    "Grass",
+    "Water",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 180
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "preventDamage",
+      "predicate": {
+       "and": [
+        {
+         "subtype": "Basic"
+        },
+        {
+         "not": {
+          "energyType": "Colorless"
+         }
+        }
+       ]
+      }
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-128",
+   "name": "Terapagos ex",
+   "attackLabel": "Unified Beatdown",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "not": {
+       "and": [
+        {
+         "turn": {
+          "aspect": "wentSecond",
+          "who": "self"
+         }
+        },
+        {
+         "turn": {
+          "aspect": "isOwnFirstTurn",
+          "who": "self"
+         }
+        }
+       ]
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "perCount",
+        "base": 0,
+        "count": {
+         "kind": "forEach",
+         "of": "benchedPokemon",
+         "who": "self"
+        },
+        "per": 30
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-56",
+   "name": "Pawmi",
+   "attackLabel": "Targeted Spark",
+   "cost": [
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-61",
+   "name": "Drifblim",
+   "attackLabel": "Everyone Explode Now",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "predicate": {
+        "or": [
+         {
+          "nameEquals": "Drifloon"
+         },
+         {
+          "nameEquals": "Drifblim"
+         }
+        ]
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 50
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "damage.deal",
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "or": [
+        {
+         "nameEquals": "Drifloon"
+        },
+        {
+         "nameEquals": "Drifblim"
+        }
+       ]
+      },
+      "selector": "ownPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-63",
+   "name": "Comfey",
+   "attackLabel": "Flower Shower",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "visibility": "private"
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "visibility": "private"
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-63",
+   "name": "Comfey",
+   "attackLabel": "Play Rough",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 20,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-66",
+   "name": "Fidough",
+   "attackLabel": "Pleasant Aroma",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 1,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Pok\u00e9mon"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "bench"
+     },
+     "visibility": "search"
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-66",
+   "name": "Fidough",
+   "attackLabel": "Stampede",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-8",
+   "name": "Mow Rotom",
+   "attackLabel": "Reaping Dash",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "attached"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto",
+      "predicate": {
+       "subtype": "Pok\u00e9mon Tool",
+       "supertype": "Trainer"
+      }
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "attached"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto",
+      "predicate": {
+       "subtype": "Special",
+       "supertype": "Energy"
+      }
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-88",
+   "name": "Falinks",
+   "attackLabel": "All-Out Attack",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 30,
+      "bonus": 90,
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "window": "yourLastTurn",
+        "subject": {
+         "selector": "self"
+        },
+        "attackName": "Form Ranks"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-88",
+   "name": "Falinks",
+   "attackLabel": "Form Ranks",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 2,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "subtype": "Basic",
+       "supertype": "Pok\u00e9mon"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "bench"
+     },
+     "visibility": "search"
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-100",
+   "name": "Annihilape",
+   "attackLabel": "Destined Fight",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "pokemon.knockOut",
+     "target": {
+      "selector": "bothActives"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-100",
+   "name": "Annihilape",
+   "attackLabel": "Tantrum",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-101",
+   "name": "Paldean Tauros",
+   "attackLabel": "Blocking Stomp",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "kind2": "predicate",
+     "else": [],
+     "predicate": {
+      "subtype": "Basic"
+     },
+     "then": [
+      {
+       "kind": "attack.lockOrModify",
+       "effect": {
+        "kind": "attackShutoff"
+       },
+       "scope": "opponentNextTurn",
+       "target": {
+        "selector": "defendingPokemonAtTriggerTime"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-101",
+   "name": "Paldean Tauros",
+   "attackLabel": "Smash Kick",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-105",
+   "name": "Vibrava",
+   "attackLabel": "Cutting Wind",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-105",
+   "name": "Vibrava",
+   "attackLabel": "Screech",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 50
+      },
+      "kind": "damageVulnerability"
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "yourNextTurn",
+     "target": {
+      "selector": "defendingPokemonAtTriggerTime"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-11",
+   "name": "Zarude",
+   "attackLabel": "Jungle Whip",
+   "cost": [
+    "Grass",
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "else": [
+      {
+       "amount": {
+        "kind": "const",
+        "value": 80
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "count": {
+        "kind": "all"
+       },
+       "from": {
+        "owner": "self",
+        "zone": "attached"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "auto",
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "to": {
+        "owner": "self",
+        "zone": "hand"
+       }
+      },
+      {
+       "amount": {
+        "kind": "const",
+        "value": 160
+       },
+       "kind": "damage.deal",
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-11",
+   "name": "Zarude",
+   "attackLabel": "Leaf Drain",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "heal",
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-116",
+   "name": "Koraidon",
+   "attackLabel": "Hammer In",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-116",
+   "name": "Koraidon",
+   "attackLabel": "Unrelenting Onslaught",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 30,
+      "bonus": 150,
+      "kind": "plusIf",
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "subject": {
+         "excludeSelf": true,
+         "predicate": {
+          "subtype": "Ancient"
+         },
+         "selector": "ownPokemon"
+        },
+        "window": "yourLastTurn"
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-128",
+   "name": "Klefki",
+   "attackLabel": "Hook",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-128",
+   "name": "Klefki",
+   "attackLabel": "Stick 'n' Draw",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "costGate",
+     "preimage": {
+      "kind": "discardFromHand",
+      "count": {
+       "kind": "exactly",
+       "n": 1
+      }
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 2
+       },
+       "from": {
+        "owner": "self",
+        "zone": "deck"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "hand"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-131",
+   "name": "Gholdengo",
+   "attackLabel": "Strike It Rich",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 30,
+      "bonus": 90,
+      "kind": "plusIf",
+      "when": {
+       "history": {
+        "event": "evolved",
+        "fromName": "Gimmighoul",
+        "subject": {
+         "selector": "self"
+        },
+        "window": "thisTurn"
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-131",
+   "name": "Gholdengo",
+   "attackLabel": "Surf Back",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "pokemon.return",
+       "target": {
+        "selector": "self"
+       },
+       "zone": "deck"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-137",
+   "name": "Turtonator",
+   "attackLabel": "Fully Singe",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "opponentActive",
+      "predicate": {
+       "subtype": "ex"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-137",
+   "name": "Turtonator",
+   "attackLabel": "Steaming Stomp",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-14",
+   "name": "Rabsca",
+   "attackLabel": "Counterturn",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 40,
+      "bonus": 200,
+      "when": {
+       "deckSize": {
+        "cmp": "le",
+        "n": 3,
+        "who": "self"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-14",
+   "name": "Rabsca",
+   "attackLabel": "Triple Draw",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 3
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-141",
+   "name": "Eternatus",
+   "attackLabel": "Dyna-Blast",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 10,
+      "bonus": 80,
+      "when": {
+       "subtype": "ex"
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-141",
+   "name": "Eternatus",
+   "attackLabel": "World Ender",
+   "cost": [
+    "Fire",
+    "Darkness",
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "costGate",
+     "preimage": {
+      "kind": "discardStadiumInPlay"
+     },
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 230
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-145",
+   "name": "Slakoth",
+   "attackLabel": "Take It Easy",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "retreatShutoff"
+     },
+     "scope": "yourNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-151",
+   "name": "Bouffalant",
+   "attackLabel": "Ready to Ram",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-151",
+   "name": "Bouffalant",
+   "attackLabel": "Ready to Ram",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "history": {
+       "attackName": "Ready to Ram",
+       "event": "attackUsed",
+       "subject": {
+        "selector": "self"
+       },
+       "window": "lastTurn"
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.placeCounters",
+       "count": 6,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-151",
+   "name": "Bouffalant",
+   "attackLabel": "Smashing Headbutt",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 2
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-156",
+   "name": "Oranguru",
+   "attackLabel": "Now You're in My Power",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "energyType": "Colorless",
+      "kind": "weaknessModifier"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-156",
+   "name": "Oranguru",
+   "attackLabel": "Smack",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-197",
+   "name": "Ceruledge",
+   "attackLabel": "Black Blaze Slash",
+   "cost": [
+    "Fire",
+    "Fire",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-197",
+   "name": "Ceruledge",
+   "attackLabel": "Cursed Edge",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy",
+       "subtype": "Special"
+      }
+     },
+     "count": {
+      "kind": "all"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy",
+       "subtype": "Special"
+      }
+     },
+     "count": {
+      "kind": "all"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-222",
+   "name": "Flygon ex",
+   "attackLabel": "Reversing Storm",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "self",
+        "zone": "bench"
+       },
+       "select": {
+        "kind": "player"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "active"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-222",
+   "name": "Flygon ex",
+   "attackLabel": "Sonic Peridot",
+   "cost": [
+    "Water",
+    "Fighting",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "or": [
+        {
+         "subtype": "ex"
+        },
+        {
+         "subtype": "V"
+        }
+       ]
+      },
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "or": [
+        {
+         "subtype": "ex"
+        },
+        {
+         "subtype": "V"
+        }
+       ]
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-241",
+   "name": "Archaludon ex",
+   "attackLabel": "Metal Defender",
+   "cost": [
+    "Metal",
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 220
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "weaknessSuppression"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-61",
+   "name": "Rotom",
+   "attackLabel": "Crushing Pulse",
+   "cost": [
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "hand.reveal",
+     "who": "opponent"
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto",
+      "predicate": {
+       "subtype": "Item",
+       "supertype": "Trainer"
+      }
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "hand"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "auto",
+      "predicate": {
+       "subtype": "Pok\u00e9mon Tool",
+       "supertype": "Trainer"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-61",
+   "name": "Rotom",
+   "attackLabel": "Energy Short",
+   "cost": [
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "energyAttached",
+       "who": "opponent",
+       "selector": {
+        "selector": "opponentActive"
+       }
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-78",
+   "name": "Uxie",
+   "attackLabel": "Painful Memories",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": 2,
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.placeCounters",
+     "count": 2,
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-83",
+   "name": "Cofagrigus",
+   "attackLabel": "Law of the Underworld",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": 6,
+     "target": {
+      "selector": "ownActive",
+      "predicate": {
+       "hasAbility": {}
+      }
+     }
+    },
+    {
+     "kind": "damage.placeCounters",
+     "count": 6,
+     "target": {
+      "selector": "eachOwnBench",
+      "predicate": {
+       "hasAbility": {}
+      }
+     }
+    },
+    {
+     "kind": "damage.placeCounters",
+     "count": 6,
+     "target": {
+      "selector": "opponentActive",
+      "predicate": {
+       "hasAbility": {}
+      }
+     }
+    },
+    {
+     "kind": "damage.placeCounters",
+     "count": 6,
+     "target": {
+      "selector": "eachOpponentBench",
+      "predicate": {
+       "hasAbility": {}
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-83",
+   "name": "Cofagrigus",
+   "attackLabel": "Spooky Shot",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-87",
+   "name": "Dedenne",
+   "attackLabel": "Electromagnetic Sonar",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "discard"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "supertype": "Trainer"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-87",
+   "name": "Dedenne",
+   "attackLabel": "Gnaw",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-95",
+   "name": "Espathra",
+   "attackLabel": "Mystical Eyes",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "special.devolve",
+     "stages": 1,
+     "target": {
+      "selector": "anyOpponentPokemon"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-95",
+   "name": "Espathra",
+   "attackLabel": "Spiral Drain",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "heal",
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-149",
+   "name": "Vaporeon ex",
+   "attackLabel": "Aquamarine",
+   "cost": [
+    "Fire",
+    "Water",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 280
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "attackShutoff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-149",
+   "name": "Vaporeon ex",
+   "attackLabel": "Severe Squall",
+   "cost": [
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "subtype": "ex"
+      },
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "predicate": {
+       "subtype": "ex"
+      },
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-26",
+   "name": "Glaceon ex",
+   "attackLabel": "Euclase",
+   "cost": [
+    "Grass",
+    "Water",
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "pokemon.knockOut",
+     "target": {
+      "predicate": {
+       "damageState": {
+        "cmp": "eq",
+        "n": 6
+       }
+      },
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-26",
+   "name": "Glaceon ex",
+   "attackLabel": "Frost Bullet",
+   "cost": [
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "opponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-35",
+   "name": "Duskull",
+   "attackLabel": "Come and Get You",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 3,
+      "attack": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "discard"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "nameEquals": "Duskull"
+      }
+     },
+     "to": {
+      "owner": "self",
+      "zone": "bench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-35",
+   "name": "Duskull",
+   "attackLabel": "Mumble",
+   "cost": [
+    "Psychic",
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-37",
+   "name": "Dusknoir",
+   "attackLabel": "Shadow Bind",
+   "cost": [
+    "Psychic",
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "kind": "retreatShutoff"
+     },
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "defendingPokemonAtTriggerTime"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-55",
+   "name": "Great Tusk",
+   "attackLabel": "Giant Tusk",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-55",
+   "name": "Great Tusk",
+   "attackLabel": "Land Collapse",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "opponent",
+      "zone": "deck"
+     },
+     "kind": "cards.move",
+     "select": {
+      "kind": "auto"
+     },
+     "to": {
+      "owner": "opponent",
+      "zone": "discard"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "predicate",
+     "predicate": {
+      "cardPlayed": {
+       "predicate": {
+        "and": [
+         {
+          "subtype": "Supporter"
+         },
+         {
+          "subtype": "Ancient"
+         }
+        ]
+       },
+       "who": "self",
+       "window": "thisTurn"
+      }
+     },
+     "then": [
+      {
+       "count": {
+        "kind": "exactly",
+        "n": 3
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "deck"
+       },
+       "kind": "cards.move",
+       "select": {
+        "kind": "auto"
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "discard"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-60",
+   "name": "Umbreon ex",
+   "attackLabel": "Moon Mirage",
+   "cost": [
+    "Darkness",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-60",
+   "name": "Umbreon ex",
+   "attackLabel": "Onyx",
+   "cost": [
+    "Lightning",
+    "Psychic",
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "all"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "from": {
+      "owner": "self",
+      "zone": "prize"
+     },
+     "select": {
+      "kind": "player"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-82",
+   "name": "Lugia ex",
+   "attackLabel": "Hyper Whirlpool",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "coinFlipsUntilTails"
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-115",
+   "name": "Druddigon",
+   "attackLabel": "Dragon's Fury",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "discard"
+      },
+      "predicate": {
+       "energyType": "Fire",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "kind": "energy.attachOrDiscard",
+     "target": {
+      "predicate": {
+       "energyType": "Dragon"
+      },
+      "selector": "anyOwnPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-115",
+   "name": "Druddigon",
+   "attackLabel": "Slashing Claw",
+   "cost": [
+    "Fire",
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 120
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-123",
+   "name": "Tropius",
+   "attackLabel": "Fruit Bearing",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "costGate",
+     "preimage": {
+      "kind": "discardFromHand",
+      "count": {
+       "kind": "exactly",
+       "n": 1
+      }
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 3
+       },
+       "from": {
+        "owner": "self",
+        "zone": "deck"
+       },
+       "to": {
+        "owner": "self",
+        "zone": "hand"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-123",
+   "name": "Tropius",
+   "attackLabel": "Gust",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-129",
+   "name": "Komala",
+   "attackLabel": "Slumbering Smack",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "ASLEEP",
+     "removeMode": false,
+     "target": {
+      "selector": "ownActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "ASLEEP",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "attack.lockOrModify",
+     "effect": {
+      "amount": {
+       "kind": "const",
+       "value": 100
+      },
+      "kind": "damageBuff"
+     },
+     "scope": "ownNextAttack",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-17",
+   "name": "Floragato",
+   "attackLabel": "Magical Leaf",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 30
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "damage.deal",
+       "amount": {
+        "kind": "const",
+        "value": 60
+       },
+       "modifiers": [],
+       "target": {
+        "selector": "opponentActive"
+       }
+      },
+      {
+       "kind": "heal",
+       "amount": {
+        "kind": "const",
+        "value": 30
+       },
+       "mode": "damage",
+       "target": {
+        "selector": "self"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-2",
+   "name": "Metapod",
+   "attackLabel": "Harden",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "effect": {
+      "kind": "preventDamage",
+      "preventAtMostDamage": 60
+     },
+     "kind": "attack.lockOrModify",
+     "scope": "opponentNextTurn",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-34",
+   "name": "Octillery",
+   "attackLabel": "Aqua Wash",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "playerChoice",
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "exactly",
+        "n": 1
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "attached"
+       },
+       "select": {
+        "kind": "player",
+        "predicate": {
+         "supertype": "Energy"
+        }
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "hand"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-34",
+   "name": "Octillery",
+   "attackLabel": "Octo Beatdown",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipsUntilTails"
+      },
+      "per": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-42",
+   "name": "Regice",
+   "attackLabel": "Blizzard",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOpponentBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-42",
+   "name": "Regice",
+   "attackLabel": "Icicle",
+   "cost": [
+    "Water",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-47",
+   "name": "Iono's Voltorb",
+   "attackLabel": "Voltaic Chain",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 20,
+      "count": {
+       "kind": "forEach",
+       "of": "energyAttached",
+       "predicate": {
+        "energyType": "Lightning"
+       },
+       "selector": {
+        "predicate": {
+         "nameTag": {
+          "owner": "Iono's"
+         }
+        },
+        "selector": "ownPokemon"
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-48",
+   "name": "Iono's Electrode",
+   "attackLabel": "Electric Ball",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-48",
+   "name": "Iono's Electrode",
+   "attackLabel": "Thump-Thump Boom",
+   "cost": [
+    "Lightning",
+    "Lightning"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 100
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    },
+    {
+     "else": [],
+     "kind": "flow.control",
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "pokemon.knockOut",
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-49",
+   "name": "N's Joltik",
+   "attackLabel": "Zapping Short",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "hasTool": {
+       "selector": {
+        "selector": "opponentActive"
+       }
+      }
+     },
+     "then": [
+      {
+       "kind": "cards.move",
+       "count": {
+        "kind": "all"
+       },
+       "from": {
+        "owner": "opponent",
+        "zone": "attached"
+       },
+       "to": {
+        "owner": "opponent",
+        "zone": "discard"
+       },
+       "select": {
+        "kind": "auto",
+        "predicate": {
+         "subtype": "Pok\u00e9mon Tool",
+         "supertype": "Trainer"
+        }
+       }
+      },
+      {
+       "kind": "condition.apply",
+       "condition": "PARALYZED",
+       "removeMode": false,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-58",
+   "name": "Mr. Mime",
+   "attackLabel": "Mimic",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "all"
+     },
+     "from": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "deck"
+     }
+    },
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "forEach",
+      "of": "handCards",
+      "who": "opponent"
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-58",
+   "name": "Mr. Mime",
+   "attackLabel": "Psy Bolt",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "condition.apply",
+       "condition": "PARALYZED",
+       "removeMode": false,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-64",
+   "name": "N's Sigilyph",
+   "attackLabel": "Psychic Sphere",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-64",
+   "name": "N's Sigilyph",
+   "attackLabel": "Victory Symbol",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "prize": {
+       "cmp": "eq",
+       "n": 1,
+       "who": "self"
+      }
+     },
+     "then": [
+      {
+       "kind": "game.win",
+       "who": "self"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-86",
+   "name": "Hop's Silicobra",
+   "attackLabel": "Gnaw",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-86",
+   "name": "Hop's Silicobra",
+   "attackLabel": "Turf Maker",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 1,
+      "searchTyped": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "hand"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "subtype": "Stadium",
+       "supertype": "Trainer"
+      }
+     },
+     "visibility": "reveal"
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-92",
+   "name": "Weezing",
+   "attackLabel": "Crazy Blast",
+   "cost": [
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 120,
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "window": "yourLastTurn",
+        "subject": {
+         "selector": "self"
+        },
+        "attackName": "Pervasive Gas"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-92",
+   "name": "Weezing",
+   "attackLabel": "Pervasive Gas",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "svp-147",
+   "name": "Iron Boulder ex",
+   "attackLabel": "Power Stomp",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 200
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "discard",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 2
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "svp-147",
+   "name": "Iron Boulder ex",
+   "attackLabel": "Repulsor Axe",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "svp-147",
+   "name": "Iron Boulder ex",
+   "attackLabel": "Repulsor Axe",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "predicate",
+     "predicate": {
+      "history": {
+       "attackName": "Repulsor Axe",
+       "event": "attackUsed",
+       "subject": {
+        "selector": "self"
+       },
+       "window": "lastTurn"
+      }
+     },
+     "then": [
+      {
+       "kind": "damage.placeCounters",
+       "count": 8,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "svp-155",
+   "name": "Wooper",
+   "attackLabel": "Headbutt",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "svp-155",
+   "name": "Wooper",
+   "attackLabel": "Scoop Water",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "cards.move",
+     "count": {
+      "kind": "upTo",
+      "max": 3,
+      "attack": true
+     },
+     "from": {
+      "owner": "self",
+      "zone": "discard"
+     },
+     "to": {
+      "owner": "self",
+      "zone": "deck"
+     },
+     "select": {
+      "kind": "player",
+      "predicate": {
+       "energyType": "Water",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-120",
+   "name": "Elgyem",
+   "attackLabel": "Beam",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-120",
+   "name": "Elgyem",
+   "attackLabel": "Slight Shift",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "action": "move",
+     "card": {
+      "from": {
+       "owner": "opponent",
+       "zone": "attached"
+      },
+      "predicate": {
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "distinctSourceTarget": true,
+     "kind": "energy.attachOrDiscard",
+     "source": {
+      "selector": "anyOpponentPokemon"
+     },
+     "target": {
+      "selector": "anyOpponentPokemon"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-131",
+   "name": "Landorus",
+   "attackLabel": "Abundant Harvest",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "energy.attachOrDiscard",
+     "action": "attach",
+     "card": {
+      "from": {
+       "owner": "self",
+       "zone": "discard"
+      },
+      "predicate": {
+       "energyType": "Fighting",
+       "subtype": "Basic",
+       "supertype": "Energy"
+      }
+     },
+     "count": {
+      "kind": "exactly",
+      "n": 1
+     },
+     "countsAsTurnAttach": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-131",
+   "name": "Landorus",
+   "attackLabel": "Earthquake",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 110
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [
+      "applyWeakness:false",
+      "applyResistance:false"
+     ],
+     "target": {
+      "selector": "eachOwnBench"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-16",
+   "name": "Volcarona",
+   "attackLabel": "Fire Wing",
+   "cost": [
+    "Fire",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-32",
+   "name": "Eelektross",
+   "attackLabel": "Buzz Flip",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 4
+      },
+      "per": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-32",
+   "name": "Eelektross",
+   "attackLabel": "Thunder Fang",
+   "cost": [
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "flow.control",
+     "else": [],
+     "kind2": "coinFlip",
+     "then": [
+      {
+       "kind": "condition.apply",
+       "condition": "PARALYZED",
+       "removeMode": false,
+       "target": {
+        "selector": "opponentActive"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-49",
+   "name": "Conkeldurr",
+   "attackLabel": "Swing Around",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 100,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 2
+      },
+      "per": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-52",
+   "name": "Crustle",
+   "attackLabel": "Stone Edge",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 80,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-54",
+   "name": "Venipede",
+   "attackLabel": "Poison Spray",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "condition.apply",
+     "condition": "POISONED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-9",
+   "name": "Karrablast",
+   "attackLabel": "Horn Attack",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  }
+ ]
+}

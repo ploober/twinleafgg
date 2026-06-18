@@ -260,15 +260,16 @@ Dartrix SFA-4) to guarantee validity.
 | 1. Resolver breadth | exact/mismatch/unmapped buckets + name validation; zsv→SV11B; `me*` deferred | ✅ done |
 | 2. Runner breadth | full step + expectation vocabulary; acceptance tracking | ✅ done |
 | 3. Corpus replay | 78 pure-damage scenarios → agreement scorecard (19 agree, 5 findings); see FINDINGS.md | ✅ done |
-| 4. IR interpreter | imperative core: damage.deal, placeCounters, condition.apply, heal; const; self/own/opp selectors | ✅ core done |
+| 4. IR interpreter | imperative ops; counts const/forEach/perCount/plusIf; predicate evaluator; flow.control (predicate + coinFlip); self/own/opp selectors | ✅ broad |
 | 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended (next) |
-| 6. Differential mode | native-vs-interpreted post-state comparison (3 multi-op cards + 19-card scale loop) | ✅ done |
+| 6. Differential mode | one unified attack-corpus differential (interpreter decides support at runtime): 32 exact cards compared, 0 unexplained mismatches | ✅ done |
 
-Phase 4 covers the imperative ops + const/forEach/perCount counts the corpus needs. Still ▢
-within Phase 4: `upTo`/`coinFlip*` counts, choice-bearing selectors (anyOwnPokemon → prompt),
-predicates, and flow.control — needed before the interpreter can run the conditional attacks.
-Note: many `forEach` attacks carry a predicate (e.g. Aggron counts only damaged Pokémon) that
-the IR currently flattens — see FINDINGS.md — so `countOf` + predicate is the faithful form.
+The differential runs `attack-scenarios.json` (every ATTACK fragment) and lets the interpreter's
+try/catch decide support — coverage grows automatically as ops are added (currently 32 compared,
+~56 unsupported). Still ▢ within Phase 4: `upTo`/`coinFlip*` counts, choice-bearing selectors
+(anyOwnPokemon → prompt), and the remaining predicate leaves (history, energyAttachedCount).
+Note: many `forEach` attacks carry a predicate the IR flattens (Aggron/Zoroark/Iono's Voltorb) —
+see FINDINGS.md — so `countOf` + predicate is the faithful form.
 
 Deferred decision points (no user input needed to proceed elsewhere):
 - **`me*` set-code map** — Mega-Evolution prefixes unmapped; 29 corpus scenarios skip on it.

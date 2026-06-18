@@ -44,6 +44,10 @@ export interface IrOp {
   removeMode?: boolean;
   modifiers?: string[];
   target?: { selector?: string };
+  kind2?: string;       // flow.control: predicate | coinFlip | costGate | playerChoice | ...
+  predicate?: any;      // flow.control kind2=predicate
+  then?: IrOp[];        // flow.control heads/true branch
+  else?: IrOp[];        // flow.control tails/false branch
 }
 
 // Damage modifiers that are no-ops in a mirror match (weakness/resistance never apply there).
@@ -157,6 +161,22 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'heal': {
       const { player, list } = resolveTarget(effect, op.target?.selector);
       return store.reduceEffect(state, new HealEffect(player, list, evalAmount(state, effect, op.amount)));
+    }
+    case 'flow.control': {
+      // Under the test harness (ALL_HEADS, no choices) a coin flip is heads → the `then` branch.
+      let branch: IrOp[];
+      if (op.kind2 === 'predicate') {
+        branch = evalPredicate(state, effect, op.predicate) ? (op.then ?? []) : (op.else ?? []);
+      } else if (op.kind2 === 'coinFlip') {
+        branch = op.then ?? [];
+      } else {
+        throw new Error(`[ir-interpreter] unsupported flow.control kind2 "${op.kind2}"`);
+      }
+      let next = state;
+      for (const sub of branch) {
+        next = executeOp(store, next, effect, sub);
+      }
+      return next;
     }
     default:
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);

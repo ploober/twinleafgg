@@ -84,8 +84,6 @@ const CASES: Array<{
 ];
 
 // Differential mismatches (native vs interpreted disagree). Adjudication deferred; none yet.
-const KNOWN_MISMATCHES = new Set<string>([]);
-
 describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => {
   CASES.forEach(c => {
     const res = resolvePrinting(c.printingId, c.name);
@@ -126,57 +124,20 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(getDamage(game.state, 1, 'active')).toBe(90); // 30 × 3 benched
   });
 
-  // Native-vs-interpreted disagreements on the imperative corpus (deferred adjudication).
-  const KNOWN_IMPERATIVE_MISMATCHES: Record<string, string> = {
-  };
-
-  it('matches native on the imperative corpus (damage + condition/heal/counters/recoil)', () => {
-    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'imperative-scenarios.json');
-    const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
-      printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
-    }>;
-
-    const mismatches: string[] = [];
-    let compared = 0;
-    for (const s of scenarios) {
-      const res = resolvePrinting(s.printingId, s.name);
-      if (res.status !== 'exact') continue;
-      const card = getCardByName(res.fullName!);
-      if (!(card instanceof PokemonCard)) continue;
-      if (card.weakness?.some(w => w.type === card.cardType)) continue;
-      if (KNOWN_IMPERATIVE_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
-
-      const energies = s.cost.map(energyToCard);
-      const preDamage = Math.min(30, card.hp - 20);
-      const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
-      let native: Snapshot, interpreted: Snapshot;
-      try {
-        native = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, null);
-        interpreted = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, fragments);
-      } catch {
-        continue; // attack-name / energy errors are catalogued by the corpus spec, not here
-      }
-      compared++;
-      if (JSON.stringify(native) !== JSON.stringify(interpreted)) {
-        mismatches.push(`${s.printingId} ${s.attackLabel}: native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
-      }
-    }
-    // eslint-disable-next-line no-console
-    console.log(`\n  imperative differential: compared ${compared}, mismatches ${mismatches.length}`);
-    expect(mismatches).toEqual([]);
-  });
-
-  // Native-vs-interpreted disagreements on conditional attacks. The interpreter faithfully runs
-  // the IR; these are IR-vs-reality gaps (see FINDINGS.md). Adjudication deferred.
-  const KNOWN_CONDITIONAL_MISMATCHES: Record<string, string> = {
+  // Native-vs-interpreted disagreements across the whole attack corpus. The interpreter runs the
+  // IR faithfully, so these are IR-vs-reality gaps (see FINDINGS.md). Adjudication deferred.
+  const KNOWN_MISMATCHES: Record<string, string> = {
     // IR: forEach pokemonInPlay/opponent. Real: "60 for each opponent's Pokémon ex AND Pokémon V".
     'sv6pt5-32 Illusory Hijacking': 'IR drops the ex/V predicate on the count',
     // IR: perCount energyAttached/self. Real: "20 more per [L] Energy on all your Iono's Pokémon".
     'sv9-47 Voltaic Chain': 'IR drops the [L]-type filter and the multi-Pokémon scope',
+    // IR: flat 170. Real: "discard a Grass Energy from hand; if you do, 170, else nothing" — also a
+    // corpus-replay finding. With no Grass Energy in hand, native does 0, interp does 170 → KO.
+    'sv6pt5-5 Power Shot': 'IR omits the conditional-discard rider (flat 170 vs "discard or nothing")',
   };
 
-  it('matches native on the conditional corpus (plusIf / perCount damage)', () => {
-    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'conditional-scenarios.json');
+  it('matches native across the attack corpus (interpreter decides support at runtime)', () => {
+    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
       printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
     }>;
@@ -189,20 +150,21 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       const card = getCardByName(res.fullName!);
       if (!(card instanceof PokemonCard)) continue;
       if (card.weakness?.some(w => w.type === card.cardType)) continue;
-      if (KNOWN_CONDITIONAL_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
+      if (KNOWN_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
 
       const energies = s.cost.map(energyToCard);
+      const preDamage = Math.min(30, card.hp - 20); // makes self-heal observable; shared by both runs
       const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
       let native: Snapshot, interpreted: Snapshot;
       try {
-        native = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, null);
+        native = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, null);
       } catch {
         continue; // native attack-name / energy errors are catalogued by the corpus spec
       }
       try {
-        interpreted = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, fragments);
+        interpreted = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, fragments);
       } catch {
-        unsupported++; // interpreter doesn't yet support this predicate/count — visible gap, skip
+        unsupported++; // interpreter doesn't yet handle an op/predicate in this body — visible gap
         continue;
       }
       compared++;
@@ -211,45 +173,9 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       }
     }
     // eslint-disable-next-line no-console
-    console.log(`\n  conditional differential: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
+    console.log(`\n  attack-corpus differential: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
     mismatches.forEach(m => console.log(`   • ${m}`)); // eslint-disable-line no-console
-    expect(mismatches).toEqual([]);
-  });
-
-  it('matches native on the agreeing pure-damage corpus (damage.deal/const)', () => {
-    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'plain-attack-scenarios.json');
-    const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
-      printingId: string; name: string; attackLabel: string; cost: string[]; expectedDamage: number;
-    }>;
-
-    const mismatches: string[] = [];
-    let compared = 0;
-    for (const s of scenarios) {
-      const res = resolvePrinting(s.printingId, s.name);
-      if (res.status !== 'exact') continue;
-      const card = getCardByName(res.fullName!);
-      if (!(card instanceof PokemonCard)) continue;
-      if (card.weakness?.some(w => w.type === card.cardType)) continue;
-      if (s.expectedDamage >= card.hp) continue; // skip KO cases here — covered by the corpus spec
-      if (KNOWN_MISMATCHES.has(`${s.printingId} ${s.attackLabel}`)) continue;
-
-      const energies = s.cost.map(energyToCard);
-      const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: [
-        { kind: 'damage.deal', amount: { kind: 'const', value: s.expectedDamage }, target: { selector: 'opponentActive' } },
-      ] }];
-      let native: Snapshot, interpreted: Snapshot;
-      try {
-        native = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, null);
-        interpreted = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, fragments);
-      } catch {
-        continue; // attack-name/energy errors are catalogued by the corpus spec, not here
-      }
-      compared++;
-      if (JSON.stringify(native) !== JSON.stringify(interpreted)) {
-        mismatches.push(`${s.printingId} ${s.attackLabel}: native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
-      }
-    }
-    expect(compared).toBeGreaterThan(8);
+    expect(compared).toBeGreaterThan(15);
     expect(mismatches).toEqual([]);
   });
 });
