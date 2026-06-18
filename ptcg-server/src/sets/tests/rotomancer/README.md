@@ -27,9 +27,11 @@ project. Start here, then read [`DESIGN.md`](DESIGN.md) (architecture) and
 | `rotomancer-structural.spec.ts` | IR attack name + cost vs Twinleaf (static) | attack-name/cost data bugs |
 | `rotomancer-official.spec.ts` | Twinleaf vs **official** data: HP/weakness/resistance/type/retreat/evolvesFrom/attack name+cost+damage | Twinleaf data bugs; **adjudicates** IR-vs-Twinleaf disputes |
 
-The official data is authoritative, so `rotomancer-official` doubles as the **adjudicator**: when
-the IR and Twinleaf disagree, whichever matches official is right (e.g. it proved Turtonator's cost
-and all 11 structural name diffs are Twinleaf bugs, not IR bugs).
+The pokemontcg.io dataset is a useful third opinion when the IR and Twinleaf disagree — but it is
+**not infallible** (it shares its source with the IR, and an independent spot-check against
+Limitless TCG found one case, Turtonator's cost, where the dataset was wrong and Twinleaf was
+right). It correctly adjudicated the 11 structural attack-name diffs as Twinleaf bugs, but **costs
+should be ground-truthed against a truly independent source** before fixing. See FINDINGS.md.
 
 ## How findings stay green
 Every confirmed discrepancy is allow-listed in its spec with a one-line reason; a **new**

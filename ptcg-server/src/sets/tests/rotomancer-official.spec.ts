@@ -6,10 +6,11 @@ import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { CardType } from '../../game/store/card/card-types';
 
 /**
- * Static cross-check of Twinleaf card data against the snapshot's authoritative card metadata
+ * Static cross-check of Twinleaf card data against the snapshot's pokemontcg.io card metadata
  * (HP / weakness / retreat / evolvesFrom), for every exact-printing card in the IR corpus. No
- * execution — pure data comparison, so mismatches are clean Twinleaf data bugs. Known ones are
- * allow-listed (see FINDINGS.md); a new one fails.
+ * execution — pure data comparison. A mismatch is *usually* a Twinleaf data bug, but the dataset
+ * is not infallible (see FINDINGS.md — Turtonator's cost was a dataset error). Known ones are
+ * allow-listed; a new one fails.
  */
 
 interface OfficialCard {
@@ -24,10 +25,11 @@ const TYPE: Record<string, CardType> = {
   Dragon: CardType.DRAGON, Colorless: CardType.COLORLESS, Fairy: CardType.FAIRY,
 };
 
-// "printingId:axis" -> reason. Clean Twinleaf data bugs vs authoritative official data; the fix
+// "printingId:axis" -> reason. Twinleaf vs the pokemontcg.io dataset (NOT infallible — see FINDINGS.md
+// "Independent spot-check": 7/8 were real Twinleaf bugs, 1 (Turtonator) was a dataset error). The fix
 // is to correct the Twinleaf card, deferred to the user. See FINDINGS.md.
 const KNOWN: Record<string, string> = {
-  // HP errors (official is authoritative):
+  // HP errors (dataset; HP findings verified solid in the independent spot-check):
   'sv8-145:hp': 'Slakoth SSP: Twinleaf 90, official 60',
   'sv9-86:hp': "Hop's Silicobra JTG: Twinleaf 60, official 80",
   'sv10-193:hp': "Misty's Psyduck DRI: Twinleaf 50, official 70",
@@ -71,7 +73,7 @@ const KNOWN: Record<string, string> = {
   'sv10-91:cost:Drag Off': 'Primeape DRI: Twinleaf [Colorless], official [Fighting]',
   'sv5-21:cost:Powerful Needles': 'Brambleghast TEF: Twinleaf [Grass,Grass,Colorless], official [Grass,Colorless,Colorless]',
   'sv5-71:cost:Double Trick': 'Duosion TEF: Twinleaf [Psychic], official [Colorless]',
-  'sv8-137:cost:Steaming Stomp': 'Turtonator SSP: Twinleaf [Fire,..], official [Fighting,..] — Twinleaf bug (official confirms the IR)',
+  'sv8-137:cost:Steaming Stomp': 'Turtonator SSP: Twinleaf [Fire,..] vs pokemontcg.io [Fighting,..]. Limitless (INDEPENDENT) confirms FIRE → pokemontcg.io DATASET ERROR; Twinleaf is correct.',
   'sv9-7:cost:Spinning Attack': 'Lilligant JTG: Twinleaf [Grass,Grass,Colorless], official [Grass,Colorless,Colorless]',
 };
 

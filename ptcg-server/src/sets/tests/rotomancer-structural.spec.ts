@@ -22,7 +22,7 @@ interface Scenario { printingId: string; name: string; attackLabel: string; cost
 const KNOWN: Record<string, string> = {
   'sv8-105 Cutting Wind': 'Twinleaf "Cutter Wind"; official + IR "Cutting Wind" → Twinleaf bug',
   'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name → Twinleaf bug',
-  'sv8-137 Steaming Stomp': 'Twinleaf cost Fire; official + IR Fighting → Twinleaf bug',
+  'sv8-137 Steaming Stomp': 'Twinleaf cost Fire; pokemontcg.io + IR Fighting; Limitless (independent) confirms FIRE → pokemontcg.io/IR dataset error, Twinleaf correct',
   'sv10-219 Haughty Order': 'Twinleaf "Haughty Orders"; official + IR "Haughty Order" → Twinleaf bug',
   'sv10-65 Crushing Press': 'Twinleaf "Crush Press"; official + IR "Crushing Press" → Twinleaf bug',
   'sv8-141 Dyna-Blast': 'Twinleaf "Dynablast"; official + IR "Dyna-Blast" → Twinleaf bug',
