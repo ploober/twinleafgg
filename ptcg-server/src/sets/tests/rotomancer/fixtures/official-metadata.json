@@ -1,0 +1,2258 @@
+{
+ "meta": {
+  "source": "data/snapshots/standard-2026-05-17/cards",
+  "count": 196
+ },
+ "cards": [
+  {
+   "printingId": "me1-10",
+   "name": "Meganium",
+   "hp": 160,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Bayleef"
+  },
+  {
+   "printingId": "me1-101",
+   "name": "Latios",
+   "hp": 130,
+   "weaknesses": [],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-105",
+   "name": "Delibird",
+   "hp": 90,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-106",
+   "name": "Miltank",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-112",
+   "name": "Bewear",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Stufful"
+  },
+  {
+   "printingId": "me1-142",
+   "name": "Inteleon",
+   "hp": 150,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Drizzile"
+  },
+  {
+   "printingId": "me1-145",
+   "name": "Houndstone",
+   "hp": 140,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Greavard"
+  },
+  {
+   "printingId": "me1-15",
+   "name": "Shiftry",
+   "hp": 160,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Nuzleaf"
+  },
+  {
+   "printingId": "me1-158",
+   "name": "Mega Manectric ex",
+   "hp": 330,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 0,
+   "evolvesFrom": "Electrike"
+  },
+  {
+   "printingId": "me1-20",
+   "name": "Ninetales",
+   "hp": 120,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Vulpix"
+  },
+  {
+   "printingId": "me1-25",
+   "name": "Volcanion",
+   "hp": 130,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-28",
+   "name": "Cinderace",
+   "hp": 160,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 0,
+   "evolvesFrom": "Raboot"
+  },
+  {
+   "printingId": "me1-30",
+   "name": "Centiskorch",
+   "hp": 140,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Sizzlipede"
+  },
+  {
+   "printingId": "me1-31",
+   "name": "Chi-Yu",
+   "hp": 110,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-56",
+   "name": "Alakazam",
+   "hp": 140,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Kadabra"
+  },
+  {
+   "printingId": "me1-75",
+   "name": "Solrock",
+   "hp": 110,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-85",
+   "name": "Crawdaunt",
+   "hp": 130,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Corphish"
+  },
+  {
+   "printingId": "me1-94",
+   "name": "Mega Mawile ex",
+   "hp": 270,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me1-95",
+   "name": "Dialga",
+   "hp": 140,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-10",
+   "name": "Lokix",
+   "hp": 120,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Nymble"
+  },
+  {
+   "printingId": "me2-13",
+   "name": "Mega Charizard X ex",
+   "hp": 360,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Charmeleon"
+  },
+  {
+   "printingId": "me2-2",
+   "name": "Gloom",
+   "hp": 70,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Oddish"
+  },
+  {
+   "printingId": "me2-34",
+   "name": "Pawmot",
+   "hp": 140,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Pawmo"
+  },
+  {
+   "printingId": "me2-40",
+   "name": "Meloetta",
+   "hp": 90,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-42",
+   "name": "Mimikyu",
+   "hp": 70,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-44",
+   "name": "Alcremie",
+   "hp": 90,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Milcery"
+  },
+  {
+   "printingId": "me2-45",
+   "name": "Zacian",
+   "hp": 130,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-46",
+   "name": "Bramblin",
+   "hp": 50,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-48",
+   "name": "Paldean Tauros",
+   "hp": 130,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2-72",
+   "name": "Bronzong",
+   "hp": 140,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Bronzor"
+  },
+  {
+   "printingId": "me2pt5-1",
+   "name": "Erika's Oddish",
+   "hp": 60,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-100",
+   "name": "Team Rocket's Diglett",
+   "hp": 60,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-104",
+   "name": "Medicham",
+   "hp": 120,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Meditite"
+  },
+  {
+   "printingId": "me2pt5-105",
+   "name": "Lunatone",
+   "hp": 110,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-116",
+   "name": "Mega Hawlucha ex",
+   "hp": 250,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-119",
+   "name": "Carkol",
+   "hp": 110,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Rolycoly"
+  },
+  {
+   "printingId": "me2pt5-12",
+   "name": "Silcoon",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Wurmple"
+  },
+  {
+   "printingId": "me2pt5-122",
+   "name": "Okidogi",
+   "hp": 140,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-142",
+   "name": "Fezandipiti ex",
+   "hp": 210,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-143",
+   "name": "Pecharunt",
+   "hp": 80,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-148",
+   "name": "Kingambit",
+   "hp": 170,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Bisharp"
+  },
+  {
+   "printingId": "me2pt5-162",
+   "name": "Team Rocket's Kangaskhan ex",
+   "hp": 230,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-170",
+   "name": "Larry's Staraptor",
+   "hp": 150,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Larry's Staravia"
+  },
+  {
+   "printingId": "me2pt5-177",
+   "name": "Hop's Cramorant",
+   "hp": 110,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-19",
+   "name": "Team Rocket's Spidops",
+   "hp": 130,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Team Rocket's Tarountula"
+  },
+  {
+   "printingId": "me2pt5-2",
+   "name": "Erika's Gloom",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Erika's Oddish"
+  },
+  {
+   "printingId": "me2pt5-242",
+   "name": "Carbink",
+   "hp": 90,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-26",
+   "name": "Ethan's Ho-Oh ex",
+   "hp": 230,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-27",
+   "name": "Numel",
+   "hp": 80,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-35",
+   "name": "Salazzle",
+   "hp": 120,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Salandit"
+  },
+  {
+   "printingId": "me2pt5-4",
+   "name": "Erika's Bellsprout",
+   "hp": 60,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-57",
+   "name": "Pikachu ex",
+   "hp": 200,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-70",
+   "name": "Iono's Bellibolt ex",
+   "hp": 280,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Iono's Tadbulb"
+  },
+  {
+   "printingId": "me2pt5-75",
+   "name": "Clefable",
+   "hp": 120,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Clefairy"
+  },
+  {
+   "printingId": "me2pt5-78",
+   "name": "Team Rocket's Exeggutor",
+   "hp": 140,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Team Rocket's Exeggcute"
+  },
+  {
+   "printingId": "me2pt5-82",
+   "name": "Togekiss",
+   "hp": 140,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Togetic"
+  },
+  {
+   "printingId": "me2pt5-86",
+   "name": "Mismagius",
+   "hp": 110,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Misdreavus"
+  },
+  {
+   "printingId": "me2pt5-91",
+   "name": "Banette",
+   "hp": 90,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Shuppet"
+  },
+  {
+   "printingId": "me2pt5-97",
+   "name": "Team Rocket's Mimikyu",
+   "hp": 60,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 0,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me2pt5-98",
+   "name": "Spectrier",
+   "hp": 120,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-12",
+   "name": "Decidueye ex",
+   "hp": 320,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Dartrix"
+  },
+  {
+   "printingId": "me3-39",
+   "name": "Hippopotas",
+   "hp": 100,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 4,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-40",
+   "name": "Hippowdon",
+   "hp": 150,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 4,
+   "evolvesFrom": "Hippopotas"
+  },
+  {
+   "printingId": "me3-49",
+   "name": "Haunter",
+   "hp": 100,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Gastly"
+  },
+  {
+   "printingId": "me3-53",
+   "name": "Yveltal ex",
+   "hp": 210,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-55",
+   "name": "Mega Skarmory ex",
+   "hp": 260,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 0,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-57",
+   "name": "Doublade",
+   "hp": 100,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Honedge"
+  },
+  {
+   "printingId": "me3-58",
+   "name": "Aegislash",
+   "hp": 150,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Doublade"
+  },
+  {
+   "printingId": "me3-62",
+   "name": "Meowth ex",
+   "hp": 170,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-63",
+   "name": "Snorlax",
+   "hp": 160,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 4,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-66",
+   "name": "Fletchling",
+   "hp": 60,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "me3-67",
+   "name": "Furfrou",
+   "hp": 90,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "rsv10pt5-127",
+   "name": "Roggenrola",
+   "hp": 80,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "rsv10pt5-135",
+   "name": "Terrakion",
+   "hp": 140,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "rsv10pt5-153",
+   "name": "Watchog",
+   "hp": 90,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Patrat"
+  },
+  {
+   "printingId": "rsv10pt5-16",
+   "name": "Litwick",
+   "hp": 60,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "rsv10pt5-40",
+   "name": "Cofagrigus",
+   "hp": 120,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Yamask"
+  },
+  {
+   "printingId": "rsv10pt5-44",
+   "name": "Frillish",
+   "hp": 80,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "rsv10pt5-78",
+   "name": "Tornadus",
+   "hp": 120,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-100",
+   "name": "Medicham",
+   "hp": 120,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Meditite"
+  },
+  {
+   "printingId": "sv10-106",
+   "name": "Hippowdon",
+   "hp": 160,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 4,
+   "evolvesFrom": "Hippopotas"
+  },
+  {
+   "printingId": "sv10-113",
+   "name": "Team Rocket's Arbok",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Team Rocket's Ekans"
+  },
+  {
+   "printingId": "sv10-123",
+   "name": "Team Rocket's Grimer",
+   "hp": 80,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-14",
+   "name": "Lurantis",
+   "hp": 120,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Fomantis"
+  },
+  {
+   "printingId": "sv10-148",
+   "name": "Team Rocket's Raticate",
+   "hp": 90,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Team Rocket's Rattata"
+  },
+  {
+   "printingId": "sv10-160",
+   "name": "Squawkabilly",
+   "hp": 70,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-18",
+   "name": "Hydrapple",
+   "hp": 170,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Dipplin"
+  },
+  {
+   "printingId": "sv10-199",
+   "name": "Team Rocket's Weezing",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Team Rocket's Koffing"
+  },
+  {
+   "printingId": "sv10-201",
+   "name": "Zamazenta",
+   "hp": 130,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-219",
+   "name": "Team Rocket's Persian ex",
+   "hp": 260,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Team Rocket's Meowth"
+  },
+  {
+   "printingId": "sv10-65",
+   "name": "Cetitan ex",
+   "hp": 300,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 4,
+   "evolvesFrom": "Cetoddle"
+  },
+  {
+   "printingId": "sv10-74",
+   "name": "Team Rocket's Ampharos",
+   "hp": 140,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Team Rocket's Flaaffy"
+  },
+  {
+   "printingId": "sv10-76",
+   "name": "Manectric",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Electrike"
+  },
+  {
+   "printingId": "sv10-78",
+   "name": "Zeraora",
+   "hp": 100,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-82",
+   "name": "Team Rocket's Wobbuffet",
+   "hp": 110,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv10-85",
+   "name": "Team Rocket's Chingling",
+   "hp": 30,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 0,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-104",
+   "name": "Gengar ex",
+   "hp": 310,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Haunter"
+  },
+  {
+   "printingId": "sv5-13",
+   "name": "Shaymin",
+   "hp": 70,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 0,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-136",
+   "name": "Minccino",
+   "hp": 70,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-138",
+   "name": "Drampa",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-175",
+   "name": "Mudsdale",
+   "hp": 150,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Mudbray"
+  },
+  {
+   "printingId": "sv5-191",
+   "name": "Iron Crown ex",
+   "hp": 220,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-31",
+   "name": "Heatmor",
+   "hp": 110,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-43",
+   "name": "Sharpedo",
+   "hp": 120,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Carvanha"
+  },
+  {
+   "printingId": "sv5-49",
+   "name": "Palafin",
+   "hp": 150,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Finizen"
+  },
+  {
+   "printingId": "sv5-52",
+   "name": "Raichu",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Pikachu"
+  },
+  {
+   "printingId": "sv5-61",
+   "name": "Iron Hands",
+   "hp": 140,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-69",
+   "name": "Bronzong",
+   "hp": 110,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Bronzor"
+  },
+  {
+   "printingId": "sv5-77",
+   "name": "Scream Tail",
+   "hp": 90,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv5-92",
+   "name": "Mudsdale",
+   "hp": 150,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Mudbray"
+  },
+  {
+   "printingId": "sv6-104",
+   "name": "Gurdurr",
+   "hp": 100,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Timburr"
+  },
+  {
+   "printingId": "sv6-105",
+   "name": "Conkeldurr",
+   "hp": 180,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Gurdurr"
+  },
+  {
+   "printingId": "sv6-107",
+   "name": "Hawlucha",
+   "hp": 70,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-110",
+   "name": "Ting-Lu",
+   "hp": 140,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-119",
+   "name": "Skarmory",
+   "hp": 120,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-122",
+   "name": "Aggron",
+   "hp": 180,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Lairon"
+  },
+  {
+   "printingId": "sv6-133",
+   "name": "Chansey",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-135",
+   "name": "Eevee",
+   "hp": 50,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-179",
+   "name": "Chimecho",
+   "hp": 70,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-187",
+   "name": "Chansey",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-22",
+   "name": "Sinistcha",
+   "hp": 70,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Poltchageist"
+  },
+  {
+   "printingId": "sv6-23",
+   "name": "Sinistcha ex",
+   "hp": 240,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Poltchageist"
+  },
+  {
+   "printingId": "sv6-43",
+   "name": "Poliwrath",
+   "hp": 170,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Poliwhirl"
+  },
+  {
+   "printingId": "sv6-48",
+   "name": "Crawdaunt",
+   "hp": 130,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Corphish"
+  },
+  {
+   "printingId": "sv6-63",
+   "name": "Walking Wake",
+   "hp": 130,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-69",
+   "name": "Emolga",
+   "hp": 60,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 0,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-76",
+   "name": "Kilowattrel",
+   "hp": 120,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Wattrel"
+  },
+  {
+   "printingId": "sv6-83",
+   "name": "Girafarig",
+   "hp": 100,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6-93",
+   "name": "Enamorus",
+   "hp": 120,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6pt5-15",
+   "name": "Revavroom ex",
+   "hp": 280,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Varoom"
+  },
+  {
+   "printingId": "sv6pt5-22",
+   "name": "Sylveon",
+   "hp": 120,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Eevee"
+  },
+  {
+   "printingId": "sv6pt5-32",
+   "name": "Zoroark",
+   "hp": 120,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Zorua"
+  },
+  {
+   "printingId": "sv6pt5-35",
+   "name": "Yveltal",
+   "hp": 120,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv6pt5-4",
+   "name": "Dartrix",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Rowlet"
+  },
+  {
+   "printingId": "sv6pt5-46",
+   "name": "Haxorus",
+   "hp": 170,
+   "weaknesses": [],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Fraxure"
+  },
+  {
+   "printingId": "sv6pt5-5",
+   "name": "Decidueye",
+   "hp": 150,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Dartrix"
+  },
+  {
+   "printingId": "sv7-123",
+   "name": "Talonflame",
+   "hp": 140,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 0,
+   "evolvesFrom": "Fletchinder"
+  },
+  {
+   "printingId": "sv7-128",
+   "name": "Terapagos ex",
+   "hp": 230,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv7-56",
+   "name": "Pawmi",
+   "hp": 40,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv7-61",
+   "name": "Drifblim",
+   "hp": 130,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Drifloon"
+  },
+  {
+   "printingId": "sv7-63",
+   "name": "Comfey",
+   "hp": 70,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv7-66",
+   "name": "Fidough",
+   "hp": 60,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv7-8",
+   "name": "Mow Rotom",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv7-88",
+   "name": "Falinks",
+   "hp": 110,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-100",
+   "name": "Annihilape",
+   "hp": 140,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Primeape"
+  },
+  {
+   "printingId": "sv8-101",
+   "name": "Paldean Tauros",
+   "hp": 130,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-105",
+   "name": "Vibrava",
+   "hp": 90,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Trapinch"
+  },
+  {
+   "printingId": "sv8-11",
+   "name": "Zarude",
+   "hp": 120,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-116",
+   "name": "Koraidon",
+   "hp": 130,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-128",
+   "name": "Klefki",
+   "hp": 70,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-131",
+   "name": "Gholdengo",
+   "hp": 130,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Gimmighoul"
+  },
+  {
+   "printingId": "sv8-137",
+   "name": "Turtonator",
+   "hp": 120,
+   "weaknesses": [],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-14",
+   "name": "Rabsca",
+   "hp": 70,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Rellor"
+  },
+  {
+   "printingId": "sv8-141",
+   "name": "Eternatus",
+   "hp": 150,
+   "weaknesses": [],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-145",
+   "name": "Slakoth",
+   "hp": 60,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-151",
+   "name": "Bouffalant",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-156",
+   "name": "Oranguru",
+   "hp": 120,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-197",
+   "name": "Ceruledge",
+   "hp": 140,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Charcadet"
+  },
+  {
+   "printingId": "sv8-222",
+   "name": "Flygon ex",
+   "hp": 310,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Vibrava"
+  },
+  {
+   "printingId": "sv8-241",
+   "name": "Archaludon ex",
+   "hp": 300,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [
+    "Grass"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Duraludon"
+  },
+  {
+   "printingId": "sv8-61",
+   "name": "Rotom",
+   "hp": 80,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-78",
+   "name": "Uxie",
+   "hp": 70,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-83",
+   "name": "Cofagrigus",
+   "hp": 120,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": "Yamask"
+  },
+  {
+   "printingId": "sv8-87",
+   "name": "Dedenne",
+   "hp": 70,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8-95",
+   "name": "Espathra",
+   "hp": 120,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": "Flittle"
+  },
+  {
+   "printingId": "sv8pt5-149",
+   "name": "Vaporeon ex",
+   "hp": 280,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Eevee"
+  },
+  {
+   "printingId": "sv8pt5-26",
+   "name": "Glaceon ex",
+   "hp": 270,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Eevee"
+  },
+  {
+   "printingId": "sv8pt5-35",
+   "name": "Duskull",
+   "hp": 60,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8pt5-37",
+   "name": "Dusknoir",
+   "hp": 160,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 3,
+   "evolvesFrom": "Dusclops"
+  },
+  {
+   "printingId": "sv8pt5-55",
+   "name": "Great Tusk",
+   "hp": 140,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv8pt5-60",
+   "name": "Umbreon ex",
+   "hp": 280,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Eevee"
+  },
+  {
+   "printingId": "sv8pt5-82",
+   "name": "Lugia ex",
+   "hp": 220,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-115",
+   "name": "Druddigon",
+   "hp": 120,
+   "weaknesses": [],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-123",
+   "name": "Tropius",
+   "hp": 110,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-129",
+   "name": "Komala",
+   "hp": 100,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-17",
+   "name": "Floragato",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Sprigatito"
+  },
+  {
+   "printingId": "sv9-2",
+   "name": "Metapod",
+   "hp": 90,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Caterpie"
+  },
+  {
+   "printingId": "sv9-34",
+   "name": "Octillery",
+   "hp": 110,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Remoraid"
+  },
+  {
+   "printingId": "sv9-42",
+   "name": "Regice",
+   "hp": 120,
+   "weaknesses": [
+    "Metal"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-47",
+   "name": "Iono's Voltorb",
+   "hp": 70,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-48",
+   "name": "Iono's Electrode",
+   "hp": 100,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 0,
+   "evolvesFrom": "Iono's Voltorb"
+  },
+  {
+   "printingId": "sv9-49",
+   "name": "N's Joltik",
+   "hp": 40,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-58",
+   "name": "Mr. Mime",
+   "hp": 90,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-64",
+   "name": "N's Sigilyph",
+   "hp": 110,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-86",
+   "name": "Hop's Silicobra",
+   "hp": 80,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "sv9-92",
+   "name": "Weezing",
+   "hp": 130,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": "Koffing"
+  },
+  {
+   "printingId": "svp-147",
+   "name": "Iron Boulder ex",
+   "hp": 240,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "svp-155",
+   "name": "Wooper",
+   "hp": 60,
+   "weaknesses": [
+    "Lightning"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "zsv10pt5-120",
+   "name": "Elgyem",
+   "hp": 60,
+   "weaknesses": [
+    "Darkness"
+   ],
+   "resistances": [
+    "Fighting"
+   ],
+   "retreat": 1,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "zsv10pt5-131",
+   "name": "Landorus",
+   "hp": 130,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 2,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "zsv10pt5-16",
+   "name": "Volcarona",
+   "hp": 120,
+   "weaknesses": [
+    "Water"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": "Larvesta"
+  },
+  {
+   "printingId": "zsv10pt5-32",
+   "name": "Eelektross",
+   "hp": 160,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Eelektrik"
+  },
+  {
+   "printingId": "zsv10pt5-49",
+   "name": "Conkeldurr",
+   "hp": 140,
+   "weaknesses": [
+    "Psychic"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Gurdurr"
+  },
+  {
+   "printingId": "zsv10pt5-52",
+   "name": "Crustle",
+   "hp": 150,
+   "weaknesses": [
+    "Grass"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": "Dwebble"
+  },
+  {
+   "printingId": "zsv10pt5-54",
+   "name": "Venipede",
+   "hp": 80,
+   "weaknesses": [
+    "Fighting"
+   ],
+   "resistances": [],
+   "retreat": 3,
+   "evolvesFrom": null
+  },
+  {
+   "printingId": "zsv10pt5-9",
+   "name": "Karrablast",
+   "hp": 60,
+   "weaknesses": [
+    "Fire"
+   ],
+   "resistances": [],
+   "retreat": 1,
+   "evolvesFrom": null
+  }
+ ]
+}

@@ -53,6 +53,20 @@ beyond Turtonator above.
 The "different attack" rows cluster in sv10 (Destined Rivals) Trainer's-Pokémon cards, which
 suggests one project's sv10 attack-name data is systematically off — worth a targeted audit.
 
+### Twinleaf data errors (vs authoritative official card data)
+
+`rotomancer-official.spec.ts` compares Twinleaf card data against the snapshot's official card
+metadata (HP / weakness / retreat / evolvesFrom) for 66 exact-printing cards. The official data
+is authoritative, so these are clean Twinleaf data bugs — the fix is to correct the card.
+
+| printing | card | field | Twinleaf | official |
+|---|---|---|---|---|
+| sv8-145 | Slakoth | HP | 90 | **60** |
+| sv9-86 | Hop's Silicobra | HP | 60 | **80** |
+| sv10-219 | Team Rocket's Persian ex | retreat | 1 | **2** |
+
+(0 weakness and 0 evolvesFrom mismatches across the 66 — that data is clean.)
+
 Notes:
 - "Owner" is a hypothesis from reading both sides, not a verdict. Confirm against
   `~/projects/pokemon-cards/docs/vendor/por_rulebook.md` + the card's printed text before
