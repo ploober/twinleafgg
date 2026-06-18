@@ -2,6 +2,7 @@ import { Store } from '../../game/store/store';
 import { State } from '../../game/store/state/state';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
+import { CardList } from '../../game/store/state/card-list';
 import { SpecialCondition } from '../../game/store/card/card-types';
 import { AttackAction, PassTurnAction, UseAbilityAction } from '../../game/store/actions/game-actions';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
@@ -122,7 +123,7 @@ export function getEnergyCount(state: State, playerIndex: number, slot?: 'active
   return getSlot(state, playerIndex, slot).energies.cards.length;
 }
 
-type ZoneName = 'hand' | 'deck' | 'discard' | 'lostzone';
+export type ZoneName = 'hand' | 'deck' | 'discard' | 'lostzone';
 
 function getZoneCards(state: State, playerIndex: number, zone: ZoneName): Card[] {
   const player = state.players[playerIndex];
@@ -152,4 +153,85 @@ export function getActivePokemon(state: State, playerIndex: number): PokemonCard
     throw new Error(`No active Pokemon for player ${playerIndex}`);
   }
   return pokemonCard;
+}
+
+// ── Zone / card-list access ──
+
+/** The underlying CardList for a player zone, for reading card order or building effects. */
+export function getZone(state: State, playerIndex: number, zone: ZoneName): CardList {
+  const player = state.players[playerIndex];
+  switch (zone) {
+    case 'hand': return player.hand;
+    case 'deck': return player.deck;
+    case 'discard': return player.discard;
+    case 'lostzone': return player.lostzone;
+  }
+}
+
+/** Ordered card ids for a player zone (index 0 = top of pile for deck/discard). */
+export function getZoneCardIds(state: State, playerIndex: number, zone: ZoneName): number[] {
+  return getZone(state, playerIndex, zone).cards.map(c => c.id);
+}
+
+/** Ordered card ids for any CardList (e.g. one captured before an effect ran). */
+export function getCardIds(cardList: CardList): number[] {
+  return cardList.cards.map(c => c.id);
+}
+
+// ── Card-conservation helpers (zone-integrity regression checks) ──
+
+// Every CardList that physically holds cards. Attached energy/tools already live in each
+// Pokemon's `.cards`, so we skip the `.energies`/`.tools` mirrors to avoid double-counting.
+function collectAllCardLists(state: State): CardList[] {
+  const lists: CardList[] = [];
+  for (const player of state.players) {
+    lists.push(player.deck, player.hand, player.discard, player.lostzone, player.stadium, player.supporter);
+    lists.push(player.active);
+    lists.push(...player.bench);
+    lists.push(...player.prizes);
+  }
+  return lists;
+}
+
+/** Multiset of every card id present anywhere in the game, sorted for stable comparison. */
+export function collectAllCardIds(state: State): number[] {
+  const ids: number[] = [];
+  for (const list of collectAllCardLists(state)) {
+    for (const card of list.cards) {
+      ids.push(card.id);
+    }
+  }
+  return ids.sort((a, b) => a - b);
+}
+
+/** Card ids that appear in more than one place (i.e. were duplicated by a buggy move). */
+export function findDuplicateCardIds(state: State): number[] {
+  const seen = new Set<number>();
+  const duplicates = new Set<number>();
+  for (const id of collectAllCardIds(state)) {
+    if (seen.has(id)) {
+      duplicates.add(id);
+    }
+    seen.add(id);
+  }
+  return Array.from(duplicates).sort((a, b) => a - b);
+}
+
+/** Throws if any card id appears in more than one zone. */
+export function expectNoDuplicateCards(state: State): void {
+  const duplicates = findDuplicateCardIds(state);
+  if (duplicates.length > 0) {
+    throw new Error(`Duplicate card ids found across zones: ${duplicates.join(', ')}`);
+  }
+}
+
+/** Throws if the set of cards differs from a `collectAllCardIds` snapshot (card created or lost). */
+export function expectCardsConserved(state: State, idsBefore: number[]): void {
+  const idsAfter = collectAllCardIds(state);
+  const before = idsBefore.slice().sort((a, b) => a - b);
+  if (before.length !== idsAfter.length || before.some((id, i) => id !== idsAfter[i])) {
+    throw new Error(
+      `Card set changed (not conserved).\n  before: [${before.join(', ')}]\n  after:  [${idsAfter.join(', ')}]`
+    );
+  }
 }

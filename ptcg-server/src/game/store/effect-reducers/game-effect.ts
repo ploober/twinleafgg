@@ -583,23 +583,24 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
       }
     };
 
-    // If specific cards are specified
+    // moveCardsTo already appends the moved cards to the bottom of the destination,
+    // so toBottom needs nothing further. For toTop, lift the moved cards to the front.
+    const liftToTop = (moved: Card[]) => {
+      const landed = moved.filter(card => destination.cards.includes(card));
+      destination.cards = [...landed, ...destination.cards.filter(card => !landed.includes(card))];
+    };
+
     if (effect.cards) {
       moveWithPrismStarCheck(effect.cards, source, destination);
-      if (effect.toBottom) {
-        destination.cards = [...destination.cards.slice(effect.cards.length), ...effect.cards];
-      } else if (effect.toTop) {
-        destination.cards = [...effect.cards, ...destination.cards];
+      if (effect.toTop) {
+        liftToTop(effect.cards);
       }
     }
-    // If count is specified
     else if (effect.count !== undefined) {
       const cards = source.cards.slice(0, effect.count);
       moveWithPrismStarCheck(cards, source, destination);
-      if (effect.toBottom) {
-        destination.cards = [...destination.cards.slice(cards.length), ...cards];
-      } else if (effect.toTop) {
-        destination.cards = [...cards, ...destination.cards];
+      if (effect.toTop) {
+        liftToTop(cards);
       }
     }
     // Move all cards
