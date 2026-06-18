@@ -212,6 +212,14 @@ export function ensureCardsRegistered(cardNames: string[] = []): void {
   }
 }
 
+/** Resolves a card by its Twinleaf set code and collector number, loading the set on demand. */
+export function getCardBySetAndNumber(setCode: string, setNumber: string): Card | undefined {
+  ensureSetCodeLoaded(setCode);
+  const target = String(setNumber);
+  return CardManager.getInstance().getAllCards()
+    .find(card => card.set === setCode && String(card.setNumber) === target);
+}
+
 // ── Convenience helpers ──
 
 export function getCardByName(fullName: string): Card {
