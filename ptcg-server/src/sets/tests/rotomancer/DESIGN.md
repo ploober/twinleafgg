@@ -257,12 +257,18 @@ Dartrix SFA-4) to guarantee validity.
 | phase | scope | status |
 |---|---|---|
 | 0. Spike | resolver + minimal runner; 3 plain-attack scenarios vs native | ✅ done |
-| 1. Resolver breadth | pin `me*`/`zsv`/`rsv` set-code map; exact/skip/unknown buckets | ▢ next |
-| 2. Runner breadth | all step + expectation kinds; semantic choice pinning; weakness-aware | ▢ |
-| 3. Corpus replay | auto-generate scenarios from all 219 IR programs for exact printings → agreement scorecard | ▢ |
-| 4. IR interpreter | imperative ops + counts + selectors + predicates + flow + coin flips (~80% cards) | ▢ |
+| 1. Resolver breadth | exact/mismatch/unmapped buckets + name validation; zsv→SV11B; `me*` deferred | ✅ done |
+| 2. Runner breadth | full step + expectation vocabulary; acceptance tracking | ✅ done |
+| 3. Corpus replay | 78 pure-damage scenarios → agreement scorecard (19 agree, 5 findings); see FINDINGS.md | ✅ done |
+| 4. IR interpreter | imperative ops + counts + selectors + predicates + flow + coin flips (~80% cards) | ▢ next |
 | 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended |
 | 6. Differential mode | native-vs-interpreted post-state comparison | ▢ |
+
+Deferred decision points (no user input needed to proceed elsewhere):
+- **`me*` set-code map** — Mega-Evolution prefixes unmapped; 29 corpus scenarios skip on it.
+  Several `me*` cards have no Twinleaf printing, so this needs a per-card correspondence, not
+  a single prefix rule. Unblocks the largest chunk of corpus coverage when done.
+- **Adjudicating the 5 findings** — see FINDINGS.md; recorded, not yet fixed in either engine.
 
 ---
 
