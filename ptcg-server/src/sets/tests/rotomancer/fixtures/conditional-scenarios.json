@@ -1,0 +1,1263 @@
+{
+ "meta": {
+  "source": "rotomancer effect-programs",
+  "snapshot": "ir/2026-05-17/effect-programs",
+  "shape": "single damage.deal -> opponentActive with plusIf/perCount amount",
+  "count": 39
+ },
+ "scenarios": [
+  {
+   "printingId": "me1-94",
+   "name": "Mega Mawile ex",
+   "attackLabel": "Gobble Down",
+   "cost": [
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "prizesTaken",
+       "who": "self"
+      },
+      "per": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-44",
+   "name": "Alcremie",
+   "attackLabel": "Sweet Circle",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self"
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-45",
+   "name": "Zacian",
+   "attackLabel": "Limit Break",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 90,
+      "when": {
+       "prize": {
+        "cmp": "le",
+        "n": 3,
+        "who": "opponent"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-48",
+   "name": "Paldean Tauros",
+   "attackLabel": "Raging Charge",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "and": [
+         {
+          "nameTag": {
+           "substring": "Tauros"
+          }
+         },
+         {
+          "damageState": {
+           "hasAny": true
+          }
+         }
+        ]
+       }
+      },
+      "per": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-72",
+   "name": "Bronzong",
+   "attackLabel": "Tool Drop",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "toolsAttached",
+       "who": "self",
+       "bothSides": true
+      },
+      "per": 40
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-122",
+   "name": "Okidogi",
+   "attackLabel": "Settle the Score",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 80,
+      "count": {
+       "kind": "forEach",
+       "of": "prizesTakenLastTurn",
+       "who": "opponent"
+      },
+      "kind": "perCount",
+      "per": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-162",
+   "name": "Team Rocket's Kangaskhan ex",
+   "attackLabel": "Comet Punch",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 4
+      },
+      "per": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-162",
+   "name": "Team Rocket's Kangaskhan ex",
+   "attackLabel": "Wicked Impact",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 120,
+      "bonus": 100,
+      "when": {
+       "cardPlayed": {
+        "predicate": {
+         "and": [
+          {
+           "subtype": "Supporter"
+          },
+          {
+           "nameTag": {
+            "substring": "Team Rocket"
+           }
+          }
+         ]
+        },
+        "who": "self",
+        "window": "thisTurn"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-170",
+   "name": "Larry's Staraptor",
+   "attackLabel": "Facade",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 60,
+      "bonus": 100,
+      "when": {
+       "or": [
+        {
+         "conditionOn": {
+          "condition": "BURNED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        },
+        {
+         "conditionOn": {
+          "condition": "POISONED",
+          "selector": {
+           "selector": "self"
+          }
+         }
+        }
+       ]
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-19",
+   "name": "Team Rocket's Spidops",
+   "attackLabel": "Rocket Rush",
+   "cost": [
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "nameTag": {
+         "owner": "Team Rocket's"
+        }
+       }
+      },
+      "per": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-242",
+   "name": "Carbink",
+   "attackLabel": "Counter Jewel",
+   "cost": [
+    "Fighting",
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 70,
+      "bonus": 100,
+      "when": {
+       "prize": {
+        "cmp": "le",
+        "n": 2,
+        "who": "opponent"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-57",
+   "name": "Doublade",
+   "attackLabel": "Weaponized Swords",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "handCards",
+       "predicate": {
+        "or": [
+         {
+          "nameEquals": "Honedge"
+         },
+         {
+          "nameEquals": "Doublade"
+         },
+         {
+          "nameEquals": "Aegislash"
+         }
+        ]
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-135",
+   "name": "Terrakion",
+   "attackLabel": "Retaliate",
+   "cost": [
+    "Fighting",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 80,
+      "when": {
+       "history": {
+        "cause": "attackDamage",
+        "event": "ko",
+        "who": "self",
+        "window": "lastTurn"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-100",
+   "name": "Medicham",
+   "attackLabel": "Harmonious Spirit Palm",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 120,
+      "when": {
+       "compare": {
+        "lhs": {
+         "attr": "energyAttached",
+         "selector": {
+          "selector": "self"
+         }
+        },
+        "op": "eq",
+        "rhs": {
+         "attr": "energyAttached",
+         "selector": {
+          "selector": "opponentActive"
+         }
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-199",
+   "name": "Team Rocket's Weezing",
+   "attackLabel": "Explode Together Now",
+   "cost": [
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "bothSides": true,
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "predicate": {
+        "or": [
+         {
+          "nameTag": {
+           "substring": "Koffing"
+          }
+         },
+         {
+          "nameTag": {
+           "substring": "Weezing"
+          }
+         }
+        ]
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-138",
+   "name": "Drampa",
+   "attackLabel": "Raging Cannon",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 100,
+      "bonus": 120,
+      "kind": "plusIf",
+      "when": {
+       "not": {
+        "damageState": {
+         "full": true,
+         "selector": {
+          "selector": "eachOwnBench"
+         }
+        }
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-49",
+   "name": "Palafin",
+   "attackLabel": "Double Hit",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 2
+      },
+      "per": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-61",
+   "name": "Iron Hands",
+   "attackLabel": "Superalloy Hands",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 80,
+      "bonus": 80,
+      "when": {
+       "subtype": "ex"
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-107",
+   "name": "Hawlucha",
+   "attackLabel": "Prize Count",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 90,
+      "when": {
+       "compare": {
+        "lhs": {
+         "attr": "prizeRemaining",
+         "who": "self"
+        },
+        "op": "gt",
+        "rhs": {
+         "attr": "prizeRemaining",
+         "who": "opponent"
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-122",
+   "name": "Aggron",
+   "attackLabel": "Angry Slam",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "self",
+       "predicate": {
+        "damageState": {
+         "hasAny": true
+        }
+       }
+      },
+      "per": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-135",
+   "name": "Eevee",
+   "attackLabel": "Quick Attack",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 20,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-93",
+   "name": "Enamorus",
+   "attackLabel": "Love Resonance",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 80,
+      "bonus": 120,
+      "kind": "plusIf",
+      "when": {
+       "sharedTypeInPlay": true
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-15",
+   "name": "Revavroom ex",
+   "attackLabel": "Accelerator Flash",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 20,
+      "bonus": 120,
+      "when": {
+       "movedToActive": {
+        "selector": {
+         "selector": "self"
+        }
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-32",
+   "name": "Zoroark",
+   "attackLabel": "Illusory Hijacking",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "pokemonInPlay",
+       "who": "opponent",
+       "predicate": {
+        "or": [
+         {
+          "subtype": "ex"
+         },
+         {
+          "subtype": "V"
+         }
+        ]
+       }
+      },
+      "per": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6pt5-4",
+   "name": "Dartrix",
+   "attackLabel": "United Wings",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "discardCards",
+       "predicate": {
+        "hasAttack": {
+         "name": "United Wings"
+        }
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-123",
+   "name": "Talonflame",
+   "attackLabel": "Aero Chase",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 110,
+      "bonus": 110,
+      "when": {
+       "retreatCost": {
+        "selector": {
+         "selector": "opponentActive"
+        },
+        "cmp": "ge",
+        "n": 2
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-63",
+   "name": "Comfey",
+   "attackLabel": "Play Rough",
+   "cost": [
+    "Psychic"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 20,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv7-88",
+   "name": "Falinks",
+   "attackLabel": "All-Out Attack",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 30,
+      "bonus": 90,
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "window": "yourLastTurn",
+        "subject": {
+         "selector": "self"
+        },
+        "attackName": "Form Ranks"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-116",
+   "name": "Koraidon",
+   "attackLabel": "Unrelenting Onslaught",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 30,
+      "bonus": 150,
+      "kind": "plusIf",
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "subject": {
+         "excludeSelf": true,
+         "predicate": {
+          "subtype": "Ancient"
+         },
+         "selector": "ownPokemon"
+        },
+        "window": "yourLastTurn"
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-131",
+   "name": "Gholdengo",
+   "attackLabel": "Strike It Rich",
+   "cost": [
+    "Metal"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 30,
+      "bonus": 90,
+      "kind": "plusIf",
+      "when": {
+       "history": {
+        "event": "evolved",
+        "fromName": "Gimmighoul",
+        "subject": {
+         "selector": "self"
+        },
+        "window": "thisTurn"
+       }
+      }
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-14",
+   "name": "Rabsca",
+   "attackLabel": "Counterturn",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 40,
+      "bonus": 200,
+      "when": {
+       "deckSize": {
+        "cmp": "le",
+        "n": 3,
+        "who": "self"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-141",
+   "name": "Eternatus",
+   "attackLabel": "Dyna-Blast",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 10,
+      "bonus": 80,
+      "when": {
+       "subtype": "ex"
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-61",
+   "name": "Rotom",
+   "attackLabel": "Energy Short",
+   "cost": [
+    "Lightning"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "forEach",
+       "of": "energyAttached",
+       "who": "opponent",
+       "selector": {
+        "selector": "opponentActive"
+       }
+      },
+      "per": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-34",
+   "name": "Octillery",
+   "attackLabel": "Octo Beatdown",
+   "cost": [
+    "Water",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipsUntilTails"
+      },
+      "per": 90
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-47",
+   "name": "Iono's Voltorb",
+   "attackLabel": "Voltaic Chain",
+   "cost": [
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "base": 20,
+      "count": {
+       "kind": "forEach",
+       "of": "energyAttached",
+       "predicate": {
+        "energyType": "Lightning"
+       },
+       "selector": {
+        "predicate": {
+         "nameTag": {
+          "owner": "Iono's"
+         }
+        },
+        "selector": "ownPokemon"
+       },
+       "who": "self"
+      },
+      "kind": "perCount",
+      "per": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-92",
+   "name": "Weezing",
+   "attackLabel": "Crazy Blast",
+   "cost": [
+    "Darkness",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "plusIf",
+      "base": 50,
+      "bonus": 120,
+      "when": {
+       "history": {
+        "event": "attackUsed",
+        "window": "yourLastTurn",
+        "subject": {
+         "selector": "self"
+        },
+        "attackName": "Pervasive Gas"
+       }
+      }
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-32",
+   "name": "Eelektross",
+   "attackLabel": "Buzz Flip",
+   "cost": [
+    "Lightning",
+    "Lightning",
+    "Lightning",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 0,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 4
+      },
+      "per": 100
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-49",
+   "name": "Conkeldurr",
+   "attackLabel": "Swing Around",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 100,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 2
+      },
+      "per": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-52",
+   "name": "Crustle",
+   "attackLabel": "Stone Edge",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "perCount",
+      "base": 80,
+      "count": {
+       "kind": "coinFlipHeads",
+       "n": 1
+      },
+      "per": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  }
+ ]
+}

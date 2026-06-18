@@ -166,6 +166,56 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(mismatches).toEqual([]);
   });
 
+  // Native-vs-interpreted disagreements on conditional attacks. The interpreter faithfully runs
+  // the IR; these are IR-vs-reality gaps (see FINDINGS.md). Adjudication deferred.
+  const KNOWN_CONDITIONAL_MISMATCHES: Record<string, string> = {
+    // IR: forEach pokemonInPlay/opponent. Real: "60 for each opponent's Pokémon ex AND Pokémon V".
+    'sv6pt5-32 Illusory Hijacking': 'IR drops the ex/V predicate on the count',
+    // IR: perCount energyAttached/self. Real: "20 more per [L] Energy on all your Iono's Pokémon".
+    'sv9-47 Voltaic Chain': 'IR drops the [L]-type filter and the multi-Pokémon scope',
+  };
+
+  it('matches native on the conditional corpus (plusIf / perCount damage)', () => {
+    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'conditional-scenarios.json');
+    const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+      printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+    }>;
+
+    const mismatches: string[] = [];
+    let compared = 0, unsupported = 0;
+    for (const s of scenarios) {
+      const res = resolvePrinting(s.printingId, s.name);
+      if (res.status !== 'exact') continue;
+      const card = getCardByName(res.fullName!);
+      if (!(card instanceof PokemonCard)) continue;
+      if (card.weakness?.some(w => w.type === card.cardType)) continue;
+      if (KNOWN_CONDITIONAL_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
+
+      const energies = s.cost.map(energyToCard);
+      const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+      let native: Snapshot, interpreted: Snapshot;
+      try {
+        native = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, null);
+      } catch {
+        continue; // native attack-name / energy errors are catalogued by the corpus spec
+      }
+      try {
+        interpreted = buildAndAttack(res.fullName!, energies, 0, s.attackLabel, fragments);
+      } catch {
+        unsupported++; // interpreter doesn't yet support this predicate/count — visible gap, skip
+        continue;
+      }
+      compared++;
+      if (JSON.stringify(native) !== JSON.stringify(interpreted)) {
+        mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
+      }
+    }
+    // eslint-disable-next-line no-console
+    console.log(`\n  conditional differential: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
+    mismatches.forEach(m => console.log(`   • ${m}`)); // eslint-disable-line no-console
+    expect(mismatches).toEqual([]);
+  });
+
   it('matches native on the agreeing pure-damage corpus (damage.deal/const)', () => {
     const file = path.join(__dirname, 'rotomancer', 'fixtures', 'plain-attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
