@@ -41,6 +41,8 @@ Thumbs.db
 *.md
 # but track design docs that live with the Rotomancer cross-engine test harness
 !ptcg-server/src/sets/tests/rotomancer/*.md
+# and the generated card-data discrepancy report
+!ptcg-server/src/sets/CARD-DATA-REPORT.md
 
 # Python
 /__pycache__
