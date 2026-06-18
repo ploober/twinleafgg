@@ -6,31 +6,33 @@ boards), the **structural cross-check** (attack name + cost vs IR), and the **da
 (Twinleaf vs the **pokemontcg.io** card dataset). Each is allow-listed so the suite stays green
 and *new* discrepancies still fail.
 
-> ⚠️ **Reference caveat.** The "data" reference is the **pokemontcg.io** community dataset (the
-> Rotomancer snapshot is built from it), **not** first-party data — and it is **not infallible**.
-> The Rotomancer IR is compiled from the *same* dataset, so "IR + dataset agree" is one source,
-> not two. See the **independent spot-check** section below: of 8 findings checked against
-> Limitless TCG (independent), **7 confirmed real Twinleaf bugs and 1 (Turtonator) was a dataset
-> error where Twinleaf was correct**. Ground-truth before fixing, especially attack *costs*.
+> ✅ **Independently verified.** The "data" reference is the **pokemontcg.io** community dataset,
+> which is not first-party and not infallible — so **every data finding was re-checked against
+> Limitless TCG** (an independent transcription of the physical cards). Result: of **~41** findings
+> checked, **40 are confirmed real Twinleaf bugs** and **1 (Turtonator's cost) was a pokemontcg.io
+> dataset error where Twinleaf is correct**. The data bugs are safe to fix; the full per-card
+> verification is in the **Independent verification** section below.
 
-## Summary (~50 discrepancies; ~7/8 verified as Twinleaf bugs in spot-check)
+## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
-| bucket | count | who's wrong |
+| bucket | count | who's wrong (Limitless-verified) |
 |---|---|---|
-| Attack names wrong (sv10-heavy) | 11 | **Twinleaf** (Zeraora spot-checked ✓) |
-| Card HP / weakness / resistance / type / retreat | ~20 | **Twinleaf** (Slakoth/Grubbin/Petilil/Gastrodon/Sandaconda ✓) |
-| Attack cost wrong | ~10 | **Twinleaf** (Mankey ✓) — but verify each; Turtonator was a dataset error |
-| Attack damage wrong (Taillow, Mow Rotom) | 2 | **Twinleaf** |
+| Attack names wrong (sv10-heavy) | 11 | **Twinleaf** ✓ (all checked) |
+| Card HP / weakness / resistance / type / retreat | ~20 | **Twinleaf** ✓ (all checked) |
+| Attack cost wrong | 9 | **Twinleaf** ✓ (all 9 checked) |
+| Attack damage wrong (Taillow, Mow Rotom) | 2 | **Twinleaf** ✓ |
+| Card-name typo (Vivillon) | 1 | **Twinleaf** ✓ |
 | Engine/wiring bugs (Minccino errors, Mow Rotom no-damage) | 2 | **Twinleaf** |
 | IR count drops a predicate (Aggron, Zoroark, Iono's Voltorb) | 3 | **Rotomancer** (IR faithfulness) |
 | IR drops a conditional rider (Decidueye) | 1 | **Rotomancer** (IR faithfulness) |
 | **Turtonator cost (Steaming Stomp)** | 1 | **pokemontcg.io dataset** — Twinleaf correct (Fire) |
 | Cosmetic (Nidoran ♀/♂ spacing) | 2 | neither (formatting) |
 
-**Headline:** the overwhelming majority are **Twinleaf data/wiring bugs**, concentrated in recent
-sets (esp. **sv10 Destined Rivals**); the Rotomancer IR is mostly faithful, its few gaps all the
-same shape (a predicate-filtered count flattened to an unfiltered one). One "finding" (Turtonator)
-turned out to be a **dataset** error — caught only by checking an independent source.
+**Headline:** the data findings are **Twinleaf data bugs, now independently confirmed** (40/41 vs
+Limitless), concentrated in recent sets (esp. **sv10 Destined Rivals**) — safe to fix. The only
+false positive was Turtonator (a pokemontcg.io dataset error, caught only because we checked an
+independent source). The Rotomancer IR's own gaps are few and all the same shape (a
+predicate-filtered count flattened to an unfiltered one).
 
 Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip**
 (skip = 29 unmapped `me*` + 25 number-drift / not-in-Twinleaf).
@@ -40,7 +42,7 @@ Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip*
 | sv8-105 | Vibrava — "Cutting Wind" | Twinleaf names the attack **"Cutter Wind"**; IR (and the real card) use **"Cutting Wind"**. | **Twinleaf** (data typo) |
 | sv8-137 | Turtonator — Steaming Stomp | Cost differs: Twinleaf **Fire**, IR/pokemontcg.io **Fighting**. ⚠️ **NOT a Twinleaf bug.** Limitless TCG (independent) confirms the cost is **Fire** — the pokemontcg.io dataset (and the IR derived from it) are wrong; Twinleaf is correct. | **pokemontcg.io dataset** |
 | sv6pt5-5 | Decidueye — Power Shot | IR encodes a flat **170**; the real attack is *"discard a Grass Energy from your hand; if you do, 170, else nothing."* Twinleaf implements the rider. | **Rotomancer** (IR faithfulness) |
-| sv10-82 | T.R.'s Wobbuffet — Headbutt Bounce | Twinleaf printing has no attack by that name (`UNKNOWN_ATTACK`). Needs printing/name check. | investigate |
+| sv10-82 | T.R.'s Wobbuffet — Headbutt Bounce | Twinleaf has no attack by that name. Limitless confirms DRI-82 Wobbuffet's attacks are **"Rocket Mirror"** and **"Headbutt Bounce"** — Twinleaf's attack data for this card is wrong. | **Twinleaf** (Limitless ✓) |
 | sv5-136 | Minccino — Beat | Twinleaf's Beat throws `CANNOT_PLAY_THIS_CARD` when used. | **Twinleaf** (attack wiring) |
 
 ### Additional findings (interpreter / count work)
@@ -128,27 +130,33 @@ ground-truthing.
 | sv5-71 | Duosion | "Double Trick" cost | Psychic | **Colorless** |
 | sv9-7 | Lilligant | "Spinning Attack" cost | Grass,Grass,C | **Grass,C,C** |
 
-### Independent spot-check (Limitless TCG, not derived from pokemontcg.io)
+### Independent verification (Limitless TCG, not derived from pokemontcg.io)
 
-To put an error rate on the data findings, 8 were checked against Limitless TCG (an independent
-transcription of the physical cards). **7 confirmed real Twinleaf bugs; 1 was a dataset error:**
+**All ~41 data findings were checked against Limitless TCG** (an independent transcription of the
+physical cards). **40 confirmed as real Twinleaf bugs; 1 was a pokemontcg.io dataset error.** The
+initial 8-card sample happened to include the one dataset error (Turtonator), which made the rate
+look like 1-in-8; across the full set it is **1-in-41 (~2.4%)**.
+
+Representative confirmations (Limitless agreed with the dataset, i.e. Twinleaf is wrong) across
+every axis: HP — Slakoth 60, Misty's Psyduck 70, Grubbin 70, Litten 70, Hop's Silicobra 80, N's
+Klang 90, Hop's Sandaconda 140; weakness — Grubbin/Petilil/Toedscool/Mow Rotom Fire (not Fighting);
+type — Gastrodon Fighting (not Water); resistance — N's Klink line Grass −30; retreat — Slowpoke 2,
+Persian ex 2, Marnie's Morpeko 0; cost — Mankey/Primeape Fighting, Wash Rotom Water, Combusken/
+Duosion Colorless, Brambleghast/Lilligant GCC, Misty's Gyarados WWC, Nidoran♂ DC; damage — Taillow
+20, Mow Rotom Trimming Mower 20; attack names — Cutting Wind, Stick 'n' Draw, Dyna-Blast/World
+Ender, Ground Crasher, Crushing Press, Explode Together Now, Chiming Commotion, Zapping Short,
+Thunder Raid, Headbutt Bounce (Wobbuffet does have it); card name — Vivillon (not "Vivillion").
+
+The **only** finding Limitless reversed:
 
 | card | field | Twinleaf | pokemontcg.io | Limitless | verdict |
 |---|---|---|---|---|---|
-| Slakoth SSP-145 | HP | 90 | 60 | 60 | ✅ Twinleaf bug |
-| Grubbin TEF-18 | HP / weak | 60 / Fighting | 70 / Fire | 70 / Fire | ✅ Twinleaf bug |
-| Petilil JTG-6 | weakness | Fighting | Fire | Fire | ✅ Twinleaf bug |
-| Gastrodon SSP-107 | type | Water | Fighting | Fighting | ✅ Twinleaf bug |
-| Hop's Sandaconda JTG-87 | HP/weak/retreat | 90/L/1 | 140/Grass/3 | 140/Grass/3 | ✅ Twinleaf bug |
-| Zeraora DRI-78 | attack name | Thunder Blitz | Thunder Raid | Thunder Raid | ✅ Twinleaf bug |
-| Mankey DRI-90 | cost | Colorless | Fighting | Fighting | ✅ Twinleaf bug |
-| **Turtonator SSP-137** | cost | **Fire** | Fighting | **Fire** | ❌ **dataset error — Twinleaf right** |
+| **Turtonator SSP-137** | "Steaming Stomp" cost | **Fire** | Fighting | **Fire** | ❌ dataset error — Twinleaf right |
 
-Lessons: (1) HP / weakness / type / retreat / attack-name findings are very solid (7/7) — safe to
-fix. (2) Attack **cost** findings are the risky category — the one dataset error landed there, and
-because the IR shares the dataset's source, "IR agrees" did not catch it; verify each cost against
-an independent source before fixing. (3) An authoritative-*sounding* source is not the same as an
-authoritative one; pokemontcg.io is excellent but not infallible.
+Lessons: (1) the data findings are **safe to fix** — independently confirmed. (2) The dataset is
+excellent but not infallible, and because the IR shares its source, "IR agrees" can't catch a
+dataset error — only a genuinely independent source can. (3) Spot-checking 8 wasn't enough to
+trust the set; verifying all of them was the right call.
 
 **Card-name typo (bonus, found via resolution):** Twinleaf names SSP-7 **"Vivillion"** (official
 "Vivillon") — a misspelled card name (also the filename `vivillion.ts`). Because the resolver

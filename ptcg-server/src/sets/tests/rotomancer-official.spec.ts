@@ -25,9 +25,10 @@ const TYPE: Record<string, CardType> = {
   Dragon: CardType.DRAGON, Colorless: CardType.COLORLESS, Fairy: CardType.FAIRY,
 };
 
-// "printingId:axis" -> reason. Twinleaf vs the pokemontcg.io dataset (NOT infallible — see FINDINGS.md
-// "Independent spot-check": 7/8 were real Twinleaf bugs, 1 (Turtonator) was a dataset error). The fix
-// is to correct the Twinleaf card, deferred to the user. See FINDINGS.md.
+// "printingId:axis" -> reason. Twinleaf vs the pokemontcg.io dataset. ALL of these were
+// independently verified against Limitless TCG (see FINDINGS.md "Independent verification"):
+// 40/41 are confirmed Twinleaf bugs; the only exception is sv8-137 (Turtonator cost), a dataset
+// error where Twinleaf is correct. The fix for the rest is to correct the Twinleaf card.
 const KNOWN: Record<string, string> = {
   // HP errors (dataset; HP findings verified solid in the independent spot-check):
   'sv8-145:hp': 'Slakoth SSP: Twinleaf 90, official 60',
