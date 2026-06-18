@@ -17,23 +17,23 @@ interface Scenario { printingId: string; name: string; attackLabel: string; cost
 // printingId + attackLabel -> reason. Real name/cost discrepancies; adjudication deferred. See
 // FINDINGS.md. Close variants (spacing/plural/hyphen) are likely cosmetic; wholly different names
 // mean one project has the wrong attack for that printing.
+// Every entry below was adjudicated against the official card data (rotomancer-official.spec.ts):
+// in all cases the IR matches the official attack name, so TWINLEAF has the wrong name/cost.
 const KNOWN: Record<string, string> = {
-  'sv8-105 Cutting Wind': 'Twinleaf names the attack "Cutter Wind" (typo) vs IR "Cutting Wind"',
-  'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name',
-  'sv8-137 Steaming Stomp': 'cost-type mismatch: Twinleaf Fire vs IR/official Fighting — Twinleaf bug (official adjudicated)',
-  // Close variants — likely cosmetic naming differences:
-  'sv10-219 Haughty Order': 'IR "Haughty Order" vs Twinleaf "Haughty Orders" (plural)',
-  'sv10-65 Crushing Press': 'IR "Crushing Press" vs Twinleaf "Crush Press"',
-  'sv8-141 Dyna-Blast': 'IR "Dyna-Blast" vs Twinleaf "Dynablast" (hyphen)',
-  // Wholly different attack names — one project has the wrong attack for this printing:
-  'sv10-199 Explode Together Now': 'IR "Explode Together Now" vs Twinleaf "All-Out Explosion"',
-  'sv10-219 Cruel Slash': 'IR "Cruel Slash" vs Twinleaf "Slash and Cash"',
-  'sv10-78 Thunder Raid': 'IR "Thunder Raid" vs Twinleaf "Thunder Blitz"',
-  'sv10-85 Chiming Commotion': 'IR "Chiming Commotion" vs Twinleaf "Ring Ring Noise"',
-  'sv6-110 Ground Crasher': 'IR "Ground Crasher" vs Twinleaf "Ground Crack"',
-  'sv8-128 Stick \'n\' Draw': 'IR "Stick \'n\' Draw" vs Twinleaf "Plug and Draw"',
-  'sv8-141 World Ender': 'IR "World Ender" vs Twinleaf "World\'s End"',
-  'sv9-49 Zapping Short': 'IR "Zapping Short" vs Twinleaf "Crackling Short"',
+  'sv8-105 Cutting Wind': 'Twinleaf "Cutter Wind"; official + IR "Cutting Wind" → Twinleaf bug',
+  'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name → Twinleaf bug',
+  'sv8-137 Steaming Stomp': 'Twinleaf cost Fire; official + IR Fighting → Twinleaf bug',
+  'sv10-219 Haughty Order': 'Twinleaf "Haughty Orders"; official + IR "Haughty Order" → Twinleaf bug',
+  'sv10-65 Crushing Press': 'Twinleaf "Crush Press"; official + IR "Crushing Press" → Twinleaf bug',
+  'sv8-141 Dyna-Blast': 'Twinleaf "Dynablast"; official + IR "Dyna-Blast" → Twinleaf bug',
+  'sv10-199 Explode Together Now': 'Twinleaf "All-Out Explosion"; official + IR "Explode Together Now" → Twinleaf bug',
+  'sv10-219 Cruel Slash': 'Twinleaf "Slash and Cash"; official + IR "Cruel Slash" → Twinleaf bug',
+  'sv10-78 Thunder Raid': 'Twinleaf "Thunder Blitz"; official + IR "Thunder Raid" → Twinleaf bug',
+  'sv10-85 Chiming Commotion': 'Twinleaf "Ring Ring Noise"; official + IR "Chiming Commotion" → Twinleaf bug',
+  'sv6-110 Ground Crasher': 'Twinleaf "Ground Crack"; official + IR "Ground Crasher" → Twinleaf bug',
+  'sv8-128 Stick \'n\' Draw': 'Twinleaf "Plug and Draw"; official + IR "Stick \'n\' Draw" → Twinleaf bug',
+  'sv8-141 World Ender': 'Twinleaf "World\'s End"; official + IR "World Ender" → Twinleaf bug',
+  'sv9-49 Zapping Short': 'Twinleaf "Crackling Short"; official + IR "Zapping Short" → Twinleaf bug',
 };
 
 function sortedCost(types: CardType[]): string {

@@ -32,26 +32,26 @@ Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip*
 ### Attack-name discrepancies (structural cross-check)
 
 `rotomancer-structural.spec.ts` statically compares every IR attack's name + cost against the
-native card's attack definition (101 attacks cross-checked). For the same printing the names
-should be identical, so each row is a real data error on one side. None are cost mismatches
-beyond Turtonator above.
+native card's attack definition (101 attacks cross-checked). Each row was then **adjudicated
+against the official data** — and in every case the **IR matches the official, so Twinleaf has the
+wrong name**. All 11 are Twinleaf data bugs:
 
-| printing | IR name | Twinleaf name | kind |
+| printing | official + IR name | Twinleaf name (wrong) | kind |
 |---|---|---|---|
-| sv10-219 | Haughty Order | Haughty Orders | cosmetic (plural) |
-| sv10-65 | Crushing Press | Crush Press | cosmetic |
-| sv8-141 | Dyna-Blast | Dynablast | cosmetic (hyphen) |
-| sv10-199 | Explode Together Now | All-Out Explosion | **different attack** |
-| sv10-219 | Cruel Slash | Slash and Cash | **different attack** |
-| sv10-78 | Thunder Raid | Thunder Blitz | **different attack** |
-| sv10-85 | Chiming Commotion | Ring Ring Noise | **different attack** |
-| sv6-110 | Ground Crasher | Ground Crack | **different attack** |
-| sv8-128 | Stick 'n' Draw | Plug and Draw | **different attack** |
-| sv8-141 | World Ender | World's End | **different attack** |
-| sv9-49 | Zapping Short | Crackling Short | **different attack** |
+| sv10-219 | Haughty Order | Haughty Orders | spelling |
+| sv10-65 | Crushing Press | Crush Press | spelling |
+| sv8-141 | Dyna-Blast | Dynablast | spelling |
+| sv10-199 | Explode Together Now | All-Out Explosion | wrong attack |
+| sv10-219 | Cruel Slash | Slash and Cash | wrong attack |
+| sv10-78 | Thunder Raid | Thunder Blitz | wrong attack |
+| sv10-85 | Chiming Commotion | Ring Ring Noise | wrong attack |
+| sv6-110 | Ground Crasher | Ground Crack | wrong attack |
+| sv8-128 | Stick 'n' Draw | Plug and Draw | wrong attack |
+| sv8-141 | World Ender | World's End | wrong attack |
+| sv9-49 | Zapping Short | Crackling Short | wrong attack |
 
-The "different attack" rows cluster in sv10 (Destined Rivals) Trainer's-Pokémon cards, which
-suggests one project's sv10 attack-name data is systematically off — worth a targeted audit.
+These cluster heavily in **sv10 (Destined Rivals)** Trainer's-Pokémon cards — Twinleaf's sv10
+attack-name data is systematically off and warrants a focused re-import from official data.
 
 ### Twinleaf data errors (vs authoritative official card data)
 
