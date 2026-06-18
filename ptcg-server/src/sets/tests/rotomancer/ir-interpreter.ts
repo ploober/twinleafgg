@@ -13,6 +13,7 @@ import { PutDamageEffect, AddSpecialConditionsEffect } from '../../../game/store
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { costToCardType } from './bridge';
 import { evalPredicate } from './ir-predicates';
+import { executeCardsMove } from './ir-cards';
 
 /**
  * A minimal interpreter that executes a Rotomancer IR program as a Twinleaf card. Each ATTACK
@@ -162,6 +163,8 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       const { player, list } = resolveTarget(effect, op.target?.selector);
       return store.reduceEffect(state, new HealEffect(player, list, evalAmount(state, effect, op.amount)));
     }
+    case 'cards.move':
+      return executeCardsMove(store, state, effect, op);
     case 'flow.control': {
       // Under the test harness (ALL_HEADS, no choices) a coin flip is heads → the `then` branch.
       let branch: IrOp[];
