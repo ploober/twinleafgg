@@ -1,0 +1,620 @@
+{
+ "meta": {
+  "source": "rotomancer effect-programs",
+  "snapshot": "ir/2026-05-17/effect-programs",
+  "shape": "imperative-core body (damage/condition/heal/counters), >1 op or non-opponent damage",
+  "count": 21
+ },
+ "scenarios": [
+  {
+   "printingId": "me1-25",
+   "name": "Volcanion",
+   "attackLabel": "Singe",
+   "cost": [
+    "Fire"
+   ],
+   "body": [
+    {
+     "kind": "condition.apply",
+     "condition": "BURNED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2-48",
+   "name": "Paldean Tauros",
+   "attackLabel": "Double-Edge",
+   "cost": [
+    "Fighting",
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 70
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-1",
+   "name": "Erika's Oddish",
+   "attackLabel": "Reckless Charge",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 10
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-148",
+   "name": "Kingambit",
+   "attackLabel": "Double-Edged Slash",
+   "cost": [
+    "Metal",
+    "Metal"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 180
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-2",
+   "name": "Erika's Gloom",
+   "attackLabel": "Poison Spray",
+   "cost": [
+    "Grass",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 50
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "POISONED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me2pt5-78",
+   "name": "Team Rocket's Exeggutor",
+   "attackLabel": "Double-Edge",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 150
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-49",
+   "name": "Haunter",
+   "attackLabel": "Haunt",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.placeCounters",
+     "count": 3,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "me3-63",
+   "name": "Snorlax",
+   "attackLabel": "Collapse",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "ASLEEP",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "rsv10pt5-40",
+   "name": "Cofagrigus",
+   "attackLabel": "Perplex",
+   "cost": [
+    "Psychic",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv10-219",
+   "name": "Team Rocket's Persian ex",
+   "attackLabel": "Cruel Slash",
+   "cost": [
+    "Colorless",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-175",
+   "name": "Mudsdale",
+   "attackLabel": "High Horsepower",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv5-92",
+   "name": "Mudsdale",
+   "attackLabel": "High Horsepower",
+   "cost": [
+    "Fighting",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 140
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 40
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-105",
+   "name": "Conkeldurr",
+   "attackLabel": "Tantrum",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 80
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-43",
+   "name": "Poliwrath",
+   "attackLabel": "Hypnosis",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "condition": "ASLEEP",
+     "kind": "condition.apply",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv6-63",
+   "name": "Walking Wake",
+   "attackLabel": "Aurora Gain",
+   "cost": [
+    "Water"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "heal",
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-100",
+   "name": "Annihilape",
+   "attackLabel": "Tantrum",
+   "cost": [
+    "Fighting"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 130
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-11",
+   "name": "Zarude",
+   "attackLabel": "Leaf Drain",
+   "cost": [
+    "Grass"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 20
+     },
+     "kind": "heal",
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8-95",
+   "name": "Espathra",
+   "attackLabel": "Spiral Drain",
+   "cost": [
+    "Psychic",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "amount": {
+      "kind": "const",
+      "value": 60
+     },
+     "kind": "damage.deal",
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "kind": "heal",
+     "mode": "damage",
+     "target": {
+      "selector": "self"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv8pt5-60",
+   "name": "Umbreon ex",
+   "attackLabel": "Moon Mirage",
+   "cost": [
+    "Darkness",
+    "Colorless",
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 160
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "sv9-92",
+   "name": "Weezing",
+   "attackLabel": "Pervasive Gas",
+   "cost": [
+    "Darkness"
+   ],
+   "body": [
+    {
+     "kind": "damage.deal",
+     "amount": {
+      "kind": "const",
+      "value": 30
+     },
+     "modifiers": [],
+     "target": {
+      "selector": "opponentActive"
+     }
+    },
+    {
+     "kind": "condition.apply",
+     "condition": "CONFUSED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  },
+  {
+   "printingId": "zsv10pt5-54",
+   "name": "Venipede",
+   "attackLabel": "Poison Spray",
+   "cost": [
+    "Colorless"
+   ],
+   "body": [
+    {
+     "kind": "condition.apply",
+     "condition": "POISONED",
+     "removeMode": false,
+     "target": {
+      "selector": "opponentActive"
+     }
+    }
+   ]
+  }
+ ]
+}

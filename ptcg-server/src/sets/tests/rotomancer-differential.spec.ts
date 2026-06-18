@@ -126,6 +126,46 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(getDamage(game.state, 1, 'active')).toBe(90); // 30 × 3 benched
   });
 
+  // Native-vs-interpreted disagreements on the imperative corpus (deferred adjudication).
+  const KNOWN_IMPERATIVE_MISMATCHES: Record<string, string> = {
+  };
+
+  it('matches native on the imperative corpus (damage + condition/heal/counters/recoil)', () => {
+    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'imperative-scenarios.json');
+    const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+      printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+    }>;
+
+    const mismatches: string[] = [];
+    let compared = 0;
+    for (const s of scenarios) {
+      const res = resolvePrinting(s.printingId, s.name);
+      if (res.status !== 'exact') continue;
+      const card = getCardByName(res.fullName!);
+      if (!(card instanceof PokemonCard)) continue;
+      if (card.weakness?.some(w => w.type === card.cardType)) continue;
+      if (KNOWN_IMPERATIVE_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
+
+      const energies = s.cost.map(energyToCard);
+      const preDamage = Math.min(30, card.hp - 20);
+      const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+      let native: Snapshot, interpreted: Snapshot;
+      try {
+        native = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, null);
+        interpreted = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, fragments);
+      } catch {
+        continue; // attack-name / energy errors are catalogued by the corpus spec, not here
+      }
+      compared++;
+      if (JSON.stringify(native) !== JSON.stringify(interpreted)) {
+        mismatches.push(`${s.printingId} ${s.attackLabel}: native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
+      }
+    }
+    // eslint-disable-next-line no-console
+    console.log(`\n  imperative differential: compared ${compared}, mismatches ${mismatches.length}`);
+    expect(mismatches).toEqual([]);
+  });
+
   it('matches native on the agreeing pure-damage corpus (damage.deal/const)', () => {
     const file = path.join(__dirname, 'rotomancer', 'fixtures', 'plain-attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
