@@ -1,12 +1,29 @@
-# Cross-engine findings — Rotomancer IR vs native Twinleaf
+# Cross-engine findings — Rotomancer IR vs native Twinleaf vs official data
 
-Discrepancies surfaced by three independent cross-checks over Rotomancer's IR snapshot:
-the **corpus replay** (`rotomancer-corpus.spec.ts`, native vs IR-declared damage), the
-**native-vs-interpreted differential** (`rotomancer-differential.spec.ts`, bare + primed
-boards), and the **structural cross-check** (`rotomancer-structural.spec.ts`, attack name +
-cost). Adjudication (which project to fix) is intentionally **deferred** — this is the
-measurement, recorded as it was found. Each is allow-listed so the suite stays green and
-*new* discrepancies still fail.
+Discrepancies surfaced by independent cross-checks over the 2026-05-17 snapshot: the **corpus
+replay** (native vs IR-declared damage), the **native-vs-interpreted differential** (bare +
+primed boards), the **structural cross-check** (attack name + cost vs IR), and the **official
+data cross-check** (Twinleaf vs authoritative card data — also the adjudicator). Each is
+allow-listed so the suite stays green and *new* discrepancies still fail.
+
+## Summary (~50 confirmed discrepancies)
+
+| bucket | count | who's wrong |
+|---|---|---|
+| Attack names wrong (sv10-heavy) | 11 | **Twinleaf** (IR + official agree) |
+| Card HP / weakness / resistance / type / retreat | ~20 | **Twinleaf** (official authoritative) |
+| Attack cost wrong (incl. Turtonator) | ~11 | **Twinleaf** (official authoritative) |
+| Attack damage wrong (Taillow, Mow Rotom) | 2 | **Twinleaf** |
+| Engine/wiring bugs (Minccino errors, Mow Rotom no-damage) | 2 | **Twinleaf** |
+| IR count drops a predicate (Aggron, Zoroark, Iono's Voltorb) | 3 | **Rotomancer** (IR faithfulness) |
+| IR drops a conditional rider (Decidueye) | 1 | **Rotomancer** (IR faithfulness) |
+| Cosmetic (Nidoran ♀/♂ spacing) | 2 | neither (formatting) |
+
+**Headline:** the overwhelming majority are **Twinleaf data/wiring bugs**, concentrated in recent
+sets (esp. **sv10 Destined Rivals**); the Rotomancer IR is mostly faithful, its few gaps all the
+same shape (a predicate-filtered count flattened to an unfiltered one). The official-data check
+**adjudicated** the ambiguous cases — notably reversing an early guess that Turtonator was an IR
+bug (it's Twinleaf's). Details below by axis.
 
 Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip**
 (skip = 29 unmapped `me*` + 25 number-drift / not-in-Twinleaf).
