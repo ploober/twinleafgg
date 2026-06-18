@@ -39,6 +39,8 @@ Thumbs.db
 .claude/
 
 *.md
+# but track design docs that live with the Rotomancer cross-engine test harness
+!ptcg-server/src/sets/tests/rotomancer/*.md
 
 # Python
 /__pycache__
