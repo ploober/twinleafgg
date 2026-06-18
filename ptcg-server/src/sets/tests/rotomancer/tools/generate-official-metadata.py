@@ -35,6 +35,11 @@ def main():
         pid = c.get("printingId") or ""
         if pid.split("-")[0] not in PREFIXES or c.get("supertype") != "Pokémon":
             continue
+        attacks = []
+        for a in (c.get("attacks") or []):
+            # Only compare flat damage; "20×" / "120+" / "" are computed and not directly comparable.
+            raw = str(a.get("damage") or "").strip()
+            attacks.append({"name": a.get("name"), "damage": int(raw) if raw.isdigit() else None})
         entries.append({
             "printingId": pid,
             "name": c.get("name"),
@@ -43,6 +48,7 @@ def main():
             "resistances": [r.get("type") for r in (c.get("resistances") or [])],
             "retreat": len(c.get("retreatCost") or []),
             "evolvesFrom": c.get("evolvesFrom"),
+            "attacks": attacks,
         })
     entries.sort(key=lambda e: e["printingId"])
     json.dump({

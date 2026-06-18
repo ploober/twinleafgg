@@ -15,6 +15,7 @@ import { CardType } from '../../game/store/card/card-types';
 interface OfficialCard {
   printingId: string; name: string; hp: number | null;
   weaknesses: string[]; resistances: string[]; retreat: number; evolvesFrom: string | null;
+  attacks: Array<{ name: string; damage: number | null }>;
 }
 
 const TYPE: Record<string, CardType> = {
@@ -51,6 +52,9 @@ const KNOWN: Record<string, string> = {
   'sv7-103:evolvesFrom': 'Meltan: Twinleaf "Meltan" (a Basic should be empty)',
   'sv10-115:evolvesFrom': "Team Rocket's Nidorina: cosmetic — Twinleaf has a space before ♀",
   'sv10-118:evolvesFrom': "Team Rocket's Nidorino: cosmetic — Twinleaf has a space before ♂",
+  // Attack damage (flat-damage attacks only):
+  'sv10-156:damage:Wing Attack': 'Taillow DRI: Twinleaf 10, official 20',
+  'sv10-9:damage:Trimming Mower': 'Mow Rotom DRI: Twinleaf 0 (no damage), official 20',
 };
 
 function typeSet(names: string[]): string {
@@ -61,7 +65,7 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
   const file = path.join(__dirname, 'rotomancer', 'fixtures', 'official-metadata.json');
   const cards = JSON.parse(fs.readFileSync(file, 'utf8')).cards as OfficialCard[];
 
-  const hp: string[] = [], weakness: string[] = [], retreat: string[] = [], evo: string[] = [];
+  const hp: string[] = [], weakness: string[] = [], retreat: string[] = [], evo: string[] = [], damage: string[] = [];
   let checked = 0;
 
   for (const o of cards) {
@@ -88,12 +92,21 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
     if (!allowed('evolvesFrom') && officialEvo !== twinEvo) {
       evo.push(`${o.printingId} ${o.name}: official "${officialEvo}" vs Twinleaf "${twinEvo}"`);
     }
+    // Attack damage, matched by attack name (name-diff attacks are covered by the structural spec).
+    for (const oa of o.attacks) {
+      if (oa.damage === null) continue;
+      const ta = card.attacks.find(a => a.name === oa.name);
+      if (!ta) continue;
+      if (!allowed(`damage:${oa.name}`) && ta.damage !== oa.damage) {
+        damage.push(`${o.printingId} ${o.name} "${oa.name}": official ${oa.damage} vs Twinleaf ${ta.damage}`);
+      }
+    }
   }
 
   /* eslint-disable no-console */
   it('reports the data cross-check scorecard', () => {
-    console.log(`\n  official data cross-check: checked ${checked}, hp ${hp.length}, weakness ${weakness.length}, retreat ${retreat.length}, evolvesFrom ${evo.length}`);
-    [...hp.map(m => `HP ${m}`), ...weakness.map(m => `WEAK ${m}`), ...retreat.map(m => `RETREAT ${m}`), ...evo.map(m => `EVO ${m}`)]
+    console.log(`\n  official data cross-check: checked ${checked}, hp ${hp.length}, weakness ${weakness.length}, retreat ${retreat.length}, evolvesFrom ${evo.length}, damage ${damage.length}`);
+    [...hp.map(m => `HP ${m}`), ...weakness.map(m => `WEAK ${m}`), ...retreat.map(m => `RETREAT ${m}`), ...evo.map(m => `EVO ${m}`), ...damage.map(m => `DMG ${m}`)]
       .forEach(m => console.log(`   • ${m}`));
     expect(checked).toBeGreaterThan(20);
   });
@@ -103,4 +116,5 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
   it('weakness matches official', () => expect(weakness).toEqual([]));
   it('retreat cost matches official', () => expect(retreat).toEqual([]));
   it('evolvesFrom matches official', () => expect(evo).toEqual([]));
+  it('attack damage matches official', () => expect(damage).toEqual([]));
 });

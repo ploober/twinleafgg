@@ -77,6 +77,11 @@ card. 18 discrepancies in 809 cards (~2%):
 | sv10-137 | Marnie's Morpeko | retreat | 1 | **0** |
 | sv7-57 | Slowpoke | retreat | 1 | **2** |
 | sv7-103 | Meltan | evolvesFrom | "Meltan" | **(empty — it's a Basic)** |
+| sv10-156 | Taillow | "Wing Attack" damage | 10 | **20** |
+| sv10-9 | Mow Rotom | "Trimming Mower" damage | 0 (none) | **20** |
+
+(Attack-damage check is restricted to *flat* official damage — `20×`/`120+` computed attacks
+are skipped to avoid representation false positives.)
 
 Patterns worth a targeted audit: several **Grass Pokémon carry a Fighting weakness instead of
 Fire**; **Hop's Sandaconda** has HP, weakness *and* retreat wrong (likely wholly wrong stats).
