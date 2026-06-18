@@ -33,6 +33,7 @@ Thumbs.db
 # Environment and IDE
 *.env
 .vscode
+.idea/
 
 # Claude Code artifacts
 .claude/
