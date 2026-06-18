@@ -120,6 +120,13 @@ The official cross-check is also the **adjudicator** for the IR-vs-Twinleaf find
 cost was flagged earlier as a likely IR error, but the official data confirms the IR (Fighting) —
 **Twinleaf** is wrong. This is why an authoritative third source matters.
 
+**Card-name typo (bonus, found via resolution):** Twinleaf names SSP-7 **"Vivillion"** (official
+"Vivillon") — a misspelled card name (also the filename `vivillion.ts`). Because the resolver
+name-validates, this card silently fails to match and its other data goes unchecked, so fixing the
+name may surface further findings on it. Of 1662 official sv-era Pokémon, 809 resolve exactly; the
+other 853 are genuinely-absent printings (secret/alt-art numbers Twinleaf doesn't carry, and the
+zsv/rsv sets whose collector numbering differs) — only this one is a fixable name mismatch.
+
 Patterns worth a targeted audit: several **Grass Pokémon carry a Fighting weakness instead of
 Fire**; **Hop's Sandaconda** has HP, weakness *and* retreat wrong (likely wholly wrong stats).
 Two cosmetic evolvesFrom diffs (Team Rocket's Nidorina/Nidorino — Twinleaf has a space before
