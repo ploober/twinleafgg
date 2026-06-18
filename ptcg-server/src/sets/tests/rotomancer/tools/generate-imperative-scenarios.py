@@ -21,12 +21,13 @@ SNAPSHOT = "ir/2026-05-17/effect-programs"
 
 OPS = {"damage.deal", "condition.apply", "heal", "damage.placeCounters"}
 SELECTORS = {"self", "ownActive", "opponentActive", "defendingPokemon", None}
+NOOP_MODIFIERS = {"applyWeakness:false", "applyResistance:false"}
 
 
 def supported(op):
     if op.get("kind") not in OPS:
         return False
-    if op.get("modifiers"):
+    if not all(m in NOOP_MODIFIERS for m in (op.get("modifiers") or [])):
         return False
     if op.get("removeMode"):
         return False

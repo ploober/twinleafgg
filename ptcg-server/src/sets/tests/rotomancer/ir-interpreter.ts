@@ -38,7 +38,19 @@ export interface IrOp {
   count?: number | CountForm;
   condition?: string;
   removeMode?: boolean;
+  modifiers?: string[];
   target?: { selector?: string };
+}
+
+// Damage modifiers that are no-ops in a mirror match (weakness/resistance never apply there).
+const NOOP_MODIFIERS = new Set(['applyWeakness:false', 'applyResistance:false']);
+
+function assertModifiersSupported(op: IrOp): void {
+  for (const m of op.modifiers ?? []) {
+    if (!NOOP_MODIFIERS.has(m)) {
+      throw new Error(`[ir-interpreter] unsupported damage modifier "${m}"`);
+    }
+  }
 }
 
 export interface IrFragment {
@@ -103,6 +115,7 @@ function resolveTarget(effect: AttackEffect, selector?: string): { player: Playe
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   switch (op.kind) {
     case 'damage.deal': {
+      assertModifiersSupported(op);
       const value = evalAmount(effect, op.amount);
       const selector = op.target?.selector;
       if (selector === 'opponentActive' || selector === 'defendingPokemon') {

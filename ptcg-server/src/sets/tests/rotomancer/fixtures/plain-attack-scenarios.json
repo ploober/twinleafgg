@@ -3,7 +3,7 @@
   "source": "rotomancer effect-programs",
   "snapshot": "ir/2026-05-17/effect-programs",
   "shape": "single damage.deal const -> opponentActive (pure printed damage)",
-  "count": 78
+  "count": 79
  },
  "scenarios": [
   {
@@ -383,6 +383,15 @@
     "Colorless"
    ],
    "expectedDamage": 30
+  },
+  {
+   "printingId": "sv10-78",
+   "name": "Zeraora",
+   "attackLabel": "Scratch",
+   "cost": [
+    "Colorless"
+   ],
+   "expectedDamage": 20
   },
   {
    "printingId": "sv10-82",

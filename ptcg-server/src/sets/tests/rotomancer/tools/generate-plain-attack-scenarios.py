@@ -21,6 +21,13 @@ import sys
 DEFAULT_ROOT = os.path.expanduser("~/projects/pokemon-cards")
 SNAPSHOT = "ir/2026-05-17/effect-programs"
 
+# Modifiers that are no-ops in a mirror match (no weakness/resistance ever applies).
+NOOP_MODIFIERS = {"applyWeakness:false", "applyResistance:false"}
+
+
+def modifiers_ok(op):
+    return all(m in NOOP_MODIFIERS for m in (op.get("modifiers") or []))
+
 
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ROOT
@@ -42,7 +49,7 @@ def main():
             if op.get("kind") != "damage.deal":
                 continue
             amt = op.get("amount", {})
-            if amt.get("kind") != "const" or op.get("modifiers"):
+            if amt.get("kind") != "const" or not modifiers_ok(op):
                 continue
             if op.get("target", {}).get("selector") != "opponentActive":
                 continue
