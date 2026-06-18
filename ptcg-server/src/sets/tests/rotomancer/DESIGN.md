@@ -260,9 +260,13 @@ Dartrix SFA-4) to guarantee validity.
 | 1. Resolver breadth | exact/mismatch/unmapped buckets + name validation; zsv→SV11B; `me*` deferred | ✅ done |
 | 2. Runner breadth | full step + expectation vocabulary; acceptance tracking | ✅ done |
 | 3. Corpus replay | 78 pure-damage scenarios → agreement scorecard (19 agree, 5 findings); see FINDINGS.md | ✅ done |
-| 4. IR interpreter | imperative ops + counts + selectors + predicates + flow + coin flips (~80% cards) | ▢ next |
-| 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended |
-| 6. Differential mode | native-vs-interpreted post-state comparison | ▢ |
+| 4. IR interpreter | imperative core: damage.deal, placeCounters, condition.apply, heal; const; self/own/opp selectors | ✅ core done |
+| 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended (next) |
+| 6. Differential mode | native-vs-interpreted post-state comparison (3 multi-op cards + 19-card scale loop) | ✅ done |
+
+Phase 4 covers the imperative ops the corpus needs. Still ▢ within Phase 4: non-const counts
+(forEach/perCount/upTo), choice-bearing selectors (anyOwnPokemon → prompt), predicates, and
+flow.control — needed before the interpreter can run the conditional/scaling attacks.
 
 Deferred decision points (no user input needed to proceed elsewhere):
 - **`me*` set-code map** — Mega-Evolution prefixes unmapped; 29 corpus scenarios skip on it.

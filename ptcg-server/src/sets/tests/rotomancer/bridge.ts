@@ -1,4 +1,28 @@
 import { getCardBySetAndNumber } from '../test-helpers';
+import { CardType } from '../../../game/store/card/card-types';
+
+/** Maps a Rotomancer energy/cost type name to a Twinleaf CardType (for attack costs). */
+export const COST_TO_CARDTYPE: Record<string, CardType> = {
+  GRASS: CardType.GRASS,
+  FIRE: CardType.FIRE,
+  WATER: CardType.WATER,
+  LIGHTNING: CardType.LIGHTNING,
+  PSYCHIC: CardType.PSYCHIC,
+  FIGHTING: CardType.FIGHTING,
+  DARKNESS: CardType.DARK,
+  METAL: CardType.METAL,
+  DRAGON: CardType.DRAGON,
+  FAIRY: CardType.FAIRY,
+  COLORLESS: CardType.COLORLESS,
+};
+
+export function costToCardType(cost: string): CardType {
+  const t = COST_TO_CARDTYPE[cost.toUpperCase()];
+  if (t === undefined) {
+    throw new Error(`[rotomancer-bridge] No CardType mapped for cost "${cost}"`);
+  }
+  return t;
+}
 
 /**
  * Maps a Rotomancer printingId prefix (e.g. "sv8") to the Twinleaf set code (e.g. "SSP").
