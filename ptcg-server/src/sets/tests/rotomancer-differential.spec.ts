@@ -14,22 +14,35 @@ import { State } from '../../game/store/state/state';
  * interpreter and the hand-written card produce the same engine result.
  */
 
-interface Snapshot {
-  p0damage: number | 'KO';
-  p0conditions: string[];
-  p1damage: number | 'KO';
-  p1conditions: string[];
+interface SideSnapshot {
+  damage: number | 'KO';
+  conditions: string[];
+  energy: number;
+  bench: number;
+  hand: number;
+  deck: number;
+  discard: number;
+  prizes: number;
 }
+interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
 function snapshot(state: State): Snapshot {
-  const side = (i: number) => {
-    const active = state.players[i].active;
-    return active.getPokemonCard() === undefined
-      ? { damage: 'KO' as const, conditions: [] as string[] }
-      : { damage: active.damage, conditions: active.specialConditions.map(String).sort() };
+  const side = (i: number): SideSnapshot => {
+    const p = state.players[i];
+    const active = p.active;
+    const ko = active.getPokemonCard() === undefined;
+    return {
+      damage: ko ? 'KO' : active.damage,
+      conditions: ko ? [] : active.specialConditions.map(String).sort(),
+      energy: ko ? 0 : active.energies.cards.length,
+      bench: p.bench.filter(b => b.getPokemonCard() !== undefined).length,
+      hand: p.hand.cards.length,
+      deck: p.deck.cards.length,
+      discard: p.discard.cards.length,
+      prizes: p.getPrizeLeft(),
+    };
   };
-  const a = side(0), b = side(1);
-  return { p0damage: a.damage, p0conditions: a.conditions, p1damage: b.damage, p1conditions: b.conditions };
+  return { p0: side(0), p1: side(1) };
 }
 
 function buildAndAttack(
