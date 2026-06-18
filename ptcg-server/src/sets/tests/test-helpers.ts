@@ -212,9 +212,17 @@ export function ensureCardsRegistered(cardNames: string[] = []): void {
   }
 }
 
-/** Resolves a card by its Twinleaf set code and collector number, loading the set on demand. */
+/**
+ * Resolves a card by its Twinleaf set code and collector number, loading the set on demand.
+ * Returns undefined (rather than throwing) when the set code maps to no loadable module —
+ * callers treat that as "not resolvable" rather than an error.
+ */
 export function getCardBySetAndNumber(setCode: string, setNumber: string): Card | undefined {
-  ensureSetCodeLoaded(setCode);
+  try {
+    ensureSetCodeLoaded(setCode);
+  } catch {
+    return undefined;
+  }
   const target = String(setNumber);
   return CardManager.getInstance().getAllCards()
     .find(card => card.set === setCode && String(card.setNumber) === target);
