@@ -45,14 +45,17 @@ function snapshot(state: State): Snapshot {
   return { p0: side(0), p1: side(1) };
 }
 
+interface Board { attackerDamage?: number; defenderDamage?: number; benchCount?: number; }
+
 function buildAndAttack(
-  fullName: string, costEnergies: string[], attackerDamage: number, attackLabel: string,
-  fragments: IrFragment[] | null
+  fullName: string, costEnergies: string[], attackLabel: string,
+  fragments: IrFragment[] | null, board: Board = {}
 ): Snapshot {
+  const bench = Array.from({ length: board.benchCount ?? 0 }, () => ({ card: fullName }));
   const game = setupGame({
     turn: 2,
-    player1: { active: { card: fullName, energy: costEnergies, damage: attackerDamage }, deck: padDeck(10) },
-    player2: { active: { card: fullName }, deck: padDeck(10) },
+    player1: { active: { card: fullName, energy: costEnergies, damage: board.attackerDamage ?? 0 }, bench, deck: padDeck(10) },
+    player2: { active: { card: fullName, damage: board.defenderDamage ?? 0 }, bench, deck: padDeck(10) },
   });
   if (fragments) {
     const native = game.state.players[0].active.cards[0];
@@ -103,8 +106,9 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     const exact = res.status === 'exact';
     (exact ? it : xit)(c.label, () => {
       const energies = c.cost.map(energyToCard);
-      const native = buildAndAttack(res.fullName!, energies, c.attackerDamage, c.attackLabel, null);
-      const interpreted = buildAndAttack(res.fullName!, energies, c.attackerDamage, c.attackLabel, c.fragments);
+      const board = { attackerDamage: c.attackerDamage };
+      const native = buildAndAttack(res.fullName!, energies, c.attackLabel, null, board);
+      const interpreted = buildAndAttack(res.fullName!, energies, c.attackLabel, c.fragments, board);
       expect(interpreted).toEqual(native);
     });
   });
@@ -147,9 +151,12 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     // IR: flat 170. Real: "discard a Grass Energy from hand; if you do, 170, else nothing" — also a
     // corpus-replay finding. With no Grass Energy in hand, native does 0, interp does 170 → KO.
     'sv6pt5-5 Power Shot': 'IR omits the conditional-discard rider (flat 170 vs "discard or nothing")',
+    // IR: perCount pokemonInPlay/self. Real: "50 for each of your Pokémon that has damage on it".
+    // Inert on a bare board (1 vs 1); on the primed board interp counts 3, native counts 1.
+    'sv6-122 Angry Slam': 'IR counts all Pokémon in play; real attack counts only damaged Pokémon',
   };
 
-  it('matches native across the attack corpus (interpreter decides support at runtime)', () => {
+  function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {
     const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
       printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
@@ -167,16 +174,16 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       if (KNOWN_MISMATCHES[`${s.printingId} ${s.attackLabel}`]) continue;
 
       const energies = s.cost.map(energyToCard);
-      const preDamage = Math.min(30, card.hp - 20); // makes self-heal observable; shared by both runs
+      const board = makeBoard(card.hp);
       const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
       let native: Snapshot, interpreted: Snapshot;
       try {
-        native = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, null);
+        native = buildAndAttack(res.fullName!, energies, s.attackLabel, null, board);
       } catch {
         continue; // native attack-name / energy errors are catalogued by the corpus spec
       }
       try {
-        interpreted = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, fragments);
+        interpreted = buildAndAttack(res.fullName!, energies, s.attackLabel, fragments, board);
       } catch (e: any) {
         unsupported++; // interpreter doesn't yet handle an op/predicate in this body — visible gap
         const reason = String(e?.message ?? e).replace(/"[^"]*"/g, '…').replace(/^\[[^\]]*\]\s*/, '');
@@ -189,12 +196,27 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       }
     }
     /* eslint-disable no-console */
-    console.log(`\n  attack-corpus differential: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
+    console.log(`\n  attack-corpus differential [${variant}]: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
     mismatches.forEach(m => console.log(`   • ${m}`));
     const topReasons = Object.entries(unsupportedReasons).sort((a, b) => b[1] - a[1]).slice(0, 8);
     console.log('  top unsupported reasons:', topReasons.map(([r, n]) => `${n}× ${r}`).join('  |  '));
     /* eslint-enable no-console */
     expect(compared).toBeGreaterThan(15);
     expect(mismatches).toEqual([]);
+  }
+
+  // Bare board: fresh actives (a little attacker damage to make self-heal observable).
+  it('matches native across the attack corpus — bare board', () => {
+    runCorpusDifferential('bare', hp => ({ attackerDamage: Math.min(30, hp - 20) }));
+  });
+
+  // Primed board: both sides have 2 benched mirrors and pre-damaged actives, exercising bench
+  // selectors and damageState predicates that are inert on a bare board.
+  it('matches native across the attack corpus — primed board (bench + pre-damage)', () => {
+    runCorpusDifferential('primed', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+    }));
   });
 });
