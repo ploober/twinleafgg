@@ -110,17 +110,54 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
   }
 }
 
-function resolveTarget(effect: AttackEffect, selector?: string): { player: Player; list: PokemonCardList } {
+interface Target { player: Player; list: PokemonCardList; }
+
+function benched(p: Player): Target[] {
+  return p.bench.filter(b => b.getPokemonCard() !== undefined).map(list => ({ player: p, list }));
+}
+
+// A per-target predicate restricts WHICH resolved targets are actually affected (e.g. only
+// Pokémon that already have damage, or that have an Ability). Unknown leaves throw.
+function matchesTargetPredicate(list: PokemonCardList, pred: any): boolean {
+  if (!pred) return true;
+  if (Array.isArray(pred.and)) return pred.and.every((p: any) => matchesTargetPredicate(list, p));
+  if (Array.isArray(pred.or)) return pred.or.some((p: any) => matchesTargetPredicate(list, p));
+  if (pred.not !== undefined) return !matchesTargetPredicate(list, pred.not);
+  if (pred.damageState) {
+    if (pred.damageState.hasAny !== undefined) return pred.damageState.hasAny ? list.damage > 0 : list.damage === 0;
+    if (pred.damageState.full !== undefined) return pred.damageState.full ? list.damage === 0 : list.damage > 0;
+  }
+  if (pred.hasAbility !== undefined) {
+    const card = list.getPokemonCard();
+    return !!card && card.powers.length > 0;
+  }
+  throw new Error(`[ir-interpreter] unsupported target predicate "${Object.keys(pred).join(',')}"`);
+}
+
+function selectByName(effect: AttackEffect, selector?: string): Target[] {
+  const own = effect.player, opp = effect.opponent;
   switch (selector) {
+    case undefined:
     case 'self':
-    case 'ownActive':
-      return { player: effect.player, list: effect.player.active };
+    case 'ownActive': return [{ player: own, list: own.active }];
     case 'opponentActive':
-    case 'defendingPokemon':
-      return { player: effect.opponent, list: effect.opponent.active };
+    case 'defendingPokemon': return [{ player: opp, list: opp.active }];
+    case 'eachOwnBench': return benched(own);
+    case 'eachOpponentBench': return benched(opp);
+    case 'bothActives': return [{ player: own, list: own.active }, { player: opp, list: opp.active }];
+    case 'allOwnPokemon':
+    case 'ownPokemon': return [{ player: own, list: own.active }, ...benched(own)];
+    case 'allOpponentPokemon':
+    case 'opponentPokemon': return [{ player: opp, list: opp.active }, ...benched(opp)];
     default:
       throw new Error(`[ir-interpreter] unsupported selector "${selector}"`);
   }
+}
+
+// Resolves an op `target` ({selector, predicate?}) to the concrete targets that are affected.
+function resolveTargets(effect: AttackEffect, target?: { selector?: string; predicate?: any }): Target[] {
+  const targets = selectByName(effect, target?.selector).filter(t => t.list.getPokemonCard() !== undefined);
+  return target?.predicate ? targets.filter(t => matchesTargetPredicate(t.list, target.predicate)) : targets;
 }
 
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
@@ -128,23 +165,30 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'damage.deal': {
       assertModifiersSupported(op);
       const value = evalAmount(state, effect, op.amount);
-      const selector = op.target?.selector;
-      if (selector === 'opponentActive' || selector === 'defendingPokemon') {
-        // Let the engine deal it (applies weakness/resistance), matching native attacks.
-        effect.damage += value;
-        return state;
+      const sel = op.target?.selector;
+      const viaEngine = sel === 'opponentActive' || sel === 'defendingPokemon';
+      for (const { list } of resolveTargets(effect, op.target)) {
+        if (viaEngine && list === effect.opponent.active) {
+          // Defender damage goes through the normal pipeline so weakness/resistance/prevention apply.
+          effect.damage += value;
+        } else {
+          // Multi-target / non-defender damage is spread damage — direct, weakness-free.
+          const put = new PutDamageEffect(effect, value);
+          put.target = list;
+          state = store.reduceEffect(state, put);
+        }
       }
-      const { list } = resolveTarget(effect, selector);
-      const put = new PutDamageEffect(effect, value);
-      put.target = list;
-      return store.reduceEffect(state, put);
+      return state;
     }
     case 'damage.placeCounters': {
       // Damage counters bypass weakness/resistance; 1 counter = 10 HP.
-      const { list } = resolveTarget(effect, op.target?.selector);
-      const put = new PutDamageEffect(effect, evalAmount(state, effect, op.count) * 10);
-      put.target = list;
-      return store.reduceEffect(state, put);
+      const value = evalAmount(state, effect, op.count) * 10;
+      for (const { list } of resolveTargets(effect, op.target)) {
+        const put = new PutDamageEffect(effect, value);
+        put.target = list;
+        state = store.reduceEffect(state, put);
+      }
+      return state;
     }
     case 'condition.apply': {
       if (op.removeMode) {
@@ -154,14 +198,19 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       if (condition === undefined) {
         throw new Error(`[ir-interpreter] unknown condition "${op.condition}"`);
       }
-      const { list } = resolveTarget(effect, op.target?.selector);
-      const add = new AddSpecialConditionsEffect(effect, [condition]);
-      add.target = list;
-      return store.reduceEffect(state, add);
+      for (const { list } of resolveTargets(effect, op.target)) {
+        const add = new AddSpecialConditionsEffect(effect, [condition]);
+        add.target = list;
+        state = store.reduceEffect(state, add);
+      }
+      return state;
     }
     case 'heal': {
-      const { player, list } = resolveTarget(effect, op.target?.selector);
-      return store.reduceEffect(state, new HealEffect(player, list, evalAmount(state, effect, op.amount)));
+      const value = evalAmount(state, effect, op.amount);
+      for (const { player, list } of resolveTargets(effect, op.target)) {
+        state = store.reduceEffect(state, new HealEffect(player, list, value));
+      }
+      return state;
     }
     case 'cards.move':
       return executeCardsMove(store, state, effect, op);

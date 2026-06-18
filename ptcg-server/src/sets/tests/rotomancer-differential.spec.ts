@@ -156,6 +156,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     }>;
 
     const mismatches: string[] = [];
+    const unsupportedReasons: Record<string, number> = {};
     let compared = 0, unsupported = 0;
     for (const s of scenarios) {
       const res = resolvePrinting(s.printingId, s.name);
@@ -176,8 +177,10 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       }
       try {
         interpreted = buildAndAttack(res.fullName!, energies, preDamage, s.attackLabel, fragments);
-      } catch {
+      } catch (e: any) {
         unsupported++; // interpreter doesn't yet handle an op/predicate in this body — visible gap
+        const reason = String(e?.message ?? e).replace(/"[^"]*"/g, '…').replace(/^\[[^\]]*\]\s*/, '');
+        unsupportedReasons[reason] = (unsupportedReasons[reason] ?? 0) + 1;
         continue;
       }
       compared++;
@@ -185,9 +188,12 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
         mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
       }
     }
-    // eslint-disable-next-line no-console
+    /* eslint-disable no-console */
     console.log(`\n  attack-corpus differential: compared ${compared}, unsupported ${unsupported}, mismatches ${mismatches.length}`);
-    mismatches.forEach(m => console.log(`   • ${m}`)); // eslint-disable-line no-console
+    mismatches.forEach(m => console.log(`   • ${m}`));
+    const topReasons = Object.entries(unsupportedReasons).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    console.log('  top unsupported reasons:', topReasons.map(([r, n]) => `${n}× ${r}`).join('  |  '));
+    /* eslint-enable no-console */
     expect(compared).toBeGreaterThan(15);
     expect(mismatches).toEqual([]);
   });
