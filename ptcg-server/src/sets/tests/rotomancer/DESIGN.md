@@ -260,13 +260,17 @@ Dartrix SFA-4) to guarantee validity.
 | 1. Resolver breadth | exact/mismatch/unmapped buckets + name validation; zsv→SV11B; `me*` deferred | ✅ done |
 | 2. Runner breadth | full step + expectation vocabulary; acceptance tracking | ✅ done |
 | 3. Corpus replay | 78 pure-damage scenarios → agreement scorecard (19 agree, 5 findings); see FINDINGS.md | ✅ done |
-| 4. IR interpreter | imperative ops; counts const/forEach/perCount/plusIf; predicate evaluator; flow.control (predicate + coinFlip); self/own/opp selectors | ✅ broad |
-| 5. Lock/passive tail | continuous-effect interceptors + scopes/markers | ▢ open-ended (next) |
-| 6. Differential mode | one unified attack-corpus differential (interpreter decides support at runtime): 32 exact cards compared, 0 unexplained mismatches | ✅ done |
+| 4. IR interpreter | imperative ops + cards.move; counts const/forEach/perCount/plusIf; predicates; flow.control; multi-target selectors + target predicates | ✅ broad |
+| 5. Lock/passive tail | continuous-effect interceptors + scopes/markers (the `attack.lockOrModify` family) | ▢ open-ended (next) |
+| 6. Differential mode | unified attack-corpus differential, bare + primed boards: 42 exact cards compared, 0 unexplained mismatches | ✅ done |
+| 7. Static cross-checks | attack name/cost vs IR (`structural`) and full card data vs **official** (`official`) | ✅ done |
 
 The differential runs `attack-scenarios.json` (every ATTACK fragment) and lets the interpreter's
-try/catch decide support — coverage grows automatically as ops are added (currently 32 compared,
-~56 unsupported). Still ▢ within Phase 4: `upTo`/`coinFlip*` counts, choice-bearing selectors
+try/catch decide support — coverage grows automatically as ops are added (currently 42 compared,
+~46 unsupported, mostly the `attack.lockOrModify` Phase-5 family). The **official** cross-check is
+the authoritative adjudicator (HP/weakness/resistance/type/retreat/evolvesFrom/attack name+cost+
+damage over 809 sv-era cards) and resolves IR-vs-Twinleaf disputes. Still ▢ within Phase 4:
+`upTo`/`coinFlip*` counts, choice-bearing selectors
 (anyOwnPokemon → prompt), and the remaining predicate leaves (history, energyAttachedCount).
 Note: many `forEach` attacks carry a predicate the IR flattens (Aggron/Zoroark/Iono's Voltorb) —
 see FINDINGS.md — so `countOf` + predicate is the faithful form.
