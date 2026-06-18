@@ -4,7 +4,8 @@ import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 import { CardList } from '../../game/store/state/card-list';
 import { SpecialCondition } from '../../game/store/card/card-types';
-import { AttackAction, PassTurnAction, UseAbilityAction } from '../../game/store/actions/game-actions';
+import { GameWinner } from '../../game/store/state/state';
+import { AttackAction, PassTurnAction, UseAbilityAction, RetreatAction } from '../../game/store/actions/game-actions';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
 import { Card } from '../../game/store/card/card';
 import { AttackEffect } from '../../game/store/effects/game-effects';
@@ -59,6 +60,27 @@ export function playTrainerCard(store: Store, state: State, playerIndex: number,
   }
   const target: CardTarget = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
   store.dispatch(new PlayCardAction(player.id, handIndex, target));
+}
+
+/**
+ * Plays a card from hand onto a target slot — the general form behind trainers, energy
+ * attachment, evolution, and benching a Basic. Target defaults to the player's own active.
+ */
+export function playCardFromHand(
+  store: Store, state: State, playerIndex: number, cardFullName: string, target?: CardTarget
+): void {
+  const player = state.players[playerIndex];
+  const handIndex = player.hand.cards.findIndex(c => c.fullName === cardFullName);
+  if (handIndex === -1) {
+    throw new Error(`Card "${cardFullName}" not found in player ${playerIndex}'s hand`);
+  }
+  const slot = target ?? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+  store.dispatch(new PlayCardAction(player.id, handIndex, slot));
+}
+
+export function retreat(store: Store, state: State, playerIndex: number, benchIndex: number): void {
+  const player = state.players[playerIndex];
+  store.dispatch(new RetreatAction(player.id, benchIndex));
 }
 
 // ── Reusable effect factories ──
@@ -153,6 +175,24 @@ export function getActivePokemon(state: State, playerIndex: number): PokemonCard
     throw new Error(`No active Pokemon for player ${playerIndex}`);
   }
   return pokemonCard;
+}
+
+/** True while the player has a Pokémon in the active slot (false once it is knocked out and cleared). */
+export function hasActivePokemon(state: State, playerIndex: number): boolean {
+  return state.players[playerIndex].active.getPokemonCard() !== undefined;
+}
+
+/** Number of occupied bench slots. */
+export function getBenchSize(state: State, playerIndex: number): number {
+  return state.players[playerIndex].bench.filter(b => b.getPokemonCard() !== undefined).length;
+}
+
+export function getWinner(state: State): GameWinner {
+  return state.winner;
+}
+
+export function isGameOver(state: State): boolean {
+  return state.winner !== GameWinner.NONE;
 }
 
 // ── Zone / card-list access ──

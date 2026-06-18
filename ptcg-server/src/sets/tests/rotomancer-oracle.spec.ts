@@ -52,6 +52,40 @@ const RECIPES: Array<{ name: string; recipe: Recipe }> = [
       items: [
         { type: 'attack', attackLabel: 'Cutting Wind' },
         { type: 'expectTheirActiveDamage', expectedDamage: 30 },
+        { type: 'expectMatchOngoing' },
+      ],
+    },
+  },
+  {
+    // Tantrum confuses the attacker itself (IR target `self`); confusion persists through the
+    // between-turns checkup, unlike sleep/burn which an ALL_HEADS recovery flip would clear.
+    name: 'Conkeldurr TWM — Tantrum deals 80 and confuses itself',
+    recipe: {
+      meta: { printingId: 'sv6-105', source: 'rotomancer IR damage.deal + condition.apply(self)' },
+      fixture: {
+        activePrintingId: 'sv6-105',
+        activeEnergies: ['FIGHTING'],
+        opposingPrintingId: 'sv6-105',
+      },
+      items: [
+        { type: 'attack', attackLabel: 'Tantrum' },
+        { type: 'expectTheirActiveDamage', expectedDamage: 80 },
+        { type: 'expectOurActiveCondition', condition: 'CONFUSED' },
+      ],
+    },
+  },
+  {
+    name: 'Conkeldurr TWM — Gutsy Swing (250) knocks out a mirror (180 HP)',
+    recipe: {
+      meta: { printingId: 'sv6-105', source: 'rotomancer IR baseDamage' },
+      fixture: {
+        activePrintingId: 'sv6-105',
+        activeEnergies: ['FIGHTING', 'WATER', 'WATER', 'WATER'],
+        opposingPrintingId: 'sv6-105',
+      },
+      items: [
+        { type: 'attack', attackLabel: 'Gutsy Swing' },
+        { type: 'expectTheirActiveKnockedOut' },
       ],
     },
   },

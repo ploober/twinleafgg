@@ -220,6 +220,14 @@ Both engines can be made deterministic; the risk is making them make the *same* 
 | shuffle/deck | `NO_SHUFFLE` + ordered deck | `matchSeed` + ordered `topOfDeck` | clean enough (pin order) |
 | selector choices | interactive prompt, auto-resolved or `overridePrompt` | `choices` keyed by `ChoicePoint.path()` | **hard** — paths don't line up across engines |
 
+**Between-turns timing.** A Twinleaf attack ends with `EndTurnEffect`, so dispatching an
+attack also runs the opponent's between-turns checkup. Under ALL_HEADS that *clears
+recovery-flip conditions* — a defender put to Sleep or Burned wakes/recovers immediately —
+so `expectTheirActiveCondition ASLEEP` after a turn-ending attack will not hold even though
+the engine applied it. Rotomancer observes the post-effect state *before* its checkup, so
+this is an observation-point mismatch, not an engine bug. Portable assertions use conditions
+that survive checkup (Poisoned, Confused) or check damage/KO instead.
+
 Mitigations for selector choices:
 1. **Prefer choice-insensitive assertions** — total damage, KO count, zone sizes, conservation.
    These are unaffected by *which* legal target was picked.
