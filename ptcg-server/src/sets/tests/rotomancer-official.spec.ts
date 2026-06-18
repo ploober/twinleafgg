@@ -13,9 +13,9 @@ import { CardType } from '../../game/store/card/card-types';
  */
 
 interface OfficialCard {
-  printingId: string; name: string; hp: number | null;
+  printingId: string; name: string; hp: number | null; types: string[];
   weaknesses: string[]; resistances: string[]; retreat: number; evolvesFrom: string | null;
-  attacks: Array<{ name: string; damage: number | null }>;
+  attacks: Array<{ name: string; damage: number | null; cost: string[] }>;
 }
 
 const TYPE: Record<string, CardType> = {
@@ -55,6 +55,24 @@ const KNOWN: Record<string, string> = {
   // Attack damage (flat-damage attacks only):
   'sv10-156:damage:Wing Attack': 'Taillow DRI: Twinleaf 10, official 20',
   'sv10-9:damage:Trimming Mower': 'Mow Rotom DRI: Twinleaf 0 (no damage), official 20',
+  // Resistance:
+  'sv9-103:resistance': "N's Klink JTG: missing Grass resistance",
+  'sv9-104:resistance': "N's Klang JTG: missing Grass resistance",
+  'sv9-105:resistance': "N's Klinklang JTG: missing Grass resistance",
+  'sv9-87:resistance': "Hop's Sandaconda JTG: has Fighting resistance, official none",
+  // Pokémon type:
+  'sv8-107:type': 'Gastrodon SSP: Twinleaf Water, official Fighting',
+  // Attack cost:
+  'sv10-117:cost:Hammer In': "Team Rocket's Nidoran♂ DRI: Twinleaf [Dark,Dark], official [Dark,Colorless]",
+  'sv10-41:cost:Combustion': 'Combusken DRI: Twinleaf [Fire], official [Colorless]',
+  'sv10-49:cost:Waterfall': "Misty's Gyarados DRI: Twinleaf [Water,Colorless,Colorless], official [Water,Water,Colorless]",
+  'sv10-61:cost:Manual Wash': 'Wash Rotom DRI: Twinleaf [Lightning], official [Water]',
+  'sv10-90:cost:Wild Kick': 'Mankey DRI: Twinleaf [Colorless], official [Fighting]',
+  'sv10-91:cost:Drag Off': 'Primeape DRI: Twinleaf [Colorless], official [Fighting]',
+  'sv5-21:cost:Powerful Needles': 'Brambleghast TEF: Twinleaf [Grass,Grass,Colorless], official [Grass,Colorless,Colorless]',
+  'sv5-71:cost:Double Trick': 'Duosion TEF: Twinleaf [Psychic], official [Colorless]',
+  'sv8-137:cost:Steaming Stomp': 'Turtonator SSP: Twinleaf [Fire,..], official [Fighting,..] — Twinleaf bug (official confirms the IR)',
+  'sv9-7:cost:Spinning Attack': 'Lilligant JTG: Twinleaf [Grass,Grass,Colorless], official [Grass,Colorless,Colorless]',
 };
 
 function typeSet(names: string[]): string {
@@ -66,6 +84,7 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
   const cards = JSON.parse(fs.readFileSync(file, 'utf8')).cards as OfficialCard[];
 
   const hp: string[] = [], weakness: string[] = [], retreat: string[] = [], evo: string[] = [], damage: string[] = [];
+  const resistance: string[] = [], ptype: string[] = [], cost: string[] = [];
   let checked = 0;
 
   for (const o of cards) {
@@ -92,21 +111,32 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
     if (!allowed('evolvesFrom') && officialEvo !== twinEvo) {
       evo.push(`${o.printingId} ${o.name}: official "${officialEvo}" vs Twinleaf "${twinEvo}"`);
     }
-    // Attack damage, matched by attack name (name-diff attacks are covered by the structural spec).
+    if (!allowed('resistance') && typeSet(o.resistances) !== card.resistance.map(r => r.type).sort((a, b) => a - b).join(',')) {
+      resistance.push(`${o.printingId} ${o.name}: official [${o.resistances.join(',')}] vs Twinleaf [${card.resistance.map(r => r.type).join(',')}]`);
+    }
+    if (!allowed('type') && o.types.length > 0 && typeSet(o.types) !== String(card.cardType)) {
+      ptype.push(`${o.printingId} ${o.name}: official [${o.types.join(',')}] vs Twinleaf ${card.cardType}`);
+    }
+    // Attack damage + cost, matched by attack name (name-diff attacks are covered by the structural spec).
     for (const oa of o.attacks) {
-      if (oa.damage === null) continue;
       const ta = card.attacks.find(a => a.name === oa.name);
       if (!ta) continue;
-      if (!allowed(`damage:${oa.name}`) && ta.damage !== oa.damage) {
+      if (oa.damage !== null && !allowed(`damage:${oa.name}`) && ta.damage !== oa.damage) {
         damage.push(`${o.printingId} ${o.name} "${oa.name}": official ${oa.damage} vs Twinleaf ${ta.damage}`);
+      }
+      const officialCost = oa.cost.map(t => TYPE[t]).sort((a, b) => a - b).join(',');
+      const twinCost = ta.cost.slice().sort((a, b) => a - b).join(',');
+      if (!allowed(`cost:${oa.name}`) && officialCost !== twinCost) {
+        cost.push(`${o.printingId} ${o.name} "${oa.name}": official [${oa.cost.join(',')}] vs Twinleaf [${ta.cost.join(',')}]`);
       }
     }
   }
 
   /* eslint-disable no-console */
   it('reports the data cross-check scorecard', () => {
-    console.log(`\n  official data cross-check: checked ${checked}, hp ${hp.length}, weakness ${weakness.length}, retreat ${retreat.length}, evolvesFrom ${evo.length}, damage ${damage.length}`);
-    [...hp.map(m => `HP ${m}`), ...weakness.map(m => `WEAK ${m}`), ...retreat.map(m => `RETREAT ${m}`), ...evo.map(m => `EVO ${m}`), ...damage.map(m => `DMG ${m}`)]
+    console.log(`\n  official data cross-check: checked ${checked}, hp ${hp.length}, weakness ${weakness.length}, resistance ${resistance.length}, type ${ptype.length}, retreat ${retreat.length}, evolvesFrom ${evo.length}, damage ${damage.length}, cost ${cost.length}`);
+    [...hp.map(m => `HP ${m}`), ...weakness.map(m => `WEAK ${m}`), ...resistance.map(m => `RESIST ${m}`), ...ptype.map(m => `TYPE ${m}`),
+      ...retreat.map(m => `RETREAT ${m}`), ...evo.map(m => `EVO ${m}`), ...damage.map(m => `DMG ${m}`), ...cost.map(m => `COST ${m}`)]
       .forEach(m => console.log(`   • ${m}`));
     expect(checked).toBeGreaterThan(20);
   });
@@ -114,7 +144,10 @@ describe('Twinleaf vs official card data — HP / weakness / retreat / evolvesFr
 
   it('HP matches official', () => expect(hp).toEqual([]));
   it('weakness matches official', () => expect(weakness).toEqual([]));
+  it('resistance matches official', () => expect(resistance).toEqual([]));
+  it('Pokémon type matches official', () => expect(ptype).toEqual([]));
   it('retreat cost matches official', () => expect(retreat).toEqual([]));
   it('evolvesFrom matches official', () => expect(evo).toEqual([]));
   it('attack damage matches official', () => expect(damage).toEqual([]));
+  it('attack cost matches official', () => expect(cost).toEqual([]));
 });

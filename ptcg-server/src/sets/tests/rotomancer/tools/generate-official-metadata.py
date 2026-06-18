@@ -39,11 +39,16 @@ def main():
         for a in (c.get("attacks") or []):
             # Only compare flat damage; "20×" / "120+" / "" are computed and not directly comparable.
             raw = str(a.get("damage") or "").strip()
-            attacks.append({"name": a.get("name"), "damage": int(raw) if raw.isdigit() else None})
+            attacks.append({
+                "name": a.get("name"),
+                "damage": int(raw) if raw.isdigit() else None,
+                "cost": a.get("cost") or [],
+            })
         entries.append({
             "printingId": pid,
             "name": c.get("name"),
             "hp": int(c["hp"]) if str(c.get("hp", "")).isdigit() else None,
+            "types": c.get("types") or [],
             "weaknesses": [w.get("type") for w in (c.get("weaknesses") or [])],
             "resistances": [r.get("type") for r in (c.get("resistances") or [])],
             "retreat": len(c.get("retreatCost") or []),

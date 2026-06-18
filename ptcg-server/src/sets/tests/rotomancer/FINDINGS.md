@@ -14,7 +14,7 @@ Scorecard (snapshot 2026-05-17): **19 agree · 1 disagree · 4 error · 54 skip*
 | printing | attack | finding | likely owner |
 |---|---|---|---|
 | sv8-105 | Vibrava — "Cutting Wind" | Twinleaf names the attack **"Cutter Wind"**; IR (and the real card) use **"Cutting Wind"**. | **Twinleaf** (data typo) |
-| sv8-137 | Turtonator — Steaming Stomp | Cost type differs: Twinleaf **Fire**, IR **Fighting**. Turtonator is a fire attacker, so the IR cost looks wrong. | **Rotomancer** (IR cost) |
+| sv8-137 | Turtonator — Steaming Stomp | Cost type differs: Twinleaf **Fire**, IR **Fighting**. ⚠️ The official data cross-check later adjudicated this: official cost is **Fighting**, so **Twinleaf** is wrong, not the IR. (Corrected from an earlier guess.) | **Twinleaf** (official-confirmed) |
 | sv6pt5-5 | Decidueye — Power Shot | IR encodes a flat **170**; the real attack is *"discard a Grass Energy from your hand; if you do, 170, else nothing."* Twinleaf implements the rider. | **Rotomancer** (IR faithfulness) |
 | sv10-82 | T.R.'s Wobbuffet — Headbutt Bounce | Twinleaf printing has no attack by that name (`UNKNOWN_ATTACK`). Needs printing/name check. | investigate |
 | sv5-136 | Minccino — Beat | Twinleaf's Beat throws `CANNOT_PLAY_THIS_CARD` when used. | **Twinleaf** (attack wiring) |
@@ -82,6 +82,26 @@ card. 18 discrepancies in 809 cards (~2%):
 
 (Attack-damage check is restricted to *flat* official damage — `20×`/`120+` computed attacks
 are skipped to avoid representation false positives.)
+
+Resistance / type / attack-cost errors (same cross-check):
+
+| printing | card | field | Twinleaf | official |
+|---|---|---|---|---|
+| sv9-103/104/105 | N's Klink / Klang / Klinklang | resistance | (none) | **Grass** |
+| sv8-107 | Gastrodon | type | Water | **Fighting** |
+| sv8-137 | Turtonator | "Steaming Stomp" cost | Fire,C,C | **Fighting,C,C** |
+| sv10-117 | Team Rocket's Nidoran♂ | "Hammer In" cost | Dark,Dark | **Dark,Colorless** |
+| sv10-49 | Misty's Gyarados | "Waterfall" cost | Water,C,C | **Water,Water,C** |
+| sv10-41 | Combusken | "Combustion" cost | Fire | **Colorless** |
+| sv10-61 | Wash Rotom | "Manual Wash" cost | Lightning | **Water** |
+| sv10-90/91 | Mankey / Primeape | cost | Colorless | **Fighting** |
+| sv5-21 | Brambleghast | "Powerful Needles" cost | Grass,Grass,C | **Grass,C,C** |
+| sv5-71 | Duosion | "Double Trick" cost | Psychic | **Colorless** |
+| sv9-7 | Lilligant | "Spinning Attack" cost | Grass,Grass,C | **Grass,C,C** |
+
+The official cross-check is also the **adjudicator** for the IR-vs-Twinleaf findings: Turtonator's
+cost was flagged earlier as a likely IR error, but the official data confirms the IR (Fighting) —
+**Twinleaf** is wrong. This is why an authoritative third source matters.
 
 Patterns worth a targeted audit: several **Grass Pokémon carry a Fighting weakness instead of
 Fire**; **Hop's Sandaconda** has HP, weakness *and* retreat wrong (likely wholly wrong stats).

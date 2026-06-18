@@ -46,7 +46,7 @@ const KNOWN_DISAGREEMENTS: Record<string, string> = {
   // Attack-name typo: Twinleaf "Cutter Wind" vs IR/real "Cutting Wind".
   'sv8-105 Cutting Wind': 'attack-name typo: Twinleaf "Cutter Wind" vs IR "Cutting Wind"',
   // Energy-cost type mismatch: Twinleaf costs Fire (Turtonator is a fire attacker); IR says Fighting.
-  'sv8-137 Steaming Stomp': 'cost-type mismatch: Twinleaf Fire vs IR Fighting (likely IR error)',
+  'sv8-137 Steaming Stomp': 'cost-type mismatch: Twinleaf Fire vs IR/official Fighting — Twinleaf bug (official adjudicated)',
 };
 
 function key(s: Scenario): string {

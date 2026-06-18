@@ -20,7 +20,7 @@ interface Scenario { printingId: string; name: string; attackLabel: string; cost
 const KNOWN: Record<string, string> = {
   'sv8-105 Cutting Wind': 'Twinleaf names the attack "Cutter Wind" (typo) vs IR "Cutting Wind"',
   'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name',
-  'sv8-137 Steaming Stomp': 'cost-type mismatch: Twinleaf Fire vs IR Fighting (likely IR error)',
+  'sv8-137 Steaming Stomp': 'cost-type mismatch: Twinleaf Fire vs IR/official Fighting — Twinleaf bug (official adjudicated)',
   // Close variants — likely cosmetic naming differences:
   'sv10-219 Haughty Order': 'IR "Haughty Order" vs Twinleaf "Haughty Orders" (plural)',
   'sv10-65 Crushing Press': 'IR "Crushing Press" vs Twinleaf "Crush Press"',
