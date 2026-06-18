@@ -26,9 +26,31 @@ const TYPE: Record<string, CardType> = {
 // "printingId:axis" -> reason. Clean Twinleaf data bugs vs authoritative official data; the fix
 // is to correct the Twinleaf card, deferred to the user. See FINDINGS.md.
 const KNOWN: Record<string, string> = {
-  'sv8-145:hp': 'Slakoth SSP: Twinleaf HP 90, official 60',
-  'sv9-86:hp': "Hop's Silicobra JTG: Twinleaf HP 60, official 80",
-  'sv10-219:retreat': "Team Rocket's Persian ex DRI: Twinleaf retreat 1, official 2",
+  // HP errors (official is authoritative):
+  'sv8-145:hp': 'Slakoth SSP: Twinleaf 90, official 60',
+  'sv9-86:hp': "Hop's Silicobra JTG: Twinleaf 60, official 80",
+  'sv10-193:hp': "Misty's Psyduck DRI: Twinleaf 50, official 70",
+  'sv10-45:hp': "Misty's Psyduck DRI: Twinleaf 50, official 70",
+  'sv5-18:hp': 'Grubbin TEF: Twinleaf 60, official 70',
+  'sv5-32:hp': 'Litten TEF: Twinleaf 60, official 70',
+  'sv9-104:hp': "N's Klang JTG: Twinleaf 160, official 90",
+  'sv9-87:hp': "Hop's Sandaconda JTG: Twinleaf 90, official 140 (also weakness+retreat wrong — likely wrong card data)",
+  // Weakness errors — several Grass Pokémon given Fighting instead of Fire:
+  'sv10-9:weakness': 'Mow Rotom DRI: Twinleaf Fighting, official Fire',
+  'sv5-18:weakness': 'Grubbin TEF: Twinleaf Fighting, official Fire',
+  'sv7-17:weakness': 'Toedscool SCR: Twinleaf Fighting, official Fire',
+  'sv9-6:weakness': 'Petilil JTG: Twinleaf Fighting, official Fire',
+  'sv9-87:weakness': "Hop's Sandaconda JTG: Twinleaf Lightning, official Grass",
+  // Retreat-cost errors:
+  'sv10-219:retreat': "Team Rocket's Persian ex DRI: Twinleaf 1, official 2",
+  'sv10-150:retreat': "Team Rocket's Persian ex DRI: Twinleaf 1, official 2",
+  'sv10-137:retreat': "Marnie's Morpeko DRI: Twinleaf 1, official 0",
+  'sv7-57:retreat': 'Slowpoke SCR: Twinleaf 1, official 2',
+  'sv9-87:retreat': "Hop's Sandaconda JTG: Twinleaf 1, official 3",
+  // evolvesFrom:
+  'sv7-103:evolvesFrom': 'Meltan: Twinleaf "Meltan" (a Basic should be empty)',
+  'sv10-115:evolvesFrom': "Team Rocket's Nidorina: cosmetic — Twinleaf has a space before ♀",
+  'sv10-118:evolvesFrom': "Team Rocket's Nidorino: cosmetic — Twinleaf has a space before ♂",
 };
 
 function typeSet(names: string[]): string {

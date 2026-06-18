@@ -18,26 +18,22 @@ SNAPSHOT = "ir/2026-05-17/effect-programs"
 CARDS = "data/snapshots/standard-2026-05-17/cards"
 
 
+# Official printing-id prefixes for the sets Twinleaf carries (same prefixes as the bridge map).
+PREFIXES = {"sv5", "sv6", "sv6pt5", "sv7", "sv8", "sv8pt5", "sv9", "sv10", "svp", "zsv10pt5", "rsv10pt5"}
+
+
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ROOT
 
-    # printingIds we have IR for (the corpus).
-    wanted = set()
-    for f in glob.glob(os.path.join(root, SNAPSHOT, "*.json")):
-        try:
-            wanted.add(json.load(open(f))["program"]["printingId"])
-        except Exception:
-            pass
-
-    # Index official card files by printingId.
+    # Index official Pokémon card files (sv-era prefixes) by printingId.
     entries = []
     for f in glob.glob(os.path.join(root, CARDS, "**", "*.json"), recursive=True):
         try:
             c = json.load(open(f))
         except Exception:
             continue
-        pid = c.get("printingId")
-        if pid not in wanted or c.get("supertype") != "Pokémon":
+        pid = c.get("printingId") or ""
+        if pid.split("-")[0] not in PREFIXES or c.get("supertype") != "Pokémon":
             continue
         entries.append({
             "printingId": pid,

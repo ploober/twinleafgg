@@ -56,16 +56,32 @@ suggests one project's sv10 attack-name data is systematically off — worth a t
 ### Twinleaf data errors (vs authoritative official card data)
 
 `rotomancer-official.spec.ts` compares Twinleaf card data against the snapshot's official card
-metadata (HP / weakness / retreat / evolvesFrom) for 66 exact-printing cards. The official data
-is authoritative, so these are clean Twinleaf data bugs — the fix is to correct the card.
+metadata (HP / weakness / retreat / evolvesFrom) for **809** exact-printing sv-era cards. The
+official data is authoritative, so these are clean Twinleaf data bugs — the fix is to correct the
+card. 18 discrepancies in 809 cards (~2%):
 
 | printing | card | field | Twinleaf | official |
 |---|---|---|---|---|
 | sv8-145 | Slakoth | HP | 90 | **60** |
 | sv9-86 | Hop's Silicobra | HP | 60 | **80** |
-| sv10-219 | Team Rocket's Persian ex | retreat | 1 | **2** |
+| sv10-45/193 | Misty's Psyduck | HP | 50 | **70** |
+| sv5-18 | Grubbin | HP | 60 | **70** |
+| sv5-32 | Litten | HP | 60 | **70** |
+| sv9-104 | N's Klang | HP | 160 | **90** |
+| sv9-87 | Hop's Sandaconda | HP/weak/retreat | 90 / Lightning / 1 | **140 / Grass / 3** |
+| sv10-9 | Mow Rotom | weakness | Fighting | **Fire** |
+| sv5-18 | Grubbin | weakness | Fighting | **Fire** |
+| sv7-17 | Toedscool | weakness | Fighting | **Fire** |
+| sv9-6 | Petilil | weakness | Fighting | **Fire** |
+| sv10-219/150 | Team Rocket's Persian ex | retreat | 1 | **2** |
+| sv10-137 | Marnie's Morpeko | retreat | 1 | **0** |
+| sv7-57 | Slowpoke | retreat | 1 | **2** |
+| sv7-103 | Meltan | evolvesFrom | "Meltan" | **(empty — it's a Basic)** |
 
-(0 weakness and 0 evolvesFrom mismatches across the 66 — that data is clean.)
+Patterns worth a targeted audit: several **Grass Pokémon carry a Fighting weakness instead of
+Fire**; **Hop's Sandaconda** has HP, weakness *and* retreat wrong (likely wholly wrong stats).
+Two cosmetic evolvesFrom diffs (Team Rocket's Nidorina/Nidorino — Twinleaf has a space before
+the ♀/♂ glyph) are allow-listed but not real bugs.
 
 Notes:
 - "Owner" is a hypothesis from reading both sides, not a verdict. Confirm against
