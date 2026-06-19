@@ -47,7 +47,8 @@ export class Monferno extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Both Chop (0) and Heat Blow (1) read "Discard an Energy from this Pokémon."
+    if (WAS_ATTACK_USED(effect, 0, this) || WAS_ATTACK_USED(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
     return state;
