@@ -13,36 +13,39 @@ Jan-2026 "Implement complete X set" burst — BLW/EPO/NXD/NVI and similar) are w
 fields per card because the cards were hallucinated from the *wrong printing* — those are
 flagged ⚠️ severe below.
 
-**Caveats:** `name-unpaired` = a stub whose name matches no card in `card-data.json` (a real
-typo, an invented card, or a gap in the source — needs a look). Attack damage compares the
-leading integer, so `20×`/`120+` computed attacks are not flagged.
+**Caveats:** gallery/promo subset cards (non-numeric numbers like `GG2`/`TG4`) are skipped —
+`card-data.json` does not include those subsets, so it is a reference gap, not a bug. Naming
+conventions (Star↔★, LV.X, Prism Star, "-GX"↔"GX") are normalized away. So the few remaining
+`name-unpaired` rows are real: a typo, or a card placed at the wrong collector number /
+invented by the no-source backfill. Attack damage compares the leading integer, so `20×`/
+`120+` computed attacks are not flagged.
 
 ## Summary
 
-- **1063 discrepancies across 90 sets**
-- By field: attack.name 349, attack.damage 161, attack.cost 148, name-unpaired 93, hp 88, retreat 72, resistance 55, weakness 50, type 26, attack-count 21
+- **982 discrepancies across 90 sets**
+- By field: attack.name 349, attack.damage 163, attack.cost 148, hp 88, retreat 72, resistance 56, weakness 50, type 26, attack-count 21, name-unpaired 9
 
 | set | discrepancies | cards |
 |---|---|---|
 | set-black-and-white | 137 | 39 |
 | set-destined-rivals | 86 | 69 |
 | set-noble-victories | 68 | 28 |
-| set-crown-zenith | 60 | 40 |
 | set-shining-fates | 46 | 19 |
 | set-mega-evolution | 33 | 27 |
-| set-astral-radiance | 31 | 21 |
 | set-journey-together | 31 | 25 |
-| set-lost-origin | 30 | 20 |
-| set-brilliant-stars | 28 | 23 |
-| set-silver-tempest | 28 | 16 |
+| set-crown-zenith | 28 | 8 |
 | set-surging-sparks | 28 | 22 |
 | set-fusion-strike | 26 | 21 |
 | set-cosmic-eclipse | 25 | 13 |
+| set-lost-origin | 25 | 15 |
 | set-chilling-reign | 18 | 9 |
 | set-hidden-fates | 18 | 10 |
+| set-silver-tempest | 18 | 6 |
+| set-astral-radiance | 17 | 7 |
 | set-paradox-rift | 17 | 13 |
 | set-sword-and-shield | 17 | 9 |
 | set-evolving-skies | 15 | 9 |
+| set-brilliant-stars | 14 | 9 |
 | set-shining-legends | 14 | 8 |
 | set-temporal-forces | 14 | 13 |
 | set-paldean-fates | 13 | 13 |
@@ -63,9 +66,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 | set-paldea-evolved | 6 | 6 |
 | set-twilight-masquerade | 6 | 6 |
 | set-unleashed | 6 | 6 |
-| set-ex-crystal-guardians | 5 | 5 |
-| set-ex-deoxys | 5 | 5 |
-| set-ex-dragon-frontiers | 5 | 5 |
 | set-forbidden-light | 5 | 4 |
 | set-secret-wonders | 5 | 5 |
 | set-triumphant | 5 | 5 |
@@ -73,14 +73,16 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 | set-base-set | 4 | 3 |
 | set-burning-shadows | 4 | 3 |
 | set-darkness-ablaze | 4 | 4 |
+| set-ex-crystal-guardians | 4 | 4 |
 | set-ex-delta-species | 4 | 4 |
 | set-ex-hidden-legends | 4 | 4 |
-| set-ex-power-keepers | 4 | 4 |
 | set-majestic-dawn | 4 | 3 |
 | set-undaunted | 4 | 3 |
 | set-celebrations | 3 | 3 |
 | set-crimson-invasion | 3 | 3 |
 | set-dragons-exalted | 3 | 3 |
+| set-ex-deoxys | 3 | 3 |
+| set-ex-dragon-frontiers | 3 | 3 |
 | set-ex-ruby-and-sapphire | 3 | 3 |
 | set-fossil | 3 | 3 |
 | set-guardians-rising | 3 | 2 |
@@ -92,11 +94,13 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 | set-breakthrough | 2 | 1 |
 | set-call-of-legends | 2 | 2 |
 | set-diamond-and-pearl | 2 | 2 |
+| set-ex-power-keepers | 2 | 2 |
 | set-ex-sandstorm | 2 | 2 |
 | set-ex-team-rocket-returns | 2 | 2 |
 | set-ex-unseen-forces | 2 | 2 |
 | set-plasma-blast | 2 | 1 |
 | set-stellar-crown | 2 | 2 |
+| set-supreme-victors | 2 | 2 |
 | set-team-rocket | 2 | 2 |
 | set-vivid-voltage | 2 | 2 |
 | set-aquapolis | 1 | 1 |
@@ -113,7 +117,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 | set-skyridge | 1 | 1 |
 | set-steam-siege | 1 | 1 |
 | set-stormfront | 1 | 1 |
-| set-supreme-victors | 1 | 1 |
 
 ## set-black-and-white — 137 discrepancies across 39 cards — ⚠️ severe (cards wrong in many fields; likely no-source backfill)
 
@@ -684,148 +687,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 - attack[0].cost (Double Draw): `Grass` → should be `Colorless`
 - attack[1].cost (Leaf Wallop): `Grass,Grass,Colorless` → should be `Grass,Colorless`
 
-## set-crown-zenith — 60 discrepancies across 40 cards
-
-**Luxray CRZ 43 (#43)**
-- hp: `160` → should be `150`
-- retreat: `0` → should be `1`
-- attack-count: `Seeking Fang` → should be `Electrostep|Scar Strikes`
-
-**Cherubi CRZ (#11)**
-- attack[0].cost (Leafage): `Water` → should be `Grass`
-
-**Mew V CRZ (#60)**
-- resistance: `` → should be `Fighting`
-
-**Absol2 CRZ (#GG16)**
-- attack[0].name: `Swirling Diaster` → should be `Slash`
-- attack[0].damage (Swirling Diaster): `0` → should be `30`
-- attack[1].name: `Claw Rend` → should be `Lost Claw`
-- attack[1].cost (Claw Rend): `Darkness,Colorless` → should be `Darkness,Colorless,Colorless`
-- attack[1].damage (Claw Rend): `50` → should be `70`
-
-**Pikachu2 CRZ (#GG30)**
-- hp: `60` → should be `70`
-- attack[0].name: `Whimsy Tackle` → should be `Wild Charge`
-- attack[0].cost (Whimsy Tackle): `Lightning,Colorless,Colorless` → should be `Lightning,Lightning,Colorless`
-- attack[0].damage (Whimsy Tackle): `50` → should be `90`
-
-**Zacian V2 CRZ (#GG48)**
-- type: `Psychic` → should be `Metal`
-- weakness: `Metal` → should be `Fire`
-- resistance: `` → should be `Grass`
-- attack-count: `Storm Slash` → should be `Piercing Strike|Behemoth Blade`
-
-**Koffing CRZ 75 (#75)**
-- hp: `50` → should be `70`
-- type: `Grass` → should be `Darkness`
-- weakness: `Psychic` → should be `Fighting`
-- attack[0].cost (Smog): `Grass` → should be `Darkness,Colorless`
-- attack[0].damage (Smog): `0` → should be `20`
-
-**Metang CRZ 90 (#90)**
-- hp: `90` → should be `100`
-- resistance: `Psychic` → should be `Grass`
-- retreat: `3` → should be `2`
-- attack[0].cost (Bullet Punch): `Metal` → should be `Metal,Colorless`
-- attack[0].damage (Bullet Punch): `20` → should be `30`
-
-**Kricketune CRZ (#GG2)**
-- name: `Kricketune CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Magmortar CRZ (#GG3)**
-- name: `Magmortar CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Oricorio CRZ (#GG4)**
-- name: `Oricorio CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Lapras CRZ (#GG5)**
-- name: `Lapras CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Manaphy CRZ (#GG6)**
-- name: `Manaphy CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Keldeo CRZ (#GG7)**
-- name: `Keldeo CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Electivire CRZ (#GG8)**
-- name: `Electivire CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Mew CRZ (#GG10)**
-- name: `Mew CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Deoxys CRZ (#GG12)**
-- name: `Deoxys CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Diancie CRZ (#GG13)**
-- name: `Diancie CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Comfey CRZ (#GG14)**
-- name: `Comfey CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Magnezone CRZ (#GG18)**
-- name: `Magnezone CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Altaria CRZ (#GG19)**
-- name: `Altaria CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Dunsparce CRZ (#GG23)**
-- name: `Dunsparce CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Miltank CRZ (#GG24)**
-- name: `Miltank CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Bibarel CRZ (#GG25)**
-- name: `Bibarel CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Swablu CRZ (#GG27)**
-- name: `Swablu CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Duskull CRZ (#GG28)**
-- name: `Duskull CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Mareep CRZ (#GG34)**
-- name: `Mareep CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Entei V CRZ (#GG36)**
-- name: `Entei V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Suicune V CRZ (#GG38)**
-- name: `Suicune V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Lumineon V CRZ (#GG39)**
-- name: `Lumineon V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Raikou V CRZ (#GG41)**
-- name: `Raikou V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Drapion V CRZ (#GG49)**
-- name: `Drapion V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Darkrai VSTAR CRZ (#GG50)**
-- name: `Darkrai VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Hisuian Samurott V CRZ (#GG51)**
-- name: `Hisuian Samurott V CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Hisuian Samurott VSTAR CRZ (#GG52)**
-- name: `Hisuian Samurott VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Hisuian Zoroark VSTAR CRZ (#GG56)**
-- name: `Hisuian Zoroark VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Origin Forme Palkia VSTAR CRZ (#GG67)**
-- name: `Origin Forme Palkia VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Origin Forme Dialga VSTAR CRZ (#GG68)**
-- name: `Origin Forme Dialga VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Giratina VSTAR CRZ (#GG69)**
-- name: `Giratina VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
-**Arceus VSTAR CRZ (#GG70)**
-- name: `Arceus VSTAR CRZ` has no matching card in card-data.json (typo / invented / source gap)
-
 ## set-shining-fates — 46 discrepancies across 19 cards
 
 **Centiskorch SHF (#SV19)**
@@ -1001,81 +862,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Clawitizer2 MEG (#141)**
 - name: `Clawitizer2 MEG` has no matching card in card-data.json (typo / invented / source gap)
 
-## set-astral-radiance — 31 discrepancies across 21 cards
-
-**Absol ASR (#97)**
-- attack[0].name: `Swirling Diaster` → should be `Swirling Disaster`
-
-**Uxie ASR (#65)**
-- retreat: `2` → should be `1`
-
-**Bronzong ASR TG11 (#TG11)**
-- hp: `110` → should be `130`
-- resistance: `` → should be `Grass`
-- attack[0].name: `Zen Headbutt` → should be `Hammer In`
-- attack[0].damage (Zen Headbutt): `70` → should be `100`
-
-**Barboach ASR 35 (#35)**
-- hp: `70` → should be `60`
-- type: `Fighting` → should be `Water`
-- weakness: `Grass` → should be `Lightning`
-- retreat: `2` → should be `1`
-- attack[0].name: `Razor Fin` → should be `Rain Splash`
-- attack[0].cost (Razor Fin): `Fighting` → should be `Water,Colorless,Colorless`
-- attack[0].damage (Razor Fin): `10` → should be `40`
-
-**Dewott ASR 42 (#42)**
-- retreat: `2` → should be `1`
-- attack-count: `Water Gun|Aqua Wash` → should be `Razor Shell`
-
-**Hisuian Zoroark ASR (#76)**
-- name: `Hisuian Zoroark ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Hisuian Zorua ASR (#75)**
-- name: `Hisuian Zorua ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Flapple ASR (#TG2)**
-- name: `Flapple ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Frosmoth ASR (#TG4)**
-- name: `Frosmoth ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Gardevoir ASR (#TG5)**
-- name: `Gardevoir ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Falinks ASR (#TG7)**
-- name: `Falinks ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Ice Rider Calyrex V ASR (#TG14)**
-- name: `Ice Rider Calyrex V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Ice Rider Calyrex VMAX ASR (#TG15)**
-- name: `Ice Rider Calyrex VMAX ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Galarian Articuno V ASR (#TG16)**
-- name: `Galarian Articuno V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Shadow Rider Calyrex V ASR (#TG17)**
-- name: `Shadow Rider Calyrex V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Shadow Rider Calyrex VMAX ASR (#TG18)**
-- name: `Shadow Rider Calyrex VMAX ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Galarian Zapdos V ASR (#TG19)**
-- name: `Galarian Zapdos V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Galarian Moltres V ASR (#TG20)**
-- name: `Galarian Moltres V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Zacian V ASR (#TG21)**
-- name: `Zacian V ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Ice Rider Calyrex VMAX2 ASR (#TG29)**
-- name: `Ice Rider Calyrex VMAX2 ASR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Shadow Rider Calyrex VMAX2 ASR (#TG30)**
-- name: `Shadow Rider Calyrex VMAX2 ASR` has no matching card in card-data.json (typo / invented / source gap)
-
 ## set-journey-together — 31 discrepancies across 25 cards
 
 **Blaziken ex JTG (#24)**
@@ -1159,215 +945,51 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Volcanion exSIR JTG (#182)**
 - attack[0].name: `Heat Cyclone` → should be `Scorching Cyclone`
 
-## set-lost-origin — 30 discrepancies across 20 cards
+## set-crown-zenith — 28 discrepancies across 8 cards — ⚠️ severe (cards wrong in many fields; likely no-source backfill)
 
-**Giratina VSTAR LOR (#131)**
-- attack[1].name: `Star Requium` → should be `Star Requiem`
+**Luxray CRZ 43 (#43)**
+- hp: `160` → should be `150`
+- retreat: `0` → should be `1`
+- attack-count: `Seeking Fang` → should be `Electrostep|Scar Strikes`
 
-**Hisuian Zoroark V LOR (#146)**
-- hp: `220` → should be `210`
+**Cherubi CRZ (#11)**
+- attack[0].cost (Leafage): `Water` → should be `Grass`
 
-**Inkay LOR 77 (#77)**
+**Mew V CRZ (#60)**
 - resistance: `` → should be `Fighting`
 
-**Magnezone VSTAR LOR (#57)**
-- attack[1].name: `Splitting Beam` → should be `Electro Star`
+**Absol2 CRZ (#GG16)**
+- attack[0].name: `Swirling Diaster` → should be `Slash`
+- attack[0].damage (Swirling Diaster): `0` → should be `30`
+- attack[1].name: `Claw Rend` → should be `Lost Claw`
+- attack[1].cost (Claw Rend): `Darkness,Colorless` → should be `Darkness,Colorless,Colorless`
+- attack[1].damage (Claw Rend): `50` → should be `70`
 
-**Seadra LOR (#36)**
-- attack[1].cost (Hydro Jet): `Colorless,Colorless` → should be `Water`
-- attack[1].damage (Hydro Jet): `20` → should be `0`
-
-**Silcoon LOR (#7)**
-- attack[1].damage (Ram): `20` → should be `30`
-
-**Magnezone VSTAR2 LOR (#198)**
-- attack[1].name: `Splitting Beam` → should be `Electro Star`
-
-**Giratina VSTAR2 LOR (#201)**
-- attack[1].name: `Star Requium` → should be `Star Requiem`
-
-**Giratina VSTAR3 LOR (#212)**
-- attack[1].name: `Star Requium` → should be `Star Requiem`
-
-**Banette2 LOR (#TG7)**
-- hp: `80` → should be `100`
-- attack-count: `Resolute Spite|Eerie Light` → should be `Spooky Shot`
-
-**Blipbug LOR 18 (#18)**
-- attack[0].cost (Gnaw): `Grass` → should be `Grass,Colorless`
-- attack[0].damage (Gnaw): `20` → should be `30`
-
-**Ducklett LOR 46 (#46)**
-- hp: `70` → should be `60`
-- attack[0].cost (Rain Splash): `Water,Colorless` → should be `Water`
-
-**Rhyhorn LOR 89 (#89)**
-- hp: `80` → should be `100`
-- attack[0].cost (Take Down): `Fighting,Fighting` → should be `Fighting,Colorless,Colorless`
-- attack[0].damage (Take Down): `40` → should be `70`
-
-**Murkrow LOR 114 (#114)**
-- hp: `70` → should be `60`
-- attack[1].damage (Wing Attack): `20` → should be `30`
-
-**Goomy LOR 132 (#132)**
-- hp: `50` → should be `60`
-- retreat: `1` → should be `2`
-- attack[1].cost (Melt): `Water,Psychic` → should be `Water,Metal`
-- attack[1].damage (Melt): `20` → should be `30`
-
-**Charizard LOR (#TG3)**
-- name: `Charizard LOR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Crobat V LOR (#TG20)**
-- name: `Crobat V LOR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Eternatus V LOR (#TG21)**
-- name: `Eternatus V LOR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Eternatus VMAX LOR (#TG22)**
-- name: `Eternatus VMAX LOR` has no matching card in card-data.json (typo / invented / source gap)
-
-**Mew VMAX LOR (#TG30)**
-- name: `Mew VMAX LOR` has no matching card in card-data.json (typo / invented / source gap)
-
-## set-brilliant-stars — 28 discrepancies across 23 cards
-
-**Eiscue BRS (#44)**
-- attack[0].cost (Block Slider): `Water,Water` → should be `Water,Colorless`
-
-**Gible BRS (#107)**
-- attack[0].cost (Gnaw): `Fire,Water` → should be `Water,Fighting`
-
-**Minccino BRS (#124)**
-- attack[0].name: `Call For Family` → should be `Call for Family`
-
-**Mimikyu V BRS (#68)**
-- resistance: `` → should be `Fighting`
-
-**Galarian Zapdos V BRS (#182)**
-- hp: `210` → should be `200`
-
-**Dusknoir2 BRS (#TG6)**
-- hp: `150` → should be `160`
-- retreat: `2` → should be `3`
-- attack[0].name: `Spooky Shot` → should be `Devour Soul`
-
-**Mimikyu V2 BRS (#TG16)**
-- resistance: `` → should be `Fighting`
-
-**Burmy BRS 9 (#9)**
-- attack[0].cost (Hang Down): `Colorless` → should be `Colorless,Colorless`
-- attack[0].damage (Hang Down): `10` → should be `20`
-
-**Karrablast BRS 15 (#15)**
+**Pikachu2 CRZ (#GG30)**
 - hp: `60` → should be `70`
-- attack[0].cost (Peck): `Colorless,Colorless` → should be `Colorless`
-- attack[0].damage (Peck): `20` → should be `10`
+- attack[0].name: `Whimsy Tackle` → should be `Wild Charge`
+- attack[0].cost (Whimsy Tackle): `Lightning,Colorless,Colorless` → should be `Lightning,Lightning,Colorless`
+- attack[0].damage (Whimsy Tackle): `50` → should be `90`
 
-**Octillery BRS (#TG3)**
-- name: `Octillery BRS` has no matching card in card-data.json (typo / invented / source gap)
+**Zacian V2 CRZ (#GG48)**
+- type: `Psychic` → should be `Metal`
+- weakness: `Metal` → should be `Fire`
+- resistance: `` → should be `Grass`
+- attack-count: `Storm Slash` → should be `Piercing Strike|Behemoth Blade`
 
-**Zekrom BRS (#TG5)**
-- name: `Zekrom BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Houndoom BRS (#TG10)**
-- name: `Houndoom BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Oranguru BRS (#TG12)**
-- name: `Oranguru BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Sylveon V BRS (#TG14)**
-- name: `Sylveon V BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Sylveon VMAX BRS (#TG15)**
-- name: `Sylveon VMAX BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Single Strike Urshifu V BRS (#TG18)**
-- name: `Single Strike Urshifu V BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Single Strike Urshifu VMAX BRS (#TG19)**
-- name: `Single Strike Urshifu VMAX BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rapid Strike Urshifu V BRS (#TG20)**
-- name: `Rapid Strike Urshifu V BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rapid Strike Urshifu VMAX BRS (#TG21)**
-- name: `Rapid Strike Urshifu VMAX BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Umbreon V BRS (#TG22)**
-- name: `Umbreon V BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Umbreon VMAX BRS (#TG23)**
-- name: `Umbreon VMAX BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Single Strike Urshifu VMAX2 BRS (#TG29)**
-- name: `Single Strike Urshifu VMAX2 BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rapid Strike Urshifu VMAX2 BRS (#TG30)**
-- name: `Rapid Strike Urshifu VMAX2 BRS` has no matching card in card-data.json (typo / invented / source gap)
-
-## set-silver-tempest — 28 discrepancies across 16 cards
-
-**Ho-Oh V SIT (#001)**
-- weakness: `` → should be `Lightning`
-- resistance: `` → should be `Fighting`
-
-**Sandile SIT 111 (#111)**
-- type: `Fighting` → should be `Darkness`
-- weakness: `Water` → should be `Grass`
-- attack[0].cost (Bite): `Fighting,Colorless` → should be `Colorless,Colorless`
-- attack[0].damage (Bite): `20` → should be `30`
-
-**Mareanie SIT 114 (#114)**
-- type: `Psychic` → should be `Darkness`
+**Koffing CRZ 75 (#75)**
+- hp: `50` → should be `70`
+- type: `Grass` → should be `Darkness`
 - weakness: `Psychic` → should be `Fighting`
-- attack[0].cost (Poison Sting): `Psychic` → should be `Darkness`
+- attack[0].cost (Smog): `Grass` → should be `Darkness,Colorless`
+- attack[0].damage (Smog): `0` → should be `20`
 
-**Metang SIT 118 (#118)**
+**Metang CRZ 90 (#90)**
 - hp: `90` → should be `100`
 - resistance: `Psychic` → should be `Grass`
 - retreat: `3` → should be `2`
 - attack[0].cost (Bullet Punch): `Metal` → should be `Metal,Colorless`
 - attack[0].damage (Bullet Punch): `20` → should be `30`
-
-**Fletchling SIT 150 (#150)**
-- retreat: `1` → should be `0`
-- attack[0].damage (Peck): `20` → should be `10`
-
-**Ho-Oh V SIT 187 (#187)**
-- weakness: `` → should be `Lightning`
-- resistance: `` → should be `Fighting`
-
-**Flaaffy SIT (#TG3)**
-- name: `Flaaffy SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Druddigon SIT (#TG9)**
-- name: `Druddigon SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Kricketune V SIT (#TG12)**
-- name: `Kricketune V SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Blaziken V SIT (#TG14)**
-- name: `Blaziken V SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Blaziken VMAX SIT (#TG15)**
-- name: `Blaziken VMAX SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rayquaza VMAX SIT (#TG20)**
-- name: `Rayquaza VMAX SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Duraludon VMAX SIT (#TG21)**
-- name: `Duraludon VMAX SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Blissey V SIT (#TG22)**
-- name: `Blissey V SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rayquaza VMAX2 SIT (#TG29)**
-- name: `Rayquaza VMAX2 SIT` has no matching card in card-data.json (typo / invented / source gap)
-
-**Duraludon VMAX2 SIT (#TG30)**
-- name: `Duraludon VMAX2 SIT` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-surging-sparks — 28 discrepancies across 22 cards
 
@@ -1566,6 +1188,63 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 - weakness: `Grass` → should be `Fighting`
 - retreat: `4` → should be `1`
 
+## set-lost-origin — 25 discrepancies across 15 cards
+
+**Giratina VSTAR LOR (#131)**
+- attack[1].name: `Star Requium` → should be `Star Requiem`
+
+**Hisuian Zoroark V LOR (#146)**
+- hp: `220` → should be `210`
+
+**Inkay LOR 77 (#77)**
+- resistance: `` → should be `Fighting`
+
+**Magnezone VSTAR LOR (#57)**
+- attack[1].name: `Splitting Beam` → should be `Electro Star`
+
+**Seadra LOR (#36)**
+- attack[1].cost (Hydro Jet): `Colorless,Colorless` → should be `Water`
+- attack[1].damage (Hydro Jet): `20` → should be `0`
+
+**Silcoon LOR (#7)**
+- attack[1].damage (Ram): `20` → should be `30`
+
+**Magnezone VSTAR2 LOR (#198)**
+- attack[1].name: `Splitting Beam` → should be `Electro Star`
+
+**Giratina VSTAR2 LOR (#201)**
+- attack[1].name: `Star Requium` → should be `Star Requiem`
+
+**Giratina VSTAR3 LOR (#212)**
+- attack[1].name: `Star Requium` → should be `Star Requiem`
+
+**Banette2 LOR (#TG7)**
+- hp: `80` → should be `100`
+- attack-count: `Resolute Spite|Eerie Light` → should be `Spooky Shot`
+
+**Blipbug LOR 18 (#18)**
+- attack[0].cost (Gnaw): `Grass` → should be `Grass,Colorless`
+- attack[0].damage (Gnaw): `20` → should be `30`
+
+**Ducklett LOR 46 (#46)**
+- hp: `70` → should be `60`
+- attack[0].cost (Rain Splash): `Water,Colorless` → should be `Water`
+
+**Rhyhorn LOR 89 (#89)**
+- hp: `80` → should be `100`
+- attack[0].cost (Take Down): `Fighting,Fighting` → should be `Fighting,Colorless,Colorless`
+- attack[0].damage (Take Down): `40` → should be `70`
+
+**Murkrow LOR 114 (#114)**
+- hp: `70` → should be `60`
+- attack[1].damage (Wing Attack): `20` → should be `30`
+
+**Goomy LOR 132 (#132)**
+- hp: `50` → should be `60`
+- retreat: `1` → should be `2`
+- attack[1].cost (Melt): `Water,Psychic` → should be `Water,Metal`
+- attack[1].damage (Melt): `20` → should be `30`
+
 ## set-chilling-reign — 18 discrepancies across 9 cards
 
 **Banette CRE (#63)**
@@ -1643,6 +1322,71 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 - hp: `60` → should be `70`
 - resistance: `` → should be `Metal`
 - attack[1].damage (Electro Ball): `50` → should be `60`
+
+## set-silver-tempest — 18 discrepancies across 6 cards — ⚠️ severe (cards wrong in many fields; likely no-source backfill)
+
+**Ho-Oh V SIT (#001)**
+- weakness: `` → should be `Lightning`
+- resistance: `` → should be `Fighting`
+
+**Sandile SIT 111 (#111)**
+- type: `Fighting` → should be `Darkness`
+- weakness: `Water` → should be `Grass`
+- attack[0].cost (Bite): `Fighting,Colorless` → should be `Colorless,Colorless`
+- attack[0].damage (Bite): `20` → should be `30`
+
+**Mareanie SIT 114 (#114)**
+- type: `Psychic` → should be `Darkness`
+- weakness: `Psychic` → should be `Fighting`
+- attack[0].cost (Poison Sting): `Psychic` → should be `Darkness`
+
+**Metang SIT 118 (#118)**
+- hp: `90` → should be `100`
+- resistance: `Psychic` → should be `Grass`
+- retreat: `3` → should be `2`
+- attack[0].cost (Bullet Punch): `Metal` → should be `Metal,Colorless`
+- attack[0].damage (Bullet Punch): `20` → should be `30`
+
+**Fletchling SIT 150 (#150)**
+- retreat: `1` → should be `0`
+- attack[0].damage (Peck): `20` → should be `10`
+
+**Ho-Oh V SIT 187 (#187)**
+- weakness: `` → should be `Lightning`
+- resistance: `` → should be `Fighting`
+
+## set-astral-radiance — 17 discrepancies across 7 cards
+
+**Absol ASR (#97)**
+- attack[0].name: `Swirling Diaster` → should be `Swirling Disaster`
+
+**Uxie ASR (#65)**
+- retreat: `2` → should be `1`
+
+**Bronzong ASR TG11 (#TG11)**
+- hp: `110` → should be `130`
+- resistance: `` → should be `Grass`
+- attack[0].name: `Zen Headbutt` → should be `Hammer In`
+- attack[0].damage (Zen Headbutt): `70` → should be `100`
+
+**Barboach ASR 35 (#35)**
+- hp: `70` → should be `60`
+- type: `Fighting` → should be `Water`
+- weakness: `Grass` → should be `Lightning`
+- retreat: `2` → should be `1`
+- attack[0].name: `Razor Fin` → should be `Rain Splash`
+- attack[0].cost (Razor Fin): `Fighting` → should be `Water,Colorless,Colorless`
+- attack[0].damage (Razor Fin): `10` → should be `40`
+
+**Dewott ASR 42 (#42)**
+- retreat: `2` → should be `1`
+- attack-count: `Water Gun|Aqua Wash` → should be `Razor Shell`
+
+**Hisuian Zoroark ASR (#76)**
+- name: `Hisuian Zoroark ASR` has no matching card in card-data.json (typo / invented / source gap)
+
+**Hisuian Zorua ASR (#75)**
+- name: `Hisuian Zorua ASR` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-paradox-rift — 17 discrepancies across 13 cards
 
@@ -1760,6 +1504,40 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 
 **Gyarados VMAX (EVS 207) (#207)**
 - attack[0].cost (Hyper Beam): `Water,Colorless,Colorless` → should be `Water,Water,Colorless`
+
+## set-brilliant-stars — 14 discrepancies across 9 cards
+
+**Eiscue BRS (#44)**
+- attack[0].cost (Block Slider): `Water,Water` → should be `Water,Colorless`
+
+**Gible BRS (#107)**
+- attack[0].cost (Gnaw): `Fire,Water` → should be `Water,Fighting`
+
+**Minccino BRS (#124)**
+- attack[0].name: `Call For Family` → should be `Call for Family`
+
+**Mimikyu V BRS (#68)**
+- resistance: `` → should be `Fighting`
+
+**Galarian Zapdos V BRS (#182)**
+- hp: `210` → should be `200`
+
+**Dusknoir2 BRS (#TG6)**
+- hp: `150` → should be `160`
+- retreat: `2` → should be `3`
+- attack[0].name: `Spooky Shot` → should be `Devour Soul`
+
+**Mimikyu V2 BRS (#TG16)**
+- resistance: `` → should be `Fighting`
+
+**Burmy BRS 9 (#9)**
+- attack[0].cost (Hang Down): `Colorless` → should be `Colorless,Colorless`
+- attack[0].damage (Hang Down): `10` → should be `20`
+
+**Karrablast BRS 15 (#15)**
+- hp: `60` → should be `70`
+- attack[0].cost (Peck): `Colorless,Colorless` → should be `Colorless`
+- attack[0].damage (Peck): `20` → should be `10`
 
 ## set-shining-legends — 14 discrepancies across 8 cards
 
@@ -2126,11 +1904,11 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Omastar LM (#23)**
 - attack[0].cost (Drag Off): `Water,Colorless` → should be `Colorless`
 
+**Registeel Star LM (#92)**
+- attack[1].damage (Final Laser): `70` → should be `0`
+
 **Voltorb LM (#68)**
 - attack[0].name: `Thunderwave` → should be `Thunder Wave`
-
-**Registeel Star LM (#92)**
-- name: `Registeel Star LM` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-legendary-treasures — 8 discrepancies across 6 cards
 
@@ -2277,57 +2055,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Suicune & Entei LEGEND (Top) UL (#94)**
 - type: `Fire` → should be `Water`
 
-## set-ex-crystal-guardians — 5 discrepancies across 5 cards
-
-**Lombre CG (#37)**
-- attack[0].damage (Plunder): `30` → should be `20`
-
-**Sceptile ex CG (#96)**
-- weakness: `Grass,Fire` → should be `Grass`
-
-**Shiftry ex CG (#97)**
-- weakness: `Grass,Fighting` → should be `Grass`
-
-**Treecko CG 68 (#68)**
-- attack[1].damage (Shining Claws): `30` → should be `10`
-
-**Alakazam Star CG (#99)**
-- name: `Alakazam Star CG` has no matching card in card-data.json (typo / invented / source gap)
-
-## set-ex-deoxys — 5 discrepancies across 5 cards
-
-**Altaria (#1)**
-- retreat: `0` → should be `1`
-
-**Ludicolo DX (#10)**
-- attack[0].name: `Water Healing Steps` → should be `Healing Steps`
-
-**Latias Star DX (#105)**
-- name: `Latias Star DX` has no matching card in card-data.json (typo / invented / source gap)
-
-**Latios Star DX (#106)**
-- name: `Latios Star DX` has no matching card in card-data.json (typo / invented / source gap)
-
-**Rayquaza Star DX (#107)**
-- name: `Rayquaza Star DX` has no matching card in card-data.json (typo / invented / source gap)
-
-## set-ex-dragon-frontiers — 5 discrepancies across 5 cards
-
-**Chikorita DF (#44)**
-- retreat: `2` → should be `1`
-
-**Nidoqueen DF (#7)**
-- attack[0].name: `Vengence` → should be `Vengeance`
-
-**Rayquaza ex DF (#97)**
-- attack[1].name: `Sky-High Claws` → should be `Sky-high Claws`
-
-**Charizard Star DF (#100)**
-- name: `Charizard Star DF` has no matching card in card-data.json (typo / invented / source gap)
-
-**Mew Star DF (#101)**
-- name: `Mew Star DF` has no matching card in card-data.json (typo / invented / source gap)
-
 ## set-forbidden-light — 5 discrepancies across 4 cards
 
 **Froakie FLI2 (#21)**
@@ -2426,19 +2153,33 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Ursaring DAA (#139)**
 - retreat: `2` → should be `3`
 
+## set-ex-crystal-guardians — 4 discrepancies across 4 cards
+
+**Lombre CG (#37)**
+- attack[0].damage (Plunder): `30` → should be `20`
+
+**Sceptile ex CG (#96)**
+- weakness: `Grass,Fire` → should be `Grass`
+
+**Shiftry ex CG (#97)**
+- weakness: `Grass,Fighting` → should be `Grass`
+
+**Treecko CG 68 (#68)**
+- attack[1].damage (Shining Claws): `30` → should be `10`
+
 ## set-ex-delta-species — 4 discrepancies across 4 cards
 
 **Beldum DS (#59)**
 - weakness: `Fighting` → should be `Fire`
+
+**Groudon Star DS (#111)**
+- attack[0].damage (Critical Collection): `0` → should be `10`
 
 **Ralts DS (#81)**
 - hp: `70` → should be `50`
 
 **Vaporeon ex DS (#110)**
 - attack[1].name: `Hydro Splash` → should be `Hydrosplash`
-
-**Groudon Star DS (#111)**
-- name: `Groudon Star DS` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-ex-hidden-legends — 4 discrepancies across 4 cards
 
@@ -2453,20 +2194,6 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 
 **Spheal HL (#74)**
 - hp: `50` → should be `40`
-
-## set-ex-power-keepers — 4 discrepancies across 4 cards
-
-**Metagross ex PK (#95)**
-- weakness: `Fire,Fighting` → should be `Fire`
-
-**Shiftry ex PK (#97)**
-- weakness: `Grass,Fighting` → should be `Grass`
-
-**Flareon Star PK (#100)**
-- name: `Flareon Star PK` has no matching card in card-data.json (typo / invented / source gap)
-
-**Jolteon Star PK (#101)**
-- name: `Jolteon Star PK` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-majestic-dawn — 4 discrepancies across 3 cards
 
@@ -2524,6 +2251,28 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 
 **Krookodile DRX (#127)**
 - attack[1].damage (Bombast): `0` → should be `40`
+
+## set-ex-deoxys — 3 discrepancies across 3 cards
+
+**Altaria (#1)**
+- retreat: `0` → should be `1`
+
+**Latios Star DX (#106)**
+- resistance: `Grass,Fighting` → should be `Grass`
+
+**Ludicolo DX (#10)**
+- attack[0].name: `Water Healing Steps` → should be `Healing Steps`
+
+## set-ex-dragon-frontiers — 3 discrepancies across 3 cards
+
+**Chikorita DF (#44)**
+- retreat: `2` → should be `1`
+
+**Nidoqueen DF (#7)**
+- attack[0].name: `Vengence` → should be `Vengeance`
+
+**Rayquaza ex DF (#97)**
+- attack[1].name: `Sky-High Claws` → should be `Sky-high Claws`
 
 ## set-ex-ruby-and-sapphire — 3 discrepancies across 3 cards
 
@@ -2627,6 +2376,14 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 **Piplup DP (#93)**
 - attack[1].damage (Water Splash): `10` → should be `20`
 
+## set-ex-power-keepers — 2 discrepancies across 2 cards
+
+**Metagross ex PK (#95)**
+- weakness: `Fire,Fighting` → should be `Fire`
+
+**Shiftry ex PK (#97)**
+- weakness: `Grass,Fighting` → should be `Grass`
+
 ## set-ex-sandstorm — 2 discrepancies across 2 cards
 
 **Skitty SS (#79)**
@@ -2664,6 +2421,14 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 
 **Toedscool SCR (#17)**
 - weakness: `Fighting` → should be `Fire`
+
+## set-supreme-victors — 2 discrepancies across 2 cards
+
+**Baltoy SV (#89)**
+- attack[1].name: `Spinning Attack` → should be `Quick Turn`
+
+**Staraptor FB Lv. X SV (#147)**
+- name: `Staraptor FB Lv. X SV` has no matching card in card-data.json (typo / invented / source gap)
 
 ## set-team-rocket — 2 discrepancies across 2 cards
 
@@ -2750,9 +2515,4 @@ leading integer, so `20×`/`120+` computed attacks are not flagged.
 
 **Gastly SF (#62)**
 - attack[0].name: `Pitch Dark` → should be `Pitch-Dark`
-
-## set-supreme-victors — 1 discrepancies across 1 cards
-
-**Baltoy SV (#89)**
-- attack[1].name: `Spinning Attack` → should be `Quick Turn`
 

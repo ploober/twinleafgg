@@ -43,8 +43,10 @@ interface Mismatch { card: string; field: string; stub: string; data: string; }
 // collector number) avoids false positives where a set's setNumbers don't align with the dataset.
 function normName(n: string): string {
   return (n || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().replace(/[^a-z0-9]/g, '')
-    .replace(/(lvx|prismstar)$/, '');
+    .toLowerCase()
+    .replace(/[★δ]/g, '')                       // star/delta symbols
+    .replace(/\b(star|prism|lv\.?x)\b/g, '')    // "X Star" ↔ "X ★", Prism Star, LV.X (NOT VSTAR)
+    .replace(/[^a-z0-9]/g, '');
 }
 
 function collectCards(setDir: string): Card[] {
@@ -75,7 +77,12 @@ function checkSet(setDir: string): Mismatch[] {
   for (const card of collectCards(setDir)) {
     if (!(card instanceof PokemonCard)) continue;
     const candidates = byName.get(normName(card.name));
-    if (!candidates) { unpaired.push(`${card.fullName} (#${card.setNumber})`); continue; }
+    if (!candidates) {
+      // Gallery/promo subset cards (non-numeric numbers like GG2/TG4) aren't in card-data.json —
+      // that's a reference gap, not a Twinleaf bug. Only flag unpaired cards with a real number.
+      if (/^\d+$/.test(String(card.setNumber))) unpaired.push(`${card.fullName} (#${card.setNumber})`);
+      continue;
+    }
     // Prefer the print at the same collector number; else any (alt-art prints share stats).
     const d = candidates.find(c => String(c.number) === String(card.setNumber)) ?? candidates[0];
     const tag = `${card.fullName} (#${card.setNumber})`;
@@ -142,9 +149,12 @@ function emitReport(all: Record<string, Mismatch[]>) {
   out.push('fields per card because the cards were hallucinated from the *wrong printing* — those are');
   out.push('flagged ⚠️ severe below.');
   out.push('');
-  out.push('**Caveats:** `name-unpaired` = a stub whose name matches no card in `card-data.json` (a real');
-  out.push('typo, an invented card, or a gap in the source — needs a look). Attack damage compares the');
-  out.push('leading integer, so `20×`/`120+` computed attacks are not flagged.');
+  out.push('**Caveats:** gallery/promo subset cards (non-numeric numbers like `GG2`/`TG4`) are skipped —');
+  out.push('`card-data.json` does not include those subsets, so it is a reference gap, not a bug. Naming');
+  out.push('conventions (Star↔★, LV.X, Prism Star, "-GX"↔"GX") are normalized away. So the few remaining');
+  out.push('`name-unpaired` rows are real: a typo, or a card placed at the wrong collector number /');
+  out.push('invented by the no-source backfill. Attack damage compares the leading integer, so `20×`/');
+  out.push('`120+` computed attacks are not flagged.');
   out.push('');
   out.push('## Summary');
   out.push('');
