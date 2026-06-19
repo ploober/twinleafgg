@@ -1,0 +1,1009 @@
+{
+ "meta": {
+  "source": "IR (peg-emit) vs native, adjudicated against official-metadata.json + Limitless spot-checks",
+  "note": "IR matches official attack name/cost in 100% of these; native Twinleaf differs. Spot-checked vs Limitless (independent): Crustle DRI-12 Superb Scissors, Mankey DRI-90 Wild Kick cost Fighting \u2014 both confirm Twinleaf wrong.",
+  "count": 86
+ },
+ "discrepancies": [
+  {
+   "printingId": "sv10-61",
+   "attackLabel": "Manual Wash",
+   "card": "Wash Rotom",
+   "kind": "cost",
+   "irCost": [
+    "Water"
+   ],
+   "officialCost": [
+    "Water"
+   ],
+   "verdict": "twinleaf-cost-bug"
+  },
+  {
+   "printingId": "sv10-90",
+   "attackLabel": "Wild Kick",
+   "card": "Mankey",
+   "kind": "cost",
+   "irCost": [
+    "Fighting"
+   ],
+   "officialCost": [
+    "Fighting"
+   ],
+   "verdict": "twinleaf-cost-bug"
+  },
+  {
+   "printingId": "sv5-71",
+   "attackLabel": "Double Trick",
+   "card": "Duosion",
+   "kind": "cost",
+   "irCost": [
+    "Colorless"
+   ],
+   "officialCost": [
+    "Colorless"
+   ],
+   "verdict": "twinleaf-cost-bug"
+  },
+  {
+   "printingId": "sv10-111",
+   "attackLabel": "Rock Kagura",
+   "card": "Cornerstone Mask Ogerpon",
+   "kind": "name",
+   "native": [
+    "Rock Dance",
+    "Mountain Ramming"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-112",
+   "attackLabel": "Drag Down",
+   "card": "Team Rocket's Ekans",
+   "kind": "name",
+   "native": [
+    "Hold Back",
+    "Gnaw"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-114",
+   "attackLabel": "Surprise Attack",
+   "card": "Team Rocket's Nidoran\u2640",
+   "kind": "name",
+   "native": [
+    "Suprise Attack"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-118",
+   "attackLabel": "Horn Rend",
+   "card": "Team Rocket's Nidorino",
+   "kind": "name",
+   "native": [
+    "Hammer In",
+    "Horned Gouge"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-119",
+   "attackLabel": "Tainted Horn",
+   "card": "Team Rocket's Nidoking ex",
+   "kind": "name",
+   "native": [
+    "Dirty Horns",
+    "King's Impact"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-12",
+   "attackLabel": "Superb Scissors",
+   "card": "Crustle",
+   "kind": "name",
+   "native": [
+    "Great Scissors"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-130",
+   "attackLabel": "Pointy Nails",
+   "card": "Marnie's Purrloin",
+   "kind": "name",
+   "native": [
+    "Sharp Nail"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-139",
+   "attackLabel": "Boss Headbutt",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-139",
+   "attackLabel": "Vigorous Tackle",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-149",
+   "attackLabel": "Fury Swipes",
+   "card": "Team Rocket's Meowth",
+   "kind": "name",
+   "native": [
+    "Cat Nab",
+    "Wild Scratch"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-150",
+   "attackLabel": "Cruel Slash",
+   "card": "Team Rocket's Persian ex",
+   "kind": "name",
+   "native": [
+    "Haughty Orders",
+    "Slash and Cash"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-186",
+   "attackLabel": "Superb Scissors",
+   "card": "Crustle",
+   "kind": "name",
+   "native": [
+    "Great Scissors"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-192",
+   "attackLabel": "Inferno Kick Flurry",
+   "card": "Blaziken",
+   "kind": "name",
+   "native": [
+    "Heat Blast",
+    "Inferno Legs"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-203",
+   "attackLabel": "Fury Swipes",
+   "card": "Team Rocket's Meowth",
+   "kind": "name",
+   "native": [
+    "Cat Nab",
+    "Wild Scratch"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-209",
+   "attackLabel": "Shining Feathers",
+   "card": "Ethan's Ho-Oh ex",
+   "kind": "name",
+   "native": [
+    "Shining Feather"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-211",
+   "attackLabel": "Avenging Billow",
+   "card": "Dondozo ex",
+   "kind": "name",
+   "native": [
+    "Tsunami Reversal",
+    "Dynamic Dive"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-216",
+   "attackLabel": "Tainted Horn",
+   "card": "Team Rocket's Nidoking ex",
+   "kind": "name",
+   "native": [
+    "Dirty Horns",
+    "King's Impact"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-218",
+   "attackLabel": "Boss Headbutt",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-218",
+   "attackLabel": "Vigorous Tackle",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-230",
+   "attackLabel": "Shining Feathers",
+   "card": "Ethan's Ho-Oh ex",
+   "kind": "name",
+   "native": [
+    "Shining Feather"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-233",
+   "attackLabel": "Tainted Horn",
+   "card": "Team Rocket's Nidoking ex",
+   "kind": "name",
+   "native": [
+    "Dirty Horns",
+    "King's Impact"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-235",
+   "attackLabel": "Boss Headbutt",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-235",
+   "attackLabel": "Vigorous Tackle",
+   "card": "Arven's Mabosstiff ex",
+   "kind": "name",
+   "native": [
+    "Hustle Tackle",
+    "Boss's Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-239",
+   "attackLabel": "Shining Feathers",
+   "card": "Ethan's Ho-Oh ex",
+   "kind": "name",
+   "native": [
+    "Shining Feather"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-26",
+   "attackLabel": "Grass Kagura",
+   "card": "Teal Mask Ogerpon",
+   "kind": "name",
+   "native": [
+    "Grass Dance",
+    "Ogre Hammer"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-26",
+   "attackLabel": "Ogre's Hammer",
+   "card": "Teal Mask Ogerpon",
+   "kind": "name",
+   "native": [
+    "Grass Dance",
+    "Ogre Hammer"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-29",
+   "attackLabel": "Double Headbutt",
+   "card": "Ponyta",
+   "kind": "name",
+   "native": [
+    "Double Strike"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-39",
+   "attackLabel": "Shining Feathers",
+   "card": "Ethan's Ho-Oh ex",
+   "kind": "name",
+   "native": [
+    "Shining Feather"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-42",
+   "attackLabel": "Inferno Kick Flurry",
+   "card": "Blaziken",
+   "kind": "name",
+   "native": [
+    "Heat Blast",
+    "Inferno Legs"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-44",
+   "attackLabel": "Fire Kagura",
+   "card": "Hearthflame Mask Ogerpon",
+   "kind": "name",
+   "native": [
+    "Flame Dance",
+    "Searing Flame"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-47",
+   "attackLabel": "Abrupt Flash",
+   "card": "Misty's Starmie",
+   "kind": "name",
+   "native": [
+    "Sudden Flash"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-66",
+   "attackLabel": "Avenging Billow",
+   "card": "Dondozo ex",
+   "kind": "name",
+   "native": [
+    "Tsunami Reversal",
+    "Dynamic Dive"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-67",
+   "attackLabel": "Water Kagura",
+   "card": "Wellspring Mask Ogerpon",
+   "kind": "name",
+   "native": [
+    "Water Dance",
+    "Bubble Drain"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-70",
+   "attackLabel": "Wicked Thunder",
+   "card": "Team Rocket's Zapdos",
+   "kind": "name",
+   "native": [
+    "Jamming Wave",
+    "Bad Thunder"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-71",
+   "attackLabel": "Zapping Draw",
+   "card": "Ethan's Pichu",
+   "kind": "name",
+   "native": [
+    "Sparking Draw"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-72",
+   "attackLabel": "Procurement",
+   "card": "Team Rocket's Mareep",
+   "kind": "name",
+   "native": [
+    "Provision",
+    "Petibolt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-96",
+   "attackLabel": "Demolition Tackle",
+   "card": "Team Rocket's Tyranitar",
+   "kind": "name",
+   "native": [
+    "Breakthrough Tackle"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-130",
+   "attackLabel": "Call for Family",
+   "card": "Skitty",
+   "kind": "name",
+   "native": [
+    "Call For Family",
+    "Tackle"
+   ],
+   "category": "cosmetic",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-132",
+   "attackLabel": "A Cappella",
+   "card": "Chatot",
+   "kind": "name",
+   "native": [
+    "A Capella",
+    "Gust"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-181",
+   "attackLabel": "A Cappella",
+   "card": "Chatot",
+   "kind": "name",
+   "native": [
+    "A Capella",
+    "Gust"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-189",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-205",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-215",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-50",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv5-56",
+   "attackLabel": "Circuit Cannon",
+   "card": "Vikavolt",
+   "kind": "name",
+   "native": [
+    "Mach Bolt",
+    "Serial Cannon"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv6pt5-13",
+   "attackLabel": "Beset",
+   "card": "Sneasel",
+   "kind": "name",
+   "native": [
+    "Cut",
+    "Draw Near"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv6pt5-26",
+   "attackLabel": "Iron Smasher",
+   "card": "Slither Wing",
+   "kind": "name",
+   "native": [
+    "Iron Buster",
+    "Smashing Wings"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv6pt5-26",
+   "attackLabel": "Smashing Wing",
+   "card": "Slither Wing",
+   "kind": "name",
+   "native": [
+    "Iron Buster",
+    "Smashing Wings"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv6pt5-30",
+   "attackLabel": "Darkfall",
+   "card": "Absol",
+   "kind": "name",
+   "native": [
+    "Bad Fall"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-104",
+   "attackLabel": "Call for Family",
+   "card": "Trapinch",
+   "kind": "name",
+   "native": [
+    "Call For Family",
+    "Bite"
+   ],
+   "category": "cosmetic",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-106",
+   "attackLabel": "Reversing Storm",
+   "card": "Flygon ex",
+   "kind": "name",
+   "native": [
+    "Storm Bug",
+    "Peridot Sonic"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-136",
+   "attackLabel": "Space Crash",
+   "card": "Palkia",
+   "kind": "name",
+   "native": [
+    "Special Crash"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-17",
+   "attackLabel": "Fire Soul",
+   "card": "Ninetales",
+   "kind": "name",
+   "native": [
+    "Fiery Spirits"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-35",
+   "attackLabel": "Black Blaze Slash",
+   "card": "Ceruledge",
+   "kind": "name",
+   "native": [
+    "Blaze Curse",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-36",
+   "attackLabel": "Abyssal Flames",
+   "card": "Ceruledge ex",
+   "kind": "name",
+   "native": [
+    "Abyssal Flame",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-36",
+   "attackLabel": "Raging Amethyst",
+   "card": "Ceruledge ex",
+   "kind": "name",
+   "native": [
+    "Abyssal Flame",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-71",
+   "attackLabel": "Draining Kiss",
+   "card": "Togetic",
+   "kind": "name",
+   "native": [
+    "Drain Kiss"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-75",
+   "attackLabel": "Delightful Kiss",
+   "card": "Smoochum",
+   "kind": "name",
+   "native": [
+    "Happy Kiss"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-79",
+   "attackLabel": "Full Heart",
+   "card": "Mesprit",
+   "kind": "name",
+   "native": [
+    "Heart Fulfilment",
+    "Legendary Burst"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-79",
+   "attackLabel": "Guardian Burst",
+   "card": "Mesprit",
+   "kind": "name",
+   "native": [
+    "Heart Fulfilment",
+    "Legendary Burst"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-80",
+   "attackLabel": "Neurokinesis",
+   "card": "Azelf",
+   "kind": "name",
+   "native": [
+    "Neurokenesis"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8pt5-147",
+   "attackLabel": "Abyssal Flames",
+   "card": "Ceruledge ex",
+   "kind": "name",
+   "native": [
+    "Abyssal Flame",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8pt5-147",
+   "attackLabel": "Raging Amethyst",
+   "card": "Ceruledge ex",
+   "kind": "name",
+   "native": [
+    "Abyssal Flame",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8pt5-178",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8pt5-64",
+   "attackLabel": "Tyrannical Crush",
+   "card": "Tyranitar ex",
+   "kind": "name",
+   "native": [
+    "Grind",
+    "Tyranical Crush"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-104",
+   "attackLabel": "Spinning Gears",
+   "card": "N's Klang",
+   "kind": "name",
+   "native": [
+    "Twirling Gear",
+    "Confront"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-12",
+   "attackLabel": "Shell Smack",
+   "card": "Shelmet",
+   "kind": "name",
+   "native": [
+    "Shell Hit"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-16",
+   "attackLabel": "Tons of Treading",
+   "card": "Sprigatito",
+   "kind": "name",
+   "native": [
+    "Stomp Repeatedly"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-165",
+   "attackLabel": "Call for Family",
+   "card": "Swinub",
+   "kind": "name",
+   "native": [
+    "Call For Family",
+    "Lunge Out"
+   ],
+   "category": "cosmetic",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-166",
+   "attackLabel": "Clamping Fangs",
+   "card": "Lycanroc",
+   "kind": "name",
+   "native": [
+    "Clutch Fang"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-171",
+   "attackLabel": "Scorching Cyclone",
+   "card": "Volcanion ex",
+   "kind": "name",
+   "native": [
+    "Heat Cyclone"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-182",
+   "attackLabel": "Scorching Cyclone",
+   "card": "Volcanion ex",
+   "kind": "name",
+   "native": [
+    "Heat Cyclone"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-24",
+   "attackLabel": "Smolder-sault",
+   "card": "Blaziken ex",
+   "kind": "name",
+   "native": [
+    "Burning Assault"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-27",
+   "attackLabel": "Back Draft",
+   "card": "N's Darmanitan",
+   "kind": "name",
+   "native": [
+    "Backdraft",
+    "Darman-i-cannon"
+   ],
+   "category": "cosmetic",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-27",
+   "attackLabel": "Flamebody Cannon",
+   "card": "N's Darmanitan",
+   "kind": "name",
+   "native": [
+    "Backdraft",
+    "Darman-i-cannon"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-31",
+   "attackLabel": "Scorching Cyclone",
+   "card": "Volcanion ex",
+   "kind": "name",
+   "native": [
+    "Heat Cyclone"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-51",
+   "attackLabel": "Linked Lightning",
+   "card": "Tapu Koko ex",
+   "kind": "name",
+   "native": [
+    "Thunder Connect"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-63",
+   "attackLabel": "Conjoined Beams",
+   "card": "Metagross",
+   "kind": "name",
+   "native": [
+    "Wrack Down",
+    "Zen Headbutt"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-77",
+   "attackLabel": "Call for Family",
+   "card": "Swinub",
+   "kind": "name",
+   "native": [
+    "Call For Family",
+    "Lunge Out"
+   ],
+   "category": "cosmetic",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-82",
+   "attackLabel": "Breaching Lariat",
+   "card": "Regirock",
+   "kind": "name",
+   "native": [
+    "Buster Lariat"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-85",
+   "attackLabel": "Clamping Fangs",
+   "card": "Lycanroc",
+   "kind": "name",
+   "native": [
+    "Clutch Fang"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv9-95",
+   "attackLabel": "Cracking Stomp",
+   "card": "Tyranitar",
+   "kind": "name",
+   "native": [
+    "Crackling Stomp"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "svp-127",
+   "attackLabel": "Catharsis Roar",
+   "card": "Walking Wake ex",
+   "kind": "name",
+   "native": [
+    "Cathartic Roar"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  }
+ ]
+}

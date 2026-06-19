@@ -19,7 +19,7 @@ import os
 import sys
 
 DEFAULT_ROOT = os.path.expanduser("~/projects/pokemon-cards")
-SNAPSHOT = "ir/2026-05-17/effect-programs"
+SNAPSHOT = "tools/template-parser-probe/peg-emit"
 
 # Modifiers that are no-ops in a mirror match (no weakness/resistance ever applies).
 NOOP_MODIFIERS = {"applyWeakness:false", "applyResistance:false"}

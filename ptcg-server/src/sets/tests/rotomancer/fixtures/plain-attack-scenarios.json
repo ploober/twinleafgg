@@ -1,159 +1,34 @@
 {
  "meta": {
   "source": "rotomancer effect-programs",
-  "snapshot": "ir/2026-05-17/effect-programs",
+  "snapshot": "tools/template-parser-probe/peg-emit",
   "shape": "single damage.deal const -> opponentActive (pure printed damage)",
-  "count": 79
+  "count": 12
  },
  "scenarios": [
   {
-   "printingId": "me1-10",
-   "name": "Meganium",
-   "attackLabel": "Solar Beam",
+   "printingId": "me1-83",
+   "name": "Naclstack",
+   "attackLabel": "Rock Hurl",
    "cost": [
-    "Grass",
-    "Grass",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 140
-  },
-  {
-   "printingId": "me1-101",
-   "name": "Latios",
-   "attackLabel": "Dragon Claw",
-   "cost": [
-    "Water",
-    "Psychic",
-    "Colorless"
-   ],
-   "expectedDamage": 130
-  },
-  {
-   "printingId": "me1-105",
-   "name": "Delibird",
-   "attackLabel": "Gentle Slap",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me1-106",
-   "name": "Miltank",
-   "attackLabel": "Tackle",
-   "cost": [
-    "Colorless",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 60
-  },
-  {
-   "printingId": "me1-112",
-   "name": "Bewear",
-   "attackLabel": "Knuckle Punch",
-   "cost": [
-    "Colorless",
+    "Fighting",
     "Colorless"
    ],
    "expectedDamage": 50
   },
   {
-   "printingId": "me1-145",
-   "name": "Houndstone",
-   "attackLabel": "Hammer In",
+   "printingId": "me2pt5-109",
+   "name": "Cynthia's Gible",
+   "attackLabel": "Rock Hurl",
    "cost": [
-    "Psychic",
-    "Psychic",
-    "Colorless"
-   ],
-   "expectedDamage": 130
-  },
-  {
-   "printingId": "me1-20",
-   "name": "Ninetales",
-   "attackLabel": "Combustion",
-   "cost": [
-    "Fire",
-    "Colorless"
-   ],
-   "expectedDamage": 60
-  },
-  {
-   "printingId": "me1-30",
-   "name": "Centiskorch",
-   "attackLabel": "Heat Crawler",
-   "cost": [
-    "Fire",
-    "Fire",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 140
-  },
-  {
-   "printingId": "me1-85",
-   "name": "Crawdaunt",
-   "attackLabel": "Cutting Riposte",
-   "cost": [
-    "Darkness",
-    "Darkness",
-    "Colorless"
-   ],
-   "expectedDamage": 130
-  },
-  {
-   "printingId": "me1-85",
-   "name": "Crawdaunt",
-   "attackLabel": "Vise Grip",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me1-95",
-   "name": "Dialga",
-   "attackLabel": "Beam",
-   "cost": [
-    "Metal"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me2-10",
-   "name": "Lokix",
-   "attackLabel": "Low Kick",
-   "cost": [
-    "Grass"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me2-40",
-   "name": "Meloetta",
-   "attackLabel": "Magical Shot",
-   "cost": [
-    "Psychic",
-    "Colorless"
-   ],
-   "expectedDamage": 50
-  },
-  {
-   "printingId": "me2-42",
-   "name": "Mimikyu",
-   "attackLabel": "Scratch",
-   "cost": [
-    "Psychic"
+    "Fighting"
    ],
    "expectedDamage": 20
   },
   {
-   "printingId": "me2pt5-105",
-   "name": "Lunatone",
-   "attackLabel": "Power Gem",
+   "printingId": "me3-41",
+   "name": "Landorus",
+   "attackLabel": "Rock Tumble",
    "cost": [
     "Fighting",
     "Fighting"
@@ -161,650 +36,98 @@
    "expectedDamage": 50
   },
   {
-   "printingId": "me2pt5-119",
-   "name": "Carkol",
-   "attackLabel": "Power Gem",
+   "printingId": "rsv10pt5-134",
+   "name": "Mienshao",
+   "attackLabel": "Smash Uppercut",
    "cost": [
     "Fighting",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 60
-  },
-  {
-   "printingId": "me2pt5-12",
-   "name": "Silcoon",
-   "attackLabel": "Tackle",
-   "cost": [
-    "Grass"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me2pt5-122",
-   "name": "Okidogi",
-   "attackLabel": "Light Punch",
-   "cost": [
     "Fighting"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "me2pt5-27",
-   "name": "Numel",
-   "attackLabel": "Combustion",
-   "cost": [
-    "Fire",
-    "Colorless"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "me2pt5-4",
-   "name": "Erika's Bellsprout",
-   "attackLabel": "Vine Slap",
-   "cost": [
-    "Grass"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "me2pt5-75",
-   "name": "Clefable",
-   "attackLabel": "Magical Shot",
-   "cost": [
-    "Psychic",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "me2pt5-82",
-   "name": "Togekiss",
-   "attackLabel": "Speed Wing",
-   "cost": [
-    "Colorless",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 140
-  },
-  {
-   "printingId": "me2pt5-91",
-   "name": "Banette",
-   "attackLabel": "Spooky Shot",
-   "cost": [
-    "Psychic",
-    "Colorless"
-   ],
-   "expectedDamage": 70
-  },
-  {
-   "printingId": "me2pt5-98",
-   "name": "Spectrier",
-   "attackLabel": "Spooky Shot",
-   "cost": [
-    "Psychic"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "me3-39",
-   "name": "Hippopotas",
-   "attackLabel": "Bite",
-   "cost": [
-    "Fighting",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 60
-  },
-  {
-   "printingId": "me3-40",
-   "name": "Hippowdon",
-   "attackLabel": "Heavy Impact",
-   "cost": [
-    "Fighting",
-    "Fighting",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 130
-  },
-  {
-   "printingId": "me3-58",
-   "name": "Aegislash",
-   "attackLabel": "Slash",
-   "cost": [
-    "Colorless",
-    "Colorless",
-    "Colorless"
    ],
    "expectedDamage": 80
   },
   {
-   "printingId": "me3-66",
-   "name": "Fletchling",
-   "attackLabel": "Peck",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "me3-67",
-   "name": "Furfrou",
-   "attackLabel": "Headbutt",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "rsv10pt5-127",
-   "name": "Roggenrola",
-   "attackLabel": "Rolling Rocks",
+   "printingId": "rsv10pt5-53",
+   "name": "Mienshao",
+   "attackLabel": "Smash Uppercut",
    "cost": [
     "Fighting",
     "Fighting"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "rsv10pt5-135",
-   "name": "Terrakion",
-   "attackLabel": "Land Crush",
-   "cost": [
-    "Fighting",
-    "Fighting",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "sv10-106",
-   "name": "Hippowdon",
-   "attackLabel": "Ram",
-   "cost": [
-    "Fighting",
-    "Fighting"
-   ],
-   "expectedDamage": 60
-  },
-  {
-   "printingId": "sv10-14",
-   "name": "Lurantis",
-   "attackLabel": "Razor Leaf",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv10-18",
-   "name": "Hydrapple",
-   "attackLabel": "Whip Smash",
-   "cost": [
-    "Grass",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 140
-  },
-  {
-   "printingId": "sv10-201",
-   "name": "Zamazenta",
-   "attackLabel": "Strong Bash",
-   "cost": [
-    "Metal",
-    "Metal",
-    "Colorless"
-   ],
-   "expectedDamage": 70
-  },
-  {
-   "printingId": "sv10-74",
-   "name": "Team Rocket's Ampharos",
-   "attackLabel": "Head Bolt",
-   "cost": [
-    "Lightning",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 140
-  },
-  {
-   "printingId": "sv10-76",
-   "name": "Manectric",
-   "attackLabel": "Zap Kick",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv10-78",
-   "name": "Zeraora",
-   "attackLabel": "Scratch",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv10-82",
-   "name": "Team Rocket's Wobbuffet",
-   "attackLabel": "Headbutt Bounce",
-   "cost": [
-    "Psychic",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 70
-  },
-  {
-   "printingId": "sv5-13",
-   "name": "Shaymin",
-   "attackLabel": "Rear Kick",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 50
-  },
-  {
-   "printingId": "sv5-136",
-   "name": "Minccino",
-   "attackLabel": "Beat",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 10
-  },
-  {
-   "printingId": "sv5-138",
-   "name": "Drampa",
-   "attackLabel": "Gentle Slap",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv5-31",
-   "name": "Heatmor",
-   "attackLabel": "Live Coal",
-   "cost": [
-    "Fire"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv5-43",
-   "name": "Sharpedo",
-   "attackLabel": "Jet Headbutt",
-   "cost": [
-    "Water",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "sv5-52",
-   "name": "Raichu",
-   "attackLabel": "Electric Ball",
-   "cost": [
-    "Lightning",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 120
-  },
-  {
-   "printingId": "sv5-69",
-   "name": "Bronzong",
-   "attackLabel": "Super Psy Bolt",
-   "cost": [
-    "Psychic",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "sv5-77",
-   "name": "Scream Tail",
-   "attackLabel": "Hyper Voice",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 40
-  },
-  {
-   "printingId": "sv6-104",
-   "name": "Gurdurr",
-   "attackLabel": "Knuckle Punch",
-   "cost": [
-    "Fighting"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv6-105",
-   "name": "Conkeldurr",
-   "attackLabel": "Gutsy Swing",
-   "cost": [
-    "Fighting",
-    "Colorless",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 250
-  },
-  {
-   "printingId": "sv6-110",
-   "name": "Ting-Lu",
-   "attackLabel": "Hammer In",
-   "cost": [
-    "Fighting",
-    "Fighting",
-    "Colorless"
-   ],
-   "expectedDamage": 110
-  },
-  {
-   "printingId": "sv6-119",
-   "name": "Skarmory",
-   "attackLabel": "Cutting Wind",
-   "cost": [
-    "Metal"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv6-179",
-   "name": "Chimecho",
-   "attackLabel": "Hyper Voice",
-   "cost": [
-    "Psychic"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv6-93",
-   "name": "Enamorus",
-   "attackLabel": "Heart Sign",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv6pt5-32",
-   "name": "Zoroark",
-   "attackLabel": "Claw Slash",
-   "cost": [
-    "Darkness",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 110
-  },
-  {
-   "printingId": "sv6pt5-4",
-   "name": "Dartrix",
-   "attackLabel": "Cutting Wind",
-   "cost": [
-    "Grass"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv6pt5-5",
-   "name": "Decidueye",
-   "attackLabel": "Power Shot",
-   "cost": [
-    "Grass"
-   ],
-   "expectedDamage": 170
-  },
-  {
-   "printingId": "sv7-66",
-   "name": "Fidough",
-   "attackLabel": "Stampede",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 10
-  },
-  {
-   "printingId": "sv8-101",
-   "name": "Paldean Tauros",
-   "attackLabel": "Smash Kick",
-   "cost": [
-    "Fighting",
-    "Colorless"
-   ],
-   "expectedDamage": 40
-  },
-  {
-   "printingId": "sv8-105",
-   "name": "Vibrava",
-   "attackLabel": "Cutting Wind",
-   "cost": [
-    "Fighting",
-    "Colorless"
-   ],
-   "expectedDamage": 50
-  },
-  {
-   "printingId": "sv8-116",
-   "name": "Koraidon",
-   "attackLabel": "Hammer In",
-   "cost": [
-    "Fighting",
-    "Fighting",
-    "Colorless"
-   ],
-   "expectedDamage": 110
-  },
-  {
-   "printingId": "sv8-128",
-   "name": "Klefki",
-   "attackLabel": "Hook",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv8-137",
-   "name": "Turtonator",
-   "attackLabel": "Steaming Stomp",
-   "cost": [
-    "Fighting",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "sv8-151",
-   "name": "Bouffalant",
-   "attackLabel": "Ready to Ram",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 40
-  },
-  {
-   "printingId": "sv8-156",
-   "name": "Oranguru",
-   "attackLabel": "Smack",
-   "cost": [
-    "Colorless",
-    "Colorless",
-    "Colorless"
    ],
    "expectedDamage": 80
   },
   {
-   "printingId": "sv8-83",
-   "name": "Cofagrigus",
-   "attackLabel": "Spooky Shot",
+   "printingId": "sv10-102",
+   "name": "Cynthia's Gible",
+   "attackLabel": "Rock Hurl",
    "cost": [
-    "Psychic",
+    "Fighting"
+   ],
+   "expectedDamage": 20
+  },
+  {
+   "printingId": "sv8-110",
+   "name": "Landorus",
+   "attackLabel": "Buster Swing",
+   "cost": [
+    "Fighting",
+    "Colorless",
     "Colorless",
     "Colorless"
    ],
-   "expectedDamage": 100
+   "expectedDamage": 130
   },
   {
-   "printingId": "sv8-87",
-   "name": "Dedenne",
-   "attackLabel": "Gnaw",
+   "printingId": "sv8-114",
+   "name": "Glimmet",
+   "attackLabel": "Rock Hurl",
    "cost": [
-    "Psychic"
+    "Fighting"
    ],
-   "expectedDamage": 30
+   "expectedDamage": 10
   },
   {
-   "printingId": "sv8pt5-35",
-   "name": "Duskull",
-   "attackLabel": "Mumble",
-   "cost": [
-    "Psychic",
-    "Psychic"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv8pt5-55",
-   "name": "Great Tusk",
-   "attackLabel": "Giant Tusk",
+   "printingId": "sv9-82",
+   "name": "Regirock",
+   "attackLabel": "Breaching Lariat",
    "cost": [
     "Fighting",
     "Fighting",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 160
-  },
-  {
-   "printingId": "sv9-115",
-   "name": "Druddigon",
-   "attackLabel": "Slashing Claw",
-   "cost": [
-    "Fire",
-    "Water",
-    "Colorless"
+    "Fighting"
    ],
    "expectedDamage": 120
   },
   {
-   "printingId": "sv9-123",
-   "name": "Tropius",
-   "attackLabel": "Gust",
-   "cost": [
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 50
-  },
-  {
-   "printingId": "sv9-42",
-   "name": "Regice",
-   "attackLabel": "Icicle",
-   "cost": [
-    "Water",
-    "Colorless"
-   ],
-   "expectedDamage": 30
-  },
-  {
-   "printingId": "sv9-48",
-   "name": "Iono's Electrode",
-   "attackLabel": "Electric Ball",
-   "cost": [
-    "Lightning",
-    "Lightning",
-    "Colorless"
-   ],
-   "expectedDamage": 100
-  },
-  {
-   "printingId": "sv9-64",
-   "name": "N's Sigilyph",
-   "attackLabel": "Psychic Sphere",
-   "cost": [
-    "Psychic"
-   ],
-   "expectedDamage": 20
-  },
-  {
-   "printingId": "sv9-86",
-   "name": "Hop's Silicobra",
-   "attackLabel": "Gnaw",
+   "printingId": "zsv10pt5-160",
+   "name": "Excadrill ex",
+   "attackLabel": "Rock Tumble",
    "cost": [
     "Fighting",
-    "Colorless"
+    "Fighting",
+    "Fighting"
    ],
-   "expectedDamage": 20
+   "expectedDamage": 200
   },
   {
-   "printingId": "svp-147",
-   "name": "Iron Boulder ex",
-   "attackLabel": "Repulsor Axe",
+   "printingId": "zsv10pt5-168",
+   "name": "Excadrill ex",
+   "attackLabel": "Rock Tumble",
    "cost": [
     "Fighting",
-    "Colorless"
+    "Fighting",
+    "Fighting"
    ],
-   "expectedDamage": 60
+   "expectedDamage": 200
   },
   {
-   "printingId": "svp-155",
-   "name": "Wooper",
-   "attackLabel": "Headbutt",
+   "printingId": "zsv10pt5-46",
+   "name": "Excadrill ex",
+   "attackLabel": "Rock Tumble",
    "cost": [
-    "Water"
+    "Fighting",
+    "Fighting",
+    "Fighting"
    ],
-   "expectedDamage": 10
-  },
-  {
-   "printingId": "zsv10pt5-120",
-   "name": "Elgyem",
-   "attackLabel": "Beam",
-   "cost": [
-    "Colorless",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 40
-  },
-  {
-   "printingId": "zsv10pt5-16",
-   "name": "Volcarona",
-   "attackLabel": "Fire Wing",
-   "cost": [
-    "Fire",
-    "Colorless",
-    "Colorless"
-   ],
-   "expectedDamage": 70
-  },
-  {
-   "printingId": "zsv10pt5-9",
-   "name": "Karrablast",
-   "attackLabel": "Horn Attack",
-   "cost": [
-    "Colorless"
-   ],
-   "expectedDamage": 10
+   "expectedDamage": 200
   }
  ]
 }

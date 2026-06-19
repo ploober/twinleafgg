@@ -13,6 +13,59 @@ and *new* discrepancies still fail.
 > dataset error where Twinleaf is correct**. The data bugs are safe to fix; the full per-card
 > verification is in the **Independent verification** section below.
 
+## Update — larger corpus (peg-emit, 1540 programs) + a harness determinism fix
+
+Re-running the cross-checks against the larger **`template-parser-probe/peg-emit`** IR corpus
+(1777 attack fragments, up from the earlier snapshot) surfaced two things.
+
+### 1. Test-harness bug found & fixed: coin flips were never deterministic
+
+The differential at scale produced *unstable* mismatches — the same card (e.g. Mankey's Wild Kick)
+returned 30 then 0 across repeated games in one run. Root cause: **`BotArbiter`'s `ALL_HEADS` was
+dead code for the modern coin-flip path.** `COIN_FLIP_PROMPT` → `CoinFlipEffect` resolves with
+`Math.random() < 0.5` directly in `game-effect.ts`; the arbiter only ever intercepted the legacy
+`CoinFlipPrompt`. So **every coin-flip card test was non-deterministic** (passing by luck), not just
+the differential.
+
+Fix (backward-compatible): `CoinFlipEffect` now consults a handler-provided `flipCoin()` when one
+exists; production handlers don't implement it, so the real game still uses `Math.random`. The test
+`TestStoreHandler` implements it via the arbiter, giving `ALL_HEADS` its intended authority. Verified:
+Mankey is now `30 30 30 30 30`. This is a **Twinleaf test-infrastructure fix**, not a card bug — but
+it hardens every coin-flip card test in the repo.
+
+With flips deterministic, the differential is stable: **185 const/structured attacks compared, 0
+mismatches** on both bare and primed boards. Every disagreement the larger corpus first showed turned
+out to be an **interpreter-expressiveness gap, never a Twinleaf bug** — the native card always does
+the real attack; the IR's simpler model diverges. Five gap families (allow-listed in
+`rotomancer-differential.spec.ts`, each verified native-correct):
+
+| family | example | why interp diverges |
+|---|---|---|
+| type/Special-filtered count | Hydrapple ex *Syrup Storm* ([G]), Marnie's Morpeko *Spiky Wheel* ([D]), Cinccino *Special Roll* (Special) | IR's `energyAttached` count drops the energy-type filter |
+| count scope | Skeledirge *Torcherto*, Lillie's Clefairy ex *Full Moon Rondo* | IR counts a different population than "for each Benched (both sides)" |
+| dynamic-to-HP | Medicham ex *Chi-Atsu* ("counters until remaining HP 50") | IR can't express a target-HP-relative count → flat const |
+| self-damage / KO timing | Hop's Snorlax *Dynamic Press* | interp models opponent damage only |
+| ability not modeled | Magmortar *Searing Flame* (Magma Surge +30 checkup burn) | interp runs the attack body, not the card's ability |
+
+### 2. ~86 new attack name/cost discrepancies (Twinleaf wrong; IR = official, spot-checked)
+
+The structural cross-check over the larger corpus (580 attacks cross-checked) found **3 cost + 83
+name** discrepancies beyond the original 14. For **every** one, the **IR matches the official card
+data** (`official-metadata.json`, 1309/1309 IR labels present in official). Spot-checked against
+**Limitless** (independent): Crustle DRI-12 *Superb Scissors* (Twinleaf: "Great Scissors") and Mankey
+DRI-90 *Wild Kick* cost **Fighting** (Twinleaf: Colorless) — both confirm **Twinleaf is wrong**.
+
+- **3 cost bugs:** Wash Rotom sv10-61 (Lightning→**Water**), Mankey sv10-90 (Colorless→**Fighting**),
+  Duosion sv5-71 (Psychic→**Colorless**).
+- **78 wrong-name bugs:** native attack name wholly differs from official — incl. clear typos
+  (*Suprise Attack*, *Neurokenesis*, *Tyranical Crush*, *Crackling Stomp*) and wrong attacks
+  (*Great Scissors*→Superb Scissors, *Sudden Flash*→Abrupt Flash, Ogerpon *Dance*→*Kagura*).
+- **5 cosmetic:** capitalization/spacing (*Call **F**or Family*, *Backdraft*→Back Draft).
+
+The full adjudicated list is the fixture **`fixtures/known-discrepancies.json`** (loaded as the
+structural allow-list). These are the same family as the data findings below — concentrated in
+recent sets (esp. **sv10 Destined Rivals** Trainer's-Pokémon cards) and safe to fix.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

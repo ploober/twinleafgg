@@ -271,7 +271,7 @@ export function buildInterpretedCard(native: Card, fragments: IrFragment[]): Int
   }
   card.attacks = fragments.map((fr): Attack => ({
     name: fr.label,
-    cost: fr.cost.map(costToCardType),
+    cost: fr.cost.filter(c => c.toUpperCase() !== 'FREE').map(costToCardType),
     damage: 0,
     text: '',
   }));

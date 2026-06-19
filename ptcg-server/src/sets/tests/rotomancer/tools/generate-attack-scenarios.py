@@ -17,7 +17,7 @@ import os
 import sys
 
 DEFAULT_ROOT = os.path.expanduser("~/projects/pokemon-cards")
-SNAPSHOT = "ir/2026-05-17/effect-programs"
+SNAPSHOT = "tools/template-parser-probe/peg-emit"
 
 
 def main():

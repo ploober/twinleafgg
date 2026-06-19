@@ -36,6 +36,15 @@ const KNOWN: Record<string, string> = {
   'sv9-49 Zapping Short': 'Twinleaf "Crackling Short"; official + IR "Zapping Short" → Twinleaf bug',
 };
 
+// Bulk attack-name/cost discrepancies surfaced by the larger peg-emit corpus, externalised to a
+// fixture (it doubles as report data). Every entry: IR == official name/cost (100%), Twinleaf
+// differs; spot-checked against Limitless (independent). Keyed by `printingId attackLabel`.
+const KNOWN_BULK: Set<string> = new Set(
+  (JSON.parse(fs.readFileSync(path.join(__dirname, 'rotomancer', 'fixtures', 'known-discrepancies.json'), 'utf8'))
+    .discrepancies as Array<{ printingId: string; attackLabel: string }>)
+    .map(d => `${d.printingId} ${d.attackLabel}`)
+);
+
 function sortedCost(types: CardType[]): string {
   return types.slice().sort((a, b) => a - b).join(',');
 }
@@ -53,7 +62,8 @@ describe('Rotomancer structural cross-check — attack name + cost vs native', (
     if (res.status !== 'exact') continue;
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) continue;
-    if (KNOWN[`${s.printingId} ${s.attackLabel}`]) continue;
+    const key = `${s.printingId} ${s.attackLabel}`;
+    if (KNOWN[key] || KNOWN_BULK.has(key)) continue;
 
     const attack = card.attacks.find(a => a.name === s.attackLabel);
     if (!attack) {
