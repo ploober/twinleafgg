@@ -271,6 +271,13 @@ class TestStoreHandler implements StoreHandler {
     this.overrides.set(type, handler);
   }
 
+  // Deterministic coin flips for CoinFlipEffect, which resolves outside the prompt system and so
+  // never reaches resolvePrompt/the arbiter's CoinFlipPrompt branch. game-effect.ts calls this
+  // when present, giving ALL_HEADS its intended authority over every coin flip in a test.
+  flipCoin(): boolean {
+    return this.arbiter.flipCoin();
+  }
+
   onStateChange(state: State): void {
     // Auto-resolve any pending prompts
     const pending = state.prompts.filter(p => p.result === undefined);

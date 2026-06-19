@@ -684,8 +684,13 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
   }
 
   if (effect instanceof CoinFlipEffect) {
-    // Simulate coin flip and store result
-    const result = Math.random() < 0.5;
+    // Simulate coin flip and store result. A handler may supply a deterministic flip (the test
+    // harness's BotArbiter does this for ALL_HEADS/ALL_TAILS); production handlers do not, so the
+    // real game falls back to a random flip.
+    const flipHandler = (store as any).handler;
+    const result = typeof flipHandler?.flipCoin === 'function'
+      ? !!flipHandler.flipCoin()
+      : Math.random() < 0.5;
     (effect as CoinFlipEffect).result = result;
 
     const player = (effect as CoinFlipEffect).player;

@@ -61,20 +61,22 @@ export class BotArbiter {
     }
 
     if (prompt instanceof CoinFlipPrompt) {
-      this.flipCount += 1;
-      let result: boolean = false;
-      switch (this.options.flipMode) {
-        case BotFlipMode.RANDOM:
-          result = Math.round(Math.random()) === 0;
-          return new ResolvePromptAction(prompt.id, result);
-        case BotFlipMode.ALL_TAILS:
-          // Every 10th coin is opposite to avoid infinite loops.
-          result = (this.flipCount % 10 === 9) ? true : false;
-          return new ResolvePromptAction(prompt.id, result);
-        default:
-          result = (this.flipCount % 10 === 9) ? false : true;
-          return new ResolvePromptAction(prompt.id, result);
-      }
+      return new ResolvePromptAction(prompt.id, this.flipCoin());
+    }
+  }
+
+  // Decide a single coin flip per the configured flipMode. Shared by the CoinFlipPrompt branch
+  // above and by handlers that resolve coin flips outside the prompt system (e.g. CoinFlipEffect).
+  public flipCoin(): boolean {
+    this.flipCount += 1;
+    switch (this.options.flipMode) {
+      case BotFlipMode.RANDOM:
+        return Math.round(Math.random()) === 0;
+      case BotFlipMode.ALL_TAILS:
+        // Every 10th coin is opposite to avoid infinite loops (e.g. "flip until heads").
+        return this.flipCount % 10 === 9;
+      default:
+        return this.flipCount % 10 !== 9;
     }
   }
 
