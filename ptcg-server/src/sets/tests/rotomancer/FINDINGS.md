@@ -66,6 +66,28 @@ The full adjudicated list is the fixture **`fixtures/known-discrepancies.json`**
 structural allow-list). These are the same family as the data findings below — concentrated in
 recent sets (esp. **sv10 Destined Rivals** Trainer's-Pokémon cards) and safe to fix.
 
+### 3. Building out IR support → 4 coin-flip / cost bugs found & fixed
+
+Teaching the interpreter more IR ops (`attack.lockOrModify` as a snapshot-neutral no-op,
+`energy.attachOrDiscard` discard-from-self, `coinFlipHeads`, `noDefenderReduction`, and forEach
+`damageCounters`/`prizesTaken`/`handCards`/`retreatCost`) **doubled differential coverage from 185
+to 383 attacks compared** — and the newly-compared cards agree with the IR oracle in ~98% of cases.
+The disagreements were six real **engine bugs in coin-flip / cost attacks**, each a different
+mechanism, all now fixed (the differential agrees after the fix):
+
+| card | attack | bug | fix |
+|---|---|---|---|
+| Combusken (sv10-41) | Double Kick | `effect.damage = 40·heads` set **outside** the async `COIN_FLIP_PROMPT` callbacks → `heads` always 0 → **always 0 damage** | flip via `MULTIPLE_COIN_FLIPS_PROMPT`, set damage in the callback |
+| N's Klink (sv9-103) | Double Spin | printed `damage: 10` **plus** `effect.damage += 10·heads` → base double-counted → **+10 too high** | `+=` → `=` (overwrite the base, like other ×-damage cards) |
+| Sunkern (sv6-6) | Bullet Seed | `WAS_ATTACK_USED(effect, 1)` but Bullet Seed is index **0** → coin logic never runs → **always base 10** | index `1` → `0` |
+| Monferno (sv6-32) | Heat Blow | energy discard wired only to `WAS_ATTACK_USED(…, 0)` (Chop); Heat Blow is index 1 → **never discards** | run the discard for index 0 **or** 1 |
+
+These confirm a **systemic risk in coin-flip damage attacks** (async callback ordering, base
+double-apply, wrong attack index) — a targeted sweep of the corpus's coin-flip attacks would likely
+surface more. One non-bug remains allow-listed: **Pecharunt's Poison Chain** (native 70 vs interp 20)
+— the gap is Pecharunt's *Toxic Subjugation* ability (+50 poison during checkup), which the
+interpreter doesn't model (it runs only the attack body — same family as Magmortar's Magma Surge).
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

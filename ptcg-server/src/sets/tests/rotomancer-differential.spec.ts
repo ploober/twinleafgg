@@ -165,6 +165,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Power Shot': 'IR omits the conditional-discard rider (flat 170 vs "discard a Grass Energy or nothing")',
     // (5) Ability not modeled — the interpreter runs only the attack body, not the card's ability.
     'Searing Flame': 'Magmortar JTG: Magma Surge (+30 checkup burn on burned opponents) lifts native to KO; interp models only the attack',
+    'Poison Chain': 'Pecharunt: Toxic Subjugation (+50 poison damage during checkup) lifts native to 70; interp models only the attack body (20)',
   };
 
   function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {

@@ -11,6 +11,7 @@ import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { EnergyCard } from '../../../game/store/card/energy-card';
 import { costToCardType } from './bridge';
 import { evalPredicate } from './ir-predicates';
 import { executeCardsMove } from './ir-cards';
@@ -26,15 +27,17 @@ import { executeCardsMove } from './ir-cards';
  */
 
 export interface CountForm {
-  kind: string;        // const | forEach | perCount | plusIf
+  kind: string;        // const | forEach | perCount | plusIf | coinFlipHeads
   value?: number;      // const
-  of?: string;         // forEach: pokemonInPlay | benchedPokemon | energyAttached | discardCards
+  of?: string;         // forEach: pokemonInPlay | benchedPokemon | energyAttached | discardCards | …
   who?: string;        // forEach: self | opponent
+  selector?: { selector?: string };  // forEach with an explicit target (e.g. damageCounters on X)
   base?: number;       // perCount / plusIf
   per?: number;        // perCount
   count?: CountForm;   // perCount inner count
   bonus?: number;      // plusIf
   when?: any;          // plusIf predicate
+  n?: number;          // coinFlipHeads: number of coins flipped
 }
 
 export interface IrOp {
@@ -49,10 +52,15 @@ export interface IrOp {
   predicate?: any;      // flow.control kind2=predicate
   then?: IrOp[];        // flow.control heads/true branch
   else?: IrOp[];        // flow.control tails/false branch
+  action?: string;      // energy.attachOrDiscard: attach | discard | move
+  card?: any;           // energy.attachOrDiscard: { from: { owner, zone }, predicate }
+  scope?: string;       // attack.lockOrModify: opponentNextTurn | ownNextAttack | …
+  effect?: any;         // attack.lockOrModify: { kind, … }
 }
 
-// Damage modifiers that are no-ops in a mirror match (weakness/resistance never apply there).
-const NOOP_MODIFIERS = new Set(['applyWeakness:false', 'applyResistance:false']);
+// Damage modifiers that are no-ops in a mirror match: weakness/resistance never apply, and
+// "ignore the defender's damage reduction" is inert when the defender has no reduction effect.
+const NOOP_MODIFIERS = new Set(['applyWeakness:false', 'applyResistance:false', 'noDefenderReduction']);
 
 function assertModifiersSupported(op: IrOp): void {
   for (const m of op.modifiers ?? []) {
@@ -76,7 +84,19 @@ const CONDITIONS: Record<string, SpecialCondition> = {
   CONFUSED: SpecialCondition.CONFUSED,
 };
 
-function countOf(effect: AttackEffect, of?: string, who?: string): number {
+// Heads count when flipping n coins under the harness's ALL_HEADS (heads unless the 10th flip,
+// matching BotArbiter.flipCoin). A fresh game's only flip source is this attack, so this exactly
+// reproduces what the native card's real flips would yield.
+function headsOf(n: number): number {
+  let heads = 0;
+  for (let i = 1; i <= n; i++) {
+    if (i % 10 !== 9) { heads++; }
+  }
+  return heads;
+}
+
+function countOf(effect: AttackEffect, form: CountForm): number {
+  const of = form.of, who = form.who;
   const p = who === 'opponent' ? effect.opponent : effect.player;
   const bench = p.bench.filter(b => b.getPokemonCard() !== undefined).length;
   switch (of) {
@@ -84,6 +104,14 @@ function countOf(effect: AttackEffect, of?: string, who?: string): number {
     case 'benchedPokemon': return bench;
     case 'energyAttached': return p.active.energies.cards.length;
     case 'discardCards': return p.discard.cards.length;
+    case 'handCards': return p.hand.cards.length;
+    case 'prizesTaken': return 6 - p.getPrizeLeft();
+    case 'retreatCost': return p.active.getPokemonCard()?.retreat?.length ?? 0;
+    case 'damageCounters': {
+      // Damage counters on the form's explicit target (e.g. opponentActive), else on `who`'s active.
+      const targets = form.selector ? selectByName(effect, form.selector.selector) : [{ player: p, list: p.active }];
+      return targets.reduce((sum, t) => sum + t.list.damage, 0) / 10;
+    }
     default: throw new Error(`[ir-interpreter] unsupported forEach.of "${of}"`);
   }
 }
@@ -100,7 +128,9 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
       if (amount.value === undefined) throw new Error('[ir-interpreter] const missing value');
       return amount.value;
     case 'forEach':
-      return countOf(effect, amount.of, amount.who);
+      return countOf(effect, amount);
+    case 'coinFlipHeads':
+      return headsOf(amount.n ?? 0);
     case 'perCount':
       return (amount.base ?? 0) + (amount.per ?? 0) * evalAmount(state, effect, amount.count);
     case 'plusIf':
@@ -160,6 +190,31 @@ function resolveTargets(effect: AttackEffect, target?: { selector?: string; pred
   return target?.predicate ? targets.filter(t => matchesTargetPredicate(t.list, target.predicate)) : targets;
 }
 
+// energy.attachOrDiscard. Only the deterministic "discard energy from this Pokémon" form is
+// modelled (the bulk case): attach/move and upTo/anyAmount counts are player-choice or zone-
+// dependent and left unsupported (they throw → the attack is skipped, a visible gap).
+function executeEnergyOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+  const from = op.card?.from;
+  if (op.action !== 'discard' || from?.owner !== 'self' || from?.zone !== 'attached') {
+    throw new Error(`[ir-interpreter] energy.attachOrDiscard ${op.action} from ${from?.owner}/${from?.zone} not supported`);
+  }
+  const count: any = op.count;
+  const targets = resolveTargets(effect, op.target);
+  for (const { player, list } of targets) {
+    const energies = list.cards.filter(c => c instanceof EnergyCard);
+    let n: number;
+    if (count?.kind === 'all') {
+      n = energies.length;
+    } else if (count?.kind === 'exactly') {
+      n = count.n ?? 0;
+    } else {
+      throw new Error(`[ir-interpreter] energy discard count "${count?.kind}" not supported`);
+    }
+    list.moveCardsTo(energies.slice(0, n), player.discard);
+  }
+  return state;
+}
+
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   switch (op.kind) {
     case 'damage.deal': {
@@ -214,6 +269,15 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     }
     case 'cards.move':
       return executeCardsMove(store, state, effect, op);
+    case 'energy.attachOrDiscard':
+      return executeEnergyOp(store, state, effect, op);
+    case 'attack.lockOrModify':
+      // Every observed scope (opponentNextTurn, ownNextAttack, yourNextTurn, untilLeavesActive) is
+      // a future/persistent rider — attack/retreat shutoff, damage debuff/reduction, prevent-damage,
+      // etc. None change the immediate post-attack snapshot the differential compares, so this is a
+      // recognized no-op; the attack's damage/condition ops still run. (A multi-turn differential
+      // would be needed to exercise these; out of scope here.)
+      return state;
     case 'flow.control': {
       // Under the test harness (ALL_HEADS, no choices) a coin flip is heads → the `then` branch.
       let branch: IrOp[];
