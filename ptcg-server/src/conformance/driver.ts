@@ -2,16 +2,20 @@ import { Card } from '../game/store/card/card';
 import { Player } from '../game/store/state/player';
 import { Prompt } from '../game/store/prompts/prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
-import { AttackAction, PassTurnAction, RetreatAction as RetreatGameAction } from '../game/store/actions/game-actions';
+import {
+  AttackAction, PassTurnAction, RetreatAction as RetreatGameAction,
+  UseAbilityAction as UseAbilityGameAction
+} from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
 import { mapDelta } from './event-mapper';
 import { classify, decomposerFor, WirePick } from './decomposers';
+import { topLevelMenu } from './legal-actions';
 import {
-  NeutralState, NeutralAction, NeutralEvent, StepResponse, ResponseStatus,
+  NeutralState, NeutralAction, NeutralEvent, NeutralPlayerId, StepResponse, ResponseStatus,
   PendingDecision, LegalAction,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
-  RetreatAction, DeclareAttackAction, EndTurnAction,
+  RetreatAction, DeclareAttackAction, EndTurnAction, UseAbilityAction,
   ShuffleSystemAction, FlipSystemAction
 } from './neutral-types';
 
@@ -117,6 +121,27 @@ function dispatchEndTurn(game: ImportedGame, action: EndTurnAction): void {
   game.store.dispatch(new PassTurnAction(player.id));
 }
 
+/**
+ * Play an Item / Supporter / Stadium. twinleaf routes all three through PlayCardAction; the
+ * play-card reducer dispatches by the card's trainerType. A placeholder target (own active) is
+ * passed for the rare trainer that targets a Pokemon — `findPokemonTarget` swallows a non-resolving
+ * target, and non-targeting trainers ignore it; the card's own effect drives any real selection.
+ */
+function dispatchPlayTrainer(game: ImportedGame, action: { actor: NeutralPlayerId; type: string; card: string }): void {
+  const player = game.state.players[actorIndex(action.actor)];
+  const card = lookupCard(game, action.card, `${action.type}.card`);
+  const handIndex = handIndexOf(player, card, `${action.type}.card`, action.actor);
+  const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+  game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
+}
+
+function dispatchUseAbility(game: ImportedGame, action: UseAbilityAction): void {
+  const player = game.state.players[actorIndex(action.actor)];
+  const sourceCard = lookupCard(game, action.source, 'useAbility.source');
+  const target = resolveOwnPokemonTarget(player, sourceCard);
+  game.store.dispatch(new UseAbilityGameAction(player.id, action.name, target));
+}
+
 /** Dispatch one top-level neutral action, returning the game-log delta it produced. */
 function dispatchAction(game: ImportedGame, action: NeutralAction): void {
   switch (action.type) {
@@ -127,6 +152,11 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
     case 'retreat': dispatchRetreat(game, action as RetreatAction); break;
     case 'declareAttack': dispatchDeclareAttack(game, action as DeclareAttackAction); break;
     case 'endTurn': dispatchEndTurn(game, action as EndTurnAction); break;
+    case 'playItem':
+    case 'playSupporter':
+    case 'playStadium':
+      dispatchPlayTrainer(game, action as { actor: NeutralPlayerId; type: string; card: string }); break;
+    case 'useAbility': dispatchUseAbility(game, action as UseAbilityAction); break;
     default:
       throw new Error(`[conformance] action "${action.type}" is not a top-level action`);
   }
@@ -270,7 +300,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       }
       continue;
     }
-    return { events, pending: null, applied: cursor.i };
+    // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
+    // active player's top-level menu (M5); otherwise (gameOver, or a non-main boundary) there is
+    // nothing to choose.
+    return { events, pending: topLevelMenu(game), applied: cursor.i };
   }
 }
 

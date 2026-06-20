@@ -92,7 +92,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       { actor: 'A', type: 'choose', target: 'h1' },
     ]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY, WATER]);
-    expect(res.pending).toBeNull();
+    expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
     const proj = projectGame(game);
     expect(proj.players.A.hand).toEqual([{ iid: 'h2', printing: LIGHT }]);
     expect(proj.players.A.discard.map(c => c.iid).sort()).toEqual(['h0', 'h1']);
@@ -117,7 +117,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
     const res = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }, { actor: 'A', type: 'endChoice' }]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY]);
-    expect(res.pending).toBeNull();
+    expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
   });
 
   it('ChooseCards: blocked indices are not offered', () => {
@@ -175,7 +175,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       { actor: 'A', type: 'placeCounter', target: 'B-act' },
       { actor: 'A', type: 'placeCounter', target: 'B-b0' },
     ]);
-    expect(res.pending).toBeNull();
+    expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
     const proj = projectGame(game);
     expect(proj.players.B.active!.damage).toBe(10);
     expect(proj.players.B.bench[0].damage).toBe(10);

@@ -106,7 +106,9 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     // ── response envelope ──
     expect(res.status).toBe('awaitingAction');
     expect(res.applied).toBe(4);
-    expect(res.pending).toBeNull();
+    // The attack auto-ended A's turn, so the quiescent menu now belongs to B (M5).
+    expect(res.pending!.actor).toBe('B');
+    expect(res.pending!.descriptor).toBe('main');
 
     // ── projection ──
     expect(res.state.players.A.active!.stack).toEqual([

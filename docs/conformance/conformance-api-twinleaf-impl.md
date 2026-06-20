@@ -379,6 +379,30 @@ the same contract.
   card): `poisonDamage=10`, `burnDamage=20`, `sleepFlips=1`. Multi-condition simultaneity
   (poison+asleep on one active) and a checkup-poison KO → `promote` pending both reuse existing
   machinery (M2 `ChoosePokemon` decomposer) but aren't covered by the M4 spec.
+- **M5 (`legalActions` — the main-phase menu) is new enumeration code (`legal-actions.ts`).** At a
+  quiescent main boundary the driver now returns `pending = { actor, descriptor:'main', legalActions }`
+  instead of `null` (a contract change — several M1–M3 specs that asserted `pending` null at a
+  boundary were updated). Phases per §4.6: phase-1 hand plays from the store's `playableCardIds`;
+  phase-2 attacks/retreat/abilities mirror the reducers' own gates via the Check* query effects.
+  Each entry mirrors a dispatchable top-level action (incl. the new `playItem`/`playSupporter`/
+  `playStadium`/`useAbility` dispatchers), and the spec round-trips every entry through `step` to
+  prove soundness. *Surfaced in M5:*
+  (a) **`playableCardIds` is only recomputed at the end of a `reduceEffect`** (store.ts) — so a no-op
+  `step(board, [])` (read the menu with an empty log) sees a stale/empty list. `topLevelMenu` triggers
+  a refresh with one read-only `CheckProvidedEnergyEffect` before reading hand playability.
+  (b) **twinleaf's playability heuristic is conservative for Items/Supporters:**
+  `CAN_PLAY_TRAINER_CARD` returns `true` for a Tool/Stadium unconditionally, but for an Item/Supporter
+  only when the card implements `canPlay()` — otherwise it "errs on the side of caution" and returns
+  `false`. So the phase-1 menu **under-lists** items/supporters that gate playability through
+  `reduceEffect` throwing (e.g. Capturing Aroma). This is an engine-side legality gap, not an adapter
+  bug; the menu's item/supporter coverage will improve as cards gain `canPlay`. Tools/Stadiums are the
+  reliable trainer-classification probes for now.
+  (c) **`LegalAction` carries no `actor`** (the `PendingDecision` does); to dispatch a menu entry the
+  caller attaches the pending's actor.
+  (d) Dispatch coverage gaps the menu can surface but the loop can't yet *complete*: a retreat paid
+  with **mixed** energy raises `ChooseEnergyPrompt` (exact / all-identical energy auto-pays), and some
+  attacks raise a `ChooseAttackPrompt` (e.g. Ralts "Memory Skip") — both unsupported prompt types
+  today. Enumeration is correct; resolving these follow-ups is a later decomposer addition.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

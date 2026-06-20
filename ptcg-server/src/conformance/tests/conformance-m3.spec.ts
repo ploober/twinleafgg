@@ -53,7 +53,7 @@ describe('Conformance M3 — the system actor (shuffle + coin flip)', () => {
     game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), (order: number[]) => { p.deck.applyOrder(order); });
 
     const res = replay(game, [{ actor: 'system', type: 'shuffle', order: ['d2', 'd0', 'd1'] }]);
-    expect(res.pending).toBeNull();
+    expect(res.pending!.descriptor).toBe('main'); // shuffle resolved → A's main-phase menu (M5)
     expect(projectGame(game).players.A.deck.map(c => c.iid)).toEqual(['d2', 'd0', 'd1']);
   });
 

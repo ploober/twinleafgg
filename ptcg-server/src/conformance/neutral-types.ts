@@ -181,6 +181,38 @@ export interface EndTurnAction {
   type: 'endTurn';
 }
 
+// Trainer plays (M5). Each dispatches through twinleaf's PlayCardAction; the card's own effect
+// then drives any follow-up prompts (decomposed / system) the same way an attack's do.
+export interface PlayItemAction {
+  actor: NeutralPlayerId;
+  type: 'playItem';
+  /** iid of the Item card in hand. */
+  card: string;
+}
+
+export interface PlaySupporterAction {
+  actor: NeutralPlayerId;
+  type: 'playSupporter';
+  /** iid of the Supporter card in hand. */
+  card: string;
+}
+
+export interface PlayStadiumAction {
+  actor: NeutralPlayerId;
+  type: 'playStadium';
+  /** iid of the Stadium card in hand. */
+  card: string;
+}
+
+export interface UseAbilityAction {
+  actor: NeutralPlayerId;
+  type: 'useAbility';
+  /** iid of the Pokemon-in-play whose ability is used (its stack's bottom/basic iid). */
+  source: string;
+  /** Ability name. */
+  name: string;
+}
+
 // ── Single-pick actions (consumed by prompt decomposers, design §7) ────────
 // These are NOT top-level dispatches; each answers one open single-decision pending. Cards are
 // named by iid, which is globally unique in a game, so owner/from/to are conveniences — the adapter
@@ -256,6 +288,10 @@ export type NeutralAction =
   | RetreatAction
   | DeclareAttackAction
   | EndTurnAction
+  | PlayItemAction
+  | PlaySupporterAction
+  | PlayStadiumAction
+  | UseAbilityAction
   | ChooseAction
   | PlaceCounterAction
   | MoveCounterAction
@@ -295,14 +331,27 @@ export type ResponseStatus = 'awaitingAction' | 'gameOver' | 'invalidAction';
  * impl §4.6); for a system pending, the shuffle/flip candidates.
  */
 export type LegalAction =
+  // Single picks inside a decomposed prompt (M2) and the system seam (M3).
   | { type: 'choose'; target: string; owner?: NeutralPlayerId }
   | { type: 'placeCounter'; target: string }
   | { type: 'moveCounter'; from: string; to: string }
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
-  | { type: 'attachEnergy'; card: string; target: string }
   | { type: 'endChoice' }
   | { type: 'shuffle'; deck: string[] }
-  | { type: 'flip'; face: 'heads' | 'tails' };
+  | { type: 'flip'; face: 'heads' | 'tails' }
+  // The main-phase top-level menu (M5). These mirror the dispatchable top-level NeutralActions, so
+  // each entry is directly executable as the next action.
+  | { type: 'benchBasic'; card: string }
+  | { type: 'evolve'; card: string; target: string }
+  | { type: 'attachEnergy'; card: string; target: string }
+  | { type: 'attachTool'; card: string; target: string }
+  | { type: 'playItem'; card: string }
+  | { type: 'playSupporter'; card: string }
+  | { type: 'playStadium'; card: string }
+  | { type: 'retreat'; to: number }
+  | { type: 'declareAttack'; source: string; name: string }
+  | { type: 'useAbility'; source: string; name: string }
+  | { type: 'endTurn' };
 
 export interface PendingDecision {
   actor: Actor;
