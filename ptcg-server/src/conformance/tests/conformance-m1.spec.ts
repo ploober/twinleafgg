@@ -1,4 +1,5 @@
 import { step } from '../driver';
+import { stepChecked } from './support/invariants';
 import {
   NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
@@ -225,8 +226,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       { actor: 'A', type: 'endTurn' },
     ];
 
-    const first = step(initial, actions);
-    const second = step(initial, actions);
+    const first = stepChecked(initial, actions);  // also asserts invariants + import determinism
+    const second = stepChecked(initial, actions);
     expect(second.events).toEqual(first.events);
     expect(second.state).toEqual(first.state);
   });

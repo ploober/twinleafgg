@@ -1,4 +1,5 @@
 import { step } from '../driver';
+import { withNoRandomness } from './support/invariants';
 import {
   NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers,
   ConditionToken, SCHEMA_VERSION
@@ -135,8 +136,8 @@ describe('Conformance M4 — turn boundaries & checkup', () => {
 
   it('replays a sleep checkup deterministically', () => {
     const actions: NeutralAction[] = [END_A, FLIP('tails')];
-    const a = step(checkupBoard(['asleep']), actions);
-    const b = step(checkupBoard(['asleep']), actions);
+    const a = withNoRandomness(() => step(checkupBoard(['asleep']), actions));
+    const b = withNoRandomness(() => step(checkupBoard(['asleep']), actions));
     expect(b.events).toEqual(a.events);
     expect(b.state).toEqual(a.state);
   });

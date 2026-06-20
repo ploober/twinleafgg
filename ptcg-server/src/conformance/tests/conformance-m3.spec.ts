@@ -1,5 +1,6 @@
 import { importState } from '../state-adapter';
 import { replay, step, projectGame } from '../driver';
+import { withNoRandomness } from './support/invariants';
 import {
   NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
@@ -118,8 +119,9 @@ describe('Conformance M3 — the system actor (shuffle + coin flip)', () => {
       { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Whimsy Tackle' },
       { actor: 'system', type: 'flip', face: 'heads' },
     ];
-    const a = step(attackTurn('A-act', 'Pikachu LOR', energy), actions);
-    const b = step(attackTurn('A-act', 'Pikachu LOR', energy), actions);
+    // …and with no randomness leaking onto the in-scope path (flips come from the action log).
+    const a = withNoRandomness(() => step(attackTurn('A-act', 'Pikachu LOR', energy), actions));
+    const b = withNoRandomness(() => step(attackTurn('A-act', 'Pikachu LOR', energy), actions));
     expect(b.events).toEqual(a.events);
     expect(b.state).toEqual(a.state);
   });

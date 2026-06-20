@@ -60,7 +60,14 @@ New, in `src/conformance/tests/support/`:
   in-scope replay never calls it. Turns the "prompt-mediated randomness in, inline `Math.random`
   out" boundary (design §2) into an enforced invariant and proves replay determinism has no hidden
   source. (Coin/shuffle go through the `system` actor; the handler's `flipCoin` and the
-  ShuffleDeckPrompt path never touch `Math.random`.)
+  ShuffleDeckPrompt path never touch `Math.random`.) **Two implementation findings (Step A):**
+  (a) the one cosmetic core consumer is `GameStatsTracker` (a `Math.random` display-id on the first
+  damage event, writing `gameStats` the projection never reads), so the guard temporarily no-op's its
+  two reducer entry points (`trackDamageDealt`/`handlePokemonEvolution`) rather than pre-seeding
+  per-state — which also makes it compose with `step()` (re-imports internally), not just
+  `replay(game)`; (b) the guard must **not** inspect `Error().stack` — under ts-node, reading `.stack`
+  invokes `source-map`'s randomized quicksort, a `Math.random` cascade — so it throws instead of
+  recording stacks.
 - **`stepChecked(initial, actions)`** — wraps `step`, then asserts `assertInvariants(result via a
   re-import)` and `project(import(initial)) deep-equals` re-projection (idempotence). A drop-in the
   existing specs can adopt incrementally.
