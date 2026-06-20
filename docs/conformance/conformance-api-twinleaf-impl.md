@@ -356,6 +356,29 @@ the same contract.
   the action log and consumed as the engine flips; if the log is dry at a flip point the
   driver surfaces a best-effort `{actor:'system', flip}` pending and stops. Shuffles, by
   contrast, *are* real prompts (`ShuffleDeckPrompt`) and surface/resolve cleanly per §5.
+- **M4 (turn boundaries + checkup) needed NO new driver code — the M0–M3 loop already
+  carries it.** *Surfaced in M4:* `PassTurnAction` runs the whole boundary synchronously
+  inside one dispatch — `startNextTurn` (logs `LOG_PLAYER_ENDS_TURN` → `turnEnded`),
+  `betweenTurns` (special conditions), `checkState`, `initNextTurn` (`turn++`, `LOG_TURN` →
+  `turnStarted`, mandatory draw, deck-out ⇒ `endGame`). Consequences:
+  (a) `turnEnded` / `turnStarted` / `deckedOut` already map via the M1 event-mapper;
+  (b) burn and sleep raise a **`CoinFlipPrompt`** (the prompt-class path, *not* the inline
+  `flipCoin` hook), so the M3 `system` branch resolves them from `flip` actions unchanged —
+  sleep raises N flips as an array `store.prompt`, each surfacing as its own `'Coin flip'`
+  the loop answers in order (callback fires once all resolve);
+  (c) **poison and burn deal damage with NO log** (state-only `active.damage +=`), so the
+  checkup is observable in the *projection* (damage / `conditions`), not in events — there is
+  **no `conditionChecked` event** (the §4.8 table lists one, but twinleaf gives nothing to map
+  it from without synthesizing a diff, which would be fragile and engine-specific; kept the
+  event vocab closed);
+  (d) **deck-out ⇒ `gameOver`** projects through the existing `state.winner` / `phase` mapping
+  (`endGame` sets both) and the **drawing** player loses; `initNextTurn` logs
+  `LOG_PLAYER_DRAWS_CARD` *before* the empty-deck check, so a deck-out emits a `drew`
+  immediately followed by `deckedOut` — both engines must agree on this ordering.
+  `PokemonCardList` defaults make an imported afflicted Pokémon self-sufficient (no trigger
+  card): `poisonDamage=10`, `burnDamage=20`, `sleepFlips=1`. Multi-condition simultaneity
+  (poison+asleep on one active) and a checkup-poison KO → `promote` pending both reuse existing
+  machinery (M2 `ChoosePokemon` decomposer) but aren't covered by the M4 spec.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 
