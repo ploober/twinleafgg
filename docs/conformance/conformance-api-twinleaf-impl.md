@@ -431,6 +431,22 @@ the same contract.
   rejection are kept distinct. Pure handlers (`handleStep`/`handleCapabilities`) are in-process
   testable; `server.ts` is a runnable entry (`CONFORMANCE_PORT`, default 8090). Mounting into the main
   `src/backend/app.ts` later is a one-liner, deferred. `/v1/normalize` is deferred (optional, §5).
+- **Follow-up (post-M6): `ChooseEnergy` + `ChooseAttack` decomposers — closes the M5(d) gap.** Two
+  more M2-style decomposers (`decomposers/choose-energy.ts`, `choose-attack.ts`), registered in the
+  registry (which flips `classify` unsupported→decomposable, no other change). **`ChooseEnergyPrompt`**
+  (`'Choose energy'`, retreat / energy-cost payment): one pick = one attached energy named by iid →
+  an index into `prompt.energy`; raw result `number[]`. There is **no `endChoice`** — `validate`
+  requires the picked set to pay the cost EXACTLY (`StateUtils.checkExactEnergy`), so `next` completes
+  the instant the accumulation pays it, and never offers a pick that would overshoot. (Edge: a harness
+  that picks a non-completable subset assembles an inexact set → `validate` fails → the loop throws;
+  acceptable for deterministic conformance.) **`ChooseAttackPrompt`** (`'Choose attack'`, copy/disable
+  — e.g. Ralts "Memory Skip"): a **single-select**, one pick = `{source iid, attack name}` → the raw
+  `{index, attack}` (index into `prompt.cards`); `source` is the iid of the exact card in the prompt's
+  list (its in-play top card), self-consistent because the harness echoes back the iid the menu
+  emitted. **Now end-to-end replayable:** retreat with a non-trivial / mixed-energy cost, and
+  copy/disable-attack cards. Still deferred: the copy/energy-accel cards that live in the
+  inline-`Math.random` exclusion set (§9) — the prompt *mechanism* works, but those specific cards
+  await migration.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

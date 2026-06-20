@@ -6,6 +6,8 @@ import { putDamageDecomposer } from './put-damage';
 import { attachEnergyDecomposer } from './attach-energy';
 import { moveDamageDecomposer } from './move-damage';
 import { discardEnergyDecomposer } from './discard-energy';
+import { chooseEnergyDecomposer } from './choose-energy';
+import { chooseAttackDecomposer } from './choose-attack';
 
 export * from './decomposer';
 
@@ -19,6 +21,8 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   attachEnergyDecomposer,
   moveDamageDecomposer,
   discardEnergyDecomposer,
+  chooseEnergyDecomposer,
+  chooseAttackDecomposer,
 ];
 
 const REGISTRY = new Map<string, PromptDecomposer<any>>(DECOMPOSERS.map(d => [d.type, d]));

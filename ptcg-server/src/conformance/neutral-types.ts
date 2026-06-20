@@ -250,6 +250,24 @@ export interface DiscardPickAction {
   owner?: NeutralPlayerId;
 }
 
+/** One energy chosen to pay a cost (ChooseEnergyPrompt — retreat / energy-cost payment). */
+export interface ChooseEnergyAction {
+  actor: NeutralPlayerId;
+  type: 'chooseEnergy';
+  /** iid of an attached energy card offered by the prompt. */
+  card: string;
+}
+
+/** The attack chosen to copy/disable (ChooseAttackPrompt — Memory Skip & metronome-style). */
+export interface ChooseAttackAction {
+  actor: NeutralPlayerId;
+  type: 'chooseAttack';
+  /** iid of the card in the prompt's card list whose attack is chosen. */
+  source: string;
+  /** Attack name. */
+  name: string;
+}
+
 /** Completes the current variable-count ("up to N") multi-pick decision. */
 export interface EndChoiceAction {
   actor: NeutralPlayerId;
@@ -296,6 +314,8 @@ export type NeutralAction =
   | PlaceCounterAction
   | MoveCounterAction
   | DiscardPickAction
+  | ChooseEnergyAction
+  | ChooseAttackAction
   | EndChoiceAction
   | ShuffleSystemAction
   | FlipSystemAction
@@ -336,6 +356,8 @@ export type LegalAction =
   | { type: 'placeCounter'; target: string }
   | { type: 'moveCounter'; from: string; to: string }
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
+  | { type: 'chooseEnergy'; card: string }
+  | { type: 'chooseAttack'; source: string; name: string }
   | { type: 'endChoice' }
   | { type: 'shuffle'; deck: string[] }
   | { type: 'flip'; face: 'heads' | 'tails' }

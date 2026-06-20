@@ -21,6 +21,7 @@ export type WirePick =
   | { kind: 'assign'; to: CardTarget; index: number }      // AttachEnergy
   | { kind: 'transfer'; from: CardTarget; to: CardTarget } // MoveDamage
   | { kind: 'discard'; from: CardTarget; index: number }   // DiscardEnergy
+  | { kind: 'attack'; index: number; attack: string }      // ChooseAttack (single-select)
   | { kind: 'done' };
 
 /**
