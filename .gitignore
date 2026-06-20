@@ -43,6 +43,8 @@ Thumbs.db
 !ptcg-server/src/sets/tests/rotomancer/*.md
 # and the generated card-data discrepancy report
 !ptcg-server/src/sets/CARD-DATA-REPORT.md
+# and the vendored conformance-API design docs (cross-engine contract reference)
+!docs/conformance/*.md
 
 # Python
 /__pycache__
