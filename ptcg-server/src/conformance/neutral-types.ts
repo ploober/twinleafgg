@@ -181,6 +181,49 @@ export interface EndTurnAction {
   type: 'endTurn';
 }
 
+// ── Single-pick actions (consumed by prompt decomposers, design §7) ────────
+// These are NOT top-level dispatches; each answers one open single-decision pending. Cards are
+// named by iid, which is globally unique in a game, so owner/from/to are conveniences — the adapter
+// resolves the slot/owner from the iid.
+
+export interface ChooseAction {
+  actor: NeutralPlayerId;
+  type: 'choose';
+  /** iid of the chosen card (ChooseCardsPrompt) or Pokemon-in-play (ChoosePokemonPrompt). */
+  target: string;
+  owner?: NeutralPlayerId;
+}
+
+export interface PlaceCounterAction {
+  actor: NeutralPlayerId;
+  type: 'placeCounter';
+  /** iid of the Pokemon-in-play to place one damage counter (10 HP) on. */
+  target: string;
+}
+
+export interface MoveCounterAction {
+  actor: NeutralPlayerId;
+  type: 'moveCounter';
+  /** iid of the source Pokemon-in-play. */
+  from: string;
+  /** iid of the destination Pokemon-in-play. */
+  to: string;
+}
+
+export interface DiscardPickAction {
+  actor: NeutralPlayerId;
+  type: 'discard';
+  /** iid of the energy card to discard (resolves its attached Pokemon/owner). */
+  target: string;
+  owner?: NeutralPlayerId;
+}
+
+/** Completes the current variable-count ("up to N") multi-pick decision. */
+export interface EndChoiceAction {
+  actor: NeutralPlayerId;
+  type: 'endChoice';
+}
+
 // The full vocabulary is broader (design §7); milestones beyond M1 (abilities, prompt-mediated
 // trainers, the system actor) are typed loosely until their milestone lands.
 export interface UnimplementedAction {
@@ -197,6 +240,11 @@ export type NeutralAction =
   | RetreatAction
   | DeclareAttackAction
   | EndTurnAction
+  | ChooseAction
+  | PlaceCounterAction
+  | MoveCounterAction
+  | DiscardPickAction
+  | EndChoiceAction
   | UnimplementedAction;
 
 // ── Events (design §4.1, impl doc §4.8) ───────────────────────────────────
@@ -223,10 +271,25 @@ export type NeutralEvent =
 
 export type ResponseStatus = 'awaitingAction' | 'gameOver' | 'invalidAction';
 
+/**
+ * The candidate actions valid at the current pending decision (design §8). For a decomposed
+ * aggregate prompt these are the single picks the open decision ranges over (Phase-1 legalActions,
+ * impl §4.6); for a system pending, the shuffle/flip candidates.
+ */
+export type LegalAction =
+  | { type: 'choose'; target: string; owner?: NeutralPlayerId }
+  | { type: 'placeCounter'; target: string }
+  | { type: 'moveCounter'; from: string; to: string }
+  | { type: 'discard'; target: string; owner?: NeutralPlayerId }
+  | { type: 'attachEnergy'; card: string; target: string }
+  | { type: 'endChoice' }
+  | { type: 'shuffle'; deck: string[] }
+  | { type: 'flip'; face: 'heads' | 'tails' };
+
 export interface PendingDecision {
   actor: Actor;
   descriptor: string;
-  legalActions: unknown[];
+  legalActions: LegalAction[];
 }
 
 export interface StepResponse {

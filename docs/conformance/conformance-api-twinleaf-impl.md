@@ -333,6 +333,15 @@ the same contract.
   inline-`Math.random` cards (§9) — a load-time exclusion distinct from the
   semantic one. *Surfaced in M1:* Kirlia SVI was unusable, so the in-scope no-prompt
   turn test uses **Kirlia SIT** (same evolution line, a set that loads).
+- **`checkState` runs after every prompt resolution and re-sets-up a 0-prize board.**
+  `Store.dispatch(ResolvePromptAction)` runs `checkState` once the prompt callback
+  returns; on a board where either player has **0 prizes left**, `checkState` reads
+  that as game-over and triggers a sudden-death re-setup (`check-effect.ts` ~L383:
+  collect all zones back to deck + `ShuffleDeckPrompt`). *Surfaced in M2:* minimal
+  test boards with `prizes: []` spuriously produced a shuffle pending after a resolve.
+  Conformance `initialState` boards must carry ≥1 prize per player (a real
+  mid-game position always does); the harness should treat a 0-prize side as a
+  terminal/`gameOver` state, never a live `initialState`.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

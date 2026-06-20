@@ -1,30 +1,31 @@
 import { Card } from '../game/store/card/card';
 import { Player } from '../game/store/state/player';
-import { StateLog } from '../game/store/state/state-log';
+import { Prompt } from '../game/store/prompts/prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
 import { AttackAction, PassTurnAction, RetreatAction as RetreatGameAction } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { ImportedGame, IidContext, importState, projectState, actorIndex } from './state-adapter';
+import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
 import { mapDelta } from './event-mapper';
+import { classify, decomposerFor, WirePick } from './decomposers';
 import {
   NeutralState, NeutralAction, NeutralEvent, StepResponse, ResponseStatus,
+  PendingDecision, LegalAction,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
   RetreatAction, DeclareAttackAction, EndTurnAction
 } from './neutral-types';
 
 /**
- * M1 driver: action mapper + event mapper for a full no-prompt turn.
- *
- * Maps the prompt-free player actions (bench / evolve / attach energy+tool / retreat / declare a
- * simple attack / end turn) onto twinleaf dispatches, captures the per-dispatch game-log delta as
- * neutral events, and projects the result. The only prompt it auto-acks is the attack-animation
- * WaitPrompt (engine plumbing, not a decision). Prompt decomposition (M2), the system actor (M3),
- * the clean checkup/turn-boundary bracketing (M4), legalActions/pending (M5) and HTTP (M6) are out
- * of scope; M1 boards are KO-free and condition-free so nothing else raises a prompt.
+ * M2 driver: the prompt-driven replay loop (impl §4.1). Each iteration finds the open prompt and
+ * either decomposes it (a player prompt → one single decision per pick, accumulated from the action
+ * log, then reassembled + ResolvePromptAction so the card callback fires unchanged), drives an
+ * attack-animation WaitPrompt, surfaces a system prompt and stops (the M2/M3 seam), or — with no
+ * open prompt — dispatches the next top-level action (M1). `pending` is now populated.
  */
 
-function lookupCard(ctx: IidContext, iid: string, role: string): Card {
-  const card = ctx.iidToCard.get(iid);
+// ── top-level action mapping (M1) ──────────────────────────────────────────
+
+function lookupCard(game: ImportedGame, iid: string, role: string): Card {
+  const card = game.ctx.iidToCard.get(iid);
   if (card === undefined) {
     throw new Error(`[conformance] ${role} iid "${iid}" not found in this game`);
   }
@@ -61,11 +62,9 @@ function firstEmptyBenchIndex(player: Player): number {
   throw new Error('[conformance] no empty bench slot available for benchBasic');
 }
 
-// ── per-action dispatchers ────────────────────────────────────────────────
-
 function dispatchBenchBasic(game: ImportedGame, action: BenchBasicAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const card = lookupCard(game.ctx, action.card, 'benchBasic.card');
+  const card = lookupCard(game, action.card, 'benchBasic.card');
   const handIndex = handIndexOf(player, card, 'benchBasic.card', action.actor);
   const index = firstEmptyBenchIndex(player);
   game.store.dispatch(new PlayCardAction(player.id, handIndex, {
@@ -75,46 +74,41 @@ function dispatchBenchBasic(game: ImportedGame, action: BenchBasicAction): void 
 
 function dispatchEvolve(game: ImportedGame, action: EvolveAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const evoCard = lookupCard(game.ctx, action.card, 'evolve.card');
+  const evoCard = lookupCard(game, action.card, 'evolve.card');
   const handIndex = handIndexOf(player, evoCard, 'evolve.card', action.actor);
-  const targetCard = lookupCard(game.ctx, action.target, 'evolve.target');
-  const target = resolveOwnPokemonTarget(player, targetCard);
+  const target = resolveOwnPokemonTarget(player, lookupCard(game, action.target, 'evolve.target'));
   game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
 }
 
 function dispatchAttachEnergy(game: ImportedGame, action: AttachEnergyAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const energyCard = lookupCard(game.ctx, action.card, 'attachEnergy.card');
+  const energyCard = lookupCard(game, action.card, 'attachEnergy.card');
   const handIndex = handIndexOf(player, energyCard, 'attachEnergy.card', action.actor);
-  const targetCard = lookupCard(game.ctx, action.target, 'attachEnergy.target');
-  const target = resolveOwnPokemonTarget(player, targetCard);
+  const target = resolveOwnPokemonTarget(player, lookupCard(game, action.target, 'attachEnergy.target'));
   game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
 }
 
 function dispatchAttachTool(game: ImportedGame, action: AttachToolAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const toolCard = lookupCard(game.ctx, action.card, 'attachTool.card');
+  const toolCard = lookupCard(game, action.card, 'attachTool.card');
   const handIndex = handIndexOf(player, toolCard, 'attachTool.card', action.actor);
-  const targetCard = lookupCard(game.ctx, action.target, 'attachTool.target');
-  const target = resolveOwnPokemonTarget(player, targetCard);
+  const target = resolveOwnPokemonTarget(player, lookupCard(game, action.target, 'attachTool.target'));
   game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
 }
 
 function dispatchRetreat(game: ImportedGame, action: RetreatAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  // RetreatAction carries the destination bench index, so no bench ChoosePokemonPrompt fires;
-  // M1 boards keep retreat cost 0 or exactly/identically payable so no ChooseEnergyPrompt fires.
   game.store.dispatch(new RetreatGameAction(player.id, action.to));
 }
 
 function dispatchDeclareAttack(game: ImportedGame, action: DeclareAttackAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const sourceCard = lookupCard(game.ctx, action.source, 'declareAttack.source');
+  const sourceCard = lookupCard(game, action.source, 'declareAttack.source');
   if (!player.active.cards.includes(sourceCard)) {
     throw new Error('[conformance] declareAttack.source is not the acting player\'s active Pokemon');
   }
+  // The attack parks on a WaitPrompt (and may raise card prompts mid-attack); the loop drives those.
   game.store.dispatch(new AttackAction(player.id, action.name));
-  resolveAttackAnimation(game);
 }
 
 function dispatchEndTurn(game: ImportedGame, action: EndTurnAction): void {
@@ -122,32 +116,8 @@ function dispatchEndTurn(game: ImportedGame, action: EndTurnAction): void {
   game.store.dispatch(new PassTurnAction(player.id));
 }
 
-/**
- * Drive the attack generator past its animation WaitPrompt(s). Each is engine plumbing, not a
- * decision. It must be resolved with a non-undefined value (`true`): Store.reducePrompt only fires
- * the continuation when results are !== undefined, and Prompt.decode returns the value as-is. After
- * this, the attack has dealt damage and run EndTurnEffect -> the full turn boundary (turn++, active
- * player flip, mandatory draw).
- */
-function resolveAttackAnimation(game: ImportedGame): void {
-  for (;;) {
-    const wait = game.state.prompts.find(p => p.result === undefined && p.type === 'WaitPrompt');
-    if (wait === undefined) {
-      break;
-    }
-    game.store.dispatch(new ResolvePromptAction(wait.id, true));
-  }
-  if (game.handler.isBlocked()) {
-    throw new Error('[conformance] attack left a non-animation prompt pending (out of M1 scope)');
-  }
-}
-
-/**
- * Map and dispatch a single neutral action, returning the game-log delta it produced (the slice of
- * state.logs appended during the dispatch, including any WaitPrompt resolution for attacks).
- */
-export function dispatchAction(game: ImportedGame, action: NeutralAction): StateLog[] {
-  const before = game.state.logs.length;
+/** Dispatch one top-level neutral action, returning the game-log delta it produced. */
+function dispatchAction(game: ImportedGame, action: NeutralAction): void {
   switch (action.type) {
     case 'benchBasic': dispatchBenchBasic(game, action as BenchBasicAction); break;
     case 'evolve': dispatchEvolve(game, action as EvolveAction); break;
@@ -157,37 +127,109 @@ export function dispatchAction(game: ImportedGame, action: NeutralAction): State
     case 'declareAttack': dispatchDeclareAttack(game, action as DeclareAttackAction); break;
     case 'endTurn': dispatchEndTurn(game, action as EndTurnAction); break;
     default:
-      throw new Error(`[conformance] action "${action.type}" not implemented`);
+      throw new Error(`[conformance] action "${action.type}" is not a top-level action`);
   }
-  return game.state.logs.slice(before);
 }
 
-/**
- * Replay the action log in order, accumulating the neutral events each step produced.
- *
- * Attack auto-end reconciliation (impl §4.3): twinleaf runs the whole turn boundary inside the
- * AttackAction dispatch, so a neutral `endTurn` that follows a `declareAttack` is consumed as an
- * already-applied no-op. The clean forced-endTurn pending + turnEnded/turnStarted bracketing around
- * a real checkup is M4.
- */
-export function applyActions(game: ImportedGame, actions: NeutralAction[]): NeutralEvent[] {
+// ── the replay loop ────────────────────────────────────────────────────────
+
+interface LoopResult {
+  events: NeutralEvent[];
+  pending: PendingDecision | null;
+  applied: number;
+}
+
+/** A pending the M2 driver can't resolve (shuffle / coin flip) — surfaced for the system actor (M3). */
+function systemPending(game: ImportedGame, prompt: Prompt<any>): PendingDecision {
+  const legalActions: LegalAction[] = [];
+  if (prompt.type === 'Shuffle deck') {
+    const player = game.state.players.find(p => p.id === prompt.playerId);
+    const deck = (player ? player.deck.cards : [])
+      .map(c => game.ctx.cardToIid.get(c))
+      .filter((iid): iid is string => iid !== undefined);
+    legalActions.push({ type: 'shuffle', deck });
+  } else if (prompt.type === 'Coin flip') {
+    legalActions.push({ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' });
+  }
+  return { actor: 'system', descriptor: prompt.type, legalActions };
+}
+
+function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
+  let cursor = 0;
+  let accum: WirePick[] = [];
   let turnAlreadyEnded = false;
 
-  for (const action of actions) {
-    if (action.type === 'endTurn' && turnAlreadyEnded) {
-      turnAlreadyEnded = false;
+  const dispatchAndCollect = (fire: () => void): void => {
+    const before = game.state.logs.length;
+    fire();
+    events.push(...mapDelta(game.state.logs.slice(before)));
+  };
+
+  for (;;) {
+    const prompt = game.state.prompts.find(p => p.result === undefined);
+
+    if (prompt !== undefined) {
+      const kind = classify(prompt);
+
+      if (kind === 'wait') {
+        dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, true)));
+        continue;
+      }
+      if (kind === 'system') {
+        return { events, pending: systemPending(game, prompt), applied: cursor };
+      }
+      if (kind === 'unsupported') {
+        throw new Error(`[conformance] prompt '${prompt.type}' has no decomposer (out of M2 scope)`);
+      }
+
+      // decomposable player prompt
+      const dec = decomposerFor(prompt);
+      const sub = dec.next(prompt, accum, game.ctx, game.state);
+      if (sub === null) {
+        const wire = dec.assemble(prompt, accum);
+        const result = prompt.decode(wire, game.state);
+        if (!prompt.validate(result, game.state)) {
+          throw new Error(`[conformance] decomposed result failed validate for prompt '${prompt.type}'`);
+        }
+        dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
+        accum = [];
+        continue; // the callback may have raised the next prompt
+      }
+      if (cursor < actions.length) {
+        accum.push(dec.toPick(prompt, actions[cursor++], game.ctx, game.state));
+        continue;
+      }
+      return { events, pending: sub, applied: cursor }; // log dry mid-decision
+    }
+
+    // no open prompt
+    if (cursor < actions.length) {
+      const action = actions[cursor++];
+      if (action.type === 'endTurn' && turnAlreadyEnded) {
+        turnAlreadyEnded = false; // attack already ran the boundary; the explicit endTurn is a no-op
+        continue;
+      }
+      dispatchAndCollect(() => dispatchAction(game, action));
+      if (action.type === 'declareAttack') {
+        turnAlreadyEnded = true;
+      }
       continue;
     }
-    if (game.handler.isBlocked()) {
-      throw new Error('[conformance] driver reached a pending prompt it cannot answer (needs M2+)');
-    }
-    events.push(...mapDelta(dispatchAction(game, action)));
-    if (action.type === 'declareAttack') {
-      turnAlreadyEnded = true;
-    }
+    return { events, pending: null, applied: cursor };
   }
-  return events;
+}
+
+// ── public surface ─────────────────────────────────────────────────────────
+
+/** Replay the action log on an already-imported game, returning events + the open pending + applied. */
+export function replay(game: ImportedGame, actions: NeutralAction[]): LoopResult {
+  return runLoop(game, actions);
+}
+
+/** Replay the action log, returning the neutral events. (Thin wrapper kept for M0/M1 specs.) */
+export function applyActions(game: ImportedGame, actions: NeutralAction[]): NeutralEvent[] {
+  return runLoop(game, actions).events;
 }
 
 /** Project the current twinleaf state of an imported game to the neutral observable schema. */
@@ -197,13 +239,14 @@ export function projectGame(game: ImportedGame): NeutralState {
 
 /**
  * The in-process step entry: import the initial state, replay the actions, project the result.
- * The response-envelope shape matches the wire contract (§4.1); `pending`/`legalActions` (M5) and
- * the HTTP layer (M6) are deferred, so `pending` is null here.
+ * `pending` is the open single decision (decomposer candidates) or a system pending, or null at a
+ * quiescent boundary. `legalActions` population is Phase-1 (decomposer/system); the top-level menu
+ * is M5.
  */
 export function step(initial: NeutralState, actions: NeutralAction[]): StepResponse {
   const game = importState(initial);
-  const events = applyActions(game, actions);
+  const { events, pending, applied } = runLoop(game, actions);
   const state = projectGame(game);
   const status: ResponseStatus = state.outcome === 'ongoing' ? 'awaitingAction' : 'gameOver';
-  return { status, applied: actions.length, pending: null, events, state };
+  return { status, applied, pending, events, state };
 }
