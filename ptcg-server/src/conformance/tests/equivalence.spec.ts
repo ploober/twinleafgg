@@ -186,6 +186,23 @@ describe('Conformance Tier 2 — native-vs-adapter equivalence', () => {
     });
   });
 
+  it('KO -> take a prize + promote a new active (non-terminal; follow-up picks aligned to native)', () => {
+    // A's Raichu (40) KOs B's pre-damaged Ralts; both hold 6 prizes so the KO is non-terminal, raising
+    // a ChoosePrizePrompt (A) + ChoosePokemonPrompt (B). The runner resolves both adapter-side to the
+    // native auto-resolver's defaults (first prize, first bench) — exercising the new prize decomposer.
+    runScenario({
+      name: 'ko-promote',
+      board: {
+        turn: 3,
+        players: {
+          A: { active: { card: 'Raichu SIT', energy: [L] }, deck: [W, W], prizeCount: 6 },
+          B: { active: { card: 'Ralts SIT', damage: 60 }, bench: [{ card: 'Rufflet SIT' }], deck: [W, W], prizeCount: 6 },
+        },
+      },
+      steps: [{ kind: 'attack', name: 'Ambushing Spark' }],
+    });
+  });
+
   it('multi-step: attach then end turn (crosses the turn boundary + opponent draw)', () => {
     runScenario({
       name: 'attach-then-endturn',

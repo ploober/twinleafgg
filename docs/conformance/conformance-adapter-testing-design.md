@@ -215,6 +215,35 @@ stability; a longer nightly variant optional).
 **Acceptance:** N seeded runs green; a known-injected bug (e.g. menu lists an illegal move) is caught
 and reported with a replayable seed.
 
+**Realized (Step C, 2026-06-20).** 40 seeded games (`maxActions` 25) + 3 negative-space cases = 43
+fuzz specs; total conformance suite now 133. The harness (`generators.ts`): `mulberry32` PRNG;
+`genBoard` over a curated pool (Ralts/Kirlia/Gardevoir/Rufflet/Pikachu/Raichu + SVE energies +
+Primordial Altar); `playRandomGame` walks `replay(import, logSoFar).pending` as the frontier oracle,
+committing a random *accepted* candidate each step. Findings that reshaped the build:
+
+- **The menu is best-effort, not a guarantee.** The engine's own `Check*` effects over-report
+  attack/ability legality for cards with internal preconditions (e.g. Kirlia's "Refinement" with an
+  empty hand → `cannotUseAbility`). So the strict "every enumerated action dispatches" property is
+  false for this engine; the generator instead **backs out of a rejected candidate and tries another**
+  (the menu is a candidate set; `endTurn` is always legal so no frontier is dead).
+- **Inline `CoinFlipEffect` needs its flip pre-fed.** Pikachu's "Whimsy Tackle" consumes a flip from
+  the log *during* dispatch (driver.ts:221), unlike a `CoinFlipPrompt` which surfaces as a system
+  pending. The generator detects the "coin flip needed" signal and appends a PRNG flip, keeping that
+  seam under test.
+- **`ChoosePrizePrompt` was unsupported → a decomposer was added** (Step C, Part 1). A non-terminal KO
+  (defender survives, >1 prize left) raises it; previously `classify()` returned `unsupported` and the
+  driver threw, capping random play at the first mid-game KO. The new `choosePrizeDecomposer` makes
+  prize-taking / non-terminal KOs / KO→promote driveable, and unblocked the deferred Tier-2 KO→promote
+  equivalence scenario (native-aligned picks via `resolveFollowups`).
+- **Pre-existing engine quirk surfaced (documented, not adapter fidelity):** runtime tool-play
+  (`PlayCardAction`) attaches a Tool to `slot.tools` but not `slot.cards`, while `collectAllCardIds`
+  walks `.cards` — so a *played* tool reads as a lost card. Confirmed identical on the native driver,
+  so it is an engine/helper data-model inconsistency; the fuzz stays in-scope by excluding Tools from
+  the pool (impl doc §8).
+- **Negative controls (confirmed, reverted):** breaking `choosePrizeDecomposer.assemble` (empty result)
+  fails the prize spec + KO equivalence via the prompt's `validate`; re-adding the Tool to the pool
+  fires the fuzz's card-conservation invariant — proving both checks are non-vacuous.
+
 ## 7. Tier 4 — silent-failure hardening
 
 Three smaller guards against the ways the adapter fails *quietly*.
@@ -242,8 +271,8 @@ committed with a refresh script.
 |---|---|---|---|
 | **A** | Foundations + Tier 1 | small, high-signal, touches every path; adjudicates the deferred defaults | ✅ done |
 | **B** | Tier 2 | the centerpiece fidelity oracle; needs the two materializers + state diff | ✅ done (11 robust-core scenarios) |
-| **C** | Tier 3 | breadth once the harness + invariants exist; absorbs Tier-2's deferred follow-up-pick scenarios | next |
-| **D** | Tier 4 | hardening + regression net | |
+| **C** | Tier 3 | breadth once the harness + invariants exist; absorbs Tier-2's deferred follow-up-pick scenarios | ✅ done (40 seeds; + ChoosePrizePrompt decomposer) |
+| **D** | Tier 4 | hardening + regression net | next |
 
 Each step lands independently (its own spec files), runs under `jasmine-ts`, and gates on
 project-wide `tsc --noEmit` = 0 — same bar as M0–M6. No engine-core or card edits.

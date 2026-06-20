@@ -447,6 +447,31 @@ the same contract.
   copy/disable-attack cards. Still deferred: the copy/energy-accel cards that live in the
   inline-`Math.random` exclusion set (§9) — the prompt *mechanism* works, but those specific cards
   await migration.
+- **Follow-up (Step C): `ChoosePrize` decomposer — unblocks non-terminal KOs.** A fifth-and-final
+  single-pick decomposer (`decomposers/choose-prize.ts`), registered like the others. *Surfaced by the
+  Tier-3 fuzz:* a **non-terminal KO** (defender survives on its bench, attacker has >1 prize left)
+  raises `ChoosePrizePrompt` (`'Choose prize'`), which previously `classify`'d as `unsupported` → the
+  driver threw, capping any random game at the first mid-game KO. The decomposer: one pick = a prize
+  pile named by the iid of its card → an index into the player's non-empty prizes (`decode` wants
+  `number[]`); accumulates `options.count` picks; `blocked`/`useOpponentPrizes` honored. Prize-taking,
+  non-terminal KOs, and **KO→promote** are now driveable end-to-end, and the deferred Tier-2 KO→promote
+  *equivalence* scenario lands (the runner resolves the prize + promote picks to the native
+  auto-resolver's defaults — first prize, first bench — via `resolveFollowups`). (Normal/terminal KOs
+  never needed it: taking the last prize, or KO-ing the opponent's last Pokémon, auto-takes without a
+  prompt — `check-effect.ts` `choosePrizeCards`.)
+- **Two engine quirks surfaced by the Tier-3 fuzz (NOT adapter-fidelity bugs; documented, worked
+  around in the fuzz pool):**
+  (a) **The menu over-reports.** The engine's own `Check*` effects (which `legal-actions.ts` mirrors)
+  report an attack/ability as usable without simulating the card's *internal* preconditions — e.g.
+  Kirlia/Gardevoir "Refinement" (discard-to-draw) lists as usable with an empty hand, then its
+  `reduceEffect` raises `cannotUseAbility`. So "every enumerated action dispatches" is **false** for
+  this engine; the conformance menu is a best-effort *candidate* set, and the fuzz treats a menu-action
+  rejection as back-out-and-retry, not a bug.
+  (b) **Played tools miss `.cards`.** Runtime `PlayCardAction` of a Pokémon Tool pushes it to
+  `slot.tools` but **not** `slot.cards` (setup-placed tools land in both); `collectAllCardIds` walks
+  `.cards`, so a *played* tool reads as a lost card to the conservation invariant. Confirmed identical
+  on the native `setupGame` driver → an engine/helper data-model inconsistency, not the adapter. The
+  fuzz excludes Tools from its pool to stay in-scope.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

@@ -268,6 +268,14 @@ export interface ChooseAttackAction {
   name: string;
 }
 
+/** One prize pile chosen to take after a knockout (ChoosePrizePrompt). */
+export interface ChoosePrizeAction {
+  actor: NeutralPlayerId;
+  type: 'choosePrize';
+  /** iid of the prize pile's card (resolves to its index among the player's non-empty prizes). */
+  prize: string;
+}
+
 /** Completes the current variable-count ("up to N") multi-pick decision. */
 export interface EndChoiceAction {
   actor: NeutralPlayerId;
@@ -316,6 +324,7 @@ export type NeutralAction =
   | DiscardPickAction
   | ChooseEnergyAction
   | ChooseAttackAction
+  | ChoosePrizeAction
   | EndChoiceAction
   | ShuffleSystemAction
   | FlipSystemAction
@@ -358,6 +367,7 @@ export type LegalAction =
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
   | { type: 'chooseEnergy'; card: string }
   | { type: 'chooseAttack'; source: string; name: string }
+  | { type: 'choosePrize'; prize: string }
   | { type: 'endChoice' }
   | { type: 'shuffle'; deck: string[] }
   | { type: 'flip'; face: 'heads' | 'tails' }

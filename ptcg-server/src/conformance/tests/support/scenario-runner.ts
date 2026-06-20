@@ -1,5 +1,6 @@
 import {
-  SCHEMA_VERSION, NeutralState, NeutralAction, PlayerState, PokemonInPlay, PokemonMarkers, PlayerFlags
+  SCHEMA_VERSION, NeutralState, NeutralAction, PlayerState, PokemonInPlay, PokemonMarkers, PlayerFlags,
+  Actor, LegalAction
 } from '../../neutral-types';
 import { importState } from '../../state-adapter';
 import { replay, projectGame } from '../../driver';
@@ -217,6 +218,34 @@ export function driveNative(game: SetupGameResult, steps: ScenarioStep[], board:
   }
 }
 
+// ── native-aligned follow-up resolution ──
+// Some steps (e.g. an attack that KOs) leave open follow-up prompts (take-a-prize, promote a new
+// active, a between-turns flip). The native `TestStoreHandler` auto-resolves these to deterministic
+// defaults — the FIRST candidate (prize index 0, first benched Pokémon), heads, and NO_SHUFFLE
+// (identity order). We resolve the adapter's matching prompts the same way (`legalActions[0]`,
+// identity shuffle order) so both engines land identically.
+
+function followupToAction(legal: LegalAction, actor: Actor): NeutralAction {
+  if (legal.type === 'shuffle') {
+    return { actor: 'system', type: 'shuffle', order: legal.deck }; // identity == native NO_SHUFFLE
+  }
+  return { ...legal, actor } as NeutralAction;
+}
+
+/** Extend `base` with native-aligned answers to any follow-up prompts, until the next top-level menu. */
+function resolveFollowups(initial: NeutralState, base: NeutralAction[]): NeutralAction[] {
+  const actions = base.slice();
+  for (let guard = 0; guard < 24; guard++) {
+    const pending = replay(importState(initial), actions).pending;
+    // A top-level menu (it offers `endTurn`) or a quiescent boundary means no follow-up is open.
+    if (pending === null || pending.legalActions.some(a => a.type === 'endTurn') || pending.legalActions.length === 0) {
+      break;
+    }
+    actions.push(followupToAction(pending.legalActions[0], pending.actor));
+  }
+  return actions;
+}
+
 // ── the runner ──
 
 /**
@@ -238,7 +267,9 @@ export function runScenario(scenario: Scenario): void {
 
   const adapterIdsBefore = collectAllCardIds(adapterGame.state);
   const nativeIdsBefore = collectAllCardIds(nativeGame.state);
-  const actions = stepToNeutralActions(scenario.steps);
+  // The adapter drives the steps plus native-aligned answers to any follow-up prompts they raise;
+  // the native path auto-resolves the same prompts to the same defaults.
+  const actions = resolveFollowups(neutral, stepToNeutralActions(scenario.steps));
 
   withNoRandomness(() => {
     replay(adapterGame, actions);
