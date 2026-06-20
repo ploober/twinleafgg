@@ -224,6 +224,22 @@ export interface EndChoiceAction {
   type: 'endChoice';
 }
 
+// ── System actions (the `system` actor — design §5) ────────────────────────
+// Randomness externalized to the action log: the harness supplies shuffle orders and coin faces.
+
+export interface ShuffleSystemAction {
+  actor: 'system';
+  type: 'shuffle';
+  /** The new deck order as iids ([0] = top of deck). A permutation of the pending's deck multiset. */
+  order: string[];
+}
+
+export interface FlipSystemAction {
+  actor: 'system';
+  type: 'flip';
+  face: 'heads' | 'tails';
+}
+
 // The full vocabulary is broader (design §7); milestones beyond M1 (abilities, prompt-mediated
 // trainers, the system actor) are typed loosely until their milestone lands.
 export interface UnimplementedAction {
@@ -245,6 +261,8 @@ export type NeutralAction =
   | MoveCounterAction
   | DiscardPickAction
   | EndChoiceAction
+  | ShuffleSystemAction
+  | FlipSystemAction
   | UnimplementedAction;
 
 // ── Events (design §4.1, impl doc §4.8) ───────────────────────────────────

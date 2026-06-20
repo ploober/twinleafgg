@@ -342,6 +342,20 @@ the same contract.
   Conformance `initialState` boards must carry ≥1 prize per player (a real
   mid-game position always does); the harness should treat a 0-prize side as a
   terminal/`gameOver` state, never a live `initialState`.
+- **Coin flips need NO engine patch (§4.5 overestimated the work), but diverge from
+  the design's flip-as-pending model.** *Surfaced in M3:* the primary coin mechanism
+  is `CoinFlipEffect` (used by `COIN_FLIP_PROMPT` / `FLIP_A_COIN_*` / `MULTIPLE_COIN_FLIPS`),
+  and `game-effect.ts` **already** consults `handler.flipCoin()` for it — so the
+  conformance handler just implements `flipCoin()` reading the next `flip` action from
+  the log; **purely additive, no engine edit**. (A `CoinFlipPrompt` *prompt-class* path
+  also exists for a handful of cards, e.g. Rufflet SIT — resolved via `ResolvePromptAction`
+  in the loop's system branch.) Both consume `flip` actions in log order via a cursor the
+  driver shares with the flip hook. **Divergence from design §5:** twinleaf computes flips
+  **eagerly** during the triggering dispatch (then a `WaitPrompt` animates), so it can't
+  pause and surface a single-decision pending *per* flip — flips are supplied inline in
+  the action log and consumed as the engine flips; if the log is dry at a flip point the
+  driver surfaces a best-effort `{actor:'system', flip}` pending and stops. Shuffles, by
+  contrast, *are* real prompts (`ShuffleDeckPrompt`) and surface/resolve cleanly per §5.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

@@ -14,16 +14,31 @@ import { StoreHandler } from '../game/store/store-handler';
  * The Store does not call the Arbiter (the handler does), so by simply not wiring one here,
  * randomness (shuffles, coin flips) stays externalized to the `system` actor (design §5).
  *
- * `flipCoin()` is intentionally absent: game-effect.ts only consults `handler.flipCoin` when it
- * exists. Omitting it means inline non-prompt coin flips are NOT silently auto-answered; routing
- * them through the `system` actor is a later milestone (impl doc §4.5), out of M0 scope.
+ * `flipCoin()` is the `system` actor's inline coin hook (M3): `CoinFlipEffect` (game-effect.ts)
+ * consults `handler.flipCoin()` to get a flip result synchronously during reduction, rather than
+ * raising a prompt. The driver installs a provider (`setFlipProvider`) that supplies the next
+ * scripted face from the action log, so inline coin flips are deterministic and replay-correct.
  */
 export class ConformanceStoreHandler implements StoreHandler {
 
   private store!: Store;
+  private flipProvider?: () => boolean;
 
   setStore(store: Store): void {
     this.store = store;
+  }
+
+  /** Install the source of scripted coin flips (the driver wires this to the action-log cursor). */
+  setFlipProvider(provider: () => boolean): void {
+    this.flipProvider = provider;
+  }
+
+  /** Called inline by CoinFlipEffect; returns the next scripted flip (heads = true). */
+  flipCoin(): boolean {
+    if (this.flipProvider === undefined) {
+      throw new Error('[conformance] coin flip requested but no flip provider is set');
+    }
+    return this.flipProvider();
   }
 
   /** True when the engine is blocked on at least one unresolved prompt. */

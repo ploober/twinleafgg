@@ -11,7 +11,8 @@ import {
   NeutralState, NeutralAction, NeutralEvent, StepResponse, ResponseStatus,
   PendingDecision, LegalAction,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
-  RetreatAction, DeclareAttackAction, EndTurnAction
+  RetreatAction, DeclareAttackAction, EndTurnAction,
+  ShuffleSystemAction, FlipSystemAction
 } from './neutral-types';
 
 /**
@@ -139,7 +140,7 @@ interface LoopResult {
   applied: number;
 }
 
-/** A pending the M2 driver can't resolve (shuffle / coin flip) — surfaced for the system actor (M3). */
+/** A system pending (shuffle / coin flip) surfaced when its action isn't yet in the log. */
 function systemPending(game: ImportedGame, prompt: Prompt<any>): PendingDecision {
   const legalActions: LegalAction[] = [];
   if (prompt.type === 'Shuffle deck') {
@@ -154,11 +155,44 @@ function systemPending(game: ImportedGame, prompt: Prompt<any>): PendingDecision
   return { actor: 'system', descriptor: prompt.type, legalActions };
 }
 
+/**
+ * Convert a neutral shuffle order (new deck order as iids) into the permutation ShuffleDeckPrompt
+ * expects: `perm[i]` = the current deck index of the card that should land at position i, so
+ * `deck.applyOrder(perm)` yields the requested order. The order is supplied at shuffle time, which
+ * is what makes shuffle-then-draw deterministic (design §5).
+ */
+function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, action: ShuffleSystemAction): number[] {
+  const player = game.state.players.find(p => p.id === prompt.playerId);
+  if (player === undefined) {
+    throw new Error('[conformance] shuffle prompt has no player');
+  }
+  const deck = player.deck.cards;
+  return action.order.map(iid => {
+    const card = game.ctx.iidToCard.get(iid);
+    const index = card ? deck.indexOf(card) : -1;
+    if (index === -1) {
+      throw new Error(`[conformance] shuffle order iid '${iid}' is not in the deck`);
+    }
+    return index;
+  });
+}
+
 function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
-  let cursor = 0;
+  const cursor = { i: 0 };          // shared with the flip provider below
   let accum: WirePick[] = [];
   let turnAlreadyEnded = false;
+
+  // The system actor's inline coin source: consume the next `flip` action from the same cursor the
+  // loop walks, so inline flips (CoinFlipEffect) and the loop stay aligned in log order.
+  game.handler.setFlipProvider((): boolean => {
+    const next = cursor.i < actions.length ? actions[cursor.i] : undefined;
+    if (next === undefined || next.type !== 'flip') {
+      throw new Error('[conformance] coin flip needed but the next action is not a flip');
+    }
+    cursor.i++;
+    return (next as FlipSystemAction).face === 'heads';
+  });
 
   const dispatchAndCollect = (fire: () => void): void => {
     const before = game.state.logs.length;
@@ -177,10 +211,26 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         continue;
       }
       if (kind === 'system') {
-        return { events, pending: systemPending(game, prompt), applied: cursor };
+        const next = cursor.i < actions.length ? actions[cursor.i] : undefined;
+        if (prompt.type === 'Coin flip' && next !== undefined && next.type === 'flip') {
+          const heads = (next as FlipSystemAction).face === 'heads';
+          cursor.i++;
+          dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, heads)));
+          continue;
+        }
+        if (prompt.type.startsWith('Shuffle') && next !== undefined && next.type === 'shuffle') {
+          const perm = shuffleOrderToPermutation(game, prompt, next as ShuffleSystemAction);
+          if (!prompt.validate(perm, game.state)) {
+            throw new Error(`[conformance] shuffle order invalid for prompt '${prompt.type}'`);
+          }
+          cursor.i++;
+          dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
+          continue;
+        }
+        return { events, pending: systemPending(game, prompt), applied: cursor.i };
       }
       if (kind === 'unsupported') {
-        throw new Error(`[conformance] prompt '${prompt.type}' has no decomposer (out of M2 scope)`);
+        throw new Error(`[conformance] prompt '${prompt.type}' has no decomposer (out of scope)`);
       }
 
       // decomposable player prompt
@@ -196,16 +246,20 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         accum = [];
         continue; // the callback may have raised the next prompt
       }
-      if (cursor < actions.length) {
-        accum.push(dec.toPick(prompt, actions[cursor++], game.ctx, game.state));
+      if (cursor.i < actions.length) {
+        accum.push(dec.toPick(prompt, actions[cursor.i++], game.ctx, game.state));
         continue;
       }
-      return { events, pending: sub, applied: cursor }; // log dry mid-decision
+      return { events, pending: sub, applied: cursor.i }; // log dry mid-decision
     }
 
     // no open prompt
-    if (cursor < actions.length) {
-      const action = actions[cursor++];
+    if (cursor.i < actions.length) {
+      const action = actions[cursor.i];
+      if (action.type === 'flip' || action.type === 'shuffle') {
+        throw new Error(`[conformance] stray system action '${action.type}' with no pending system decision`);
+      }
+      cursor.i++;
       if (action.type === 'endTurn' && turnAlreadyEnded) {
         turnAlreadyEnded = false; // attack already ran the boundary; the explicit endTurn is a no-op
         continue;
@@ -216,7 +270,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       }
       continue;
     }
-    return { events, pending: null, applied: cursor };
+    return { events, pending: null, applied: cursor.i };
   }
 }
 
