@@ -265,6 +265,29 @@ Three smaller guards against the ways the adapter fails *quietly*.
 **Acceptance:** seam coverage asserts the encountered universe; non-perturbation green; goldens
 committed with a refresh script.
 
+**Realized (Step D, 2026-06-20).** Seam-coverage + non-perturbation shipped (tests-only; suite now
+165). The golden net was **split out to its own Step E** (below) to scope its churn separately.
+
+- **Seam exhaustiveness** (`seam-coverage.spec.ts`). Corpus = 25 fuzz seeds + 6 runs of a crafted
+  KO board; `collectSeams` prefix-walks each game (only at *follow-up* frontiers — the open prompt is
+  always answered by a pick/system action) for prompt `type`s, and reads every `GameLog` from a full
+  replay's `state.logs`. The realized universe: **6 prompt types** (Choose cards/pokemon/prize/attack/
+  energy + Coin flip), **all classified** (zero `unsupported`); **12 mapped** GameLogs; **7 dropped**,
+  all intentional and allow-listed (`LOG_GAME_FINISHED_WINNER`, `LOG_PLAYER_PLAYS_STADIUM` — no
+  `playedStadium` event kind, `LOG_PLAYER_FLIPS_HEADS/TAILS` — coin faces are inputs,
+  `LOG_PLAYER_DISABLES_ATTACK`, `LOG_PLAYER_NO_ACTIVE_POKEMON`, `LOG_PLAYER_NO_PRIZE_CARD`). Asserts:
+  none unsupported beyond `ALLOW_UNSUPPORTED` (empty); none dropped beyond `ALLOW_UNMAPPED`; and a
+  non-vacuous floor (the corpus actually exercised the high-value prompt + event seams).
+- **Non-perturbation** (`non-perturbation.spec.ts`). Across 3 crafted boards (each forcing a `Check*`
+  path) + 25 fuzz seeds: `snapshotRawState` is identical before/after `topLevelMenu`, `state.prompts`
+  and `state.logs` are unchanged (no orphan prompt / stray log), and the menu is idempotent — pinning
+  "building the menu is read-only."
+- **Doc correction:** `buildCapabilities` takes no `State` and reduces no effects (pure registry
+  enumeration); the §7 line above overstated it — non-perturbation concerns `topLevelMenu` only.
+- **Negative controls (confirmed, reverted):** removing the `LOG_POKEMON_KO` case from the event mapper
+  makes seam-coverage flag it as dropped-beyond-allow; mutating `active.damage` inside `topLevelMenu`
+  fails non-perturbation's before/after snapshot.
+
 ## 8. Sequencing & acceptance
 
 | step | scope | rationale | status |
@@ -272,7 +295,8 @@ committed with a refresh script.
 | **A** | Foundations + Tier 1 | small, high-signal, touches every path; adjudicates the deferred defaults | ✅ done |
 | **B** | Tier 2 | the centerpiece fidelity oracle; needs the two materializers + state diff | ✅ done (11 robust-core scenarios) |
 | **C** | Tier 3 | breadth once the harness + invariants exist; absorbs Tier-2's deferred follow-up-pick scenarios | ✅ done (40 seeds; + ChoosePrizePrompt decomposer) |
-| **D** | Tier 4 | hardening + regression net | next |
+| **D** | Tier 4 (seam coverage + non-perturbation) | hardening the silent-failure seams | ✅ done (165 specs) |
+| **E** | Tier 4 (golden regression net) | frozen projected `state`+`events` for the Tier-2 scenarios + an env-gated refresh; split from D to scope golden churn on its own | next (optional) |
 
 Each step lands independently (its own spec files), runs under `jasmine-ts`, and gates on
 project-wide `tsc --noEmit` = 0 — same bar as M0–M6. No engine-core or card edits.
