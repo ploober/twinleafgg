@@ -13,7 +13,8 @@
 
 ## 1. Context & goal
 
-The adapter (M0–M6) is exercised by 58 specs. They are strong at **internal consistency** —
+The adapter (M0–M6) was exercised by 58 specs (now 87, after Steps A–B below). They are strong at
+**internal consistency** —
 determinism, `project(import)` round-trip stability, decomposition-equals-one-shot — but most of
 them use the adapter as both the thing under test *and* the source of the expected value. That
 leaves one class of bug uncovered: the adapter can be **self-consistent and still systematically
@@ -150,10 +151,44 @@ Two sub-assertions (they catch different things):
 | KO → promote; deck-out ⇒ gameOver | `checkState`, `endGame`, outcome projection |
 | use a once-per-turn ability | `UseAbilityAction`, ability markers |
 
-**Files:** `tests/support/scenario-runner.ts` (the two materializers + the state diff),
+**Files:** `tests/support/scenario-runner.ts` (the two materializers + the runner),
+`tests/support/raw-snapshot.ts` (the import-fidelity snapshot + `synthCtx`),
+`tests/support/canonical-neutral.ts` (`projectNative` + iid-stripping `canonicalize`),
 `tests/equivalence.spec.ts`.
 **Acceptance:** every curated scenario agrees on both sub-assertions; a deliberately-broken
 projection/import makes a scenario fail (negative control).
+
+**Realized (Step B, 2026-06-20).** Shipped as 11 robust-core scenarios (87 conformance specs total).
+Findings that shaped the build:
+
+- **Import fidelity is a deep raw-state snapshot, not a normalized full-`State` diff.**
+  `snapshotRawState` (`raw-snapshot.ts`) walks the engine `State` into an iid/id/identity-free structure
+  that *includes the fields the projection ignores* — `isPublic`/`isSecret` per zone, `hp`,
+  `pokemonPlayedTurn`, the per-player flag counters, `usedGX`. Documented exclusions (normalized away):
+  `card.id` (native bases at 1000, adapter at 1), object identity, `player.name`, `state.prompts`,
+  `state.logs`, `lastAttack`. This is the class nothing else can see.
+- **Replay fidelity compares canonicalized projections, applied to BOTH sides.** `projectNative` reuses
+  the real `projectState` via a synthetic ctx (`iid = String(card.id)`); `canonicalize` strips iids
+  (printing + structure is the engine-neutral identity; ordered zones keep order, hand/discard/lostZone
+  sort as multisets). Same projection on both sides means projection bugs cancel — this isolates
+  **dispatch** fidelity (projection correctness is Tier 1's job). Chosen over a post-action raw diff
+  because the two drivers (`useAttack` vs `declareAttack`→`AttackAction`) legitimately leave different
+  transient internals (§9).
+- **The BoardSpec is the intersection both builders can express.** `setupGame` and `importState` both
+  build `State` directly at `PLAYER_TURN`; the shared subset is per-slot card/energy/damage/tools,
+  hand/deck/discard piles, a prize *count* (materialized as N× the native `DEFAULT_FILLER`
+  'Water Energy SVE' face-down so the boards match exactly), and turn. Special conditions, an in-play
+  stadium, and custom flags/markers are NOT presettable natively, so scenarios induce them via *actions*
+  (`playStadium` enters a stadium; conditions arise mid-game) — never via the board.
+- **Two engine gates surfaced as scenario constraints:** evolution is blocked at `state.turn` ∈ {0,1,2}
+  (play-pokemon-effect.ts), so the evolve scenario runs at turn 3; coin-flip equivalence is **heads-only**
+  (native `BotArbiter` is ALL_HEADS), tails stays an M3-spec concern.
+- **Once-per-turn ability deferred to Step C.** No in-scope ability is prompt-free (e.g. Dynamotor raises
+  pick prompts), and robust-core forbids native-auto-resolver alignment.
+- **Negative controls (both confirmed, reverted):** (a) injecting `usedGX = true` in `importState` fails
+  import-fidelity on every scenario while the 13 projection-based specs stay green — proving the deep
+  check earns its keep; (b) no-op'ing the adapter's `attachEnergy` dispatch fails replay-fidelity on
+  exactly the two attach scenarios while import-fidelity passes — isolating dispatch divergence.
 
 ## 6. Tier 3 — property / fuzz (breadth the hand boards can't reach)
 
@@ -203,12 +238,12 @@ committed with a refresh script.
 
 ## 8. Sequencing & acceptance
 
-| step | scope | rationale |
-|---|---|---|
-| **A** | Foundations + Tier 1 | small, high-signal, touches every path; adjudicates the deferred defaults |
-| **B** | Tier 2 | the centerpiece fidelity oracle; needs the two materializers + state diff |
-| **C** | Tier 3 | breadth once the harness + invariants exist |
-| **D** | Tier 4 | hardening + regression net |
+| step | scope | rationale | status |
+|---|---|---|---|
+| **A** | Foundations + Tier 1 | small, high-signal, touches every path; adjudicates the deferred defaults | ✅ done |
+| **B** | Tier 2 | the centerpiece fidelity oracle; needs the two materializers + state diff | ✅ done (11 robust-core scenarios) |
+| **C** | Tier 3 | breadth once the harness + invariants exist; absorbs Tier-2's deferred follow-up-pick scenarios | next |
+| **D** | Tier 4 | hardening + regression net | |
 
 Each step lands independently (its own spec files), runs under `jasmine-ts`, and gates on
 project-wide `tsc --noEmit` = 0 — same bar as M0–M6. No engine-core or card edits.
