@@ -359,11 +359,23 @@ export interface PendingDecision {
   legalActions: LegalAction[];
 }
 
+/**
+ * Why an action was rejected (design §4.9, M6). `reasonCode` is the engine-neutral normalized code
+ * the conformance harness compares across engines; `message` is the raw engine string (twinleaf's
+ * `GameMessage`) kept for diagnostics. `reasonCode` values are defined in rejection-codes.ts.
+ */
+export interface RejectionInfo {
+  reasonCode: string;
+  message: string;
+}
+
 export interface StepResponse {
   status: ResponseStatus;
-  /** Number of actions consumed from the log. */
+  /** Number of actions consumed from the log (those applied before any rejection). */
   applied: number;
   pending: PendingDecision | null;
   events: NeutralEvent[];
   state: NeutralState;
+  /** Present only when `status === 'invalidAction'`. */
+  rejection?: RejectionInfo;
 }

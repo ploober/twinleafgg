@@ -6,7 +6,8 @@
 > package** over the `ptcg-server` engine — **no card-effect edits in the first
 > pass**.
 >
-> Status: **design** (no implementation yet). Last reviewed: 2026-06-19.
+> Status: **M0–M6 implemented** (the full build sequence in §6; see §8 for milestone findings).
+> Last reviewed: 2026-06-20.
 >
 > Paths below are in `~/projects/twinleafgg/ptcg-server/`.
 
@@ -403,6 +404,33 @@ the same contract.
   with **mixed** energy raises `ChooseEnergyPrompt` (exact / all-identical energy auto-pays), and some
   attacks raise a `ChooseAttackPrompt` (e.g. Ralts "Memory Skip") — both unsupported prompt types
   today. Enumeration is correct; resolving these follow-ups is a later decomposer addition.
+- **M6 (capabilities + rejection codes + HTTP) is fully additive — no engine edits.** *Surfaced in
+  M6:*
+  (a) **Rejection codes need no engine change.** `GameError.message` defaults to the `GameMessage`
+  *value* (`message || code`), so the driver maps the caught error's `.message` → a neutral
+  `ReasonCode` (rejection-codes.ts) with no `code` field added to `GameError`. The loop wraps its body
+  in a `try/catch`: a `GameError` becomes `status:'invalidAction'` + `rejection`, anything else keeps
+  propagating (adapter/contract bugs are not action rejections). The Store rolls back on throw, so the
+  projected `state` is the pre-action position; on rejection `applied` is the count of actions applied
+  **before** the rejected one (the cursor advances past an action before dispatching it).
+  (b) **Capabilities enumerates ~12.4k cards** via `loadAllSets()` (an exported test-helper that
+  force-loads every set module, idempotent). **Six sets fail to `require` under the headless runner**
+  — `BST, DRV, NXD, PRC, SUM, SVI` (not just SVI as M1 found) — each caught per-module and surfaced in
+  `excludedSets`; their cards never enter the registry. Of the 91 inline-`Math.random` cards, 86 are
+  registered (the other 5 live in load-failing sets). **Context dependence:** the fs-based set
+  enumeration works under jasmine-ts (source present, where it is tested); in compiled production
+  `start.js` pre-loads all sets so `getAllCards()` is already full and the force-load is a no-op.
+  (c) **The `Math.random` exclusion list is generated + drift-checked.** `excluded-random-cards.ts`
+  (91 `fullName`s) is re-derived from source by `conformance-m6.spec.ts` (extraction handles
+  escaped apostrophes, e.g. "PokéPark's Whismur PCGP"); the spec fails on drift, keeping the list
+  honest as cards migrate off `Math.random` (§9).
+  (d) **HTTP is a standalone thin module** (`src/conformance/http/`), decoupled from the backend's
+  auth/DB/Core (uses `import * as express` to match the repo's no-`esModuleInterop` config). A
+  structurally malformed request → 400 `malformedRequest`; a valid request with an illegal action is
+  a normal **200** envelope with `status:'invalidAction'` — the transport error and the game-result
+  rejection are kept distinct. Pure handlers (`handleStep`/`handleCapabilities`) are in-process
+  testable; `server.ts` is a runnable entry (`CONFORMANCE_PORT`, default 8090). Mounting into the main
+  `src/backend/app.ts` later is a one-liner, deferred. `/v1/normalize` is deferred (optional, §5).
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

@@ -199,6 +199,35 @@ function ensureSetCodeLoaded(setCode: string): void {
   }
 }
 
+/**
+ * Force-load every exported set module so CardManager holds the full registry, reporting which
+ * modules loaded and which threw on `require`. Some set barrels fail under ts-node/jasmine-ts
+ * (e.g. set-scarlet-and-violet / SVI: "Class constructor TrainerCard cannot be invoked without
+ * 'new'"); those are caught per-module (not aborting the sweep) and returned with their inferred set
+ * code. Used by the conformance `/v1/capabilities` endpoint to enumerate supported cards and to
+ * report load-failing sets. Idempotent (each module loads at most once).
+ */
+export function loadAllSets(): {
+  loadedModules: string[];
+  failedModules: { module: string; setCode?: string; error: string }[];
+} {
+  const loadedModules: string[] = [];
+  const failedModules: { module: string; setCode?: string; error: string }[] = [];
+  for (const moduleName of getExportedSetModulePaths()) {
+    try {
+      loadSetModule(moduleName);
+      loadedModules.push(moduleName);
+    } catch (error: any) {
+      failedModules.push({
+        module: moduleName,
+        setCode: inferSetCodeFromModule(moduleName),
+        error: error?.message ?? String(error),
+      });
+    }
+  }
+  return { loadedModules, failedModules };
+}
+
 export function ensureCardsRegistered(cardNames: string[] = []): void {
   const cardManager = CardManager.getInstance();
   const namesToRegister = Array.from(new Set(cardNames.map(name => name.trim()).filter(Boolean)));

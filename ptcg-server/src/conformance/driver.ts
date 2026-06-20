@@ -11,9 +11,10 @@ import { ImportedGame, importState, projectState, actorIndex } from './state-ada
 import { mapDelta } from './event-mapper';
 import { classify, decomposerFor, WirePick } from './decomposers';
 import { topLevelMenu } from './legal-actions';
+import { mapRejection } from './rejection-codes';
 import {
   NeutralState, NeutralAction, NeutralEvent, NeutralPlayerId, StepResponse, ResponseStatus,
-  PendingDecision, LegalAction,
+  PendingDecision, LegalAction, RejectionInfo,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
   RetreatAction, DeclareAttackAction, EndTurnAction, UseAbilityAction,
   ShuffleSystemAction, FlipSystemAction
@@ -168,6 +169,8 @@ interface LoopResult {
   events: NeutralEvent[];
   pending: PendingDecision | null;
   applied: number;
+  /** Set when a dispatched action was rejected by the engine (M6). */
+  rejection?: RejectionInfo;
 }
 
 /** A system pending (shuffle / coin flip) surfaced when its action isn't yet in the log. */
@@ -230,6 +233,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     events.push(...mapDelta(game.state.logs.slice(before)));
   };
 
+  // A GameError from any dispatch (top-level action OR a prompt resolution) means the engine rejected
+  // the move; the Store rolls its state back, so we report the events applied so far, the actions
+  // consumed before the failure, and the normalized rejection. Non-GameError throws are adapter /
+  // contract bugs and keep propagating.
+  try {
+    return loop();
+  } catch (err) {
+    const rejection = mapRejection(err);
+    if (rejection === undefined) {
+      throw err;
+    }
+    // The cursor is advanced past an action before it is dispatched, so on a rejection it points one
+    // past the offending action; `applied` is therefore the count of actions applied before it.
+    return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection };
+  }
+
+  function loop(): LoopResult {
   for (;;) {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
@@ -305,6 +325,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // nothing to choose.
     return { events, pending: topLevelMenu(game), applied: cursor.i };
   }
+  }
 }
 
 // ── public surface ─────────────────────────────────────────────────────────
@@ -332,8 +353,12 @@ export function projectGame(game: ImportedGame): NeutralState {
  */
 export function step(initial: NeutralState, actions: NeutralAction[]): StepResponse {
   const game = importState(initial);
-  const { events, pending, applied } = runLoop(game, actions);
+  const { events, pending, applied, rejection } = runLoop(game, actions);
   const state = projectGame(game);
+  if (rejection !== undefined) {
+    // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
+    return { status: 'invalidAction', applied, pending: null, events, state, rejection };
+  }
   const status: ResponseStatus = state.outcome === 'ongoing' ? 'awaitingAction' : 'gameOver';
   return { status, applied, pending, events, state };
 }
