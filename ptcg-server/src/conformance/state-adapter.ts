@@ -144,6 +144,9 @@ class Importer {
   buildPlayer(index: number, ps: PlayerState, turn: number): Player {
     const player = new Player();
     player.id = index + 1;
+    // Name = neutral id so game logs carry a recoverable actor (display-only in the engine;
+    // the event mapper maps params.name -> 'A'/'B').
+    player.name = indexToPlayerId(index);
 
     // 5 bench slots (matching production/test setup), occupied ones filled.
     player.bench = [];

@@ -324,6 +324,15 @@ the same contract.
   keep it minimal and documented.
 - **Excluded-card list maintenance** — the ~88 set must stay in sync with the
   `capabilities` filter as cards migrate.
+- **Set-module load fragility under the headless runner** — some set barrels throw
+  on `require` under `ts-node`/`jasmine-ts` (observed: `set-scarlet-and-violet`/SVI
+  raises `Class constructor TrainerCard cannot be invoked without 'new'`, a
+  class-extension / import-order issue), which makes **every** printing in that set
+  unusable by the headless adapter until the load is fixed. The `capabilities`
+  filter must therefore exclude **load-failing sets** in addition to the
+  inline-`Math.random` cards (§9) — a load-time exclusion distinct from the
+  semantic one. *Surfaced in M1:* Kirlia SVI was unusable, so the in-scope no-prompt
+  turn test uses **Kirlia SIT** (same evolution line, a set that loads).
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

@@ -126,6 +126,22 @@ export interface NeutralState {
 
 // ── Actions (design §7) ───────────────────────────────────────────────────
 
+export interface BenchBasicAction {
+  actor: NeutralPlayerId;
+  type: 'benchBasic';
+  /** iid of the basic Pokemon card in hand. */
+  card: string;
+}
+
+export interface EvolveAction {
+  actor: NeutralPlayerId;
+  type: 'evolve';
+  /** iid of the evolution card in hand. */
+  card: string;
+  /** iid of any card in the in-play Pokemon's stack to evolve. */
+  target: string;
+}
+
 export interface AttachEnergyAction {
   actor: NeutralPlayerId;
   type: 'attachEnergy';
@@ -135,15 +151,73 @@ export interface AttachEnergyAction {
   target: string;
 }
 
-// The full vocabulary is broader (design §7); M0 only implements attachEnergy. Other action
-// kinds are typed loosely until their milestone lands.
+export interface AttachToolAction {
+  actor: NeutralPlayerId;
+  type: 'attachTool';
+  /** iid of the tool card in hand. */
+  card: string;
+  /** iid of the target Pokemon-in-play. */
+  target: string;
+}
+
+export interface RetreatAction {
+  actor: NeutralPlayerId;
+  type: 'retreat';
+  /** Destination bench slot index to promote into the active spot. */
+  to: number;
+}
+
+export interface DeclareAttackAction {
+  actor: NeutralPlayerId;
+  type: 'declareAttack';
+  /** iid of the attacking Pokemon-in-play (the active). */
+  source: string;
+  /** Attack name. */
+  name: string;
+}
+
+export interface EndTurnAction {
+  actor: NeutralPlayerId;
+  type: 'endTurn';
+}
+
+// The full vocabulary is broader (design §7); milestones beyond M1 (abilities, prompt-mediated
+// trainers, the system actor) are typed loosely until their milestone lands.
 export interface UnimplementedAction {
   actor: Actor;
   type: string;
   [key: string]: unknown;
 }
 
-export type NeutralAction = AttachEnergyAction | UnimplementedAction;
+export type NeutralAction =
+  | BenchBasicAction
+  | EvolveAction
+  | AttachEnergyAction
+  | AttachToolAction
+  | RetreatAction
+  | DeclareAttackAction
+  | EndTurnAction
+  | UnimplementedAction;
+
+// ── Events (design §4.1, impl doc §4.8) ───────────────────────────────────
+// Resolution trace for one step. Cards are named by display name (twinleaf logs carry no card id),
+// so events are not iid-tagged in this first pass. `actor` is the neutral player who acted.
+
+export type NeutralEvent =
+  | { kind: 'benchedBasic'; actor: NeutralPlayerId; card: string }
+  | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'attachedEnergy'; actor: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'attachedTool'; actor: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'drew'; actor: NeutralPlayerId }
+  | { kind: 'usedAttack'; actor: NeutralPlayerId; attack: string }
+  | { kind: 'dealtDamage'; actor: NeutralPlayerId; damage: number; target: string }
+  | { kind: 'placedDamage'; actor: NeutralPlayerId; damage: number; target: string }
+  | { kind: 'ko'; target: string }
+  | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
+  | { kind: 'turnEnded'; actor: NeutralPlayerId }
+  | { kind: 'turnStarted'; turn: number }
+  | { kind: 'deckedOut'; actor: NeutralPlayerId }
+  | { kind: 'usedAbility'; actor: NeutralPlayerId; ability: string };
 
 // ── Response envelope (design §4.1) ───────────────────────────────────────
 
@@ -160,6 +234,6 @@ export interface StepResponse {
   /** Number of actions consumed from the log. */
   applied: number;
   pending: PendingDecision | null;
-  events: unknown[];
+  events: NeutralEvent[];
   state: NeutralState;
 }
