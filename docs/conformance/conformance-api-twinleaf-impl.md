@@ -254,18 +254,31 @@ flips as `system` pendings, and enforces the neutral-spec conventions
 (`activePlayer` flips at `turnStarted`; per-turn `flags` reset at `turnStarted`;
 fixed poison→burn→sleep order).
 
-### 4.8 Event mapping
+### 4.8 Event mapping (two tiers)
 
-twinleaf appends `StateLog` entries (`GameLog.*`) during reduction. Map them to
-the neutral event vocabulary:
+Events ride in two tiers (OpenAPI Step 2b). The **significant** vocabulary is the
+contract's compared surface; the **informational** trace rides along under
+`Event.additionalProperties:true` and never fails a test.
 
-| twinleaf `GameLog` | neutral event |
-|---|---|
-| `LOG_PLAYER_PLAYS_*` | `playedItem` / `supporterPlayed` / `stadiumPlayed` |
-| draw / `DrawCardForTurnEffect` | `draw` |
-| KO / prize | `ko`, `prizeTaken` |
-| `LOG_PLAYER_ENDS_TURN` / turn start | `turnEnded` / `turnStarted` |
-| shuffle / condition checkup | `shuffled` / `conditionChecked` |
+**Significant** (`events.ts` `deriveEvents`, per dispatch) — must be
+iid/player/count-tagged, so it is derived from a **before/after projected-state
+diff** plus the raw `StateLog` delta, NOT from the display-name log params:
+
+| significant `kind` | payload | source |
+|---|---|---|
+| `damaged` | `target` (basic iid), `hp` (net HP this step) | state-diff (survivor Δdamage); lethal hit on the single KO'd target via the deals-damage delta |
+| `ko` | `target` (basic iid) | a basic iid present before, gone after |
+| `draw` | `player`, `count` | aggregated `LOG_PLAYER_DRAWS_CARD` |
+| `turnStarted` / `turnEnded` | `player` | `LOG_TURN` (→ after-state active) / `LOG_PLAYER_ENDS_TURN` |
+| `shuffled` | `player` | emitted by the driver at shuffle-pending resolution (no deck-shuffle `GameLog`) |
+| `gameOver` | `outcome` | `before.outcome` ongoing → `after.outcome` terminal |
+
+**Informational** (`event-mapper.ts` `mapLog`, display-name tagged):
+`benchedBasic`, `evolved`, `attachedEnergy`, `attachedTool`, `usedAttack`,
+`retreated`, `deckedOut`, `usedAbility`. A `GameLog` with no mapping returns
+`undefined` and is dropped; the `seam-coverage` guard asserts no significant log
+is silently dropped (its `SIGNIFICANT_LOGS` set documents what `deriveEvents`
+consumes).
 
 ### 4.9 Rejection codes & capabilities
 
@@ -362,20 +375,23 @@ the same contract.
   inside one dispatch — `startNextTurn` (logs `LOG_PLAYER_ENDS_TURN` → `turnEnded`),
   `betweenTurns` (special conditions), `checkState`, `initNextTurn` (`turn++`, `LOG_TURN` →
   `turnStarted`, mandatory draw, deck-out ⇒ `endGame`). Consequences:
-  (a) `turnEnded` / `turnStarted` / `deckedOut` already map via the M1 event-mapper;
+  (a) the turn boundary surfaces `turnEnded{player}` / `turnStarted{player}` (significant,
+  derived in `events.ts` from the boundary logs + the after-state, Step 2b) and `deckedOut`
+  (informational, `mapLog`);
   (b) burn and sleep raise a **`CoinFlipPrompt`** (the prompt-class path, *not* the inline
   `flipCoin` hook), so the M3 `system` branch resolves them from `flip` actions unchanged —
   sleep raises N flips as an array `store.prompt`, each surfacing as its own `'Coin flip'`
   the loop answers in order (callback fires once all resolve);
-  (c) **poison and burn deal damage with NO log** (state-only `active.damage +=`), so the
-  checkup is observable in the *projection* (damage / `conditions`), not in events — there is
-  **no `conditionChecked` event** (the §4.8 table lists one, but twinleaf gives nothing to map
-  it from without synthesizing a diff, which would be fragile and engine-specific; kept the
-  event vocab closed);
+  (c) **poison and burn deal damage with NO log** (state-only `active.damage +=`); Step 2b
+  derives the significant `damaged{target,hp}` from a before/after projected-state diff (the
+  contract's `hp` is *net counters placed this step*), so checkup poison/burn damage surfaces as
+  `damaged` from that diff — the state-diff is the deliberate iid-tagging mechanism, not fragile
+  log-scraping. There is still no `conditionChecked` event (the vocab stays closed);
   (d) **deck-out ⇒ `gameOver`** projects through the existing `state.winner` / `phase` mapping
   (`endGame` sets both) and the **drawing** player loses; `initNextTurn` logs
-  `LOG_PLAYER_DRAWS_CARD` *before* the empty-deck check, so a deck-out emits a `drew`
-  immediately followed by `deckedOut` — both engines must agree on this ordering.
+  `LOG_PLAYER_DRAWS_CARD` *before* the empty-deck check, so a deck-out emits `draw{count}`
+  (significant) then `deckedOut` (informational) then `gameOver{outcome}` — both engines must
+  agree on this ordering.
   `PokemonCardList` defaults make an imported afflicted Pokémon self-sufficient (no trigger
   card): `poisonDamage=10`, `burnDamage=20`, `sleepFlips=1`. Multi-condition simultaneity
   (poison+asleep on one active) and a checkup-poison KO → `promote` pending both reuse existing

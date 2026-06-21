@@ -9,9 +9,9 @@ import { getCardByName } from '../../sets/tests/test-helpers';
  * Validate live adapter responses against the actual OpenAPI contract schemas (the source of truth,
  * `~/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`). Step 1 covers the response
  * envelope, `GameState`, `Capabilities`, and `Error`; Step 2a adds the `pending.legalActions[]`
- * action vocabulary (closed `Action` enum + required `actor`) — validated here via a full
- * `awaitingAction` response and each legalAction against `Action`. The significant-EVENT vocabulary
- * remains the known Step-2b gap (events still ride as the engine's informational trace).
+ * action vocabulary (closed `Action` enum + required `actor`), validated via a full `awaitingAction`
+ * response and each legalAction against `Action`; Step 2b adds the significant-event vocabulary,
+ * validated via the turn-boundary `events[]` against `Event`. The full contract surface now validates.
  *
  * Skips when the cross-repo contract file is absent (e.g. CI without the conformance-tests checkout).
  */
@@ -119,6 +119,18 @@ function relaxNullableRefs(schemas: Record<string, any>): void {
     const res = step(BOARD, []);
     for (const action of res.pending!.legalActions) {
       expect(check('Action', action)).toBe(true);
+    }
+  });
+
+  it('significant events validate against the Event schema (turnEnded/turnStarted/draw)', () => {
+    // A ends the turn → B's turn starts and B draws: the turn boundary's significant events.
+    const res = step(BOARD, [{ actor: 'A', type: 'endTurn' }]);
+    const kinds = res.events.map(e => e.kind);
+    expect(kinds).toContain('turnEnded');
+    expect(kinds).toContain('turnStarted');
+    expect(kinds).toContain('draw');
+    for (const event of res.events) {
+      expect(check('Event', event)).toBe(true);
     }
   });
 

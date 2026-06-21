@@ -26,6 +26,13 @@ interface Seams {
   dropped: Set<string>;
 }
 
+// GameLogs consumed by the SIGNIFICANT-event derivation (events.ts), not the informational mapLog.
+// They are handled, not silently dropped — the seam guard counts them as mapped.
+const SIGNIFICANT_LOGS = new Set<string>([
+  'LOG_PLAYER_DRAWS_CARD', 'LOG_PLAYER_DEALS_DAMAGE', 'LOG_PLAYER_PLACES_DAMAGE_COUNTERS',
+  'LOG_POKEMON_KO', 'LOG_PLAYER_ENDS_TURN', 'LOG_TURN',
+]);
+
 // Action types that ANSWER an open prompt (decomposer picks + system inputs). The open prompt at a
 // frontier is always consumed by one of these, so we only re-import at those prefixes (top-level
 // actions leave the synthetic menu, not a `state.prompts` entry) — far cheaper than every prefix.
@@ -50,7 +57,8 @@ function collectSeams(initial: NeutralState, log: NeutralAction[], s: Seams): vo
   const full = importState(initial);
   replay(full, log);
   for (const entry of full.state.logs) {
-    (mapLog(entry) === undefined ? s.dropped : s.mapped).add(String(entry.message));
+    const handled = mapLog(entry) !== undefined || SIGNIFICANT_LOGS.has(String(entry.message));
+    (handled ? s.mapped : s.dropped).add(String(entry.message));
   }
 }
 

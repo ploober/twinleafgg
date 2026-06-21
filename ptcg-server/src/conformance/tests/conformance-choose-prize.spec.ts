@@ -62,6 +62,12 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     // A took exactly one prize: 6 -> 5, and the prize card landed in A's hand
     expect(res.state.players.A.prizes.length).toBe(5);
     expect(res.state.players.A.hand.some(c => c.printing === W_PRINTING)).toBe(true);
+
+    // Significant events: the KO'd Pokemon is B's original active (its basic iid), preceded by the
+    // lethal `damaged` on the same target.
+    const koIid = initial.players.B.active!.stack[0].iid;
+    expect(res.events.some(e => e.kind === 'damaged' && e.target === koIid && e.hp > 0)).toBe(true);
+    expect(res.events.some(e => e.kind === 'ko' && e.target === koIid)).toBe(true);
   });
 
   it('enumerates every takeable prize pile as a takePrize legal action', () => {

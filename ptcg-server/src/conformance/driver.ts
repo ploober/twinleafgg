@@ -8,7 +8,8 @@ import {
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
-import { mapDelta } from './event-mapper';
+import { deriveEvents } from './events';
+import { playerIdToActor } from './iid-targets';
 import { classify, decomposerFor, WirePick } from './decomposers';
 import { topLevelMenu } from './legal-actions';
 import { mapRejection } from './rejection-codes';
@@ -245,9 +246,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   });
 
   const dispatchAndCollect = (fire: () => void): void => {
-    const before = game.state.logs.length;
+    const beforeLogs = game.state.logs.length;
+    const beforeState = projectState(game.state, game.ctx);
     fire();
-    events.push(...mapDelta(game.state.logs.slice(before)));
+    const afterState = projectState(game.state, game.ctx);
+    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs)));
   };
 
   // A GameError from any dispatch (top-level action OR a prompt resolution) means the engine rejected
@@ -292,6 +295,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           }
           cursor.i++;
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
+          // No deck-shuffle GameLog exists; emit the significant `shuffled` for the deck's owner here.
+          events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
           continue;
         }
         return { events, pending: toWirePending(systemPending(game, prompt)), applied: cursor.i };

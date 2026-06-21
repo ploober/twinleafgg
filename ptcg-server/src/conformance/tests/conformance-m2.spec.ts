@@ -308,4 +308,23 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect(res.pending!.legalActions[0].type).toBe('shuffle');
     expect((res.pending!.legalActions[0] as any).deck.sort()).toEqual(['d0', 'd1']);
   });
+
+  it('resolving a chained shuffle emits a significant `shuffled` event for the deck owner', () => {
+    const game = importState(board(
+      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }], deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
+      player({ active: ralts('B-act') }),
+    ));
+    const p = game.state.players[0];
+    game.store.prompt(game.state, new ChooseCardsPrompt(
+      p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 1, allowCancel: false }
+    ), () => {
+      game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), (order: number[]) => { p.deck.applyOrder(order); });
+    });
+
+    const res = replay(game, [
+      { actor: 'A', type: 'choose', target: 'h0' },
+      { actor: 'system', type: 'shuffle', order: ['d1', 'd0'] },
+    ]);
+    expect(res.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
+  });
 });

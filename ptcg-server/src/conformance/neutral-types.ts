@@ -304,23 +304,28 @@ export type NeutralAction =
   | FlipSystemAction
   | UnimplementedAction;
 
-// ── Events (design §4.1, impl doc §4.8) ───────────────────────────────────
-// Resolution trace for one step. Cards are named by display name (twinleaf logs carry no card id),
-// so events are not iid-tagged in this first pass. `actor` is the neutral player who acted.
+// ── Events (design §4.1, §10.4, impl doc §4.8) ─────────────────────────────
+// Resolution trace for one step. The SIGNIFICANT vocabulary (contract `Event`) is iid/player/count-
+// tagged and compared cross-engine (events.ts derives it from a before/after state diff + the log);
+// the informational kinds (display-name tagged) ride along under `Event.additionalProperties:true`
+// and never fail a test — captured only for the divergence report.
 
 export type NeutralEvent =
+  // ── Significant (OpenAPI `Event`) — compared cross-engine ──
+  | { kind: 'draw'; player: NeutralPlayerId; count: number }
+  | { kind: 'damaged'; target: string; hp: number }   // target = basic iid; hp = net HP placed this step
+  | { kind: 'ko'; target: string }                     // target = basic iid
+  | { kind: 'turnStarted'; player: NeutralPlayerId }
+  | { kind: 'turnEnded'; player: NeutralPlayerId }
+  | { kind: 'shuffled'; player: NeutralPlayerId }
+  | { kind: 'gameOver'; outcome: Outcome }
+  // ── Informational trace — never compared ──
   | { kind: 'benchedBasic'; actor: NeutralPlayerId; card: string }
   | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }
   | { kind: 'attachedEnergy'; actor: NeutralPlayerId; card: string; pokemon: string }
   | { kind: 'attachedTool'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'drew'; actor: NeutralPlayerId }
   | { kind: 'usedAttack'; actor: NeutralPlayerId; attack: string }
-  | { kind: 'dealtDamage'; actor: NeutralPlayerId; damage: number; target: string }
-  | { kind: 'placedDamage'; actor: NeutralPlayerId; damage: number; target: string }
-  | { kind: 'ko'; target: string }
   | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
-  | { kind: 'turnEnded'; actor: NeutralPlayerId }
-  | { kind: 'turnStarted'; turn: number }
   | { kind: 'deckedOut'; actor: NeutralPlayerId }
   | { kind: 'usedAbility'; actor: NeutralPlayerId; ability: string };
 

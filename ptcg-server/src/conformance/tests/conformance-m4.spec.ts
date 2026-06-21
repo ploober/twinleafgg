@@ -60,8 +60,8 @@ describe('Conformance M4 — turn boundaries & checkup', () => {
     expect(res.state.players.A.active!.conditions).toEqual(['poisoned']); // poison persists
     expect(res.state.activePlayer).toBe('B');
     expect(res.state.turn).toBe(4);
-    expect(res.events.some(e => e.kind === 'turnEnded' && e.actor === 'A')).toBe(true);
-    expect(res.events.some(e => e.kind === 'turnStarted' && e.turn === 4)).toBe(true);
+    expect(res.events.some(e => e.kind === 'turnEnded' && e.player === 'A')).toBe(true);
+    expect(res.events.some(e => e.kind === 'turnStarted' && e.player === 'B')).toBe(true);
   });
 
   it('burn: heads removes Burned (always +2 counters)', () => {
@@ -110,8 +110,9 @@ describe('Conformance M4 — turn boundaries & checkup', () => {
     expect(res.status).toBe('gameOver');
     expect(res.state.outcome).toBe('winA'); // B drew from an empty deck, so A wins
     expect(res.state.phase).toBe('gameOver');
-    expect(res.events.some(e => e.kind === 'turnEnded' && e.actor === 'A')).toBe(true);
+    expect(res.events.some(e => e.kind === 'turnEnded' && e.player === 'A')).toBe(true);
     expect(res.events.some(e => e.kind === 'deckedOut' && e.actor === 'B')).toBe(true);
+    expect(res.events.some(e => e.kind === 'gameOver' && e.outcome === 'winA')).toBe(true);
   });
 
   it('per-turn flags reset across the boundary; activePlayer flips at turnStarted', () => {
