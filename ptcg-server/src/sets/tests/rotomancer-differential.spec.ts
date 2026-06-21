@@ -6,6 +6,7 @@ import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { State } from '../../game/store/state/state';
+import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 
 /**
  * Phase 4 + 6 — differential: run the SAME scenario through the native Twinleaf card and
@@ -14,11 +15,14 @@ import { State } from '../../game/store/state/state';
  * interpreter and the hand-written card produce the same engine result.
  */
 
-interface SideSnapshot {
+interface PokeSnap {
   damage: number | 'KO';
   conditions: string[];
   energy: number;
-  bench: number;
+}
+interface SideSnapshot {
+  active: PokeSnap;
+  bench: PokeSnap[];   // occupied bench slots, in slot order — verifies spread / per-bench effects
   hand: number;
   deck: number;
   discard: number;
@@ -26,16 +30,21 @@ interface SideSnapshot {
 }
 interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
+function pokeSnap(list: PokemonCardList): PokeSnap {
+  const ko = list.getPokemonCard() === undefined;
+  return {
+    damage: ko ? 'KO' : list.damage,
+    conditions: ko ? [] : list.specialConditions.map(String).sort(),
+    energy: ko ? 0 : list.energies.cards.length,
+  };
+}
+
 function snapshot(state: State): Snapshot {
   const side = (i: number): SideSnapshot => {
     const p = state.players[i];
-    const active = p.active;
-    const ko = active.getPokemonCard() === undefined;
     return {
-      damage: ko ? 'KO' : active.damage,
-      conditions: ko ? [] : active.specialConditions.map(String).sort(),
-      energy: ko ? 0 : active.energies.cards.length,
-      bench: p.bench.filter(b => b.getPokemonCard() !== undefined).length,
+      active: pokeSnap(p.active),
+      bench: p.bench.filter(b => b.getPokemonCard() !== undefined).map(pokeSnap),
       hand: p.hand.cards.length,
       deck: p.deck.cards.length,
       discard: p.discard.cards.length,
@@ -160,8 +169,6 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Full Moon Rondo': 'Lillie\'s Clefairy ex: "20 more per Benched (both sides)" — IR count scope differs',
     'Angry Slam': 'IR counts all Pokémon in play; real attack counts only damaged Pokémon',
     'Illusory Hijacking': 'IR forEach pokemonInPlay drops the "ex AND V" predicate on the count',
-    // (3) Dynamic-to-HP — IR can't express "until remaining HP is N".
-    'Chi-Atsu': 'Medicham ex: "counters until remaining HP is 50" — IR falls back to a flat const',
     // (4) Self-damage / KO-timing rider not modeled by the interpreter.
     'Dynamic Press': 'Hop\'s Snorlax: "140, also 80 to itself" — self-damage + KO/prize timing differs',
     'Power Shot': 'IR omits the conditional-discard rider (flat 170 vs "discard a Grass Energy or nothing")',

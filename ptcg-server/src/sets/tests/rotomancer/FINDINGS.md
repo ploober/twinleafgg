@@ -133,6 +133,22 @@ Pokémon") are deferred to **Stage B**: native distributes those via a prompt th
 unreliably, so aligning them needs the interpreter to emit the same prompts (a continuation-passing
 rewrite), not a first-eligible guess. The remaining unsupported attacks are that Stage-B tail.
 
+### 6. Wider observation surface (per-bench)
+
+The differential's snapshot only compared the two **actives**' damage, so any divergence on the
+**bench** was invisible — a chunk of "compared, 0 mismatches" was effectively vacuous for spread
+attacks. Widening the snapshot to per-bench `{damage, conditions, energy}` immediately flushed out
+two real **interpreter** bugs (now fixed) that had been hidden:
+
+- **`untilHpRemaining` not modeled.** `damage.placeCounters` used the literal `count` (0) and
+  ignored `untilHpRemaining`, so "counters until N HP remaining" attacks did nothing. The v2 IR
+  *does* express this, so it's now implemented — which also retired the **Chi-Atsu** allow-list
+  entry (Medicham ex "counters until 50 HP" now agrees).
+- **`placeCounters` used `PutDamageEffect`.** That effect only lands on the defender, so counters
+  placed on the *bench* (e.g. Palossand ex's Barite Jail, "counters until 100 HP on each Benched
+  Pokémon") silently did nothing. Switched to `PutCountersEffect`, which native uses and which
+  applies to any Pokémon. Caught only because the snapshot now sees the bench.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

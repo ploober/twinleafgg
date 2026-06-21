@@ -7,7 +7,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
-import { PutDamageEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
+import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { costToCardType } from './bridge';
@@ -43,6 +43,7 @@ export interface IrOp {
   kind: string;
   amount?: CountForm;
   count?: number | CountForm;
+  untilHpRemaining?: number;  // damage.placeCounters: place counters until the target has N HP left
   condition?: string;
   removeMode?: boolean;
   ignore?: string[];    // damage.deal: weakness | resistance | defenderEffects (all no-op in a mirror)
@@ -221,10 +222,19 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return state;
     }
     case 'damage.placeCounters': {
-      // Damage counters bypass weakness/resistance; 1 counter = 10 HP.
-      const value = evalAmount(state, effect, op.count) * 10;
+      // "Put damage counters" — direct counter placement via PutCountersEffect (bypasses
+      // weakness/resistance and applies to any Pokémon, including the bench; PutDamageEffect only
+      // lands on the defender). 1 counter = 10 HP. `untilHpRemaining` brings each target down to N
+      // HP remaining (never heals).
       for (const { list } of resolveTargets(state, effect, op.target)) {
-        const put = new PutDamageEffect(effect, value);
+        let value: number;
+        if (op.untilHpRemaining !== undefined) {
+          const card = list.getPokemonCard() as PokemonCard;
+          value = Math.max(0, (card.hp - list.damage) - op.untilHpRemaining);
+        } else {
+          value = evalAmount(state, effect, op.count) * 10;
+        }
+        const put = new PutCountersEffect(effect, value);
         put.target = list;
         state = store.reduceEffect(state, put);
       }
