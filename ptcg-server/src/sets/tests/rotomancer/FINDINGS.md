@@ -245,12 +245,19 @@ compared, **0 unexplained mismatches**, and it **found a 4th wrong-attack-index 
 > native doesn't. → **Twinleaf bug** (allow-listed, not fixed). Same class as Mega Sharpedo ex /
 > Hungry Jaws (§8).
 
-The remaining lock families are the next to wire in: `attackShutoff` — the `ownNextAttack`/self
-"recharge" form (105 ops) needs an own-turn probe (skip the opponent's turn, retry the attack), while
-the `opponentNextTurn`/defending form (10 ops) reuses this turn's timing (attempt the defender's
-attack, observe the block); `retreatShutoff`'s `yourNextTurn`/self variant (3); the
-`itemPlayRestriction` / `evolvePlayRestriction` bans (9); and `damageVulnerability` (`yourNextTurn`,
-3 — a probe on the lock-user's own next turn).
+The remaining lock families are the next to wire in:
+- `attackShutoff` / `opponentNextTurn` / defending (10 ops) — "the Defending Pokémon can't use
+  attacks." A block probe was prototyped (give the defender energy, attempt its attack, observe
+  `BLOCKED_BY_EFFECT`; the interpreter sets the engine's central `cannotAttackNextTurn`). But **all 10
+  printings are currently un-comparable**: me2pt5/me3 are unmapped, the zsv numbers don't align, and
+  TEF-46 (Frosmoth) / SSP-140 (Appletun) aren't implemented in Twinleaf at those numbers. So the
+  family has no Twinleaf∩corpus intersection yet — deferred until those printings exist, not a harness
+  gap. (The prototype was reverted to keep every scorecard live rather than perpetually `compared 0`.)
+- `attackShutoff` / `ownNextAttack` / self (105 ops) — the "recharge" form; needs an own-turn probe
+  (skip the opponent's turn, retry the same attack).
+- `retreatShutoff`'s `yourNextTurn`/self variant (3); the `itemPlayRestriction` /
+  `evolvePlayRestriction` bans (9); and `damageVulnerability` (`yourNextTurn`, 3 — a probe on the
+  lock-user's own next turn).
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
