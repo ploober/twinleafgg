@@ -17,7 +17,7 @@ import {
 // `ensureCardsRegistered`). A dedicated, non-test card-registry seam replaces this in a later
 // milestone; for the headless adapter it is the same CardManager singleton either way.
 import { getCardByName, getCardBySetAndNumber, ensureCardsRegistered } from '../sets/tests/test-helpers';
-import { toPrinting, resolvePrinting } from './printing';
+import { toPrinting, isFullName, printingCandidates } from './printing';
 
 /**
  * Resolve a wire `printing` to a fresh twinleaf Card. The conformance form is a set-number
@@ -26,15 +26,17 @@ import { toPrinting, resolvePrinting } from './printing';
  * get a clone (matching the `getCardByName` path, whose result is safe to stamp an `id` on).
  */
 function resolveCard(printing: string): Card {
-  const parsed = resolvePrinting(printing);
-  if (parsed === null) {
+  if (isFullName(printing)) {
     return getCardByName(printing);
   }
-  const found = getCardBySetAndNumber(parsed.set, parsed.setNumber);
-  if (found === undefined) {
-    throw new Error(`[conformance] no card for printing "${printing}" (${parsed.set} #${parsed.setNumber})`);
+  // A `printing` id may name an identity with several printings; load the first one twinleaf has.
+  for (const c of printingCandidates(printing)) {
+    const found = getCardBySetAndNumber(c.set, c.setNumber);
+    if (found !== undefined) {
+      return getCardByName(found.fullName);
+    }
   }
-  return getCardByName(found.fullName);
+  throw new Error(`[conformance] no card for printing "${printing}"`);
 }
 
 /**
@@ -229,15 +231,18 @@ const OUTCOME_IMPORT: Record<Outcome, GameWinner> = {
   tie: GameWinner.DRAW,
 };
 
-/** Pre-load every set referenced by `initialState`, tolerating both set-number and fullName printings. */
+/** Pre-load every set referenced by `initialState`, tolerating id, set-number, and fullName printings. */
 function ensurePrintingsLoaded(printings: string[]): void {
   const fullNames: string[] = [];
   for (const printing of printings) {
-    const parsed = resolvePrinting(printing);
-    if (parsed === null) {
+    if (isFullName(printing)) {
       fullNames.push(printing);
-    } else {
-      getCardBySetAndNumber(parsed.set, parsed.setNumber); // side effect: loads the set (result unused)
+      continue;
+    }
+    for (const c of printingCandidates(printing)) {
+      if (getCardBySetAndNumber(c.set, c.setNumber) !== undefined) {
+        break; // loaded the set twinleaf actually has for this id
+      }
     }
   }
   ensureCardsRegistered(fullNames);

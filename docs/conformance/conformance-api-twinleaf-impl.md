@@ -28,7 +28,11 @@ core enabling facts (all verified against source):
   auto-resolving.
 - The `Store` **does not call the `Arbiter`** — the handler does. Externalizing
   randomness is "don't wire the Arbiter," not "rip it out."
-- Card identity is `Card.fullName` (set-number) = the neutral `printing`.
+- Card identity (`printing`) is a pokemontcg.io id — the rotomancer canonical
+  IDENTITY `cid` where the shared registry has the card (reprint-safe), else the
+  card's own printing id. `printing.ts` maps `Card.(set,setNumber)` to it via the
+  generated `printing-registry.json`; import accepts the id, the old set-number
+  form, and `fullName` (back-compat).
 
 ## 2. First-pass scope
 
@@ -491,9 +495,10 @@ the same contract.
 - **OpenAPI compliance — Step 1 (envelope + identity + capabilities).** The formal contract
   (`~/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`) postdates M0–M6; we aligned the
   wire surface to it in a phased way (the second engine + runner consume this exact shape). **Done:**
-  (a) **card identity** — `printing` is now a set-number `lower(card.set)-pad3(card.setNumber)`
-  (`sit-067`, `sve-002`), via `printing.ts`; import accepts set-number *and* fullName (back-compat,
-  `resolveCard`); (b) **response envelope** — top-level `schemaVersion`; invalidAction emits `index` +
+  (a) **card identity** — `printing` is a pokemontcg.io id (rotomancer canonical IDENTITY `cid`
+  where the shared registry has the card, reprint-safe; else the card's own printing id —
+  `sve-3`, `sv4-93`, `swsh12-60`), via `printing.ts` + the generated `printing-registry.json`;
+  import accepts the id, the old set-number form, *and* fullName (back-compat, `resolveCard`); (b) **response envelope** — top-level `schemaVersion`; invalidAction emits `index` +
   coarse `reasonCode` (the contract's 14-value enum) + `nativeReason {code, source:'twinleaf:GameMessage'}`
   (replacing the old `rejection`); `state.activeEffects: []`; (c) **capabilities** —
   `{engine, version, schemaVersion, supportedSets, implementedCards}` (set-number cards); (d) **HTTP** —
