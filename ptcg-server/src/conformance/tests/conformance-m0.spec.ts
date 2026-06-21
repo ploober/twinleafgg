@@ -3,6 +3,15 @@ import { projectGame, applyActions } from '../driver';
 import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
+
+// Boards carry the contract's set-number printings (sit-067, sve-004, …); import accepts these and the
+// projection emits them, so a round-trip is a true identity.
+const RALTS = toPrinting(getCardByName('Ralts SIT'));
+const LIGHTNING = toPrinting(getCardByName('Lightning Energy SVE'));
+const WATER = toPrinting(getCardByName('Water Energy SVE'));
+const GENERATOR = toPrinting(getCardByName('Electric Generator PAF'));
 
 // ── builders that mirror the projection's exact default shapes ─────────────
 // (so a full round-trip deep-equal is a real guard, not a fudge)
@@ -49,10 +58,10 @@ describe('Conformance M0 — import/project + attach energy', () => {
 
   it('round-trips a static no-prompt board through import -> project', () => {
     const activeA: PokemonInPlay = {
-      stack: [{ iid: 'A-active', printing: 'Ralts SIT' }],
+      stack: [{ iid: 'A-active', printing: RALTS }],
       energy: [
-        { iid: 'A-e1', printing: 'Lightning Energy SVE' },
-        { iid: 'A-e2', printing: 'Water Energy SVE' },
+        { iid: 'A-e1', printing: LIGHTNING },
+        { iid: 'A-e2', printing: WATER },
       ],
       tools: [],
       damage: 30,
@@ -62,7 +71,7 @@ describe('Conformance M0 — import/project + attach energy', () => {
     };
 
     const benchA: PokemonInPlay = {
-      stack: [{ iid: 'A-bench0', printing: 'Ralts SIT' }],
+      stack: [{ iid: 'A-bench0', printing: RALTS }],
       energy: [],
       tools: [],
       damage: 0,
@@ -82,22 +91,22 @@ describe('Conformance M0 — import/project + attach energy', () => {
         A: {
           active: activeA,
           bench: [benchA],
-          hand: [{ iid: 'A-h1', printing: 'Electric Generator PAF' }],
+          hand: [{ iid: 'A-h1', printing: GENERATOR }],
           deck: [
-            { iid: 'A-d1', printing: 'Lightning Energy SVE' },
-            { iid: 'A-d2', printing: 'Water Energy SVE' },
+            { iid: 'A-d1', printing: LIGHTNING },
+            { iid: 'A-d2', printing: WATER },
           ],
-          discard: [{ iid: 'A-x1', printing: 'Water Energy SVE' }],
+          discard: [{ iid: 'A-x1', printing: WATER }],
           lostZone: [],
           prizes: [
-            { iid: 'A-p1', printing: 'Water Energy SVE', faceUp: false },
-            { iid: 'A-p2', printing: 'Lightning Energy SVE', faceUp: false },
+            { iid: 'A-p1', printing: WATER, faceUp: false },
+            { iid: 'A-p2', printing: LIGHTNING, faceUp: false },
           ],
           flags: defaultFlags(),
         },
         B: {
           active: {
-            stack: [{ iid: 'B-active', printing: 'Ralts SIT' }],
+            stack: [{ iid: 'B-active', printing: RALTS }],
             energy: [],
             tools: [],
             damage: 0,
@@ -106,13 +115,14 @@ describe('Conformance M0 — import/project + attach energy', () => {
           },
           bench: [],
           hand: [],
-          deck: [{ iid: 'B-d1', printing: 'Water Energy SVE' }],
+          deck: [{ iid: 'B-d1', printing: WATER }],
           discard: [],
           lostZone: [],
-          prizes: [{ iid: 'B-p1', printing: 'Water Energy SVE', faceUp: false }],
+          prizes: [{ iid: 'B-p1', printing: WATER, faceUp: false }],
           flags: defaultFlags(),
         },
       },
+      activeEffects: [],
     };
 
     const game = importState(initial);
@@ -137,28 +147,28 @@ describe('Conformance M0 — import/project + attach energy', () => {
       players: {
         A: emptyPlayer({
           active: {
-            stack: [{ iid: 'A-active', printing: 'Ralts SIT' }],
+            stack: [{ iid: 'A-active', printing: RALTS }],
             energy: [],
             tools: [],
             damage: 0,
             conditions: [],
             markers: defaultMarkers(1),
           },
-          hand: [{ iid: 'A-energy', printing: 'Lightning Energy SVE' }],
-          deck: [{ iid: 'A-d1', printing: 'Water Energy SVE' }],
-          prizes: [{ iid: 'A-p1', printing: 'Water Energy SVE', faceUp: false }],
+          hand: [{ iid: 'A-energy', printing: LIGHTNING }],
+          deck: [{ iid: 'A-d1', printing: WATER }],
+          prizes: [{ iid: 'A-p1', printing: WATER, faceUp: false }],
         }),
         B: emptyPlayer({
           active: {
-            stack: [{ iid: 'B-active', printing: 'Ralts SIT' }],
+            stack: [{ iid: 'B-active', printing: RALTS }],
             energy: [],
             tools: [],
             damage: 0,
             conditions: [],
             markers: defaultMarkers(1),
           },
-          deck: [{ iid: 'B-d1', printing: 'Water Energy SVE' }],
-          prizes: [{ iid: 'B-p1', printing: 'Water Energy SVE', faceUp: false }],
+          deck: [{ iid: 'B-d1', printing: WATER }],
+          prizes: [{ iid: 'B-p1', printing: WATER, faceUp: false }],
         }),
       },
     };
@@ -168,7 +178,7 @@ describe('Conformance M0 — import/project + attach energy', () => {
     // Precondition: energy is in hand, not yet attached.
     const before = projectGame(game);
     expect(before.players.A.active!.energy).toEqual([]);
-    expect(before.players.A.hand).toEqual([{ iid: 'A-energy', printing: 'Lightning Energy SVE' }]);
+    expect(before.players.A.hand).toEqual([{ iid: 'A-energy', printing: LIGHTNING }]);
     expect(before.players.A.flags.energyAttachedThisTurn).toBe(false);
 
     applyActions(game, [
@@ -179,7 +189,7 @@ describe('Conformance M0 — import/project + attach energy', () => {
 
     const after = projectGame(game);
     // The energy moved hand -> the active Pokemon's energy, and the once-per-turn gate flipped.
-    expect(after.players.A.active!.energy).toEqual([{ iid: 'A-energy', printing: 'Lightning Energy SVE' }]);
+    expect(after.players.A.active!.energy).toEqual([{ iid: 'A-energy', printing: LIGHTNING }]);
     expect(after.players.A.hand).toEqual([]);
     expect(after.players.A.flags.energyAttachedThisTurn).toBe(true);
 

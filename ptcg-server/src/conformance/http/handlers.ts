@@ -1,5 +1,5 @@
 import { step } from '../driver';
-import { StepResponse, NeutralState, NeutralAction } from '../neutral-types';
+import { StepResponse, NeutralState, NeutralAction, SCHEMA_VERSION } from '../neutral-types';
 import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
 
 /**
@@ -14,11 +14,19 @@ import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
  *  - an unexpected throw from `step()` (adapter/contract bug) propagates → the binding answers 500.
  */
 
-/** A structurally invalid request body (missing or wrong-typed fields). Maps to HTTP 400. */
+/** A structurally invalid request body (missing or wrong-typed fields). Maps to HTTP 400 `malformedRequest`. */
 export class BadRequestError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'BadRequestError';
+  }
+}
+
+/** A well-formed request whose `schemaVersion` this engine does not speak. Maps to HTTP 400 `unsupportedSchemaVersion`. */
+export class UnsupportedSchemaVersionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsupportedSchemaVersionError';
   }
 }
 
@@ -36,6 +44,14 @@ function isObject(v: unknown): v is Record<string, unknown> {
 export function handleStep(body: unknown): StepResponse {
   if (!isObject(body)) {
     throw new BadRequestError('request body must be a JSON object');
+  }
+  if (typeof body.schemaVersion !== 'string') {
+    throw new BadRequestError('`schemaVersion` is required and must be a string');
+  }
+  if (body.schemaVersion !== SCHEMA_VERSION) {
+    throw new UnsupportedSchemaVersionError(
+      `unsupported schemaVersion "${body.schemaVersion}" (this engine speaks "${SCHEMA_VERSION}")`
+    );
   }
   if (!isObject(body.initialState)) {
     throw new BadRequestError('`initialState` is required and must be an object');

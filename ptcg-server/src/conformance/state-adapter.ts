@@ -16,7 +16,26 @@ import {
 // M0 reuses the test harness's set-loading/registration machinery (the impl doc's
 // `ensureCardsRegistered`). A dedicated, non-test card-registry seam replaces this in a later
 // milestone; for the headless adapter it is the same CardManager singleton either way.
-import { getCardByName, ensureCardsRegistered } from '../sets/tests/test-helpers';
+import { getCardByName, getCardBySetAndNumber, ensureCardsRegistered } from '../sets/tests/test-helpers';
+import { toPrinting, resolvePrinting } from './printing';
+
+/**
+ * Resolve a wire `printing` to a fresh twinleaf Card. The conformance form is a set-number
+ * (`sit-060`); existing in-process test boards pass a `fullName` ("Ralts SIT"), still accepted for
+ * back-compat. `getCardBySetAndNumber` returns the shared registry instance, so re-resolve by name to
+ * get a clone (matching the `getCardByName` path, whose result is safe to stamp an `id` on).
+ */
+function resolveCard(printing: string): Card {
+  const parsed = resolvePrinting(printing);
+  if (parsed === null) {
+    return getCardByName(printing);
+  }
+  const found = getCardBySetAndNumber(parsed.set, parsed.setNumber);
+  if (found === undefined) {
+    throw new Error(`[conformance] no card for printing "${printing}" (${parsed.set} #${parsed.setNumber})`);
+  }
+  return getCardByName(found.fullName);
+}
 
 /**
  * The bidirectional iid <-> Card map for one imported game. Card identity is stable across
@@ -102,7 +121,7 @@ class Importer {
 
   /** Resolve a printing to a fresh Card instance and register it in the iid map. */
   materialize(ref: CardRef): Card {
-    const card = getCardByName(ref.printing);
+    const card = resolveCard(ref.printing);
     card.id = this.nextId++;
     if (this.ctx.iidToCard.has(ref.iid)) {
       throw new Error(`[conformance] Duplicate iid "${ref.iid}" in initialState`);
@@ -210,8 +229,22 @@ const OUTCOME_IMPORT: Record<Outcome, GameWinner> = {
   tie: GameWinner.DRAW,
 };
 
+/** Pre-load every set referenced by `initialState`, tolerating both set-number and fullName printings. */
+function ensurePrintingsLoaded(printings: string[]): void {
+  const fullNames: string[] = [];
+  for (const printing of printings) {
+    const parsed = resolvePrinting(printing);
+    if (parsed === null) {
+      fullNames.push(printing);
+    } else {
+      getCardBySetAndNumber(parsed.set, parsed.setNumber); // side effect: loads the set (result unused)
+    }
+  }
+  ensureCardsRegistered(fullNames);
+}
+
 export function importState(initial: NeutralState): ImportedGame {
-  ensureCardsRegistered(collectPrintings(initial));
+  ensurePrintingsLoaded(collectPrintings(initial));
 
   const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map() };
   const importer = new Importer(ctx);
@@ -265,7 +298,7 @@ function cardRef(ctx: IidContext, card: Card): CardRef {
   if (iid === undefined) {
     throw new Error(`[conformance] Card "${card.fullName}" (id ${card.id}) has no iid mapping`);
   }
-  return { iid, printing: card.fullName };
+  return { iid, printing: toPrinting(card) };
 }
 
 function projectPip(ctx: IidContext, slot: PokemonCardList): PokemonInPlay {
@@ -348,5 +381,6 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
       A: projectPlayer(ctx, state.players[0], state.turn),
       B: projectPlayer(ctx, state.players[1], state.turn),
     },
+    activeEffects: [], // timed effects are deferred (design §6.3); emitted as [] per the contract default
   };
 }

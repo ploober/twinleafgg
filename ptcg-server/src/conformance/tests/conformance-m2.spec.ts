@@ -1,5 +1,7 @@
 import { importState, ImportedGame } from '../state-adapter';
 import { replay, projectGame } from '../driver';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
 import {
   NeutralState, LegalAction,
   PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
@@ -19,9 +21,14 @@ import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 
 // ── board builders ──────────────────────────────────────────────────────────
 
+// M2 works at the ENGINE level — decomposer results are engine Cards, asserted by `fullName`. Boards
+// accept fullName printings (import resolves either form). Only the few PROJECTED-printing assertions
+// use the set-number form (`*_PRINTING`).
 const PSY = 'Psychic Energy SVE';
 const WATER = 'Water Energy SVE';
 const LIGHT = 'Lightning Energy SVE';
+const RALTS = 'Ralts SIT';
+const LIGHT_PRINTING = toPrinting(getCardByName('Lightning Energy SVE'));
 
 function markers(): PokemonMarkers {
   return { playedOnTurn: 1, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
@@ -33,7 +40,7 @@ function flags(): PlayerFlags {
   };
 }
 function ralts(iid: string, energy: Array<{ iid: string; printing: string }> = [], damage = 0): PokemonInPlay {
-  return { stack: [{ iid, printing: 'Ralts SIT' }], energy, tools: [], damage, conditions: [], markers: markers() };
+  return { stack: [{ iid, printing: RALTS }], energy, tools: [], damage, conditions: [], markers: markers() };
 }
 function player(over: Partial<PlayerState> = {}): PlayerState {
   return { active: null, bench: [], hand: [], deck: [], discard: [], lostZone: [], prizes: [], flags: flags(), ...over };
@@ -94,7 +101,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY, WATER]);
     expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
     const proj = projectGame(game);
-    expect(proj.players.A.hand).toEqual([{ iid: 'h2', printing: LIGHT }]);
+    expect(proj.players.A.hand).toEqual([{ iid: 'h2', printing: LIGHT_PRINTING }]);
     expect(proj.players.A.discard.map(c => c.iid).sort()).toEqual(['h0', 'h1']);
   });
 

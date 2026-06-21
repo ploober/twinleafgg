@@ -472,6 +472,25 @@ the same contract.
   `.cards`, so a *played* tool reads as a lost card to the conservation invariant. Confirmed identical
   on the native `setupGame` driver → an engine/helper data-model inconsistency, not the adapter. The
   fuzz excludes Tools from its pool to stay in-scope.
+- **OpenAPI compliance — Step 1 (envelope + identity + capabilities).** The formal contract
+  (`~/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`) postdates M0–M6; we aligned the
+  wire surface to it in a phased way (the second engine + runner consume this exact shape). **Done:**
+  (a) **card identity** — `printing` is now a set-number `lower(card.set)-pad3(card.setNumber)`
+  (`sit-067`, `sve-002`), via `printing.ts`; import accepts set-number *and* fullName (back-compat,
+  `resolveCard`); (b) **response envelope** — top-level `schemaVersion`; invalidAction emits `index` +
+  coarse `reasonCode` (the contract's 14-value enum) + `nativeReason {code, source:'twinleaf:GameMessage'}`
+  (replacing the old `rejection`); `state.activeEffects: []`; (c) **capabilities** —
+  `{engine, version, schemaVersion, supportedSets, implementedCards}` (set-number cards); (d) **HTTP** —
+  required `schemaVersion` (→ `unsupportedSchemaVersion` on mismatch), `Error` body is `{error:<code>, message}`,
+  `POST /v1/normalize` → 501. Validated live against the contract schemas (ajv, `conformance-openapi-validation.spec.ts`).
+  **Deferred to Step 2:** the **significant-event vocabulary** (`damaged`/`ko` by iid, `draw` count,
+  `gameOver`, `shuffled`) and the **closed action-type enum** (`choosePrize→takePrize`, promote→`promoteBench`,
+  + the no-equivalent `chooseEnergy`/`chooseAttack`/`moveCounter`/`endChoice` and `legalActions.actor`) —
+  these need event-time iid resolution and a few contract-semantics confirmations.
+- **Contract inconsistency found (flag for the contract author).** The spec marks `stadium`/`active`/`pending`
+  nullable in their **descriptions** but declares them as a bare `$ref` (non-nullable) — so a strict
+  validator rejects the `null` the descriptions sanction. Our validation spec relaxes those fields to
+  test the spec's intent; the contract should restore a `oneOf: [{$ref}, {type: 'null'}]` (or `[..., 'null']`).
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 

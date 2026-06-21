@@ -66,20 +66,23 @@ describe('Conformance Tier 3 — negative-space legality (rejection, not crash)'
     const initial = materializeNeutral(oneActive('Raichu SIT')); // no energy attached
     const res = step(initial, [{ actor: 'A', type: 'declareAttack', source: 'A-act-s0', name: 'Ambushing Spark' }]);
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection).toBeDefined();
+    expect(res.reasonCode).toBeDefined();
+    expect(res.nativeReason).toBeDefined();
   });
 
   it('retreating with an empty bench is invalidAction', () => {
     const initial = materializeNeutral(oneActive('Ralts SIT'));
     const res = step(initial, [{ actor: 'A', type: 'retreat', to: 0 }]);
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection).toBeDefined();
+    expect(res.reasonCode).toBeDefined();
+    expect(res.nativeReason).toBeDefined();
   });
 
   it('declaring an attack the active does not have is invalidAction', () => {
     const initial = materializeNeutral(oneActive('Ralts SIT'));
     const res = step(initial, [{ actor: 'A', type: 'declareAttack', source: 'A-act-s0', name: 'No Such Attack' } as NeutralAction]);
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection).toBeDefined();
+    expect(res.reasonCode).toBeDefined();
+    expect(res.nativeReason).toBeDefined();
   });
 });

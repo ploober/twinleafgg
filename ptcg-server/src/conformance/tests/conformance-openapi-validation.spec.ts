@@ -1,0 +1,111 @@
+import * as fs from 'fs';
+import { step } from '../driver';
+import { buildCapabilities } from '../capabilities';
+import { NeutralState, PlayerState, PlayerFlags, PokemonInPlay, SCHEMA_VERSION } from '../neutral-types';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
+
+/**
+ * Validate live adapter responses against the actual OpenAPI contract schemas (the source of truth,
+ * `~/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`). Step 1 covers the response
+ * envelope, `GameState`, `Capabilities`, and `Error` (all `additionalProperties:false`). The
+ * `pending.legalActions` action vocabulary and the significant-event vocabulary are the known Step-2
+ * gap — so we validate an invalidAction response (pending is `null`) for the full envelope, and the
+ * `state` projection on its own; legalActions/events validity lands in Step 2.
+ *
+ * Skips when the cross-repo contract file is absent (e.g. CI without the conformance-tests checkout).
+ */
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const yaml = require('js-yaml');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Ajv = require('ajv');
+
+const SPEC_PATH = `${process.env.HOME}/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`;
+const SPEC_EXISTS = fs.existsSync(SPEC_PATH);
+
+const RALTS = toPrinting(getCardByName('Ralts SIT'));
+const WATER = toPrinting(getCardByName('Water Energy SVE'));
+
+function flags(): PlayerFlags {
+  return {
+    supporterPlayedThisTurn: false, energyAttachedThisTurn: false, stadiumPlayedThisTurn: false,
+    retreatedThisTurn: false, cardsPlayedThisTurn: 0, prizesTakenThisTurn: 0, prizesTakenLastTurn: 0, vstarUsed: false,
+  };
+}
+function pip(iid: string, printing: string, energy: { iid: string; printing: string }[] = []): PokemonInPlay {
+  return {
+    stack: [{ iid, printing }], energy, tools: [], damage: 0, conditions: [],
+    markers: { playedOnTurn: 1, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false },
+  };
+}
+function side(active: PokemonInPlay, over: Partial<PlayerState> = {}): PlayerState {
+  return {
+    active, bench: [], hand: [], deck: [{ iid: `${active.stack[0].iid}-d`, printing: WATER }],
+    discard: [], lostZone: [], prizes: [{ iid: `${active.stack[0].iid}-p`, printing: WATER, faceUp: false }], flags: flags(), ...over,
+  };
+}
+const BOARD: NeutralState = {
+  schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A', phase: 'main', outcome: 'ongoing', stadium: null,
+  players: {
+    A: side(pip('A-act', RALTS), { hand: [{ iid: 'A-e0', printing: WATER }, { iid: 'A-e1', printing: WATER }] }),
+    B: side(pip('B-act', RALTS)),
+  },
+  activeEffects: [],
+};
+
+/**
+ * The contract marks `stadium`/`active`/`pending` nullable in their DESCRIPTIONS but declares them as a
+ * bare `$ref` (non-nullable) — an inconsistency in the in-progress spec (flag for the contract author).
+ * To validate the spec's INTENT, relax any `{$ref, description:"…null…"}` property to also accept null.
+ */
+function relaxNullableRefs(schemas: Record<string, any>): void {
+  for (const schema of Object.values(schemas)) {
+    if (!schema || !schema.properties) { continue; }
+    for (const [key, prop] of Object.entries<any>(schema.properties)) {
+      if (prop && prop.$ref && typeof prop.description === 'string' && /null/i.test(prop.description)) {
+        schema.properties[key] = { description: prop.description, anyOf: [{ $ref: prop.$ref }, { type: 'null' }] };
+      }
+    }
+  }
+}
+
+(SPEC_EXISTS ? describe : xdescribe)('Conformance — OpenAPI schema validation', () => {
+  const spec = SPEC_EXISTS ? yaml.load(fs.readFileSync(SPEC_PATH, 'utf8')) : { components: { schemas: {} } };
+  relaxNullableRefs(spec.components.schemas);
+  const ajv = new Ajv({ allErrors: true });
+  ajv.addSchema(spec, 'api');
+  /** Validate `value` against component schema `name`; on failure, print the violations. */
+  function check(name: string, value: unknown): boolean {
+    const v = ajv.compile({ $ref: `api#/components/schemas/${name}` });
+    const ok = v(value) as boolean;
+    if (!ok) {
+      // eslint-disable-next-line no-console
+      console.log(`[${name}] schema violations:`, JSON.stringify(v.errors, null, 2));
+    }
+    return ok;
+  }
+
+  it('Capabilities validates', () => {
+    expect(check('Capabilities', buildCapabilities())).toBe(true);
+  });
+
+  it('a successful step state validates as GameState', () => {
+    expect(check('GameState', step(BOARD, []).state)).toBe(true);
+  });
+
+  it('an invalidAction response validates as StepResponse (full envelope, pending null)', () => {
+    // a second energy attach in one turn → invalidAction (pending: null, so legalActions don't apply)
+    const res = step(BOARD, [
+      { actor: 'A', type: 'attachEnergy', card: 'A-e0', target: 'A-act' },
+      { actor: 'A', type: 'attachEnergy', card: 'A-e1', target: 'A-act' },
+    ]);
+    expect(res.status).toBe('invalidAction');
+    expect(check('StepResponse', res)).toBe(true);
+  });
+
+  it('the Error body validates', () => {
+    expect(check('Error', { error: 'malformedRequest', message: 'x' })).toBe(true);
+    expect(check('Error', { error: 'unsupportedSchemaVersion' })).toBe(true);
+  });
+});

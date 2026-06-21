@@ -392,22 +392,53 @@ export interface PendingDecision {
 }
 
 /**
- * Why an action was rejected (design §4.9, M6). `reasonCode` is the engine-neutral normalized code
- * the conformance harness compares across engines; `message` is the raw engine string (twinleaf's
- * `GameMessage`) kept for diagnostics. `reasonCode` values are defined in rejection-codes.ts.
+ * The contract's coarse, normalized rejection vocabulary (OpenAPI `ReasonCode`). Compared across
+ * engines best-effort (warn, not fail). twinleaf's finer internal codes map onto these in
+ * rejection-codes.ts; the verbatim engine code rides in `NativeReason`.
+ */
+export type ContractReasonCode =
+  | 'NOT_YOUR_TURN'
+  | 'FIRST_TURN_RESTRICTION'
+  | 'ONCE_PER_TURN_EXHAUSTED'
+  | 'INSUFFICIENT_ENERGY'
+  | 'INVALID_TARGET'
+  | 'CONDITION_BLOCKED'
+  | 'EVOLVE_NOT_ELIGIBLE'
+  | 'TOOL_ALREADY_ATTACHED'
+  | 'STADIUM_RULE'
+  | 'UNKNOWN_REFERENCE'
+  | 'DECK_EMPTY'
+  | 'BLOCKED_BY_EFFECT'
+  | 'CARD_SPECIFIC'
+  | 'OTHER';
+
+/** The engine's verbatim rejection code (OpenAPI `NativeReason`). Captured for taxonomy; never compared. */
+export interface NativeReason {
+  code: string;
+  source: string;
+}
+
+/**
+ * Why an action was rejected (design §4.9, M6 / OpenAPI invalidAction). `reasonCode` is the coarse
+ * cross-engine code; `nativeReason` carries twinleaf's verbatim `GameMessage` for taxonomy mining.
  */
 export interface RejectionInfo {
-  reasonCode: string;
-  message: string;
+  reasonCode: ContractReasonCode;
+  nativeReason: NativeReason;
 }
 
 export interface StepResponse {
+  schemaVersion: string;
   status: ResponseStatus;
   /** Number of actions consumed from the log (those applied before any rejection). */
   applied: number;
   pending: PendingDecision | null;
   events: NeutralEvent[];
   state: NeutralState;
+  /** Present only when `status === 'invalidAction'` — the offending action's index in `actions[]`. */
+  index?: number;
   /** Present only when `status === 'invalidAction'`. */
-  rejection?: RejectionInfo;
+  reasonCode?: ContractReasonCode;
+  /** Present only when `status === 'invalidAction'`. */
+  nativeReason?: NativeReason;
 }

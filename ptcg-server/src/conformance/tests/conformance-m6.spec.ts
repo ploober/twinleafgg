@@ -7,6 +7,8 @@ import {
   ConditionToken, CardRef, SCHEMA_VERSION
 } from '../neutral-types';
 import { buildCapabilities } from '../capabilities';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
 import { EXCLUDED_RANDOM_CARDS } from '../excluded-random-cards';
 import { handleStep, handleCapabilities, BadRequestError } from '../http/handlers';
 import { createConformanceApp } from '../http/app';
@@ -59,7 +61,9 @@ describe('Conformance M6 — rejection codes', () => {
       ],
     );
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection!.reasonCode).toBe('alreadyAttachedEnergy');
+    expect(res.reasonCode).toBe('ONCE_PER_TURN_EXHAUSTED');
+    expect(res.index).toBe(1);                                  // the offending action's index
+    expect(res.nativeReason!.source).toBe('twinleaf:GameMessage'); // verbatim engine code preserved
     expect(res.applied).toBe(1); // the first attach succeeded; the second was rejected + rolled back
     expect(res.state.players.A.active!.energy.map(e => e.iid)).toEqual(['e0']);
   });
@@ -70,7 +74,7 @@ describe('Conformance M6 — rejection codes', () => {
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' }],
     );
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection!.reasonCode).toBe('notEnoughEnergy');
+    expect(res.reasonCode).toBe('INSUFFICIENT_ENERGY');
     expect(res.applied).toBe(0);
   });
 
@@ -80,7 +84,7 @@ describe('Conformance M6 — rejection codes', () => {
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Nonexistent Attack' }],
     );
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection!.reasonCode).toBe('unknownAttack');
+    expect(res.reasonCode).toBe('UNKNOWN_REFERENCE');
   });
 
   it('acting as the non-active player → notYourTurn', () => {
@@ -90,7 +94,7 @@ describe('Conformance M6 — rejection codes', () => {
       [{ actor: 'B', type: 'attachEnergy', card: 'be', target: 'B-act' }],
     );
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection!.reasonCode).toBe('notYourTurn');
+    expect(res.reasonCode).toBe('NOT_YOUR_TURN');
   });
 
   it('evolving a Pokémon played this turn → cannotEvolveThisTurn', () => {
@@ -100,7 +104,7 @@ describe('Conformance M6 — rejection codes', () => {
       [{ actor: 'A', type: 'evolve', card: 'k', target: 'A-act' }],
     );
     expect(res.status).toBe('invalidAction');
-    expect(res.rejection!.reasonCode).toBe('cannotEvolveThisTurn');
+    expect(res.reasonCode).toBe('EVOLVE_NOT_ELIGIBLE');
   });
 
   it('a non-GameError (stray system action) still propagates — the boundary catches only GameError', () => {
@@ -113,16 +117,17 @@ describe('Conformance M6 — rejection codes', () => {
 
 describe('Conformance M6 — capabilities', () => {
 
-  it('reports versions and a filtered supported-card list', () => {
+  it('reports engine identity and a filtered set-number card list', () => {
     const caps = buildCapabilities();
+    expect(caps.engine).toBe('twinleaf');
+    expect(caps.version).toBeTruthy();
     expect(caps.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(caps.engineVersion).toBeTruthy();
-    expect(caps.cards.length).toBeGreaterThan(1000);
-    expect(caps.cards).toContain('Ralts SIT');         // an in-scope card
-    expect(caps.cards).not.toContain('Iono PAL');      // excluded: inline Math.random
-    expect(caps.cards.some(n => / SVI(\s|$)/.test(n))).toBe(false); // excluded: load-failing set
-    expect(caps.excludedSets).toContain('SVI');
-    expect(caps.excludedRandomCount).toBeGreaterThan(0);
+    expect(caps.implementedCards.length).toBeGreaterThan(1000);
+    expect(caps.implementedCards).toContain(toPrinting(getCardByName('Ralts SIT')));   // an in-scope card
+    expect(caps.implementedCards).not.toContain(toPrinting(getCardByName('Iono PAL'))); // excluded: inline Math.random
+    expect(caps.implementedCards.every(p => /^[a-z0-9]+-/.test(p))).toBe(true);          // set-number printings
+    expect(caps.supportedSets).toContain('sit');
+    expect(caps.supportedSets).not.toContain('svi'); // load-failing set: its cards never registered
   });
 
   it('EXCLUDED_RANDOM_CARDS matches the cards that call Math.random in source (drift guard)', () => {
@@ -148,7 +153,7 @@ describe('Conformance M6 — HTTP handlers', () => {
 
   it('handleCapabilities returns the capabilities object', () => {
     const caps = handleCapabilities();
-    expect(Array.isArray(caps.cards)).toBe(true);
+    expect(Array.isArray(caps.implementedCards)).toBe(true);
     expect(caps.schemaVersion).toBe(SCHEMA_VERSION);
   });
 
@@ -170,7 +175,7 @@ describe('Conformance M6 — HTTP handlers', () => {
     try {
       const { status, json } = await request(server, 'POST', '/v1/step', { actions: [] });
       expect(status).toBe(400);
-      expect(json.error.reasonCode).toBe('malformedRequest');
+      expect(json.error).toBe('malformedRequest'); // contract Error: `error` is a string code
     } finally {
       await new Promise<void>(resolve => server.close(() => resolve()));
     }

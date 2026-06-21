@@ -3,6 +3,8 @@ import { replay, step } from '../driver';
 import { NeutralAction } from '../neutral-types';
 import { materializeNeutral, BoardSpec } from './support/scenario-runner';
 import { legalToNeutral, mulberry32 } from './support/generators';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
 
 /**
  * The ChoosePrizePrompt decomposer (Step C, Part 1). A non-terminal KO — defender survives on its
@@ -11,8 +13,10 @@ import { legalToNeutral, mulberry32 } from './support/generators';
  * the KO. (Before this decomposer, ChoosePrizePrompt classified as `unsupported` and the driver threw.)
  */
 
-const L = 'Lightning Energy SVE';
+const L = 'Lightning Energy SVE'; // BoardSpec card names stay fullName (the native side resolves by name)
 const W = 'Water Energy SVE';
+const W_PRINTING = toPrinting(getCardByName('Water Energy SVE'));   // the projected set-number printing
+const RUFFLET_PRINTING = toPrinting(getCardByName('Rufflet SIT'));
 
 // A's Raichu (1 Lightning) "Ambushing Spark" hits 40; B's Ralts (70 HP) is pre-damaged to 60, so the
 // attack KOs it. Both sides hold 6 prizes, so A's single KO prize is non-terminal -> ChoosePrizePrompt.
@@ -54,10 +58,10 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     const res = step(initial, log);
     expect(res.status).toBe('awaitingAction'); // not gameOver — A took only 1 of 6 prizes
     // B promoted its benched Rufflet into the active slot
-    expect(res.state.players.B.active!.stack[0].printing).toBe('Rufflet SIT');
+    expect(res.state.players.B.active!.stack[0].printing).toBe(RUFFLET_PRINTING);
     // A took exactly one prize: 6 -> 5, and the prize card landed in A's hand
     expect(res.state.players.A.prizes.length).toBe(5);
-    expect(res.state.players.A.hand.some(c => c.printing === W)).toBe(true);
+    expect(res.state.players.A.hand.some(c => c.printing === W_PRINTING)).toBe(true);
   });
 
   it('enumerates every takeable prize pile as a choosePrize legal action', () => {

@@ -3,6 +3,8 @@ import { stepChecked } from './support/invariants';
 import {
   NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
+import { toPrinting } from '../printing';
+import { getCardByName } from '../../sets/tests/test-helpers';
 
 // ── builders ───────────────────────────────────────────────────────────────
 
@@ -44,8 +46,11 @@ function emptyPlayer(overrides: Partial<PlayerState> = {}): PlayerState {
   };
 }
 
-const PSY = 'Psychic Energy SVE';
-const WATER = 'Water Energy SVE';
+// Set-number printings (the contract identity); events still carry bare display names ("Ralts").
+const PSY = toPrinting(getCardByName('Psychic Energy SVE'));
+const WATER = toPrinting(getCardByName('Water Energy SVE'));
+const RALTS = toPrinting(getCardByName('Ralts SIT'));
+const KIRLIA = toPrinting(getCardByName('Kirlia SIT'));
 
 function base(players: { A: PlayerState; B: PlayerState }): NeutralState {
   return {
@@ -64,7 +69,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
   it('Test A — drives bench/evolve/attach/attack/endTurn; attack auto-ends the turn', () => {
     const active: PokemonInPlay = {
-      stack: [{ iid: 'A-active', printing: 'Ralts SIT' }],
+      stack: [{ iid: 'A-active', printing: RALTS }],
       energy: [{ iid: 'A-pre', printing: PSY }],   // pre-loaded so Kirlia can pay [P,C] after one attach
       tools: [],
       damage: 0,
@@ -76,7 +81,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       A: emptyPlayer({
         active,
         hand: [
-          { iid: 'A-kirlia', printing: 'Kirlia SIT' },
+          { iid: 'A-kirlia', printing: KIRLIA },
           { iid: 'A-psy', printing: PSY },
         ],
         deck: [{ iid: 'A-d1', printing: WATER }],
@@ -84,7 +89,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       }),
       B: emptyPlayer({
         active: {
-          stack: [{ iid: 'B-active', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'B-active', printing: RALTS }],
           energy: [], tools: [], damage: 0, conditions: [], markers: markers(1),
         },
         deck: [
@@ -113,8 +118,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
     // ── projection ──
     expect(res.state.players.A.active!.stack).toEqual([
-      { iid: 'A-active', printing: 'Ralts SIT' },
-      { iid: 'A-kirlia', printing: 'Kirlia SIT' },
+      { iid: 'A-active', printing: RALTS },
+      { iid: 'A-kirlia', printing: KIRLIA },
     ]);
     expect(res.state.players.A.active!.energy).toEqual([
       { iid: 'A-pre', printing: PSY },
@@ -145,12 +150,12 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     const initial = base({
       A: emptyPlayer({
         active: {
-          stack: [{ iid: 'A-active', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'A-active', printing: RALTS }],
           energy: [{ iid: 'A-pre', printing: PSY }],   // exactly retreat cost [C] -> prompt-free
           tools: [], damage: 0, conditions: [], markers: markers(1),
         },
         bench: [{
-          stack: [{ iid: 'A-bench0', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'A-bench0', printing: RALTS }],
           energy: [], tools: [], damage: 0, conditions: [], markers: markers(1),
         }],
         hand: [{ iid: 'A-psy', printing: PSY }],
@@ -159,7 +164,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       }),
       B: emptyPlayer({
         active: {
-          stack: [{ iid: 'B-active', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'B-active', printing: RALTS }],
           energy: [], tools: [], damage: 0, conditions: [], markers: markers(1),
         },
         deck: [
@@ -182,7 +187,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.applied).toBe(3);
 
     // the benched Ralts (with its freshly attached energy) is now active
-    expect(res.state.players.A.active!.stack).toEqual([{ iid: 'A-bench0', printing: 'Ralts SIT' }]);
+    expect(res.state.players.A.active!.stack).toEqual([{ iid: 'A-bench0', printing: RALTS }]);
     expect(res.state.players.A.active!.energy).toEqual([{ iid: 'A-psy', printing: PSY }]);
     // the retreat cost was paid by discarding the previously-active Pokemon's energy
     expect(res.state.players.A.discard).toEqual([{ iid: 'A-pre', printing: PSY }]);
@@ -203,7 +208,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     const initial = base({
       A: emptyPlayer({
         active: {
-          stack: [{ iid: 'A-active', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'A-active', printing: RALTS }],
           energy: [{ iid: 'A-pre', printing: PSY }],
           tools: [], damage: 0, conditions: [], markers: markers(1),
         },
@@ -213,7 +218,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       }),
       B: emptyPlayer({
         active: {
-          stack: [{ iid: 'B-active', printing: 'Ralts SIT' }],
+          stack: [{ iid: 'B-active', printing: RALTS }],
           energy: [], tools: [], damage: 0, conditions: [], markers: markers(1),
         },
         deck: [{ iid: 'B-d1', printing: WATER }, { iid: 'B-d2', printing: WATER }],

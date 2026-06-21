@@ -13,6 +13,7 @@ import { classify, decomposerFor, WirePick } from './decomposers';
 import { topLevelMenu } from './legal-actions';
 import { mapRejection } from './rejection-codes';
 import {
+  SCHEMA_VERSION,
   NeutralState, NeutralAction, NeutralEvent, NeutralPlayerId, StepResponse, ResponseStatus,
   PendingDecision, LegalAction, RejectionInfo,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
@@ -357,8 +358,12 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   const state = projectGame(game);
   if (rejection !== undefined) {
     // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
-    return { status: 'invalidAction', applied, pending: null, events, state, rejection };
+    // The cursor advances past an action before dispatch, so `applied` is the offending action's index.
+    return {
+      schemaVersion: SCHEMA_VERSION, status: 'invalidAction', applied, index: applied,
+      pending: null, events, state, reasonCode: rejection.reasonCode, nativeReason: rejection.nativeReason,
+    };
   }
   const status: ResponseStatus = state.outcome === 'ongoing' ? 'awaitingAction' : 'gameOver';
-  return { status, applied, pending, events, state };
+  return { schemaVersion: SCHEMA_VERSION, status, applied, pending, events, state };
 }

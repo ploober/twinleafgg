@@ -53,10 +53,11 @@ describe('Conformance — HTTP smoke (end-to-end over a real socket)', () => {
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/json/);
     expect(res.json.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(typeof res.json.engineVersion).toBe('string');
-    expect(Array.isArray(res.json.cards)).toBe(true);
-    expect(res.json.cards.length).toBeGreaterThan(0);
-    expect(Array.isArray(res.json.excludedSets)).toBe(true);
+    expect(res.json.engine).toBe('twinleaf');
+    expect(typeof res.json.version).toBe('string');
+    expect(Array.isArray(res.json.implementedCards)).toBe(true);
+    expect(res.json.implementedCards.length).toBeGreaterThan(0);
+    expect(Array.isArray(res.json.supportedSets)).toBe(true);
     // wire payload matches the in-process handler (no field lost in routing/serialization)
     expect(res.json).toEqual(overWire(handleCapabilities()));
   });
@@ -79,7 +80,9 @@ describe('Conformance — HTTP smoke (end-to-end over a real socket)', () => {
       { schemaVersion: SCHEMA_VERSION, initialState: ILLEGAL_STATE, actions: ILLEGAL_ACTIONS });
     expect(res.status).toBe(200); // an illegal action is a normal envelope, not an HTTP error
     expect(res.json.status).toBe('invalidAction');
-    expect(res.json.rejection.reasonCode).toBe('notEnoughEnergy');
+    expect(res.json.reasonCode).toBe('INSUFFICIENT_ENERGY');
+    expect(res.json.index).toBe(0);
+    expect(res.json.nativeReason.source).toBe('twinleaf:GameMessage');
     expect(res.json).toEqual(overWire(step(ILLEGAL_STATE, ILLEGAL_ACTIONS)));
   });
 
