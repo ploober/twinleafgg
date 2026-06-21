@@ -353,7 +353,12 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number): PlayerSta
       .map(b => projectPip(ctx, b)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
     deck: player.deck.cards.map(c => cardRef(ctx, c)),
-    discard: player.discard.cards.map(c => cardRef(ctx, c)),
+    // A Trainer mid-resolution is staged in player.supporter (play-trainer-effect.ts) until its
+    // effect finishes; the API legitimately pauses there at an externalized flip/choose, and the
+    // DTO has no "resolving" zone — so surface the staged card in discard now. It stays observable
+    // (card conservation holds) and lands where it heads a moment later. player.supporter is empty
+    // at every quiescent non-resolution boundary, so ordinary states are unaffected.
+    discard: player.discard.cards.concat(player.supporter.cards).map(c => cardRef(ctx, c)),
     lostZone: player.lostzone.cards.map(c => cardRef(ctx, c)),
     prizes,
     flags: projectFlags(player, turn),
