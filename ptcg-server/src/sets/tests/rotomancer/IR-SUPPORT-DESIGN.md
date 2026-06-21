@@ -23,6 +23,15 @@ interpreter modules it describes:
 
 ## 1. Design principles — the support contract
 
+> 🧭 **North star: accuracy.** Nothing here is "good enough" merely because a test passes or a
+> scorecard is green — it is acceptable only when it is *as faithful as possible* to the real
+> semantics. The entire value of a cross‑engine oracle is that it tells the truth about where two
+> engines diverge; an approximation that agrees *for the wrong reason* (a predicate that matches by
+> coincidence, a probe that passes vacuously, a selector that guesses instead of resolving) poisons
+> the oracle — it hides real bugs or manufactures false ones. When faithful support needs more
+> infrastructure, build it or defer it honestly as a **counted** gap; never fake it. Every principle
+> below is in service of this one.
+
 The integration is an **oracle**, not a re‑implementation. Five principles govern what "support" means.
 
 1. **Mirror‑board differential.** Every check runs the *native* Twinleaf card and the *IR‑interpreted*

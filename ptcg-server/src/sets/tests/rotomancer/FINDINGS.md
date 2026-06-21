@@ -1,5 +1,10 @@
 # Cross-engine findings — Rotomancer IR vs native Twinleaf vs official data
 
+> 🧭 **Accuracy is the north star.** Nothing is "good enough" because a scorecard is green — only
+> when it is *as faithful as possible* to the real semantics. Prefer an honest, counted **skip** over
+> a plausible **guess**, and confirm every agreement is *meaningful*, not vacuous. See
+> [IR-SUPPORT-DESIGN.md §1](IR-SUPPORT-DESIGN.md#1-design-principles--the-support-contract).
+>
 > 📐 For the feature‑by‑feature map of **every IR construct → how the integration supports it**, see
 > [IR-SUPPORT-DESIGN.md](IR-SUPPORT-DESIGN.md). This file is the running log of what each expansion
 > *found*; that one is the design contract for what we *support*.
