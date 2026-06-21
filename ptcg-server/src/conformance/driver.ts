@@ -340,7 +340,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // no open prompt
     if (cursor.i < actions.length) {
       const action = actions[cursor.i];
-      if (action.type === 'flip' || action.type === 'shuffle') {
+      if (action.type === 'flip' || action.type === 'shuffle' || action.type === 'pick') {
         throw new Error(`[conformance] stray system action '${action.type}' with no pending system decision`);
       }
       cursor.i++;

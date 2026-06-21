@@ -2,7 +2,14 @@ import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt'
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
 
-/** ChooseCardsPrompt: one pick = one index into prompt.cards.cards; raw result = number[]. */
+/**
+ * ChooseCardsPrompt: one pick = one index into prompt.cards.cards; raw result = number[].
+ *
+ * When `options.isSecret` is set the selection is hidden/random (e.g. "discard a random card from
+ * your opponent's hand", or any pick from a face-down zone). The acting player has no agency over
+ * which card, so it is surfaced as the `system` actor's `pick` (the externalized-randomness analog
+ * of player `choose`) rather than a player decision — keeping the choice reproducible across engines.
+ */
 export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
   type: 'Choose cards',
 
@@ -16,6 +23,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       return null;
     }
 
+    const secret = prompt.options.isSecret === true;
     const picked = new Set(rp.map(p => (p as { index: number }).index));
     const blocked = new Set(prompt.options.blocked);
     const legalActions: LegalAction[] = [];
@@ -29,7 +37,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       }
       const iid = ctx.cardToIid.get(card);
       if (iid !== undefined) {
-        legalActions.push({ type: 'choose', target: iid });
+        legalActions.push(secret ? { type: 'pick', target: iid } : { type: 'choose', target: iid });
       }
     }
     if (rp.length >= min && max > min) {
@@ -38,12 +46,13 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     if (legalActions.length === 0) {
       return null; // nothing left to offer — complete with what we have (validate adjudicates)
     }
-    return buildPending(prompt, state, legalActions);
+    return buildPending(prompt, state, legalActions, secret ? 'system' : undefined);
   },
 
   toPick(prompt, action, ctx) {
-    if (action.type !== 'choose') {
-      throw new Error(`[conformance] ChooseCards expected 'choose', got '${action.type}'`);
+    const expected = prompt.options.isSecret === true ? 'pick' : 'choose';
+    if (action.type !== expected) {
+      throw new Error(`[conformance] ChooseCards expected '${expected}', got '${action.type}'`);
     }
     const targetIid = action.target as string;
     const card = ctx.iidToCard.get(targetIid);

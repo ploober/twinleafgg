@@ -7,7 +7,7 @@ import { SuperType, CardType } from '../../game/store/card/card-types';
 import { PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
 import { StateUtils } from '../../game/store/state-utils';
 import { IidContext } from '../state-adapter';
-import { NeutralAction, PendingDecision, LegalAction } from '../neutral-types';
+import { NeutralAction, PendingDecision, LegalAction, Actor } from '../neutral-types';
 import { playerIdToActor } from '../iid-targets';
 
 /**
@@ -54,9 +54,11 @@ export function hasDone(picks: WirePick[]): boolean {
 
 interface PromptHead { type: string; playerId: number; message: unknown; }
 
-export function buildPending(prompt: PromptHead, state: State, legalActions: LegalAction[]): PendingDecision {
+export function buildPending(
+  prompt: PromptHead, state: State, legalActions: LegalAction[], actor?: Actor
+): PendingDecision {
   return {
-    actor: playerIdToActor(state, prompt.playerId),
+    actor: actor ?? playerIdToActor(state, prompt.playerId),
     descriptor: `${prompt.type}: ${String(prompt.message)}`,
     legalActions,
   };

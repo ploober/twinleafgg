@@ -282,6 +282,14 @@ export interface FlipSystemAction {
   face: 'heads' | 'tails';
 }
 
+/** The random selection of one candidate (a ChooseCardsPrompt with `isSecret`) — externalized. */
+export interface PickSystemAction {
+  actor: 'system';
+  type: 'pick';
+  /** iid of the chosen candidate. */
+  target: string;
+}
+
 // The full vocabulary is broader (design §7); milestones beyond M1 (abilities, prompt-mediated
 // trainers, the system actor) are typed loosely until their milestone lands.
 export interface UnimplementedAction {
@@ -310,6 +318,7 @@ export type NeutralAction =
   | ConfirmAction
   | ShuffleSystemAction
   | FlipSystemAction
+  | PickSystemAction
   | UnimplementedAction;
 
 // ── Events (design §4.1, §10.4, impl doc §4.8) ─────────────────────────────
@@ -360,6 +369,10 @@ export type LegalAction =
   | { type: 'endChoice' }
   | { type: 'shuffle'; deck: string[] }
   | { type: 'flip'; face: 'heads' | 'tails' }
+  // `pick` is the `system` actor's random selection of one candidate from a hidden/random choice
+  // (a ChooseCardsPrompt with `isSecret`). Externalized like flip/shuffle so randomness is
+  // reproducible across engines: the candidate set is enumerated, the answer names the chosen iid.
+  | { type: 'pick'; target: string }
   // The main-phase top-level menu (M5). These mirror the dispatchable top-level NeutralActions, so
   // each entry is directly executable as the next action.
   | { type: 'benchBasic'; card: string }
