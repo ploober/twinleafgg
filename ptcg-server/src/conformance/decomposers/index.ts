@@ -31,11 +31,18 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
 
 const REGISTRY = new Map<string, PromptDecomposer<any>>(DECOMPOSERS.map(d => [d.type, d]));
 
+/**
+ * Reveal / single-acknowledgement ("OK") prompts — all `Prompt<true>`, carrying NO branch. The
+ * contract REQUIRES the adapter to auto-resolve them: they never surface in `pending` and consume no
+ * action (OpenAPI `Action` §"NOT every engine prompt is a decision"; `Pending` §). Note twinleaf has
+ * BOTH `'Confirm'` (a real yes/no, `Prompt<boolean>` → the `confirm` decomposer) and `'Confirm cards'`
+ * (a `Prompt<true>` acknowledge → here); they are distinct types despite the shared word.
+ */
+const REVEAL_ACK_PROMPTS = new Set<string>(['Show cards', 'Show mulligan', 'Alert', 'Confirm cards']);
+
 export function classify(prompt: Prompt<any>): PromptKind {
-  // WaitPrompt (attack animation) and ShowCardsPrompt ('Show cards', `Prompt<true>` — a pure
-  // reveal/acknowledge whose result is always `true`) carry no decision: auto-resolve with `true`.
-  // The revealed cards are already observable in the projected state, so nothing is lost.
-  if (prompt.type === 'WaitPrompt' || prompt.type === 'Show cards') {
+  // WaitPrompt (attack animation) + the reveal/ack prompts carry no decision: auto-resolve with `true`.
+  if (prompt.type === 'WaitPrompt' || REVEAL_ACK_PROMPTS.has(prompt.type)) {
     return 'wait';
   }
   // ShuffleDeckPrompt ('Shuffle deck'), shuffle-hand/prizes, and CoinFlipPrompt are the system actor (M3).

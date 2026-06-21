@@ -4,15 +4,19 @@ import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION,
 } from '../neutral-types';
 import { GameMessage } from '../../game/game-message';
+import { Card } from '../../game/store/card/card';
+import { Prompt } from '../../game/store/prompts/prompt';
 import { ShowCardsPrompt } from '../../game/store/prompts/show-cards-prompt';
+import { ConfirmCardsPrompt } from '../../game/store/prompts/confirm-cards-prompt';
+import { AlertPrompt } from '../../game/store/prompts/alert-prompt';
 import { ConfirmPrompt } from '../../game/store/prompts/confirm-prompt';
 
 /**
- * `ShowCardsPrompt` ('Show cards', `Prompt<true>`) is a pure reveal/acknowledge — the driver
- * auto-resolves it with `true` (classified as `wait`), since the revealed cards are already in the
- * projection. `ConfirmPrompt` ('Confirm', `Prompt<boolean>`) is a genuine yes/no decision: it
- * decomposes to two `confirm{value}` legalActions and resolves to the chosen boolean (requires the
- * contract's `confirm` Action — type enum + `value` property).
+ * Reveal / single-acknowledgement prompts (`Prompt<true>` — `Show cards`, `Confirm cards`, `Alert`)
+ * carry no branch, so the contract REQUIRES they auto-resolve (never surface, consume no action). The
+ * driver classifies them as `wait` and resolves with `true`. `ConfirmPrompt` ('Confirm',
+ * `Prompt<boolean>`) is the *genuine* yes/no — it decomposes to two `confirm{value}` legalActions and
+ * resolves to the chosen boolean. (twinleaf has BOTH 'Confirm cards' (ack) and 'Confirm' (yes/no).)
  */
 
 const RALTS = 'Ralts SIT';
@@ -45,17 +49,24 @@ function board(): NeutralState {
 
 describe('Conformance — ShowCardsPrompt auto-resolve + ConfirmPrompt decomposer', () => {
 
-  it('ShowCardsPrompt auto-resolves (pure reveal): the callback fires and the driver drives past', () => {
-    const game = importState(board());
-    const p = game.state.players[0];
-    let acknowledged = false;
-    game.store.prompt(game.state, new ShowCardsPrompt(p.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, p.hand.cards),
-      () => { acknowledged = true; });
+  // Every `Prompt<true>` reveal/ack type auto-resolves identically (never surfaces, consumes no action).
+  const REVEAL_ACK: Array<{ name: string; make: (pid: number, cards: Card[]) => Prompt<true> }> = [
+    { name: 'Show cards', make: (pid, cards) => new ShowCardsPrompt(pid, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards) },
+    { name: 'Confirm cards', make: (pid, cards) => new ConfirmCardsPrompt(pid, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards) },
+    { name: 'Alert', make: (pid) => new AlertPrompt(pid, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT) },
+  ];
+  REVEAL_ACK.forEach(({ name, make }) => {
+    it(`${name} auto-resolves (reveal/ack): callback fires, driver drives past, never surfaces`, () => {
+      const game = importState(board());
+      const p = game.state.players[0];
+      let acknowledged = false;
+      game.store.prompt(game.state, make(p.id, p.hand.cards), () => { acknowledged = true; });
 
-    const res = replay(game, []); // no action needed — 'Show cards' is auto-resolved
-    expect(acknowledged).toBe(true);       // the reveal callback fired
-    expect(res.pending).not.toBeNull();    // drove past to A's main-phase menu
-    expect(res.pending!.descriptor).toBe('main');
+      const res = replay(game, []); // no action needed — reveal/ack prompts are auto-resolved
+      expect(acknowledged).toBe(true);       // the reveal/ack callback fired
+      expect(res.pending).not.toBeNull();    // drove past to A's main-phase menu
+      expect(res.pending!.descriptor).toBe('main');
+    });
   });
 
   /** A fresh game with an open ConfirmPrompt for player A (replay mutates, so each case re-imports). */

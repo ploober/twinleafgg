@@ -122,6 +122,12 @@ function relaxNullableRefs(schemas: Record<string, any>): void {
     }
   });
 
+  it('a confirm legalAction validates against the Action schema (value: boolean)', () => {
+    // ConfirmPrompt decomposes to both templates; both must validate against the contract `confirm`.
+    expect(check('Action', { actor: 'A', type: 'confirm', value: true })).toBe(true);
+    expect(check('Action', { actor: 'A', type: 'confirm', value: false })).toBe(true);
+  });
+
   it('significant events validate against the Event schema (turnEnded/turnStarted/draw)', () => {
     // A ends the turn → B's turn starts and B draws: the turn boundary's significant events.
     const res = step(BOARD, [{ actor: 'A', type: 'endTurn' }]);
