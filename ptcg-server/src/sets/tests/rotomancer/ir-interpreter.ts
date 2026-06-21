@@ -63,6 +63,10 @@ export interface IrFragment {
   body: IrOp[];
 }
 
+// "Prevent all damage" modeled as an unreachably-large damageReductionNextTurn: any probe (sized
+// under the card's max HP, ≤ ~340) is reduced to 0, matching the native preventDefault path.
+const PREVENT_ALL_DAMAGE_SENTINEL = 1_000_000;
+
 const CONDITIONS: Record<string, SpecialCondition> = {
   POISONED: SpecialCondition.POISONED,
   BURNED: SpecialCondition.BURNED,
@@ -302,6 +306,21 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         const amount = evalAmount(state, effect, mod.amount);
         for (const { list } of resolveTargets(state, effect, { of: op.appliesTo })) {
           list.damageReductionNextTurn += amount;
+        }
+      } else if (mod?.kind === 'preventDamage') {
+        // "During the opponent's next turn, prevent all damage done to this Pokémon by attacks from
+        // <matching> Pokémon." The native card installs a marker and zeroes the incoming PutDamage
+        // (preventDefault) iff the *attacker* satisfies `matching`. In the mirror lock probe the
+        // next-turn attacker is the same printing as this Pokémon, so `matching` is decided now
+        // against self; when it holds (or there's no predicate → prevent all) the prevention is
+        // total, modeled by a large damageReductionNextTurn sentinel the engine already enforces.
+        const selfCard = effect.player.active.getPokemonCard();
+        const applies = mod.matching === undefined
+          || (selfCard !== undefined && matchesCardPredicate(selfCard, mod.matching));
+        if (applies) {
+          for (const { list } of resolveTargets(state, effect, { of: op.appliesTo })) {
+            list.damageReductionNextTurn += PREVENT_ALL_DAMAGE_SENTINEL;
+          }
         }
       }
       return state;

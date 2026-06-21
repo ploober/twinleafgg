@@ -168,9 +168,9 @@ it via `damageReductionNextTurn`; 9 mapped printings compared, **0 unexplained m
 > full damage. The IR and interpreter both apply the 50-less correctly. → **Twinleaf bug**
 > (allow-listed, not fixed).
 
-The probe pattern generalises: `preventDamage` (expect 0 landed), `damageDebuff`, and the
-`rule.override` shutoffs (`cannotAttackNextTurn` / retreat lock — probe = attempt the action) are
-the next lock families to wire in.
+The probe pattern generalises: `preventDamage` is now wired in (see §9), with `damageDebuff` and the
+`rule.override` shutoffs (`cannotAttackNextTurn` / retreat lock — probe = attempt the action) still
+to come.
 
 ### 8. Mega-Evolution (`me*`) mapping — 2 more Twinleaf bugs
 
@@ -193,6 +193,32 @@ one IR gap surfaced immediately (all allow-listed, not fixed):
 > **Paldean Tauros (PFL) — Raging Charge**: the IR counts Tauros Pokémon *that have damage*; the real
 > attack is "40 per damage *counter* on your Tauros Pokémon" — the IR drops the per-counter scaling.
 > IR faithfulness gap.
+
+### 9. Lock family — `preventDamage` wired in → an IR-integration predicate bug found & fixed
+
+Extended the multi-turn probe (§7) to the second self-targeted incoming-damage family:
+`continuous.modifier { preventDamage }` ("during the opponent's next turn, prevent all damage done
+to this Pokémon by attacks from *⟨matching⟩* Pokémon", 16 ops). Natively this is a marker +
+`preventDefault`; the interpreter reproduces it by reusing the engine's `damageReductionNextTurn`
+with a large "prevent-all" sentinel — **gated on evaluating the `matching` predicate against self**,
+which is sound because the mirror probe's next-turn attacker is the same printing as the locked
+Pokémon. The lock scorecard went 10 → 17 compared (now `damageReduction 10 + preventDamage 7`).
+
+This immediately surfaced a bug — **in the IR integration itself, so it was fixed** (not
+allow-listed):
+
+> **Terapagos ex — Crown Opal** ("prevent all damage from **Basic non-[C]** Pokémon"). The IR encodes
+> the non-Colorless clause as `not(isa energyType:Colorless)`, and the native card checks
+> `sourceCard.cardType !== COLORLESS`. But `matchesCardPredicate`'s `energyType` arm only inspected
+> `EnergyCard.provides`, so for **any Pokémon** it returned no-match → `not(...)` was always true →
+> the interpreter wrongly prevented a Colorless attacker (took 0; native, correctly, took 220). Fix:
+> `energyType` now also matches a **Pokémon's own `cardType`** (and a Trainer matches neither). This
+> is the correct general reading of `isa energyType:X` across supertypes.
+
+The remaining lock families — `damageDebuff` (attacker-side, opponent's-next-turn),
+`damageVulnerability` (`yourNextTurn`, needs a probe on the lock-user's *own* next turn), and the
+`rule.override` shutoffs (attack/retreat — probe = attempt the action and observe the block) — are
+the next to wire in.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 

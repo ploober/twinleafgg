@@ -55,8 +55,17 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
   if (pred.name !== undefined && card.name !== pred.name) return false;
   if (pred.evolvesFrom !== undefined && (card as PokemonCard).evolvesFrom !== pred.evolvesFrom) return false;
   if (pred.energyType !== undefined) {
+    // `energyType` denotes an Energy card's provided type, but for a Pokémon it denotes the
+    // Pokémon's own type (cardType) — e.g. "Basic non-[C] Pokémon" → cardType !== COLORLESS.
     const type = ENERGY_TYPE_BY_NAME[pred.energyType];
-    if (!(card instanceof EnergyCard) || type === undefined || !card.provides.includes(type)) return false;
+    if (type === undefined) return false;
+    if (card instanceof EnergyCard) {
+      if (!card.provides.includes(type)) return false;
+    } else if (card instanceof PokemonCard) {
+      if (card.cardType !== type) return false;
+    } else {
+      return false; // Trainers have no type
+    }
   }
   if (pred.subtype !== undefined) {
     switch (pred.subtype) {

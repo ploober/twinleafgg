@@ -16,18 +16,29 @@ import { DealDamageEffect } from '../../game/store/effects/attack-effects';
  * the locked Pokémon and compares the *observed* result (mechanism-independent) between the native
  * card and the IR-interpreted card.
  *
- * Scope so far: `continuous.modifier { damageReduction }` on self ("this Pokémon takes N less
- * damage next turn") — the most common modifier, backed by the engine-enforced
- * `damageReductionNextTurn` property. The interpreter applies it (see ir-interpreter), the engine
- * reduces the probe, and we compare. A divergence is an IR-vs-native amount/scope discrepancy.
+ * Scope so far: self-targeted, opponent's-next-turn *incoming-damage* modifiers — the family the
+ * synthetic damage probe can observe directly:
+ *   - `continuous.modifier { damageReduction }` ("this Pokémon takes N less damage next turn"),
+ *     backed by the engine-enforced `damageReductionNextTurn` property.
+ *   - `continuous.modifier { preventDamage }` ("prevent all damage from <matching> Pokémon next
+ *     turn"); natively a marker + preventDefault, reproduced by the interpreter as a large
+ *     `damageReductionNextTurn` sentinel decided against self (the mirror probe's attacker is the
+ *     same printing). See ir-interpreter.
+ * The interpreter applies the modifier, the engine reduces the probe, and we compare the landed
+ * damage. A divergence is an IR-vs-native amount/applicability discrepancy.
  */
 
 interface Scenario { printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body']; }
 
-function hasDamageReductionSelf(body: any[]): boolean {
-  return body.some(op => op.kind === 'continuous.modifier'
-    && op.modifier?.kind === 'damageReduction'
-    && op.appliesTo?.role === 'self');
+// A self-targeted, next-turn incoming-damage modifier the probe can observe. Returns the modifier
+// kind for the scorecard, or null if the body has none (→ scenario is not a probe candidate).
+function selfIncomingDamageModifier(body: any[]): 'damageReduction' | 'preventDamage' | null {
+  for (const op of body) {
+    if (op.kind !== 'continuous.modifier' || op.appliesTo?.role !== 'self') { continue; }
+    const k = op.modifier?.kind;
+    if (k === 'damageReduction' || k === 'preventDamage') { return k; }
+  }
+  return null;
 }
 
 // Run the lock attack, then deal a known synthetic hit to the (locked) attacker on the opponent's
@@ -67,10 +78,10 @@ function lockAndProbe(fullName: string, cost: string[], attackLabel: string, fra
   return p0.active.damage - before; // landed damage = probe − damageReductionNextTurn
 }
 
-describe('Rotomancer lock differential — damageReduction (multi-turn probe)', () => {
+describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn probe)', () => {
   const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
   const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Scenario[])
-    .filter(s => hasDamageReductionSelf(s.body));
+    .filter(s => selfIncomingDamageModifier(s.body) !== null);
 
   // Native lock bugs surfaced by this probe (Twinleaf bugs — allow-listed, not fixed, per project
   // guidance). Keyed by attack label.
@@ -80,6 +91,7 @@ describe('Rotomancer lock differential — damageReduction (multi-turn probe)', 
 
   const mismatches: string[] = [];
   let compared = 0, skipped = 0;
+  const byFamily: Record<string, number> = { damageReduction: 0, preventDamage: 0 };
 
   for (const s of scenarios) {
     const res = resolvePrinting(s.printingId, s.name);
@@ -98,6 +110,7 @@ describe('Rotomancer lock differential — damageReduction (multi-turn probe)', 
       interp = lockAndProbe(res.fullName!, cost, s.attackLabel, fragments);
     } catch { skipped++; continue; } // interpreter doesn't support some op in the body
     compared++;
+    byFamily[selfIncomingDamageModifier(s.body)!]++;
     if (native !== interp) {
       mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native took ${native}, interp took ${interp}`);
     }
@@ -105,7 +118,7 @@ describe('Rotomancer lock differential — damageReduction (multi-turn probe)', 
 
   /* eslint-disable no-console */
   it('reports the lock scorecard', () => {
-    console.log(`\n  lock differential [damageReduction]: scenarios ${scenarios.length}, compared ${compared}, skipped ${skipped}, mismatches ${mismatches.length}`);
+    console.log(`\n  lock differential [incoming-damage]: scenarios ${scenarios.length}, compared ${compared} (damageReduction ${byFamily.damageReduction}, preventDamage ${byFamily.preventDamage}), skipped ${skipped}, mismatches ${mismatches.length}`);
     mismatches.forEach(m => console.log(`   • ${m}`));
     expect(compared).toBeGreaterThan(0);
   });
