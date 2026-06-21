@@ -174,6 +174,14 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
     if (pokemon === undefined) { continue; }
     // Once-per-turn activated abilities flag the slot with ABILITY_USED (cleared at EndTurnEffect).
     if (s.list.boardEffect.includes(BoardEffect.ABILITY_USED)) { continue; }
+    // Others gate via a player marker sourced by the card itself (e.g. Radiant Tsareena's
+    // ELEGANT_HEAL_MARKER, added through USE_ABILITY_ONCE_PER_TURN). A card that has added a
+    // self-sourced player marker this turn has already spent its once-per-turn ability, so don't
+    // offer it again — the engine would reject the re-use with POWER_ALREADY_USED, and legalActions
+    // must not contain a move the engine refuses (design §10.3). This is an approximation: twinleaf
+    // exposes no read-only "is this ability usable" query and the marker names are card-private, so
+    // we key on the source card; the fuzzer's "rejected its own legalAction" invariant guards drift.
+    if (player.marker.markers.some(m => m.source === pokemon)) { continue; }
     const powersEffect = new CheckPokemonPowersEffect(player, pokemon);
     store.reduceEffect(state, powersEffect);
     for (const power of powersEffect.powers) {
