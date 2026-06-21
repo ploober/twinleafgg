@@ -1,8 +1,8 @@
 {
  "meta": {
-  "source": "IR (peg-emit) vs native, adjudicated against official-metadata.json + Limitless spot-checks",
-  "note": "IR matches official attack name/cost in 100% of these; native Twinleaf differs. Spot-checked vs Limitless (independent): Crustle DRI-12 Superb Scissors, Mankey DRI-90 Wild Kick cost Fighting \u2014 both confirm Twinleaf wrong.",
-  "count": 86
+  "source": "IR (peg-emit-v2) vs native, adjudicated against official-metadata.json + Limitless spot-checks",
+  "note": "IR matches official attack name/cost; native Twinleaf differs. Spot-checked vs Limitless (independent): Crustle DRI-12, Mankey DRI-90. Regenerated from the v2 corpus.",
+  "count": 88
  },
  "discrepancies": [
   {
@@ -432,6 +432,18 @@
   },
   {
    "printingId": "sv10-70",
+   "attackLabel": "Jamming Wing",
+   "card": "Team Rocket's Zapdos",
+   "kind": "name",
+   "native": [
+    "Jamming Wave",
+    "Bad Thunder"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv10-70",
    "attackLabel": "Wicked Thunder",
    "card": "Team Rocket's Zapdos",
    "kind": "name",
@@ -664,6 +676,18 @@
   {
    "printingId": "sv8-35",
    "attackLabel": "Black Blaze Slash",
+   "card": "Ceruledge",
+   "kind": "name",
+   "native": [
+    "Blaze Curse",
+    "Amethyst Rage"
+   ],
+   "category": "wrong-name",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "sv8-35",
+   "attackLabel": "Cursed Edge",
    "card": "Ceruledge",
    "kind": "name",
    "native": [

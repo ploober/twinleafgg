@@ -6,14 +6,21 @@ Effect-IR (`~/projects/pokemon-cards`) and the snapshot's **official** card data
 project. Start here, then read [`DESIGN.md`](DESIGN.md) (architecture) and
 [`FINDINGS.md`](FINDINGS.md) (what it found).
 
+**IR wire format: v2** (`tools/template-parser-probe/peg-emit-v2`). v2 replaced the v1 flat
+selector strings with compositional selectors (`{side,spot}` / `{role}`), the `flow.control`+`kind2`
+god-op with top-level `coinFlip`/`if`, the `attack.lockOrModify` god-record with
+`continuous.modifier`+`rule.override`, `energy.attachOrDiscard` with `energy.discard`/`attach`/`move`,
+and the god-record predicate with a `{kind}`-tagged sum type. The interpreter reads v2 natively.
+
 ## Components (`rotomancer/`)
 | file | role |
 |---|---|
 | `bridge.ts` | resolve a Rotomancer `printingId` → Twinleaf card (name-validated, exact/mismatch/unmapped); energy/cost ↔ CardType maps |
 | `recipe-runner.ts` | translate a Rotomancer scenario (fixture + steps + expectations) → `setupGame` + actions + assertions |
-| `ir-interpreter.ts` | execute an IR program as a Twinleaf card: damage/condition/heal/counters/cards.move ops; const/forEach/perCount/plusIf counts; flow.control; multi-target selectors + target predicates |
-| `ir-predicates.ts` | evaluate IR predicates (compare / subtype / damageState / stadiumInPlay / and-or-not) |
-| `ir-cards.ts` | card-predicate matcher + deterministic `cards.move` execution |
+| `ir-selectors.ts` | resolve a v2 compositional selector (`{side,spot,role,quantity}`) → target Pokémon lists |
+| `ir-interpreter.ts` | execute an IR v2 program as a Twinleaf card: damage/condition/heal/counters/cards.move/energy.discard ops; const/forEach/perCount/plusIf/coinFlipHeads counts; `coinFlip`/`if` control; `continuous.modifier`/`rule.override` no-ops |
+| `ir-predicates.ts` | evaluate v2 sum-type predicates (isa / damageState / conditionOn / stadiumInPlay / energyAttachedCount / boardCount / hpRemaining / prize / handSize / cardInZone / compare / and-or-not) |
+| `ir-cards.ts` | v2 card-predicate matcher (isa / nameTag / and-or-not) + deterministic `cards.move` execution |
 | `tools/*.py` | regenerate the vendored fixtures from the Rotomancer snapshot |
 | `fixtures/*.json` | vendored corpora (hermetic — no cross-repo dependency at test time) |
 

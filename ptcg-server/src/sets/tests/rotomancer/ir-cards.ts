@@ -22,8 +22,31 @@ const ENERGY_TYPE_BY_NAME: Record<string, CardType> = {
   Dragon: CardType.DRAGON, Fairy: CardType.FAIRY, Colorless: CardType.COLORLESS,
 };
 
+// Matches a card against a Rotomancer IR **v2** card predicate. v2 fuses the printing-intrinsic
+// attributes (supertype/subtype/energyType/name) into a single `isa` leaf, and combines with
+// kind-tagged and/or/not. A bare object without `kind` is treated as an isa body (the `predicate`
+// field of energy.* / cards.move carries the isa attributes directly).
 export function matchesCardPredicate(card: Card, pred: any): boolean {
   if (!pred) return true;
+  switch (pred.kind) {
+    case 'and': return pred.operands.every((p: any) => matchesCardPredicate(card, p));
+    case 'or': return pred.operands.some((p: any) => matchesCardPredicate(card, p));
+    case 'not': return !matchesCardPredicate(card, pred.operand);
+    case 'nameTag': {
+      // Substring / owner-prefix match on the card's printed name (e.g. "Nidoking",
+      // "Team Rocket's Energy"). Both fields, when present, must be contained in the name.
+      const name = card.name ?? '';
+      if (pred.substring !== undefined && !name.includes(pred.substring)) return false;
+      if (pred.owner !== undefined && !name.includes(pred.owner)) return false;
+      return true;
+    }
+    case 'isa':
+    case undefined:
+      break; // fall through to the intrinsic-attribute checks below
+    default:
+      throw new Error(`[ir-cards] unsupported card predicate kind "${pred.kind}"`);
+  }
+  // isa (kind:'isa' or a bare attribute object)
   if (pred.supertype !== undefined) {
     const want = pred.supertype === 'Trainer' ? SuperType.TRAINER
       : pred.supertype === 'Energy' ? SuperType.ENERGY : SuperType.POKEMON;
@@ -63,9 +86,11 @@ function resolveZone(effect: AttackEffect, ref: any): CardList {
 }
 
 export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any): State {
-  const selectKind = op.select?.kind;
-  if (selectKind !== undefined && selectKind !== 'auto') {
-    throw new Error(`[ir-cards] unsupported cards.move select "${selectKind}"`); // player / random
+  // v2: select.chooser (player/opponent/auto) + select.where (predicate). A player/opponent
+  // chooser is non-deterministic; only `auto` (engine-forced, predicate-filtered) is supported.
+  const chooser = op.select?.chooser;
+  if (chooser !== undefined && chooser !== 'auto') {
+    throw new Error(`[ir-cards] unsupported cards.move chooser "${chooser}"`);
   }
   if (op.visibility === 'search' || op.count?.searchTyped) {
     throw new Error('[ir-cards] cards.move deck search not supported');
@@ -76,8 +101,8 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
 
   const countKind = op.count?.kind;
   let candidates: Card[] = from.cards.slice();
-  if (selectKind === 'auto') {
-    candidates = candidates.filter(c => matchesCardPredicate(c, op.select.predicate));
+  if (chooser === 'auto') {
+    candidates = candidates.filter(c => matchesCardPredicate(c, op.select.where));
   }
 
   let cards: Card[];

@@ -76,8 +76,8 @@ const CASES: Array<{
     label: 'Conkeldurr TWM — Tantrum (80 + Confuse self)',
     printingId: 'sv6-105', name: 'Conkeldurr', attackLabel: 'Tantrum', cost: ['FIGHTING'], attackerDamage: 0,
     fragments: [{ label: 'Tantrum', cost: ['Fighting'], body: [
-      { kind: 'damage.deal', amount: { kind: 'const', value: 80 }, target: { selector: 'opponentActive' } },
-      { kind: 'condition.apply', condition: 'CONFUSED', target: { selector: 'self' } },
+      { kind: 'damage.deal', amount: { kind: 'const', value: 80 }, target: { of: { side: 'opponent', spot: 'active' } } },
+      { kind: 'condition.apply', condition: 'CONFUSED', target: { of: { role: 'self' } } },
     ] }],
   },
   {
@@ -85,16 +85,16 @@ const CASES: Array<{
     printingId: 'sv8pt5-60', name: 'Umbreon ex', attackLabel: 'Moon Mirage',
     cost: ['DARKNESS', 'COLORLESS', 'COLORLESS'], attackerDamage: 0,
     fragments: [{ label: 'Moon Mirage', cost: ['Darkness', 'Colorless', 'Colorless'], body: [
-      { kind: 'damage.deal', amount: { kind: 'const', value: 160 }, target: { selector: 'opponentActive' } },
-      { kind: 'condition.apply', condition: 'CONFUSED', target: { selector: 'opponentActive' } },
+      { kind: 'damage.deal', amount: { kind: 'const', value: 160 }, target: { of: { side: 'opponent', spot: 'active' } } },
+      { kind: 'condition.apply', condition: 'CONFUSED', target: { of: { side: 'opponent', spot: 'active' } } },
     ] }],
   },
   {
     label: 'Zarude SSP — Leaf Drain (20 + heal 20 self)',
     printingId: 'sv8-11', name: 'Zarude', attackLabel: 'Leaf Drain', cost: ['GRASS'], attackerDamage: 30,
     fragments: [{ label: 'Leaf Drain', cost: ['Grass'], body: [
-      { kind: 'damage.deal', amount: { kind: 'const', value: 20 }, target: { selector: 'opponentActive' } },
-      { kind: 'heal', amount: { kind: 'const', value: 20 }, target: { selector: 'self' } },
+      { kind: 'damage.deal', amount: { kind: 'const', value: 20 }, target: { of: { side: 'opponent', spot: 'active' } } },
+      { kind: 'heal', amount: { kind: 'const', value: 20 }, target: { of: { role: 'self' } } },
     ] }],
   },
 ];
@@ -131,7 +131,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       body: [{
         kind: 'damage.deal',
         amount: { kind: 'perCount', base: 0, per: 30, count: { kind: 'forEach', of: 'benchedPokemon', who: 'self' } },
-        target: { selector: 'opponentActive' },
+        target: { of: { side: 'opponent', spot: 'active' } },
       }],
     }]);
     interpreted.id = native.id;
@@ -166,6 +166,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     // (5) Ability not modeled — the interpreter runs only the attack body, not the card's ability.
     'Searing Flame': 'Magmortar JTG: Magma Surge (+30 checkup burn on burned opponents) lifts native to KO; interp models only the attack',
     'Poison Chain': 'Pecharunt: Toxic Subjugation (+50 poison damage during checkup) lifts native to 70; interp models only the attack body (20)',
+    'Shocking Web': 'Galvantula: Compound Eyes ability (+50 vs opponents with an Ability) lifts native to 100 (KO); interp models only the attack body (50)',
   };
 
   function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {

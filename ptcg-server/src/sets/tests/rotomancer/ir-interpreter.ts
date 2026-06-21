@@ -5,25 +5,24 @@ import { SpecialCondition } from '../../../game/store/card/card-types';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
-import { Player } from '../../../game/store/state/player';
-import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { costToCardType } from './bridge';
-import { evalPredicate } from './ir-predicates';
+import { evalPredicate, matchesV2Where } from './ir-predicates';
 import { executeCardsMove } from './ir-cards';
+import { resolveV2Selector, Target, V2Selector } from './ir-selectors';
 
 /**
- * A minimal interpreter that executes a Rotomancer IR program as a Twinleaf card. Each ATTACK
- * fragment becomes an Attack whose printed damage is 0; the fragment `body` is the program and
- * is executed op-by-op into Twinleaf effects when the attack is used. This is the Phase-4 core:
- * imperative ops (damage.deal, damage.placeCounters, condition.apply, heal); count forms const,
- * forEach (pokemonInPlay/benchedPokemon/energyAttached/discardCards), perCount, and plusIf
- * (predicate-gated bonus, see ir-predicates); and direct selectors (self/ownActive/opponentActive).
- * Anything else throws — visible gaps.
+ * A minimal interpreter that executes a Rotomancer IR **v2** program as a Twinleaf card. Each
+ * ATTACK fragment becomes an Attack whose printed damage is 0; the fragment `body` is executed
+ * op-by-op into Twinleaf effects when the attack is used. Imperative ops (damage.deal,
+ * damage.placeCounters, condition.apply, heal, energy.discard, cards.move); count forms const,
+ * forEach, perCount, plusIf, coinFlipHeads; v2 compositional selectors ({side,spot}/{role}) and
+ * sum-type predicates (see ir-selectors / ir-predicates). Control flow is the v2 top-level
+ * `coinFlip`/`if` kinds (no more flow.control + kind2). Anything else throws — visible gaps.
  */
 
 export interface CountForm {
@@ -31,7 +30,7 @@ export interface CountForm {
   value?: number;      // const
   of?: string;         // forEach: pokemonInPlay | benchedPokemon | energyAttached | discardCards | …
   who?: string;        // forEach: self | opponent
-  selector?: { selector?: string };  // forEach with an explicit target (e.g. damageCounters on X)
+  selector?: V2Selector;  // forEach with an explicit target (e.g. damageCounters on X)
   base?: number;       // perCount / plusIf
   per?: number;        // perCount
   count?: CountForm;   // perCount inner count
@@ -46,28 +45,13 @@ export interface IrOp {
   count?: number | CountForm;
   condition?: string;
   removeMode?: boolean;
-  modifiers?: string[];
-  target?: { selector?: string };
-  kind2?: string;       // flow.control: predicate | coinFlip | costGate | playerChoice | ...
-  predicate?: any;      // flow.control kind2=predicate
-  then?: IrOp[];        // flow.control heads/true branch
-  else?: IrOp[];        // flow.control tails/false branch
-  action?: string;      // energy.attachOrDiscard: attach | discard | move
-  card?: any;           // energy.attachOrDiscard: { from: { owner, zone }, predicate }
-  scope?: string;       // attack.lockOrModify: opponentNextTurn | ownNextAttack | …
-  effect?: any;         // attack.lockOrModify: { kind, … }
-}
-
-// Damage modifiers that are no-ops in a mirror match: weakness/resistance never apply, and
-// "ignore the defender's damage reduction" is inert when the defender has no reduction effect.
-const NOOP_MODIFIERS = new Set(['applyWeakness:false', 'applyResistance:false', 'noDefenderReduction']);
-
-function assertModifiersSupported(op: IrOp): void {
-  for (const m of op.modifiers ?? []) {
-    if (!NOOP_MODIFIERS.has(m)) {
-      throw new Error(`[ir-interpreter] unsupported damage modifier "${m}"`);
-    }
-  }
+  ignore?: string[];    // damage.deal: weakness | resistance | defenderEffects (all no-op in a mirror)
+  target?: { of?: V2Selector; where?: any };
+  when?: any;           // `if` op condition predicate
+  then?: IrOp[];        // coinFlip heads branch / `if` true branch
+  else?: IrOp[];        // `if` false branch
+  card?: any;           // energy.discard: { from: { owner, zone }, predicate }
+  scope?: string;       // continuous.modifier / rule.override: opponentNextTurn | ownNextAttack | …
 }
 
 export interface IrFragment {
@@ -108,8 +92,8 @@ function countOf(effect: AttackEffect, form: CountForm): number {
     case 'prizesTaken': return 6 - p.getPrizeLeft();
     case 'retreatCost': return p.active.getPokemonCard()?.retreat?.length ?? 0;
     case 'damageCounters': {
-      // Damage counters on the form's explicit target (e.g. opponentActive), else on `who`'s active.
-      const targets = form.selector ? selectByName(effect, form.selector.selector) : [{ player: p, list: p.active }];
+      // Damage counters on the form's explicit target, else on `who`'s active.
+      const targets = form.selector ? resolveV2Selector(effect, form.selector) : [{ player: p, list: p.active }];
       return targets.reduce((sum, t) => sum + t.list.damage, 0) / 10;
     }
     default: throw new Error(`[ir-interpreter] unsupported forEach.of "${of}"`);
@@ -140,66 +124,22 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
   }
 }
 
-interface Target { player: Player; list: PokemonCardList; }
-
-function benched(p: Player): Target[] {
-  return p.bench.filter(b => b.getPokemonCard() !== undefined).map(list => ({ player: p, list }));
+// Resolves an op `target` ({ of: Selector, where?: Predicate }) to the concrete targets affected.
+function resolveTargets(state: State, effect: AttackEffect, target?: { of?: V2Selector; where?: any }): Target[] {
+  const targets = resolveV2Selector(effect, target?.of).filter(t => t.list.getPokemonCard() !== undefined);
+  return target?.where ? targets.filter(t => matchesV2Where(state, effect, t.list, target.where)) : targets;
 }
 
-// A per-target predicate restricts WHICH resolved targets are actually affected (e.g. only
-// Pokémon that already have damage, or that have an Ability). Unknown leaves throw.
-function matchesTargetPredicate(list: PokemonCardList, pred: any): boolean {
-  if (!pred) return true;
-  if (Array.isArray(pred.and)) return pred.and.every((p: any) => matchesTargetPredicate(list, p));
-  if (Array.isArray(pred.or)) return pred.or.some((p: any) => matchesTargetPredicate(list, p));
-  if (pred.not !== undefined) return !matchesTargetPredicate(list, pred.not);
-  if (pred.damageState) {
-    if (pred.damageState.hasAny !== undefined) return pred.damageState.hasAny ? list.damage > 0 : list.damage === 0;
-    if (pred.damageState.full !== undefined) return pred.damageState.full ? list.damage === 0 : list.damage > 0;
-  }
-  if (pred.hasAbility !== undefined) {
-    const card = list.getPokemonCard();
-    return !!card && card.powers.length > 0;
-  }
-  throw new Error(`[ir-interpreter] unsupported target predicate "${Object.keys(pred).join(',')}"`);
-}
-
-function selectByName(effect: AttackEffect, selector?: string): Target[] {
-  const own = effect.player, opp = effect.opponent;
-  switch (selector) {
-    case undefined:
-    case 'self':
-    case 'ownActive': return [{ player: own, list: own.active }];
-    case 'opponentActive':
-    case 'defendingPokemon': return [{ player: opp, list: opp.active }];
-    case 'eachOwnBench': return benched(own);
-    case 'eachOpponentBench': return benched(opp);
-    case 'bothActives': return [{ player: own, list: own.active }, { player: opp, list: opp.active }];
-    case 'allOwnPokemon':
-    case 'ownPokemon': return [{ player: own, list: own.active }, ...benched(own)];
-    case 'allOpponentPokemon':
-    case 'opponentPokemon': return [{ player: opp, list: opp.active }, ...benched(opp)];
-    default:
-      throw new Error(`[ir-interpreter] unsupported selector "${selector}"`);
-  }
-}
-
-// Resolves an op `target` ({selector, predicate?}) to the concrete targets that are affected.
-function resolveTargets(effect: AttackEffect, target?: { selector?: string; predicate?: any }): Target[] {
-  const targets = selectByName(effect, target?.selector).filter(t => t.list.getPokemonCard() !== undefined);
-  return target?.predicate ? targets.filter(t => matchesTargetPredicate(t.list, target.predicate)) : targets;
-}
-
-// energy.attachOrDiscard. Only the deterministic "discard energy from this Pokémon" form is
-// modelled (the bulk case): attach/move and upTo/anyAmount counts are player-choice or zone-
-// dependent and left unsupported (they throw → the attack is skipped, a visible gap).
-function executeEnergyOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+// energy.discard. Only the deterministic "discard energy from this Pokémon" form is modelled (the
+// bulk case): the count is exactly/all. (energy.attach / energy.move are player-choice or
+// zone-dependent and are separate v2 kinds left unsupported — they throw → the attack is skipped.)
+function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   const from = op.card?.from;
-  if (op.action !== 'discard' || from?.owner !== 'self' || from?.zone !== 'attached') {
-    throw new Error(`[ir-interpreter] energy.attachOrDiscard ${op.action} from ${from?.owner}/${from?.zone} not supported`);
+  if (from?.owner !== 'self' || from?.zone !== 'attached') {
+    throw new Error(`[ir-interpreter] energy.discard from ${from?.owner}/${from?.zone} not supported`);
   }
   const count: any = op.count;
-  const targets = resolveTargets(effect, op.target);
+  const targets = resolveTargets(state, effect, op.target);
   for (const { player, list } of targets) {
     const energies = list.cards.filter(c => c instanceof EnergyCard);
     let n: number;
@@ -215,15 +155,23 @@ function executeEnergyOp(store: StoreLike, state: State, effect: AttackEffect, o
   return state;
 }
 
+function runBranch(store: StoreLike, state: State, effect: AttackEffect, branch?: IrOp[]): State {
+  let next = state;
+  for (const sub of branch ?? []) {
+    next = executeOp(store, next, effect, sub);
+  }
+  return next;
+}
+
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   switch (op.kind) {
     case 'damage.deal': {
-      assertModifiersSupported(op);
+      // `ignore` (weakness/resistance/defenderEffects) is inert in a mirror match — no-op.
       const value = evalAmount(state, effect, op.amount);
-      const sel = op.target?.selector;
-      const viaEngine = sel === 'opponentActive' || sel === 'defendingPokemon';
-      for (const { list } of resolveTargets(effect, op.target)) {
-        if (viaEngine && list === effect.opponent.active) {
+      const of = op.target?.of;
+      const toDefender = !!of && (of.role === 'defending' || (of.side === 'opponent' && of.spot === 'active'));
+      for (const { list } of resolveTargets(state, effect, op.target)) {
+        if (toDefender && list === effect.opponent.active) {
           // Defender damage goes through the normal pipeline so weakness/resistance/prevention apply.
           effect.damage += value;
         } else {
@@ -238,7 +186,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'damage.placeCounters': {
       // Damage counters bypass weakness/resistance; 1 counter = 10 HP.
       const value = evalAmount(state, effect, op.count) * 10;
-      for (const { list } of resolveTargets(effect, op.target)) {
+      for (const { list } of resolveTargets(state, effect, op.target)) {
         const put = new PutDamageEffect(effect, value);
         put.target = list;
         state = store.reduceEffect(state, put);
@@ -253,7 +201,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       if (condition === undefined) {
         throw new Error(`[ir-interpreter] unknown condition "${op.condition}"`);
       }
-      for (const { list } of resolveTargets(effect, op.target)) {
+      for (const { list } of resolveTargets(state, effect, op.target)) {
         const add = new AddSpecialConditionsEffect(effect, [condition]);
         add.target = list;
         state = store.reduceEffect(state, add);
@@ -262,39 +210,32 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     }
     case 'heal': {
       const value = evalAmount(state, effect, op.amount);
-      for (const { player, list } of resolveTargets(effect, op.target)) {
+      for (const { player, list } of resolveTargets(state, effect, op.target)) {
         state = store.reduceEffect(state, new HealEffect(player, list, value));
       }
       return state;
     }
     case 'cards.move':
       return executeCardsMove(store, state, effect, op);
-    case 'energy.attachOrDiscard':
-      return executeEnergyOp(store, state, effect, op);
-    case 'attack.lockOrModify':
-      // Every observed scope (opponentNextTurn, ownNextAttack, yourNextTurn, untilLeavesActive) is
-      // a future/persistent rider — attack/retreat shutoff, damage debuff/reduction, prevent-damage,
-      // etc. None change the immediate post-attack snapshot the differential compares, so this is a
-      // recognized no-op; the attack's damage/condition ops still run. (A multi-turn differential
-      // would be needed to exercise these; out of scope here.)
+    case 'energy.discard':
+      return executeEnergyDiscard(store, state, effect, op);
+    case 'continuous.modifier':
+    case 'rule.override':
+      // The v2 split of attack.lockOrModify. Every scope (opponentNextTurn, ownNextAttack,
+      // yourNextTurn, untilLeavesActive) is a future/persistent rider — attack/retreat shutoff,
+      // damage debuff/reduction, prevent-damage, etc. None change the immediate post-attack
+      // snapshot the differential compares, so both are recognized no-ops. (A multi-turn
+      // differential would be needed to exercise these; out of scope here.)
       return state;
-    case 'flow.control': {
-      // Under the test harness (ALL_HEADS, no choices) a coin flip is heads → the `then` branch.
-      let branch: IrOp[];
-      if (op.kind2 === 'predicate') {
-        branch = evalPredicate(state, effect, op.predicate) ? (op.then ?? []) : (op.else ?? []);
-      } else if (op.kind2 === 'coinFlip') {
-        branch = op.then ?? [];
-      } else {
-        throw new Error(`[ir-interpreter] unsupported flow.control kind2 "${op.kind2}"`);
-      }
-      let next = state;
-      for (const sub of branch) {
-        next = executeOp(store, next, effect, sub);
-      }
-      return next;
-    }
+    case 'coinFlip':
+      // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch.
+      return runBranch(store, state, effect, op.then);
+    case 'if':
+      return evalPredicate(state, effect, op.when)
+        ? runBranch(store, state, effect, op.then)
+        : runBranch(store, state, effect, op.else);
     default:
+      // choice / iterate / costGate and the new pokemon.* / damage.move ops are unsupported.
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);
   }
 }

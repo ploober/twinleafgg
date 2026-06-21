@@ -19,14 +19,14 @@ import os
 import sys
 
 DEFAULT_ROOT = os.path.expanduser("~/projects/pokemon-cards")
-SNAPSHOT = "tools/template-parser-probe/peg-emit"
+SNAPSHOT = "tools/template-parser-probe/peg-emit-v2"
 
-# Modifiers that are no-ops in a mirror match (no weakness/resistance ever applies).
-NOOP_MODIFIERS = {"applyWeakness:false", "applyResistance:false"}
+# v2 damage-application ignores that are no-ops in a mirror match (weakness/resistance never apply).
+NOOP_IGNORES = {"weakness", "resistance"}
 
 
 def modifiers_ok(op):
-    return all(m in NOOP_MODIFIERS for m in (op.get("modifiers") or []))
+    return all(m in NOOP_IGNORES for m in (op.get("ignore") or []))
 
 
 def main():
@@ -51,7 +51,8 @@ def main():
             amt = op.get("amount", {})
             if amt.get("kind") != "const" or not modifiers_ok(op):
                 continue
-            if op.get("target", {}).get("selector") != "opponentActive":
+            of = op.get("target", {}).get("of", {})
+            if of.get("side") != "opponent" or of.get("spot") != "active":
                 continue
             scenarios.append({
                 "printingId": pid,

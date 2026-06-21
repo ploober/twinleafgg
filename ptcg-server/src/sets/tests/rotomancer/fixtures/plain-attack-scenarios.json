@@ -1,7 +1,7 @@
 {
  "meta": {
   "source": "rotomancer effect-programs",
-  "snapshot": "tools/template-parser-probe/peg-emit",
+  "snapshot": "tools/template-parser-probe/peg-emit-v2",
   "shape": "single damage.deal const -> opponentActive (pure printed damage)",
   "count": 12
  },

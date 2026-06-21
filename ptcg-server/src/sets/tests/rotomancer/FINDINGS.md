@@ -88,6 +88,23 @@ surface more. One non-bug remains allow-listed: **Pecharunt's Poison Chain** (na
 — the gap is Pecharunt's *Toxic Subjugation* ability (+50 poison during checkup), which the
 interpreter doesn't model (it runs only the attack body — same family as Magmortar's Magma Surge).
 
+### 4. Migrated to IR v2
+
+Rotomancer moved its canonical schema to **v2** (compositional selectors `{side,spot}`/`{role}`;
+`coinFlip`/`if` replacing `flow.control`+`kind2`; `continuous.modifier`+`rule.override` replacing
+`attack.lockOrModify`; `energy.discard`/`attach`/`move`; a `{kind}`-tagged predicate sum type;
+`ignore` replacing the flat damage-modifier strings). The interpreter now reads the v2 corpus
+(`peg-emit-v2`, 1585 programs) natively — new module `ir-selectors.ts` for the compositional
+selectors, and `ir-predicates.ts`/`ir-cards.ts` rewritten as `kind`-dispatched sum types.
+
+The differential **validates the port against native ground truth**: coverage rose **383 → ~409
+attacks compared, 0 mismatches**. Two divergences found during the port were interpreter bugs
+(fixed): `matchesCardPredicate` silently matched the v2 `nameTag` leaf, over-triggering the
+`plusIf` bonus on Team Rocket's Nidoqueen (Love Impact) and Articuno (Dark Frost) — now `nameTag`
+is handled and unknown predicate kinds throw rather than match. One new allow-list entry, also an
+ability-not-modeled case: **Galvantula's Shocking Web** (its *Compound Eyes* ability adds +50 vs
+opponents with an Ability → native 100/KO; interp models only the attack body, 50).
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
