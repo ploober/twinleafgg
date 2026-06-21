@@ -55,14 +55,14 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('A');
     expect(res.pending!.descriptor).toContain('Choose energy');
-    expect(res.pending!.legalActions).toContain({ type: 'chooseEnergy', card: 'e0' });
-    expect(res.pending!.legalActions).toContain({ type: 'chooseEnergy', card: 'e1' });
+    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'discard', owner: 'A', target: 'e0' });
+    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'discard', owner: 'A', target: 'e1' });
   });
 
   it('pays the cost with the chosen energy and completes the retreat', () => {
     const res = step(retreatBoard(), [
       { actor: 'A', type: 'retreat', to: 0 },
-      { actor: 'A', type: 'chooseEnergy', card: 'e1' }, // pay [C] with the Water energy
+      { actor: 'A', type: 'discard', target: 'e1' }, // pay [C] by discarding the Water energy
     ]);
 
     expect(res.status).toBe('awaitingAction');
@@ -77,7 +77,7 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
   it('replays the retreat-payment deterministically', () => {
     const actions: NeutralAction[] = [
       { actor: 'A', type: 'retreat', to: 0 },
-      { actor: 'A', type: 'chooseEnergy', card: 'e0' },
+      { actor: 'A', type: 'discard', target: 'e0' },
     ];
     const a = step(retreatBoard(), actions);
     const b = step(retreatBoard(), actions);
@@ -102,13 +102,13 @@ describe('ChooseAttackPrompt decomposer — Memory Skip', () => {
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('A');
     expect(res.pending!.descriptor).toContain('Choose attack');
-    expect(res.pending!.legalActions).toContain({ type: 'chooseAttack', source: 'B-act', name: 'Memory Skip' });
+    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'choose', target: 'B-act', name: 'Memory Skip' });
   });
 
   it('resolves the chosen attack; the attack deals its damage and auto-ends the turn', () => {
     const res = step(memorySkipBoard(), [
       { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' },
-      { actor: 'A', type: 'chooseAttack', source: 'B-act', name: 'Memory Skip' },
+      { actor: 'A', type: 'choose', target: 'B-act', name: 'Memory Skip' },
     ]);
 
     expect(res.state.players.B.active!.damage).toBe(10); // Memory Skip's 10 damage

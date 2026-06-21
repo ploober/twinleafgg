@@ -30,8 +30,7 @@ interface Seams {
 // frontier is always consumed by one of these, so we only re-import at those prefixes (top-level
 // actions leave the synthetic menu, not a `state.prompts` entry) — far cheaper than every prefix.
 const FOLLOWUP_TYPES = new Set<string>([
-  'choose', 'choosePrize', 'chooseEnergy', 'chooseAttack', 'placeCounter', 'moveCounter', 'discard',
-  'endChoice', 'shuffle', 'flip',
+  'choose', 'takePrize', 'placeCounter', 'promoteBench', 'discard', 'shuffle', 'flip',
 ]);
 
 /** Collect open prompt types (at follow-up frontiers) + every GameLog (from a full replay). */

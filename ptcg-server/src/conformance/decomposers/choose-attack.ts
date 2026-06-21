@@ -27,7 +27,7 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
         if (blocked.has(`${i}:${attack.name}`)) {
           continue;
         }
-        legalActions.push({ type: 'chooseAttack', source: iid, name: attack.name });
+        legalActions.push({ type: 'choose', target: iid, name: attack.name });
       }
     }
     if (legalActions.length === 0) {
@@ -37,17 +37,19 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
   },
 
   toPick(prompt, action, ctx) {
-    if (action.type !== 'chooseAttack') {
-      throw new Error(`[conformance] ChooseAttack expected 'chooseAttack', got '${action.type}'`);
+    // ChooseAttack maps onto the generic `choose`; the attack is named via the contract-valid `name`
+    // field (target = the card iid in the prompt's list).
+    if (action.type !== 'choose') {
+      throw new Error(`[conformance] ChooseAttack expected 'choose', got '${action.type}'`);
     }
-    const source = action.source as string;
+    const source = action.target as string;
     const name = action.name as string;
     const index = prompt.cards.findIndex(c => ctx.cardToIid.get(c) === source);
     if (index === -1) {
-      throw new Error(`[conformance] chooseAttack source '${source}' is not in the prompt's card list`);
+      throw new Error(`[conformance] choose target '${source}' is not in the prompt's card list`);
     }
     if (!prompt.cards[index].attacks.some(a => a.name === name)) {
-      throw new Error(`[conformance] chooseAttack source '${source}' has no attack '${name}'`);
+      throw new Error(`[conformance] choose target '${source}' has no attack '${name}'`);
     }
     return { kind: 'attack', index, attack: name };
   },

@@ -50,9 +50,6 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
   },
 
   toPick(_prompt, action, ctx, state) {
-    if (action.type === 'endChoice') {
-      return { kind: 'done' };
-    }
     if (action.type !== 'placeCounter') {
       throw new Error(`[conformance] PutDamage expected 'placeCounter', got '${action.type}'`);
     }

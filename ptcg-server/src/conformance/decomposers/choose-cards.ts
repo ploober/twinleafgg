@@ -42,9 +42,6 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
   },
 
   toPick(prompt, action, ctx) {
-    if (action.type === 'endChoice') {
-      return { kind: 'done' };
-    }
     if (action.type !== 'choose') {
       throw new Error(`[conformance] ChooseCards expected 'choose', got '${action.type}'`);
     }

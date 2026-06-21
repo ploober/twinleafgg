@@ -52,8 +52,8 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     const initial = materializeNeutral(KO_BOARD);
     const log = driveAfterAttack(initial);
 
-    // the KO produced a choosePrize pick in the log
-    expect(log.some(a => a.type === 'choosePrize')).toBe(true);
+    // the KO produced a takePrize pick in the log
+    expect(log.some(a => a.type === 'takePrize')).toBe(true);
 
     const res = step(initial, log);
     expect(res.status).toBe('awaitingAction'); // not gameOver — A took only 1 of 6 prizes
@@ -64,7 +64,7 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     expect(res.state.players.A.hand.some(c => c.printing === W_PRINTING)).toBe(true);
   });
 
-  it('enumerates every takeable prize pile as a choosePrize legal action', () => {
+  it('enumerates every takeable prize pile as a takePrize legal action', () => {
     const initial = materializeNeutral(KO_BOARD);
     // walk to A's prize decision
     const rng = mulberry32(1);
@@ -74,13 +74,13 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
       const r = replay(importState(initial), log);
       const p = r.pending;
       if (p === null || p.descriptor === 'main') { break; }
-      if (p.legalActions[0].type === 'choosePrize') { prizePending = p; break; }
+      if (p.legalActions[0].type === 'takePrize') { prizePending = p; break; }
       log.push(legalToNeutral(p.legalActions[0], p.actor, rng));
     }
 
     expect(prizePending).not.toBeNull();
     expect(prizePending!.actor).toBe('A');
-    expect(prizePending!.legalActions.every(a => a.type === 'choosePrize')).toBe(true);
+    expect(prizePending!.legalActions.every(a => a.type === 'takePrize')).toBe(true);
     expect(prizePending!.legalActions.length).toBe(6); // all six of A's prize piles are takeable
   });
 });

@@ -179,7 +179,7 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
     for (const power of powersEffect.powers) {
       if (power.powerType !== PowerType.ABILITY) { continue; }
       if (power.useWhenInPlay !== true) { continue; } // only player-activated in-play abilities
-      out.push({ type: 'useAbility', source: s.iid, name: power.name });
+      out.push({ type: 'useAbility', source: s.iid, ability: power.name });
     }
   }
   return out;

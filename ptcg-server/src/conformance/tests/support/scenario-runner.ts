@@ -169,7 +169,7 @@ export function stepToNeutralActions(steps: ScenarioStep[]): NeutralAction[] {
       case 'playStadium': actions.push({ actor: 'A', type: 'playStadium', card: handIid('A', step.hand) }); break;
       case 'playItem': actions.push({ actor: 'A', type: 'playItem', card: handIid('A', step.hand) }); break;
       case 'playSupporter': actions.push({ actor: 'A', type: 'playSupporter', card: handIid('A', step.hand) }); break;
-      case 'useAbility': actions.push({ actor: 'A', type: 'useAbility', source: slotIid('A', step.source), name: step.name }); break;
+      case 'useAbility': actions.push({ actor: 'A', type: 'useAbility', source: slotIid('A', step.source), ability: step.name }); break;
       case 'retreat': actions.push({ actor: 'A', type: 'retreat', to: step.to }); break;
       case 'flip': actions.push({ actor: 'system', type: 'flip', face: step.face }); break;
       case 'endTurn': actions.push({ actor: 'A', type: 'endTurn' }); break;

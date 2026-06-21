@@ -67,7 +67,7 @@ describe('Conformance M3 — the system actor (shuffle + coin flip)', () => {
     game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), () => { /* noop */ });
     const pending = replay(game, []).pending!;
     expect(pending.actor).toBe('system');
-    expect(pending.legalActions[0]).toEqual({ type: 'shuffle', deck: ['d0', 'd1'] });
+    expect(pending.legalActions[0]).toEqual({ actor: 'system', type: 'shuffle', deck: ['d0', 'd1'] });
   });
 
   it('inline coin flip (CoinFlipEffect): Pikachu Whimsy Tackle does 50 on heads, 0 on tails', () => {
@@ -110,7 +110,7 @@ describe('Conformance M3 — the system actor (shuffle + coin flip)', () => {
     ]);
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('system');
-    expect(res.pending!.legalActions).toEqual([{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }]);
+    expect(res.pending!.legalActions).toEqual([{ actor: 'system', type: 'flip', face: 'heads' }, { actor: 'system', type: 'flip', face: 'tails' }]);
   });
 
   it('replays coin-flip attacks deterministically', () => {

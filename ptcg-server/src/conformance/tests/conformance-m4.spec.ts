@@ -97,7 +97,7 @@ describe('Conformance M4 — turn boundaries & checkup', () => {
 
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('system');
-    expect(res.pending!.legalActions).toEqual([{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }]);
+    expect(res.pending!.legalActions).toEqual([{ actor: 'system', type: 'flip', face: 'heads' }, { actor: 'system', type: 'flip', face: 'tails' }]);
   });
 
   it('deck-out at the start of a turn ends the game (the drawing player loses)', () => {

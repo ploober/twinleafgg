@@ -154,9 +154,11 @@ describe('Tier 1 — deferred-default fields stay at their documented defaults (
         player({ active: pip('B-act', RALTS, { damage: 20 }), bench: [pip('B-b0', RALTS)] }),
       ),
       [
-        { actor: 'A', type: 'useAbility', source: 'A-act', name: 'Painful Spoons' },
-        { actor: 'A', type: 'moveCounter', from: 'B-act', to: 'B-b0' },
-        { actor: 'A', type: 'endChoice' },
+        { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Painful Spoons' },
+        { actor: 'A', type: 'choose', target: 'B-act' },
+        { actor: 'A', type: 'placeCounter', target: 'B-b0' },
+        { actor: 'A', type: 'choose', target: 'B-act' },
+        { actor: 'A', type: 'placeCounter', target: 'B-b0' },
       ],
     );
     expect(projectGame(game).players.A.active!.markers.abilitiesUsedThisTurn).toEqual([]);

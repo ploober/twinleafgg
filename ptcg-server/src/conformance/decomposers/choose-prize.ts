@@ -47,9 +47,9 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
       }
       const iid = ctx.cardToIid.get(prizes[i].cards[0]);
       if (iid === undefined) {
-        continue;
+        continue; // pile has no projectable card → not an offerable index
       }
-      legalActions.push({ type: 'choosePrize', prize: iid });
+      legalActions.push({ type: 'takePrize', index: i });
     }
     if (legalActions.length === 0) {
       return null;
@@ -57,19 +57,14 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
     return buildPending(prompt, state, legalActions);
   },
 
-  toPick(prompt, action, ctx, state) {
-    if (action.type !== 'choosePrize') {
-      throw new Error(`[conformance] ChoosePrize expected 'choosePrize', got '${action.type}'`);
+  toPick(prompt, action, _ctx, state) {
+    if (action.type !== 'takePrize') {
+      throw new Error(`[conformance] ChoosePrize expected 'takePrize', got '${action.type}'`);
     }
-    const prizeIid = (action as { prize: string }).prize;
-    const card = ctx.iidToCard.get(prizeIid);
-    if (card === undefined) {
-      throw new Error(`[conformance] choosePrize iid '${prizeIid}' not found in this game`);
-    }
+    const index = (action as { index: number }).index;
     const prizes = nonEmptyPrizes(prompt, state);
-    const index = prizes.findIndex(p => p.cards[0] === card);
-    if (index === -1) {
-      throw new Error(`[conformance] choosePrize iid '${prizeIid}' is not a takeable prize pile`);
+    if (!Number.isInteger(index) || index < 0 || index >= prizes.length) {
+      throw new Error(`[conformance] takePrize index ${index} is not a takeable prize pile`);
     }
     return { kind: 'prize', index };
   },

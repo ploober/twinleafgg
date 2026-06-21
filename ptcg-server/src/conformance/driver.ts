@@ -15,7 +15,7 @@ import { mapRejection } from './rejection-codes';
 import {
   SCHEMA_VERSION,
   NeutralState, NeutralAction, NeutralEvent, NeutralPlayerId, StepResponse, ResponseStatus,
-  PendingDecision, LegalAction, RejectionInfo,
+  PendingDecision, WirePending, WireLegalAction, LegalAction, RejectionInfo,
   BenchBasicAction, EvolveAction, AttachEnergyAction, AttachToolAction,
   RetreatAction, DeclareAttackAction, EndTurnAction, UseAbilityAction,
   ShuffleSystemAction, FlipSystemAction
@@ -141,7 +141,7 @@ function dispatchUseAbility(game: ImportedGame, action: UseAbilityAction): void 
   const player = game.state.players[actorIndex(action.actor)];
   const sourceCard = lookupCard(game, action.source, 'useAbility.source');
   const target = resolveOwnPokemonTarget(player, sourceCard);
-  game.store.dispatch(new UseAbilityGameAction(player.id, action.name, target));
+  game.store.dispatch(new UseAbilityGameAction(player.id, action.ability, target));
 }
 
 /** Dispatch one top-level neutral action, returning the game-log delta it produced. */
@@ -168,10 +168,26 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
 
 interface LoopResult {
   events: NeutralEvent[];
-  pending: PendingDecision | null;
+  pending: WirePending | null;
   applied: number;
   /** Set when a dispatched action was rejected by the engine (M6). */
   rejection?: RejectionInfo;
+}
+
+/**
+ * Project an internal `PendingDecision` to the contract-shaped `WirePending` (OpenAPI `Pending`):
+ * strip the internal `endChoice` terminator (no such contract Action — completion is signalled by
+ * the next non-pick action, R1) and stamp each surviving legalAction with the pending's `actor`
+ * (contract `Action.actor`, required on every action).
+ */
+function toWirePending(p: PendingDecision): WirePending {
+  return {
+    actor: p.actor,
+    descriptor: p.descriptor,
+    legalActions: p.legalActions
+      .filter(a => a.type !== 'endChoice')
+      .map(a => ({ actor: p.actor, ...a }) as WireLegalAction),
+  };
 }
 
 /** A system pending (shuffle / coin flip) surfaced when its action isn't yet in the log. */
@@ -278,7 +294,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
           continue;
         }
-        return { events, pending: systemPending(game, prompt), applied: cursor.i };
+        return { events, pending: toWirePending(systemPending(game, prompt)), applied: cursor.i };
       }
       if (kind === 'unsupported') {
         throw new Error(`[conformance] prompt '${prompt.type}' has no decomposer (out of scope)`);
@@ -297,11 +313,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         accum = [];
         continue; // the callback may have raised the next prompt
       }
-      if (cursor.i < actions.length) {
-        accum.push(dec.toPick(prompt, actions[cursor.i++], game.ctx, game.state));
+      // sub !== null — more picks are possible for this decision.
+      const nextAction = cursor.i < actions.length ? actions[cursor.i] : undefined;
+      if (nextAction === undefined) {
+        return { events, pending: toWirePending(sub), applied: cursor.i }; // log dry mid-decision
+      }
+      // R1 (next-action-completes): if the next action is not one of this decision's pick types and
+      // the decision permits stopping (its internal `endChoice` marker is present), synthesize the
+      // terminator and finalize on the next iteration — without consuming the action.
+      const canStop = sub.legalActions.some(a => a.type === 'endChoice');
+      const pickTypes = new Set<string>(sub.legalActions.filter(a => a.type !== 'endChoice').map(a => a.type));
+      if (!pickTypes.has(nextAction.type) && canStop) {
+        accum.push({ kind: 'done' });
         continue;
       }
-      return { events, pending: sub, applied: cursor.i }; // log dry mid-decision
+      accum.push(dec.toPick(prompt, nextAction, game.ctx, game.state));
+      cursor.i++;
+      continue;
     }
 
     // no open prompt
@@ -324,7 +352,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
     // active player's top-level menu (M5); otherwise (gameOver, or a non-main boundary) there is
     // nothing to choose.
-    return { events, pending: topLevelMenu(game), applied: cursor.i };
+    const menu = topLevelMenu(game);
+    return { events, pending: menu ? toWirePending(menu) : null, applied: cursor.i };
   }
   }
 }

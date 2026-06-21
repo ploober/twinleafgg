@@ -3,7 +3,7 @@ import { replay, projectGame } from '../driver';
 import { toPrinting } from '../printing';
 import { getCardByName } from '../../sets/tests/test-helpers';
 import {
-  NeutralState, LegalAction,
+  NeutralState, WireLegalAction,
   PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
 import { GameMessage } from '../../game/game-message';
@@ -57,7 +57,7 @@ function board(A: PlayerState, B: PlayerState): NeutralState {
 }
 
 /** The legalActions surfaced for the first decision of an open prompt (no actions consumed). */
-function firstDecision(game: ImportedGame): LegalAction[] {
+function firstDecision(game: ImportedGame): WireLegalAction[] {
   const pending = replay(game, []).pending;
   if (pending === null) {
     throw new Error('no pending decision surfaced');
@@ -89,10 +89,9 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       (cards || []).forEach((c: any) => p.hand.moveCardTo(c, p.discard));
     });
 
-    // first decision: 3 candidates, no endChoice (fixed count)
+    // first decision: 3 candidates (fixed count, 2 of 3)
     const la = firstDecision(game);
     expect(la.filter(a => a.type === 'choose').length).toBe(3);
-    expect(la.some(a => a.type === 'endChoice')).toBe(false);
 
     const res = replay(game, [
       { actor: 'A', type: 'choose', target: 'h0' },
@@ -105,7 +104,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect(proj.players.A.discard.map(c => c.iid).sort()).toEqual(['h0', 'h1']);
   });
 
-  it('ChooseCards: "up to 2" offers endChoice once min is met and stops early', () => {
+  it('ChooseCards: "up to 2" stops early when the next action is not a pick (R1)', () => {
     const game = importState(board(
       player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }, { iid: 'h1', printing: WATER }] }),
       player({ active: ralts('B-act') }),
@@ -116,15 +115,18 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 2, allowCancel: false }
     ), cards => { captured = cards; });
 
-    // decision 1: no endChoice yet (0 < min)
-    expect(firstDecision(game).some(a => a.type === 'endChoice')).toBe(false);
-    // decision 2 (after 1 pick): endChoice now offered
+    // The wire never exposes an `endChoice` terminator (contract has no such Action; R1). After one
+    // pick the decision still offers more `choose` candidates (max not yet reached).
     const d2 = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }]).pending!.legalActions;
-    expect(d2.some(a => a.type === 'endChoice')).toBe(true);
+    expect(d2.some(a => (a as { type: string }).type === 'endChoice')).toBe(false);
+    expect(d2.some(a => a.type === 'choose')).toBe(true);
 
-    const res = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }, { actor: 'A', type: 'endChoice' }]);
+    // next-action-completes: a non-pick next action (endTurn) stops the "up to 2" choice at one pick.
+    // `captured` is set only if the discard RESOLVED (a log that dried mid-choice would surface a
+    // pending and never fire the callback), so [PSY] proves the early stop; both actions are consumed.
+    const res = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }, { actor: 'A', type: 'endTurn' }]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY]);
-    expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
+    expect(res.applied).toBe(2);
   });
 
   it('ChooseCards: blocked indices are not offered', () => {
@@ -269,11 +271,19 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       p.id, GameMessage.CHOOSE_POKEMON, PlayerType.TOP_PLAYER, [SlotType.ACTIVE, SlotType.BENCH], max, { min: 1, max: 1 }
     ), (result: DamageTransfer[]) => { captured = result; });
 
-    // only valid move: from B-active (has damage) to B-bench (can't move onto itself)
-    const la = firstDecision(game).filter(a => a.type === 'moveCounter') as any[];
-    expect(la).toEqual([{ type: 'moveCounter', from: 'B-act', to: 'B-b0' }]);
+    // relocating a counter has no single Action (R2): pick the SOURCE (choose), then the
+    // DESTINATION (placeCounter). Only B-active has damage; it can't move onto itself.
+    const sources = firstDecision(game).filter(a => a.type === 'choose') as any[];
+    expect(sources).toEqual([{ actor: 'A', type: 'choose', target: 'B-act' }]);
 
-    replay(game, [{ actor: 'A', type: 'moveCounter', from: 'B-act', to: 'B-b0' }]);
+    const dests = replay(game, [{ actor: 'A', type: 'choose', target: 'B-act' }])
+      .pending!.legalActions.filter(a => a.type === 'placeCounter') as any[];
+    expect(dests).toEqual([{ actor: 'A', type: 'placeCounter', target: 'B-b0' }]);
+
+    replay(game, [
+      { actor: 'A', type: 'choose', target: 'B-act' },
+      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
+    ]);
     expect(captured!.length).toBe(1);
   });
 

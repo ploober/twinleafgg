@@ -1,6 +1,6 @@
 import {
   SCHEMA_VERSION, NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers,
-  CardRef, Actor, LegalAction
+  CardRef, Actor, WireLegalAction
 } from '../../neutral-types';
 import { importState } from '../../state-adapter';
 import { replay } from '../../driver';
@@ -136,8 +136,8 @@ export function genBoard(rng: Rng): NeutralState {
 
 // ── LegalAction -> NeutralAction ──
 
-/** Attach the acting `actor` to an enumerated legal move; `shuffle` becomes a PRNG permutation. */
-export function legalToNeutral(legal: LegalAction, actor: Actor, rng: Rng): NeutralAction {
+/** A `shuffle` template becomes a PRNG permutation; every other wire action already carries `actor`. */
+export function legalToNeutral(legal: WireLegalAction, actor: Actor, rng: Rng): NeutralAction {
   if (legal.type === 'shuffle') {
     return { actor: 'system', type: 'shuffle', order: permute(legal.deck, rng) };
   }

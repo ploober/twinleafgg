@@ -150,7 +150,7 @@ describe('Conformance M5 — legalActions (the main-phase menu)', () => {
       player({ active: pip('A-act', ALAKAZAM) }),
       player({ active: pip('B-act', RALTS) }),
     ));
-    expect(has(m, a => a.type === 'useAbility' && a.source === 'A-act' && a.name === 'Painful Spoons')).toBe(true);
+    expect(has(m, a => a.type === 'useAbility' && a.source === 'A-act' && a.ability === 'Painful Spoons')).toBe(true);
   });
 
   it('phase 2: an ability drops off the menu once used (ABILITY_USED)', () => {
@@ -161,17 +161,21 @@ describe('Conformance M5 — legalActions (the main-phase menu)', () => {
         bench: [pip('B-b0', RALTS)],
       }),
     );
-    // Use Painful Spoons: move 1 counter from B's active to B's bench, then stop (min 1).
+    // Use Painful Spoons: move both counters from B's active to B's bench (each transfer is a SOURCE
+    // `choose` + a DESTINATION `placeCounter`, R2). Moving the full 2 (= max) auto-completes the
+    // decision, so no separate stop action is needed.
     const res = step(initial, [
-      { actor: 'A', type: 'useAbility', source: 'A-act', name: 'Painful Spoons' },
-      { actor: 'A', type: 'moveCounter', from: 'B-act', to: 'B-b0' },
-      { actor: 'A', type: 'endChoice' },
+      { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Painful Spoons' },
+      { actor: 'A', type: 'choose', target: 'B-act' },
+      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
+      { actor: 'A', type: 'choose', target: 'B-act' },
+      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
     ]);
-    expect(res.state.players.B.active!.damage).toBe(10);
-    expect(res.state.players.B.bench[0].damage).toBe(10);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    expect(res.state.players.B.bench[0].damage).toBe(20);
     // Still A's turn; the ability is now spent.
     expect(res.pending!.actor).toBe('A');
-    expect(has(res.pending!.legalActions, a => a.type === 'useAbility' && a.name === 'Painful Spoons')).toBe(false);
+    expect(has(res.pending!.legalActions, a => a.type === 'useAbility' && a.ability === 'Painful Spoons')).toBe(false);
   });
 
   it('phase 1: a playable trainer is classified by trainerType (Stadium)', () => {

@@ -12,7 +12,8 @@ import { playerIdToActor } from '../iid-targets';
 
 /**
  * A single accumulated pick, in the form a specific decomposer reassembles into the prompt's raw
- * wire result. `done` is the variable-count terminator (from a neutral `endChoice`).
+ * wire result. `done` is the variable-count terminator — the driver SYNTHESIZES it when the next
+ * action in the log is not a pick for the current decision (the contract has no `endChoice`; R1).
  */
 export type WirePick =
   | { kind: 'index'; index: number }                       // ChooseCards
@@ -60,7 +61,12 @@ export function buildPending(prompt: PromptHead, state: State, legalActions: Leg
   };
 }
 
-/** The `endChoice` legal action, appended to a variable-count decision once min is satisfied. */
+/**
+ * The internal "stop allowed" marker, appended to a variable-count decision once min is satisfied.
+ * It is INTERNAL ONLY — `toWirePending` strips it before the pending is surfaced (the contract has no
+ * `endChoice` Action). The driver reads its presence to know completion is permitted (next-action-
+ * completes, R1).
+ */
 export const END_CHOICE: LegalAction = { type: 'endChoice' };
 
 export function targetKey(t: CardTarget): string {

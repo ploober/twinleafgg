@@ -1,12 +1,12 @@
 import { DiscardEnergyPrompt } from '../../game/store/prompts/discard-energy-prompt';
 import { SuperType } from '../../game/store/card/card-types';
-import { CardTarget } from '../../game/store/actions/play-card-action';
+import { CardTarget, PlayerType } from '../../game/store/actions/play-card-action';
 import { StateUtils } from '../../game/store/state-utils';
 import { LegalAction } from '../neutral-types';
 import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, resolveAnyPokemonTarget } from '../iid-targets';
+import { promptPlayer, resolveAnyPokemonTarget, playerIdToActor } from '../iid-targets';
 
 /** DiscardEnergyPrompt: one pick = {from, index} (energy in a source list); raw = {from,index}[]. */
 export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
@@ -23,6 +23,7 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
     }
 
     const player = promptPlayer(state, prompt.playerId);
+    const opponent = StateUtils.getOpponent(state, player);
     const pickedKeys = new Set(rp.map(p => `${targetKey(p.from)}-${p.index}`));
     const blockedBySource = new Map<string, Set<number>>();
     for (const entry of prompt.options.blockedMap) {
@@ -33,6 +34,7 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
     const legalActions: LegalAction[] = [];
     for (const source of sources) {
       const list = StateUtils.getTarget(state, player, source);
+      const owner = playerIdToActor(state, source.player === PlayerType.BOTTOM_PLAYER ? player.id : opponent.id);
       const blockedIdx = blockedBySource.get(targetKey(source)) ?? new Set<number>();
       for (let i = 0; i < list.cards.length; i++) {
         const card = list.cards[i];
@@ -47,7 +49,7 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
         }
         const iid = ctx.cardToIid.get(card);
         if (iid !== undefined) {
-          legalActions.push({ type: 'discard', target: iid });
+          legalActions.push({ type: 'discard', owner, target: iid });
         }
       }
     }
@@ -61,9 +63,6 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
   },
 
   toPick(_prompt, action, ctx, state) {
-    if (action.type === 'endChoice') {
-      return { kind: 'done' };
-    }
     if (action.type !== 'discard') {
       throw new Error(`[conformance] DiscardEnergy expected 'discard', got '${action.type}'`);
     }

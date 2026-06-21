@@ -8,10 +8,10 @@ import { getCardByName } from '../../sets/tests/test-helpers';
 /**
  * Validate live adapter responses against the actual OpenAPI contract schemas (the source of truth,
  * `~/projects/pmtcg-conformance-tests/openapi/conformance-api.yaml`). Step 1 covers the response
- * envelope, `GameState`, `Capabilities`, and `Error` (all `additionalProperties:false`). The
- * `pending.legalActions` action vocabulary and the significant-event vocabulary are the known Step-2
- * gap — so we validate an invalidAction response (pending is `null`) for the full envelope, and the
- * `state` projection on its own; legalActions/events validity lands in Step 2.
+ * envelope, `GameState`, `Capabilities`, and `Error`; Step 2a adds the `pending.legalActions[]`
+ * action vocabulary (closed `Action` enum + required `actor`) — validated here via a full
+ * `awaitingAction` response and each legalAction against `Action`. The significant-EVENT vocabulary
+ * remains the known Step-2b gap (events still ride as the engine's informational trace).
  *
  * Skips when the cross-repo contract file is absent (e.g. CI without the conformance-tests checkout).
  */
@@ -104,6 +104,22 @@ function relaxNullableRefs(schemas: Record<string, any>): void {
     ]);
     expect(res.status).toBe('invalidAction');
     expect(check('StepResponse', res)).toBe(true);
+  });
+
+  it('an awaitingAction response validates as StepResponse (non-null pending + legalActions)', () => {
+    // an empty log at a main-phase boundary surfaces the active player's top-level menu
+    const res = step(BOARD, []);
+    expect(res.status).toBe('awaitingAction');
+    expect(res.pending).not.toBeNull();
+    expect(res.pending!.legalActions.length).toBeGreaterThan(0);
+    expect(check('StepResponse', res)).toBe(true);
+  });
+
+  it('every surfaced legalAction validates against the closed Action schema (actor + enum)', () => {
+    const res = step(BOARD, []);
+    for (const action of res.pending!.legalActions) {
+      expect(check('Action', action)).toBe(true);
+    }
   });
 
   it('the Error body validates', () => {

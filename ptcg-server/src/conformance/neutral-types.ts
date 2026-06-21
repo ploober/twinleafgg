@@ -209,8 +209,8 @@ export interface UseAbilityAction {
   type: 'useAbility';
   /** iid of the Pokemon-in-play whose ability is used (its stack's bottom/basic iid). */
   source: string;
-  /** Ability name. */
-  name: string;
+  /** Ability label (contract `Action.ability`). */
+  ability: string;
 }
 
 // ── Single-pick actions (consumed by prompt decomposers, design §7) ────────
@@ -221,9 +221,11 @@ export interface UseAbilityAction {
 export interface ChooseAction {
   actor: NeutralPlayerId;
   type: 'choose';
-  /** iid of the chosen card (ChooseCardsPrompt) or Pokemon-in-play (ChoosePokemonPrompt). */
+  /** iid of the chosen card (ChooseCardsPrompt) or Pokemon-in-play (ChoosePokemonPrompt / ChooseAttackPrompt source). */
   target: string;
   owner?: NeutralPlayerId;
+  /** Attack name, when the `choose` answers a ChooseAttackPrompt (contract-valid `Action.name`). */
+  name?: string;
 }
 
 export interface PlaceCounterAction {
@@ -233,13 +235,12 @@ export interface PlaceCounterAction {
   target: string;
 }
 
-export interface MoveCounterAction {
+/** Promote a benched Pokemon into the empty Active slot after a KO (contract `promoteBench`). */
+export interface PromoteBenchAction {
   actor: NeutralPlayerId;
-  type: 'moveCounter';
-  /** iid of the source Pokemon-in-play. */
-  from: string;
-  /** iid of the destination Pokemon-in-play. */
-  to: string;
+  type: 'promoteBench';
+  /** iid of the benched Pokemon-in-play to promote. */
+  target: string;
 }
 
 export interface DiscardPickAction {
@@ -250,36 +251,12 @@ export interface DiscardPickAction {
   owner?: NeutralPlayerId;
 }
 
-/** One energy chosen to pay a cost (ChooseEnergyPrompt — retreat / energy-cost payment). */
-export interface ChooseEnergyAction {
+/** One prize pile chosen to take after a knockout (ChoosePrizePrompt → contract `takePrize`). */
+export interface TakePrizeAction {
   actor: NeutralPlayerId;
-  type: 'chooseEnergy';
-  /** iid of an attached energy card offered by the prompt. */
-  card: string;
-}
-
-/** The attack chosen to copy/disable (ChooseAttackPrompt — Memory Skip & metronome-style). */
-export interface ChooseAttackAction {
-  actor: NeutralPlayerId;
-  type: 'chooseAttack';
-  /** iid of the card in the prompt's card list whose attack is chosen. */
-  source: string;
-  /** Attack name. */
-  name: string;
-}
-
-/** One prize pile chosen to take after a knockout (ChoosePrizePrompt). */
-export interface ChoosePrizeAction {
-  actor: NeutralPlayerId;
-  type: 'choosePrize';
-  /** iid of the prize pile's card (resolves to its index among the player's non-empty prizes). */
-  prize: string;
-}
-
-/** Completes the current variable-count ("up to N") multi-pick decision. */
-export interface EndChoiceAction {
-  actor: NeutralPlayerId;
-  type: 'endChoice';
+  type: 'takePrize';
+  /** Index of the prize pile among the player's non-empty prizes. */
+  index: number;
 }
 
 // ── System actions (the `system` actor — design §5) ────────────────────────
@@ -320,12 +297,9 @@ export type NeutralAction =
   | UseAbilityAction
   | ChooseAction
   | PlaceCounterAction
-  | MoveCounterAction
+  | PromoteBenchAction
   | DiscardPickAction
-  | ChooseEnergyAction
-  | ChooseAttackAction
-  | ChoosePrizeAction
-  | EndChoiceAction
+  | TakePrizeAction
   | ShuffleSystemAction
   | FlipSystemAction
   | UnimplementedAction;
@@ -361,13 +335,14 @@ export type ResponseStatus = 'awaitingAction' | 'gameOver' | 'invalidAction';
  */
 export type LegalAction =
   // Single picks inside a decomposed prompt (M2) and the system seam (M3).
-  | { type: 'choose'; target: string; owner?: NeutralPlayerId }
+  | { type: 'choose'; target: string; owner?: NeutralPlayerId; name?: string }
   | { type: 'placeCounter'; target: string }
-  | { type: 'moveCounter'; from: string; to: string }
+  | { type: 'promoteBench'; target: string }
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
-  | { type: 'chooseEnergy'; card: string }
-  | { type: 'chooseAttack'; source: string; name: string }
-  | { type: 'choosePrize'; prize: string }
+  | { type: 'takePrize'; index: number }
+  // `endChoice` is the INTERNAL variable-count terminator only — it is never emitted on the wire
+  // (the contract has no such Action; completion is signalled by the next non-pick action, R1). The
+  // wire transform (`toWirePending`) strips it; decomposers still append it to mark "stop allowed".
   | { type: 'endChoice' }
   | { type: 'shuffle'; deck: string[] }
   | { type: 'flip'; face: 'heads' | 'tails' }
@@ -382,13 +357,27 @@ export type LegalAction =
   | { type: 'playStadium'; card: string }
   | { type: 'retreat'; to: number }
   | { type: 'declareAttack'; source: string; name: string }
-  | { type: 'useAbility'; source: string; name: string }
+  | { type: 'useAbility'; source: string; ability: string }
   | { type: 'endTurn' };
 
+/** The pending shape decomposers/menus build internally — `legalActions` carry no `actor`. */
 export interface PendingDecision {
   actor: Actor;
   descriptor: string;
   legalActions: LegalAction[];
+}
+
+/**
+ * The contract-shaped pending surfaced on the wire (OpenAPI `Pending`): every `legalAction` carries
+ * its `actor` (contract `Action.actor`, required) and the internal `endChoice` terminator is gone.
+ * Built from a `PendingDecision` by `toWirePending` (driver.ts).
+ */
+export type WireLegalAction = Exclude<LegalAction, { type: 'endChoice' }> & { actor: Actor };
+
+export interface WirePending {
+  actor: Actor;
+  descriptor: string;
+  legalActions: WireLegalAction[];
 }
 
 /**
@@ -432,7 +421,7 @@ export interface StepResponse {
   status: ResponseStatus;
   /** Number of actions consumed from the log (those applied before any rejection). */
   applied: number;
-  pending: PendingDecision | null;
+  pending: WirePending | null;
   events: NeutralEvent[];
   state: NeutralState;
   /** Present only when `status === 'invalidAction'` — the offending action's index in `actions[]`. */
