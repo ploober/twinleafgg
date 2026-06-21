@@ -12,7 +12,7 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
-import { executeCardsMove } from './ir-cards';
+import { executeCardsMove, matchesCardPredicate } from './ir-cards';
 import { resolveV2Selector, Target, V2Selector } from './ir-selectors';
 
 /**
@@ -91,6 +91,7 @@ function countOf(effect: AttackEffect, form: CountForm): number {
     case 'handCards': return p.hand.cards.length;
     case 'prizesTaken': return 6 - p.getPrizeLeft();
     case 'retreatCost': return p.active.getPokemonCard()?.retreat?.length ?? 0;
+    case 'toolsAttached': return p.active.tools.length;
     case 'damageCounters': {
       // Damage counters on the form's explicit target, else on `who`'s active.
       const targets = form.selector ? resolveV2Selector(effect, form.selector) : [{ player: p, list: p.active }];
@@ -117,6 +118,9 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
       return headsOf(amount.n ?? 0);
     case 'perCount':
       return (amount.base ?? 0) + (amount.per ?? 0) * evalAmount(state, effect, amount.count);
+    case 'minusPerCount':
+      // "base, minus per for each X" — damage can't go negative.
+      return Math.max(0, (amount.base ?? 0) - (amount.per ?? 0) * evalAmount(state, effect, amount.count));
     case 'plusIf':
       return (amount.base ?? 0) + (evalPredicate(state, effect, amount.when) ? (amount.bonus ?? 0) : 0);
     default:
@@ -130,18 +134,20 @@ function resolveTargets(state: State, effect: AttackEffect, target?: { of?: V2Se
   return target?.where ? targets.filter(t => matchesV2Where(state, effect, t.list, target.where)) : targets;
 }
 
-// energy.discard. Only the deterministic "discard energy from this Pokémon" form is modelled (the
-// bulk case): the count is exactly/all. (energy.attach / energy.move are player-choice or
-// zone-dependent and are separate v2 kinds left unsupported — they throw → the attack is skipped.)
+// energy.discard. The deterministic forms: discard exactly-N / all attached energy (optionally
+// filtered by an isa predicate, e.g. a [R] Energy) from the target Pokémon — self or opponent's
+// active. (energy.attach / energy.move, and upTo/anyAmount counts, are player-choice or
+// zone-dependent and are separate v2 kinds / forms left unsupported — they throw → card skipped.)
 function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   const from = op.card?.from;
-  if (from?.owner !== 'self' || from?.zone !== 'attached') {
+  if (from?.zone !== 'attached') {
     throw new Error(`[ir-interpreter] energy.discard from ${from?.owner}/${from?.zone} not supported`);
   }
   const count: any = op.count;
-  const targets = resolveTargets(state, effect, op.target);
-  for (const { player, list } of targets) {
-    const energies = list.cards.filter(c => c instanceof EnergyCard);
+  // The energies discarded are those attached to the resolved target Pokémon (each goes to its
+  // owner's discard), matching the from-card predicate (Energy supertype / specific type).
+  for (const { player, list } of resolveTargets(state, effect, op.target)) {
+    const energies = list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, from.predicate));
     let n: number;
     if (count?.kind === 'all') {
       n = energies.length;
@@ -219,6 +225,9 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return executeCardsMove(store, state, effect, op);
     case 'energy.discard':
       return executeEnergyDiscard(store, state, effect, op);
+    case 'hand.reveal':
+      // Revealing a hand moves no cards and changes no observable zone — snapshot-neutral no-op.
+      return state;
     case 'continuous.modifier':
     case 'rule.override':
       // The v2 split of attack.lockOrModify. Every scope (opponentNextTurn, ownNextAttack,

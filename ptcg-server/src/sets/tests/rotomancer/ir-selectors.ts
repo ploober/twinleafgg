@@ -78,5 +78,10 @@ export function resolveV2Selector(effect: AttackEffect, sel?: V2Selector): Targe
 /** Resolve a selector that is expected to denote a single Pokémon list (predicate subjects). */
 export function resolveV2Single(effect: AttackEffect, sel?: V2Selector): PokemonCardList {
   const targets = resolveV2Selector(effect, sel);
+  if (targets.length === 0) {
+    // e.g. a bench selector on an empty bench — the predicate/attr can't be evaluated. Throw a
+    // clean error (→ the card is skipped) rather than dereferencing undefined.
+    throw new Error('[ir-selectors] selector resolved to no Pokémon');
+  }
   return targets[0].list;
 }

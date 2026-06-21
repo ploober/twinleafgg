@@ -68,6 +68,7 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
       case 'Stage 1': if ((card as PokemonCard).stage !== Stage.STAGE_1) return false; break;
       case 'Stage 2': if ((card as PokemonCard).stage !== Stage.STAGE_2) return false; break;
       case 'ex': if (!card.tags.includes(CardTag.POKEMON_ex)) return false; break;
+      case 'Tera': if (!card.tags.includes(CardTag.POKEMON_TERA)) return false; break;
       default: throw new Error(`[ir-cards] unsupported card subtype "${pred.subtype}"`);
     }
   }

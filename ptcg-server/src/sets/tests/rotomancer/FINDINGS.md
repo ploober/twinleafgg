@@ -105,6 +105,15 @@ is handled and unknown predicate kinds throw rather than match. One new allow-li
 ability-not-modeled case: **Galvantula's Shocking Web** (its *Compound Eyes* ability adds +50 vs
 opponents with an Ability → native 100/KO; interp models only the attack body, 50).
 
+A follow-up coverage pass took the differential to **~431 attacks compared, 0 mismatches** by
+teaching the interpreter more deterministic v2 surface — `energy.discard` from the opponent's
+active (with the `isa` energy-type filter), `hand.reveal` (snapshot-neutral no-op), the
+`toolsAttached`/`minusPerCount` count forms, and the `Tera` subtype — and fixing one integration
+crash (`resolveV2Single` dereferenced an empty selector; it now fails cleanly → skip). The
+remaining ~120 unsupported attacks are almost all **genuine player choices** (choose-a-Pokémon
+selectors, `cards.move`/`choice`/`iterate` with a chooser), which a deterministic mirror
+differential can't resolve without choice-alignment infrastructure.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
