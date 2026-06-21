@@ -1,5 +1,9 @@
 # Cross-engine findings — Rotomancer IR vs native Twinleaf vs official data
 
+> 📐 For the feature‑by‑feature map of **every IR construct → how the integration supports it**, see
+> [IR-SUPPORT-DESIGN.md](IR-SUPPORT-DESIGN.md). This file is the running log of what each expansion
+> *found*; that one is the design contract for what we *support*.
+
 Discrepancies surfaced by cross-checks over the 2026-05-17 snapshot: the **corpus replay**
 (native vs IR-declared damage), the **native-vs-interpreted differential** (bare + primed
 boards), the **structural cross-check** (attack name + cost vs IR), and the **data cross-check**
