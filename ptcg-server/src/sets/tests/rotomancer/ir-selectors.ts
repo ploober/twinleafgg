@@ -57,11 +57,8 @@ export function resolveV2Selector(effect: AttackEffect, sel?: V2Selector): Targe
     }
   }
 
-  // Spatial selectors (side × spot × quantity). A single-pick (`quantity: one`) or any explicit
-  // chooser is a player choice — unsupported (skip rather than guess a target).
-  if (sel.chooser !== undefined || sel.quantity === 'one') {
-    throw new Error(`[ir-selectors] player-choice selector (chooser/quantity:one) not supported`);
-  }
+  // Spatial selectors (side × spot × quantity), built active-before-bench / low-index — the same
+  // order the harness's resolveChoosePokemonRaw enumerates candidates.
   const players = sideOf(effect, sel.side);
   const out: Target[] = [];
   for (const p of players) {
@@ -71,6 +68,14 @@ export function resolveV2Selector(effect: AttackEffect, sel?: V2Selector): Targe
       case 'anywhere': out.push({ player: p, list: p.active }, ...benched(p)); break;
       default: throw new Error(`[ir-selectors] unsupported spot "${sel.spot}"`);
     }
+  }
+
+  // A single-pick (`quantity: one`) or explicit chooser is a player choice. For ops that *affect*
+  // the chosen target (damage/condition/heal), native distributes via a prompt the test harness
+  // resolves unreliably (often to nothing on a bare board) — so aligning these needs the prompt-
+  // emitting Stage B, not a first-eligible guess. Left unsupported → the attack is skipped.
+  if (sel.chooser !== undefined || sel.quantity === 'one') {
+    throw new Error('[ir-selectors] player-choice affect-target needs choice-alignment (Stage B)');
   }
   return out;
 }

@@ -112,10 +112,26 @@ active (with the `isa` energy-type filter), `hand.reveal` (snapshot-neutral no-o
 board-mutation ops `pokemon.knockOut` (lethal damage through the normal pipeline, so the engine
 awards the prize/promotes — a direct `KnockOutEffect` skips the prize flow) and `pokemon.discard`.
 One integration crash was fixed (`resolveV2Single` dereferenced an empty selector; it now fails
-cleanly → skip). The remaining ~120 unsupported attacks are almost all **genuine player choices**
-(choose-a-Pokémon selectors, `cards.move`/`choice`/`iterate` with a chooser, `damage.move` to
-`anyOpponentPokemon`), which a deterministic mirror differential can't resolve without
-choice-alignment infrastructure.
+cleanly → skip).
+
+### 5. Choice-alignment infrastructure (Stage A)
+
+To start covering the player-choice tail safely, the harness now runs a **divergence guard**:
+`TestStoreHandler` counts genuine multi-option choices it makes (a `ChoosePokemon`/`ChooseCards`
+prompt where more candidates were eligible than were selected), and the differential **skips an
+attack when native made more such choices than the interpreted run** — i.e. native chose among
+options that the interpreter resolved directly, so the two might have picked differently. Choices
+both sides delegate to the harness (taking a prize, promoting after a KO) increment both counts
+equally and so never trip the guard. This converts the residual false-mismatch risk into a safe
+skip, which preserves the differential's zero-false-positive guarantee.
+
+With the guard in place, **Stage A** resolves the *forced/degenerate* choices directly — first-N
+matching for `cards.move` with a `player` chooser, `energy.attach` from hand/discard (usually empty
+→ no-op) — taking the differential to **~440 attacks compared, 0 mismatches**. Choice-*affect*
+targets (damage/condition/heal to a *chosen* Pokémon, e.g. "deal 50 to 2 of your opponent's
+Pokémon") are deferred to **Stage B**: native distributes those via a prompt the harness resolves
+unreliably, so aligning them needs the interpreter to emit the same prompts (a continuation-passing
+rewrite), not a first-eligible guess. The remaining unsupported attacks are that Stage-B tail.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 

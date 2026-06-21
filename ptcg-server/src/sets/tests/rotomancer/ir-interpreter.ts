@@ -169,6 +169,37 @@ function runBranch(store: StoreLike, state: State, effect: AttackEffect, branch?
   return next;
 }
 
+// energy.attach: move the first-N matching energy from a source zone (hand/deck/discard) onto the
+// target Pokémon. On the differential's board the source is usually empty (→ no-op, a genuine
+// forced outcome); a non-trivial pick (e.g. a deck search over many energies) is flagged by the
+// harness's ambiguity guard and skipped, so this never false-mismatches.
+function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+  const from = op.card?.from;
+  const owner = from?.owner === 'opponent' ? effect.opponent : effect.player;
+  let source: any;
+  switch (from?.zone) {
+    case 'hand': source = owner.hand; break;
+    case 'discard': source = owner.discard; break;
+    // 'deck' is a search (a player choice over the whole deck — and the differential's deck is
+    // filler energy), so attaching from it isn't a genuine forced outcome → leave unsupported.
+    default: throw new Error(`[ir-interpreter] energy.attach from zone "${from?.zone}" not supported`);
+  }
+  const count: any = op.count;
+  let n: number;
+  if (count?.kind === 'exactly') { n = count.n ?? 0; }
+  else if (count?.kind === 'upTo') { n = count.max ?? 0; }
+  else if (count?.kind === 'all') { n = Infinity; }
+  else { throw new Error(`[ir-interpreter] energy.attach count "${count?.kind}" not supported`); }
+
+  const matching = source.cards.filter((c: any) => c instanceof EnergyCard && matchesCardPredicate(c, from.predicate));
+  const toAttach = matching.slice(0, n === Infinity ? matching.length : n);
+  const targets = resolveTargets(state, effect, op.target);
+  if (targets.length > 0) {
+    source.moveCardsTo(toAttach, targets[0].list);
+  }
+  return state;
+}
+
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
   switch (op.kind) {
     case 'damage.deal': {
@@ -225,6 +256,8 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return executeCardsMove(store, state, effect, op);
     case 'energy.discard':
       return executeEnergyDiscard(store, state, effect, op);
+    case 'energy.attach':
+      return executeEnergyAttach(store, state, effect, op);
     case 'hand.reveal':
       // Revealing a hand moves no cards and changes no observable zone — snapshot-neutral no-op.
       return state;

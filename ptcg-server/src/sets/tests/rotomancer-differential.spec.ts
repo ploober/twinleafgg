@@ -47,10 +47,12 @@ function snapshot(state: State): Snapshot {
 
 interface Board { attackerDamage?: number; defenderDamage?: number; benchCount?: number; }
 
+interface AttackRun { snap: Snapshot; ambiguous: number; }
+
 function buildAndAttack(
   fullName: string, costEnergies: string[], attackLabel: string,
   fragments: IrFragment[] | null, board: Board = {}
-): Snapshot {
+): AttackRun {
   const bench = Array.from({ length: board.benchCount ?? 0 }, () => ({ card: fullName }));
   const game = setupGame({
     turn: 2,
@@ -64,7 +66,7 @@ function buildAndAttack(
     game.state.players[0].active.cards[0] = interpreted;
   }
   useAttack(game.store, game.state, 0, attackLabel);
-  return snapshot(game.state);
+  return { snap: snapshot(game.state), ambiguous: game.ambiguousChoices() };
 }
 
 // Real IR bodies (snapshot 2026-05-17) for cards whose attack mixes damage with a non-damage op.
@@ -109,7 +111,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       const board = { attackerDamage: c.attackerDamage };
       const native = buildAndAttack(res.fullName!, energies, c.attackLabel, null, board);
       const interpreted = buildAndAttack(res.fullName!, energies, c.attackLabel, c.fragments, board);
-      expect(interpreted).toEqual(native);
+      expect(interpreted.snap).toEqual(native.snap);
     });
   });
 
@@ -189,7 +191,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
       const board = makeBoard(card.hp);
       const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
-      let native: Snapshot, interpreted: Snapshot;
+      let native: AttackRun, interpreted: AttackRun;
       try {
         native = buildAndAttack(res.fullName!, energies, s.attackLabel, null, board);
       } catch {
@@ -203,9 +205,18 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
         unsupportedReasons[reason] = (unsupportedReasons[reason] ?? 0) + 1;
         continue;
       }
+      // Divergence guard: if native made MORE genuine multi-option choices than the interpreter,
+      // it made a choice the interpreter resolved directly (first-eligible) and the two may have
+      // picked differently — skip rather than risk a false mismatch. Choices both delegate to the
+      // harness (prize, promotion) increment both counts equally and so don't trip the guard.
+      if (native.ambiguous !== interpreted.ambiguous) {
+        unsupported++;
+        unsupportedReasons['native made an ambiguous choice'] = (unsupportedReasons['native made an ambiguous choice'] ?? 0) + 1;
+        continue;
+      }
       compared++;
-      if (JSON.stringify(native) !== JSON.stringify(interpreted)) {
-        mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native ${JSON.stringify(native)} vs interp ${JSON.stringify(interpreted)}`);
+      if (JSON.stringify(native.snap) !== JSON.stringify(interpreted.snap)) {
+        mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native ${JSON.stringify(native.snap)} vs interp ${JSON.stringify(interpreted.snap)}`);
       }
     }
     /* eslint-disable no-console */

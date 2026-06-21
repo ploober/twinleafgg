@@ -292,6 +292,13 @@ class TestStoreHandler implements StoreHandler {
   private overrides = new Map<string, PromptHandler>();
   private store!: Store;
 
+  // Divergence guard for the Rotomancer differential: counts genuine multi-option choices the
+  // harness made (a ChoosePokemon/ChooseCards prompt where more candidates were eligible than were
+  // selected). The differential skips an attack when the native run made such a choice but the
+  // IR-interpreted run resolved it directly — there is then no guarantee the two picked the same
+  // option, so comparing snapshots could yield a false mismatch.
+  public ambiguousChoices = 0;
+
   setStore(store: Store): void {
     this.store = store;
   }
@@ -422,11 +429,13 @@ class TestStoreHandler implements StoreHandler {
     const blocked = new Set(prompt.options.blocked);
     const indices: number[] = [];
     const max = prompt.options.max;
-    for (let i = 0; i < prompt.cards.cards.length && indices.length < max; i++) {
-      if (!blocked.has(i)) {
-        indices.push(i);
-      }
+    let eligible = 0;
+    for (let i = 0; i < prompt.cards.cards.length; i++) {
+      if (blocked.has(i)) { continue; }
+      eligible++;
+      if (indices.length < max) { indices.push(i); }
     }
+    if (eligible > indices.length) { this.ambiguousChoices++; } // more candidates than picked → a choice
     if (indices.length < prompt.options.min && prompt.options.allowCancel) {
       return null;
     }
@@ -465,6 +474,7 @@ class TestStoreHandler implements StoreHandler {
 
     const max = prompt.options.max;
     const result = targets.slice(0, max);
+    if (targets.length > result.length) { this.ambiguousChoices++; } // more eligible than picked → a choice
     if (result.length < prompt.options.min) {
       return prompt.options.allowCancel ? null : [];
     }
@@ -854,6 +864,7 @@ export interface SetupGameResult {
   player1: Player;
   player2: Player;
   overridePrompt: (type: string, handler: PromptHandler) => void;
+  ambiguousChoices: () => number;  // genuine multi-option choices the harness has made (divergence guard)
 }
 
 function collectCardsFromPokemonSlot(config: PokemonSlotConfig): string[] {
@@ -917,7 +928,8 @@ export function setupGame(config: SetupGameConfig): SetupGameResult {
     state,
     player1,
     player2,
-    overridePrompt: (type: string, h: PromptHandler) => handler.overridePrompt(type, h)
+    overridePrompt: (type: string, h: PromptHandler) => handler.overridePrompt(type, h),
+    ambiguousChoices: () => handler.ambiguousChoices
   };
 }
 

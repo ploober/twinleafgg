@@ -87,10 +87,12 @@ function resolveZone(effect: AttackEffect, ref: any): CardList {
 }
 
 export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any): State {
-  // v2: select.chooser (player/opponent/auto) + select.where (predicate). A player/opponent
-  // chooser is non-deterministic; only `auto` (engine-forced, predicate-filtered) is supported.
+  // v2: select.chooser (player/opponent/auto) + select.where (predicate). `auto`/`player` resolve to
+  // the first-N matching cards (the harness's first-eligible policy); when the native choice was
+  // ambiguous the differential's guard skips the attack, so a wrong guess never false-mismatches.
+  // `opponent`/`random` choosers stay unsupported.
   const chooser = op.select?.chooser;
-  if (chooser !== undefined && chooser !== 'auto') {
+  if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player') {
     throw new Error(`[ir-cards] unsupported cards.move chooser "${chooser}"`);
   }
   if (op.visibility === 'search' || op.count?.searchTyped) {
@@ -102,7 +104,7 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
 
   const countKind = op.count?.kind;
   let candidates: Card[] = from.cards.slice();
-  if (chooser === 'auto') {
+  if (chooser === 'auto' || chooser === 'player') {
     candidates = candidates.filter(c => matchesCardPredicate(c, op.select.where));
   }
 
@@ -111,6 +113,8 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     cards = candidates;
   } else if (countKind === 'exactly') {
     cards = candidates.slice(0, op.count.n);
+  } else if (countKind === 'upTo') {
+    cards = candidates.slice(0, op.count.max);
   } else {
     throw new Error(`[ir-cards] unsupported cards.move count "${countKind}"`);
   }
