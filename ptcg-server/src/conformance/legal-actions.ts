@@ -23,8 +23,10 @@ import { LegalAction, PendingDecision, NeutralPlayerId } from './neutral-types';
  * main phase. Each LegalAction mirrors a dispatchable top-level NeutralAction, so the menu is
  * directly executable — the M5 spec round-trips every entry through `step` to prove soundness.
  *
- * Legality is enumerated by mirroring the engine's own gates: hand playability comes from the
- * store's per-dispatch `player.playableCardIds`; attacks/retreat/abilities reuse the same Check*
+ * Legality is enumerated by mirroring the engine's own gates: Pokemon/Energy hand playability comes
+ * from the store's per-dispatch `player.playableCardIds`; trainers use `trainerPlayable` (which
+ * matches what `playCardAction` accepts, not the conservative `playableCardIds` that hides most
+ * Item/Supporter plays); attacks/retreat/abilities reuse the same Check*
  * effects the reducers use (`CheckPokemonAttacksEffect`, `CheckAttackCostEffect`,
  * `CheckProvidedEnergyEffect`, `CheckRetreatCostEffect`, `CheckPokemonPowersEffect`). These are
  * the engine's read-only query effects (the same ones `calculatePlayability` drives), so reducing
@@ -54,18 +56,18 @@ function ownInPlay(player: Player, ctx: IidContext): OwnSlot[] {
 
 // ── Phase 1: hand plays (from the store's precomputed playability) ───────────
 
-function handMenu(state: State, player: Player, ctx: IidContext): LegalAction[] {
+function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContext): LegalAction[] {
   const out: LegalAction[] = [];
   const playable = new Set(player.playableCardIds);
   const own = ownInPlay(player, ctx);
   const hasBenchSpace = player.bench.some(b => b.cards.length === 0);
 
   for (const card of player.hand.cards) {
-    if (!playable.has(card.id)) { continue; }
     const iid = ctx.cardToIid.get(card);
     if (iid === undefined) { continue; }
 
     if (card.superType === SuperType.POKEMON && card instanceof PokemonCard) {
+      if (!playable.has(card.id)) { continue; }
       if (card.evolvesFrom === '' && card.stage === Stage.BASIC) {
         if (hasBenchSpace) { out.push({ type: 'benchBasic', card: iid }); }
       } else {
@@ -79,8 +81,14 @@ function handMenu(state: State, player: Player, ctx: IidContext): LegalAction[] 
         }
       }
     } else if (card.superType === SuperType.ENERGY && card instanceof EnergyCard) {
+      if (!playable.has(card.id)) { continue; }
       for (const s of own) { out.push({ type: 'attachEnergy', card: iid, target: s.iid }); }
     } else if (card.superType === SuperType.TRAINER && card instanceof TrainerCard) {
+      // Trainers are NOT gated on playableCardIds: that mirrors CAN_PLAY_CARD, which defaults
+      // Items/Supporters lacking a canPlay() override to `false` — yet the playCardAction reducer
+      // accepts them, so mirroring it would make legalActions under-report most trainer plays
+      // (a §10.3 contract gap). Enumerate by the engine's real play-time gates instead.
+      if (!trainerPlayable(store, state, player, card)) { continue; }
       switch (card.trainerType) {
         case TrainerType.TOOL:
           for (const s of own) {
@@ -94,6 +102,33 @@ function handMenu(state: State, player: Player, ctx: IidContext): LegalAction[] 
     }
   }
   return out;
+}
+
+/**
+ * Whether a trainer in hand is playable right now, for legalAction enumeration. CAN_PLAY_CARD (which
+ * feeds player.playableCardIds) defaults Items/Supporters without a canPlay() override to false —
+ * but playCardAction accepts them, so mirroring playableCardIds under-reports. We defer to
+ * CAN_PLAY_CARD when it says yes (covers Energy/Pokemon/Tool/Stadium and trainers that DO implement
+ * canPlay()), honor an explicit canPlay() verdict, and otherwise enumerate the canPlay-less majority
+ * of Items/Supporters by the engine's basic play-time gates (the same ones CAN_PLAY_TRAINER_CARD
+ * checks before its conservative fallback). Over-reporting is self-correcting: the fuzzer's
+ * "never reject your own legalAction" invariant flags any enumerated play the reducer refuses.
+ */
+function trainerPlayable(store: StoreLike, state: State, player: Player, card: TrainerCard): boolean {
+  const { CAN_PLAY_CARD } = require('../game/store/prefabs/prefabs');
+  if (CAN_PLAY_CARD(store, state, player, card)) { return true; }
+  if (card.canPlay) { return false; } // had a card-specific verdict above — honor it, don't override
+  switch (card.trainerType) {
+    case TrainerType.SUPPORTER:
+      if (state.turn === 1 && !card.firstTurn) { return false; }
+      return player.supporterTurn === 0;
+    case TrainerType.ITEM:
+      if (player.marker.hasMarker('OPPONENT_CANNOT_PLAY_ITEM_CARDS_MARKER')) { return false; }
+      if (player.marker.hasMarker(player.ATTACK_EFFECT_ITEM_LOCK)) { return false; }
+      return true;
+    default:
+      return false; // Tool/Stadium were already adjudicated by CAN_PLAY_CARD above
+  }
 }
 
 // ── Phase 2: attacks / retreat / abilities (new legality enumeration) ────────
@@ -213,7 +248,7 @@ export function topLevelMenu(game: ImportedGame): PendingDecision | null {
   game.store.reduceEffect(state, new CheckProvidedEnergyEffect(player));
 
   const legalActions: LegalAction[] = [
-    ...handMenu(state, player, game.ctx),
+    ...handMenu(game.store, state, player, game.ctx),
     ...attackMenu(game.store, state, player, game.ctx),
     ...retreatMenu(game.store, state, player),
     ...abilityMenu(game.store, state, player, game.ctx),
