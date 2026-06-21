@@ -55,9 +55,11 @@ const BOARD: NeutralState = {
 };
 
 /**
- * The contract marks `stadium`/`active`/`pending` nullable in their DESCRIPTIONS but declares them as a
- * bare `$ref` (non-nullable) — an inconsistency in the in-progress spec (flag for the contract author).
- * To validate the spec's INTENT, relax any `{$ref, description:"…null…"}` property to also accept null.
+ * The contract marks `stadium`/`active`/`pending` nullable via a DELIBERATE codegen convention (spec
+ * §"Codegen conventions": a plain `$ref` + a nullable description, NOT `oneOf:[…,'null']`, because
+ * openapi-generator 7.x's 3.1 support mishandles the union). A literal JSON-Schema validator therefore
+ * rejects the `null` those fields permit at runtime, so we relax any `{$ref, description:"…null…"}`
+ * property to also accept null — validating the convention's INTENT, not its generator-facing letter.
  */
 function relaxNullableRefs(schemas: Record<string, any>): void {
   for (const schema of Object.values(schemas)) {

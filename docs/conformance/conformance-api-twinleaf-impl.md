@@ -487,10 +487,13 @@ the same contract.
   `gameOver`, `shuffled`) and the **closed action-type enum** (`choosePrize→takePrize`, promote→`promoteBench`,
   + the no-equivalent `chooseEnergy`/`chooseAttack`/`moveCounter`/`endChoice` and `legalActions.actor`) —
   these need event-time iid resolution and a few contract-semantics confirmations.
-- **Contract inconsistency found (flag for the contract author).** The spec marks `stadium`/`active`/`pending`
-  nullable in their **descriptions** but declares them as a bare `$ref` (non-nullable) — so a strict
-  validator rejects the `null` the descriptions sanction. Our validation spec relaxes those fields to
-  test the spec's intent; the contract should restore a `oneOf: [{$ref}, {type: 'null'}]` (or `[..., 'null']`).
+- **Nullable-field codegen convention (not a bug).** The contract marks `stadium`/`active`/`pending`
+  nullable via a plain `$ref` + a nullable **description** (NOT `oneOf:[{$ref},{type:'null'}]`) — a
+  deliberate convention the spec documents under "Codegen conventions" (openapi-generator 7.x mishandles
+  the 3.1 null union). A literal JSON-Schema validator rejects the `null` these fields permit at runtime,
+  so `conformance-openapi-validation.spec.ts` relaxes them to accept null and validate the intent. Our
+  projection emits `null` for an empty stadium / KO'd-but-unpromoted active / non-`awaitingAction`
+  pending, matching the convention.
 
 ## 9. Out of scope / deferred (first pass) — migration plan
 
