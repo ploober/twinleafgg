@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { setupGame, padDeck, getCardByName } from './test-helpers';
-import { useAttack } from './card-test-helpers';
+import { useAttack, endTurn } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
@@ -222,6 +222,88 @@ describe('Rotomancer lock differential — retreatShutoff (block probe)', () => 
   /* eslint-enable no-console */
 
   it('native and interpreted agree on the retreat lock', () => {
+    expect(mismatches).toEqual([]);
+  });
+});
+
+// `rule.override { attackShutoff }` on self with scope `ownNextAttack` — the "recharge" lock ("during
+// your next turn, this Pokémon can't use <attackName>", e.g. Mega Lucario ex / Mega Brave). This needs
+// an OWN-turn probe: use the attack, pass the opponent's turn, then re-attempt the same attack and
+// observe BLOCKED_BY_EFFECT. Both engines push the name to the central cannotUseAttacksNextTurnPending,
+// so the probe verifies the IR names the right attack (and catches a native that locks the wrong one).
+// Restricted to the standard recharge case (the locked attackName equals the attack used). The
+// opponent gets a Bidoof on the bench so the recharge attack's damage can't end the game before the
+// lock user's next turn.
+function attackShutoffSelfRecharge(body: any[], attackLabel: string): boolean {
+  return body.some(op => op.kind === 'rule.override'
+    && op.override?.kind === 'attackShutoff'
+    && op.override?.target?.role === 'self'
+    && op.scope === 'ownNextAttack'
+    && op.override?.attackName === attackLabel);
+}
+
+function ownAttackBlocked(fullName: string, cost: string[], attackLabel: string, fragments: IrFragment[] | null): boolean {
+  const energy = cost.map(energyToCard);
+  const game = setupGame({
+    turn: 2,
+    player1: { active: { card: fullName, energy }, deck: padDeck(10) },
+    player2: { active: { card: fullName }, bench: [{ card: 'Bidoof CRZ' }], deck: padDeck(10) },
+  });
+  if (fragments) {
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, fragments);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+  }
+  useAttack(game.store, game.state, 0, attackLabel); // P0 uses the recharge attack → lock on P0, → P1's turn
+  endTurn(game.store, game.state);                   // P1 passes → back to P0's next turn
+
+  try {
+    useAttack(game.store, game.state, 0, attackLabel); // P0 re-attempts the same attack
+    return false; // not blocked by the recharge lock
+  } catch (e) {
+    return e instanceof GameError && e.message === GameMessage.BLOCKED_BY_EFFECT;
+  }
+}
+
+describe('Rotomancer lock differential — attackShutoff recharge (own-turn probe)', () => {
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Scenario[])
+    .filter(s => attackShutoffSelfRecharge(s.body, s.attackLabel));
+
+  const mismatches: string[] = [];
+  let compared = 0, skipped = 0;
+
+  for (const s of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skipped++; continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skipped++; continue; }
+
+    const cost = s.cost.filter(c => c.toUpperCase() !== 'FREE');
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    let native: boolean, interp: boolean;
+    try {
+      native = ownAttackBlocked(res.fullName!, cost, s.attackLabel, null);
+    } catch { skipped++; continue; }
+    try {
+      interp = ownAttackBlocked(res.fullName!, cost, s.attackLabel, fragments);
+    } catch { skipped++; continue; } // interpreter doesn't support some other op in the body
+    compared++;
+    if (native !== interp) {
+      mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native blocked=${native}, interp blocked=${interp}`);
+    }
+  }
+
+  /* eslint-disable no-console */
+  it('reports the recharge-lock scorecard', () => {
+    console.log(`\n  lock differential [attackShutoff recharge]: scenarios ${scenarios.length}, compared ${compared}, skipped ${skipped}, mismatches ${mismatches.length}`);
+    mismatches.forEach(m => console.log(`   • ${m}`));
+    expect(compared).toBeGreaterThan(0);
+  });
+  /* eslint-enable no-console */
+
+  it('native and interpreted agree on the recharge lock', () => {
     expect(mismatches).toEqual([]);
   });
 });

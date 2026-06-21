@@ -350,6 +350,15 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         // interpreted card (the attacker's own active in a mirror), so the marker source matches.
         const self = effect.player.active.getPokemonCard();
         if (self) { state = BLOCK_RETREAT(store, state, effect, self); }
+      } else if (ovr?.kind === 'attackShutoff' && ovr.target?.role === 'self'
+        && op.scope === 'ownNextAttack' && typeof ovr.attackName === 'string') {
+        // "During your next turn, this Pokémon can't use <attackName>" — the recharge lock (e.g.
+        // Mega Lucario ex / Mega Brave). Push the name to the engine's central
+        // cannotUseAttacksNextTurnPending; the engine promotes it at this turn's end and throws
+        // BLOCKED_BY_EFFECT (game-effect.ts) if the attack is attempted next turn. Identical to how
+        // the native cards do it, so the probe verifies the IR names the right attack.
+        const pending = effect.player.active.cannotUseAttacksNextTurnPending;
+        if (!pending.includes(ovr.attackName)) { pending.push(ovr.attackName); }
       }
       return state;
     }

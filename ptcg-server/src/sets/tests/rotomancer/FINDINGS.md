@@ -253,11 +253,31 @@ The remaining lock families are the next to wire in:
   TEF-46 (Frosmoth) / SSP-140 (Appletun) aren't implemented in Twinleaf at those numbers. So the
   family has no Twinleaf∩corpus intersection yet — deferred until those printings exist, not a harness
   gap. (The prototype was reverted to keep every scorecard live rather than perpetually `compared 0`.)
-- `attackShutoff` / `ownNextAttack` / self (105 ops) — the "recharge" form; needs an own-turn probe
-  (skip the opponent's turn, retry the same attack).
-- `retreatShutoff`'s `yourNextTurn`/self variant (3); the `itemPlayRestriction` /
-  `evolvePlayRestriction` bans (9); and `damageVulnerability` (`yourNextTurn`, 3 — a probe on the
-  lock-user's own next turn).
+- `retreatShutoff`'s `yourNextTurn`/self variant (3); the `attackShutoff` `untilLeavesActive`/self
+  variant (5); the `itemPlayRestriction` / `evolvePlayRestriction` bans (9); and `damageVulnerability`
+  (`yourNextTurn`, 3 — a probe on the lock-user's own next turn).
+
+### 11. Lock family — `attackShutoff` recharge via an *own-turn* probe
+
+The largest shutoff bucket is `rule.override { attackShutoff }` on self with scope `ownNextAttack` —
+the "recharge" lock ("during your next turn, this Pokémon can't use ⟨attack⟩", e.g. Mega Lucario ex /
+Mega Brave, 105 ops). Unlike the defending shutoffs it fires on the lock user's *own* next turn, so it
+needs a new probe geometry: use the attack, **pass the opponent's turn** (`endTurn` →
+`PassTurnAction`), then re-attempt the same attack and observe `BLOCKED_BY_EFFECT`. The opponent is
+given a Bidoof on the bench so the recharge attack's damage can't end the game before the lock user's
+next turn.
+
+Both engines push the attack name to the engine's central `cannotUseAttacksNextTurnPending` (promoted
+at the turn's end, enforced at `game-effect.ts`), so the interpreter just pushes the IR's
+`override.attackName` — and the probe verifies the IR names the *right* attack (a native that recharged
+the wrong attack would show up as a mismatch, the way Wugtrio did for retreat). Restricted to the
+standard recharge case (locked name = attack used). **17 printings compared, all `blocked=true` on both
+sides, 0 mismatches** — real recharge attacks across sv5–sv10/svp (Flare Strike, Giant Wave, Haymaker,
+Brave Slash, Cyber Drive, Impact Blow, Dirty Headbutt). No bugs this round: every native recharge lock
+is correct and the IR agrees.
+
+Lock differential total: **58 comparisons** — incoming-damage 22 (`damageReduction`/`preventDamage`/
+`damageDebuff`) + retreatShutoff 19 + attackShutoff-recharge 17.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
