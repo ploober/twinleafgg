@@ -32,9 +32,11 @@ export function costToCardType(cost: string): CardType {
  *   but collector numbers do NOT reliably align (e.g. Terrakion is rsv10pt5-135 vs SV11W-54).
  *   They are mapped anyway because resolvePrinting() name-validates every hit, so a misaligned
  *   number safely resolves to `mismatch` (a skip) rather than a false match.
- * - The Mega-Evolution block (me1/me2/me2pt5/me3) is intentionally UNMAPPED: several of its
- *   cards have no Twinleaf printing at all and the prefix→set correspondence is unresolved.
- *   Those resolve to `unmapped` and are skipped. Pinning this map is deferred.
+ * - Mega-Evolution block: me1 → MEG (Mega Evolution) and me2 → PFL (Phantasmal Flames) are mapped
+ *   and collector numbers align (e.g. Mega Venusaur ex me1-3 = MEG-3, Mega Heracross ex me2-4 =
+ *   PFL-4). me2pt5 (Erika's-prefixed cards) and me3 have no implemented Twinleaf printing yet, so
+ *   they stay UNMAPPED (→ `unmapped` skip). As always, resolvePrinting() name-validates every hit,
+ *   so any misaligned/unimplemented me1/me2 number degrades to a safe `mismatch` skip.
  */
 export const PREFIX_TO_SETCODE: Record<string, string> = {
   sv5: 'TEF',
@@ -48,6 +50,8 @@ export const PREFIX_TO_SETCODE: Record<string, string> = {
   svp: 'SVP',
   zsv10pt5: 'SV11B',
   rsv10pt5: 'SV11W',
+  me1: 'MEG',
+  me2: 'PFL',
 };
 
 /** Maps a Rotomancer EnergyType to a Twinleaf basic energy card. Colorless cost is paid with any basic. */

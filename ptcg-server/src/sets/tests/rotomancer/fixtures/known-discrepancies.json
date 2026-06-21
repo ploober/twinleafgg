@@ -1,8 +1,7 @@
 {
  "meta": {
-  "source": "IR (peg-emit-v2) vs native, adjudicated against official-metadata.json + Limitless spot-checks",
-  "note": "IR matches official attack name/cost; native Twinleaf differs. Spot-checked vs Limitless (independent): Crustle DRI-12, Mankey DRI-90. Regenerated from the v2 corpus.",
-  "count": 88
+  "source": "IR (peg-emit-v2) vs native; adjudicated vs official-metadata + Limitless spot-checks. me* entries are unadjudicated (not in the official snapshot).",
+  "count": 95
  },
  "discrepancies": [
   {
@@ -45,6 +44,93 @@
    "verdict": "twinleaf-cost-bug"
   },
   {
+   "printingId": "me2-15",
+   "attackLabel": "Blaze Ball",
+   "card": "Darumaka",
+   "kind": "name",
+   "native": [
+    "Blazing Ball"
+   ],
+   "category": "wrong-name",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-16",
+   "attackLabel": "Blaze Ball",
+   "card": "Darmanitan",
+   "kind": "name",
+   "native": [
+    "Blazing Ball"
+   ],
+   "category": "wrong-name",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-19",
+   "attackLabel": "Gather Strength",
+   "card": "Charcadet",
+   "kind": "name",
+   "native": [
+    "Gather Power",
+    "Chop"
+   ],
+   "category": "wrong-name",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-48",
+   "attackLabel": "Double-Edge",
+   "card": "Paldean Tauros",
+   "kind": "name",
+   "native": [
+    "Raging Charge",
+    "Double Edge"
+   ],
+   "category": "cosmetic",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-59",
+   "attackLabel": "Cocky Claw",
+   "card": "Sableye",
+   "kind": "name",
+   "native": [
+    "Angry Claw"
+   ],
+   "category": "wrong-name",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-60",
+   "attackLabel": "Reckless Charge",
+   "card": "Carvanha",
+   "kind": "name",
+   "native": [
+    "Assault"
+   ],
+   "category": "wrong-name",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
+   "printingId": "me2-67",
+   "attackLabel": "Call for Family",
+   "card": "Toxel",
+   "kind": "name",
+   "native": [
+    "Call For Family",
+    "Rascal Kick"
+   ],
+   "category": "cosmetic",
+   "adjudication": "unadjudicated(me*)",
+   "verdict": "twinleaf-name-discrepancy"
+  },
+  {
    "printingId": "sv10-111",
    "attackLabel": "Rock Kagura",
    "card": "Cornerstone Mask Ogerpon",
@@ -54,6 +140,7 @@
     "Mountain Ramming"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -66,6 +153,7 @@
     "Gnaw"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -77,6 +165,7 @@
     "Suprise Attack"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -89,6 +178,7 @@
     "Horned Gouge"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -101,6 +191,7 @@
     "King's Impact"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -112,6 +203,7 @@
     "Great Scissors"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -123,6 +215,7 @@
     "Sharp Nail"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -135,6 +228,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -147,6 +241,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -159,6 +254,7 @@
     "Wild Scratch"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -171,6 +267,7 @@
     "Slash and Cash"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -182,6 +279,7 @@
     "Great Scissors"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -194,6 +292,7 @@
     "Inferno Legs"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -206,6 +305,7 @@
     "Wild Scratch"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -217,6 +317,7 @@
     "Shining Feather"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -229,6 +330,7 @@
     "Dynamic Dive"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -241,6 +343,7 @@
     "King's Impact"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -253,6 +356,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -265,6 +369,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -276,6 +381,7 @@
     "Shining Feather"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -288,6 +394,7 @@
     "King's Impact"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -300,6 +407,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -312,6 +420,7 @@
     "Boss's Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -323,6 +432,7 @@
     "Shining Feather"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -335,6 +445,7 @@
     "Ogre Hammer"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -347,6 +458,7 @@
     "Ogre Hammer"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -358,6 +470,7 @@
     "Double Strike"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -369,6 +482,7 @@
     "Shining Feather"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -381,6 +495,7 @@
     "Inferno Legs"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -393,6 +508,7 @@
     "Searing Flame"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -404,6 +520,7 @@
     "Sudden Flash"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -416,6 +533,7 @@
     "Dynamic Dive"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -428,6 +546,7 @@
     "Bubble Drain"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -440,6 +559,7 @@
     "Bad Thunder"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -452,6 +572,7 @@
     "Bad Thunder"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -463,6 +584,7 @@
     "Sparking Draw"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -475,6 +597,7 @@
     "Petibolt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -486,6 +609,7 @@
     "Breakthrough Tackle"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -498,6 +622,7 @@
     "Tackle"
    ],
    "category": "cosmetic",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -510,6 +635,7 @@
     "Gust"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -522,6 +648,7 @@
     "Gust"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -533,6 +660,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -544,6 +672,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -555,6 +684,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -566,6 +696,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -578,6 +709,7 @@
     "Serial Cannon"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -590,6 +722,7 @@
     "Draw Near"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -602,6 +735,7 @@
     "Smashing Wings"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -614,6 +748,7 @@
     "Smashing Wings"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -625,6 +760,7 @@
     "Bad Fall"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -637,6 +773,7 @@
     "Bite"
    ],
    "category": "cosmetic",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -649,6 +786,7 @@
     "Peridot Sonic"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -660,6 +798,7 @@
     "Special Crash"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -671,6 +810,7 @@
     "Fiery Spirits"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -683,6 +823,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -695,6 +836,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -707,6 +849,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -719,6 +862,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -730,6 +874,7 @@
     "Drain Kiss"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -741,6 +886,7 @@
     "Happy Kiss"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -753,6 +899,7 @@
     "Legendary Burst"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -765,6 +912,7 @@
     "Legendary Burst"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -776,6 +924,7 @@
     "Neurokenesis"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -788,6 +937,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -800,6 +950,7 @@
     "Amethyst Rage"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -811,6 +962,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -823,6 +975,7 @@
     "Tyranical Crush"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -835,6 +988,7 @@
     "Confront"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -846,6 +1000,7 @@
     "Shell Hit"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -857,6 +1012,7 @@
     "Stomp Repeatedly"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -869,6 +1025,7 @@
     "Lunge Out"
    ],
    "category": "cosmetic",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -880,6 +1037,7 @@
     "Clutch Fang"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -891,6 +1049,7 @@
     "Heat Cyclone"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -902,6 +1061,7 @@
     "Heat Cyclone"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -913,6 +1073,7 @@
     "Burning Assault"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -925,6 +1086,7 @@
     "Darman-i-cannon"
    ],
    "category": "cosmetic",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -937,6 +1099,7 @@
     "Darman-i-cannon"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -948,6 +1111,7 @@
     "Heat Cyclone"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -959,6 +1123,7 @@
     "Thunder Connect"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -971,6 +1136,7 @@
     "Zen Headbutt"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -983,6 +1149,7 @@
     "Lunge Out"
    ],
    "category": "cosmetic",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -994,6 +1161,7 @@
     "Buster Lariat"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -1005,6 +1173,7 @@
     "Clutch Fang"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -1016,6 +1185,7 @@
     "Crackling Stomp"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   },
   {
@@ -1027,6 +1197,7 @@
     "Cathartic Roar"
    ],
    "category": "wrong-name",
+   "adjudication": "official",
    "verdict": "twinleaf-name-discrepancy"
   }
  ]

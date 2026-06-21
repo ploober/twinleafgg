@@ -152,12 +152,12 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(getDamage(game.state, 1, 'active')).toBe(90); // 30 × 3 benched
   });
 
-  // Native-vs-interpreted disagreements across the whole attack corpus. With coin flips now
-  // deterministic (ALL_HEADS authoritative — see test-helpers flipCoin), every remaining mismatch
-  // is a place where the IR/interpreter models *less* than the native card, never a Twinleaf bug:
-  // each native implementation does the real attack; the interpreter's simpler model diverges.
-  // The five gap families below are catalogued in FINDINGS.md. Keyed by attack label (stable
-  // across a card's printings/alt-arts). New mismatches surface as failures here — triage them.
+  // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
+  // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
+  // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the
+  // reverse — the interpreter does the real attack and *native* is wrong (a Twinleaf bug, allow-
+  // listed not fixed, per project guidance). Keyed by attack label (stable across printings). New
+  // mismatches surface as failures here — triage them.
   const KNOWN_MISMATCHES: Record<string, string> = {
     // (1) Type/Special-filtered count — IR's energyAttached count drops the energy-type filter.
     'Syrup Storm': 'Hydrapple ex: "30 more per [G] Energy on all your Pokémon" — IR drops the [G] filter/scope',
@@ -169,6 +169,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Full Moon Rondo': 'Lillie\'s Clefairy ex: "20 more per Benched (both sides)" — IR count scope differs',
     'Angry Slam': 'IR counts all Pokémon in play; real attack counts only damaged Pokémon',
     'Illusory Hijacking': 'IR forEach pokemonInPlay drops the "ex AND V" predicate on the count',
+    'Raging Charge': 'Paldean Tauros PFL: IR counts Tauros Pokémon that have damage; real attack is "40 per damage counter on Tauros Pokémon" — IR drops the per-counter scaling',
     // (4) Self-damage / KO-timing rider not modeled by the interpreter.
     'Dynamic Press': 'Hop\'s Snorlax: "140, also 80 to itself" — self-damage + KO/prize timing differs',
     'Power Shot': 'IR omits the conditional-discard rider (flat 170 vs "discard a Grass Energy or nothing")',
@@ -176,6 +177,9 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Searing Flame': 'Magmortar JTG: Magma Surge (+30 checkup burn on burned opponents) lifts native to KO; interp models only the attack',
     'Poison Chain': 'Pecharunt: Toxic Subjugation (+50 poison damage during checkup) lifts native to 70; interp models only the attack body (20)',
     'Shocking Web': 'Galvantula: Compound Eyes ability (+50 vs opponents with an Ability) lifts native to 100 (KO); interp models only the attack body (50)',
+    // (6) Twinleaf bug — the interpreter does the real attack and native is wrong.
+    'Greedy Fang': 'Mega Sharpedo ex PFL: card text "Draw 2 cards" but native MOVE_CARDS draws 1. IR/interp draw 2. → Twinleaf bug',
+    'Hungry Jaws': 'Mega Sharpedo ex PFL: the "+150 if this Pokémon has damage" rider is wired to attack index 0 (Greedy Fang), so Hungry Jaws (index 1) never applies it. IR/interp apply it. → Twinleaf bug',
   };
 
   function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {

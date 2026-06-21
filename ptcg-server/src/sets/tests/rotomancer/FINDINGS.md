@@ -172,6 +172,28 @@ The probe pattern generalises: `preventDamage` (expect 0 landed), `damageDebuff`
 `rule.override` shutoffs (`cannotAttackNextTurn` / retreat lock — probe = attempt the action) are
 the next lock families to wire in.
 
+### 8. Mega-Evolution (`me*`) mapping — 2 more Twinleaf bugs
+
+The `me*` block was 26% of the corpus and previously `unmapped` (skipped everywhere). Twinleaf does
+implement these sets, so the resolver now maps **me1 → MEG** (Mega Evolution) and **me2 → PFL**
+(Phantasmal Flames) — collector numbers align (Mega Venusaur ex me1-3 = MEG-3, Mega Heracross ex
+me2-4 = PFL-4). me2pt5 (Erika's-prefixed cards) and me3 have no implemented Twinleaf printing yet, so
+they stay unmapped. This widened every cross-check at once (differential 439→454, structural 611→650).
+
+As predicted for a newer mechanic, the freshly-visible cards were bug-rich — two Twinleaf bugs and
+one IR gap surfaced immediately (all allow-listed, not fixed):
+
+> **Mega Sharpedo ex (PFL) — Greedy Fang**: card text is "Draw 2 cards" but the native `reduceEffect`
+> draws 1 (`MOVE_CARDS … count: 1`). **Twinleaf bug.**
+>
+> **Mega Sharpedo ex (PFL) — Hungry Jaws**: the "+150 if this Pokémon has any damage counters" rider
+> is wired to attack **index 0** (Greedy Fang) instead of index 1 (Hungry Jaws), so Hungry Jaws never
+> applies it. **Twinleaf bug.** (Both Sharpedo bugs are in the same `reduceEffect`.)
+>
+> **Paldean Tauros (PFL) — Raging Charge**: the IR counts Tauros Pokémon *that have damage*; the real
+> attack is "40 per damage *counter* on your Tauros Pokémon" — the IR drops the per-counter scaling.
+> IR faithfulness gap.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
