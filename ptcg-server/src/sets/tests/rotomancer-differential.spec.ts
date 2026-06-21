@@ -1,10 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { setupGame, padDeck, getCardByName } from './test-helpers';
+import { setupGame, padDeck, getCardByName, SetupGameResult } from './test-helpers';
 import { useAttack, getDamage } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
+import { EnergyCard } from '../../game/store/card/energy-card';
+import { SpecialCondition } from '../../game/store/card/card-types';
 import { State } from '../../game/store/state/state';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 
@@ -19,6 +21,7 @@ interface PokeSnap {
   damage: number | 'KO';
   conditions: string[];
   energy: number;
+  energyTypes: string[];   // sorted multiset of provided types — makes a wrong-TYPE energy op observable
 }
 interface SideSnapshot {
   active: PokeSnap;
@@ -32,10 +35,12 @@ interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
 function pokeSnap(list: PokemonCardList): PokeSnap {
   const ko = list.getPokemonCard() === undefined;
+  const energyCards = ko ? [] : list.energies.cards.filter(c => c instanceof EnergyCard) as EnergyCard[];
   return {
     damage: ko ? 'KO' : list.damage,
     conditions: ko ? [] : list.specialConditions.map(String).sort(),
     energy: ko ? 0 : list.energies.cards.length,
+    energyTypes: energyCards.flatMap(c => c.provides.map(String)).sort(),
   };
 }
 
@@ -54,19 +59,42 @@ function snapshot(state: State): Snapshot {
   return { p0: side(0), p1: side(1) };
 }
 
-interface Board { attackerDamage?: number; defenderDamage?: number; benchCount?: number; }
+interface Board {
+  attackerDamage?: number; defenderDamage?: number; benchCount?: number;
+  // Loaded-board fields (all optional; applied identically to native & interp → mirror-symmetric).
+  extraEnergy?: string[];              // typed energy added to BOTH actives + every bench slot
+  hand?: string[]; discard?: string[]; // seeded into BOTH players' zones
+  defenderConditions?: SpecialCondition[]; // special conditions on p1.active ONLY (attacker must attack)
+}
 
 interface AttackRun { snap: Snapshot; ambiguous: number; }
+
+// Non-declarative board state (special conditions). Applied identically in the native and interp run,
+// so any deterministic effect cancels in the snapshot diff. Conditions go on the DEFENDER only —
+// ASLEEP/PARALYZED on the attacker would block useAttack — and via addSpecialCondition so the engine's
+// stack/exclusivity rules hold (POISON+BURN stack; PARALYZED/ASLEEP/CONFUSED are mutually exclusive).
+function applyBoardMutations(game: SetupGameResult, board: Board): void {
+  for (const c of board.defenderConditions ?? []) {
+    game.state.players[1].active.addSpecialCondition(c);
+  }
+}
 
 function buildAndAttack(
   fullName: string, costEnergies: string[], attackLabel: string,
   fragments: IrFragment[] | null, board: Board = {}
 ): AttackRun {
-  const bench = Array.from({ length: board.benchCount ?? 0 }, () => ({ card: fullName }));
+  const benchSlot = () => ({ card: fullName, energy: board.extraEnergy });
+  const bench = Array.from({ length: board.benchCount ?? 0 }, benchSlot);
   const game = setupGame({
     turn: 2,
-    player1: { active: { card: fullName, energy: costEnergies, damage: board.attackerDamage ?? 0 }, bench, deck: padDeck(10) },
-    player2: { active: { card: fullName, damage: board.defenderDamage ?? 0 }, bench, deck: padDeck(10) },
+    player1: {
+      active: { card: fullName, energy: [...costEnergies, ...(board.extraEnergy ?? [])], damage: board.attackerDamage ?? 0 },
+      bench, hand: board.hand, discard: board.discard, deck: padDeck(10),
+    },
+    player2: {
+      active: { card: fullName, energy: board.extraEnergy, damage: board.defenderDamage ?? 0 },
+      bench, hand: board.hand, discard: board.discard, deck: padDeck(10),
+    },
   });
   if (fragments) {
     const native = game.state.players[0].active.cards[0];
@@ -74,6 +102,7 @@ function buildAndAttack(
     interpreted.id = native.id;
     game.state.players[0].active.cards[0] = interpreted;
   }
+  applyBoardMutations(game, board);
   useAttack(game.store, game.state, 0, attackLabel);
   return { snap: snapshot(game.state), ambiguous: game.ambiguousChoices() };
 }
@@ -150,6 +179,68 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
 
     useAttack(game.store, game.state, 0, 'Bench Beat');
     expect(getDamage(game.state, 1, 'active')).toBe(90); // 30 × 3 benched
+  });
+
+  // ── Non-vacuity guards: prove the loaded variants actually feed the interpreter. A green corpus is
+  // not enough (north star); the loaded inputs must demonstrably change the outcome, else the
+  // "agreement" is vacuous. Hosted on Koraidon (mirror-safe: weak to Psychic, not its own type).
+
+  it('loaded conditions feed conditionOn riders (not a vacuous false branch)', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    // CONFUSED is used as the gate condition: unlike POISONED/BURNED it deals no checkup damage at the
+    // turn transition (which useAttack triggers — verified empirically), so the comparison is exact.
+    const frag: IrFragment[] = [{ label: 'Probe', cost: ['Colorless'], body: [{
+      kind: 'damage.deal',
+      amount: { kind: 'plusIf', base: 20, bonus: 100, when: { kind: 'conditionOn', condition: 'CONFUSED', selector: { side: 'opponent', spot: 'active' } } },
+      target: { of: { side: 'opponent', spot: 'active' } },
+    }] }];
+    const clean = buildAndAttack(res.fullName!, ['Water Energy SVE'], 'Probe', frag, {});
+    const loaded = buildAndAttack(res.fullName!, ['Water Energy SVE'], 'Probe', frag, { defenderConditions: [SpecialCondition.CONFUSED] });
+    expect(clean.snap.p1.active.damage).toBe(20);   // FALSE branch on a clean defender
+    expect(loaded.snap.p1.active.damage).toBe(120);  // TRUE branch (+100) when the condition is loaded
+  });
+
+  it('loaded energy feeds forEach energyAttached (not a vacuous zero count)', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const frag: IrFragment[] = [{ label: 'Probe', cost: ['Colorless'], body: [{
+      kind: 'damage.deal',
+      amount: { kind: 'perCount', base: 0, per: 20, count: { kind: 'forEach', of: 'energyAttached', who: 'self' } },
+      target: { of: { side: 'opponent', spot: 'active' } },
+    }] }];
+    const lean = buildAndAttack(res.fullName!, ['Water Energy SVE'], 'Probe', frag, {});                                      // active: 1 energy → 20
+    const rich = buildAndAttack(res.fullName!, ['Water Energy SVE'], 'Probe', frag, { extraEnergy: ['Fire Energy SVE', 'Fire Energy SVE'] }); // active: 3 → 60
+    expect(lean.snap.p1.active.damage).toBe(20);
+    expect(rich.snap.p1.active.damage).toBe(60);
+  });
+
+  it('energyAttachedCount sums across spot:anywhere (active + bench), not just the active', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: { card: res.fullName!, energy: ['Water Energy SVE'] },                          // 0 Lightning on the active
+        bench: [{ card: res.fullName!, energy: ['Lightning Energy SVE', 'Lightning Energy SVE'] },
+                { card: res.fullName!, energy: ['Lightning Energy SVE', 'Lightning Energy SVE'] }], // 4 Lightning on the bench
+        deck: padDeck(10),
+      },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Probe', cost: ['Colorless'],
+      body: [{
+        kind: 'damage.deal',
+        amount: { kind: 'plusIf', base: 10, bonus: 100, when: { kind: 'energyAttachedCount', cmp: 'ge', n: 4, predicate: { kind: 'isa', energyType: 'Lightning' }, selector: { side: 'self', spot: 'anywhere' } } },
+        target: { of: { side: 'opponent', spot: 'active' } },
+      }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Probe');
+    expect(getDamage(game.state, 1, 'active')).toBe(110); // 0 (active) + 4 (bench) = 4 ≥ 4 → +100. Active-only would give 10.
   });
 
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
@@ -265,6 +356,48 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       attackerDamage: Math.min(30, hp - 20),
       defenderDamage: Math.min(30, hp - 20),
       benchCount: 2,
+    }));
+  });
+
+  // ── Loaded boards: focused variants that each turn ON one dimension over the primed baseline, so a
+  // surfaced divergence is attributable to that dimension. All loads are mirror-symmetric (applied to
+  // both runs); the divergence guard turns any genuine new choice into a counted skip, not a mismatch.
+
+  // conditions: the defender carries POISONED+BURNED+CONFUSED (the legal co-occurring set), so
+  // `conditionOn(opponent active)` riders fire their TRUE branch instead of only the (vacuous) false one.
+  it('matches native across the attack corpus — loaded: conditions on defender', () => {
+    runCorpusDifferential('conditions', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+      defenderConditions: [SpecialCondition.POISONED, SpecialCondition.BURNED, SpecialCondition.CONFUSED],
+    }));
+  });
+
+  // energy-rich: every Pokémon (active + bench, both sides) carries a typed bundle on top of cost, so
+  // `energyAttachedCount`/`forEach energyAttached` and the ≥4-of-a-type gates evaluate non-trivially.
+  it('matches native across the attack corpus — loaded: energy-rich (typed energy everywhere)', () => {
+    runCorpusDifferential('energy-rich', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+      extraEnergy: [
+        'Lightning Energy SVE', 'Lightning Energy SVE',
+        'Fire Energy SVE', 'Fire Energy SVE',
+        'Water Energy SVE', 'Water Energy SVE',
+      ], // ×3 Pokémon/side → 6 of each type across `spot:anywhere`, flipping the ≥4 gates
+    }));
+  });
+
+  // zones-loaded: hand + discard are seeded, so `handSize`/`cardInZone`/`forEach discardCards` counts
+  // are non-zero (incl. ≥10 [F] Energy in discard). Filler is basic energy + Bidoof CRZ (SVI fails to load).
+  it('matches native across the attack corpus — loaded: zones (hand + discard)', () => {
+    runCorpusDifferential('zones-loaded', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+      hand: ['Bidoof CRZ', 'Bidoof CRZ', 'Fire Energy SVE'],
+      discard: padDeck(12, 'Fire Energy SVE').concat('Bidoof CRZ'),
     }));
   });
 });

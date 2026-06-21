@@ -154,9 +154,11 @@ function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffe
   }
   const count: any = op.count;
   // The energies discarded are those attached to the resolved target Pokémon (each goes to its
-  // owner's discard), matching the from-card predicate (Energy supertype / specific type).
+  // owner's discard), matching the card predicate (Energy supertype / specific type / Special).
+  // NB: the predicate lives at op.card.predicate (a sibling of op.card.from), not op.card.from.predicate.
+  const predicate = op.card?.predicate;
   for (const { player, list } of resolveTargets(state, effect, op.target)) {
-    const energies = list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, from.predicate));
+    const energies = list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, predicate));
     let n: number;
     if (count?.kind === 'all') {
       n = energies.length;
@@ -200,7 +202,8 @@ function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffec
   else if (count?.kind === 'all') { n = Infinity; }
   else { throw new Error(`[ir-interpreter] energy.attach count "${count?.kind}" not supported`); }
 
-  const matching = source.cards.filter((c: any) => c instanceof EnergyCard && matchesCardPredicate(c, from.predicate));
+  // The predicate lives at op.card.predicate (sibling of op.card.from), not op.card.from.predicate.
+  const matching = source.cards.filter((c: any) => c instanceof EnergyCard && matchesCardPredicate(c, op.card?.predicate));
   const toAttach = matching.slice(0, n === Infinity ? matching.length : n);
   const targets = resolveTargets(state, effect, op.target);
   if (targets.length > 0) {

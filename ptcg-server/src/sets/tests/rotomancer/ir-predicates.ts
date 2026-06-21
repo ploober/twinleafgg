@@ -6,7 +6,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { SpecialCondition } from '../../../game/store/card/card-types';
 import { StateUtils } from '../../../game/store/state-utils';
-import { resolveV2Single, V2Selector } from './ir-selectors';
+import { resolveV2Single, resolveV2Selector, V2Selector } from './ir-selectors';
 import { matchesCardPredicate } from './ir-cards';
 
 /**
@@ -113,8 +113,13 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
       if (!card) return false;
       return compareOp(pred.cmp, card.hp - list.damage, pred.n);
     }
-    case 'energyAttachedCount':
-      return compareOp(pred.cmp, energyCount(listOf(pred.selector), pred.predicate), pred.n);
+    case 'energyAttachedCount': {
+      // Sum across EVERY Pokémon the selector resolves to (e.g. spot:'anywhere' → active + bench),
+      // not just the first — "≥N [type] Energy attached to your Pokémon" counts all of them.
+      const lists = pred.selector ? resolveV2Selector(effect, pred.selector).map(t => t.list) : [subj()];
+      const total = lists.reduce((sum, l) => sum + energyCount(l, pred.predicate), 0);
+      return compareOp(pred.cmp, total, pred.n);
+    }
     case 'boardCount':
       return compareOp(pred.cmp, boardCount(effect, pred.who, pred.predicate), pred.n);
     case 'prize':

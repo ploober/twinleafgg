@@ -296,6 +296,50 @@ is correct and the IR agrees.
 Lock differential total: **58 comparisons** — incoming-damage 22 (`damageReduction`/`preventDamage`/
 `damageDebuff`) + retreatShutoff 19 + attackShutoff-recharge 17.
 
+### 12. Loaded-board accuracy audit → 2 IR-integration bugs fixed
+
+The bare/primed differential boards only set pre-damage + a bench, so whole classes of count/predicate
+logic were exercised *only* in their trivial (zero) case — a **vacuous agreement** (a `conditionOn`
+rider that only ever sees its false branch; a typed-energy count that only ever sees the active's cost
+energy; a `forEach discardCards` that's always 0). Per the north star, "green" there is not enough.
+
+Added three **focused** loaded-board variants — `conditions` (the defender carries
+POISONED+BURNED+CONFUSED), `energy-rich` (every Pokémon carries 6 typed energies across active+bench,
+both sides), `zones-loaded` (hand + a 12-Energy discard) — each turning on *one* dimension so a
+divergence is attributable to it. Plus a narrow snapshot widening: `PokeSnap` now records
+`energyTypes` (a typed multiset), so a wrong-**type** energy op (count unchanged) is observable. All
+loads are mirror-symmetric (applied to both runs) and the divergence guard turns any genuine new choice
+into a counted skip — so a loaded variant can only surface *real* divergences. It immediately did:
+
+> **IR-integration bug #1 (fixed) — `energy.discard`/`energy.attach` read the card predicate from the
+> wrong path.** The interpreter read `op.card.from.predicate`, but the predicate lives at
+> `op.card.predicate` (a sibling of `op.card.from`) — in all **249** energy ops. So the type/subtype
+> filter was silently dropped: `matchesCardPredicate(c, undefined)` matches *any* energy. Invisible on
+> the empty board (nothing to discard/attach), it surfaced the instant the loaded board gave the
+> predicate something to wrongly match: **Victini / Singe Off** and **Farfetch'd / Mach Cut** (IR:
+> discard a **Special** Energy) discarded a *basic*; **Regirock ex / Regi Charge** (IR: attach a
+> **Fighting** Energy from discard) attached *Fire*. Native, correctly, did neither. Fix: read
+> `op.card.predicate`. → all four divergences resolved, and the energy-rich board now meaningfully
+> verifies the filter *excludes* the wrong types.
+
+> **IR-integration bug #2 (fixed, latent) — `energyAttachedCount` over a `spot:anywhere` selector
+> counted only the active.** It used `resolveV2Single` (first target), so "≥N [type] Energy attached to
+> *your Pokémon*" ignored the bench. Fixed to sum `energyCount` across every target the selector
+> resolves to. **No compared card exercises it yet** — all five `≥4`-type-anywhere printings (Electro
+> Fall, Crystal Fall, Flare Fall, Magnetic Burst, Darkfall) name-drift or are unmapped in Twinleaf — so
+> this is a correctness fix verified by a *direct assertion*, not the differential oracle (an honest
+> counted gap, not faked coverage).
+
+Three **non-vacuity assertions** lock the audit's meaning (a green corpus isn't enough): a
+`conditionOn` rider deals +100 only when the condition is loaded (20→120); `forEach energyAttached`
+scales with loaded energy (20→60); `energyAttachedCount` sums bench energy (110, vs 10 active-only).
+Also corrected an assumption along the way — `useAttack` *does* trigger the turn-transition checkup, so
+loaded POISONED/BURNED tick (verified when a probe hit exactly lethal); the assertions use CONFUSED to
+stay tick-free.
+
+Differential now runs **five** board variants (bare 449, primed 450, conditions 450, energy-rich 438,
+zones-loaded 441), all 0 mismatches.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

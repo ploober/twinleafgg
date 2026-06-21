@@ -203,7 +203,7 @@ is the opponent's active (the implicit subject of an attack's riders).
 | `damageState` | 30 | ✅ | `hasAny`/`full` damage on the selected list. |
 | `and` / `or` / `not` | 24/11/17 | ✅ | Boolean combinators (recurse). |
 | `cardInZone` | 19 | ✅ | Count of (optionally predicate‑filtered) cards in hand/deck/discard/bench, compared or `>0`. |
-| `energyAttachedCount` | 13 | ✅ | Count of (filtered) attached energy vs N. |
+| `energyAttachedCount` | 13 | ✅ | Count of (filtered) attached energy vs N, **summed across every Pokémon the selector resolves to** (`spot:anywhere` → active + bench). |
 | `prize` | 9 | ✅ | Prizes remaining vs N. |
 | `handSize` / `deckSize` | 7/1 | ✅ | Zone size vs N. |
 | `stadiumInPlay` | 7 | ✅ | Any stadium in play. |
@@ -312,11 +312,23 @@ A `flipCoin()` seam on the handler/arbiter now drives both the native flip and t
 **skips** any card where the native and interpreted runs faced a *different* number of ambiguous
 choices — so a first‑eligible auto‑pick can never masquerade as a mismatch.
 
-### 12.3 Observation surfaces (snapshots)
-The single‑turn differential snapshots `{damage, conditions, energy}` per Pokémon and
+### 12.3 Observation surfaces (snapshots) & loaded boards
+The single‑turn differential snapshots `{damage, conditions, energy, energyTypes}` per Pokémon and
 `{active, bench[], hand, deck, discard, prizes}` per side — widened to **per‑bench** so spread damage
 and multi‑target placement are observable (this surfaced the `untilHpRemaining` and
-`placeCounters`‑vs‑`PutDamage` interpreter bugs).
+`placeCounters`‑vs‑`PutDamage` interpreter bugs), and to a typed‑energy multiset (`energyTypes`) so a
+wrong‑**type** energy op is observable.
+
+It runs over **five board variants**: `bare`, `primed` (bench + pre‑damage), and three *loaded*
+variants that each turn on one dimension so a divergence is attributable to it — `conditions` (defender
+carries POISONED+BURNED+CONFUSED → `conditionOn` true branches), `energy‑rich` (typed energy on every
+Pokémon → `energyAttachedCount`/`forEach energyAttached`), `zones‑loaded` (seeded hand + discard →
+`handSize`/`cardInZone`/`forEach discardCards`). Loads are mirror‑symmetric, so a loaded variant can
+only surface real divergences. This audit (§12 in FINDINGS) found and fixed two IR‑integration bugs the
+empty board hid: the `energy.discard`/`attach` predicate read the wrong path (`op.card.from.predicate`
+vs `op.card.predicate`, dropping the type filter on all 249 ops), and `energyAttachedCount` over a
+`spot:anywhere` selector counted only the active. Three **non‑vacuity assertions** prove the loaded
+inputs actually change the outcome (a green corpus is not enough).
 
 ### 12.4 Lock differential — three probe geometries
 Next‑turn `continuous.modifier`/`rule.override` riders are invisible to the single‑turn snapshot.
