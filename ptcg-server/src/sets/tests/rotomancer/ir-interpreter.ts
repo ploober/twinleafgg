@@ -53,6 +53,8 @@ export interface IrOp {
   else?: IrOp[];        // `if` false branch
   card?: any;           // energy.discard: { from: { owner, zone }, predicate }
   scope?: string;       // continuous.modifier / rule.override: opponentNextTurn | ownNextAttack | …
+  appliesTo?: any;      // continuous.modifier: selector the modifier attaches to
+  modifier?: any;       // continuous.modifier: { kind, amount?, attackName?, matching? }
 }
 
 export interface IrFragment {
@@ -289,13 +291,23 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       }
       return state;
     }
-    case 'continuous.modifier':
+    case 'continuous.modifier': {
+      // The v2 split of attack.lockOrModify (next-turn riders). These don't change the immediate
+      // post-attack snapshot, so most stay no-ops there — but the lock differential probes them on
+      // the following turn, so the ones backed by an engine-enforced property are applied here.
+      const mod = op.modifier;
+      if (mod?.kind === 'damageReduction') {
+        // "this Pokémon takes N less damage during the opponent's next turn" — the engine reduces
+        // incoming damage by damageReductionNextTurn and clears it at the opponent's turn end.
+        const amount = evalAmount(state, effect, mod.amount);
+        for (const { list } of resolveTargets(state, effect, { of: op.appliesTo })) {
+          list.damageReductionNextTurn += amount;
+        }
+      }
+      return state;
+    }
     case 'rule.override':
-      // The v2 split of attack.lockOrModify. Every scope (opponentNextTurn, ownNextAttack,
-      // yourNextTurn, untilLeavesActive) is a future/persistent rider — attack/retreat shutoff,
-      // damage debuff/reduction, prevent-damage, etc. None change the immediate post-attack
-      // snapshot the differential compares, so both are recognized no-ops. (A multi-turn
-      // differential would be needed to exercise these; out of scope here.)
+      // Next-turn rule bans (retreat/attack shutoff, item lock). Snapshot-neutral; not yet probed.
       return state;
     case 'coinFlip':
       // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch.

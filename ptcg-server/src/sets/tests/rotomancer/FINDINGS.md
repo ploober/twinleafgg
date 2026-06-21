@@ -149,6 +149,29 @@ two real **interpreter** bugs (now fixed) that had been hidden:
   Pokémon") silently did nothing. Switched to `PutCountersEffect`, which native uses and which
   applies to any Pokémon. Caught only because the snapshot now sees the bench.
 
+### 7. Multi-turn LOCK differential (Phase 5) — first finding
+
+The single-turn differential can't see "during your opponent's next turn" riders — the interpreter
+no-ops the 273 `continuous.modifier`/`rule.override` ops, so they're *vacuously* "compared". The new
+`rotomancer-locks.spec.ts` actually exercises them: it runs the lock attack, then on the opponent's
+turn deals a known synthetic hit (in `GamePhase.ATTACK`, so phase-gated native interceptors fire)
+and compares the **observed** result — mechanism-independent, so it doesn't matter whether native
+reduces via the engine's `damageReductionNextTurn` property or a bespoke marker.
+
+Scope so far: `damageReduction` on self (the most common modifier, 42 ops). The interpreter applies
+it via `damageReductionNextTurn`; 9 mapped printings compared, **0 unexplained mismatches** — and it
+**found a real Twinleaf bug**:
+
+> **Team Rocket's Moltres ex — Flame Screen** ("takes 50 less damage next turn"). The card's
+> `reduceEffect` *adds* `FLAME_SCREEN_MARKER` but **never reads it to reduce damage** (unlike Flareon
+> ex / Vaporeon ex, which do). The marker is dead — the reduction is never enforced; native takes
+> full damage. The IR and interpreter both apply the 50-less correctly. → **Twinleaf bug**
+> (allow-listed, not fixed).
+
+The probe pattern generalises: `preventDamage` (expect 0 landed), `damageDebuff`, and the
+`rule.override` shutoffs (`cannotAttackNextTurn` / retreat lock — probe = attempt the action) are
+the next lock families to wire in.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
