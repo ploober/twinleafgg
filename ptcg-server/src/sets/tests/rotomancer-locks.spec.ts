@@ -16,27 +16,33 @@ import { DealDamageEffect } from '../../game/store/effects/attack-effects';
  * the locked Pokémon and compares the *observed* result (mechanism-independent) between the native
  * card and the IR-interpreted card.
  *
- * Scope so far: self-targeted, opponent's-next-turn *incoming-damage* modifiers — the family the
- * synthetic damage probe can observe directly:
- *   - `continuous.modifier { damageReduction }` ("this Pokémon takes N less damage next turn"),
- *     backed by the engine-enforced `damageReductionNextTurn` property.
- *   - `continuous.modifier { preventDamage }` ("prevent all damage from <matching> Pokémon next
- *     turn"); natively a marker + preventDefault, reproduced by the interpreter as a large
+ * Scope so far: opponent's-next-turn modifiers that reduce the damage *this* (lock-user's) Pokémon
+ * takes — the family the synthetic damage probe can observe directly:
+ *   - `continuous.modifier { damageReduction }` on self ("this Pokémon takes N less damage next
+ *     turn"), backed by the engine-enforced `damageReductionNextTurn` property.
+ *   - `continuous.modifier { preventDamage }` on self ("prevent all damage from <matching> Pokémon
+ *     next turn"); natively a marker + preventDefault, reproduced by the interpreter as a large
  *     `damageReductionNextTurn` sentinel decided against self (the mirror probe's attacker is the
- *     same printing). See ir-interpreter.
+ *     same printing).
+ *   - `continuous.modifier { damageDebuff }` on the defending Pokémon ("attacks used by the
+ *     Defending Pokémon do N less next turn", Growl/Charm); natively reduces the defender's
+ *     *outgoing* damage, but in the mirror probe the defender's only next-turn attack hits this
+ *     Pokémon, so it reduces the probe by N just like an incoming reduction. See ir-interpreter.
  * The interpreter applies the modifier, the engine reduces the probe, and we compare the landed
  * damage. A divergence is an IR-vs-native amount/applicability discrepancy.
  */
 
 interface Scenario { printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body']; }
 
-// A self-targeted, next-turn incoming-damage modifier the probe can observe. Returns the modifier
-// kind for the scorecard, or null if the body has none (→ scenario is not a probe candidate).
-function selfIncomingDamageModifier(body: any[]): 'damageReduction' | 'preventDamage' | null {
+// A next-turn modifier whose effect on the probe (damage taken by the lock user's active) the spec
+// can observe. Returns the modifier kind for the scorecard, or null if the body has none. Self-
+// targeted reduction/prevention and a defender-side outgoing debuff all land on the same observable.
+function selfIncomingDamageModifier(body: any[]): 'damageReduction' | 'preventDamage' | 'damageDebuff' | null {
   for (const op of body) {
-    if (op.kind !== 'continuous.modifier' || op.appliesTo?.role !== 'self') { continue; }
+    if (op.kind !== 'continuous.modifier') { continue; }
     const k = op.modifier?.kind;
-    if (k === 'damageReduction' || k === 'preventDamage') { return k; }
+    if ((k === 'damageReduction' || k === 'preventDamage') && op.appliesTo?.role === 'self') { return k; }
+    if (k === 'damageDebuff' && op.appliesTo?.role === 'defending') { return k; }
   }
   return null;
 }
@@ -91,7 +97,7 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
 
   const mismatches: string[] = [];
   let compared = 0, skipped = 0;
-  const byFamily: Record<string, number> = { damageReduction: 0, preventDamage: 0 };
+  const byFamily: Record<string, number> = { damageReduction: 0, preventDamage: 0, damageDebuff: 0 };
 
   for (const s of scenarios) {
     const res = resolvePrinting(s.printingId, s.name);
@@ -118,7 +124,7 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
 
   /* eslint-disable no-console */
   it('reports the lock scorecard', () => {
-    console.log(`\n  lock differential [incoming-damage]: scenarios ${scenarios.length}, compared ${compared} (damageReduction ${byFamily.damageReduction}, preventDamage ${byFamily.preventDamage}), skipped ${skipped}, mismatches ${mismatches.length}`);
+    console.log(`\n  lock differential [incoming-damage]: scenarios ${scenarios.length}, compared ${compared} (damageReduction ${byFamily.damageReduction}, preventDamage ${byFamily.preventDamage}, damageDebuff ${byFamily.damageDebuff}), skipped ${skipped}, mismatches ${mismatches.length}`);
     mismatches.forEach(m => console.log(`   • ${m}`));
     expect(compared).toBeGreaterThan(0);
   });

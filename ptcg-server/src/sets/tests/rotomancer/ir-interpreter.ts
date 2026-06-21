@@ -322,6 +322,17 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
             list.damageReductionNextTurn += PREVENT_ALL_DAMAGE_SENTINEL;
           }
         }
+      } else if (mod?.kind === 'damageDebuff') {
+        // "Attacks used by the Defending Pokémon do N less damage during the opponent's next turn"
+        // (Growl/Charm). Natively a marker on the defender that reduces *that Pokémon's outgoing*
+        // damage. In the mirror lock probe the defender's only next-turn attack hits this Pokémon,
+        // so the observable — this Pokémon takes N less — is reproduced by the same incoming
+        // damageReductionNextTurn property applied to self (the lock user's active). Only the
+        // attacker-side `defending` shape maps this way; anything else is an unmodeled geometry.
+        if (op.appliesTo?.role !== 'defending') {
+          throw new Error(`[ir-interpreter] damageDebuff appliesTo "${JSON.stringify(op.appliesTo)}" not modeled`);
+        }
+        effect.player.active.damageReductionNextTurn += evalAmount(state, effect, mod.amount);
       }
       return state;
     }

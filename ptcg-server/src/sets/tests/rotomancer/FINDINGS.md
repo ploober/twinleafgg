@@ -194,15 +194,24 @@ one IR gap surfaced immediately (all allow-listed, not fixed):
 > attack is "40 per damage *counter* on your Tauros Pokémon" — the IR drops the per-counter scaling.
 > IR faithfulness gap.
 
-### 9. Lock family — `preventDamage` wired in → an IR-integration predicate bug found & fixed
+### 9. Lock family — `preventDamage` + `damageDebuff` wired in → an IR-integration predicate bug found & fixed
 
-Extended the multi-turn probe (§7) to the second self-targeted incoming-damage family:
-`continuous.modifier { preventDamage }` ("during the opponent's next turn, prevent all damage done
-to this Pokémon by attacks from *⟨matching⟩* Pokémon", 16 ops). Natively this is a marker +
-`preventDefault`; the interpreter reproduces it by reusing the engine's `damageReductionNextTurn`
-with a large "prevent-all" sentinel — **gated on evaluating the `matching` predicate against self**,
-which is sound because the mirror probe's next-turn attacker is the same printing as the locked
-Pokémon. The lock scorecard went 10 → 17 compared (now `damageReduction 10 + preventDamage 7`).
+Extended the multi-turn probe (§7) to the rest of the *incoming-damage* lock family — every modifier
+whose effect the synthetic probe (damage taken by the lock user's active) can observe:
+
+- `continuous.modifier { preventDamage }` on self ("prevent all damage from *⟨matching⟩* Pokémon next
+  turn", 16 ops). Natively a marker + `preventDefault`; the interpreter reproduces it by reusing the
+  engine's `damageReductionNextTurn` with a large "prevent-all" sentinel — **gated on evaluating the
+  `matching` predicate against self**, sound because the mirror probe's next-turn attacker is the
+  same printing as the locked Pokémon.
+- `continuous.modifier { damageDebuff }` on the defending Pokémon ("attacks used by the Defending
+  Pokémon do N less next turn" — Growl/Charm, 11 ops). Natively a marker on the defender that reduces
+  *its outgoing* damage (`PutDamageEffect` where `source` is marked). In the mirror probe the
+  defender's only next-turn attack hits the lock user's active, so the same incoming
+  `damageReductionNextTurn` applied to self reproduces the observable. The synthetic `__probe__`
+  attack carries `source = opponent.active`, so it triggers the native marker just like a real attack.
+
+The lock scorecard went 10 → 22 compared (`damageReduction 10 + preventDamage 7 + damageDebuff 5`).
 
 This immediately surfaced a bug — **in the IR integration itself, so it was fixed** (not
 allow-listed):
@@ -215,10 +224,10 @@ allow-listed):
 > `energyType` now also matches a **Pokémon's own `cardType`** (and a Trainer matches neither). This
 > is the correct general reading of `isa energyType:X` across supertypes.
 
-The remaining lock families — `damageDebuff` (attacker-side, opponent's-next-turn),
-`damageVulnerability` (`yourNextTurn`, needs a probe on the lock-user's *own* next turn), and the
-`rule.override` shutoffs (attack/retreat — probe = attempt the action and observe the block) — are
-the next to wire in.
+The remaining lock families need a *different* probe geometry and are the next to wire in:
+`damageVulnerability` (`yourNextTurn` — needs a probe on the lock-user's *own* next turn, after
+skipping the opponent's), and the `rule.override` shutoffs (attack/retreat — probe = attempt the
+action and observe the block, not a damage measurement).
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
