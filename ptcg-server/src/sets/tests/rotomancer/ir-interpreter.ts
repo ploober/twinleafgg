@@ -228,6 +228,24 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'hand.reveal':
       // Revealing a hand moves no cards and changes no observable zone — snapshot-neutral no-op.
       return state;
+    case 'pokemon.knockOut': {
+      // Knock out each resolved target by dealing lethal damage through the normal pipeline, so the
+      // engine awards the prize, discards, and promotes (a direct KnockOutEffect skips the prize
+      // flow). Mirrors how native "knock out" attacks do it (e.g. KnockOutOpponentEffect(_, 999)).
+      for (const { list } of resolveTargets(state, effect, op.target)) {
+        const put = new PutDamageEffect(effect, 999);
+        put.target = list;
+        state = store.reduceEffect(state, put);
+      }
+      return state;
+    }
+    case 'pokemon.discard': {
+      // Literal "discard this Pokémon and everything attached" — no prize (cf. a knock-out).
+      for (const { player, list } of resolveTargets(state, effect, op.target)) {
+        list.moveCardsTo(list.cards.slice().concat(list.tools.slice()), player.discard);
+      }
+      return state;
+    }
     case 'continuous.modifier':
     case 'rule.override':
       // The v2 split of attack.lockOrModify. Every scope (opponentNextTurn, ownNextAttack,
