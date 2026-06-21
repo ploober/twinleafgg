@@ -252,9 +252,9 @@ export function getCardBySetAndNumber(setCode: string, setNumber: string): Card 
   } catch {
     return undefined;
   }
-  const target = String(setNumber);
-  return CardManager.getInstance().getAllCards()
-    .find(card => card.set === setCode && String(card.setNumber) === target);
+  // O(1) via CardManager's set+number index (was an O(registry) linear scan per call — ~4ms over the
+  // full 12.5k-card registry, called ~2x per imported card, which dominated stateless /v1/step latency).
+  return CardManager.getInstance().getCardBySetAndNumber(setCode, setNumber);
 }
 
 // ── Convenience helpers ──

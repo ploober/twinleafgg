@@ -7,6 +7,13 @@ export class CardManager {
   private static instance: CardManager;
   private cards: Card[] = [];
   private cardIndex: { [name: string]: number } = {};
+  // O(1) lookup by set code + collector number (key: `${set}|${setNumber}`). First card defined for a
+  // given key wins, matching the previous `getAllCards().find(...)` first-match semantics.
+  private setNumberIndex: { [key: string]: number } = {};
+
+  private static setNumberKey(set: string, setNumber: string | number): string {
+    return `${set}|${String(setNumber)}`;
+  }
 
   public static getInstance(): CardManager {
     if (!CardManager.instance) {
@@ -67,6 +74,11 @@ export class CardManager {
       this.cards.push(card);
       this.cardIndex[card.fullName] = index;
 
+      const setNumberKey = CardManager.setNumberKey(card.set, card.setNumber);
+      if (this.setNumberIndex[setNumberKey] === undefined) {
+        this.setNumberIndex[setNumberKey] = index;
+      }
+
       const p = card as any;
       if (p.legacyFullName) {
         if (this.cardIndex[p.legacyFullName] !== undefined) {
@@ -79,9 +91,15 @@ export class CardManager {
 
   public loadCardsInfo(cardsInfo: CardsInfo) {
     this.cardIndex = {};
+    this.setNumberIndex = {};
     this.cards = cardsInfo.cards;
     for (let i = 0; i < this.cards.length; i++) {
-      this.cardIndex[this.cards[i].fullName] = i;
+      const card = this.cards[i];
+      this.cardIndex[card.fullName] = i;
+      const setNumberKey = CardManager.setNumberKey(card.set, card.setNumber);
+      if (this.setNumberIndex[setNumberKey] === undefined) {
+        this.setNumberIndex[setNumberKey] = i;
+      }
     }
   }
 
@@ -93,6 +111,11 @@ export class CardManager {
     const index = this.cards.length;
     this.cards.push(card);
     this.cardIndex[card.fullName] = index;
+
+    const setNumberKey = CardManager.setNumberKey(card.set, card.setNumber);
+    if (this.setNumberIndex[setNumberKey] === undefined) {
+      this.setNumberIndex[setNumberKey] = index;
+    }
   }
 
   public getCardByName(name: string): Card | undefined {
@@ -104,6 +127,16 @@ export class CardManager {
 
   public isCardDefined(name: string): boolean {
     return this.cardIndex[name] !== undefined;
+  }
+
+  /**
+   * O(1) lookup of the shared registry instance by set code + collector number, or undefined if no
+   * card is registered for that key. Returns the raw instance (not a clone) — mirroring the previous
+   * `getAllCards().find(...)` behaviour; callers that need a mutable copy should re-resolve by name.
+   */
+  public getCardBySetAndNumber(set: string, setNumber: string | number): Card | undefined {
+    const index = this.setNumberIndex[CardManager.setNumberKey(set, setNumber)];
+    return index !== undefined ? this.cards[index] : undefined;
   }
 
   public getAllCards(): Card[] {
