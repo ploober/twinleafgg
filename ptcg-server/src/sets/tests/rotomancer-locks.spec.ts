@@ -6,8 +6,10 @@ import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { GamePhase } from '../../game/store/state/state';
-import { AttackEffect } from '../../game/store/effects/game-effects';
+import { AttackEffect, RetreatEffect } from '../../game/store/effects/game-effects';
 import { DealDamageEffect } from '../../game/store/effects/attack-effects';
+import { GameError } from '../../game/game-error';
+import { GameMessage } from '../../game/game-message';
 
 /**
  * Multi-turn LOCK differential. The single-turn differential can't see "during your opponent's
@@ -131,6 +133,95 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
   /* eslint-enable no-console */
 
   it('native and interpreted agree on the damage reduction', () => {
+    expect(mismatches).toEqual([]);
+  });
+});
+
+// `rule.override { retreatShutoff }` on the defending Pokémon ("the Defending Pokémon can't retreat
+// during the opponent's next turn"). Not a damage measurement — a *blocked-action* probe: run the
+// lock attack, then attempt to retreat the locked (opponent's) active and observe whether the engine
+// throws BLOCKED_BY_EFFECT. Native cards enforce it via BLOCK_RETREAT/BLOCK_RETREAT_IF_MARKER
+// (DEFENDING_POKEMON_CANNOT_RETREAT_MARKER); the interpreter calls the same prefabs, so the probe is
+// mechanism-independent and needs no bench/energy (the block throws in propagateEffect, before the
+// retreat reducer's own bench/cost checks).
+function retreatShutoffDefending(body: any[]): boolean {
+  return body.some(op => op.kind === 'rule.override'
+    && op.override?.kind === 'retreatShutoff'
+    && op.override?.target?.role === 'defending'
+    && op.scope === 'opponentNextTurn');
+}
+
+function retreatBlocked(fullName: string, cost: string[], attackLabel: string, fragments: IrFragment[] | null): boolean {
+  const game = setupGame({
+    turn: 2,
+    player1: { active: { card: fullName, energy: cost.map(energyToCard) }, deck: padDeck(10) },
+    player2: { active: { card: fullName }, deck: padDeck(10) },
+  });
+  if (fragments) {
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, fragments);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+  }
+  useAttack(game.store, game.state, 0, attackLabel); // P0's lock attack → P1's turn; locks P1's active
+
+  const p1 = game.state.players[1];
+  try {
+    game.store.reduceEffect(game.state, new RetreatEffect(p1, 0));
+    return false; // retreat was not blocked by the lock
+  } catch (e) {
+    return e instanceof GameError && e.message === GameMessage.BLOCKED_BY_EFFECT;
+  }
+}
+
+describe('Rotomancer lock differential — retreatShutoff (block probe)', () => {
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Scenario[])
+    .filter(s => retreatShutoffDefending(s.body));
+
+  // Native retreat-lock bugs surfaced by this probe (Twinleaf bugs — allow-listed, not fixed, per
+  // project guidance). Keyed by attack label.
+  const KNOWN_RETREAT_LOCK_BUGS: Record<string, string> = {
+    'Numbing Hold': 'Wugtrio ex (TEF): the BLOCK_RETREAT for Numbing Hold is guarded by '
+      + 'WAS_ATTACK_USED(effect, 0) — but index 0 is Tricolor Pump; Numbing Hold is index 1. So the '
+      + 'retreat lock is never installed when Numbing Hold is used (wrong attack index). The IR and '
+      + 'interpreter correctly lock retreat. → Twinleaf bug.',
+  };
+
+  const mismatches: string[] = [];
+  let compared = 0, skipped = 0;
+
+  for (const s of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skipped++; continue; }
+    if (KNOWN_RETREAT_LOCK_BUGS[s.attackLabel]) { skipped++; continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skipped++; continue; }
+
+    const cost = s.cost.filter(c => c.toUpperCase() !== 'FREE');
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    let native: boolean, interp: boolean;
+    try {
+      native = retreatBlocked(res.fullName!, cost, s.attackLabel, null);
+    } catch { skipped++; continue; }
+    try {
+      interp = retreatBlocked(res.fullName!, cost, s.attackLabel, fragments);
+    } catch { skipped++; continue; } // interpreter doesn't support some other op in the body
+    compared++;
+    if (native !== interp) {
+      mismatches.push(`${s.printingId} ${s.attackLabel} (${s.name}): native blocked=${native}, interp blocked=${interp}`);
+    }
+  }
+
+  /* eslint-disable no-console */
+  it('reports the retreat-lock scorecard', () => {
+    console.log(`\n  lock differential [retreatShutoff]: scenarios ${scenarios.length}, compared ${compared}, skipped ${skipped}, mismatches ${mismatches.length}`);
+    mismatches.forEach(m => console.log(`   • ${m}`));
+    expect(compared).toBeGreaterThan(0);
+  });
+  /* eslint-enable no-console */
+
+  it('native and interpreted agree on the retreat lock', () => {
     expect(mismatches).toEqual([]);
   });
 });

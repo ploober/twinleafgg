@@ -8,7 +8,8 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER } from '../../../game/store/prefabs/prefabs';
+import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
@@ -55,6 +56,7 @@ export interface IrOp {
   scope?: string;       // continuous.modifier / rule.override: opponentNextTurn | ownNextAttack | …
   appliesTo?: any;      // continuous.modifier: selector the modifier attaches to
   modifier?: any;       // continuous.modifier: { kind, amount?, attackName?, matching? }
+  override?: any;       // rule.override: { kind, target?, attackName? }
 }
 
 export interface IrFragment {
@@ -336,9 +338,21 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       }
       return state;
     }
-    case 'rule.override':
-      // Next-turn rule bans (retreat/attack shutoff, item lock). Snapshot-neutral; not yet probed.
+    case 'rule.override': {
+      // Next-turn rule bans (retreat/attack shutoff, item lock). Snapshot-neutral, so inert in the
+      // single-turn differential — but the lock spec probes them on the following turn.
+      const ovr = op.override;
+      if (ovr?.kind === 'retreatShutoff' && ovr.target?.role === 'defending') {
+        // "The Defending Pokémon can't retreat during the opponent's next turn." Reproduce it with
+        // the exact native prefab: BLOCK_RETREAT installs DEFENDING_POKEMON_CANNOT_RETREAT_MARKER on
+        // the defender keyed to this card; InterpretedCard.reduceEffect enforces it with
+        // BLOCK_RETREAT_IF_MARKER, just like every native retreat-lock card. `self` is this
+        // interpreted card (the attacker's own active in a mirror), so the marker source matches.
+        const self = effect.player.active.getPokemonCard();
+        if (self) { state = BLOCK_RETREAT(store, state, effect, self); }
+      }
       return state;
+    }
     case 'coinFlip':
       // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch.
       return runBranch(store, state, effect, op.then);
@@ -359,6 +373,10 @@ export class InterpretedCard extends PokemonCard {
   public program: IrFragment[] = [];
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Enforce any next-turn retreat lock this card installed (mirrors native retreat-lock cards,
+    // which call this same prefab in their reduceEffect). Throws BLOCKED_BY_EFFECT on a blocked
+    // RetreatEffect; inert for every other effect.
+    BLOCK_RETREAT_IF_MARKER(effect, MarkerConstants.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this);
     for (let i = 0; i < this.program.length; i++) {
       if (WAS_ATTACK_USED(effect, i, this)) {
         let next = state;

@@ -224,10 +224,33 @@ allow-listed):
 > `energyType` now also matches a **Pokémon's own `cardType`** (and a Trainer matches neither). This
 > is the correct general reading of `isa energyType:X` across supertypes.
 
-The remaining lock families need a *different* probe geometry and are the next to wire in:
-`damageVulnerability` (`yourNextTurn` — needs a probe on the lock-user's *own* next turn, after
-skipping the opponent's), and the `rule.override` shutoffs (attack/retreat — probe = attempt the
-action and observe the block, not a damage measurement).
+### 10. Lock family — `retreatShutoff` via a *blocked-action* probe → a 4th wrong-attack-index Twinleaf bug
+
+The `rule.override` shutoffs can't be read by the damage probe — there's no number to measure, only
+an action that does or doesn't go through. Added a second probe type for the most common shutoff,
+`rule.override { retreatShutoff }` on the defending Pokémon ("the Defending Pokémon can't retreat
+during the opponent's next turn", 57 ops, `opponentNextTurn`): run the lock attack, then attempt to
+retreat the locked (opponent's) active and observe whether the engine throws `BLOCKED_BY_EFFECT`.
+
+Both engines use the same enforcement (`BLOCK_RETREAT` / `BLOCK_RETREAT_IF_MARKER` keyed to the lock
+card, via `DEFENDING_POKEMON_CANNOT_RETREAT_MARKER`), so the interpreter just calls those prefabs and
+`InterpretedCard.reduceEffect` enforces the marker — and because the block throws in `propagateEffect`
+(before the retreat reducer's bench/cost checks) the probe needs no bench or energy. 19 printings
+compared, **0 unexplained mismatches**, and it **found a 4th wrong-attack-index Twinleaf bug**:
+
+> **Wugtrio ex (TEF) — Numbing Hold**. The `BLOCK_RETREAT(...)` for Numbing Hold is guarded by
+> `WAS_ATTACK_USED(effect, 0, this)` — but index 0 is *Tricolor Pump*; Numbing Hold is index **1**. So
+> the retreat lock is **never installed** when Numbing Hold is used (and the misattributed block is
+> dead code under Tricolor Pump, which returns first). The IR and interpreter correctly lock retreat;
+> native doesn't. → **Twinleaf bug** (allow-listed, not fixed). Same class as Mega Sharpedo ex /
+> Hungry Jaws (§8).
+
+The remaining lock families are the next to wire in: `attackShutoff` — the `ownNextAttack`/self
+"recharge" form (105 ops) needs an own-turn probe (skip the opponent's turn, retry the attack), while
+the `opponentNextTurn`/defending form (10 ops) reuses this turn's timing (attempt the defender's
+attack, observe the block); `retreatShutoff`'s `yourNextTurn`/self variant (3); the
+`itemPlayRestriction` / `evolvePlayRestriction` bans (9); and `damageVulnerability` (`yourNextTurn`,
+3 — a probe on the lock-user's own next turn).
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
