@@ -182,6 +182,18 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Hungry Jaws': 'Mega Sharpedo ex PFL: the "+150 if this Pokémon has damage" rider is wired to attack index 0 (Greedy Fang), so Hungry Jaws (index 1) never applies it. IR/interp apply it. → Twinleaf bug',
   };
 
+  // (6b) Twinleaf bugs keyed by *printing* rather than label — either the attack label also belongs
+  // to a correct card (so a label key would over-skip), or the bug lives in one set's card file. These
+  // four were briefly patched earlier in this spike; per project guidance native card bugs are
+  // allow-listed, not fixed (see memory: rotomancer-no-card-fixes), so the patches were reverted and
+  // the bugs catalogued here. In every case the interpreter does the real attack and native is wrong.
+  const KNOWN_NATIVE_BUGS_BY_PRINTING: Record<string, string> = {
+    'sv10-41': 'Combusken DRI — Double Kick: native sets effect.damage = 40*heads OUTSIDE the async COIN_FLIP_PROMPT callbacks, so heads is always 0 → the attack always does 0. IR/interp do 40 per head. → Twinleaf bug',
+    'sv9-103': 'N\'s Klink JTG — Double Spin: printed damage 10 PLUS `effect.damage += 10*heads` double-counts the base (30 on two heads, not 20). IR/interp do 10 per head. → Twinleaf bug. (Label "Double Spin" also belongs to Gossifleur sv7-10, which is correct — hence keyed by printing.)',
+    'sv6-6': 'Sunkern TWM — Bullet Seed: the coin-flip logic is guarded on WAS_ATTACK_USED(effect, 1) but Bullet Seed is attack index 0, so it never runs (always base 10). IR/interp flip per the text. → Twinleaf bug',
+    'sv6-32': 'Monferno TWM — Heat Blow: the "Discard an Energy from this Pokémon" rider is wired only to attack index 0 (Chop); Heat Blow (index 1) never discards. IR/interp discard. → Twinleaf bug',
+  };
+
   function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {
     const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
@@ -198,6 +210,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       if (!(card instanceof PokemonCard)) continue;
       if (card.weakness?.some(w => w.type === card.cardType)) continue;
       if (KNOWN_MISMATCHES[s.attackLabel]) continue;
+      if (KNOWN_NATIVE_BUGS_BY_PRINTING[s.printingId]) continue;
 
       const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
       const board = makeBoard(card.hp);

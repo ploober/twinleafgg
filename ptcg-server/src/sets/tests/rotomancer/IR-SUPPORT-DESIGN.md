@@ -48,10 +48,13 @@ The integration is an **oracle**, not a re‑implementation. Five principles gov
 5. **Fix the integration, allow‑list the cards.** A divergence is triaged into: an **IR‑integration
    bug** (our interpreter/selector/predicate is wrong → *fix it*), an **IR faithfulness gap** (the IR
    itself drops detail → note it), or a **native Twinleaf card bug** (the engine card is wrong →
-   *allow‑list it, never fix it* — see [memory: rotomancer-no-card-fixes]). To date: 1 IR‑integration
-   predicate bug fixed; several native card bugs allow‑listed (Flame Screen, Mega Sharpedo ex's Greedy
-   Fang & Hungry Jaws, Wugtrio ex's Numbing Hold, …) — plus 4 coin‑flip card bugs that were fixed
-   *before* the no‑fix rule was set.
+   *allow‑list it, never fix it* — see [memory: rotomancer-no-card-fixes]). To date the only thing
+   fixed in non‑test code is **1 IR‑integration predicate bug**; every native card bug is
+   **allow‑listed, not fixed** — Flame Screen, Mega Sharpedo ex's Greedy Fang & Hungry Jaws, Wugtrio
+   ex's Numbing Hold, and the 4 coin‑flip/index bugs (Combusken Double Kick, N's Klink Double Spin,
+   Sunkern Bullet Seed, Monferno Heat Blow). Those last four were briefly patched early in the spike,
+   *before* this rule was set; the patches have since been **reverted** and the bugs allow‑listed, so
+   the treatment is now uniform.
 
 Two corollaries shape the per‑feature decisions below:
 

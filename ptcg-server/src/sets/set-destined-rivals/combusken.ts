@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardType, State, StoreLike } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
-import { MULTIPLE_COIN_FLIPS_PROMPT, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class Combusken extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -35,12 +35,10 @@ export class Combusken extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // Set damage inside the flip callback: COIN_FLIP_PROMPT delivers its result asynchronously
-      // (via a WaitPrompt), so computing `heads` after the calls left damage at 0 every time.
-      return MULTIPLE_COIN_FLIPS_PROMPT(store, state, effect.player, 2, results => {
-        const heads = results.filter(r => r).length;
-        effect.damage = 40 * heads;
-      });
+      let heads = 0;
+      COIN_FLIP_PROMPT(store, state, effect.player, result => { if (result) { heads++; } });
+      COIN_FLIP_PROMPT(store, state, effect.player, result => { if (result) { heads++; } });
+      effect.damage = 40 * heads;
     }
 
     return state;

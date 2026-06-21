@@ -70,21 +70,29 @@ The full adjudicated list is the fixture **`fixtures/known-discrepancies.json`**
 structural allow-list). These are the same family as the data findings below — concentrated in
 recent sets (esp. **sv10 Destined Rivals** Trainer's-Pokémon cards) and safe to fix.
 
-### 3. Building out IR support → 4 coin-flip / cost bugs found & fixed
+### 3. Building out IR support → 4 coin-flip / cost bugs found (now allow-listed, not fixed)
 
 Teaching the interpreter more IR ops (`attack.lockOrModify` as a snapshot-neutral no-op,
 `energy.attachOrDiscard` discard-from-self, `coinFlipHeads`, `noDefenderReduction`, and forEach
 `damageCounters`/`prizesTaken`/`handCards`/`retreatCost`) **doubled differential coverage from 185
 to 383 attacks compared** — and the newly-compared cards agree with the IR oracle in ~98% of cases.
-The disagreements were six real **engine bugs in coin-flip / cost attacks**, each a different
-mechanism, all now fixed (the differential agrees after the fix):
+The disagreements were four real **native engine bugs in coin-flip / cost attacks**, each a different
+mechanism:
 
-| card | attack | bug | fix |
-|---|---|---|---|
-| Combusken (sv10-41) | Double Kick | `effect.damage = 40·heads` set **outside** the async `COIN_FLIP_PROMPT` callbacks → `heads` always 0 → **always 0 damage** | flip via `MULTIPLE_COIN_FLIPS_PROMPT`, set damage in the callback |
-| N's Klink (sv9-103) | Double Spin | printed `damage: 10` **plus** `effect.damage += 10·heads` → base double-counted → **+10 too high** | `+=` → `=` (overwrite the base, like other ×-damage cards) |
-| Sunkern (sv6-6) | Bullet Seed | `WAS_ATTACK_USED(effect, 1)` but Bullet Seed is index **0** → coin logic never runs → **always base 10** | index `1` → `0` |
-| Monferno (sv6-32) | Heat Blow | energy discard wired only to `WAS_ATTACK_USED(…, 0)` (Chop); Heat Blow is index 1 → **never discards** | run the discard for index 0 **or** 1 |
+| card | attack | bug |
+|---|---|---|
+| Combusken (sv10-41) | Double Kick | `effect.damage = 40·heads` set **outside** the async `COIN_FLIP_PROMPT` callbacks → `heads` always 0 → **always 0 damage** |
+| N's Klink (sv9-103) | Double Spin | printed `damage: 10` **plus** `effect.damage += 10·heads` → base double-counted → **+10 too high** |
+| Sunkern (sv6-6) | Bullet Seed | `WAS_ATTACK_USED(effect, 1)` but Bullet Seed is index **0** → coin logic never runs → **always base 10** |
+| Monferno (sv6-32) | Heat Blow | energy discard wired only to `WAS_ATTACK_USED(…, 0)` (Chop); Heat Blow is index 1 → **never discards** |
+
+> ⚠️ **These four were briefly patched, then reverted.** They predate the "don't fix native Twinleaf
+> card bugs, allow-list them" rule (see [memory: rotomancer-no-card-fixes]). To make the treatment
+> consistent across the whole project, the card patches were **reverted** and the bugs are now
+> **allow-listed** in the differential, keyed by *printing* (`KNOWN_NATIVE_BUGS_BY_PRINTING` in
+> [rotomancer-differential.spec.ts](../rotomancer-differential.spec.ts)) — printing-keyed because
+> "Double Spin" also belongs to Gossifleur (sv7-10), which is correct. The interpreter does the real
+> attack; native is wrong. They join the family-(6) Twinleaf bugs (Greedy Fang, Hungry Jaws, …).
 
 These confirm a **systemic risk in coin-flip damage attacks** (async callback ordering, base
 double-apply, wrong attack index) — a targeted sweep of the corpus's coin-flip attacks would likely

@@ -30,7 +30,7 @@ export class Sunkern extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       state = store.prompt(state, [
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP),
