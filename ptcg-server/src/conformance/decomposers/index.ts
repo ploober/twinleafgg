@@ -9,6 +9,7 @@ import { discardEnergyDecomposer } from './discard-energy';
 import { chooseEnergyDecomposer } from './choose-energy';
 import { chooseAttackDecomposer } from './choose-attack';
 import { choosePrizeDecomposer } from './choose-prize';
+import { confirmDecomposer } from './confirm';
 
 export * from './decomposer';
 
@@ -25,12 +26,16 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   chooseEnergyDecomposer,
   chooseAttackDecomposer,
   choosePrizeDecomposer,
+  confirmDecomposer,
 ];
 
 const REGISTRY = new Map<string, PromptDecomposer<any>>(DECOMPOSERS.map(d => [d.type, d]));
 
 export function classify(prompt: Prompt<any>): PromptKind {
-  if (prompt.type === 'WaitPrompt') {
+  // WaitPrompt (attack animation) and ShowCardsPrompt ('Show cards', `Prompt<true>` — a pure
+  // reveal/acknowledge whose result is always `true`) carry no decision: auto-resolve with `true`.
+  // The revealed cards are already observable in the projected state, so nothing is lost.
+  if (prompt.type === 'WaitPrompt' || prompt.type === 'Show cards') {
     return 'wait';
   }
   // ShuffleDeckPrompt ('Shuffle deck'), shuffle-hand/prizes, and CoinFlipPrompt are the system actor (M3).
