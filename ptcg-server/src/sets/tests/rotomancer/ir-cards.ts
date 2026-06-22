@@ -3,10 +3,14 @@ import { StoreLike } from '../../../game/store/store-like';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Card } from '../../../game/store/card/card';
 import { CardList } from '../../../game/store/state/card-list';
+import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { SuperType, EnergyType, CardType, CardTag, Stage } from '../../../game/store/card/card-types';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
+import { GameMessage } from '../../../game/game-message';
 
 /**
  * Executes the deterministic subset of the IR `cards.move` op (and the card-predicate vocabulary
@@ -95,11 +99,29 @@ function resolveZone(effect: AttackEffect, ref: any): CardList {
   }
 }
 
-export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any): State {
-  // v2: select.chooser (player/opponent/auto) + select.where (predicate). `auto`/`player` resolve to
-  // the first-N matching cards (the harness's first-eligible policy); when the native choice was
-  // ambiguous the differential's guard skips the attack, so a wrong guess never false-mismatches.
-  // `opponent`/`random` choosers stay unsupported.
+// A bench→active "move" of the same owner is a Pokémon SWITCH (promote / gust-up), not a card-zone
+// move — the engine does it with player.switchPokemon, exactly like native switch attacks (e.g.
+// Honchkrow). `chooser:'player'` → emit the same ChoosePokemonPrompt over the Bench native does, so
+// the harness picks the identical first-eligible benched Pokémon on both runs. No legal target → no-op.
+function executeSwitch(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  const owner = op.from?.owner === 'opponent' ? effect.opponent : effect.player;
+  const ownerType = op.from?.owner === 'opponent' ? PlayerType.TOP_PLAYER : PlayerType.BOTTOM_PLAYER;
+  if (!owner.bench.some(b => b.getPokemonCard() !== undefined)) {
+    return cont(state); // nothing on the Bench to switch in — snapshot-neutral, as native guards
+  }
+  const prompt = new ChoosePokemonPrompt(
+    effect.player.id, GameMessage.CHOOSE_POKEMON_TO_SWITCH, ownerType, [SlotType.BENCH],
+    { min: 1, max: 1, allowCancel: false }
+  );
+  return store.prompt(state, prompt, (chosen: PokemonCardList[] | null) => {
+    const target = chosen && chosen[0];
+    if (target) { owner.switchPokemon(target); }
+    return cont(state);
+  });
+}
+
+export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  // v2: select.chooser (player/opponent/auto) + select.where (predicate).
   const chooser = op.select?.chooser;
   if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player') {
     throw new Error(`[ir-cards] unsupported cards.move chooser "${chooser}"`);
@@ -108,6 +130,15 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     throw new Error('[ir-cards] cards.move deck search not supported');
   }
 
+  // bench → active (same owner) = a switch, handled via switchPokemon + a Bench ChoosePokemonPrompt.
+  if (op.from?.zone === 'bench' && op.to?.zone === 'active' && op.from?.owner === op.to?.owner) {
+    return executeSwitch(store, state, effect, op, cont);
+  }
+
+  // Zone↔zone card move. `auto`/`player` resolve to the first-N matching cards (the harness's
+  // first-eligible policy); a genuinely ambiguous `player` pick (count exactly/upTo) is caught by the
+  // differential's guard until the ChooseCards path lands (Stage B remainder, with the filter-aware
+  // harness fix). `count:'all'` needs no choice, so it compares today.
   const from = resolveZone(effect, op.from);
   const to = resolveZone(effect, op.to);
 
@@ -129,7 +160,7 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   }
 
   if (cards.length === 0) {
-    return state;
+    return cont(state);
   }
-  return MOVE_CARDS(store, state, from, to, { cards });
+  return cont(MOVE_CARDS(store, state, from, to, { cards }));
 }

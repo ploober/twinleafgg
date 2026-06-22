@@ -305,6 +305,33 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[1].active.specialConditions).toContain(SpecialCondition.CONFUSED); // the optional fired
   });
 
+  // Stage B non-vacuity: a `cards.move` bench→active is a SWITCH (ChoosePokemonPrompt + switchPokemon),
+  // observably swapping the Active with the chosen benched Pokémon — not a no-op, not a card-zone move.
+  it('Stage B: cards.move bench→active switches the Active with a chosen benched Pokémon', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: { card: res.fullName!, energy: ['Water Energy SVE'], damage: 50 }, // damaged Active
+        bench: [{ card: res.fullName! }],                                          // fresh Bench (0 damage)
+        deck: padDeck(10),
+      },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Swap', cost: ['Colorless'],
+      body: [{ kind: 'cards.move', select: { chooser: 'player' }, count: { kind: 'exactly', n: 1 },
+        from: { owner: 'self', zone: 'bench' }, to: { owner: 'self', zone: 'active' } }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Swap');
+    expect(game.state.players[0].active.damage).toBe(0);    // fresh benched Pokémon promoted to Active
+    expect(game.state.players[0].bench[0].damage).toBe(50); // the damaged old Active demoted to the Bench
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the

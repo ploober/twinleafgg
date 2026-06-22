@@ -61,6 +61,10 @@ export interface IrOp {
   over?: CountForm;     // `iterate`: how many times to run `body`
   body?: IrOp[];        // `iterate`: the per-iteration ops
   card?: any;           // energy.discard: { from: { owner, zone }, predicate }
+  select?: any;         // cards.move: { chooser, where }
+  from?: any;           // cards.move: { owner, zone }
+  to?: any;             // cards.move: { owner, zone }
+  visibility?: string;  // cards.move: 'search' → deck search (unsupported)
   scope?: string;       // continuous.modifier / rule.override: opponentNextTurn | ownNextAttack | …
   appliesTo?: any;      // continuous.modifier: selector the modifier attaches to
   modifier?: any;       // continuous.modifier: { kind, amount?, attackName?, matching? }
@@ -351,7 +355,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return cont(state);
     }
     case 'cards.move':
-      return cont(executeCardsMove(store, state, effect, op));
+      return executeCardsMove(store, state, effect, op, cont);
     case 'energy.discard':
       return cont(executeEnergyDiscard(store, state, effect, op));
     case 'energy.attach':
