@@ -389,6 +389,54 @@ variant); the `player-choice affect-target …` skip reason dropped from the dom
 suite **45 specs, 0 failures**. Still ⛔ (counted skips, follow-on Stage B increments): the `choice` op,
 `cards.move` `chooser:'player'` (needs a real `ChooseCardsPrompt`), `energy.move`, `iterate`.
 
+### 14. Stage B completion — remaining choice families + three harness expansions
+
+The remaining player-choice families were closed by *emitting the same prompt native emits* — but most
+needed the **test harness's prompt auto-resolver to actually honor the prompt's constraints**, which it
+previously stubbed. Three harness expansions (in [test-helpers.ts](../test-helpers.ts), the shared
+`TestStoreHandler`) were the unlock; each is strictly more correct and was verified against the whole
+harness blast surface (**sets 71 + conformance 190 specs**, both green — the 39 pre-existing
+Base64/Logger/Reconnection failures are unrelated infra, confirmed identical with this work stashed):
+
+| harness fix | was | now | unlocks |
+|---|---|---|---|
+| `resolvePutDamageRaw` | picked the first `maxAllowedDamage` target (the Active), rejected by a `[BENCH]`-scoped prompt → threw | honors `prompt.slots` (first in-slot target) | `iterate` distribute-counters (Phantom Dive / Hex Hurl) |
+| `resolveChooseCardsRaw` | ignored the prompt `filter`; picked first-N of *all* cards (wrong card / inflated eligible count) | filter-aware (eligible = filter-matching, non-blocked) | predicate-bearing `cards.move` |
+| `resolveMoveEnergyRaw` | **no-op stub** (moved nothing) | deterministic first-eligible move (slots/blockedFrom/blockedTo/filter) | `energy.move` (87 native cards now actually move) |
+
+Interpreter side (continuation-passing throughout, so a prompt mid-body resumes the rest):
+- **`choice`** (37, all "you may"): emit a `ConfirmPrompt` (harness always confirms, no ambiguity
+  increment) and run the `then` branch. Plumbing — its value is the switch then-branches below.
+- **`cards.move` `chooser:'player'`** (124): **bench↔active = a SWITCH** via `player.switchPokemon` + a
+  Bench `ChoosePokemonPrompt`; **zone↔zone moves** emit a `ChooseCardsPrompt` (IR predicate → `blocked`,
+  so the now-filter-aware harness picks the same first-N matching). Deck **searches**
+  (`visibility:search`/`searchTyped`), `chooser:'opponent'`/`'random'`, and place-a-Pokémon /
+  prize / attached endpoints stay counted skips.
+- **`iterate`** (9): the native `PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE` prefab (one PutDamagePrompt),
+  not a per-iteration loop (which would trip the ambiguity guard N×).
+- **`energy.move`** (23): relocate the first `count` matching attached Energy from the source selector to
+  the first-eligible destination — the same target the now-functional `resolveMoveEnergyRaw` picks for
+  native.
+
+> **Native bug surfaced (allow-listed, not fixed) — Slowpoke SCR / Dangle Tail.** "Put a Pokémon from
+> your discard pile into your hand." Native moves it from a *detached* temp `CardList`
+> (`new CardList(); cards.cards = selected; MOVE_CARDS(cards, hand)`), so the card is added to the hand
+> but **never removed from the discard** — a duplicate. IR/interp do the real move (discard −1). It only
+> became visible once the filter-aware `ChooseCards` fix dropped native's ambiguity to 0 and unskipped
+> the attack; diagnosed by a direct check (native: discard unchanged, Bidoof in both zones; interp:
+> discard −1). Catalogued in `KNOWN_MISMATCHES` (6).
+
+Coverage: differential `compared` rose **bare 481→501, primed 485→508** (the affect-target increment had
+already lifted them from 449/450). All five board variants **0 mismatches**; rotomancer suite **50 specs,
+0 failures**. Four non-vacuity assertions prove the new ops fire (choice runs its then-branch; a switch
+swaps active↔bench; `iterate` lands all N counters; `cards.move`/`energy.move` move the right card/energy).
+
+What remains a **counted skip** (honest gaps, not faithfully mirrorable under the current harness, or
+genuinely out of scope): `chooser:'opponent'`/`'random'`; `excludeSelf`/`extremum` choice refinements;
+`cards.move` endpoints that place a Pokémon (deck/discard→bench), take a prize, or pick up attached
+cards; deck searches; `costGate` / `pokemon.return` / `damage.move`; and the predicate gaps
+(`turn`/`history`/`movedToActive`). Each is a precise `unsupported` count in the scorecards.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

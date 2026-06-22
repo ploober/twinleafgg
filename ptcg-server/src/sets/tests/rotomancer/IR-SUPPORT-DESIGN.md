@@ -107,7 +107,7 @@ Status legend used throughout:
 | op | corpus | status | Twinleaf mechanism / reason |
 |---|---:|:--:|---|
 | `damage.deal` | 1680 | ✅ | Defender damage routes through the normal pipeline (`effect.damage +=`, so weakness/resistance/prevention apply); multi‑target/spread damage is direct `PutDamageEffect` (weakness‑free), matching how native spread works. `ignore` (weakness/resistance/defenderEffects) is inert in a mirror → no‑op. |
-| `cards.move` | 307 | 🟡 | `MOVE_CARDS` between zones hand/deck/discard/lostzone. Chooser `auto`/`player` → first‑N matching (the harness's first‑eligible policy; the divergence guard skips genuinely ambiguous picks). Counts `exactly`/`all`/`upTo`. **Throws** on `opponent`/`random` chooser and deck **search** (`visibility:search` / `count.searchTyped`). |
+| `cards.move` | 307 | ✅ | `MOVE_CARDS` between zones hand/deck/discard/lostzone. `chooser:'auto'` → first‑N matching; `chooser:'player'` → **emits a `ChooseCardsPrompt`** (predicate → `blocked`; the filter‑aware harness picks the same first‑N matching, §12.7). **bench→active (same owner) = a SWITCH** via `player.switchPokemon` + a Bench `ChoosePokemonPrompt`. Counts `exactly`/`all`/`upTo`. **Throws** on `opponent`/`random` chooser, deck **search** (`visibility:search`/`searchTyped`), and place‑a‑Pokémon / prize / attached endpoints. |
 | `energy.discard` | 197 | 🟡 | Discards matching attached energy from the resolved target(s). Counts `exactly`/`all`. **Throws** on non‑`attached` source and `upTo`/`anyAmount` (player‑choice amount). |
 | `condition.apply` | 197 | ✅ | `AddSpecialConditionsEffect`. **Throws** on `removeMode` (condition removal — not yet wired). |
 | `rule.override` | 192 | 🟡 | See §5. `retreatShutoff`/defending and `attackShutoff`/`ownNextAttack` are reproduced (probed by the lock differential); the rest are **🟦 no‑op** (snapshot‑neutral this turn, not yet probed). |
@@ -115,12 +115,12 @@ Status legend used throughout:
 | `coinFlip` | 104 | ✅ | Under the `ALL_HEADS` harness a flip is heads → run the `then` branch. The interpreter's `headsOf(n)` reproduces the exact head count the native card's real flips would yield. |
 | `heal` | 86 | ✅ | `HealEffect` on each resolved target. |
 | `energy.attach` | 52 | 🟡 | Moves first‑N matching energy from hand/discard onto the target. Counts `exactly`/`upTo`/`all`. **Throws** on `deck` source (a search over filler energy — not a forced outcome). On the differential's bare board the source is usually empty (a genuine forced no‑op). |
-| `choice` | 37 | ⛔ | A genuine player choice between distinct branches. Throws → skip (needs Stage B, §12.5). |
+| `choice` | 37 | ✅ | Always "you may ⟨then⟩" (empty `else`). Emits a `ConfirmPrompt` (harness always confirms, no ambiguity increment) and runs `then` through the continuation runner — mirrors native. |
 | `if` | 24 | ✅ | Evaluates `when` via `ir-predicates`, runs `then`/`else`. |
-| `energy.move` | 23 | ⛔ | Move attached energy between Pokémon — almost always a player‑chosen destination (`quantity:one`). Throws → skip. |
+| `energy.move` | 23 | ✅ | Move the first `count` matching attached energy from the source selector to the first‑eligible destination — the same target the harness's `resolveMoveEnergyRaw` picks for native's `MoveEnergyPrompt` (§12.7), so the two agree. (Energy prompts don't touch the ambiguity guard, so no prompt is emitted.) |
 | `damage.placeCounters` | 13 | ✅ | `PutCountersEffect` (bypasses weakness, lands on any Pokémon incl. bench). Supports `untilHpRemaining` (bring target to N HP). |
 | `hand.reveal` | 11 | 🟦 | Reveals a hand — moves no cards, changes no tracked zone. Snapshot‑neutral no‑op. |
-| `iterate` | 9 | ⛔ | A bounded loop (`over`) whose body almost always contains a per‑iteration `quantity:one` pick. Throws → skip. |
+| `iterate` | 9 | ✅ | All are "put N damage counters on your opponent's ⟨spot⟩ in any way you like" — reproduced with the native `PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE` prefab (one slot‑aware `PutDamagePrompt`, §12.7), not a per‑iteration loop (which would trip the ambiguity guard N×). Other `iterate` shapes throw → skip. |
 | `pokemon.knockOut` | 7 | ✅ | Lethal `PutDamageEffect(999)` through the normal pipeline so the engine awards the prize, discards, and promotes (mirrors native `KnockOutOpponentEffect`). |
 | `pokemon.return` | 4 | ⛔ | Return a Pokémon (and attached) to deck/hand — disturbs deck order / is a choice. Throws → skip. |
 | `damage.move` | 3 | ⛔ | Move existing damage counters between Pokémon — chosen source/destination. Throws → skip. |
@@ -298,7 +298,9 @@ field of energy/`cards.move` ops, and `matching` on modifiers. It **throws on un
 |---|:--:|---|
 | `coinFlip { then }` | ✅ | Heads under `ALL_HEADS` → run `then`. The harness's determinism seam (`BotArbiter.flipCoin`, consumed by `CoinFlipEffect`) makes native and interpreter flip identically. |
 | `if { when, then, else }` | ✅ | `evalPredicate(when)` selects the branch. |
-| `choice` / `iterate` / `costGate` | ⛔ | Player branch / loop‑with‑pick / pay‑to‑activate — throw → skip (§3). |
+| `choice { then }` | ✅ | "You may ⟨then⟩" → `ConfirmPrompt` (always confirmed) then run `then` (§3, §12.5). |
+| `iterate { over, body }` | ✅ | The distribute‑counters idiom via the native prefab (§3, §12.7). |
+| `costGate` | ⛔ | Pay‑to‑activate — throw → skip. |
 
 ---
 
@@ -343,24 +345,25 @@ The lock differential ([rotomancer-locks.spec.ts](../rotomancer-locks.spec.ts)) 
 | blocked‑action (retreat) | `BLOCKED_BY_EFFECT` on a retreat attempt | `retreatShutoff` (defending) |
 | own‑turn | `BLOCKED_BY_EFFECT` on re‑using the attack after passing | `attackShutoff` (recharge) |
 
-### 12.5 Choice alignment — Stage A (built) / Stage B (affect‑target half built)
+### 12.5 Choice alignment — Stage A + Stage B (both built)
 Stage A is the divergence guard (§12.2): detect and skip choices. **Stage B** has the interpreter
-*emit the same prompt native does* so the harness resolves both identically instead of skipping.
+*emit the same prompt native does* so the harness resolves both identically instead of skipping. The
+enabling infra is a **continuation‑passing op runner** (`runOps`): a prompt‑emitting op resumes the
+remaining body in its callback, so a choice mid‑body or inside an `if`/`coinFlip` branch is faithful —
+with **no behavior change for any synchronous (no‑prompt) card**. Built across the player‑choice classes:
 
-**Built — the affect‑target half.** A `quantity:'one'`/`chooser` selector on an affect‑target op
-(`damage.deal`, `damage.placeCounters`, `condition.apply`, `heal`) now emits a real `ChoosePokemonPrompt`
-whose geometry is derived from the selector (`side`→playerType, `spot`→slots, `where`→`blocked`); the op
-is applied to the chosen Pokémon in the prompt callback (chosen‑target damage via `PutDamageEffect`,
-weakness‑free, like native). `op.targetCount` ("…2 of your opponent's Pokémon") chooses N distinct
-targets. The enabling infra is a **continuation‑passing op runner** (`runOps`): a prompt‑emitting op
-resumes the remaining body in its callback, so a choice mid‑body or inside an `if`/`coinFlip` branch is
-faithful — with **no behavior change for any synchronous (no‑prompt) card**. This converted the
-`quantity:'one'` affect‑target class from skip to compared (`compared` +~32/35 per variant; FINDINGS §13),
-and surfaced the multi‑target `targetCount` integration fix and 4 benchless native bugs.
+- **Affect‑targets** (`quantity:'one'`/`chooser`/`targetCount` on `damage.deal`/`placeCounters`/
+  `condition.apply`/`heal`) → a `ChoosePokemonPrompt` whose geometry is derived from the selector
+  (`side`→playerType, `spot`→slots, `where`→`blocked`); applied in the callback (chosen‑target damage via
+  `PutDamageEffect`, weakness‑free, like native). Surfaced 4 benchless native bugs (FINDINGS §13).
+- **`choice`** → `ConfirmPrompt` then run `then`. **`cards.move chooser:'player'`** → a Bench
+  `ChoosePokemonPrompt` + `switchPokemon` for bench↔active switches, else a `ChooseCardsPrompt`.
+  **`iterate`** → the native distribute‑counters prefab. **`energy.move`** → first‑eligible deterministic
+  move. (FINDINGS §14; surfaced the Dangle Tail native bug.)
 
-**Still deferred (counted ⛔ skips) — follow‑on Stage B increments:** the `choice` op (37,
-`SelectPrompt`/`ConfirmPrompt`), `cards.move` `chooser:'player'` (needs a real `ChooseCardsPrompt`
-instead of the current silent first‑N), `energy.move` (23), `iterate` (9).
+`compared` rose **bare 449→501, primed 450→508** across the whole of Stage B. What stays a counted ⛔
+skip: `chooser:'opponent'`/`'random'`, `excludeSelf`/`extremum`, deck searches, place‑a‑Pokémon / prize /
+attached `cards.move` endpoints, `costGate`/`pokemon.return`/`damage.move`, and the predicate gaps.
 
 ### 12.6 Printing resolution & name‑validation
 `bridge.resolvePrinting` maps a printing‑id prefix → Twinleaf set code and **name‑validates** every
@@ -368,20 +371,36 @@ hit, so a misaligned set/number degrades to a safe `mismatch` skip rather than a
 prefixes: sv5–sv10, sv*pt5, svp, zsv/rsv (number‑drift‑tolerant), me1→MEG, me2→PFL. Unmapped: me2pt5,
 me3 (no implemented Twinleaf printings yet).
 
+### 12.7 Harness prompt‑resolution expansions
+Stage B needed the shared test harness's auto‑resolver (`TestStoreHandler`) to *honor each prompt's
+constraints* — it previously stubbed three, which silently broke or skipped the corresponding attacks.
+Each fix is strictly more correct and was verified across the whole harness blast surface (**sets 71 +
+conformance 190** specs, green):
+
+| resolver | was | now |
+|---|---|---|
+| `resolvePutDamageRaw` | first `maxAllowedDamage` target (the Active) → rejected by a `[BENCH]` prompt → threw | honors `prompt.slots` (first in‑slot target) — unblocks `iterate` distribute‑counters |
+| `resolveChooseCardsRaw` | ignored the prompt `filter` → picked first‑N of *all* cards (wrong card, inflated eligible/ambiguity) | filter‑aware (eligible = filter‑matching, non‑blocked) — unblocks predicate `cards.move`; surfaced the Dangle Tail native bug |
+| `resolveMoveEnergyRaw` | **no‑op stub** | deterministic first‑eligible move (slots/blockedFrom/blockedTo/filter) — makes native `MoveEnergyPrompt` (87 cards) actually move, enabling `energy.move` |
+
+These are mechanism‑level seams (like the §12.1 coin seam): they make the *native* engine behave the way
+the real game does under auto‑resolution, so the interpreter, emitting the same prompt, can be compared
+against it. The snapshot remains count‑based, so `cards.move` over hidden zones verifies *count moved*,
+not card identity — an honest partial coverage, consistent with every other zone.
+
 ---
 
 ## 13. Roadmap (prioritized)
 
 | priority | item | unlock |
 |---|---|---|
-| ~~1~~ ✅ | **Stage B affect‑target half** (§12.5) | **Done** — `quantity:one`/`chooser`/`targetCount` affect‑targets flipped from skip to compared (+~32/35/variant). |
-| **1** | **Stage B remainder**: `choice` op, `cards.move` `chooser:'player'` → `ChooseCardsPrompt`, `energy.move`, `iterate` | Completes the player‑choice class on the now‑built continuation/prompt foundation. |
-| 2 | `damageVulnerability` + `damageBuff` + `attackBaseDamageOverride` via an **own‑turn damage probe** | Reuses the turn‑advance harness from the recharge probe; measures the lock user's own next‑turn damage. |
-| 3 | `itemPlayRestriction` / `evolvePlayRestriction` via a **play‑a‑card block probe** | 9 ops; same blocked‑action shape as retreat. |
-| 4 | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |
-| 5 | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
-| 6 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5) and more comparable. |
-| 7 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
+| ~~1~~ ✅ | **Stage B — full** (§12.5, §12.7): affect‑targets, `choice`, `cards.move chooser:'player'` (incl. switches), `iterate`, `energy.move` + the three harness‑resolution expansions | **Done** — the player‑choice class flipped from skip to compared (`compared` bare 449→501, primed 450→508). |
+| **1** | `damageVulnerability` + `damageBuff` + `attackBaseDamageOverride` via an **own‑turn damage probe** | Reuses the turn‑advance harness from the recharge probe; measures the lock user's own next‑turn damage. |
+| 2 | `itemPlayRestriction` / `evolvePlayRestriction` via a **play‑a‑card block probe** | 9 ops; same blocked‑action shape as retreat. |
+| 3 | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |
+| 4 | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
+| 5 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5) and more comparable. |
+| 6 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built.
