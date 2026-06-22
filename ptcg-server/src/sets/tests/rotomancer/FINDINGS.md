@@ -697,8 +697,42 @@ energy-rich 726→734, zones-loaded 742→750) at **0 mismatches**, **no allow-l
 gone from the scorecard. Rotomancer **67 specs, 0 failures**; structural 921/0, official 810/0.
 
 **Plateau reached.** With `untilHandSize` done, every remaining ATTACK-side skip bucket lacks a deterministic
-oracle, so additional gains require an oracle-bearing harness extension (more affect-target choice-alignment)
-or new IR origins (ABILITY/RULE_BOX), not more vocabulary.
+oracle, so additional gains require an oracle-bearing harness extension (a new observation surface, or more
+affect-target choice-alignment) or new IR origins (ABILITY/RULE_BOX), not more vocabulary.
+
+### 24. `stadium-loaded` board variant (7th) + `cards.move` stadium→discard
+
+The plateau's first oracle-bearing extension: a Stadium observation surface. Two things shared one mechanism —
+a Stadium in play — and both were oracle-backed rather than deferrals:
+- **`stadiumInPlay`** (7 corpus) was "compared" but **vacuously**: no board variant had a Stadium, so it
+  evaluated *false* every time and its true branch was never tested — exactly the kind of vacuous pass the
+  north star flags as poisoning the oracle.
+- **`cards.move stadium→discard`** ("discard the Stadium in play", 7 corpus) threw `unsupported zone
+  "stadium"` — the deterministic slice of the `unsupported zone` bucket (the rest are place-a-Pokémon).
+
+**The change.** (1) `executeStadiumMove` in [ir-cards.ts](ir-cards.ts): the Stadium is a global singleton, so
+resolve the source by the non-empty `player.stadium` (mirroring `StateUtils.getStadiumCard`), move it to the
+owner-aware `to` zone; a no-op when none is in play (as native guards). (2) A 7th board variant,
+`stadium-loaded`, mirroring `tools-loaded` (§20): seed an **inert** Stadium (Town Store — its only effect is a
+`UseStadiumEffect`-gated ability the differential never triggers; seeding directly bypasses its on-play
+effect) into the attacker's `player.stadium`, and add a per-side `stadium` count to the snapshot so a discard
+(1→0) is observable. Two non-vacuity assertions prove both branches fire.
+
+**Result.** Suite **70/0**; the new variant compares **757 at 0 mismatches**. The de-vacuification is real:
+the **5** mapped `stadiumInPlay` cards that resolve (Fan Rotom *Assault Landing* across SCR/PRE/ASC + Fan
+Rotom2 ASC, Vivillon *Blow Through* M3) now exercise their TRUE branch. The realized count gain on the existing
+variants is small — most corpus stadium printings are Japan-only / number-drifted and name-validate to safe
+`mismatch` skips (Skarmory *Big Storm*, Eternatus *Shatter*, Wooloo/Dubwool *Knock Over*, Dhelmise, Probopass
+all lack a name-aligned Twinleaf card) — but the resolving cards are now exercised, and one **native bug**
+surfaced:
+
+| card | bug | adjudication |
+|---|---|---|
+| Mow Rotom DRI *Trimming Mower* (sv10-9) | "20 damage. Discard a Stadium." Native deals **0** (the base-20 is never applied), though it discards the Stadium correctly. Independently confirmed by the official-data cross-check (`sv10-9:damage:Trimming Mower`). | allow-listed (`KNOWN_NATIVE_BUGS_BY_PRINTING`) — interp deals 20, the faithful value |
+
+This was hidden in the differential only because the card previously threw on the stadium zone; unblocking it
+exposed the known damage bug. The stadium-discard *mechanism* matched native exactly (both moved the Stadium
+1→0 to the owner's discard) — only the damage diverged.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 

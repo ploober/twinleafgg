@@ -148,6 +148,9 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   if (op.from?.zone === 'prize') {
     return executePrizeMove(store, state, effect, op, cont);
   }
+  if (op.from?.zone === 'stadium') {
+    return executeStadiumMove(store, state, effect, op, cont);
+  }
 
   const from = resolveZone(effect, op.from);   // throws on bench/active → counted skip
   const to = resolveZone(effect, op.to);
@@ -240,6 +243,24 @@ function executePrizeMove(store: StoreLike, state: State, effect: AttackEffect, 
   }
   const player = op.from?.owner === 'opponent' ? effect.opponent : effect.player;
   return cont(TAKE_X_PRIZES(store, state, player, op.count.n ?? 0));
+}
+
+// "Discard the Stadium in play" (stadium → discard). The Stadium is a GLOBAL singleton (it lives in one
+// player's `player.stadium` CardList; `StateUtils.getStadiumCard` reads whichever is non-empty), so this
+// can't go through the owner-keyed `resolveZone` from-path — resolve the source by finding the non-empty
+// stadium list. The corpus shape is always `→ discard` (count exactly:1); the destination is owner-aware
+// via `resolveZone(op.to)` and, since the differential seeds the stadium in the attacker's zone, `to
+// owner:'self'` lands it in the stadium owner's discard, matching native's "stadium → its owner's discard".
+// No Stadium in play → snapshot-neutral no-op, exactly as native guards. Non-discard endpoints (hand/
+// lostzone) are supported defensively; anything else is a counted skip.
+function executeStadiumMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  if (op.to?.zone !== 'discard' && op.to?.zone !== 'hand' && op.to?.zone !== 'lostzone') {
+    throw new Error(`[ir-cards] cards.move stadium → ${op.to?.zone} not supported`);
+  }
+  const source = [effect.player.stadium, effect.opponent.stadium].find(s => s.cards.length > 0);
+  if (source === undefined) { return cont(state); }   // no Stadium in play → no-op
+  source.moveTo(resolveZone(effect, op.to));
+  return cont(state);
 }
 
 // cards.move from a Pokémon's attached cards (Energy / Tool) to hand/discard. The `from` carries a

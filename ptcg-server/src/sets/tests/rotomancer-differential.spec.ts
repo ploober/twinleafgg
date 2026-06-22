@@ -31,6 +31,7 @@ interface SideSnapshot {
   deck: number;
   discard: number;
   prizes: number;
+  stadium: number;     // cards in this side's Stadium zone — makes a Stadium discard observable (stadium-loaded variant)
 }
 interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
@@ -56,6 +57,7 @@ function snapshot(state: State): Snapshot {
       deck: p.deck.cards.length,
       discard: p.discard.cards.length,
       prizes: p.getPrizeLeft(),
+      stadium: p.stadium.cards.length,
     };
   };
   return { p0: side(0), p1: side(1) };
@@ -68,6 +70,7 @@ interface Board {
   hand?: string[]; discard?: string[]; // seeded into BOTH players' zones
   defenderConditions?: SpecialCondition[]; // special conditions on p1.active ONLY (attacker must attack)
   tools?: string[];                    // Pokémon Tools attached to BOTH actives (not the bench)
+  stadium?: string;                    // a single Stadium seeded into the attacker's (p0) Stadium zone — global singleton
 }
 
 interface AttackRun { snap: Snapshot; ambiguous: number; }
@@ -86,6 +89,14 @@ function applyBoardMutations(game: SetupGameResult, board: Board): void {
     for (const i of [0, 1]) {
       game.state.players[i].active.tools.push(getCardByName(toolName));
     }
+  }
+  // A Stadium is a GLOBAL singleton (one in play, shared by both sides), not a mirror-symmetric per-Pokémon
+  // load. Seed it into the ATTACKER's (p0) Stadium zone — so the attacker owns it and a "discard the Stadium"
+  // (to owner:'self') lands in p0.discard, matching native's "stadium → its owner's discard". Both the native
+  // and interp runs are seeded identically, so the comparison stays valid. getStadiumCard / stadiumInPlay
+  // then read it; the seeded card must be inert (no continuous reduceEffect touching the attack snapshot).
+  if (board.stadium !== undefined) {
+    game.state.players[0].stadium.cards.push(getCardByName(board.stadium));
   }
 }
 
@@ -617,6 +628,64 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(run(false)).toBe(20);  // no Tool → base only
   });
 
+  // Stadium non-vacuity (cards.move stadium→discard): "discard the Stadium in play" removes the in-play
+  // Stadium (stadium 1→0) and adds it to the owner's discard (discard +1) via the global-singleton source
+  // resolution; with no Stadium it is a snapshot-neutral no-op. Proves the stadium-loaded variant actually
+  // exercises the discard rather than passing vacuously on an empty zone.
+  it('cards.move stadium→discard non-vacuity: discards the in-play Stadium', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const run = (seedStadium: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      if (seedStadium) { game.state.players[0].stadium.cards.push(getCardByName('Town Store OBF')); }
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, [{
+        label: 'Shatter', cost: ['Colorless'],
+        body: [{ kind: 'cards.move', count: { kind: 'exactly', n: 1 },
+          from: { owner: 'self', zone: 'stadium' }, to: { owner: 'self', zone: 'discard' } }],
+      }]);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      const discardBefore = game.state.players[0].discard.cards.length;
+      useAttack(game.store, game.state, 0, 'Shatter');
+      return { stadium: game.state.players[0].stadium.cards.length, discardDelta: game.state.players[0].discard.cards.length - discardBefore };
+    };
+    expect(run(true)).toEqual({ stadium: 0, discardDelta: 1 });  // Stadium in play → discarded (1→0, discard +1)
+    expect(run(false)).toEqual({ stadium: 0, discardDelta: 0 }); // none in play → no-op
+  });
+
+  // Stadium non-vacuity (stadiumInPlay): "+bonus if a Stadium is in play" flips with the Stadium's presence
+  // (reading StateUtils.getStadiumCard) — proves both branches. On the stadium-loaded variant the TRUE branch
+  // fires instead of the vacuous false branch every stadium-less variant takes.
+  it('stadiumInPlay non-vacuity: +bonus only when a Stadium is in play', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const run = (seedStadium: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      if (seedStadium) { game.state.players[0].stadium.cards.push(getCardByName('Town Store OBF')); }
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, [{
+        label: 'Mountain Drop', cost: ['Colorless'],
+        body: [{ kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+          amount: { kind: 'plusIf', base: 20, bonus: 80, when: { kind: 'stadiumInPlay' } } }],
+      }]);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      useAttack(game.store, game.state, 0, 'Mountain Drop');
+      return game.state.players[1].active.damage;
+    };
+    expect(run(true)).toBe(100);  // Stadium in play → base + 80
+    expect(run(false)).toBe(20);  // none → base only
+  });
+
   // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
   // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
   it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {
@@ -714,6 +783,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'sv6-6': 'Sunkern TWM — Bullet Seed: the coin-flip logic is guarded on WAS_ATTACK_USED(effect, 1) but Bullet Seed is attack index 0, so it never runs (always base 10). IR/interp flip per the text. → Twinleaf bug',
     'sv6-32': 'Monferno TWM — Heat Blow: the "Discard an Energy from this Pokémon" rider is wired only to attack index 0 (Chop); Heat Blow (index 1) never discards. IR/interp discard. → Twinleaf bug',
     'sv6-123': 'Heatran TWM — Steel Burst: text/IR are "Discard all [M] Energy from this Pokémon. 50 damage for each card discarded", but native discards ALL attached energy (CheckProvidedEnergyEffect.energyMap, unfiltered — no [M] filter), inflating the discard count and the 50×count damage. (Compounded by the out-of-scope Incandescent Body ability, which burns the attacker.) IR/interp faithfully discard only [M] Energy and model only the attack body. → Twinleaf bug',
+    'sv10-9': 'Mow Rotom DRI — Trimming Mower: "20 damage. Discard a Stadium in play." Native deals 0 (the base-20 damage is never applied), though it DOES discard the Stadium correctly. Surfaced in the differential by the stadium-loaded variant (the card previously threw on the stadium zone); the 0-vs-20 damage bug is independently confirmed by the official-data cross-check (rotomancer-official.spec.ts `sv10-9:damage:Trimming Mower`). IR/interp deal 20. → Twinleaf bug',
     // ── Mega-era (me1→MEG / me2pt5→ASC) native bugs surfaced by the loader fix. Keyed by printing
     //    because the labels (Crunch / Energy Crush / Fast Flight / …) also belong to unrelated cards.
     'me1-83': 'Naclstack MEG — Rock Hurl: native deals 0 (the base-50 damage is never applied — the attack is effectively unimplemented). IR/interp deal 50. → Twinleaf bug',
@@ -865,6 +935,21 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       defenderDamage: Math.min(30, hp - 20),
       benchCount: 2,
       tools: ['Float Stone PLF'],
+    }));
+  });
+
+  // stadium-loaded: a Stadium (Town Store — inert for an attack snapshot: its only effect is a
+  // UseStadiumEffect-gated once-per-turn ability the differential never triggers) is in play in the attacker's
+  // Stadium zone, so `stadiumInPlay` riders fire their TRUE branch (vs. the vacuous false branch every
+  // stadium-less variant takes) and `cards.move stadium→discard` ("discard the Stadium in play") is exercised
+  // and observed via the snapshot's `stadium` field. The Stadium is a global singleton (one in play), so it is
+  // seeded once on the attacker's side rather than mirror-symmetrically; both runs are seeded identically.
+  it('matches native across the attack corpus — loaded: a Stadium in play', () => {
+    runCorpusDifferential('stadium-loaded', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+      stadium: 'Town Store OBF',
     }));
   });
 });
