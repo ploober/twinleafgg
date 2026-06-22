@@ -48,6 +48,9 @@ function resolveCard(printing: string): Card {
 export interface IidContext {
   iidToCard: Map<string, Card>;
   cardToIid: Map<Card, string>;
+  /** The game-constant first player, echoed from `initialState.firstPlayer`. twinleaf's engine `State`
+   *  has no first-player field (setup is out of scope), so it is carried here and projected verbatim. */
+  firstPlayer: NeutralPlayerId;
 }
 
 export interface ImportedGame {
@@ -58,8 +61,9 @@ export interface ImportedGame {
 }
 
 // ── A/B <-> twinleaf player index convention ──────────────────────────────
-// Neutral 'A' is twinleaf player index 0, 'B' is index 1. First pass: 'A' is always the first
-// player (setup is out of scope; initialState is post-setup), so `firstPlayer` projects to 'A'.
+// Neutral 'A' is twinleaf player index 0, 'B' is index 1. `firstPlayer` is a game constant the engine
+// State doesn't track (setup is out of scope; initialState is post-setup), so it is carried through the
+// import context (`IidContext.firstPlayer`) and projected verbatim from `initialState.firstPlayer`.
 
 export function actorIndex(id: NeutralPlayerId): number {
   return id === 'A' ? 0 : 1;
@@ -251,7 +255,7 @@ function ensurePrintingsLoaded(printings: string[]): void {
 export function importState(initial: NeutralState): ImportedGame {
   ensurePrintingsLoaded(collectPrintings(initial));
 
-  const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map() };
+  const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map(), firstPlayer: initial.firstPlayer };
   const importer = new Importer(ctx);
 
   const handler = new ConformanceStoreHandler();
@@ -383,7 +387,7 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     schemaVersion: SCHEMA_VERSION,
     turn: state.turn,
     activePlayer: indexToPlayerId(state.activePlayer),
-    firstPlayer: 'A', // first-pass convention (setup out of scope)
+    firstPlayer: ctx.firstPlayer, // game constant, echoed from initialState (engine State has no such field)
     phase: PHASE_PROJECT[state.phase] ?? 'main',
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),

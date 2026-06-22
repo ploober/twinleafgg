@@ -76,6 +76,18 @@ describe('Tier 1 — projection matches raw State', () => {
     ));
   });
 
+  it('firstPlayer is echoed from initialState, not hardcoded: B-goes-first is preserved', () => {
+    // Regression guard: the adapter used to project firstPlayer: 'A' unconditionally, so a state where
+    // B went first was silently mis-reported. With B first and A active on turn 3, the projection must
+    // preserve firstPlayer: 'B' (independent of activePlayer). check() also runs the fidelity helper.
+    const game = check(board(
+      player({ active: pip('A-act', RALTS) }),
+      player({ active: pip('B-act', RALTS) }),
+      { firstPlayer: 'B' },
+    ));
+    expect(projectGame(game).firstPlayer).toBe('B');
+  });
+
   it('after attaching energy: energy flag + attached iid + hand shrink', () => {
     check(
       board(player({ active: pip('A-act', RALTS), hand: [{ iid: 'e', printing: PSY }] }), player({ active: pip('B-act', RALTS) })),

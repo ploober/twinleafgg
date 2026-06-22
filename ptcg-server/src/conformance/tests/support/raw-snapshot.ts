@@ -102,6 +102,8 @@ export function collectAllCards(state: State): Card[] {
  * every card is keyed by its (unique-per-state) `card.id`. Lets `projectState` run on a native state
  * for the replay-fidelity check; the iids are canonicalized away in the comparison, so they only need
  * to be internally consistent (and `projectState.cardRef` requires every projected card be present).
+ * `firstPlayer` mirrors the equivalence harness's A-first convention (`materializeNeutral`), so the
+ * native projection matches the adapter side (whose ctx carries `initialState.firstPlayer = 'A'`).
  */
 export function synthCtx(state: State): IidContext {
   const iidToCard = new Map<string, Card>();
@@ -111,7 +113,7 @@ export function synthCtx(state: State): IidContext {
     iidToCard.set(iid, card);
     cardToIid.set(card, iid);
   }
-  return { iidToCard, cardToIid };
+  return { iidToCard, cardToIid, firstPlayer: 'A' };
 }
 
 // ── snapshot ──

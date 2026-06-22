@@ -46,6 +46,7 @@ function assertSlot(pip: PokemonInPlay, slot: PokemonCardList, ctx: IidContext):
 export function assertProjectionMatchesState(proj: NeutralState, state: State, ctx: IidContext): void {
   expect(proj.turn).toBe(state.turn);
   expect(proj.activePlayer).toBe(state.activePlayer === 0 ? 'A' : 'B');
+  expect(proj.firstPlayer).toBe(ctx.firstPlayer); // game constant, echoed from initialState via ctx
   expect(proj.outcome === 'ongoing').toBe(state.winner === GameWinner.NONE);
   expect(proj.phase === 'gameOver').toBe(state.phase === GamePhase.FINISHED);
 
