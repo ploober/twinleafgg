@@ -437,6 +437,37 @@ genuinely out of scope): `chooser:'opponent'`/`'random'`; `excludeSelf`/`extremu
 cards; deck searches; `costGate` / `pokemon.return` / `damage.move`; and the predicate gaps
 (`turn`/`history`/`movedToActive`). Each is a precise `unsupported` count in the scorecards.
 
+### 15. Own-turn damage probe — next-turn damage-buff modifiers verified
+
+Three `continuous.modifier` families were *applied but never verified* — accepted as snapshot-neutral
+no-ops, which the north star only allows when the effect is genuinely unobservable. They are observable
+on the lock user's **own next turn**, so a fourth lock-probe geometry (sibling of the recharge own-turn
+probe) now checks them: use the setup attack, `endTurn` (opponent passes), re-attack on the user's own
+next turn, and compare the landed damage native-vs-interp.
+
+The interpreter reproduces the buffs with the **exact native prefabs** — `NEXT_TURN_ATTACK_BONUS`
+(damageBuff) and `NEXT_TURN_ATTACK_BASE_DAMAGE` (attackBaseDamageOverride), [prefabs.ts](../../../game/store/prefabs/prefabs.ts)
+— precomputed per card in `buildInterpretedCard` and run in `InterpretedCard.reduceEffect` on every
+effect (install on use → apply on the own next turn → clear at EndTurn), **after** the attack body so a
+base-damage override overwrites the body's base. Mechanism-identical to native, so agreement is faithful;
+inert (empty closure list) for every card without such a modifier, so the other three probes and the
+single-turn differential are unchanged.
+
+- **`damageBuff`** ✅ — compared **2** mapped cards (Metagross / Meteor Mash, sv5-115 & sv5-178), 0
+  mismatches. The other corpus printings are name-unmapped (Lucario ex sv8pt5-51, Meloetta ex zsv10pt5,
+  Watchog rsv10pt5 all fail name-validation → safe skip) or unmapped (Pecharunt me2pt5).
+- **`attackBaseDamageOverride`** ✅ (reproduced) — **no mapped oracle card** (Watchog rsv10pt5 name-
+  mismatches), so verified by a **direct non-vacuity assertion** (setup overrides a different attack's
+  base 50→100 — an overwrite, not an add), the same honest treatment as the `energyAttachedCount`-anywhere
+  fix in §12.
+- **`damageVulnerability`** ⛔ deferred — the only mapped case (Vibrava / Screech, sv8) is a **0-damage
+  setup**, so the "+N to the Defending Pokémon" can't be observed by a re-attack; the one damaging case
+  (Stunfisk / Pouncing Trap) is unmapped me2pt5. Stays a counted skip until a damaging mapped case exists.
+
+Two non-vacuity assertions prove the buffs actually fire on the own next turn (damageBuff: 20 base → 80
+next turn; override: 50 → 100). Rotomancer suite **54 specs, 0 failures**; lock differential now runs
+**four** probe geometries (incoming-damage, retreat-block, recharge, next-turn damage buff).
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

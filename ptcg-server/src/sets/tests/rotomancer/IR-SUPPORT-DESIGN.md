@@ -142,10 +142,10 @@ no‑op**. The ones backed by an observable next‑turn consequence are reproduc
 | `preventDamage` | 42 | ✅ | "Prevent all damage from ⟨matching⟩ Pokémon" → a large `damageReductionNextTurn` sentinel, **gated on evaluating `matching` against self** (the mirror probe's attacker is the same printing). |
 | `preventEffects` | 21 | 🟦 | "Prevent effects of attacks" — the single‑turn snapshot can't see it and the damage probe doesn't exercise effect‑prevention. No‑op for now; a future effect‑application probe would be needed. |
 | `damageDebuff` | 11 | ✅ | "The Defending Pokémon's attacks do N less next turn." In the mirror the defender's only next‑turn attack hits self, so it's reproduced as `damageReductionNextTurn` on self (the lock user's active). |
-| `damageBuff` | 7 | 🟦 | Own‑side next‑attack buff (`ownNextAttack`). Not a *lock* on the opponent; would need an own‑turn *damage* probe (re‑attack and measure the increase). Deferred. |
-| `damageVulnerability` | 3 | 🟦 | "The Defending Pokémon takes N more next turn" but scoped `yourNextTurn` — the consequence lands on the lock user's **own** next turn. Needs the two‑turn‑skip own‑turn damage probe (§13). |
+| `damageBuff` | 7 | ✅ | "During your next turn, this Pokémon's ⟨attack⟩ does +N." Reproduced with the exact native `NEXT_TURN_ATTACK_BONUS` prefab in `InterpretedCard.reduceEffect`; the **own‑turn damage probe** (§12.4) re‑attacks next turn and compares the increase. Compared on 2 mapped cards (Metagross / Meteor Mash). |
+| `damageVulnerability` | 3 | ⛔ | "The Defending Pokémon takes N more during your next turn." Deferred: the only mapped case (Vibrava / Screech) is a 0‑damage setup, so the +N can't be observed by a re‑attack; the damaging case (Stunfisk) is unmapped me2pt5. Counted skip. |
 | `weaknessSuppression` | 3 | 🟦 | "No Weakness while active." Mirror‑mode already filters self‑weakness cards from the probes, so there's nothing to observe in the current harness. |
-| `attackBaseDamageOverride` | 2 | 🟦 | Set a named attack's base damage next turn. Own‑turn re‑attack probe. |
+| `attackBaseDamageOverride` | 2 | ✅ | "…⟨attack⟩'s base damage is N next turn" (setup attack ≠ boosted, e.g. Watchog Focus Energy→Hyper Fang). Reproduced with the native `NEXT_TURN_ATTACK_BASE_DAMAGE` prefab (overwrites after the body); no mapped oracle card (rsv10pt5 name‑mismatch), so verified by a direct non‑vacuity assertion (§12.4). |
 | (spec‑only: `coinGate`, `hpModifier`/`hpFloor`, `retreatCostModifier`, `attackCostModifier`, `conditionImmunity`, `typeModifier`, `benchCapModifier`, `energyAttachRestriction`, `conditionPreservation`, `weaknessModifier`) | 0 | ⬜ | Not emitted by the ATTACK corpus. |
 
 ---
@@ -334,16 +334,20 @@ vs `op.card.predicate`, dropping the type filter on all 249 ops), and `energyAtt
 `spot:anywhere` selector counted only the active. Three **non‑vacuity assertions** prove the loaded
 inputs actually change the outcome (a green corpus is not enough).
 
-### 12.4 Lock differential — three probe geometries
+### 12.4 Lock differential — four probe geometries
 Next‑turn `continuous.modifier`/`rule.override` riders are invisible to the single‑turn snapshot.
-The lock differential ([rotomancer-locks.spec.ts](../rotomancer-locks.spec.ts)) makes them observable
-(**58 comparisons** today):
+The lock differential ([rotomancer-locks.spec.ts](../rotomancer-locks.spec.ts)) makes them observable:
 
 | probe | observes | families |
 |---|---|---|
 | incoming‑damage | landed damage of a synthetic next‑turn hit | `damageReduction`, `preventDamage`, `damageDebuff` |
 | blocked‑action (retreat) | `BLOCKED_BY_EFFECT` on a retreat attempt | `retreatShutoff` (defending) |
-| own‑turn | `BLOCKED_BY_EFFECT` on re‑using the attack after passing | `attackShutoff` (recharge) |
+| own‑turn block | `BLOCKED_BY_EFFECT` on re‑using the attack after passing | `attackShutoff` (recharge) |
+| own‑turn damage | landed damage when re‑attacking on the user's own next turn | `damageBuff`, `attackBaseDamageOverride` |
+
+The own‑turn damage probe reuses the recharge probe's turn‑advance (`useAttack` → `endTurn` → re‑attack);
+the interpreter reproduces the buffs with the exact native prefabs (`NEXT_TURN_ATTACK_BONUS` /
+`NEXT_TURN_ATTACK_BASE_DAMAGE`), so agreement is mechanism‑faithful (FINDINGS §15).
 
 ### 12.5 Choice alignment — Stage A + Stage B (both built)
 Stage A is the divergence guard (§12.2): detect and skip choices. **Stage B** has the interpreter
@@ -395,12 +399,12 @@ not card identity — an honest partial coverage, consistent with every other zo
 | priority | item | unlock |
 |---|---|---|
 | ~~1~~ ✅ | **Stage B — full** (§12.5, §12.7): affect‑targets, `choice`, `cards.move chooser:'player'` (incl. switches), `iterate`, `energy.move` + the three harness‑resolution expansions | **Done** — the player‑choice class flipped from skip to compared (`compared` bare 449→501, primed 450→508). |
-| **1** | `damageVulnerability` + `damageBuff` + `attackBaseDamageOverride` via an **own‑turn damage probe** | Reuses the turn‑advance harness from the recharge probe; measures the lock user's own next‑turn damage. |
-| 2 | `itemPlayRestriction` / `evolvePlayRestriction` via a **play‑a‑card block probe** | 9 ops; same blocked‑action shape as retreat. |
-| 3 | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |
-| 4 | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
-| 5 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5) and more comparable. |
-| 6 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
+| ~~2~~ ✅ | **Own‑turn damage probe** (§12.4): `damageBuff` + `attackBaseDamageOverride` reproduced via native prefabs and verified | **Done** — `damageBuff` compared on 2 mapped cards, `attackBaseDamageOverride` verified by direct assertion; `damageVulnerability` deferred (no damaging mapped case). |
+| **1** | `itemPlayRestriction` / `evolvePlayRestriction` via a **play‑a‑card block probe** | 9 ops; same blocked‑action shape as retreat. |
+| 2 | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |
+| 3 | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
+| 4 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride` mapped cards, and more comparable. |
+| 5 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built.

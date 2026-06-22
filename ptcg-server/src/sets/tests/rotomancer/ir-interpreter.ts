@@ -8,7 +8,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER, NEXT_TURN_ATTACK_BONUS, NEXT_TURN_ATTACK_BASE_DAMAGE } from '../../../game/store/prefabs/prefabs';
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
 import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
@@ -533,21 +533,58 @@ export class InterpretedCard extends PokemonCard {
   public name = '';
   public fullName = '';
   public program: IrFragment[] = [];
+  // Next-turn damage buffs (continuous.modifier damageBuff / attackBaseDamageOverride) reproduced with
+  // the exact native prefabs; each closure is called on every effect (install / apply / cleanup). Empty
+  // for cards without such a modifier, so reduceEffect is unchanged for them.
+  public nextTurnBuffs: Array<(effect: Effect) => void> = [];
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Enforce any next-turn retreat lock this card installed (mirrors native retreat-lock cards,
     // which call this same prefab in their reduceEffect). Throws BLOCKED_BY_EFFECT on a blocked
     // RetreatEffect; inert for every other effect.
     BLOCK_RETREAT_IF_MARKER(effect, MarkerConstants.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this);
+    // Run the next-turn-buff prefabs AFTER the attack body (so a base-damage override overwrites the
+    // body's base) and on non-attack effects (so the EndTurn marker lifecycle runs). Inert when empty.
+    const applyBuffs = (s: State): State => { for (const buff of this.nextTurnBuffs) { buff(effect); } return s; };
     for (let i = 0; i < this.program.length; i++) {
       if (WAS_ATTACK_USED(effect, i, this)) {
         // Continuation-passing so a player-choice op can emit a prompt and resume the rest of the body
-        // in its callback (Stage B); the terminal continuation is the identity (return the final state).
-        return runOps(store, state, effect as AttackEffect, this.program[i].body, 0, s => s);
+        // in its callback (Stage B); the terminal continuation applies the next-turn buffs.
+        return runOps(store, state, effect as AttackEffect, this.program[i].body, 0, applyBuffs);
       }
     }
-    return state;
+    return applyBuffs(state);
   }
+}
+
+// Precompute the next-turn damage-buff closures from the program. Each `continuous.modifier` of kind
+// damageBuff / attackBaseDamageOverride (self, ownNextAttack, const amount) becomes a call to the exact
+// native prefab — mechanism-identical to native, so a probe sees the same observable. The boosted attack
+// must be one of this card's attacks (its fragment was provided); else the buff is inert here.
+function buildNextTurnBuffs(card: InterpretedCard, fragments: IrFragment[]): Array<(effect: Effect) => void> {
+  const buffs: Array<(effect: Effect) => void> = [];
+  const findAttack = (name: string): Attack | undefined => card.attacks.find(a => a.name === name);
+  for (const fr of fragments) {
+    const setupAttack = findAttack(fr.label);
+    if (!setupAttack) { continue; }
+    for (const op of fr.body) {
+      const mod = op.modifier;
+      if (op.kind !== 'continuous.modifier' || !mod) { continue; }
+      if (mod.kind !== 'damageBuff' && mod.kind !== 'attackBaseDamageOverride') { continue; }
+      if (op.appliesTo?.role !== 'self' || op.scope !== 'ownNextAttack') { continue; }
+      const value = mod.amount?.kind === 'const' ? mod.amount.value : undefined;
+      const boostedAttack = typeof mod.attackName === 'string' ? findAttack(mod.attackName) : undefined;
+      if (value === undefined || !boostedAttack) { continue; } // non-const amount or boosted attack absent → inert
+      const bonusMarker = `IR_NTB::${mod.attackName}`;
+      const clearMarker = `IR_NTB_CLEAR::${mod.attackName}`;
+      if (mod.kind === 'damageBuff') {
+        buffs.push(effect => NEXT_TURN_ATTACK_BONUS(effect, { attack: boostedAttack, source: card, bonusDamage: value, bonusMarker, clearMarker }));
+      } else {
+        buffs.push(effect => NEXT_TURN_ATTACK_BASE_DAMAGE(effect, { setupAttack, boostedAttack, source: card, baseDamage: value, bonusMarker, clearMarker }));
+      }
+    }
+  }
+  return buffs;
 }
 
 const COPIED_FIELDS = [
@@ -571,5 +608,6 @@ export function buildInterpretedCard(native: Card, fragments: IrFragment[]): Int
     text: '',
   }));
   card.program = fragments;
+  card.nextTurnBuffs = buildNextTurnBuffs(card, fragments);
   return card;
 }

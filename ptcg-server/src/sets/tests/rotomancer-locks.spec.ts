@@ -307,3 +307,159 @@ describe('Rotomancer lock differential — attackShutoff recharge (own-turn prob
     expect(mismatches).toEqual([]);
   });
 });
+
+// `continuous.modifier { damageBuff | attackBaseDamageOverride }` on self with scope `ownNextAttack` —
+// "during your next turn, this Pokémon's <attack> does +N / has base N." Invisible to the single-turn
+// snapshot, so the interpreter previously no-op'd them. This is an OWN-turn DAMAGE probe (sibling of the
+// recharge probe): use the setup attack, pass the opponent's turn, then re-attack on the lock user's own
+// next turn and compare the landed damage. The interpreter reproduces the buff with the exact native
+// prefabs (NEXT_TURN_ATTACK_BONUS / NEXT_TURN_ATTACK_BASE_DAMAGE), so a divergence is a real IR-vs-native
+// amount/applicability discrepancy. (damageVulnerability is NOT probed: the only mapped case — Vibrava
+// Screech — is a 0-damage setup, so the +N can't be observed by a re-attack; the damaging case, Stunfisk,
+// is unmapped me2pt5.)
+function ownNextAttackBuff(body: any[]): { kind: string; boostedLabel: string } | null {
+  for (const op of body) {
+    if (op.kind !== 'continuous.modifier') { continue; }
+    const mod = op.modifier;
+    if (!mod || (mod.kind !== 'damageBuff' && mod.kind !== 'attackBaseDamageOverride')) { continue; }
+    if (op.appliesTo?.role === 'self' && op.scope === 'ownNextAttack'
+      && typeof mod.attackName === 'string' && mod.amount?.kind === 'const') {
+      return { kind: mod.kind, boostedLabel: mod.attackName };
+    }
+  }
+  return null;
+}
+
+describe('Rotomancer lock differential — next-turn damage buffs (own-turn damage probe)', () => {
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const allScenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Scenario[];
+  const scenarios = allScenarios.filter(s => ownNextAttackBuff(s.body) !== null);
+  const findScenario = (printingId: string, label: string) =>
+    allScenarios.find(x => x.printingId === printingId && x.attackLabel === label);
+
+  // Use the setup attack, pass the opponent's turn, then re-attack with the boosted attack on the lock
+  // user's own next turn; return the boosted attack's landed damage (base + buff) or 'KO'. P2 gets a
+  // Bidoof bench so an early KO can't end the game; enough energy for BOTH attacks is attached.
+  function ownDamageProbe(s: Scenario, buff: { boostedLabel: string }, fragments: boolean): number | 'KO' {
+    const res = resolvePrinting(s.printingId, s.name);
+    const boosted = findScenario(s.printingId, buff.boostedLabel);
+    const costStrs = s.cost.concat(boosted ? boosted.cost : []).filter(c => c.toUpperCase() !== 'FREE');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: costStrs.map(energyToCard) }, deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, bench: [{ card: 'Bidoof CRZ' }], deck: padDeck(10) },
+    });
+    if (fragments) {
+      const frags: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+      if (boosted && buff.boostedLabel !== s.attackLabel) {
+        frags.push({ label: boosted.attackLabel, cost: boosted.cost, body: boosted.body }); // boosted ≠ setup → need both
+      }
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, frags);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+    }
+    useAttack(game.store, game.state, 0, s.attackLabel); // setup attack → installs the buff, → P1's turn
+    endTurn(game.store, game.state);                     // P1 passes → P0's own next turn
+    const p1 = game.state.players[1];
+    if (p1.active.getPokemonCard() === undefined) { return 'KO'; }
+    const before = p1.active.damage;
+    useAttack(game.store, game.state, 0, buff.boostedLabel); // boosted attack, now buffed
+    if (p1.active.getPokemonCard() === undefined) { return 'KO'; }
+    return p1.active.damage - before;
+  }
+
+  const mismatches: string[] = [];
+  let compared = 0, skipped = 0;
+  const byKind: Record<string, number> = { damageBuff: 0, attackBaseDamageOverride: 0 };
+
+  for (const s of scenarios) {
+    const buff = ownNextAttackBuff(s.body)!;
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skipped++; continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard) || card.weakness?.some(w => w.type === card.cardType)) { skipped++; continue; }
+
+    let native: number | 'KO', interp: number | 'KO';
+    try {
+      native = ownDamageProbe(s, buff, false);
+    } catch { skipped++; continue; }
+    try {
+      interp = ownDamageProbe(s, buff, true);
+    } catch { skipped++; continue; } // interpreter doesn't support some op in the setup/boosted body
+    compared++;
+    byKind[buff.kind]++;
+    if (native !== interp) {
+      mismatches.push(`${s.printingId} ${s.attackLabel}→${buff.boostedLabel} (${s.name}): native dealt ${native}, interp dealt ${interp}`);
+    }
+  }
+
+  /* eslint-disable no-console */
+  it('reports the next-turn-buff scorecard', () => {
+    console.log(`\n  lock differential [next-turn damage buff]: scenarios ${scenarios.length}, compared ${compared} (damageBuff ${byKind.damageBuff}, attackBaseDamageOverride ${byKind.attackBaseDamageOverride}), skipped ${skipped}, mismatches ${mismatches.length}`);
+    mismatches.forEach(m => console.log(`   • ${m}`));
+    expect(compared).toBeGreaterThan(0);
+  });
+  /* eslint-enable no-console */
+
+  it('native and interpreted agree on the next-turn damage buff', () => {
+    expect(mismatches).toEqual([]);
+  });
+
+  // Non-vacuity: the buff must actually fire on the own next turn (turn-2 damage = base + bonus), not be
+  // a vacuous no-op. A hand-written self-buff: 20 base now, +60 to itself next turn.
+  it('a damageBuff actually adds to the boosted attack on the own next turn', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon'); // mirror-safe, high HP (survives both hits)
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, bench: [{ card: 'Bidoof CRZ' }], deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{ label: 'Pump', cost: ['Colorless'], body: [
+      { kind: 'damage.deal', amount: { kind: 'const', value: 20 }, target: { of: { side: 'opponent', spot: 'active' } } },
+      { kind: 'continuous.modifier', appliesTo: { role: 'self' }, scope: 'ownNextAttack',
+        modifier: { kind: 'damageBuff', attackName: 'Pump', amount: { kind: 'const', value: 60 } } },
+    ] }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Pump');         // turn 1: 20 damage + install buff
+    expect(game.state.players[1].active.damage).toBe(20);
+    endTurn(game.store, game.state);                       // P1 passes → P0's next turn
+    const before = game.state.players[1].active.damage;
+    useAttack(game.store, game.state, 0, 'Pump');          // turn 2: 20 base + 60 buff = 80
+    expect(game.state.players[1].active.damage - before).toBe(80);
+  });
+
+  // Non-vacuity for attackBaseDamageOverride (no mapped corpus card exercises it — Watchog rsv10pt5
+  // name-mismatches — so verify the reproduction directly): a setup attack overrides a *different*
+  // boosted attack's base next turn (50 → 100, an overwrite not an add).
+  it('an attackBaseDamageOverride overwrites the boosted attack base on the own next turn', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, bench: [{ card: 'Bidoof CRZ' }], deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [
+      { label: 'Setup', cost: ['Colorless'], body: [
+        { kind: 'continuous.modifier', appliesTo: { role: 'self' }, scope: 'ownNextAttack',
+          modifier: { kind: 'attackBaseDamageOverride', attackName: 'Blast', amount: { kind: 'const', value: 100 } } },
+      ] },
+      { label: 'Blast', cost: ['Colorless'], body: [
+        { kind: 'damage.deal', amount: { kind: 'const', value: 50 }, target: { of: { side: 'opponent', spot: 'active' } } },
+      ] },
+    ]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Setup');        // turn 1: install the override for Blast (0 damage)
+    expect(game.state.players[1].active.damage).toBe(0);
+    endTurn(game.store, game.state);                       // P1 passes → P0's next turn
+    const before = game.state.players[1].active.damage;
+    useAttack(game.store, game.state, 0, 'Blast');         // turn 2: base 50 overwritten to 100
+    expect(game.state.players[1].active.damage - before).toBe(100);
+  });
+});
