@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, AttachEnergyPrompt, EnergyCard, PlayerType, SlotType, StateUtils } from '../../game';
+import { StoreLike, State, GameMessage, AttachEnergyPrompt, EnergyCard, GameError, PlayerType, SlotType, StateUtils } from '../../game';
 
 import { Effect } from '../../game/store/effects/effect';
 import { AttachEnergyEffect } from '../../game/store/effects/play-card-effects';
@@ -58,14 +58,8 @@ export class Groudon extends PokemonCard {
           && c.energyType === EnergyType.BASIC
           && c.provides.includes(CardType.FIGHTING);
       });
-      // The attach is an EFFECT, not a cost: with no Basic [F] Energy in hand the attack still
-      // resolves and simply attaches nothing — it is NOT undeclarable. (Rulings Compendium:
-      // Terrakion EX "Pump-up Smash", TPCi Rules Team 2012-08-23, and the general "do as much of
-      // the attack as you can" rule; the text has no "in order to" gate.) This previously threw
-      // CANNOT_USE_POWER, making a legal attack illegal — the F-002 legalActions-superset bug the
-      // conformance fuzzer flagged.
       if (!hasEnergyInHand) {
-        return state;
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(
