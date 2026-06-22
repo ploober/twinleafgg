@@ -340,6 +340,55 @@ stay tick-free.
 Differential now runs **five** board variants (bare 449, primed 450, conditions 450, energy-rich 438,
 zones-loaded 441), all 0 mismatches.
 
+### 13. Stage B (affect-target half) — prompt-emitting choice alignment → 4 native bugs found
+
+Until now the interpreter **threw-to-skip on every player-choice affect-target** (a selector with
+`chooser` or `quantity:'one'`): "deal damage to 1 of your opponent's Pokémon" was the single biggest
+counted gap. Stage A only *detects and skips* such choices (the divergence guard); Stage B *aligns*
+them — the interpreter now **emits the same `ChoosePokemonPrompt` native emits** (geometry derived from
+the selector: `side`→playerType, `spot`→slots, `where`→`blocked`), so the harness resolves both runs
+first-eligible to the *identical* target. The comparison then tests whether the IR's choice geometry
+matches the printed card. Built for the four affect ops — `damage.deal`, `damage.placeCounters`,
+`condition.apply`, `heal`.
+
+The enabling change is a **continuation-passing op runner**: a prompt-emitting op resumes the rest of
+the body in its callback, so a choice mid-body (or inside an `if`/`coinFlip` branch) is faithful for any
+op order. An all-synchronous body still runs straight through — **no behavior change for any
+already-supported card** (locks/structural/corpus stayed green). Chosen-target damage is applied with
+`PutDamageEffect` *inside* the callback (weakness-free, like native `DAMAGE_OPPONENT_POKEMON`), never
+`effect.damage +=` — the attack reducer's damage step has already run by the time a deferred prompt
+resolves.
+
+**IR-integration fix surfaced on first run — multi-target `targetCount`.** "50 damage to **2** of your
+opponent's Pokémon" is encoded as `quantity:'one'` plus a sibling `op.targetCount: 2` (22 ops in the
+corpus, value 2 or 3); `quantity` itself is never numeric. The first cut hard-coded a single pick, so
+**Iron Crown ex / Twin Shotels** (6 printings) hit only 1 target — caught immediately by the bench
+snapshot (native active 80 + bench 50 vs interp active 80 only). Fixed to choose `targetCount` distinct
+Pokémon (`min = min(N, eligible)`, `max = N`), and to no-op when no legal target exists (which also
+cleared the benchless "invalid auto-resolved prompt" noise). → all bench-bearing variants 0 mismatches.
+
+**4 native bugs (allow-listed, not fixed — per the no-card-fix rule), all on the *benchless* board.**
+Every "choose N of your opponent's Pokémon" attack agrees with native once the opponent has a Bench;
+the divergences appear only on `bare` (opponent holds just the active), where the native cards mishandle
+the degenerate too-few-targets / no-Bench case while the interpreter does the rules-faithful attack:
+
+| attack | native (bare) | faithful (IR/interp) | native bug |
+|---|---|---|---|
+| **Sonic Double** (Steven's Skarmory) | 100 to the lone target | 50 (one hit) | printed base 50 **and** the distribute-to-2 prompt's 50 both land |
+| **Dual Bolt** (Electivire ex) | 0 | 50 | prefab requires *exactly* 2 targets → unsatisfiable with 1 |
+| **Garnet Volley** (Cinderace ex) | 0 | 180 to the active | `if (!hasBenched) return` — but the active is a legal target |
+| **Crimson Blaster** (Armarouge) | 180 to the active (KO) | 0 | text says *Benched* only; native uses the any-Pokémon prefab |
+
+These are skipped **only on `bare`** (`KNOWN_BENCHLESS_NATIVE_BUGS`, label-keyed), preserving the
+meaningful agreement on the four bench-bearing variants — not skipped globally. A **non-vacuity
+assertion** proves the lever fired: a `targetCount:2` choice over `spot:anywhere` lands 50 on the active
+**and** bench[0] and leaves bench[1] untouched (a dropped prompt would damage one target or none).
+
+Coverage: differential `compared` rose **bare 449→481, primed 450→485** (~+32/+35 newly-compared per
+variant); the `player-choice affect-target …` skip reason dropped from the dominant gap to ~16. Full
+suite **45 specs, 0 failures**. Still ⛔ (counted skips, follow-on Stage B increments): the `choice` op,
+`cards.move` `chooser:'player'` (needs a real `ChooseCardsPrompt`), `energy.move`, `iterate`.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

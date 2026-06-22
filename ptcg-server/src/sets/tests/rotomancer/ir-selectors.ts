@@ -1,6 +1,7 @@
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Player } from '../../../game/store/state/player';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
+import { PlayerType, SlotType, CardTarget } from '../../../game/store/actions/play-card-action';
 
 /**
  * Resolves a Rotomancer IR **v2** selector to concrete Twinleaf targets.
@@ -89,4 +90,77 @@ export function resolveV2Single(effect: AttackEffect, sel?: V2Selector): Pokemon
     throw new Error('[ir-selectors] selector resolved to no Pokémon');
   }
   return targets[0].list;
+}
+
+// ── Stage B: prompt-emitting choice alignment (IR-SUPPORT-DESIGN §12.5) ──────────────────────────
+// A single player-choice affect-target ("deal 70 to 1 of your opponent's Pokémon") is resolved by
+// emitting the SAME ChoosePokemonPrompt native emits — geometry derived from the selector — so the
+// test harness resolves both runs first-eligible to the identical target. The differential then
+// tests whether the IR's choice geometry matches the printed card (agreement when right, a real
+// mismatch when wrong), instead of skipping the attack.
+
+export interface ChoiceCandidate { target: CardTarget; list: PokemonCardList; player: Player; }
+export interface ChoiceTarget {
+  playerType: PlayerType;
+  slots: SlotType[];
+  candidates: ChoiceCandidate[];   // how many to choose comes from the op (op.targetCount), not the selector
+}
+
+/**
+ * True when a selector denotes a single player-PICKED Pokémon to AFFECT (vs. a forced set or a
+ * predicate subject). `quantity:'one'`, or a bare `chooser` (default single pick); a `chooser` with
+ * `quantity:'each'|'all'` is not a single pick and stays a counted skip (deterministic path throws).
+ * `role` selectors are deterministic (they short-circuit in resolveV2Selector) → not a choice.
+ */
+export function isSingleChoiceTarget(sel?: V2Selector): boolean {
+  if (!sel || sel.role !== undefined) { return false; }
+  if (sel.quantity === 'one') { return true; }
+  return sel.chooser !== undefined && sel.quantity === undefined;
+}
+
+function playerTypeOf(side?: string): PlayerType {
+  switch (side) {
+    case 'self': return PlayerType.BOTTOM_PLAYER;       // the attacker owns the prompt (BOTTOM)
+    case 'opponent': return PlayerType.TOP_PLAYER;
+    case 'both': return PlayerType.ANY;
+    default: throw new Error(`[ir-selectors] choice target unsupported side "${side}"`);
+  }
+}
+
+function slotsOf(spot?: string): SlotType[] {
+  switch (spot) {
+    case 'active': return [SlotType.ACTIVE];
+    case 'bench': return [SlotType.BENCH];
+    case 'anywhere': return [SlotType.ACTIVE, SlotType.BENCH];
+    default: throw new Error(`[ir-selectors] choice target unsupported spot "${spot}"`);
+  }
+}
+
+/**
+ * Expand a single-pick choice selector into (a) the prompt geometry and (b) the concrete candidate
+ * set — each with its CardTarget coordinate so the caller can mark `where`-failing ones `blocked`.
+ * Enumerated in the SAME order the harness's resolveChoosePokemonRaw walks (BOTTOM before TOP, active
+ * before bench, low bench index first), and skipping empty slots exactly as it does, so the emitted
+ * prompt resolves to the candidate the IR intends.
+ */
+export function resolveChoiceTarget(effect: AttackEffect, sel: V2Selector): ChoiceTarget {
+  const playerType = playerTypeOf(sel.side);
+  const slots = slotsOf(sel.spot);
+  const sides: Array<[PlayerType, Player]> = [];
+  if (sel.side === 'self' || sel.side === 'both') { sides.push([PlayerType.BOTTOM_PLAYER, effect.player]); }
+  if (sel.side === 'opponent' || sel.side === 'both') { sides.push([PlayerType.TOP_PLAYER, effect.opponent]); }
+  const candidates: ChoiceCandidate[] = [];
+  for (const [pt, p] of sides) {
+    if (slots.indexOf(SlotType.ACTIVE) !== -1 && p.active.getPokemonCard() !== undefined) {
+      candidates.push({ target: { player: pt, slot: SlotType.ACTIVE, index: 0 }, list: p.active, player: p });
+    }
+    if (slots.indexOf(SlotType.BENCH) !== -1) {
+      for (let i = 0; i < p.bench.length; i++) {
+        if (p.bench[i].getPokemonCard() !== undefined) {
+          candidates.push({ target: { player: pt, slot: SlotType.BENCH, index: i }, list: p.bench[i], player: p });
+        }
+      }
+    }
+  }
+  return { playerType, slots, candidates };
 }

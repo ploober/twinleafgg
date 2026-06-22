@@ -243,6 +243,41 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(getDamage(game.state, 1, 'active')).toBe(110); // 0 (active) + 4 (bench) = 4 ≥ 4 → +100. Active-only would give 10.
   });
 
+  // Stage B non-vacuity: a player-choice affect-target ("50 to 2 of your opponent's Pokémon") must
+  // actually EMIT a prompt and LAND on the chosen Pokémon — not skip, and not silently hit the
+  // default defender. The harness resolves the emitted ChoosePokemonPrompt first-eligible (active,
+  // then bench low-index), so targetCount:2 over `spot:anywhere` hits the active + bench[0] and leaves
+  // bench[1] untouched. A regression that dropped the prompt would damage one target (or none).
+  it('Stage B: a quantity:one / targetCount choice prompts and lands on exactly the chosen targets', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon'); // mirror-safe (weak to Psychic), 230 HP → 50 never KOs
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+      player2: {
+        active: { card: res.fullName! },
+        bench: [{ card: res.fullName! }, { card: res.fullName! }],
+        deck: padDeck(10),
+      },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Twin Probe', cost: ['Colorless'],
+      body: [{
+        kind: 'damage.deal',
+        amount: { kind: 'const', value: 50 },
+        target: { of: { chooser: 'player', quantity: 'one', side: 'opponent', spot: 'anywhere' } },
+        targetCount: 2,
+      }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Twin Probe');
+    expect(game.state.players[1].active.damage).toBe(50);   // chosen #1 (first-eligible)
+    expect(game.state.players[1].bench[0].damage).toBe(50); // chosen #2
+    expect(game.state.players[1].bench[1].damage).toBe(0);  // not chosen → untouched (not all-targets)
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the
@@ -285,6 +320,18 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'sv6-32': 'Monferno TWM — Heat Blow: the "Discard an Energy from this Pokémon" rider is wired only to attack index 0 (Chop); Heat Blow (index 1) never discards. IR/interp discard. → Twinleaf bug',
   };
 
+  // (6c) Native bugs that only manifest on the BENCHLESS board (opponent holds just the active),
+  // surfaced by Stage B choice-alignment: each is a "choose N of your opponent's Pokémon" attack whose
+  // native card mishandles the degenerate too-few-targets / no-Bench case. On every bench-bearing
+  // variant native and interp AGREE (the IR's choice geometry is validated there), so these are skipped
+  // ONLY on `bare` to keep that coverage. In every case the interpreter does the rules-faithful attack.
+  const KNOWN_BENCHLESS_NATIVE_BUGS: Record<string, string> = {
+    'Sonic Double': 'Steven\'s Skarmory DRI: native double-counts — the printed base 50 AND the distribute-to-2 prompt\'s 50 both land on the lone target (100). IR/interp deal 50 once (only 1 of the "2 Pokémon" is available). → Twinleaf bug',
+    'Dual Bolt': 'Electivire ex DRI: native\'s prefab requires choosing exactly 2 targets, so with only the opponent\'s active it satisfies the min and deals 0. IR/interp deal 50 to the one available. → Twinleaf bug',
+    'Garnet Volley': 'Cinderace ex SCR: native guards `if (!hasBenched) return`, so "180 to 1 of your opponent\'s Pokémon" does nothing with no Bench — but the active is a legal target. IR/interp deal 180 to the active. → Twinleaf bug',
+    'Crimson Blaster': 'Armarouge SSP: text targets 1 of the opponent\'s BENCHED Pokémon, but native uses the any-Pokémon prefab and hits the active. IR/interp target benched-only (0 with no Bench). → Twinleaf bug',
+  };
+
   function runCorpusDifferential(variant: string, makeBoard: (hp: number) => Board): void {
     const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
     const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
@@ -302,6 +349,9 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       if (card.weakness?.some(w => w.type === card.cardType)) continue;
       if (KNOWN_MISMATCHES[s.attackLabel]) continue;
       if (KNOWN_NATIVE_BUGS_BY_PRINTING[s.printingId]) continue;
+      // Benchless-only native bugs: skip on `bare` (no opponent Bench) where native mishandles the
+      // degenerate choice; still compared on every bench-bearing variant, where native and interp agree.
+      if (variant === 'bare' && KNOWN_BENCHLESS_NATIVE_BUGS[s.attackLabel]) continue;
 
       const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
       const board = makeBoard(card.hp);

@@ -70,9 +70,11 @@ Two corollaries shape the per‑feature decisions below:
 - **A no‑op is a valid support strategy** when the construct is *snapshot‑neutral* in the single‑turn
   differential (e.g. `hand.reveal` moves no cards; a next‑turn `rule.override` changes nothing
   *this* turn). The lock differential later probes the next‑turn ones explicitly.
-- **A skip is better than a guess.** For player‑choice affect‑targets, attaching "the first eligible"
-  would frequently disagree with native's prompt resolution; throwing (→ skip) is correct until the
-  prompt‑emitting *Stage B* exists (§12.5).
+- **A skip is better than a guess; but an *aligned prompt* beats a skip.** Picking "the first eligible"
+  directly would be a guess that can disagree with native — so until **Stage B** (§12.5) the affect‑target
+  choices threw → skip. Stage B now *emits the same prompt native does* and lets the **harness** resolve
+  both runs identically: no guess, and the comparison meaningfully tests the IR's choice geometry. Where
+  the prompt geometry can't yet be mirrored faithfully (e.g. `excludeSelf`/`extremum`), it still throws → skip.
 
 ---
 
@@ -179,8 +181,8 @@ resolves the deterministic shapes; an op's `target.where` then filters via `ir-p
 | `side: self` / `opponent` / `both` | ✅ | combined with `spot`. |
 | `spot: active` / `bench` / `anywhere` | ✅ | built active‑before‑bench, low‑index‑first — the same order the harness enumerates choice candidates. |
 | `quantity: each` / `all` | ✅ | all matching Pokémon (a forced set). |
-| `quantity: one` | ⛔ | A single **player‑picked** Pokémon. For an *affect‑target* (damage/condition/heal) this is non‑deterministic on a bare board → throw → skip (Stage B, §12.5). |
-| `chooser: player` / `opponent` / `auto` | ⛔ | Explicit chooser on a selector → a pick → throw → skip. |
+| `quantity: one` | ✅ (affect‑target) / ⛔ (else) | A single **player‑picked** Pokémon. On an *affect‑target* op (damage/condition/heal/placeCounters) Stage B emits a `ChoosePokemonPrompt` the harness resolves identically to native (§12.5); `op.targetCount` chooses N distinct. As a predicate/`forEach` subject it still throws → skip. |
+| `chooser: player` / `opponent` / `auto` | ✅ (affect‑target) / ⛔ (else) | Explicit chooser on an affect‑target selector → same Stage B prompt path. A `chooser` with `quantity:'each'`/`'all'`, or on a non‑affect selector, still throws → skip. |
 | `bind: atInstall` / `now` | ✅ (inert) | Snapshot‑timing for "the Defending Pokémon at trigger time." In a single‑turn differential it's the same Pokémon, so the timing is inert. |
 | `where: <predicate>` | ✅ | Post‑filter on resolved targets, evaluated by §8 with the target as subject. |
 | `extremum` / `excludeSelf` | ⛔ | Superlative ("the most‑damaged") / self‑exclusion refinements — not yet handled; throw → skip. |
@@ -341,13 +343,24 @@ The lock differential ([rotomancer-locks.spec.ts](../rotomancer-locks.spec.ts)) 
 | blocked‑action (retreat) | `BLOCKED_BY_EFFECT` on a retreat attempt | `retreatShutoff` (defending) |
 | own‑turn | `BLOCKED_BY_EFFECT` on re‑using the attack after passing | `attackShutoff` (recharge) |
 
-### 12.5 Choice alignment — Stage A (built) / Stage B (deferred)
-Stage A is the divergence guard (§12.2): detect and skip choices. **Stage B** is the unbuilt half:
-have the interpreter *emit the same prompts* native does (a `choice`/`quantity:one`/`chooser` becomes
-a real `ChoosePokemonPrompt`/`ChooseCardsPrompt`), so the harness resolves both identically instead of
-skipping. Stage B is the single biggest coverage unlock — it would convert the entire ⛔ player‑choice
-class (`choice` 37, `energy.move` 23, `iterate` 9, `quantity:one` affect‑targets 173, `chooser`
-selectors) from skipped to compared.
+### 12.5 Choice alignment — Stage A (built) / Stage B (affect‑target half built)
+Stage A is the divergence guard (§12.2): detect and skip choices. **Stage B** has the interpreter
+*emit the same prompt native does* so the harness resolves both identically instead of skipping.
+
+**Built — the affect‑target half.** A `quantity:'one'`/`chooser` selector on an affect‑target op
+(`damage.deal`, `damage.placeCounters`, `condition.apply`, `heal`) now emits a real `ChoosePokemonPrompt`
+whose geometry is derived from the selector (`side`→playerType, `spot`→slots, `where`→`blocked`); the op
+is applied to the chosen Pokémon in the prompt callback (chosen‑target damage via `PutDamageEffect`,
+weakness‑free, like native). `op.targetCount` ("…2 of your opponent's Pokémon") chooses N distinct
+targets. The enabling infra is a **continuation‑passing op runner** (`runOps`): a prompt‑emitting op
+resumes the remaining body in its callback, so a choice mid‑body or inside an `if`/`coinFlip` branch is
+faithful — with **no behavior change for any synchronous (no‑prompt) card**. This converted the
+`quantity:'one'` affect‑target class from skip to compared (`compared` +~32/35 per variant; FINDINGS §13),
+and surfaced the multi‑target `targetCount` integration fix and 4 benchless native bugs.
+
+**Still deferred (counted ⛔ skips) — follow‑on Stage B increments:** the `choice` op (37,
+`SelectPrompt`/`ConfirmPrompt`), `cards.move` `chooser:'player'` (needs a real `ChooseCardsPrompt`
+instead of the current silent first‑N), `energy.move` (23), `iterate` (9).
 
 ### 12.6 Printing resolution & name‑validation
 `bridge.resolvePrinting` maps a printing‑id prefix → Twinleaf set code and **name‑validates** every
@@ -361,7 +374,8 @@ me3 (no implemented Twinleaf printings yet).
 
 | priority | item | unlock |
 |---|---|---|
-| **1** | **Stage B: prompt‑emitting choice alignment** (§12.5) | The largest single lever — flips `choice`/`energy.move`/`iterate`/`quantity:one`/`chooser` from skip to compared. |
+| ~~1~~ ✅ | **Stage B affect‑target half** (§12.5) | **Done** — `quantity:one`/`chooser`/`targetCount` affect‑targets flipped from skip to compared (+~32/35/variant). |
+| **1** | **Stage B remainder**: `choice` op, `cards.move` `chooser:'player'` → `ChooseCardsPrompt`, `energy.move`, `iterate` | Completes the player‑choice class on the now‑built continuation/prompt foundation. |
 | 2 | `damageVulnerability` + `damageBuff` + `attackBaseDamageOverride` via an **own‑turn damage probe** | Reuses the turn‑advance harness from the recharge probe; measures the lock user's own next‑turn damage. |
 | 3 | `itemPlayRestriction` / `evolvePlayRestriction` via a **play‑a‑card block probe** | 9 ops; same blocked‑action shape as retreat. |
 | 4 | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |

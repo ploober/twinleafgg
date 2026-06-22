@@ -11,10 +11,13 @@ import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '
 import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER } from '../../../game/store/prefabs/prefabs';
 import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
+import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
+import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { GameMessage } from '../../../game/game-message';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
 import { executeCardsMove, matchesCardPredicate } from './ir-cards';
-import { resolveV2Selector, Target, V2Selector } from './ir-selectors';
+import { resolveV2Selector, resolveChoiceTarget, isSingleChoiceTarget, Target, V2Selector } from './ir-selectors';
 
 /**
  * A minimal interpreter that executes a Rotomancer IR **v2** program as a Twinleaf card. Each
@@ -45,6 +48,7 @@ export interface IrOp {
   amount?: CountForm;
   count?: number | CountForm;
   untilHpRemaining?: number;  // damage.placeCounters: place counters until the target has N HP left
+  targetCount?: number;       // affect-target ops: choose N distinct Pokémon, each taking `amount` ("2 of your opponent's Pokémon")
   condition?: string;
   removeMode?: boolean;
   ignore?: string[];    // damage.deal: weakness | resistance | defenderEffects (all no-op in a mirror)
@@ -172,12 +176,57 @@ function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffe
   return state;
 }
 
-function runBranch(store: StoreLike, state: State, effect: AttackEffect, branch?: IrOp[]): State {
-  let next = state;
-  for (const sub of branch ?? []) {
-    next = executeOp(store, next, effect, sub);
-  }
-  return next;
+// Continuation-passing op runner. Runs ops[index..] then calls `done(state)`. A synchronous op hands
+// its post-op state straight to the continuation; a prompt-emitting op (Stage B) emits a real engine
+// prompt and resumes the remaining ops inside the prompt callback, so a player choice mid-body (or
+// inside an if/coinFlip branch) is faithful for any op order. An all-synchronous body recurses fully
+// synchronously and returns the same final state as a plain loop — no behavior change for cards that
+// emit no prompt.
+function runOps(
+  store: StoreLike, state: State, effect: AttackEffect,
+  ops: IrOp[], index: number, done: (state: State) => State
+): State {
+  if (index >= ops.length) { return done(state); }
+  return executeOp(store, state, effect, ops[index],
+    next => runOps(store, next, effect, ops, index + 1, done));
+}
+
+// Stage B: a single player-choice affect-target. Emit the SAME ChoosePokemonPrompt native emits
+// (geometry from the selector; a `where` predicate → the failing candidates marked `blocked`) and
+// apply the op to the chosen Pokémon in the callback — the way native cards damage a chosen target
+// (PutDamageEffect inside the callback, never effect.damage +=, which the attack reducer has already
+// consumed by the time a deferred prompt resolves). State is mutated in place, so the captured `state`
+// is the live object; the continuation runs the rest of the body once the choice resolves.
+function affectChoiceTarget(
+  store: StoreLike, state: State, effect: AttackEffect, op: IrOp,
+  apply: (state: State, target: Target) => State, cont: (state: State) => State
+): State {
+  const choice = resolveChoiceTarget(effect, op.target!.of!);
+  const where = op.target?.where;
+  const eligible = where
+    ? choice.candidates.filter(c => matchesV2Where(state, effect, c.list, where))
+    : choice.candidates;
+  // No legal target → snapshot-neutral no-op (native deals nothing when nothing is targetable).
+  if (eligible.length === 0) { return cont(state); }
+  const blocked = choice.candidates.filter(c => eligible.indexOf(c) === -1).map(c => c.target);
+  // `targetCount` ("50 damage to 2 of your opponent's Pokémon") chooses N distinct Pokémon, each
+  // taking `amount`; default 1. Pick as many as exist (min) up to N (max), as native does on a short board.
+  const pick = op.targetCount ?? 1;
+  const prompt = new ChoosePokemonPrompt(
+    effect.player.id, GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+    choice.playerType, choice.slots,
+    { min: Math.min(pick, eligible.length), max: pick, allowCancel: false, blocked }
+  );
+  return store.prompt(state, prompt, (chosen: PokemonCardList[] | null) => {
+    let next = state;
+    for (const list of chosen ?? []) {
+      const cand = choice.candidates.find(c => c.list === list);
+      const player = cand ? cand.player
+        : (list === effect.opponent.active || effect.opponent.bench.indexOf(list) !== -1 ? effect.opponent : effect.player);
+      next = apply(next, { player, list });
+    }
+    return cont(next);
+  });
 }
 
 // energy.attach: move the first-N matching energy from a source zone (hand/deck/discard) onto the
@@ -212,9 +261,17 @@ function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffec
   return state;
 }
 
-function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State): State {
   switch (op.kind) {
     case 'damage.deal': {
+      if (isSingleChoiceTarget(op.target?.of)) {
+        // Chosen-target damage is weakness-free (like native DAMAGE_OPPONENT_POKEMON), applied in the callback.
+        return affectChoiceTarget(store, state, effect, op, (s, t) => {
+          const put = new PutDamageEffect(effect, evalAmount(s, effect, op.amount));
+          put.target = t.list;
+          return store.reduceEffect(s, put);
+        }, cont);
+      }
       // `ignore` (weakness/resistance/defenderEffects) is inert in a mirror match — no-op.
       const value = evalAmount(state, effect, op.amount);
       const of = op.target?.of;
@@ -230,26 +287,32 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
           state = store.reduceEffect(state, put);
         }
       }
-      return state;
+      return cont(state);
     }
     case 'damage.placeCounters': {
       // "Put damage counters" — direct counter placement via PutCountersEffect (bypasses
       // weakness/resistance and applies to any Pokémon, including the bench; PutDamageEffect only
       // lands on the defender). 1 counter = 10 HP. `untilHpRemaining` brings each target down to N
       // HP remaining (never heals).
-      for (const { list } of resolveTargets(state, effect, op.target)) {
+      const place = (s: State, list: PokemonCardList): State => {
         let value: number;
         if (op.untilHpRemaining !== undefined) {
           const card = list.getPokemonCard() as PokemonCard;
           value = Math.max(0, (card.hp - list.damage) - op.untilHpRemaining);
         } else {
-          value = evalAmount(state, effect, op.count) * 10;
+          value = evalAmount(s, effect, op.count) * 10;
         }
         const put = new PutCountersEffect(effect, value);
         put.target = list;
-        state = store.reduceEffect(state, put);
+        return store.reduceEffect(s, put);
+      };
+      if (isSingleChoiceTarget(op.target?.of)) {
+        return affectChoiceTarget(store, state, effect, op, (s, t) => place(s, t.list), cont);
       }
-      return state;
+      for (const { list } of resolveTargets(state, effect, op.target)) {
+        state = place(state, list);
+      }
+      return cont(state);
     }
     case 'condition.apply': {
       if (op.removeMode) {
@@ -259,29 +322,39 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       if (condition === undefined) {
         throw new Error(`[ir-interpreter] unknown condition "${op.condition}"`);
       }
-      for (const { list } of resolveTargets(state, effect, op.target)) {
+      const applyCond = (s: State, list: PokemonCardList): State => {
         const add = new AddSpecialConditionsEffect(effect, [condition]);
         add.target = list;
-        state = store.reduceEffect(state, add);
+        return store.reduceEffect(s, add);
+      };
+      if (isSingleChoiceTarget(op.target?.of)) {
+        return affectChoiceTarget(store, state, effect, op, (s, t) => applyCond(s, t.list), cont);
       }
-      return state;
+      for (const { list } of resolveTargets(state, effect, op.target)) {
+        state = applyCond(state, list);
+      }
+      return cont(state);
     }
     case 'heal': {
+      if (isSingleChoiceTarget(op.target?.of)) {
+        return affectChoiceTarget(store, state, effect, op,
+          (s, t) => store.reduceEffect(s, new HealEffect(t.player, t.list, evalAmount(s, effect, op.amount))), cont);
+      }
       const value = evalAmount(state, effect, op.amount);
       for (const { player, list } of resolveTargets(state, effect, op.target)) {
         state = store.reduceEffect(state, new HealEffect(player, list, value));
       }
-      return state;
+      return cont(state);
     }
     case 'cards.move':
-      return executeCardsMove(store, state, effect, op);
+      return cont(executeCardsMove(store, state, effect, op));
     case 'energy.discard':
-      return executeEnergyDiscard(store, state, effect, op);
+      return cont(executeEnergyDiscard(store, state, effect, op));
     case 'energy.attach':
-      return executeEnergyAttach(store, state, effect, op);
+      return cont(executeEnergyAttach(store, state, effect, op));
     case 'hand.reveal':
       // Revealing a hand moves no cards and changes no observable zone — snapshot-neutral no-op.
-      return state;
+      return cont(state);
     case 'pokemon.knockOut': {
       // Knock out each resolved target by dealing lethal damage through the normal pipeline, so the
       // engine awards the prize, discards, and promotes (a direct KnockOutEffect skips the prize
@@ -291,14 +364,14 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         put.target = list;
         state = store.reduceEffect(state, put);
       }
-      return state;
+      return cont(state);
     }
     case 'pokemon.discard': {
       // Literal "discard this Pokémon and everything attached" — no prize (cf. a knock-out).
       for (const { player, list } of resolveTargets(state, effect, op.target)) {
         list.moveCardsTo(list.cards.slice().concat(list.tools.slice()), player.discard);
       }
-      return state;
+      return cont(state);
     }
     case 'continuous.modifier': {
       // The v2 split of attack.lockOrModify (next-turn riders). These don't change the immediate
@@ -339,7 +412,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         }
         effect.player.active.damageReductionNextTurn += evalAmount(state, effect, mod.amount);
       }
-      return state;
+      return cont(state);
     }
     case 'rule.override': {
       // Next-turn rule bans (retreat/attack shutoff, item lock). Snapshot-neutral, so inert in the
@@ -363,15 +436,14 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         const pending = effect.player.active.cannotUseAttacksNextTurnPending;
         if (!pending.includes(ovr.attackName)) { pending.push(ovr.attackName); }
       }
-      return state;
+      return cont(state);
     }
     case 'coinFlip':
-      // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch.
-      return runBranch(store, state, effect, op.then);
+      // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch, then the rest of the body.
+      return runOps(store, state, effect, op.then ?? [], 0, cont);
     case 'if':
-      return evalPredicate(state, effect, op.when)
-        ? runBranch(store, state, effect, op.then)
-        : runBranch(store, state, effect, op.else);
+      return runOps(store, state, effect,
+        (evalPredicate(state, effect, op.when) ? op.then : op.else) ?? [], 0, cont);
     default:
       // choice / iterate / costGate and the new pokemon.* / damage.move ops are unsupported.
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);
@@ -391,11 +463,9 @@ export class InterpretedCard extends PokemonCard {
     BLOCK_RETREAT_IF_MARKER(effect, MarkerConstants.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this);
     for (let i = 0; i < this.program.length; i++) {
       if (WAS_ATTACK_USED(effect, i, this)) {
-        let next = state;
-        for (const op of this.program[i].body) {
-          next = executeOp(store, next, effect as AttackEffect, op);
-        }
-        return next;
+        // Continuation-passing so a player-choice op can emit a prompt and resume the rest of the body
+        // in its callback (Stage B); the terminal continuation is the identity (return the final state).
+        return runOps(store, state, effect as AttackEffect, this.program[i].body, 0, s => s);
       }
     }
     return state;
