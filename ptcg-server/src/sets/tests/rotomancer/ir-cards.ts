@@ -172,6 +172,19 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     cards = candidates.slice(0, op.count.n);
   } else if (countKind === 'upTo') {
     cards = candidates.slice(0, op.count.max);
+  } else if (countKind === 'untilHandSize') {
+    // "Draw until you have N cards in your hand." Deterministic: draw max(0, N − handSize) from the
+    // source (deck) top, exactly like native's `while (hand.length < N && deck.length) draw 1` (e.g.
+    // Blissey ex Return: ConfirmPrompt(WANT_TO_DRAW_UNTIL_6) → that loop). The corpus shape is who:'self'
+    // → self's hand, which is `to`; anything else is a counted skip rather than a wrong count.
+    if (op.count.who !== undefined && op.count.who !== 'self') {
+      throw new Error(`[ir-cards] cards.move untilHandSize who "${op.count.who}" not supported`);
+    }
+    if (op.to?.zone !== 'hand') {
+      throw new Error(`[ir-cards] cards.move untilHandSize to ${op.to?.zone} not supported`);
+    }
+    const need = Math.max(0, (op.count.target ?? 0) - to.cards.length);
+    cards = candidates.slice(0, need);   // .slice clamps to deck size, matching native's deck-empty break
   } else {
     throw new Error(`[ir-cards] unsupported cards.move count "${countKind}"`);
   }

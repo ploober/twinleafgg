@@ -666,6 +666,40 @@ surfaced; every divergence is native-side or an IR-faithfulness gap, verified in
 **Loader safety** verified across the **sets (22/0)** and **conformance (191/0)** suites — the change is
 additive (modules become findable under more codes). Rotomancer suite **67 specs, 0 failures**.
 
+### 23. `cards.move count:'untilHandSize'` (draw-to-hand-size) + empirical roadmap re-grounding
+
+Before building the next vocabulary item I censused the corpus (`fixtures/attack-scenarios.json`, 1851
+scenarios) against the differential's per-op skip counter (`unsupportedReasons`). The result **corrected the
+roadmap**: the three "small remaining ATTACK gaps" it named are essentially vapor —
+
+| roadmap-named gap | corpus instances | verdict |
+|---|---|---|
+| `condition.apply removeMode` | **0** | the throw is defensive/unexercised — nothing to unblock |
+| `extremum` / `excludeSelf` selectors | **0** / **1** | one card (Koraidon *Unrelenting Onslaught*) |
+| `damage.move` | **3** | Cofagrigus ×2 (`rsv10pt5`, speculative/unmapped) + Wobbuffet — player-chosen counter move, **no deterministic oracle** |
+
+The real skip buckets are dominated by **genuine deferrals** (no oracle): `cards.move` deck search (18×),
+`chooser:'opponent'/'random'` (12–14×), and `native made an ambiguous choice` (10–33×, inherent to
+choice-alignment, not a vocabulary gap). The **one large bucket that is deterministic** was
+`unsupported cards.move count …` (8×/variant) — every instance is `count:'untilHandSize'`, *"draw until you
+have N cards in your hand."*
+
+**The fix** (one branch in `executeCardsMove`): draw `max(0, N − handSize)` from the deck top — the engine
+equivalent of native's `while (hand.length < N && deck.length) draw 1` behind a Confirm (e.g. Blissey ex
+*Return*: `ConfirmPrompt(WANT_TO_DRAW_UNTIL_6)` → that loop). The harness auto-confirms the `choice` wrapper on
+both engines, and `.slice` clamps to deck size exactly as native breaks on an empty deck; the count-based
+`snapshot` compares `hand`/`deck`, so both land identical.
+
+**Result:** `compared` rose **+8 per variant** (bare 738→746, primed/conditions/tools-loaded 747→755,
+energy-rich 726→734, zones-loaded 742→750) at **0 mismatches**, **no allow-list entries needed** — Blissey ex
+& Lumineon *Return*, Cynthia's Garchomp ex *Corkscrew Dive* (×5 printings), Mismagius ex *Hexa-Magic*, Thievul
+*Greedy Hunt*, Decidueye *Stock Up on Feathers* all flipped clean. The `unsupported cards.move count` reason is
+gone from the scorecard. Rotomancer **67 specs, 0 failures**; structural 921/0, official 810/0.
+
+**Plateau reached.** With `untilHandSize` done, every remaining ATTACK-side skip bucket lacks a deterministic
+oracle, so additional gains require an oracle-bearing harness extension (more affect-target choice-alignment)
+or new IR origins (ABILITY/RULE_BOX), not more vocabulary.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
