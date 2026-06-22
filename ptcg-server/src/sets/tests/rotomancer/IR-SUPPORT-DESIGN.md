@@ -510,9 +510,28 @@ prompt contradicts its printed text — **Iron Leaves TWM *Recovery Net*** ("up 
 1 card" but native min:0). Both invariants were verified to bite (the real run; plus a deliberate
 ignore‑the‑pick skew → 22 per‑pick mismatches with **identical counts, differing only in `discardNames`** —
 the precise case a count‑only snapshot would have passed, proving the identity snapshot load‑bearing). This
-**retires the masking risk** for the `ChooseCardsPrompt` class. Out of scope (documented deferrals): switches
-(`bench→active` → `ChoosePokemonPrompt`; needs an *active‑Pokémon* identity snapshot), `discard→bench`
-place‑a‑Pokémon (`resolveZone` throws on `to:bench`), deck‑search, and attached/prize moves.
+**retires the masking risk** for the `ChooseCardsPrompt` class. Out of scope (documented deferrals):
+`discard→bench` place‑a‑Pokémon (`resolveZone` throws on `to:bench`), deck‑search, and attached/prize moves.
+
+### 12.12 Switch differential (bench→active option‑set equivalence) + active‑species identity
+The last first‑eligible‑resolved `ChoosePokemonPrompt` class the choice differentials had not covered: a
+**`cards.move bench→active`** switch ("switch to 1 of your — or your opponent's — Benched Pokémon": *Run
+Around*, *Follow Me*, *Pull*, …). §12.10 only covered AFFECT‑target choices, and its mirror board seeds
+*identical* benched Pokémon, so a switch's observable — **which species is now Active** — was invisible
+(`PokeSnap` had no name). Fixed by the same identity‑snapshot pattern as §12.11, applied to Pokémon:
+- **Active/bench species identity:** `PokeSnap.name` (opt‑in via `snapshot(state, true)`) records the
+  species of the Active and each Bench slot. Left `undefined` in count‑only mode → zero blast radius.
+- **Seed distinct benched Pokémon** (registered Basics) on the switched side, register the BENCH‑only
+  `ChoosePokemonPrompt` override, then assert **A — same bench targets + `(min,max)`** and **B — switching to
+  each target promotes the same species** (the identity‑aware snapshot).
+
+Result: **13 switches (all multi‑option), 39 targets checked, 0 mismatches** — self‑switch (*Run Around*,
+*Trading Places*, *Leap Out*, *Teleportation Attack*, *Hydro Turn*, *Reverse Thrust*, *Dire Nails*, *Poisonous
+Ploy*) and opponent‑switch (*Follow Me*, *Pull*) all clean. The active‑species snapshot was verified
+load‑bearing (a deliberate always‑switch‑to‑bench[0] skew → 26 per‑target mismatches that differ *only* in
+`name`; a count‑only snapshot would have passed them all). Honest counted skips: 18 non‑exact, 5 build‑error —
+the latter being 2 native name‑drift (`UNKNOWN_ATTACK`, Ninjask *U‑turn*) and **3 `cards.move chooser:'opponent'`**
+switches (Bayleef *Push Down*, Yanma *Whirlwind* ×2) — the throw‑to‑skip for §13's `chooser:'opponent'` deferral.
 
 ---
 
@@ -544,8 +563,8 @@ ops) or new IR origins (ABILITY/RULE_BOX, still 0% of the corpus), not more voca
 unexplained skip, fails the suite — so the coverage can only be lost on purpose, never by accident.
 
 The plateau's *quality* (not breadth) is what later work hardens: the **choice differentials** (§12.10
-`ChoosePokemonPrompt`, §12.11 `ChooseCardsPrompt`) retire the masking risk for the two player‑choice prompt
-classes by verifying the *whole option set* + each option's outcome (identity‑aware for card moves), not just
-first‑eligible. With both done, the remaining first‑eligible‑resolved choice points are switches
-(`bench→active` → `ChoosePokemonPrompt`, needs an active‑Pokémon identity snapshot), `chooser:'opponent'`
-(now safe to align), and multi‑select `targetCount`≥2 — the documented next steps.
+`ChoosePokemonPrompt` affect‑targets, §12.11 `ChooseCardsPrompt`, §12.12 `bench→active` switches) retire the
+masking risk for every player‑choice prompt class by verifying the *whole option set* + each option's outcome
+(identity‑aware for card moves and switches), not just first‑eligible. With all three done, the remaining
+first‑eligible‑resolved choice points are `chooser:'opponent'` (now safe to align — affect‑targets and the 3
+`Whirlwind`/`Push Down` switches) and multi‑select `targetCount`≥2 — the documented next steps.

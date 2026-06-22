@@ -27,6 +27,7 @@ interface PokeSnap {
   energy: number;
   energyTypes: string[];   // sorted multiset of provided types — makes a wrong-TYPE energy op observable
   tools: number;           // attached Pokémon Tools — makes a Tool discard observable (tools-loaded variant)
+  name?: string;           // species (opt-in, §12.12): makes a SWITCH observable — which Pokémon is now Active
 }
 interface SideSnapshot {
   active: PokeSnap;
@@ -45,24 +46,27 @@ interface SideSnapshot {
 }
 interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
-function pokeSnap(list: PokemonCardList): PokeSnap {
-  const ko = list.getPokemonCard() === undefined;
+function pokeSnap(list: PokemonCardList, identity = false): PokeSnap {
+  const pokemon = list.getPokemonCard();
+  const ko = pokemon === undefined;
   const energyCards = ko ? [] : list.energies.cards.filter(c => c instanceof EnergyCard) as EnergyCard[];
-  return {
+  const snap: PokeSnap = {
     damage: ko ? 'KO' : list.damage,
     conditions: ko ? [] : list.specialConditions.map(String).sort(),
     energy: ko ? 0 : list.energies.cards.length,
     energyTypes: energyCards.flatMap(c => c.provides.map(String)).sort(),
     tools: ko ? 0 : list.tools.length,
   };
+  if (identity) { snap.name = ko ? 'KO' : pokemon!.name; }
+  return snap;
 }
 
 function snapshot(state: State, identity = false): Snapshot {
   const side = (i: number): SideSnapshot => {
     const p = state.players[i];
     const snap: SideSnapshot = {
-      active: pokeSnap(p.active),
-      bench: p.bench.filter(b => b.getPokemonCard() !== undefined).map(pokeSnap),
+      active: pokeSnap(p.active, identity),
+      bench: p.bench.filter(b => b.getPokemonCard() !== undefined).map(b => pokeSnap(b, identity)),
       hand: p.hand.cards.length,
       deck: p.deck.cards.length,
       discard: p.discard.cards.length,
@@ -1454,6 +1458,147 @@ describe('Rotomancer card-choice differential — ChooseCards option-set equival
     expect(perPickMismatches).toEqual([]);
   });
   it('actually exercised multi-option card choices (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Switch differential (§12.12) — the last first-eligible-resolved ChoosePokemonPrompt class the choice
+// differentials did not yet cover: `cards.move bench→active` (same owner), i.e. "switch to 1 of your (or your
+// opponent's) Benched Pokémon" (Run Around, Follow Me, Pull, …). §12.10 only covered AFFECT-target choices, and
+// its mirror board seeds IDENTICAL benched Pokémon, so a switch's observable — which species is now Active —
+// was invisible. This seeds DISTINCT benched Pokémon and reads the new active/bench species identity
+// (`PokeSnap.name`, §12.12) so option-set equivalence bites: (A) the engines offer the same bench targets +
+// bounds, and (B) switching to each target promotes the same species on both.
+describe('Rotomancer switch differential — bench→active option-set equivalence', () => {
+  // Native divergences surfaced by the full-option-set check (interp faithful to the IR; native diverges). Per
+  // the standing rule allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by printingId.
+  const KNOWN_SWITCH_BUGS: Record<string, string> = {};
+
+  // Distinct, registered, benchable (Basic) species — so switching to slot i promotes an observably different
+  // Pokémon. Seeded identically on both runs, so any benched-ability effect is symmetric and cancels in the diff.
+  const SWITCH_BENCH = ['Togepi SSP', 'Turtonator SSP', 'Trapinch SSP'];
+
+  // A switch op: `cards.move` bench→active, same owner (the executeSwitch path).
+  function switchMove(body: any[]): any | null {
+    for (const op of body) {
+      if (op.kind === 'cards.move' && op.from?.zone === 'bench' && op.to?.zone === 'active'
+          && op.from?.owner === op.to?.owner) { return op; }
+    }
+    return null;
+  }
+
+  // One game seeding the switched-side's bench with distinct species. Registers a ChoosePokemonPrompt override
+  // (the switch prompt is BENCH-only) that captures the candidate set + (min,max) and resolves via `pick`;
+  // returns the IDENTITY-AWARE snapshot (so the promoted species is observable).
+  function runSwitch(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    benchOwner: 'self' | 'opponent', pick: (c: CardTarget[], p: ChoosePokemonPrompt) => CardTarget[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; candidateKeys: string[] } {
+    const benchSeed = SWITCH_BENCH.map(card => ({ card }));
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, bench: benchOwner === 'self' ? benchSeed : [], deck: padDeck(10) },
+      player2: { active: { card: fullName }, bench: benchOwner === 'opponent' ? benchSeed : [], deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let candidateKeys: string[] = [];
+    game.overridePrompt(ChoosePokemonPromptType, (prompt, state) => {
+      promptCount++;
+      const p = prompt as ChoosePokemonPrompt;
+      const candidates = choosePokemonCandidates(state, p);
+      if (promptCount === 1) { candidateKeys = candidates.map(cardTargetKey); min = p.options.min; max = p.options.max; }
+      return pick(candidates, p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state, true), promptCount, min, max, candidateKeys };
+  }
+
+  const firstEligible = (c: CardTarget[], p: ChoosePokemonPrompt) => c.slice(0, p.options.max);
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).map(s => ({ s, op: switchMove(s.body) })).filter(x => x.op !== null) as Array<{ s: any; op: any }>;
+
+  let enumerated = 0, optionsChecked = 0, multiOption = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perOptionMismatches: string[] = [];
+
+  for (const { s, op } of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_SWITCH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const benchOwner: 'self' | 'opponent' = op.from?.owner === 'opponent' ? 'opponent' : 'self';
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (c: CardTarget[], p: ChoosePokemonPrompt) => CardTarget[]) =>
+      runSwitch(res.fullName!, energies, s.attackLabel, frags, benchOwner, pick);
+
+    let nat, intp;
+    try { nat = run(null, firstEligible); intp = run(fragments, firstEligible); }
+    catch { skip('build-error'); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-switch-prompt'); continue; }
+    if (nat.promptCount > 1 || intp.promptCount > 1) { skip('multi-prompt (deferred)'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — same bench targets + bounds.
+    const aKey = (r: { candidateKeys: string[]; min: number; max: number }) =>
+      JSON.stringify({ keys: r.candidateKeys, min: r.min, max: r.max });
+    if (aKey(nat) !== aKey(intp)) {
+      optionSetMismatches.push(`${tag}: native ${aKey(nat)} vs interp ${aKey(intp)}`);
+      continue;
+    }
+    if (nat.candidateKeys.length > 1) { multiOption++; }
+    // Invariant B — switching to each target promotes the same species (identity-aware snapshot).
+    for (let i = 0; i < nat.candidateKeys.length; i++) {
+      optionsChecked++;
+      try {
+        const sn = run(null, c => [c[i]]).snap;
+        const si = run(fragments, c => [c[i]]).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perOptionMismatches.push(`${tag} target ${i} (${nat.candidateKeys[i]}): native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perOptionMismatches.push(`${tag} target ${i}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer switch differential [bench→active option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-option: ${multiOption})`);
+    console.log(`  options checked     : ${optionsChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-option mismatch : ${perOptionMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perOptionMismatches.map(m => `TARGET ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same bench targets + bounds for every switch', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('switching to each target promotes the same species in both engines', () => {
+    expect(perOptionMismatches).toEqual([]);
+  });
+  it('actually exercised multi-option switches (non-vacuity)', () => {
     expect(multiOption).toBeGreaterThan(0);
   });
 });

@@ -861,8 +861,27 @@ interp run produced **22** per-pick mismatches with **identical discard counts a
 `discardNames`/`handNames`** (e.g. *Shooting Moons* picking Grass: native discards Grass, skewed-interp
 discards Fire — both count 1, both 160 damage) — exactly the case a count-only snapshot would have passed,
 proving the identity snapshot is what makes Invariant B bite for card moves. **Out of scope** (documented
-deferrals): switches (`bench→active` → `ChoosePokemonPrompt`, needs an active-Pokémon identity snapshot),
-`discard→bench` place-a-Pokémon (`resolveZone` throws on `to:bench`), deck-search, attached/prize moves.
+deferrals): `discard→bench` place-a-Pokémon (`resolveZone` throws on `to:bench`), deck-search, attached/prize
+moves.
+
+### 29. Switch differential — bench→active option-set equivalence + active-species identity
+
+The last first-eligible-resolved `ChoosePokemonPrompt` class the choice differentials hadn't covered:
+`cards.move bench→active` (same owner) — "switch to 1 of your (or your opponent's) Benched Pokémon." §27 only
+covered AFFECT-target choices, and the mirror board seeds *identical* benched Pokémon, so the switch's
+observable — which species is now Active — was invisible (`PokeSnap` had no name). Fixed with the §28 identity
+pattern applied to Pokémon: **`PokeSnap.name`** (opt-in) records the Active/Bench species; the differential
+seeds **distinct** benched Pokémon and asserts **A — same bench targets + `(min,max)`** and **B — switching to
+each target promotes the same species**.
+
+**Result: 13 switches (all multi-option), 39 targets checked, 0 mismatches** — self-switch (*Run Around*,
+*Trading Places*, *Leap Out*, *Teleportation Attack*, *Hydro Turn*, *Reverse Thrust*, *Dire Nails*, *Poisonous
+Ploy*) and opponent-switch (*Follow Me*, *Pull*) all clean, **no native bugs**. The active-species snapshot was
+verified load-bearing: a deliberate always-switch-to-bench[0] skew produced **26** per-target mismatches that
+differ *only* in `name` (native promotes e.g. Turtonator, skewed-interp promotes Togepi — both 0 damage, 0
+energy) — exactly the case a count-only snapshot would have passed. Honest counted skips: 18 non-exact, 5
+build-error (2 native name-drift `UNKNOWN_ATTACK` — Ninjask *U-turn*; and **3 `chooser:'opponent'`** switches —
+Bayleef *Push Down*, Yanma *Whirlwind* ×2 — the throw-to-skip for the `chooser:'opponent'` deferral).
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
