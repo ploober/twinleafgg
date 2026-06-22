@@ -734,6 +734,37 @@ This was hidden in the differential only because the card previously threw on th
 exposed the known damage bug. The stadium-discard *mechanism* matched native exactly (both moved the Stadium
 1→0 to the owner's discard) — only the damage diverged.
 
+### 25. `cards.move bindAs` → `countOf` — discard-and-scale completed; the deterministic well is now dry
+
+The last clean deterministic vocabulary gap: the `countOf ref not bound` skip bucket (4×/variant).
+Discard-and-scale ("discard N cards, then `base + per × N` damage") was half-built — `energy.discard bindAs`
+recorded the discarded list (Inferno X, §8.1), but `cards.move bindAs` did not, so its `countOf` threw
+unbound and the card was skipped. The 4 cards are all me3 (Mega Clefable ex *Shooting Moons*, Mawile *Double
+Eater*), shape: `cards.move` hand→discard `bindAs` (Energy, `upTo`, `chooser:'player'`) + `damage.deal
+perCount {base, per, countOf}`. The §13 deferral reason ("me3-unmapped, no oracle") was **stale** — me3→POR
+is now mapped and the native POR cards exist.
+
+**The fix** (threading, not new logic): pass the fragment-scoped `bindings` register into `executeCardsMove`
+(it already reaches `executeEnergyDiscard`) and record the chosen-and-moved set as `bindings[op.bindAs]` in
+the move paths — even when empty, so `countOf` reads 0 rather than throwing. Added `max?` to the `CountForm`
+type (the `upTo` upper bound the runtime already read via `any`).
+
+**The oracle is near-identical.** Native *Shooting Moons*/*Double Eater* both do
+`ChooseCardsPrompt(player.hand, Energy, {min:0, max:min(N,eligible)})` → discard chosen →
+`effect.damage += cards.length × per`. The interpreter's `executeCardsMoveChoice` emits the same prompt (the
+harness greedily discards `min(max, eligible)`), and `countOf` reads the recorded count. **Result:** all 4
+me3 prints flipped clean — `compared` rose **+4 per variant** (bare 746→750, primed 755→759, …,
+stadium-loaded 757→761) at **0 mismatches, no allow-list entries**. The `countOf ref not bound` reason is
+gone from the scorecard. Suite **71/0**. A non-vacuity assertion proves the damage scales with the seeded-hand
+Energy discarded (0/1/2 → base/+per/+2per) and the empty case binds `[]` (countOf 0, not a throw).
+
+**The deterministic well is now dry.** Every remaining ATTACK-side skip bucket lacks a deterministic oracle:
+`cards.move` deck search (18), `chooser:'opponent'/'random'` (12–14), `native made an ambiguous choice`
+(10–33, inherent), place-a-Pokémon zone endpoints, `coinFlipsUntilTails`, `energy.attach` from deck. Further
+ATTACK-side gains require either the **risky** Stage B choice-alignment extension (per-shape native
+prompt-geometry verification; false-positive-prone) or new **IR origins** (ABILITY/RULE_BOX, still blocked at
+0% of the corpus) — not more vocabulary.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

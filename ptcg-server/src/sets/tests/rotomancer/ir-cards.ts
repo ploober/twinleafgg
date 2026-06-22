@@ -126,7 +126,7 @@ function executeSwitch(store: StoreLike, state: State, effect: AttackEffect, op:
   });
 }
 
-export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State, bindings: Record<string, Card[]>): State {
   // v2: select.chooser (player/opponent/auto) + select.where (predicate).
   const chooser = op.select?.chooser;
   if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player') {
@@ -158,7 +158,7 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   // `chooser:'player'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`, so the
   // now-filter-aware harness picks the identical first-N matching cards), aligning the ambiguity guard.
   if (chooser === 'player') {
-    return executeCardsMoveChoice(store, state, effect, op, from, to, cont);
+    return executeCardsMoveChoice(store, state, effect, op, from, to, cont, bindings);
   }
 
   // `auto` / absent: deterministic first-N (no choice, no prompt).
@@ -192,6 +192,9 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     throw new Error(`[ir-cards] unsupported cards.move count "${countKind}"`);
   }
 
+  // Record the moved set for a later `countOf` (discard-and-scale producer — "discard up to N, then N more
+  // damage per card discarded"). Recorded even when empty so `countOf` reads 0 rather than throwing unbound.
+  if (op.bindAs) { bindings[op.bindAs] = cards; }
   if (cards.length === 0) {
     return cont(state);
   }
@@ -212,19 +215,23 @@ function countToMinMax(count: any, eligible: number): { min: number; max: number
 
 function executeCardsMoveChoice(
   store: StoreLike, state: State, effect: AttackEffect, op: any,
-  from: CardList, to: CardList, cont: (state: State) => State
+  from: CardList, to: CardList, cont: (state: State) => State, bindings: Record<string, Card[]>
 ): State {
   const where = op.select?.where;
   const blocked: number[] = [];
   from.cards.forEach((c, i) => { if (!matchesCardPredicate(c, where)) { blocked.push(i); } });
   const eligible = from.cards.length - blocked.length;
-  if (eligible === 0) { return cont(state); } // nothing matches → snapshot-neutral no-op
+  if (eligible === 0) {
+    if (op.bindAs) { bindings[op.bindAs] = []; } // nothing matches → empty bind (countOf reads 0)
+    return cont(state);                          // snapshot-neutral no-op
+  }
   const { min, max } = countToMinMax(op.count, eligible);
   const prompt = new ChooseCardsPrompt(
     effect.player, GameMessage.CHOOSE_CARD_TO_HAND, from, {}, { min, max, allowCancel: false, blocked }
   );
   return store.prompt(state, prompt, (selected: Card[] | null) => {
     const cards = selected ?? [];
+    if (op.bindAs) { bindings[op.bindAs] = cards; } // discard-and-scale: record what was moved for countOf
     return cont(cards.length ? MOVE_CARDS(store, state, from, to, { cards }) : state);
   });
 }

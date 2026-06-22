@@ -427,6 +427,48 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(two.attackerFire).toBe(0);      // every matching energy discarded — the discard is observable, not a no-op
   });
 
+  // countOf / cards.move bindAs non-vacuity: the OTHER discard-and-scale producer — "discard up to N Energy
+  // from your hand, then N more damage per card discarded" (Mega Clefable ex Shooting Moons / Mawile Double
+  // Eater shape). The `cards.move` records the chosen-and-discarded set as `bindAs`, and `countOf` reads its
+  // cardinality; the harness greedily discards min(max, eligible) hand Energy (its ChooseCardsPrompt policy),
+  // so native and interp discard the same set. A regression that ignored the binding would throw (unbound →
+  // skip) or deal a constant; the empty case proves the empty-bind path (countOf 0, not a throw).
+  it('countOf: damage scales with hand Energy discarded and bound via a cards.move bindAs', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const shootingMoons: IrFragment[] = [{
+      label: 'Hand Burst', cost: ['Colorless'],
+      body: [
+        { kind: 'cards.move', bindAs: 'discarded', count: { kind: 'upTo', max: 4 },
+          from: { owner: 'self', zone: 'hand' }, to: { owner: 'self', zone: 'discard' },
+          select: { chooser: 'player', where: { kind: 'isa', supertype: 'Energy' } } },
+        { kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+          amount: { kind: 'perCount', base: 20, per: 40, count: { kind: 'countOf', ref: 'discarded' } } },
+      ],
+    }];
+    const run = (energyInHand: number) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10),
+          hand: Array(energyInHand).fill('Fire Energy SVE') },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, shootingMoons);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      const discardBefore = game.state.players[0].discard.cards.length;
+      useAttack(game.store, game.state, 0, 'Hand Burst');
+      return {
+        defenderDamage: game.state.players[1].active.damage,
+        discardDelta: game.state.players[0].discard.cards.length - discardBefore,
+      };
+    };
+    expect(run(0)).toEqual({ defenderDamage: 20, discardDelta: 0 });   // empty hand → base only (empty bind → countOf 0, not a throw)
+    expect(run(1)).toEqual({ defenderDamage: 60, discardDelta: 1 });   // 1 discarded → 20 + 40
+    expect(run(2)).toEqual({ defenderDamage: 100, discardDelta: 2 });  // 2 discarded → 20 + 80 (scales with the bound set)
+  });
+
   // Turn-state predicate non-vacuity (movedToActive): the +bonus must land ONLY when the attacker
   // actually switched into the Active this turn. The interpreter reads the engine's real signal
   // (player.movedToActiveThisTurn). Proving BOTH branches (switched-in → bonus, placed → no bonus)

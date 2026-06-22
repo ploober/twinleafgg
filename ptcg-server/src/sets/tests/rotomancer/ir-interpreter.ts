@@ -50,7 +50,8 @@ export interface CountForm {
   count?: CountForm;   // perCount inner count
   bonus?: number;      // plusIf
   when?: any;          // plusIf predicate
-  n?: number;          // coinFlipHeads: number of coins flipped
+  n?: number;          // coinFlipHeads: number of coins flipped; exactly: count
+  max?: number;        // upTo: the upper bound (discard/move up to N)
   ref?: string;        // countOf: name of the runtime binding whose cardinality this returns
   bothSides?: boolean; // forEach: count over BOTH players' Pokémon (e.g. "tools attached to all Pokémon")
 }
@@ -422,7 +423,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return cont(state);
     }
     case 'cards.move':
-      return executeCardsMove(store, state, effect, op, cont);
+      return executeCardsMove(store, state, effect, op, cont, bindings);
     case 'energy.discard':
       return cont(executeEnergyDiscard(store, state, effect, op, bindings));
     case 'energy.attach':
