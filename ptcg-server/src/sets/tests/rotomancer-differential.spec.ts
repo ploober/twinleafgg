@@ -278,6 +278,33 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[1].bench[1].damage).toBe(0);  // not chosen → untouched (not all-targets)
   });
 
+  // Stage B non-vacuity: a `choice` ("you may <then>") must run its then-branch (the harness always
+  // confirms the optional effect).
+  it('Stage B: a `choice` (you-may) runs its then-branch under the harness', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Maybe Confuse', cost: ['Colorless'],
+      body: [
+        { kind: 'damage.deal', amount: { kind: 'const', value: 20 }, target: { of: { side: 'opponent', spot: 'active' } } },
+        { kind: 'choice', chooser: 'self', else: [], then: [
+          { kind: 'condition.apply', condition: 'CONFUSED', target: { of: { side: 'opponent', spot: 'active' } } },
+        ] },
+      ],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Maybe Confuse');
+    expect(game.state.players[1].active.damage).toBe(20);
+    expect(game.state.players[1].active.specialConditions).toContain(SpecialCondition.CONFUSED); // the optional fired
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the

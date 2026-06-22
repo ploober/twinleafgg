@@ -13,6 +13,7 @@ import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
 import { GameMessage } from '../../../game/game-message';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
@@ -54,8 +55,11 @@ export interface IrOp {
   ignore?: string[];    // damage.deal: weakness | resistance | defenderEffects (all no-op in a mirror)
   target?: { of?: V2Selector; where?: any };
   when?: any;           // `if` op condition predicate
-  then?: IrOp[];        // coinFlip heads branch / `if` true branch
-  else?: IrOp[];        // `if` false branch
+  then?: IrOp[];        // coinFlip heads branch / `if` true branch / `choice` "you may" branch
+  else?: IrOp[];        // `if` false branch (always empty for `choice`)
+  chooser?: string;     // `choice`: who decides (self) — a "you may" optional effect
+  over?: CountForm;     // `iterate`: how many times to run `body`
+  body?: IrOp[];        // `iterate`: the per-iteration ops
   card?: any;           // energy.discard: { from: { owner, zone }, predicate }
   scope?: string;       // continuous.modifier / rule.override: opponentNextTurn | ownNextAttack | …
   appliesTo?: any;      // continuous.modifier: selector the modifier attaches to
@@ -444,8 +448,19 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'if':
       return runOps(store, state, effect,
         (evalPredicate(state, effect, op.when) ? op.then : op.else) ?? [], 0, cont);
+    case 'choice': {
+      // A "you may <then>" optional effect (corpus `else` is always empty). Native emits a
+      // ConfirmPrompt, which the harness always resolves to `true` (and never increments the
+      // ambiguity guard) — so emit the same prompt and run `then` when confirmed, mirroring native.
+      if (op.chooser !== undefined && op.chooser !== 'self') {
+        throw new Error(`[ir-interpreter] choice chooser "${op.chooser}" not supported`);
+      }
+      const prompt = new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_USE_ABILITY);
+      return store.prompt(state, prompt, (use: boolean) =>
+        use ? runOps(store, state, effect, op.then ?? [], 0, cont) : cont(state));
+    }
     default:
-      // choice / iterate / costGate and the new pokemon.* / damage.move ops are unsupported.
+      // iterate / costGate and the new pokemon.* / damage.move ops are unsupported.
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);
   }
 }
