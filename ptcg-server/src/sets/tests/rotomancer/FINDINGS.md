@@ -588,6 +588,40 @@ and no Tool is on the differential's boards → it would compare vacuously; need
 roadmap #1), plus bench-search / place-a-Pokémon / active(self-bounce) endpoints. Rotomancer suite **63
 specs, 0 failures**.
 
+### 20. Tools-loaded board variant + `'Pokémon Tool'` subtype + `hasTool` → 4 native bugs
+
+To make Pokémon-Tool effects observable (so the deferred Tool cards stop comparing vacuously), a **sixth**
+board variant seeds a Tool on both Actives, mirror-symmetric like `conditions`/`energy-rich`. Added: the
+`'Pokémon Tool'` card subtype (`TrainerCard` + `trainerType === TrainerType.TOOL`), the `hasTool` predicate
+(`list.tools.length > 0`), a `tools` count in the snapshot, and `forEach toolsAttached` now counts
+active+bench and honors `bothSides`. **Float Stone** is the seeded Tool — retreat-only, so inert for an
+attack snapshot (the differential never retreats).
+
+**The load-bearing faithfulness detail.** A Tool must be seeded into `PokemonCardList.tools` **only** — not
+`.cards` — exactly as the engine's `AttachPokemonToolEffect` leaves it. The harness's `buildPokemonSlot`
+puts a configured tool in *both* `.cards` and `.tools`, which makes `moveCardsTo` find it in `.cards` first
+(branch 1) and leave `.tools` **stale** — a test-only artifact a real game never has. Seeding `.tools`-only
+(via `applyBoardMutations`) makes `moveCardsTo`'s `.tools` branch fire and the snapshot's tool count update
+correctly. Correspondingly, `executeAttachedMove`'s auto gather reads `[...energies.cards, ...tools]` (Tools
+live in `.tools`, not `.cards`).
+
+The variant surfaced **4 native bugs** (interp faithful, allow-listed, never fixed):
+- **Gadget Show** (Heat/Wash/Mow Rotom DRI) — "30 per Pokémon Tool attached to all your Pokémon" counts
+  the **vestigial `PokemonCard.tools`** field (never populated; the engine stores tools on
+  `PokemonCardList.tools`), so it always counts 0. IR/interp read the real `list.tools`.
+- **Gnaw Through** (Arven's Skwovet DRI) — the entire `reduceEffect` is **commented out** (unimplemented),
+  so it never discards the opponent's Tool. IR/interp do (opponent `tools` −1, `discard` +1).
+
+And one **IR-integration bug fixed**: `forEach toolsAttached` ignored the IR's `bothSides` flag and counted
+only the Active (Bronzong's *Tool Drop*, "40 per Tool attached to **all** Pokémon"); now it sums active+bench
+across the named side(s). **Deferred**: `attached`→discard with a `source` selector (Minccino's "from your
+opponent's Pokémon" — native emits a `ChoosePokemonPrompt` of a different geometry; counted skip).
+
+`compared` rose **+6 per existing variant** (the prize/attached phase) and the new `tools-loaded` variant
+compares ~528 cards at **0 mismatches**. Non-vacuity assertions prove a Tool is actually discarded (tools
+1→0, discard +1) and that `hasTool` flips the damage with the Tool's presence. Rotomancer suite **66 specs,
+0 failures**; conformance 191/0.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

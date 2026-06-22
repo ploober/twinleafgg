@@ -6,7 +6,8 @@ import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { SuperType, EnergyType, CardType, CardTag, Stage } from '../../../game/store/card/card-types';
+import { TrainerCard } from '../../../game/store/card/trainer-card';
+import { SuperType, EnergyType, CardType, CardTag, Stage, TrainerType } from '../../../game/store/card/card-types';
 import { MOVE_CARDS, TAKE_X_PRIZES } from '../../../game/store/prefabs/prefabs';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
@@ -86,6 +87,7 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
       case 'Stage 2': if ((card as PokemonCard).stage !== Stage.STAGE_2) return false; break;
       case 'ex': if (!card.tags.includes(CardTag.POKEMON_ex)) return false; break;
       case 'Tera': if (!card.tags.includes(CardTag.POKEMON_TERA)) return false; break;
+      case 'Pokémon Tool': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.TOOL) return false; break;
       default: throw new Error(`[ir-cards] unsupported card subtype "${pred.subtype}"`);
     }
   }
@@ -229,25 +231,32 @@ function executePrizeMove(store: StoreLike, state: State, effect: AttackEffect, 
 
 // cards.move from a Pokémon's attached cards (Energy / Tool) to hand/discard. The `from` carries a
 // selector (op.from.of) naming the source Pokémon, like energy.discard — resolve it, then move the
-// attached cards matching `select.where`. The move MUST go through PokemonCardList.moveCardsTo (which
-// keeps the `.energies`/`.tools` sub-lists the snapshot reads in sync), never MOVE_CARDS. `chooser:
-// 'player'` emits the same ChooseCardsPrompt native does (the filter-aware harness picks the identical
-// first-N matching); `auto`/absent moves the first-N deterministically. (Tool predicates throw in
-// matchesCardPredicate → counted skip; multi-Pokémon sources aren't in the corpus → first source.)
+// attached cards matching `select.where` via PokemonCardList.moveCardsTo (its `.energies`/`.tools`
+// branches keep both sub-lists the snapshot reads in sync). Energies live in `.energies.cards` (and
+// `.cards`); Tools live in `.tools` ONLY — so the deterministic gather reads BOTH. `chooser:'player'`
+// (energy attached→hand) emits the same ChooseCardsPrompt native does over the source list; `auto`/
+// absent (the Tool-discard family) moves the first-N. A `source` selector ("from your opponent's
+// Pokémon", a player choice of WHICH Pokémon — native emits a ChoosePokemonPrompt of a different
+// geometry) is a counted skip.
 function executeAttachedMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  if (op.source !== undefined) {
+    throw new Error('[ir-cards] cards.move attached with a multi-Pokémon source selector not supported');
+  }
   const to = resolveZone(effect, op.to);   // hand / discard, owner-aware
   const where = op.select?.where;
   const sources = resolveV2Selector(effect, op.from?.of).filter(t => t.list.getPokemonCard() !== undefined);
   if (sources.length === 0) { return cont(state); }   // no source Pokémon → snapshot-neutral no-op
   const source = sources[0].list;
-  const eligibleIdx: number[] = [];
-  source.cards.forEach((c, i) => { if (matchesCardPredicate(c, where)) { eligibleIdx.push(i); } });
-  if (eligibleIdx.length === 0) { return cont(state); } // nothing attached matches → no-op (as native guards)
 
   if (op.select?.chooser === 'player') {
+    // Player picks WHICH attached card. Energies are in `.cards`, so a ChooseCardsPrompt over the source
+    // list (non-matching → blocked) mirrors native (the energy attached→hand cards). Tool player-choice
+    // is only the source-selector shape, already thrown above.
     const blocked: number[] = [];
-    source.cards.forEach((_, i) => { if (eligibleIdx.indexOf(i) === -1) { blocked.push(i); } });
-    const { min, max } = countToMinMax(op.count, eligibleIdx.length);
+    let eligible = 0;
+    source.cards.forEach((c, i) => { if (matchesCardPredicate(c, where)) { eligible++; } else { blocked.push(i); } });
+    if (eligible === 0) { return cont(state); }
+    const { min, max } = countToMinMax(op.count, eligible);
     const prompt = new ChooseCardsPrompt(
       effect.player, GameMessage.CHOOSE_CARD_TO_HAND, source, {}, { min, max, allowCancel: false, blocked }
     );
@@ -258,13 +267,15 @@ function executeAttachedMove(store: StoreLike, state: State, effect: AttackEffec
     });
   }
 
-  // auto / absent: deterministic first-N of the matching attached cards.
-  const eligible = eligibleIdx.map(i => source.cards[i]);
+  // auto / absent: the attached cards matching `where` (energies in `.energies.cards`, tools in
+  // `.tools`), first-N. moveCardsTo routes each to the right sub-list, so the tools count updates.
+  const attached = [...source.energies.cards, ...source.tools].filter(c => matchesCardPredicate(c, where));
+  if (attached.length === 0) { return cont(state); } // nothing attached matches → no-op (as native guards)
   const countKind = op.count?.kind;
   let cards: Card[];
-  if (countKind === 'all') { cards = eligible; }
-  else if (countKind === 'exactly') { cards = eligible.slice(0, op.count.n ?? 0); }
-  else if (countKind === 'upTo') { cards = eligible.slice(0, op.count.max ?? 0); }
+  if (countKind === 'all') { cards = attached; }
+  else if (countKind === 'exactly') { cards = attached.slice(0, op.count.n ?? 0); }
+  else if (countKind === 'upTo') { cards = attached.slice(0, op.count.max ?? 0); }
   else { throw new Error(`[ir-cards] unsupported cards.move count "${countKind}"`); }
   if (cards.length) { source.moveCardsTo(cards, to); }
   return cont(state);

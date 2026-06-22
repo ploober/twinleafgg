@@ -16,9 +16,9 @@ import { matchesCardPredicate } from './ir-cards';
  * contextual subject), damageState, conditionOn, stadiumInPlay, energyAttachedCount, boardCount,
  * hpRemaining, prize, handSize, deckSize, cardInZone, compare, plus the turn-state leaves read from
  * engine signals: turn (went-first / own-first-turn via state.turn), movedToActive (switched-in this
- * turn via player.movedToActiveThisTurn), and history event:'evolved' (via pokemonPlayedTurn). The
- * remaining history events (attackUsed/healed) and other leaves (hasTool, nameTag, resistanceType, …)
- * throw, so the differential simply skips that card rather than guessing.
+ * turn via player.movedToActiveThisTurn), history event:'evolved' (via pokemonPlayedTurn), and hasTool
+ * (via the per-Pokémon `tools` array). The remaining history events (attackUsed/healed) and other
+ * leaves (nameTag, resistanceType, …) throw, so the differential simply skips that card rather than guessing.
  */
 
 const CONDITIONS: Record<string, SpecialCondition> = {
@@ -169,6 +169,11 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
         return !!card && player.movedToActiveThisTurn.includes(card.id);
       });
     }
+    case 'hasTool':
+      // "this / the Defending Pokémon has a Pokémon Tool attached" — read the engine's per-Pokémon
+      // `tools` array (the same list native cards check via `list.tools.length`). Observable on the
+      // tools-loaded board variant; a non-vacuity assertion exercises the true branch.
+      return listOf(pred.selector).tools.length > 0;
     case 'history': {
       // Only "evolved this turn" is engine-observable: a Pokémon's pokemonPlayedTurn equals the current
       // turn when it was played/evolved this turn — exactly what native evolution-bonus cards check

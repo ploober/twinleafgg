@@ -52,6 +52,7 @@ export interface CountForm {
   when?: any;          // plusIf predicate
   n?: number;          // coinFlipHeads: number of coins flipped
   ref?: string;        // countOf: name of the runtime binding whose cardinality this returns
+  bothSides?: boolean; // forEach: count over BOTH players' Pokémon (e.g. "tools attached to all Pokémon")
 }
 
 export interface IrOp {
@@ -124,7 +125,12 @@ function countOf(effect: AttackEffect, form: CountForm): number {
     case 'handCards': return p.hand.cards.length;
     case 'prizesTaken': return 6 - p.getPrizeLeft();
     case 'retreatCost': return p.active.getPokemonCard()?.retreat?.length ?? 0;
-    case 'toolsAttached': return p.active.tools.length;
+    case 'toolsAttached': {
+      // Tools attached across a player's Pokémon (active + bench). `bothSides` ("attached to all
+      // Pokémon") sums both players. Tools live on PokemonCardList.tools (the engine's real storage).
+      const toolsOf = (pl: any) => [pl.active, ...pl.bench].reduce((s: number, l: any) => s + l.tools.length, 0);
+      return form.bothSides ? toolsOf(effect.player) + toolsOf(effect.opponent) : toolsOf(p);
+    }
     case 'damageCounters': {
       // Damage counters on the form's explicit target, else on `who`'s active.
       const targets = form.selector ? resolveV2Selector(effect, form.selector) : [{ player: p, list: p.active }];

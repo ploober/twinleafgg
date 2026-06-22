@@ -22,6 +22,7 @@ interface PokeSnap {
   conditions: string[];
   energy: number;
   energyTypes: string[];   // sorted multiset of provided types — makes a wrong-TYPE energy op observable
+  tools: number;           // attached Pokémon Tools — makes a Tool discard observable (tools-loaded variant)
 }
 interface SideSnapshot {
   active: PokeSnap;
@@ -41,6 +42,7 @@ function pokeSnap(list: PokemonCardList): PokeSnap {
     conditions: ko ? [] : list.specialConditions.map(String).sort(),
     energy: ko ? 0 : list.energies.cards.length,
     energyTypes: energyCards.flatMap(c => c.provides.map(String)).sort(),
+    tools: ko ? 0 : list.tools.length,
   };
 }
 
@@ -65,6 +67,7 @@ interface Board {
   extraEnergy?: string[];              // typed energy added to BOTH actives + every bench slot
   hand?: string[]; discard?: string[]; // seeded into BOTH players' zones
   defenderConditions?: SpecialCondition[]; // special conditions on p1.active ONLY (attacker must attack)
+  tools?: string[];                    // Pokémon Tools attached to BOTH actives (not the bench)
 }
 
 interface AttackRun { snap: Snapshot; ambiguous: number; }
@@ -76,6 +79,13 @@ interface AttackRun { snap: Snapshot; ambiguous: number; }
 function applyBoardMutations(game: SetupGameResult, board: Board): void {
   for (const c of board.defenderConditions ?? []) {
     game.state.players[1].active.addSpecialCondition(c);
+  }
+  // Pokémon Tools attach to `.tools` ONLY (not `.cards`) — exactly as the engine's AttachPokemonToolEffect
+  // leaves them; this is what makes moveCardsTo's tools branch (and the snapshot) behave like a real game.
+  for (const toolName of board.tools ?? []) {
+    for (const i of [0, 1]) {
+      game.state.players[i].active.tools.push(getCardByName(toolName));
+    }
   }
 }
 
@@ -549,6 +559,64 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[0].hand.cards.length).toBe(handBefore + 1); // …into the hand
   });
 
+  // Tool non-vacuity (attached→discard): "discard all Pokémon Tools from your opponent's Active" actually
+  // removes the Tool from the opponent's Active (tools −1) and adds it to their discard (discard +1),
+  // through moveCardsTo's `.tools` branch (the Tool is in `.tools` only, as in a real game). A regression
+  // (Tool subtype not matched, or moveCardsTo leaving `.tools` stale) would leave the Tool attached.
+  it('cards.move attached→discard non-vacuity: discards the opponent\'s Pokémon Tool', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const run = (seedTool: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      if (seedTool) { game.state.players[1].active.tools.push(getCardByName('Float Stone PLF')); } // tools-only, as the engine attaches
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, [{
+        label: 'Strip Tool', cost: ['Colorless'],
+        body: [{ kind: 'cards.move', count: { kind: 'all' },
+          from: { of: { side: 'opponent', spot: 'active' }, zone: 'attached' }, to: { owner: 'opponent', zone: 'discard' },
+          select: { chooser: 'auto', where: { kind: 'isa', supertype: 'Trainer', subtype: 'Pokémon Tool' } } }],
+      }]);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      const discardBefore = game.state.players[1].discard.cards.length;
+      useAttack(game.store, game.state, 0, 'Strip Tool');
+      return { tools: game.state.players[1].active.tools.length, discardDelta: game.state.players[1].discard.cards.length - discardBefore };
+    };
+    expect(run(true)).toEqual({ tools: 0, discardDelta: 1 });  // Tool present → discarded (tools 1→0, discard +1)
+    expect(run(false)).toEqual({ tools: 0, discardDelta: 0 }); // no Tool → nothing to discard (no-op)
+  });
+
+  // Tool non-vacuity (hasTool): "+bonus if the Defending Pokémon has a Tool" flips with the Tool's
+  // presence — reading the real `.tools` array. Proves both branches.
+  it('hasTool non-vacuity: +bonus only when the target has a Pokémon Tool', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const run = (seedTool: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      if (seedTool) { game.state.players[1].active.tools.push(getCardByName('Float Stone PLF')); }
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, [{
+        label: 'Tool Punish', cost: ['Colorless'],
+        body: [{ kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+          amount: { kind: 'plusIf', base: 20, bonus: 80, when: { kind: 'hasTool', selector: { side: 'opponent', spot: 'active' } } } }],
+      }]);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      useAttack(game.store, game.state, 0, 'Tool Punish');
+      return game.state.players[1].active.damage;
+    };
+    expect(run(true)).toBe(100);  // Tool attached → base + 80
+    expect(run(false)).toBe(20);  // no Tool → base only
+  });
+
   // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
   // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
   it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {
@@ -628,6 +696,9 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Dangle Tail': 'Slowpoke SCR: "Put a Pokémon from your discard pile into your hand." Native moves from a detached temp CardList (new CardList(); cards.cards = selected; MOVE_CARDS(cards, hand)), so the card is ADDED to the hand but never removed from the discard — a duplicate. IR/interp move it (discard −1). → Twinleaf bug. (Surfaced once the filter-aware ChooseCards fix dropped native\'s ambiguity to 0.)',
     'Greedy Fang': 'Mega Sharpedo ex PFL: card text "Draw 2 cards" but native MOVE_CARDS draws 1. IR/interp draw 2. → Twinleaf bug',
     'Hungry Jaws': 'Mega Sharpedo ex PFL: the "+150 if this Pokémon has damage" rider is wired to attack index 0 (Greedy Fang), so Hungry Jaws (index 1) never applies it. IR/interp apply it. → Twinleaf bug',
+    // (6, tools) Twinleaf bugs surfaced by the tools-loaded board variant — the interpreter does the real attack.
+    'Gadget Show': 'Heat/Wash/Mow Rotom DRI: "30 damage for each Pokémon Tool attached to all your Pokémon" — native counts `card.tools` (the vestigial PokemonCard.tools field, never populated; the engine attaches tools to PokemonCardList.tools), so it always counts 0. IR/interp read the real list.tools. → Twinleaf bug',
+    'Gnaw Through': 'Arven\'s Skwovet DRI: "Before doing damage, discard all Pokémon Tools from your opponent\'s Active." Native\'s entire reduceEffect is commented out (unimplemented), so it never discards the Tool. IR/interp discard it (opponent tools −1, discard +1). → Twinleaf bug (unimplemented)',
   };
 
   // (6b) Twinleaf bugs keyed by *printing* rather than label — either the attack label also belongs
@@ -771,6 +842,19 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       benchCount: 2,
       hand: ['Bidoof CRZ', 'Bidoof CRZ', 'Fire Energy SVE'],
       discard: padDeck(12, 'Fire Energy SVE').concat('Bidoof CRZ'),
+    }));
+  });
+
+  // tools-loaded: both Actives carry a Pokémon Tool (Float Stone — retreat-only, so fully inert for the
+  // attack snapshot since the differential never retreats), so `attached`→discard(Tools) and `hasTool`
+  // riders fire non-trivially instead of vacuously on a tool-less board. Mirror-symmetric (both Actives),
+  // so a Tool effect cancels in the diff and only a real divergence surfaces.
+  it('matches native across the attack corpus — loaded: tools on both actives', () => {
+    runCorpusDifferential('tools-loaded', hp => ({
+      attackerDamage: Math.min(30, hp - 20),
+      defenderDamage: Math.min(30, hp - 20),
+      benchCount: 2,
+      tools: ['Float Stone PLF'],
     }));
   });
 });

@@ -107,7 +107,7 @@ Status legend used throughout:
 | op | corpus | status | Twinleaf mechanism / reason |
 |---|---:|:--:|---|
 | `damage.deal` | 1680 | ✅ | Defender damage routes through the normal pipeline (`effect.damage +=`, so weakness/resistance/prevention apply); multi‑target/spread damage is direct `PutDamageEffect` (weakness‑free), matching how native spread works. `ignore` (weakness/resistance/defenderEffects) is inert in a mirror → no‑op. |
-| `cards.move` | 307 | ✅ | `MOVE_CARDS` between zones hand/deck/discard/lostzone. `chooser:'auto'` → first‑N matching; `chooser:'player'` → **emits a `ChooseCardsPrompt`** (predicate → `blocked`; the filter‑aware harness picks the same first‑N matching, §12.7). **bench→active (same owner) = a SWITCH** via `player.switchPokemon` + a Bench `ChoosePokemonPrompt`. **attached → hand/discard** (move a card off a Pokémon named by `from.of`) via `PokemonCardList.moveCardsTo` (keeps the `.energies`/`.tools` sub‑lists the snapshot reads in sync — never `MOVE_CARDS`). **prize → hand** ("take a Prize card") via the native `TAKE_X_PRIZES` prefab (prizes are a `CardList[]`; the prefab emits the same `ChoosePrizePrompt` the harness resolves, no guard bump). Counts `exactly`/`all`/`upTo`. **Throws** on `opponent`/`random` chooser, deck **search** (`visibility:search`/`searchTyped`), `attached`→discard of **Pokémon Tools** (the `'Pokémon Tool'` subtype isn't in `matchesCardPredicate`, and no tool is on the differential's boards → would be vacuous), and place‑a‑Pokémon / bench‑search / active(self‑bounce) endpoints. |
+| `cards.move` | 307 | ✅ | `MOVE_CARDS` between zones hand/deck/discard/lostzone. `chooser:'auto'` → first‑N matching; `chooser:'player'` → **emits a `ChooseCardsPrompt`** (predicate → `blocked`; the filter‑aware harness picks the same first‑N matching, §12.7). **bench→active (same owner) = a SWITCH** via `player.switchPokemon` + a Bench `ChoosePokemonPrompt`. **attached → hand/discard** (move a card off a Pokémon named by `from.of`) via `PokemonCardList.moveCardsTo` (keeps the `.energies`/`.tools` sub‑lists the snapshot reads in sync — never `MOVE_CARDS`). **prize → hand** ("take a Prize card") via the native `TAKE_X_PRIZES` prefab (prizes are a `CardList[]`; the prefab emits the same `ChoosePrizePrompt` the harness resolves, no guard bump). Counts `exactly`/`all`/`upTo`. `attached`→discard of **Pokémon Tools** is now supported (Tool subtype + the tools‑loaded board, §12.3); the auto gather reads `.tools` (where the engine keeps attached Tools), so `moveCardsTo` updates the snapshot's tools count. **Throws** on `opponent`/`random` chooser, deck **search** (`visibility:search`/`searchTyped`), a `source` selector (the "from your opponent's Pokémon" player‑choice‑of‑which‑Pokémon shape — native emits a `ChoosePokemonPrompt` of a different geometry, e.g. Minccino), and place‑a‑Pokémon / bench‑search / active(self‑bounce) endpoints. |
 | `energy.discard` | 197 | ✅ | Discards matching attached energy from the resolved target(s). Counts `exactly`/`all`, plus the player‑chosen `anyAmount`/`upTo` (collapsed to the greedy maximum the harness auto‑resolves native's `DiscardEnergyPrompt` to — §8.2). When the source is a player‑choice pool ("from among your Pokémon", `chooser`/`quantity:'one'`), resolves the spatial pool directly (§6, `spatialPool`). With `bindAs` it records the discarded list for a later `countOf` (discard‑and‑scale — §8.1). **Throws** on non‑`attached` source. |
 | `condition.apply` | 197 | ✅ | `AddSpecialConditionsEffect`. **Throws** on `removeMode` (condition removal — not yet wired). |
 | `rule.override` | 192 | 🟡 | See §5. `retreatShutoff`/defending and `attackShutoff`/`ownNextAttack` are reproduced (probed by the lock differential); the rest are **🟦 no‑op** (snapshot‑neutral this turn, not yet probed). |
@@ -216,7 +216,7 @@ is the opponent's active (the implicit subject of an attack's riders).
 | `turn` | 16 | ✅ | "went first/second", "is your first turn" — read from `state.turn`/`activePlayer` (convention: turn 1 = first player's first turn, turn 2 = second player's; active player went first iff `state.turn` odd; "your first turn" = `state.turn ≤ 2`). Native reads the same `state.turn`, so they agree. In the single‑turn differential (`turn:2`) the value is determinable, so a true‑branch non‑vacuity assertion (§12.3) proves the model isn't vacuously matching. |
 | `history` | 10 | 🟡 | `event:'evolved'` (`window:'thisTurn'`) ✅ — `pokemonPlayedTurn === state.turn` (the signal native evolution‑bonus cards read; `fromName` inert in a mirror). `attackUsed`/`healed` **⛔ throw → skip**: they need cross‑turn / heal history the engine doesn't expose (and `yourLastTurn` can't be exercised in a single‑turn differential). |
 | `movedToActive` | 9 | ✅ | "switched into the Active this turn" — read from the engine's `player.movedToActiveThisTurn` (the `IS_POKEMON_MOVED_TO_ACTIVE_THIS_TURN` signal). Determinable‑false in the placed‑attacker setup; a switched‑in non‑vacuity assertion proves the true branch. |
-| `hasTool` | 5 | ⛔ | Tool attached — the differential's bare board has no tools; throw → skip. |
+| `hasTool` | 5 | ✅ | "this / the Defending Pokémon has a Pokémon Tool" — reads the engine's per‑Pokémon `tools` array (`list.tools.length > 0`). Exercised non‑trivially on the tools‑loaded board variant (§12.3). |
 | `nameTag` | 4 | 🟡 | Supported by `matchesCardPredicate` for **card** matching (substring/owner); throws as a standalone **state** predicate (rare). |
 | `resistanceType` / `retreatCost` / `sharedTypeInPlay` / `hasAttack` / `hasAbility` / `cardPlayed` | 2/1/… | ⛔ | Spec leaves not yet modeled (board‑shape or history dependent). Throw → skip. |
 
@@ -266,7 +266,7 @@ Two distinct vocabularies: **amounts** (a damage/heal magnitude, evaluated by `e
 | `pokemonInPlay` | 27 | ✅ |
 | `prizesTaken` | 22 | ✅ |
 | `discardCards` | 11 | ✅ |
-| `toolsAttached` | 7 | ✅ |
+| `toolsAttached` | 7 | ✅ (active+bench, `bothSides`) |
 | `retreatCost` | 5 | ✅ |
 | `handCards` | 4 | ✅ |
 | `specialConditions` | 2 | ⛔ (throws → skip) |
@@ -287,7 +287,8 @@ field of energy/`cards.move` ops, and `matching` on modifiers. It **throws on un
 | `nameTag` (`substring` / `owner`) | ✅ | e.g. "Cynthia's", "Duskull". |
 | `energyType` | ✅ | Matches an Energy card's `provides` **and** a Pokémon's own `cardType` (the fix from FINDINGS §9 — `isa energyType:Colorless` on a Pokémon now reads its type). |
 | `subtype: Basic` / `Special` / `Stage 1` / `Stage 2` / `ex` / `Tera` | ✅ | Basic handles both basic energy and Basic Pokémon. |
-| `subtype: Ancient` / `Future` / `Pokémon Tool` / `Supporter` / `Item` / `Stadium` | ⛔ | Unsupported subtypes throw → skip (board rarely contains them anyway). |
+| `subtype: Pokémon Tool` | ✅ | `TrainerCard` with `trainerType === TrainerType.TOOL`. Used by the `attached`→discard(Tools) cards (matched on the tools‑loaded board). |
+| `subtype: Ancient` / `Future` / `Supporter` / `Item` / `Stadium` | ⛔ | Unsupported subtypes throw → skip (board rarely contains them anyway). |
 | `hpAtMost` / `hasRuleBox` / `zoneIs` | ⛔ | spec leaves not yet wired. |
 | `and` / `or` / `not` | ✅ | combinators. |
 
@@ -324,12 +325,14 @@ and multi‑target placement are observable (this surfaced the `untilHpRemaining
 `placeCounters`‑vs‑`PutDamage` interpreter bugs), and to a typed‑energy multiset (`energyTypes`) so a
 wrong‑**type** energy op is observable.
 
-It runs over **five board variants**: `bare`, `primed` (bench + pre‑damage), and three *loaded*
+It runs over **six board variants**: `bare`, `primed` (bench + pre‑damage), and four *loaded*
 variants that each turn on one dimension so a divergence is attributable to it — `conditions` (defender
 carries POISONED+BURNED+CONFUSED → `conditionOn` true branches), `energy‑rich` (typed energy on every
 Pokémon → `energyAttachedCount`/`forEach energyAttached`), `zones‑loaded` (seeded hand + discard →
-`handSize`/`cardInZone`/`forEach discardCards`). Loads are mirror‑symmetric, so a loaded variant can
-only surface real divergences. This audit (§12 in FINDINGS) found and fixed two IR‑integration bugs the
+`handSize`/`cardInZone`/`forEach discardCards`), and `tools‑loaded` (a Pokémon Tool — Float Stone, a
+retreat‑only Tool that is inert for an attack snapshot — on both Actives, attached to `.tools` exactly as
+the engine does → `attached`→discard(Tools), `hasTool`, `forEach toolsAttached`). Loads are mirror‑symmetric,
+so a loaded variant can only surface real divergences. This audit (§12 in FINDINGS) found and fixed two IR‑integration bugs the
 empty board hid: the `energy.discard`/`attach` predicate read the wrong path (`op.card.from.predicate`
 vs `op.card.predicate`, dropping the type filter on all 249 ops), and `energyAttachedCount` over a
 `spot:anywhere` selector counted only the active. Three **non‑vacuity assertions** prove the loaded
@@ -407,9 +410,9 @@ not card identity — an honest partial coverage, consistent with every other zo
 | ~~4~~ ✅ | Amount `countOf` (runtime bindings) + `bindAs` tracking | **Done** — discard‑and‑scale (Inferno X shape) wired end to end via a fragment‑scoped binding register + greedy‑discard pool; `compared` rose bare 501→517, primed 508→524. Surfaced a 5th native card‑file bug (Heatran TWM Steel Burst discards all energy, not just `[M]`). Deferred: `cards.move bindAs` (4 `me3`‑unmapped cards, no oracle). |
 | ~~4~~ ✅ | Predicate `turn` / `history` / `movedToActive` modeling | **Done** — `turn` (state.turn parity) + `movedToActive` (engine signal) + `history.evolved` (pokemonPlayedTurn) modeled; `compared` rose **+6 per variant** (bare 517→523, primed 524→530), 0 mismatches. True‑branch non‑vacuity assertions discharge the determinable‑at‑`turn:2` caveat. Deferred: `history.attackUsed`/`healed` (no engine signal). |
 | ~~4~~ ✅ | `cards.move` `prize` + `attached` zone endpoints | **Done** — attached→hand (Energy off a Pokémon, via `moveCardsTo`) + prize→hand (via `TAKE_X_PRIZES`) modeled; `compared` rose **+6 per variant** (bare 523→529, primed 530→536), 0 mismatches. Deferred: attached→discard(Tools) (needs the Tool subtype + a tool‑loaded board), bench‑search, active(self‑bounce). |
-| **1** | Tool‑loaded board variant + `'Pokémon Tool'` card subtype | Unlocks `attached`→discard(Tools) (~7 mapped: Minccino, Seaking, Larvesta, …) non‑vacuously, and any other Tool‑predicate gate (`hasTool` §7). A 6th board variant (seed a Tool on each Pokémon), mirror‑symmetric like `conditions`/`energy‑rich`. |
-| 2 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs`/`history.attackUsed` mapped cards, and more comparable. |
-| 3 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
+| ~~4~~ ✅ | Tool‑loaded board variant + `'Pokémon Tool'` card subtype + `hasTool` | **Done** — a 6th `tools‑loaded` variant + the Tool subtype + `hasTool` + `forEach toolsAttached` (active+bench, `bothSides`); the snapshot gained a `tools` count. Surfaced **4 native bugs** (Gadget Show ×3 read the vestigial `card.tools`; Gnaw Through's `reduceEffect` is commented out). Deferred: `attached`→discard with a `source` selector (Minccino's "from your opponent's Pokémon"). |
+| **1** | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs`/`history.attackUsed` mapped cards, and more comparable. |
+| 2 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built.
