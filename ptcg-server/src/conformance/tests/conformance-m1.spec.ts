@@ -137,7 +137,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       { kind: 'evolved', actor: 'A', card: 'Kirlia', pokemon: 'Ralts' },
       { kind: 'attachedEnergy', actor: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
       { kind: 'usedAttack', actor: 'A', attack: 'Slap' },
-      { kind: 'damaged', target: 'B-active', hp: 30 },  // significant: B's active took 30 (basic iid)
+      { kind: 'damaged', player: 'B', target: RALTS, hp: 30 }, // significant: B's active (Ralts) took 30
       { kind: 'turnEnded', player: 'A' },
       { kind: 'turnStarted', player: 'B' },
       { kind: 'draw', player: 'B', count: 1 },          // B's mandatory start-of-turn draw

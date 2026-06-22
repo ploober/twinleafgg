@@ -330,8 +330,8 @@ export type NeutralAction =
 export type NeutralEvent =
   // ── Significant (OpenAPI `Event`) — compared cross-engine ──
   | { kind: 'draw'; player: NeutralPlayerId; count: number }
-  | { kind: 'damaged'; target: string; hp: number }   // target = basic iid; hp = net HP placed this step
-  | { kind: 'ko'; target: string }                     // target = basic iid
+  | { kind: 'damaged'; player: NeutralPlayerId; target: string; hp: number } // target = basic printing (cid); hp = net HP this step
+  | { kind: 'ko'; player: NeutralPlayerId; target: string }                  // target = basic printing (cid)
   | { kind: 'turnStarted'; player: NeutralPlayerId }
   | { kind: 'turnEnded'; player: NeutralPlayerId }
   | { kind: 'shuffled'; player: NeutralPlayerId }

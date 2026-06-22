@@ -6,12 +6,13 @@ import { mapDelta } from './event-mapper';
 /**
  * Derive the SIGNIFICANT event vocabulary (OpenAPI `Event`, design §10.4) for one dispatch, from a
  * before/after neutral-state diff plus the raw twinleaf log delta. State-diff is the load-bearing
- * trick: the projection already carries stable basic `iid`s, so `damaged`/`ko` are iid-tagged without
- * resolving twinleaf's ambiguous display-name log params.
+ * trick: the projection carries stable basic `iid`s, so `damaged`/`ko` are detected by diffing them,
+ * then `identify`d to a `player` (owner) + `target` (basic printing/cid) — comparable across engines,
+ * unlike the engine-private iid — without resolving twinleaf's ambiguous display-name log params.
  *
- *  - `damaged{target, hp}` — a Pokemon whose `damage` rose (net HP this step); for the (single) target
- *    KO'd in this dispatch, the lethal hit is attributed from the deals-damage log delta.
- *  - `ko{target}` — a basic iid present before the dispatch and gone after.
+ *  - `damaged{player, target, hp}` — a Pokemon whose `damage` rose (net HP this step); for the (single)
+ *    target KO'd in this dispatch, the lethal hit is attributed from the deals-damage log delta.
+ *  - `ko{player, target}` — a basic iid present before the dispatch and gone after, identified in `before`.
  *  - `draw{player, count}` — aggregated `LOG_PLAYER_DRAWS_CARD` per player.
  *  - `turnStarted{player}` / `turnEnded{player}` — the turn boundary (player resolved from the log /
  *    the after-state's active player).
@@ -38,6 +39,25 @@ function damageByIid(state: NeutralState): Map<string, number> {
   return byIid;
 }
 
+/**
+ * Owner + basic printing of an in-play Pokemon (by basic `iid`). Significant events identify the
+ * affected Pokemon by `player` (owner) + `target` (its basic printing/cid) — both comparable across
+ * engines and available even after the Pokemon leaves play (a KO), unlike the engine-private `iid`
+ * (§6.1). Throws if the iid is not in play in the given state; callers only `identify` an iid the
+ * matching state's `damageByIid` just found.
+ */
+function identify(state: NeutralState, iid: string): { player: NeutralPlayerId; printing: string } {
+  for (const p of PLAYERS) {
+    const side = state.players[p];
+    for (const poke of [side.active, ...side.bench]) {
+      if (poke && poke.stack[0]?.iid === iid) {
+        return { player: p, printing: poke.stack[0].printing };
+      }
+    }
+  }
+  throw new Error(`[conformance] cannot identify iid "${iid}" for an event target`);
+}
+
 function logActor(log: StateLog): NeutralPlayerId | undefined {
   const name = log.params?.['name'];
   return name === 'A' || name === 'B' ? name : undefined;
@@ -62,7 +82,8 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     if (dmgAfter !== undefined && dmgAfter > dmgBefore) {
       const hp = dmgAfter - dmgBefore;
       survivorDamage += hp;
-      significant.push({ kind: 'damaged', target: iid, hp });
+      const at = identify(after, iid); // survivor: still in `after`
+      significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp });
     }
   }
 
@@ -75,11 +96,13 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
       .reduce((sum, l) => sum + logNum(l, 'damage'), 0);
     const lethal = dealt - survivorDamage;
     if (lethal > 0) {
-      significant.push({ kind: 'damaged', target: koList[0], hp: lethal });
+      const koHit = identify(before, koList[0]); // KO'd: gone from `after`, identify in `before`
+      significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal });
     }
   }
   for (const iid of koList) {
-    significant.push({ kind: 'ko', target: iid });
+    const at = identify(before, iid); // KO'd: identify where it was, in `before`
+    significant.push({ kind: 'ko', player: at.player, target: at.printing });
   }
 
   // turn boundary — `turnEnded` carries the ending player (log); `turnStarted` the new active player.

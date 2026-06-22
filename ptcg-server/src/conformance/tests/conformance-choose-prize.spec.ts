@@ -63,11 +63,12 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     expect(res.state.players.A.prizes.length).toBe(5);
     expect(res.state.players.A.hand.some(c => c.printing === W_PRINTING)).toBe(true);
 
-    // Significant events: the KO'd Pokemon is B's original active (its basic iid), preceded by the
-    // lethal `damaged` on the same target.
-    const koIid = initial.players.B.active!.stack[0].iid;
-    expect(res.events.some(e => e.kind === 'damaged' && e.target === koIid && e.hp > 0)).toBe(true);
-    expect(res.events.some(e => e.kind === 'ko' && e.target === koIid)).toBe(true);
+    // Significant events: the KO'd Pokemon is B's original active, identified by `player` + basic
+    // `printing` (cid, the PROJECTED set-number id) — not the engine-private iid — preceded by the
+    // lethal `damaged` on it.
+    const koPrinting = toPrinting(getCardByName('Ralts SIT'));
+    expect(res.events.some(e => e.kind === 'damaged' && e.player === 'B' && e.target === koPrinting && e.hp > 0)).toBe(true);
+    expect(res.events.some(e => e.kind === 'ko' && e.player === 'B' && e.target === koPrinting)).toBe(true);
   });
 
   it('enumerates every takeable prize pile as a takePrize legal action', () => {
