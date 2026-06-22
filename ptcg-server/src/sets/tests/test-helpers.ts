@@ -431,7 +431,10 @@ class TestStoreHandler implements StoreHandler {
     const max = prompt.options.max;
     let eligible = 0;
     for (let i = 0; i < prompt.cards.cards.length; i++) {
-      if (blocked.has(i)) { continue; }
+      // Respect the prompt's card `filter` (e.g. "a [R] Energy", "a Basic Pokémon"): a card that
+      // doesn't match it is not a legal pick, so it must not be auto-selected — the real eligible set
+      // is the filter-matching, non-blocked cards. (Mirrors resolveAttachEnergyRaw's filter handling.)
+      if (blocked.has(i) || !this.cardMatchesPartialFilter(prompt.cards.cards[i], prompt.filter)) { continue; }
       eligible++;
       if (indices.length < max) { indices.push(i); }
     }

@@ -363,6 +363,30 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[1].active.damage).toBe(0);    // bench-only target — Active untouched
   });
 
+  // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
+  // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
+  it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10),
+        discard: ['Fire Energy SVE', 'Fire Energy SVE', 'Bidoof CRZ'] }, // only the Bidoof is a Pokémon
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const ic = buildInterpretedCard(native, [{ label: 'Recover', cost: ['Colorless'], body: [
+      { kind: 'cards.move', select: { chooser: 'player', where: { kind: 'isa', supertype: 'Pokémon' } },
+        count: { kind: 'exactly', n: 1 }, from: { owner: 'self', zone: 'discard' }, to: { owner: 'self', zone: 'hand' } },
+    ] }]);
+    ic.id = native.id; game.state.players[0].active.cards[0] = ic;
+    const handBefore = game.state.players[0].hand.cards.length;
+    useAttack(game.store, game.state, 0, 'Recover');
+    expect(game.state.players[0].discard.cards.length).toBe(2);            // one card moved out of the discard
+    expect(game.state.players[0].hand.cards.length).toBe(handBefore + 1);
+    expect(game.state.players[0].hand.cards.some(c => c.name === 'Bidoof')).toBe(true); // the Pokémon, not a Fire Energy
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the
@@ -389,6 +413,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'Poison Chain': 'Pecharunt: Toxic Subjugation (+50 poison damage during checkup) lifts native to 70; interp models only the attack body (20)',
     'Shocking Web': 'Galvantula: Compound Eyes ability (+50 vs opponents with an Ability) lifts native to 100 (KO); interp models only the attack body (50)',
     // (6) Twinleaf bug — the interpreter does the real attack and native is wrong.
+    'Dangle Tail': 'Slowpoke SCR: "Put a Pokémon from your discard pile into your hand." Native moves from a detached temp CardList (new CardList(); cards.cards = selected; MOVE_CARDS(cards, hand)), so the card is ADDED to the hand but never removed from the discard — a duplicate. IR/interp move it (discard −1). → Twinleaf bug. (Surfaced once the filter-aware ChooseCards fix dropped native\'s ambiguity to 0.)',
     'Greedy Fang': 'Mega Sharpedo ex PFL: card text "Draw 2 cards" but native MOVE_CARDS draws 1. IR/interp draw 2. → Twinleaf bug',
     'Hungry Jaws': 'Mega Sharpedo ex PFL: the "+150 if this Pokémon has damage" rider is wired to attack index 0 (Greedy Fang), so Hungry Jaws (index 1) never applies it. IR/interp apply it. → Twinleaf bug',
   };

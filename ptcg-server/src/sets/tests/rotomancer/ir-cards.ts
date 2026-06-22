@@ -9,6 +9,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { SuperType, EnergyType, CardType, CardTag, Stage } from '../../../game/store/card/card-types';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { GameMessage } from '../../../game/game-message';
 
@@ -135,16 +136,19 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     return executeSwitch(store, state, effect, op, cont);
   }
 
-  // Zone↔zone card move. `auto`/`player` resolve to the first-N matching cards (the harness's
-  // first-eligible policy); a genuinely ambiguous `player` pick (count exactly/upTo) is caught by the
-  // differential's guard until the ChooseCards path lands (Stage B remainder, with the filter-aware
-  // harness fix). `count:'all'` needs no choice, so it compares today.
-  const from = resolveZone(effect, op.from);
+  const from = resolveZone(effect, op.from);   // throws on bench/active/prize/attached → counted skip
   const to = resolveZone(effect, op.to);
 
+  // `chooser:'player'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`, so the
+  // now-filter-aware harness picks the identical first-N matching cards), aligning the ambiguity guard.
+  if (chooser === 'player') {
+    return executeCardsMoveChoice(store, state, effect, op, from, to, cont);
+  }
+
+  // `auto` / absent: deterministic first-N (no choice, no prompt).
   const countKind = op.count?.kind;
   let candidates: Card[] = from.cards.slice();
-  if (chooser === 'auto' || chooser === 'player') {
+  if (chooser === 'auto') {
     candidates = candidates.filter(c => matchesCardPredicate(c, op.select.where));
   }
 
@@ -163,4 +167,35 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
     return cont(state);
   }
   return cont(MOVE_CARDS(store, state, from, to, { cards }));
+}
+
+// Map an IR count quantifier to ChooseCardsPrompt min/max (the eligible set is the predicate-matching
+// cards; non-matching are `blocked`). `exactly` clamps min to what's available so a short zone doesn't
+// throw on the interp side — native's strict min then skips that scenario, never false-matches.
+function countToMinMax(count: any, eligible: number): { min: number; max: number } {
+  switch (count?.kind) {
+    case 'exactly': return { min: Math.min(count.n ?? 0, eligible), max: count.n ?? 0 };
+    case 'upTo': return { min: 0, max: count.max ?? 0 };
+    case 'all': return { min: eligible, max: eligible };
+    default: throw new Error(`[ir-cards] unsupported cards.move count "${count?.kind}"`);
+  }
+}
+
+function executeCardsMoveChoice(
+  store: StoreLike, state: State, effect: AttackEffect, op: any,
+  from: CardList, to: CardList, cont: (state: State) => State
+): State {
+  const where = op.select?.where;
+  const blocked: number[] = [];
+  from.cards.forEach((c, i) => { if (!matchesCardPredicate(c, where)) { blocked.push(i); } });
+  const eligible = from.cards.length - blocked.length;
+  if (eligible === 0) { return cont(state); } // nothing matches → snapshot-neutral no-op
+  const { min, max } = countToMinMax(op.count, eligible);
+  const prompt = new ChooseCardsPrompt(
+    effect.player, GameMessage.CHOOSE_CARD_TO_HAND, from, {}, { min, max, allowCancel: false, blocked }
+  );
+  return store.prompt(state, prompt, (selected: Card[] | null) => {
+    const cards = selected ?? [];
+    return cont(cards.length ? MOVE_CARDS(store, state, from, to, { cards }) : state);
+  });
 }
