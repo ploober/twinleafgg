@@ -562,6 +562,32 @@ native bug surfaced. **Deferred** (honest counted gaps, specific throw messages)
 differential) and `history event:'healed'` (no heal-this-turn engine signal). Rotomancer suite **61 specs,
 0 failures**.
 
+### 19. `cards.move` `attached` + `prize` zone endpoints
+
+`cards.move` used to support only flat zones (hand/deck/discard/lostzone) and threw "unsupported zone" on
+everything else — the largest remaining `cards.move` gap. Two deterministic, observable endpoints are now
+modeled:
+
+- **attached → hand/discard** ("Put an Energy attached to this Pokémon into your hand" — Shiftry,
+  Chien-Pao, Dipplin). The `attached` `from` carries a **selector** (`from.of`) naming the source Pokémon
+  (like `energy.discard`), not an `owner`, so it can't go through `resolveZone`. The move uses
+  `PokemonCardList.moveCardsTo` — which keeps the `.energies`/`.tools` sub-lists the snapshot reads in sync
+  — **never** `MOVE_CARDS` (which would leave `.energies` stale → a false mismatch). `chooser:'player'`
+  emits the same `ChooseCardsPrompt` native does; `auto` moves the first-N.
+- **prize → hand** ("take a Prize card" — Umbreon ex's *Onyx*, sv8pt5). `player.prizes` is a `CardList[]`
+  (6 face-down piles), so this can't use `MOVE_CARDS` either. Reproduced with the **exact native prefab**
+  `TAKE_X_PRIZES` ([umbreon-ex.ts:57](../../set-prismatic-evolution/umbreon-ex.ts)), which emits a
+  `ChoosePrizePrompt` the harness resolves first-eligible with no divergence-guard bump — so native and
+  interp take the identical count to hand (mechanism-faithful, like the lock probes).
+
+`compared` rose **+6 per board variant** (bare 523→529, primed/conditions 530→536); **0 mismatches** — no
+native bug surfaced. Both are non-vacuous on the existing boards (the attacker always has cost energy; a
+prize take is `getPrizeLeft()` −1) and have direct non-vacuity assertions. **Deferred** (honest counted
+gaps): `attached`→discard of **Pokémon Tools** (the `'Pokémon Tool'` subtype isn't in `matchesCardPredicate`,
+and no Tool is on the differential's boards → it would compare vacuously; needs a tool-loaded board — now
+roadmap #1), plus bench-search / place-a-Pokémon / active(self-bounce) endpoints. Rotomancer suite **63
+specs, 0 failures**.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

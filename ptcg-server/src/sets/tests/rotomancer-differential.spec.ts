@@ -496,6 +496,59 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(run(true)).toBe(100);   // evolved this turn → base + 80
   });
 
+  // cards.move attached → hand non-vacuity: "Put an Energy attached to this Pokémon into your hand"
+  // actually moves an Energy OFF the attacker (energy −1) and INTO the hand (hand +1), through
+  // PokemonCardList.moveCardsTo so the `.energies` sub-list the snapshot reads stays consistent. A
+  // regression that used MOVE_CARDS or no-op'd would leave the energy count unchanged.
+  it('cards.move attached→hand non-vacuity: returns an attached Energy to the hand', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE', 'Water Energy SVE'] }, hand: [], deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Energy Recall', cost: ['Water'],
+      body: [{ kind: 'cards.move', count: { kind: 'exactly', n: 1 },
+        from: { of: { role: 'self' }, zone: 'attached' }, to: { owner: 'self', zone: 'hand' },
+        select: { chooser: 'player', where: { kind: 'isa', supertype: 'Energy' } } }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    const handBefore = game.state.players[0].hand.cards.length;
+    useAttack(game.store, game.state, 0, 'Energy Recall');
+    expect(game.state.players[0].active.energies.cards.length).toBe(1); // one of the two Energy left the Pokémon
+    expect(game.state.players[0].hand.cards.length).toBe(handBefore + 1); // …and arrived in the hand
+  });
+
+  // cards.move prize → hand non-vacuity: "take a Prize card" reduces the prize count by 1 and adds a card
+  // to the hand, via the native TAKE_X_PRIZES prefab (so native and interp behave identically). A
+  // regression that no-op'd or threw would leave the prize count at 6.
+  it('cards.move prize→hand non-vacuity: takes a Prize into the hand', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, hand: [], deck: padDeck(10) },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Prize Grab', cost: ['Colorless'],
+      body: [{ kind: 'cards.move', count: { kind: 'exactly', n: 1 },
+        from: { owner: 'self', zone: 'prize' }, to: { owner: 'self', zone: 'hand' }, select: { chooser: 'player' } }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    const handBefore = game.state.players[0].hand.cards.length;
+    expect(game.state.players[0].getPrizeLeft()).toBe(6);
+    useAttack(game.store, game.state, 0, 'Prize Grab');
+    expect(game.state.players[0].getPrizeLeft()).toBe(5);                 // one Prize taken
+    expect(game.state.players[0].hand.cards.length).toBe(handBefore + 1); // …into the hand
+  });
+
   // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
   // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
   it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {

@@ -7,18 +7,21 @@ import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { SuperType, EnergyType, CardType, CardTag, Stage } from '../../../game/store/card/card-types';
-import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, TAKE_X_PRIZES } from '../../../game/store/prefabs/prefabs';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { GameMessage } from '../../../game/game-message';
+import { resolveV2Selector } from './ir-selectors';
 
 /**
  * Executes the deterministic subset of the IR `cards.move` op (and the card-predicate vocabulary
- * it shares with other selectors). Supports zones hand/deck/discard/lostzone, select modes
- * `None` (top-N) and `auto` (predicate-filtered), and counts exactly/all. Anything that needs a
- * player choice, deck search, or randomness throws — the differential then skips that card rather
- * than risk a choice-alignment false positive.
+ * it shares with other selectors). Supports zones hand/deck/discard/lostzone, the bench→active
+ * switch, attached → hand/discard (move a card off a Pokémon via PokemonCardList.moveCardsTo), and
+ * prize → hand (the native TAKE_X_PRIZES prefab); select modes `None` (top-N), `auto`
+ * (predicate-filtered), and `player` (a ChooseCardsPrompt); counts exactly/all/upTo. Anything that
+ * needs a deck search or randomness throws — the differential then skips that card rather than risk a
+ * choice-alignment false positive.
  */
 
 const ENERGY_TYPE_BY_NAME: Record<string, CardType> = {
@@ -135,8 +138,16 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   if (op.from?.zone === 'bench' && op.to?.zone === 'active' && op.from?.owner === op.to?.owner) {
     return executeSwitch(store, state, effect, op, cont);
   }
+  // attached → hand/discard (move a card OFF a Pokémon) and prize → hand ("take a Prize card") need
+  // Pokémon-/pile-aware handling, not the flat-CardList resolveZone path.
+  if (op.from?.zone === 'attached') {
+    return executeAttachedMove(store, state, effect, op, cont);
+  }
+  if (op.from?.zone === 'prize') {
+    return executePrizeMove(store, state, effect, op, cont);
+  }
 
-  const from = resolveZone(effect, op.from);   // throws on bench/active/prize/attached → counted skip
+  const from = resolveZone(effect, op.from);   // throws on bench/active → counted skip
   const to = resolveZone(effect, op.to);
 
   // `chooser:'player'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`, so the
@@ -198,4 +209,63 @@ function executeCardsMoveChoice(
     const cards = selected ?? [];
     return cont(cards.length ? MOVE_CARDS(store, state, from, to, { cards }) : state);
   });
+}
+
+// "Take a Prize card" (prize → hand). player.prizes is a CardList[] (face-down piles), not a single
+// CardList, so this can't go through MOVE_CARDS — reproduce native exactly with the engine prefab
+// TAKE_X_PRIZES (the same ChoosePrizePrompt the harness auto-resolves first-eligible, with no
+// divergence-guard bump), so native and interp take the identical count to hand. The corpus shape is
+// prize → hand, count exactly; anything else is a counted skip.
+function executePrizeMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  if (op.to?.zone !== 'hand') {
+    throw new Error(`[ir-cards] cards.move prize → ${op.to?.zone} not supported`);
+  }
+  if (op.count?.kind !== 'exactly') {
+    throw new Error(`[ir-cards] cards.move prize count "${op.count?.kind}" not supported`);
+  }
+  const player = op.from?.owner === 'opponent' ? effect.opponent : effect.player;
+  return cont(TAKE_X_PRIZES(store, state, player, op.count.n ?? 0));
+}
+
+// cards.move from a Pokémon's attached cards (Energy / Tool) to hand/discard. The `from` carries a
+// selector (op.from.of) naming the source Pokémon, like energy.discard — resolve it, then move the
+// attached cards matching `select.where`. The move MUST go through PokemonCardList.moveCardsTo (which
+// keeps the `.energies`/`.tools` sub-lists the snapshot reads in sync), never MOVE_CARDS. `chooser:
+// 'player'` emits the same ChooseCardsPrompt native does (the filter-aware harness picks the identical
+// first-N matching); `auto`/absent moves the first-N deterministically. (Tool predicates throw in
+// matchesCardPredicate → counted skip; multi-Pokémon sources aren't in the corpus → first source.)
+function executeAttachedMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  const to = resolveZone(effect, op.to);   // hand / discard, owner-aware
+  const where = op.select?.where;
+  const sources = resolveV2Selector(effect, op.from?.of).filter(t => t.list.getPokemonCard() !== undefined);
+  if (sources.length === 0) { return cont(state); }   // no source Pokémon → snapshot-neutral no-op
+  const source = sources[0].list;
+  const eligibleIdx: number[] = [];
+  source.cards.forEach((c, i) => { if (matchesCardPredicate(c, where)) { eligibleIdx.push(i); } });
+  if (eligibleIdx.length === 0) { return cont(state); } // nothing attached matches → no-op (as native guards)
+
+  if (op.select?.chooser === 'player') {
+    const blocked: number[] = [];
+    source.cards.forEach((_, i) => { if (eligibleIdx.indexOf(i) === -1) { blocked.push(i); } });
+    const { min, max } = countToMinMax(op.count, eligibleIdx.length);
+    const prompt = new ChooseCardsPrompt(
+      effect.player, GameMessage.CHOOSE_CARD_TO_HAND, source, {}, { min, max, allowCancel: false, blocked }
+    );
+    return store.prompt(state, prompt, (selected: Card[] | null) => {
+      const cards = selected ?? [];
+      if (cards.length) { source.moveCardsTo(cards, to); }
+      return cont(state);
+    });
+  }
+
+  // auto / absent: deterministic first-N of the matching attached cards.
+  const eligible = eligibleIdx.map(i => source.cards[i]);
+  const countKind = op.count?.kind;
+  let cards: Card[];
+  if (countKind === 'all') { cards = eligible; }
+  else if (countKind === 'exactly') { cards = eligible.slice(0, op.count.n ?? 0); }
+  else if (countKind === 'upTo') { cards = eligible.slice(0, op.count.max ?? 0); }
+  else { throw new Error(`[ir-cards] unsupported cards.move count "${countKind}"`); }
+  if (cards.length) { source.moveCardsTo(cards, to); }
+  return cont(state);
 }
