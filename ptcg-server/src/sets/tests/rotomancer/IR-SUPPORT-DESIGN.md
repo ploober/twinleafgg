@@ -378,8 +378,12 @@ attached `cards.move` endpoints, `costGate`/`pokemon.return`/`damage.move`, and 
 ### 12.6 Printing resolution & name‑validation
 `bridge.resolvePrinting` maps a printing‑id prefix → Twinleaf set code and **name‑validates** every
 hit, so a misaligned set/number degrades to a safe `mismatch` skip rather than a false match. Mapped
-prefixes: sv5–sv10, sv*pt5, svp, zsv/rsv (number‑drift‑tolerant), me1→MEG, me2→PFL. Unmapped: me2pt5,
-me3 (no implemented Twinleaf printings yet).
+prefixes: sv5–sv10, sv*pt5, svp, zsv/rsv (number‑drift‑tolerant), me1→MEG, me2→PFL, **me3→POR** (Perfect
+Order — 80/80 corpus attacks resolve exact). **me2pt5 (Ascended Heroes, ASC) is deferred, not mapped**:
+the card files exist and numbers align (me2pt5‑22 = ASC‑22 Mega Charizard Y ex), but the Twinleaf
+set‑ascended‑heroes module is not reachable via `getCardBySetAndNumber('ASC', …)` in the test harness
+(the loader keys it under a different set code, so it never loads → every ASC lookup returns undefined).
+Mapping it would resolve 0/202 corpus attacks (pure noise), so it stays unmapped until the harness loads ASC.
 
 ### 12.7 Harness prompt‑resolution expansions
 Stage B needed the shared test harness's auto‑resolver (`TestStoreHandler`) to *honor each prompt's
@@ -411,7 +415,8 @@ not card identity — an honest partial coverage, consistent with every other zo
 | ~~4~~ ✅ | Predicate `turn` / `history` / `movedToActive` modeling | **Done** — `turn` (state.turn parity) + `movedToActive` (engine signal) + `history.evolved` (pokemonPlayedTurn) modeled; `compared` rose **+6 per variant** (bare 517→523, primed 524→530), 0 mismatches. True‑branch non‑vacuity assertions discharge the determinable‑at‑`turn:2` caveat. Deferred: `history.attackUsed`/`healed` (no engine signal). |
 | ~~4~~ ✅ | `cards.move` `prize` + `attached` zone endpoints | **Done** — attached→hand (Energy off a Pokémon, via `moveCardsTo`) + prize→hand (via `TAKE_X_PRIZES`) modeled; `compared` rose **+6 per variant** (bare 523→529, primed 530→536), 0 mismatches. Deferred: attached→discard(Tools) (needs the Tool subtype + a tool‑loaded board), bench‑search, active(self‑bounce). |
 | ~~4~~ ✅ | Tool‑loaded board variant + `'Pokémon Tool'` card subtype + `hasTool` | **Done** — a 6th `tools‑loaded` variant + the Tool subtype + `hasTool` + `forEach toolsAttached` (active+bench, `bothSides`); the snapshot gained a `tools` count. Surfaced **4 native bugs** (Gadget Show ×3 read the vestigial `card.tools`; Gnaw Through's `reduceEffect` is commented out). Deferred: `attached`→discard with a `source` selector (Minccino's "from your opponent's Pokémon"). |
-| **1** | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs`/`history.attackUsed` mapped cards, and more comparable. |
+| ~~1~~ 🟡 | Map `me2pt5` / `me3` | **me3 → POR done** — +67 comparable cards across the differential (bare 521→588, primed 528→595), 0 mismatches; surfaced one attack‑name translation discrepancy (Hawlucha me3‑46 "Vengeful Kick" vs Twinleaf "Revenge Kick", Japan‑only set → deferred). **me2pt5 → ASC deferred**: the set‑ascended‑heroes module isn't loadable via `getCardBySetAndNumber('ASC',…)` in the harness (loads 0/202) — a harness gap, not the mapping. |
+| **1** | Make the harness load **ASC** (set‑ascended‑heroes), unblocking me2pt5 | The bridge mapping `me2pt5 → ASC` is correct (numbers align), blocked only by the test loader keying that module under a non‑`ASC` code. Fixing the loader (handle mixed‑set‑code modules) unblocks the me2pt5 corpus. |
 | 2 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted

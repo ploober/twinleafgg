@@ -622,6 +622,27 @@ compares ~528 cards at **0 mismatches**. Non-vacuity assertions prove a Tool is 
 1→0, discard +1) and that `hasTool` flips the damage with the Tool's presence. Rotomancer suite **66 specs,
 0 failures**; conformance 191/0.
 
+### 21. Map `me3 → POR` (Perfect Order) — +67 comparable cards, 0 mismatches
+
+The Mega-era corpus prefixes `me2pt5`/`me3` were unmapped "until Twinleaf ships those sets"; Twinleaf has
+since shipped **Perfect Order** (`POR`) and **Ascended Heroes** (`ASC`). Adding `me3 → POR` to the bridge's
+`PREFIX_TO_SETCODE` resolves **80/80** me3 corpus attacks exactly (collector numbers align: me3-65 = POR-65
+*Diggersby*) and unblocks **+67 comparable cards** across the differential (bare 521→588, primed 528→595) at
+**0 mismatches on all six board variants** — a remarkably clean widening (these cards exercise the
+already-supported op vocabulary on a fresh pool). The structural cross-check rose to 728 checked with
+**0 cost-mismatches** and **1 attack-name** discrepancy:
+
+| printing | attack | finding | likely owner |
+|---|---|---|---|
+| me3-46 | Hawlucha — Twinleaf **"Revenge Kick"** vs IR/pokemontcg.io **"Vengeful Kick"** | Perfect Order is a Japan-only Mega-era set whose English name isn't yet canonical; the Japanese リベンジキック transliterates literally to "Revenge Kick" (favoring Twinleaf). **Adjudication deferred** (allow-listed). | neither / TBD |
+
+**`me2pt5 → ASC` is deferred** (not mapped): the card files exist and numbers align (me2pt5-22 = ASC-22 Mega
+Charizard Y ex), but the Twinleaf `set-ascended-heroes` module is **not loadable** via
+`getCardBySetAndNumber('ASC', …)` in the test harness (the loader infers each module's set code from its
+first card and keys `set-ascended-heroes` under a non-`ASC` code, so it never loads → 0/202 me2pt5 attacks
+resolve). Mapping it would be pure noise, so me2pt5 stays `unmapped` pending a harness fix (now roadmap #1).
+Rotomancer suite **67 specs, 0 failures**; conformance 191/0.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

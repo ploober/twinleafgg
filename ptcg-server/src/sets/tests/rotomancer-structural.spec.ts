@@ -17,10 +17,12 @@ interface Scenario { printingId: string; name: string; attackLabel: string; cost
 // printingId + attackLabel -> reason. Real name/cost discrepancies; adjudication deferred. See
 // FINDINGS.md. Close variants (spacing/plural/hyphen) are likely cosmetic; wholly different names
 // mean one project has the wrong attack for that printing.
-// Every entry below was adjudicated against the official card data (rotomancer-official.spec.ts):
-// in all cases the IR matches the official attack name, so TWINLEAF has the wrong name/cost.
+// The sv-era entries below were adjudicated against the official card data (rotomancer-official.spec.ts):
+// in all cases the IR matches the official attack name, so TWINLEAF has the wrong name/cost. The me3/POR
+// entry is a Japan-only Mega-era set whose English attack name isn't yet canonical → adjudication deferred.
 const KNOWN: Record<string, string> = {
   'sv8-105 Cutting Wind': 'Twinleaf "Cutter Wind"; official + IR "Cutting Wind" → Twinleaf bug',
+  'me3-46 Vengeful Kick': 'Hawlucha (Perfect Order, Japan-only Mega-era set): Twinleaf "Revenge Kick" vs IR/pokemontcg.io "Vengeful Kick" (リベンジキック ≈ "Revenge Kick" literal). Translation discrepancy — English name not yet canonical; adjudication deferred.',
   'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name → Twinleaf bug',
   'sv8-137 Steaming Stomp': 'Twinleaf cost Fire; pokemontcg.io + IR Fighting; Limitless (independent) confirms FIRE → pokemontcg.io/IR dataset error, Twinleaf correct',
   'sv10-219 Haughty Order': 'Twinleaf "Haughty Orders"; official + IR "Haughty Order" → Twinleaf bug',

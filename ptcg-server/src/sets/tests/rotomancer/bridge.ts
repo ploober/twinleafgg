@@ -32,11 +32,17 @@ export function costToCardType(cost: string): CardType {
  *   but collector numbers do NOT reliably align (e.g. Terrakion is rsv10pt5-135 vs SV11W-54).
  *   They are mapped anyway because resolvePrinting() name-validates every hit, so a misaligned
  *   number safely resolves to `mismatch` (a skip) rather than a false match.
- * - Mega-Evolution block: me1 → MEG (Mega Evolution) and me2 → PFL (Phantasmal Flames) are mapped
- *   and collector numbers align (e.g. Mega Venusaur ex me1-3 = MEG-3, Mega Heracross ex me2-4 =
- *   PFL-4). me2pt5 (Erika's-prefixed cards) and me3 have no implemented Twinleaf printing yet, so
- *   they stay UNMAPPED (→ `unmapped` skip). As always, resolvePrinting() name-validates every hit,
- *   so any misaligned/unimplemented me1/me2 number degrades to a safe `mismatch` skip.
+ * - Mega-Evolution block: me1 → MEG (Mega Evolution), me2 → PFL (Phantasmal Flames), me3 → POR
+ *   (Perfect Order) — mapped, collector numbers align (e.g. Mega Venusaur ex me1-3 = MEG-3, Mega
+ *   Heracross ex me2-4 = PFL-4, Diggersby me3-65 = POR-65). me3 → POR resolves 80/80 corpus attacks.
+ *   resolvePrinting() name-validates every hit, so any misaligned/unimplemented number degrades to a
+ *   safe `mismatch` skip — the same speculative-mapping safety net used for zsv/rsv.
+ * - me2pt5 (Ascended Heroes, real set code ASC) is **deferred, not mapped**: although the card files
+ *   exist (Mega Charizard Y ex me2pt5-22 = ASC-22) and the bridge mapping would be `me2pt5 → ASC`, the
+ *   Twinleaf set-ascended-heroes module is NOT reachable via `getCardBySetAndNumber('ASC', …)` in the
+ *   test harness (the loader keys that module under a different set code, so it never loads → every ASC
+ *   lookup returns undefined). Mapping it would resolve 0/202 corpus attacks (pure noise), so it stays
+ *   unmapped until the harness can load ASC. me2pt5 → `unmapped` skip.
  */
 export const PREFIX_TO_SETCODE: Record<string, string> = {
   sv5: 'TEF',
@@ -52,6 +58,7 @@ export const PREFIX_TO_SETCODE: Record<string, string> = {
   rsv10pt5: 'SV11W',
   me1: 'MEG',
   me2: 'PFL',
+  me3: 'POR',
 };
 
 /** Maps a Rotomancer EnergyType to a Twinleaf basic energy card. Colorless cost is paid with any basic. */

@@ -21,9 +21,15 @@ describe('Rotomancer printing resolver — exact / mismatch / unmapped buckets',
     expect(r.fullName).toBeUndefined();
   });
 
-  it('reports unmapped for the deferred Mega-Evolution block', () => {
+  it('reports unmapped for me2pt5 (Ascended Heroes — deferred: set not loadable in the harness)', () => {
     const r = resolvePrinting('me2pt5-148', 'Kingambit');
     expect(r.status).toBe('unmapped');
+  });
+
+  it('resolves the newly-mapped me3 → POR (Perfect Order)', () => {
+    const r = resolvePrinting('me3-65', 'Diggersby');
+    expect(r.status).toBe('exact');
+    expect(r.fullName).toBe('Diggersby M3');
   });
 
   it('reports mismatch for a number with no card in the mapped set', () => {
