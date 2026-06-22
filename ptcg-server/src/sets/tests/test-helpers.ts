@@ -377,7 +377,7 @@ class TestStoreHandler implements StoreHandler {
     } else if (prompt instanceof MoveDamagePrompt) {
       rawResult = prompt.options.allowCancel ? null : [];
     } else if (prompt instanceof MoveEnergyPrompt) {
-      rawResult = prompt.options.allowCancel ? null : [];
+      rawResult = this.resolveMoveEnergyRaw(state, prompt);
     } else if (prompt instanceof DiscardEnergyPrompt) {
       rawResult = this.resolveDiscardEnergyRaw(state, prompt);
     }
@@ -656,6 +656,58 @@ class TestStoreHandler implements StoreHandler {
     }
 
     return prompt.options.allowCancel ? null : [];
+  }
+
+  // Deterministically resolve a MoveEnergyPrompt (previously a no-op stub): move the first eligible
+  // attached Energy from the first eligible source Pokémon to the first eligible destination, honoring
+  // playerType × slots, blockedFrom / blockedTo / blockedMap, the card filter, and min/max. This makes
+  // native "move an Energy from this Pokémon to 1 of your Benched Pokémon" attacks actually move energy,
+  // so a second engine emitting the same prompt produces the identical observable. (Mirrors how
+  // resolveAttachEnergyRaw moves energy; both pick first-eligible, active-before-bench, low-index.)
+  private resolveMoveEnergyRaw(state: State, prompt: MoveEnergyPrompt): any {
+    const promptPlayers = this.getPromptPlayers(state, prompt);
+    if (!promptPlayers) { return prompt.options.allowCancel ? null : []; }
+    const { player, opponent } = promptPlayers;
+
+    const pokemon: Array<{ target: CardTarget; list: PokemonCardList }> = [];
+    const playerTypes: PlayerType[] = prompt.playerType === PlayerType.ANY
+      ? [PlayerType.BOTTOM_PLAYER, PlayerType.TOP_PLAYER] : [prompt.playerType];
+    for (const pt of playerTypes) {
+      const p = pt === PlayerType.BOTTOM_PLAYER ? player : opponent;
+      if (prompt.slots.includes(SlotType.ACTIVE) && p.active.cards.length > 0) {
+        pokemon.push({ target: { player: pt, slot: SlotType.ACTIVE, index: 0 }, list: p.active });
+      }
+      if (prompt.slots.includes(SlotType.BENCH)) {
+        for (let i = 0; i < p.bench.length; i++) {
+          if (p.bench[i].cards.length > 0) { pokemon.push({ target: { player: pt, slot: SlotType.BENCH, index: i }, list: p.bench[i] }); }
+        }
+      }
+    }
+
+    const blockedFrom = new Set(prompt.options.blockedFrom.map(t => this.toTargetKey(t)));
+    const blockedTo = new Set(prompt.options.blockedTo.map(t => this.toTargetKey(t)));
+    const blockedMap = new Map<string, Set<number>>();
+    for (const bm of prompt.options.blockedMap) { blockedMap.set(this.toTargetKey(bm.source), new Set(bm.blocked)); }
+
+    const sources = pokemon.filter(s => !blockedFrom.has(this.toTargetKey(s.target)));
+    const dests = pokemon.filter(d => !blockedTo.has(this.toTargetKey(d.target)));
+    const max = prompt.options.max ?? 1;
+
+    const result: Array<{ from: CardTarget; to: CardTarget; index: number }> = [];
+    for (const src of sources) {
+      if (result.length >= max) { break; }
+      const srcKey = this.toTargetKey(src.target);
+      const blockedIdx = blockedMap.get(srcKey) ?? new Set<number>();
+      const dest = dests.find(d => this.toTargetKey(d.target) !== srcKey);
+      if (!dest) { continue; }
+      for (let i = 0; i < src.list.cards.length && result.length < max; i++) {
+        const card = src.list.cards[i];
+        if (!(card instanceof EnergyCard) || blockedIdx.has(i) || !this.cardMatchesPartialFilter(card, prompt.filter)) { continue; }
+        result.push({ from: src.target, to: dest.target, index: i });
+      }
+    }
+    if (result.length < prompt.options.min) { return prompt.options.allowCancel ? null : []; }
+    return result;
   }
 
   private getEnergyCardScore(provides: CardType[]): number {

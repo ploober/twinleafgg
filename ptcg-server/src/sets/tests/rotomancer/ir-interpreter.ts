@@ -62,7 +62,8 @@ export interface IrOp {
   chooser?: string;     // `choice`: who decides (self) — a "you may" optional effect
   over?: CountForm;     // `iterate`: how many times to run `body`
   body?: IrOp[];        // `iterate`: the per-iteration ops
-  card?: any;           // energy.discard: { from: { owner, zone }, predicate }
+  card?: any;           // energy.discard / energy.move: { from: { owner, zone }, predicate }
+  source?: V2Selector;  // energy.move: the Pokémon to take energy FROM
   select?: any;         // cards.move: { chooser, where }
   from?: any;           // cards.move: { owner, zone }
   to?: any;             // cards.move: { owner, zone }
@@ -149,6 +150,18 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
     default:
       throw new Error(`[ir-interpreter] unsupported count form "${amount.kind}"`);
   }
+}
+
+// First eligible target of a selector — for a single-pick (`quantity:'one'`/`chooser`) selector use the
+// choice candidates (active-before-bench, low-index, the harness order); otherwise the first resolved.
+function firstTarget(effect: AttackEffect, sel?: V2Selector): Target | undefined {
+  if (sel === undefined) { return undefined; }
+  if (isSingleChoiceTarget(sel)) {
+    const c = resolveChoiceTarget(effect, sel).candidates;
+    return c.length ? { player: c[0].player, list: c[0].list } : undefined;
+  }
+  const targets = resolveV2Selector(effect, sel).filter(t => t.list.getPokemonCard() !== undefined);
+  return targets.length ? targets[0] : undefined;
 }
 
 // Resolves an op `target` ({ of: Selector, where?: Predicate }) to the concrete targets affected.
@@ -362,6 +375,23 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return cont(executeEnergyDiscard(store, state, effect, op));
     case 'energy.attach':
       return cont(executeEnergyAttach(store, state, effect, op));
+    case 'energy.move': {
+      // Move attached energy from a source Pokémon to a (usually player-chosen) destination. Resolved
+      // deterministically to the first-eligible source/destination — the same target the harness's
+      // resolveMoveEnergyRaw picks for the native MoveEnergyPrompt, so the two engines agree. Energy
+      // prompts don't touch the ambiguity guard, so a prompt isn't needed to stay comparable.
+      const src = firstTarget(effect, op.source);
+      const dst = firstTarget(effect, op.target?.of);
+      if (!src || !dst || src.list === dst.list) { return cont(state); }
+      const count: any = op.count;
+      let n: number;
+      if (count?.kind === 'exactly') { n = count.n ?? 0; }
+      else if (count?.kind === 'all') { n = Infinity; }
+      else { throw new Error(`[ir-interpreter] energy.move count "${count?.kind}" not supported`); }
+      const matching = src.list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, op.card?.predicate));
+      src.list.moveCardsTo(matching.slice(0, n === Infinity ? matching.length : n), dst.list);
+      return cont(state);
+    }
     case 'hand.reveal':
       // Revealing a hand moves no cards and changes no observable zone — snapshot-neutral no-op.
       return cont(state);

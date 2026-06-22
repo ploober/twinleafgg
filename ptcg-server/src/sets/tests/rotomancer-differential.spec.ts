@@ -387,6 +387,32 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[0].hand.cards.some(c => c.name === 'Bidoof')).toBe(true); // the Pokémon, not a Fire Energy
   });
 
+  // Stage B non-vacuity: `energy.move` actually relocates an attached Energy from the source Pokémon to
+  // the chosen destination (the harness's MoveEnergyPrompt now moves, instead of the old no-op stub).
+  it('Stage B: energy.move relocates an attached Energy from the source to the destination', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: { card: res.fullName!, energy: ['Water Energy SVE', 'Fire Energy SVE'] }, // 2 attached
+        bench: [{ card: res.fullName! }],                                                  // 0 attached
+        deck: padDeck(10),
+      },
+      player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const ic = buildInterpretedCard(native, [{ label: 'Shift', cost: ['Colorless'], body: [
+      { kind: 'energy.move', source: { role: 'self' }, target: { of: { quantity: 'one', side: 'self', spot: 'bench' } },
+        card: { from: { owner: 'self', zone: 'attached' }, predicate: { kind: 'isa', supertype: 'Energy' } },
+        count: { kind: 'exactly', n: 1 } },
+    ] }]);
+    ic.id = native.id; game.state.players[0].active.cards[0] = ic;
+    useAttack(game.store, game.state, 0, 'Shift');
+    expect(game.state.players[0].active.energies.cards.length).toBe(1);   // 2 → 1
+    expect(game.state.players[0].bench[0].energies.cards.length).toBe(1); // 0 → 1
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the
