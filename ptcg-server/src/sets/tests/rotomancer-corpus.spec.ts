@@ -48,6 +48,8 @@ const KNOWN_DISAGREEMENTS: Record<string, string> = {
   // Twinleaf Fire vs IR Fighting. Limitless (independent) confirms FIRE, so the IR/pokemontcg.io
   // dataset is wrong and Twinleaf is correct — NOT a Twinleaf bug.
   'sv8-137 Steaming Stomp': 'Twinleaf Fire vs IR Fighting; Limitless confirms FIRE → IR/dataset error, Twinleaf correct',
+  // Mega-era (loader fix unblocked MEG): native deals 0 — Rock Hurl is effectively unimplemented. → Twinleaf bug.
+  'me1-83 Rock Hurl': 'Naclstack MEG: native deals 0 (base-50 damage never applied); IR expects 50 → Twinleaf bug',
 };
 
 function key(s: Scenario): string {

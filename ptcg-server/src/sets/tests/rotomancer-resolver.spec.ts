@@ -21,15 +21,15 @@ describe('Rotomancer printing resolver — exact / mismatch / unmapped buckets',
     expect(r.fullName).toBeUndefined();
   });
 
-  it('reports unmapped for me2pt5 (Ascended Heroes — deferred: set not loadable in the harness)', () => {
-    const r = resolvePrinting('me2pt5-148', 'Kingambit');
+  it('reports unmapped for a prefix with no Twinleaf set code', () => {
+    // me4 (a future Mega-era set) is not yet mapped — me1/me2/me2pt5/me3 now are.
+    const r = resolvePrinting('me4-1', 'Whatever');
     expect(r.status).toBe('unmapped');
   });
 
-  it('resolves the newly-mapped me3 → POR (Perfect Order)', () => {
-    const r = resolvePrinting('me3-65', 'Diggersby');
-    expect(r.status).toBe('exact');
-    expect(r.fullName).toBe('Diggersby M3');
+  it('resolves the newly-mapped Mega-era sets (me2pt5 → ASC, me3 → POR)', () => {
+    expect(resolvePrinting('me3-65', 'Diggersby').status).toBe('exact');            // POR-65
+    expect(resolvePrinting('me2pt5-22', 'Mega Charizard Y ex').status).toBe('exact'); // ASC-22 (loader fix)
   });
 
   it('reports mismatch for a number with no card in the mapped set', () => {

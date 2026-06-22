@@ -643,6 +643,29 @@ first card and keys `set-ascended-heroes` under a non-`ASC` code, so it never lo
 resolve). Mapping it would be pure noise, so me2pt5 stays `unmapped` pending a harness fix (now roadmap #1).
 Rotomancer suite **67 specs, 0 failures**; conformance 191/0.
 
+### 22. Set-loader fix → me1/MEG + me2pt5/ASC unblocked (+150 cards), ~25 discrepancies
+
+`me2pt5 → ASC` resolved 0/202 because the lazy card loader keyed each set module by **only its first card
+file's** set code; `set-ascended-heroes`'s `index.ts` imports an `other-prints` reprints file first, whose
+first 7 cards are `set='MC'`, so the module was keyed under MC and `ensureSetCodeLoaded('ASC')` never found
+it. The same bug had silently kept **`me1 → MEG` dormant** too (mapped but resolving nothing). Fixing
+`inferSetCodesFromModule` to register each module under **all** its set codes (additive — `defineSet` is
+first-wins, `loadSetModule` idempotent) unblocked both, plus partial sv-era coverage.
+
+**Scale:** the differential `compared` rose **+150** (bare 588→738, primed 595→747); the structural
+cross-check from 728 to 921 checked — at **0 differential mismatches** after triage. **No interpreter bugs**
+surfaced; every divergence is native-side or an IR-faithfulness gap, verified individually:
+
+| class | examples | adjudication |
+|---|---|---|
+| native Mega-card bugs | Rock Hurl (Naclstack — deals 0); Hadron Spark (Miraidon ex — under-applies the +120 ex bonus, interp correctly KOs); Energy Crush (Delcatty — counts its OWN Pokémon, not the opponent's); Rising Lunge (coin +20 applied in the async COIN_FLIP_PROMPT callback, lost); Growl (Chikorita — damageDebuff set on the wrong Pokémon); Clutch (Larry's Braviary — retreat lock doesn't land on the defender) | allow-listed (interp faithful) |
+| IR-faithfulness gap | Giant Bouquet (Mega Meganium ex — IR drops the `[G]`-type filter on the per-energy count, cf. Syrup Storm) | allow-listed |
+| Japan-only translation names | U-turn/U-Turn, Geo Gate/Geogate, Volcanic Meteor/Volcano Meteor, Shining Feathers/Feather, Draining Kiss/Drain Kiss, … (me1/me2pt5) + 2 cost-data deltas (Water Shot, Take Down) | adjudication deferred (English names not canonical, cf. Hawlucha) |
+| reprint-resolution artifact | sv7-49 Lanturn — no `set-stellar-crown/lanturn.ts`, so `SCR-49` resolves the **Lost Thunder** Lanturn reprint (labelled `set='SCR'`); different attacks/HP/resistance | allow-listed (printing artifact, surfaced not silent) |
+
+**Loader safety** verified across the **sets (22/0)** and **conformance (191/0)** suites — the change is
+additive (modules become findable under more codes). Rotomancer suite **67 specs, 0 failures**.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

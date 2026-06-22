@@ -378,12 +378,14 @@ attached `cards.move` endpoints, `costGate`/`pokemon.return`/`damage.move`, and 
 ### 12.6 Printing resolution & name‑validation
 `bridge.resolvePrinting` maps a printing‑id prefix → Twinleaf set code and **name‑validates** every
 hit, so a misaligned set/number degrades to a safe `mismatch` skip rather than a false match. Mapped
-prefixes: sv5–sv10, sv*pt5, svp, zsv/rsv (number‑drift‑tolerant), me1→MEG, me2→PFL, **me3→POR** (Perfect
-Order — 80/80 corpus attacks resolve exact). **me2pt5 (Ascended Heroes, ASC) is deferred, not mapped**:
-the card files exist and numbers align (me2pt5‑22 = ASC‑22 Mega Charizard Y ex), but the Twinleaf
-set‑ascended‑heroes module is not reachable via `getCardBySetAndNumber('ASC', …)` in the test harness
-(the loader keys it under a different set code, so it never loads → every ASC lookup returns undefined).
-Mapping it would resolve 0/202 corpus attacks (pure noise), so it stays unmapped until the harness loads ASC.
+prefixes: sv5–sv10, sv*pt5, svp, zsv/rsv (number‑drift‑tolerant), me1→MEG, me2→PFL, **me2pt5→ASC**
+(Ascended Heroes), **me3→POR** (Perfect Order). me2pt5 required a **test‑loader fix** (§12.8): the loader
+keyed each set module by its *first* card file's set code, and `set‑ascended‑heroes`'s first import is an
+`other‑prints` reprints file whose first cards are `set='MC'` — so the module was keyed under MC, never
+ASC, and `getCardBySetAndNumber('ASC', …)` always returned undefined (the same bug had silently kept
+**me1→MEG** dormant too). Registering each module under *all* its set codes fixed both. ASC is a partial
+Twinleaf implementation (~71 of 171 me2pt5 cards), so ~46 me2pt5 + the full me1/me3 sets resolve; the rest
+name‑validate to safe skips.
 
 ### 12.7 Harness prompt‑resolution expansions
 Stage B needed the shared test harness's auto‑resolver (`TestStoreHandler`) to *honor each prompt's
@@ -402,6 +404,20 @@ the real game does under auto‑resolution, so the interpreter, emitting the sam
 against it. The snapshot remains count‑based, so `cards.move` over hidden zones verifies *count moved*,
 not card identity — an honest partial coverage, consistent with every other zone.
 
+### 12.8 Set‑loader fix (multi‑set‑code modules)
+The lazy card loader (`test‑helpers`) keyed each set module by **only its first card file's** set code
+(`inferSetCodeFromModule`). Modules whose `index.ts` imports an `other‑prints` reprints file FIRST were
+mis‑keyed under a foreign reprint code — so `ensureSetCodeLoaded(realCode)` threw and
+`getCardBySetAndNumber(realCode, …)` returned undefined. This had silently kept **MEG (me1)** and **ASC
+(me2pt5)** dormant (mapped in the bridge but resolving nothing). The fix (`inferSetCodesFromModule`)
+registers each module under **every** set code its cards declare — purely additive (a module becomes
+findable under more codes, never fewer; `loadSetModule` is idempotent and `CardManager.defineSet` is
+first‑wins). It unblocked **+150** comparable cards (bare 588→738) at **0 differential mismatches**;
+every divergence surfaced was a native Mega‑card bug, an IR‑faithfulness gap, or a Japan‑only translation
+name discrepancy (catalogued, allow‑listed). One reprint artifact: with no `set‑stellar‑crown/lanturn.ts`,
+`SCR‑49` now resolves the Lost Thunder Lanturn reprint (labelled `set='SCR'`) — surfaced by the structural/
+official checks, allow‑listed. Verified safe across the **sets (22/0)** and **conformance (191/0)** suites.
+
 ---
 
 ## 13. Roadmap (prioritized)
@@ -415,9 +431,9 @@ not card identity — an honest partial coverage, consistent with every other zo
 | ~~4~~ ✅ | Predicate `turn` / `history` / `movedToActive` modeling | **Done** — `turn` (state.turn parity) + `movedToActive` (engine signal) + `history.evolved` (pokemonPlayedTurn) modeled; `compared` rose **+6 per variant** (bare 517→523, primed 524→530), 0 mismatches. True‑branch non‑vacuity assertions discharge the determinable‑at‑`turn:2` caveat. Deferred: `history.attackUsed`/`healed` (no engine signal). |
 | ~~4~~ ✅ | `cards.move` `prize` + `attached` zone endpoints | **Done** — attached→hand (Energy off a Pokémon, via `moveCardsTo`) + prize→hand (via `TAKE_X_PRIZES`) modeled; `compared` rose **+6 per variant** (bare 523→529, primed 530→536), 0 mismatches. Deferred: attached→discard(Tools) (needs the Tool subtype + a tool‑loaded board), bench‑search, active(self‑bounce). |
 | ~~4~~ ✅ | Tool‑loaded board variant + `'Pokémon Tool'` card subtype + `hasTool` | **Done** — a 6th `tools‑loaded` variant + the Tool subtype + `hasTool` + `forEach toolsAttached` (active+bench, `bothSides`); the snapshot gained a `tools` count. Surfaced **4 native bugs** (Gadget Show ×3 read the vestigial `card.tools`; Gnaw Through's `reduceEffect` is commented out). Deferred: `attached`→discard with a `source` selector (Minccino's "from your opponent's Pokémon"). |
-| ~~1~~ 🟡 | Map `me2pt5` / `me3` | **me3 → POR done** — +67 comparable cards across the differential (bare 521→588, primed 528→595), 0 mismatches; surfaced one attack‑name translation discrepancy (Hawlucha me3‑46 "Vengeful Kick" vs Twinleaf "Revenge Kick", Japan‑only set → deferred). **me2pt5 → ASC deferred**: the set‑ascended‑heroes module isn't loadable via `getCardBySetAndNumber('ASC',…)` in the harness (loads 0/202) — a harness gap, not the mapping. |
-| **1** | Make the harness load **ASC** (set‑ascended‑heroes), unblocking me2pt5 | The bridge mapping `me2pt5 → ASC` is correct (numbers align), blocked only by the test loader keying that module under a non‑`ASC` code. Fixing the loader (handle mixed‑set‑code modules) unblocks the me2pt5 corpus. |
-| 2 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
+| ~~4~~ ✅ | Map `me2pt5` / `me3` + the set‑loader fix (§12.8) | **Done** — `me3→POR` (+67), then the loader fix activated `me1→MEG` + `me2pt5→ASC` (dormant): **+150** comparable cards total (bare 521→738), 0 differential mismatches. Surfaced ~25 native Mega‑card bugs / IR‑faithfulness gaps / Japan‑only translation discrepancies (all allow‑listed, no interp bugs). Verified safe across sets + conformance. |
+| **1** | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. **Blocked**: the corpus is 100% ATTACK (0 ABILITY/RULE_BOX fragments), so there is nothing to differentiate against until the IR emitter produces them. |
+| 2 | Small remaining ATTACK gaps | condition‑removal (`condition.apply removeMode`), `damage.move`, `excludeSelf`/`extremum` selectors — each a handful of cards; the deck‑search / hidden‑zone / player‑chosen‑count gaps are genuine deferrals. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built.

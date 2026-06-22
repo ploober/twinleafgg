@@ -32,17 +32,15 @@ export function costToCardType(cost: string): CardType {
  *   but collector numbers do NOT reliably align (e.g. Terrakion is rsv10pt5-135 vs SV11W-54).
  *   They are mapped anyway because resolvePrinting() name-validates every hit, so a misaligned
  *   number safely resolves to `mismatch` (a skip) rather than a false match.
- * - Mega-Evolution block: me1 → MEG (Mega Evolution), me2 → PFL (Phantasmal Flames), me3 → POR
- *   (Perfect Order) — mapped, collector numbers align (e.g. Mega Venusaur ex me1-3 = MEG-3, Mega
- *   Heracross ex me2-4 = PFL-4, Diggersby me3-65 = POR-65). me3 → POR resolves 80/80 corpus attacks.
- *   resolvePrinting() name-validates every hit, so any misaligned/unimplemented number degrades to a
- *   safe `mismatch` skip — the same speculative-mapping safety net used for zsv/rsv.
- * - me2pt5 (Ascended Heroes, real set code ASC) is **deferred, not mapped**: although the card files
- *   exist (Mega Charizard Y ex me2pt5-22 = ASC-22) and the bridge mapping would be `me2pt5 → ASC`, the
- *   Twinleaf set-ascended-heroes module is NOT reachable via `getCardBySetAndNumber('ASC', …)` in the
- *   test harness (the loader keys that module under a different set code, so it never loads → every ASC
- *   lookup returns undefined). Mapping it would resolve 0/202 corpus attacks (pure noise), so it stays
- *   unmapped until the harness can load ASC. me2pt5 → `unmapped` skip.
+ * - Mega-Evolution block: me1 → MEG (Mega Evolution), me2 → PFL (Phantasmal Flames), me2pt5 → ASC
+ *   (Ascended Heroes), me3 → POR (Perfect Order) — all mapped, collector numbers align (e.g. Mega
+ *   Venusaur ex me1-3 = MEG-3, Mega Heracross ex me2-4 = PFL-4, Mega Charizard Y ex me2pt5-22 = ASC-22,
+ *   Diggersby me3-65 = POR-65). resolvePrinting() name-validates every hit, so any misaligned/
+ *   unimplemented number degrades to a safe `mismatch` skip — the same speculative-mapping safety net
+ *   used for zsv/rsv. ASC is a PARTIAL Twinleaf implementation (~71 of 171 me2pt5 cards), so ~46 resolve
+ *   exact and the rest name-validate to safe skips. (me2pt5 → ASC required the test loader to register a
+ *   module under all its set codes — set-ascended-heroes leads with `set='MC'` reprints, so it used to be
+ *   keyed under MC, not ASC; see test-helpers inferSetCodesFromModule.)
  */
 export const PREFIX_TO_SETCODE: Record<string, string> = {
   sv5: 'TEF',
@@ -58,6 +56,7 @@ export const PREFIX_TO_SETCODE: Record<string, string> = {
   rsv10pt5: 'SV11W',
   me1: 'MEG',
   me2: 'PFL',
+  me2pt5: 'ASC',
   me3: 'POR',
 };
 

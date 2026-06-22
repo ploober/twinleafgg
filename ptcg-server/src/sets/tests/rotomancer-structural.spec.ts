@@ -36,6 +36,30 @@ const KNOWN: Record<string, string> = {
   'sv8-128 Stick \'n\' Draw': 'Twinleaf "Plug and Draw"; official + IR "Stick \'n\' Draw" → Twinleaf bug',
   'sv8-141 World Ender': 'Twinleaf "World\'s End"; official + IR "World Ender" → Twinleaf bug',
   'sv9-49 Zapping Short': 'Twinleaf "Crackling Short"; official + IR "Zapping Short" → Twinleaf bug',
+  // me1→MEG / me2pt5→ASC are Japan-only Mega-era sets whose English attack names aren't yet canonical;
+  // these are translation/cosmetic differences (Twinleaf localisation vs IR/pokemontcg.io). Adjudication
+  // deferred (cf. me3-46 Hawlucha). Surfaced when the loader fix made MEG/ASC loadable.
+  'me1-137 U-turn': 'Ninjask MEG: Twinleaf "U-Turn" vs IR "U-turn" — casing. Deferred.',
+  'me1-17 U-turn': 'Ninjask MEG (alt print): Twinleaf "U-Turn" vs IR "U-turn" — casing. Deferred.',
+  'me1-156 Volcanic Meteor': 'Mega Camerupt ex MEG: Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
+  'me1-22 Volcanic Meteor': 'Mega Camerupt ex MEG (alt print): Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
+  'me1-28 Turbo Flare': 'Cinderace MEG: Twinleaf "Flame Turbo" vs IR "Turbo Flare". Translation. Deferred.',
+  'me1-64 Geo Gate': 'Xerneas MEG: Twinleaf "Geogate" vs IR "Geo Gate" — spacing. Deferred.',
+  'me2pt5-161 Fury Swipes': 'Team Rocket\'s Meowth ASC: IR "Fury Swipes" not among Twinleaf\'s [Cat Nab, Wild Scratch]. Japan-only name discrepancy. Deferred.',
+  'me2pt5-26 Shining Feathers': 'Ethan\'s Ho-Oh ex ASC: Twinleaf "Shining Feather" vs IR "Shining Feathers" — plural. Deferred.',
+  'me2pt5-33 Back Draft': 'N\'s Darmanitan ASC: Twinleaf "Backdraft" vs IR "Back Draft" — spacing. Deferred.',
+  'me2pt5-33 Flamebody Cannon': 'N\'s Darmanitan ASC: Twinleaf "Darman-i-cannon" vs IR "Flamebody Cannon". Translation. Deferred.',
+  'me2pt5-44 Beset': 'Sneasel ASC: IR "Beset" not among Twinleaf\'s [Cut, Draw Near]. Japan-only name discrepancy. Deferred.',
+  'me2pt5-81 Draining Kiss': 'Togetic ASC: Twinleaf "Drain Kiss" vs IR "Draining Kiss". Translation. Deferred.',
+  'me2pt5-84 Energized Balloon': 'Azumarill ex ASC: Twinleaf "Energy Balloon" vs IR "Energized Balloon". Translation. Deferred.',
+  // Reprint-resolution artifact (loader fix): there is no set-stellar-crown/lanturn.ts, so
+  // getCardBySetAndNumber('SCR','49') now resolves the LOST THUNDER Lanturn reprint
+  // (set-lost-thunder/lanturn.ts, labelled set='SCR', attacks Salvage/Signal Beam) — a same-name,
+  // different-printing card than the IR's SCR Lanturn. Surfaced (not silent); the differential skips it.
+  'sv7-49 Thunderous Bolt': 'Lanturn: the real Stellar Crown Lanturn (SCR-49, "Thunderous Bolt") is unimplemented in Twinleaf; the resolving SCR-49 card is a Lost Thunder reprint with different attacks. Printing-resolution artifact. Deferred.',
+  // me1→MEG cost discrepancies (Japan-only set; pokemontcg.io/IR vs Twinleaf data — cf. Turtonator). Deferred.
+  'me1-142 Water Shot': 'Inteleon MEG: IR cost [Water] vs Twinleaf [Colorless,Colorless]. Japan-only cost-data discrepancy. Deferred.',
+  'me1-65 Take Down': 'Greavard MEG: IR cost [Psychic,Colorless] vs Twinleaf [Psychic]. Japan-only cost-data discrepancy. Deferred.',
 };
 
 // Bulk attack-name/cost discrepancies surfaced by the larger peg-emit corpus, externalised to a

@@ -81,20 +81,32 @@ function getExportedSetModulePaths(): string[] {
   return modulePaths;
 }
 
-function extractSetCodeFromSource(source: string): string | undefined {
-  const match = SET_DECLARATION_REGEX.exec(source);
-  if (!match) {
-    return undefined;
+// Every distinct, valid set code declared in a card file's source, in declaration order. A file can
+// declare several (an `other-prints` reprints file carries cards from multiple sets).
+function extractSetCodesFromSource(source: string): string[] {
+  const codes: string[] = [];
+  const re = new RegExp(SET_DECLARATION_REGEX.source, 'g');
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(source)) !== null) {
+    const setCode = match[1].toUpperCase();
+    if (SET_CODE_REGEX.test(setCode) && codes.indexOf(setCode) === -1) {
+      codes.push(setCode);
+    }
   }
-  const setCode = match[1].toUpperCase();
-  return SET_CODE_REGEX.test(setCode) ? setCode : undefined;
+  return codes;
 }
 
-function inferSetCodeFromModule(moduleName: string): string | undefined {
+// Every distinct set code a module's card files declare, in first-seen order. Most modules have one; a
+// few have several because their index imports an `other-prints` reprints file FIRST, whose cards carry a
+// foreign set code before the module's own (e.g. set-ascended-heroes leads with `set='MC'` Mega Charizard
+// reprints, then its 71 `set='ASC'` cards). Registering a module under ALL its codes — not just the first
+// — is what lets `ensureSetCodeLoaded('ASC')` find and load it. Purely additive: a module becomes
+// findable under more codes, never fewer.
+function inferSetCodesFromModule(moduleName: string): string[] {
   const moduleDir = path.join(setsDir, moduleName);
   const indexPath = path.join(moduleDir, 'index.ts');
   if (!fs.existsSync(indexPath)) {
-    return undefined;
+    return [];
   }
 
   const indexContent: string = fs.readFileSync(indexPath, 'utf8');
@@ -105,30 +117,26 @@ function inferSetCodeFromModule(moduleName: string): string | undefined {
     candidateFiles.push(path.join(moduleDir, `${match[1]}.ts`));
   }
 
+  const codes: string[] = [];
+  const collect = (file: string): void => {
+    for (const code of extractSetCodesFromSource(fs.readFileSync(file, 'utf8'))) {
+      if (codes.indexOf(code) === -1) { codes.push(code); }
+    }
+  };
   for (const candidateFile of candidateFiles) {
-    if (!fs.existsSync(candidateFile)) {
-      continue;
-    }
-    const fileContent = fs.readFileSync(candidateFile, 'utf8');
-    const setCode = extractSetCodeFromSource(fileContent);
-    if (setCode) {
-      return setCode;
-    }
+    if (fs.existsSync(candidateFile)) { collect(candidateFile); }
   }
-
-  const fallbackFiles = fs.readdirSync(moduleDir)
-    .filter((file: string) => file.endsWith('.ts') && file !== 'index.ts')
-    .map((file: string) => path.join(moduleDir, file));
-
-  for (const candidateFile of fallbackFiles) {
-    const fileContent = fs.readFileSync(candidateFile, 'utf8');
-    const setCode = extractSetCodeFromSource(fileContent);
-    if (setCode) {
-      return setCode;
-    }
+  if (codes.length === 0) {
+    const fallbackFiles = fs.readdirSync(moduleDir)
+      .filter((file: string) => file.endsWith('.ts') && file !== 'index.ts');
+    for (const file of fallbackFiles) { collect(path.join(moduleDir, file)); }
   }
+  return codes;
+}
 
-  return undefined;
+// Legacy singular (the module's first-declared code) — used only for failed-module reporting in loadAllSets.
+function inferSetCodeFromModule(moduleName: string): string | undefined {
+  return inferSetCodesFromModule(moduleName)[0];
 }
 
 function getSetCodeToModules(): Map<string, string[]> {
@@ -137,15 +145,12 @@ function getSetCodeToModules(): Map<string, string[]> {
   }
 
   const map = new Map<string, string[]>();
-  const modulePaths = getExportedSetModulePaths();
-  for (const moduleName of modulePaths) {
-    const setCode = inferSetCodeFromModule(moduleName);
-    if (!setCode) {
-      continue;
+  for (const moduleName of getExportedSetModulePaths()) {
+    for (const setCode of inferSetCodesFromModule(moduleName)) {
+      const modules = map.get(setCode) ?? [];
+      modules.push(moduleName);
+      map.set(setCode, modules);
     }
-    const modules = map.get(setCode) ?? [];
-    modules.push(moduleName);
-    map.set(setCode, modules);
   }
 
   setCodeToModules = map;

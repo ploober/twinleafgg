@@ -699,6 +699,8 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     // (6, tools) Twinleaf bugs surfaced by the tools-loaded board variant — the interpreter does the real attack.
     'Gadget Show': 'Heat/Wash/Mow Rotom DRI: "30 damage for each Pokémon Tool attached to all your Pokémon" — native counts `card.tools` (the vestigial PokemonCard.tools field, never populated; the engine attaches tools to PokemonCardList.tools), so it always counts 0. IR/interp read the real list.tools. → Twinleaf bug',
     'Gnaw Through': 'Arven\'s Skwovet DRI: "Before doing damage, discard all Pokémon Tools from your opponent\'s Active." Native\'s entire reduceEffect is commented out (unimplemented), so it never discards the Tool. IR/interp discard it (opponent tools −1, discard +1). → Twinleaf bug (unimplemented)',
+    // (1, Mega-era) IR faithfulness gap surfaced by the me2pt5→ASC / me3→POR unblock (loader fix).
+    'Giant Bouquet': 'Mega Meganium ex ASC (me2pt5-10/272): "+50 more damage for each [G] Energy attached to this Pokémon" — IR drops the [G]-type filter (counts ALL energy), like Syrup Storm. → Rotomancer (IR faithfulness)',
   };
 
   // (6b) Twinleaf bugs keyed by *printing* rather than label — either the attack label also belongs
@@ -712,6 +714,14 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'sv6-6': 'Sunkern TWM — Bullet Seed: the coin-flip logic is guarded on WAS_ATTACK_USED(effect, 1) but Bullet Seed is attack index 0, so it never runs (always base 10). IR/interp flip per the text. → Twinleaf bug',
     'sv6-32': 'Monferno TWM — Heat Blow: the "Discard an Energy from this Pokémon" rider is wired only to attack index 0 (Chop); Heat Blow (index 1) never discards. IR/interp discard. → Twinleaf bug',
     'sv6-123': 'Heatran TWM — Steel Burst: text/IR are "Discard all [M] Energy from this Pokémon. 50 damage for each card discarded", but native discards ALL attached energy (CheckProvidedEnergyEffect.energyMap, unfiltered — no [M] filter), inflating the discard count and the 50×count damage. (Compounded by the out-of-scope Incandescent Body ability, which burns the attacker.) IR/interp faithfully discard only [M] Energy and model only the attack body. → Twinleaf bug',
+    // ── Mega-era (me1→MEG / me2pt5→ASC) native bugs surfaced by the loader fix. Keyed by printing
+    //    because the labels (Crunch / Energy Crush / Fast Flight / …) also belong to unrelated cards.
+    'me1-83': 'Naclstack MEG — Rock Hurl: native deals 0 (the base-50 damage is never applied — the attack is effectively unimplemented). IR/interp deal 50. → Twinleaf bug',
+    'me2pt5-73': 'Miraidon ex ASC — Hadron Spark: "+120 if the opponent\'s Active is a Pokémon ex" — native under-applies the bonus; IR/interp correctly add 120 against the ex defender (KO at 240). → Twinleaf bug',
+    'me2pt5-166': 'Delcatty ASC — Energy Crush: text "40 damage for each Energy attached to all of your OPPONENT\'s Pokémon", but native counts `player.forEachPokemon(BOTTOM_PLAYER)` — its OWN Pokémon. IR/interp count the opponent. → Twinleaf bug (wrong side)',
+    'me2pt5-163': 'Larry\'s Dunsparce ASC — Rising Lunge: "+20 if heads" is applied inside the async COIN_FLIP_PROMPT callback, which resolves AFTER effect.damage is consumed → native never adds it (deals 10, not 30). IR/interp add it under ALL_HEADS. → Twinleaf bug (coin-callback timing, cf. Combusken)',
+    'me2pt5-42': 'Croconaw ASC — Crunch: coin-flip "discard an Energy from the opponent\'s Active" via nested COIN_FLIP_PROMPT → DiscardEnergyPrompt; native\'s player-chosen discard and interp\'s deterministic discard diverge (the discard prompt does not trip the ambiguity guard). Twinleaf-side coin/choice handling — adjudication deferred',
+    'me2pt5-67': 'Tapu Koko ASC — Fast Flight: "Discard your hand and draw 5 cards" (+ the "if you go first" first-turn clause) — native and interp diverge on the resulting hand/deck counts. Hand-manipulation discrepancy — adjudication deferred',
   };
 
   // (6c) Native bugs that only manifest on the BENCHLESS board (opponent holds just the active),

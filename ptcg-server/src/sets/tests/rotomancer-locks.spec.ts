@@ -98,6 +98,10 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
   const KNOWN_LOCK_BUGS: Record<string, string> = {
     'Flame Screen': 'Team Rocket\'s Moltres ex: reduceEffect adds FLAME_SCREEN_MARKER but never reads it to reduce damage — the "takes 50 less" is a dead marker, never enforced. → Twinleaf bug.',
   };
+  // Keyed by printing where the label (e.g. "Growl") also belongs to unrelated cards.
+  const KNOWN_LOCK_BUGS_BY_PRINTING: Record<string, string> = {
+    'me2pt5-8': 'Chikorita ASC — Growl: text "the Defending Pokémon\'s attacks do 20 less next turn", but native sets `opponent.active.damageReductionNextTurn = 20` — reducing the OPPONENT\'s INCOMING damage (wrong Pokémon/direction); the probe\'s next-turn hit on the lock-user is unreduced (took 60). IR/interp reduce the lock-user\'s incoming (took 40). → Twinleaf bug.',
+  };
 
   const mismatches: string[] = [];
   let compared = 0, skipped = 0;
@@ -106,7 +110,7 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
   for (const s of scenarios) {
     const res = resolvePrinting(s.printingId, s.name);
     if (res.status !== 'exact') { skipped++; continue; }
-    if (KNOWN_LOCK_BUGS[s.attackLabel]) { skipped++; continue; }
+    if (KNOWN_LOCK_BUGS[s.attackLabel] || KNOWN_LOCK_BUGS_BY_PRINTING[s.printingId]) { skipped++; continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard) || card.weakness?.some(w => w.type === card.cardType)) { skipped++; continue; }
 
@@ -189,6 +193,10 @@ describe('Rotomancer lock differential — retreatShutoff (block probe)', () => 
       + 'retreat lock is never installed when Numbing Hold is used (wrong attack index). The IR and '
       + 'interpreter correctly lock retreat. → Twinleaf bug.',
   };
+  // Keyed by printing where the label also belongs to unrelated cards.
+  const KNOWN_RETREAT_LOCK_BUGS_BY_PRINTING: Record<string, string> = {
+    'me2pt5-174': 'Larry\'s Braviary ASC — Clutch: text "During your opponent\'s next turn, the Defending Pokémon can\'t retreat". Native applies PreventRetreatEffect, but the probe\'s defender retreat is NOT blocked (the lock doesn\'t land on the Defending Pokémon). IR/interp block the defender\'s retreat. → Twinleaf bug.',
+  };
 
   const mismatches: string[] = [];
   let compared = 0, skipped = 0;
@@ -196,7 +204,7 @@ describe('Rotomancer lock differential — retreatShutoff (block probe)', () => 
   for (const s of scenarios) {
     const res = resolvePrinting(s.printingId, s.name);
     if (res.status !== 'exact') { skipped++; continue; }
-    if (KNOWN_RETREAT_LOCK_BUGS[s.attackLabel]) { skipped++; continue; }
+    if (KNOWN_RETREAT_LOCK_BUGS[s.attackLabel] || KNOWN_RETREAT_LOCK_BUGS_BY_PRINTING[s.printingId]) { skipped++; continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skipped++; continue; }
 

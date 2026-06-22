@@ -76,6 +76,11 @@ const KNOWN: Record<string, string> = {
   'sv5-71:cost:Double Trick': 'Duosion TEF: Twinleaf [Psychic], official [Colorless]',
   'sv8-137:cost:Steaming Stomp': 'Turtonator SSP: Twinleaf [Fire,..] vs pokemontcg.io [Fighting,..]. Limitless (INDEPENDENT) confirms FIRE → pokemontcg.io DATASET ERROR; Twinleaf is correct.',
   'sv9-7:cost:Spinning Attack': 'Lilligant JTG: Twinleaf [Grass,Grass,Colorless], official [Grass,Colorless,Colorless]',
+  // Reprint-resolution artifact (loader fix): there is no set-stellar-crown/lanturn.ts, so
+  // getCardBySetAndNumber('SCR','49') resolves the LOST THUNDER Lanturn reprint (labelled set='SCR'),
+  // a genuinely different card than the official Stellar Crown Lanturn — hence the stat deltas.
+  'sv7-49:hp': 'Lanturn: SCR-49 resolves the Lost Thunder reprint (HP 110) not the official SCR Lanturn (HP 120). Printing artifact.',
+  'sv7-49:resistance': 'Lanturn: same reprint artifact — the Lost Thunder Lanturn has a [Metal] resistance; the official SCR Lanturn has none.',
 };
 
 function typeSet(names: string[]): string {
