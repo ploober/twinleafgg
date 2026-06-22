@@ -475,6 +475,13 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         // the native cards do it, so the probe verifies the IR names the right attack.
         const pending = effect.player.active.cannotUseAttacksNextTurnPending;
         if (!pending.includes(ovr.attackName)) { pending.push(ovr.attackName); }
+      } else if (ovr?.kind === 'itemPlayRestriction' && ovr.target?.side === 'opponent' && op.scope === 'opponentNextTurn') {
+        // "During your opponent's next turn, they can't play Item cards." Install the engine's central
+        // ATTACK_EFFECT_ITEM_LOCK on the opponent; playTrainerReducer throws BLOCKED_BY_EFFECT on a
+        // PlayItemEffect while it's present, and it's cleared at the opponent's turn end. Mechanism-
+        // independent: native item-lock cards produce the same observable, so the block probe compares it.
+        const self = effect.player.active.getPokemonCard();
+        if (self) { effect.opponent.marker.addMarker(effect.opponent.ATTACK_EFFECT_ITEM_LOCK, self); }
       }
       return cont(state);
     }

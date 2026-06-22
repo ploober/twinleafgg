@@ -468,6 +468,30 @@ Two non-vacuity assertions prove the buffs actually fire on the own next turn (d
 next turn; override: 50 → 100). Rotomancer suite **54 specs, 0 failures**; lock differential now runs
 **four** probe geometries (incoming-damage, retreat-block, recharge, next-turn damage buff).
 
+### 16. Play-a-card block probe — `itemPlayRestriction` verified
+
+The `rule.override` **play restrictions** were applied-as-no-ops and unverified. `itemPlayRestriction`
+("during your opponent's next turn, they can't play Item cards") is now checked by a fifth lock-probe
+geometry — a **play-a-card block probe**, sibling of the retreat-block probe: run the lock attack, then
+on the opponent's turn attempt to play an Item (`PlayItemEffect` reduced directly, like the retreat probe
+reduces `RetreatEffect`) and observe `BLOCKED_BY_EFFECT`.
+
+The interpreter reproduces it by installing the engine's central `ATTACK_EFFECT_ITEM_LOCK` marker on the
+opponent ([player.ts:93](../../../game/store/state/player.ts)); `playTrainerReducer` already throws
+`BLOCKED_BY_EFFECT` on a `PlayItemEffect` while it's present ([play-trainer-effect.ts:168](../../../game/store/effect-reducers/play-trainer-effect.ts)),
+and it's cleared at the opponent's turn end. Mechanism-independent (a native item-lock card produces the
+same observable, whether via this generic marker or a card-specific one), so the probe compares the
+*blocked* outcome, not the mechanism; inert for cards without the override.
+
+- **`itemPlayRestriction`** ✅ — compared **4** mapped cards (Galvantula ex / Fulgurite sv7-159/168,
+  Frillish / Oceanic Gloom rsv10pt5-126/44), **0 mismatches**. The rest skip: Budew me2pt5 unmapped.
+- **`evolvePlayRestriction`** ⛔ deferred — the engine has **no** evolve-lock mechanism (no marker, no
+  check in `playPokemonReducer`), and it's a single corpus card (Bronzong / Evolution Jammer sv5-69).
+  Building an engine mechanism is outside the oracle's remit; it stays a counted no-op skip.
+
+A non-vacuity assertion proves the rider blocks the opponent's Item play while a control without it does
+not. Rotomancer suite **57 specs, 0 failures**; lock differential now runs **five** probe geometries.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
