@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { setupGame, padDeck, getCardByName, SetupGameResult } from './test-helpers';
+import { setupGame, padDeck, getCardByName, SetupGameResult, choosePokemonCandidates, cardTargetKey } from './test-helpers';
 import { useAttack, getDamage } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
@@ -9,6 +9,8 @@ import { EnergyCard } from '../../game/store/card/energy-card';
 import { SpecialCondition } from '../../game/store/card/card-types';
 import { State } from '../../game/store/state/state';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
+import { ChoosePokemonPrompt, ChoosePokemonPromptType } from '../../game/store/prompts/choose-pokemon-prompt';
+import { CardTarget } from '../../game/store/actions/play-card-action';
 
 /**
  * Phase 4 + 6 — differential: run the SAME scenario through the native Twinleaf card and
@@ -1081,5 +1083,152 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     const newReasons = observedReasons.filter(r => !expected.has(r));
     expect(dropped).toEqual([]);
     expect(newReasons).toEqual([]);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Choice differential — option-set equivalence over multi-choice attacks (§12.10).
+//
+// The variant differentials resolve a player choice to ONE option (first-eligible) and compare that
+// single outcome — so a native/interp prompt-geometry mismatch could balance the divergence guard yet
+// pick different targets and coincidentally agree (the project's one masking risk). This closes it: for
+// each single-select ChoosePokemonPrompt affect-target choice, verify the two engines (A) offer the SAME
+// set of options and (B) produce the SAME observable for EVERY option, not just first-eligible.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+describe('Rotomancer choice differential — option-set equivalence', () => {
+  // Native bugs the full-option-set check surfaces (a wrong option set or an option that misbehaves). Per
+  // the standing rule allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by printingId.
+  const KNOWN_CHOICE_BUGS: Record<string, string> = {
+    // Armarouge SSP — Crimson Blaster: text targets "1 of your opponent's BENCHED Pokémon", but native uses
+    // the any-Pokémon prefab and OFFERS THE ACTIVE too (option set {active,bench0,bench1} vs the IR/interp's
+    // benched-only {bench0,bench1}). The option-set invariant catches the geometry bug directly (the
+    // first-eligible differential could only catch it via KNOWN_BENCHLESS_NATIVE_BUGS on the bare board). → Twinleaf bug.
+    'sv8-34': 'Armarouge SSP — Crimson Blaster: native offers the Active; text/IR target benched-only',
+  };
+
+  const AFFECT = new Set(['damage.deal', 'condition.apply', 'heal', 'damage.placeCounters']);
+  const isSingleChoiceSel = (sel: any): boolean => {
+    if (!sel || sel.role !== undefined) { return false; }
+    if (sel.quantity === 'one') { return true; }
+    return sel.chooser !== undefined && sel.quantity === undefined;
+  };
+  // Single-pick player-choice affect-target ("1 of your/opponent's Pokémon", targetCount 1) — pre-filter
+  // so we run only the ~70 candidate printings, not all 1851.
+  const hasAffectSingleChoice = (body: any[]): boolean => body.some((op: any) =>
+    AFFECT.has(op.kind) && isSingleChoiceSel(op.target?.of) && (op.targetCount ?? 1) === 1);
+
+  // One mirror game on a benched board (each side: active + 2 bench, pre-damaged hp-safely so each option
+  // is a distinct, observable snapshot position). Registers a ChoosePokemonPrompt override that captures
+  // the canonical candidate list and resolves it via `pick`; returns the post-attack snapshot + bookkeeping.
+  function runChoice(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null, dmg: number,
+    pick: (candidates: CardTarget[], prompt: ChoosePokemonPrompt) => CardTarget[]
+  ): { snap: Snapshot; promptCount: number; maxPick: number; candidateKeys: string[] } {
+    const bench = [{ card: fullName, damage: dmg }, { card: fullName, damage: dmg }];
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies, damage: dmg }, bench, deck: padDeck(10) },
+      player2: { active: { card: fullName, damage: dmg }, bench, deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, maxPick = 0;
+    let candidateKeys: string[] = [];
+    game.overridePrompt(ChoosePokemonPromptType, (prompt, state) => {
+      promptCount++;
+      const p = prompt as ChoosePokemonPrompt;
+      const candidates = choosePokemonCandidates(state, p);
+      if (promptCount === 1) { candidateKeys = candidates.map(cardTargetKey); maxPick = p.options.max; }
+      return pick(candidates, p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state), promptCount, maxPick, candidateKeys };
+  }
+
+  const firstEligible = (c: CardTarget[], p: ChoosePokemonPrompt) => c.slice(0, p.options.max);
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).filter(s => hasAffectSingleChoice(s.body));
+
+  let enumerated = 0, optionsChecked = 0, multiOption = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perOptionMismatches: string[] = [];
+
+  for (const s of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_CHOICE_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const dmg = Math.min(20, Math.max(0, card.hp - 30)); // hp-safe: never KOs a target at setup
+    const run = (frags: IrFragment[] | null, pick: (c: CardTarget[], p: ChoosePokemonPrompt) => CardTarget[]) =>
+      runChoice(res.fullName!, energies, s.attackLabel, frags, dmg, pick);
+
+    let nat, intp;
+    try {
+      nat = run(null, firstEligible);
+      intp = run(fragments, firstEligible);
+    } catch { skip('build-error'); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choose-pokemon-prompt'); continue; }
+    if (nat.promptCount > 1 || intp.promptCount > 1) { skip('multi-prompt (deferred)'); continue; }
+    if (nat.maxPick > 1 || intp.maxPick > 1) { skip('multi-select (deferred)'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — same options.
+    if (JSON.stringify(nat.candidateKeys) !== JSON.stringify(intp.candidateKeys)) {
+      optionSetMismatches.push(`${tag}: native ${JSON.stringify(nat.candidateKeys)} vs interp ${JSON.stringify(intp.candidateKeys)}`);
+      continue; // can't pair options when the sets differ
+    }
+    if (nat.candidateKeys.length > 1) { multiOption++; }
+    // Invariant B — each option does the same thing.
+    for (let i = 0; i < nat.candidateKeys.length; i++) {
+      optionsChecked++;
+      try {
+        const sn = run(null, c => [c[i]]).snap;
+        const si = run(fragments, c => [c[i]]).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perOptionMismatches.push(`${tag} option ${i} (${nat.candidateKeys[i]}): native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perOptionMismatches.push(`${tag} option ${i}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer choice differential [option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-option: ${multiOption})`);
+    console.log(`  options checked     : ${optionsChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-option mismatch : ${perOptionMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perOptionMismatches.map(m => `OPTION ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same option set for every multi-choice attack', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('every option produces the same observable in both engines', () => {
+    expect(perOptionMismatches).toEqual([]);
+  });
+  it('actually exercised multi-option choices (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
   });
 });

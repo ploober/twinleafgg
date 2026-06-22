@@ -287,6 +287,40 @@ export function padDeck(n: number, cardName?: string): string[] {
 
 type PromptHandler = (prompt: Prompt<any>, state: State) => any;
 
+// Canonical `player-slot-index` key for a CardTarget (board position identity).
+export function cardTargetKey(target: CardTarget): string {
+  return `${target.player}-${target.slot}-${target.index}`;
+}
+
+// The canonical eligible-target list for a ChoosePokemonPrompt — BOTTOM-then-TOP player, active-before-bench,
+// low-index, honoring playerType/slots/blocked. Shared by the harness auto-resolver (first-eligible is just
+// `candidates.slice(0, max)`) and the rotomancer choice differential, which enumerates *every* option to
+// verify the two engines offer the same set and that each option does the same thing.
+export function choosePokemonCandidates(state: State, prompt: ChoosePokemonPrompt): CardTarget[] {
+  const player = state.players.find(p => p.id === prompt.playerId);
+  const opponent = state.players.find(p => p.id !== prompt.playerId);
+  if (!player || !opponent) { return []; }
+  const blockedSet = new Set(prompt.options.blocked.map(cardTargetKey));
+  const targets: CardTarget[] = [];
+  for (const pt of [PlayerType.BOTTOM_PLAYER, PlayerType.TOP_PLAYER]) {
+    const p = pt === PlayerType.BOTTOM_PLAYER ? player : opponent;
+    if (prompt.playerType !== PlayerType.ANY && prompt.playerType !== pt) { continue; }
+    if (prompt.slots.includes(SlotType.ACTIVE) && p.active.cards.length > 0) {
+      const t: CardTarget = { player: pt, slot: SlotType.ACTIVE, index: 0 };
+      if (!blockedSet.has(cardTargetKey(t))) { targets.push(t); }
+    }
+    if (prompt.slots.includes(SlotType.BENCH)) {
+      for (let i = 0; i < p.bench.length; i++) {
+        if (p.bench[i].cards.length > 0) {
+          const t: CardTarget = { player: pt, slot: SlotType.BENCH, index: i };
+          if (!blockedSet.has(cardTargetKey(t))) { targets.push(t); }
+        }
+      }
+    }
+  }
+  return targets;
+}
+
 // ── TestStoreHandler ──
 
 class TestStoreHandler implements StoreHandler {
@@ -451,35 +485,8 @@ class TestStoreHandler implements StoreHandler {
   }
 
   private resolveChoosePokemonRaw(state: State, prompt: ChoosePokemonPrompt): any {
-    const promptPlayers = this.getPromptPlayers(state, prompt);
-    if (!promptPlayers) return null;
-    const { player, opponent } = promptPlayers;
-
-    const blockedSet = new Set(prompt.options.blocked.map(b => this.toTargetKey(b)));
-    const targets: CardTarget[] = [];
-
-    for (const pt of [PlayerType.BOTTOM_PLAYER, PlayerType.TOP_PLAYER]) {
-      const p = pt === PlayerType.BOTTOM_PLAYER ? player : opponent;
-      if (prompt.playerType !== PlayerType.ANY && prompt.playerType !== pt) continue;
-
-      if (prompt.slots.includes(SlotType.ACTIVE) && p.active.cards.length > 0) {
-        const t: CardTarget = { player: pt, slot: SlotType.ACTIVE, index: 0 };
-        if (!blockedSet.has(this.toTargetKey(t))) {
-          targets.push(t);
-        }
-      }
-      if (prompt.slots.includes(SlotType.BENCH)) {
-        for (let i = 0; i < p.bench.length; i++) {
-          if (p.bench[i].cards.length > 0) {
-            const t: CardTarget = { player: pt, slot: SlotType.BENCH, index: i };
-            if (!blockedSet.has(this.toTargetKey(t))) {
-              targets.push(t);
-            }
-          }
-        }
-      }
-    }
-
+    if (!this.getPromptPlayers(state, prompt)) return null; // preserve the no-players guard
+    const targets = choosePokemonCandidates(state, prompt); // the canonical eligible list (now shared, §12.10)
     const max = prompt.options.max;
     const result = targets.slice(0, max);
     if (targets.length > result.length) { this.ambiguousChoices++; } // more eligible than picked → a choice

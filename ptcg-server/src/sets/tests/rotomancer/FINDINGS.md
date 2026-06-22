@@ -796,6 +796,33 @@ and the observed skip-reason set must **⊆** the pinned `expectedSkipReasons` (
 now only be lost on purpose, never by accident. The baseline (`fixtures/coverage-baseline.json`)
 self-bootstraps and is re-pinned by delete + re-run after an intentional coverage change.
 
+### 27. Choice differential — option-set equivalence retires the masking risk
+
+The variant differentials resolve a player choice to **one** option (first-eligible). That left the project's
+one masking risk (§12.10): a native/interp prompt-geometry mismatch can balance the divergence guard, the
+harness picks first-eligible on each, and two *different* picks can coincidentally produce the same snapshot —
+agreeing for the wrong reason. The **choice differential** verifies, for the single-select `ChoosePokemonPrompt`
+affect-target class, that the engines offer the **same option set** (Invariant A) and that **every option does
+the same thing** (Invariant B) — not just first-eligible.
+
+**Mechanism.** Extract `choosePokemonCandidates` from the harness auto-resolver (so the option list is the very
+one native resolves; behavior-preserving — sets 97/0, conformance 190 pass, differential counts unchanged),
+then on a benched mirror board capture each engine's candidate set via `overridePrompt`, compare as canonical
+`player-slot-index` keys, and re-run selecting each option to compare snapshots.
+
+**Result: 35 attacks (all multi-option), 89 options checked, 0 mismatches** after triage. It immediately found
+a native bug first-eligible can't see:
+
+| card | bug | adjudication |
+|---|---|---|
+| Armarouge SSP *Crimson Blaster* (sv8-34) | offers the **Active** as a target though the text is "1 of your opponent's **Benched** Pokémon" — option set `{active,bench0,bench1}` vs the IR's `{bench0,bench1}`. The same bug `KNOWN_BENCHLESS_NATIVE_BUGS` only caught on the bare board; the option-set invariant catches it directly. | allow-listed (`KNOWN_CHOICE_BUGS`) |
+
+**Both invariants verified to bite:** A flagged the real Crimson Blaster option-set divergence with a precise
+message; a deliberate off-by-one skew of the interp's per-option pick produced **71** per-option mismatches
+(each showing native landing on the chosen Pokémon vs interp on the wrong one) — exactly the masking case, now
+impossible to hide. Follow-ups the harness enables: multi-select (`targetCount`≥2), `ChooseCardsPrompt`, and the
+residual choice-ops including `chooser:'opponent'` (now safe to align, since the full option set is checked).
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

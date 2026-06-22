@@ -381,6 +381,11 @@ with **no behavior change for any synchronous (no‑prompt) card**. Built across
 skip: `chooser:'opponent'`/`'random'`, `excludeSelf`/`extremum`, deck searches, place‑a‑Pokémon / prize /
 attached `cards.move` endpoints, `costGate`/`pokemon.return`/`damage.move`, and the predicate gaps.
 
+Stage B compares a single resolution (first‑eligible). The **choice differential (§12.10)** now goes further
+for the `ChoosePokemonPrompt` affect‑target class: it verifies native and interp offer the *same option set*
+and that *every* option does the same thing — not just first‑eligible — which retires the geometry‑masking
+risk and makes `chooser:'opponent'` safe to align next.
+
 ### 12.6 Printing resolution & name‑validation
 `bridge.resolvePrinting` maps a printing‑id prefix → Twinleaf set code and **name‑validates** every
 hit, so a misaligned set/number degrades to a safe `mismatch` skip rather than a false match. Mapped
@@ -443,6 +448,32 @@ The baseline (`fixtures/coverage-baseline.json`) self‑bootstraps (absent → w
 re‑pin after a coverage‑changing phase by deleting + re‑running. The two guards were verified to bite (a
 phantom compared key and a removed reason both fail with precise messages). Zero oracle risk — additive,
 touching none of the 7 variant differentials.
+
+### 12.10 Choice differential (option‑set equivalence)
+The variant differentials resolve a player choice to **one** option (first‑eligible) and compare that single
+outcome. That left the project's one masking risk: if the interp's prompt geometry differs from native's,
+**both** still emit a prompt (the divergence guard's choice‑counts balance), the harness picks first‑eligible
+on each, and two *different* picks can coincidentally produce the same snapshot — agreeing for the wrong
+reason. The **choice differential** (`describe` in [rotomancer-differential.spec.ts](../rotomancer-differential.spec.ts))
+closes it for the single‑select `ChoosePokemonPrompt` affect‑target class ("1 of your/opponent's Pokémon" on
+`damage`/`heal`/`condition`/`placeCounters`). On a benched mirror board (each option a distinct snapshot
+position) it captures the **candidate set** each engine offers — via the shared `choosePokemonCandidates`
+(extracted from the harness auto‑resolver, §12, so the option list is the *same* one native resolves) and the
+`overridePrompt` hook — then asserts two invariants:
+- **A — same options:** native's and interp's candidate sets are identical as canonical `player‑slot‑index`
+  keys (a geometry divergence — wrong slots/player/`blocked` — fails here).
+- **B — each option does the same thing:** for *every* option index, re‑run both engines selecting that option
+  and compare snapshots (a per‑option divergence fails).
+
+Result: **35 attacks (all multi‑option), 89 options checked, 0 mismatches** after triage. It immediately
+surfaced a native bug invisible to first‑eligible: **Armarouge SSP *Crimson Blaster*** offers the Active as a
+target though the text is "1 of your opponent's **Benched** Pokémon" (option set `{active,bench0,bench1}` vs the
+IR's `{bench0,bench1}`) — the same bug `KNOWN_BENCHLESS_NATIVE_BUGS` only caught on the bare board; allow‑listed
+(`KNOWN_CHOICE_BUGS`). Both invariants were verified to bite (A caught Crimson Blaster; B caught a deliberate
+off‑by‑one skew → 71 per‑option mismatches). This **retires the masking risk** for the choice class — a
+geometry mismatch can no longer hide. Follow‑ups the harness enables: multi‑select (`targetCount`≥2 → option
+*combinations*), `ChooseCardsPrompt`, and the residual choice‑ops (`energy.move` destination, KO/return),
+including `chooser:'opponent'` (now safe to align, since the full option set is checked).
 
 ---
 
