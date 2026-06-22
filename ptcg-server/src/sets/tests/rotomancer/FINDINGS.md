@@ -492,6 +492,47 @@ same observable, whether via this generic marker or a card-specific one), so the
 A non-vacuity assertion proves the rider blocks the opponent's Item play while a control without it does
 not. Rotomancer suite **57 specs, 0 failures**; lock differential now runs **five** probe geometries.
 
+### 17. Amount `countOf` + `bindAs` tracking — discard-and-scale attacks → a native discard-filter bug
+
+The `countOf` amount form ("90 damage **for each card you discarded in this way**" — Inferno X) and the
+`bindAs` binding it reads were both unsupported, so all 34 corpus occurrences skipped. They are now wired
+end to end: a **producer** op (`energy.discard` with `bindAs:"discarded"`) records the discarded card
+list in a fragment-scoped register threaded through the continuation runner; a **consumer**
+(`{kind:"countOf", ref:"discarded"}` inside a `perCount` amount) reads its cardinality. Damage =
+`base + per × |binding|`.
+
+Three load-bearing facts made this a deterministic (no-guess) reproduction:
+
+- **The discard amount is forced by the harness.** The producer's count is a player choice (`anyAmount`
+  = "discard any amount", `upTo {max}`), but the shared harness resolves native's `DiscardEnergyPrompt`
+  greedily (first-eligible up to `max`) and **never bumps the divergence guard** (test-helpers.ts:847;
+  only `ChooseCards`/`ChoosePokemon` increment it). So the interpreter discards the same greedy-max set
+  **without emitting a prompt** — exactly the `energy.move`/`iterate` pattern — and the two runs face the
+  same number of choices. No guard skew, no guess.
+- **The discard SOURCE is a pool, not a single chosen target.** "From among your Pokémon" is encoded
+  `{chooser:'player', quantity:'one', spot:'anywhere'}`, which the affect-target selector throws on
+  (Inferno X was skipping on the *selector*, before count or amount). A new `ir-selectors.spatialPool`
+  returns the `side × spot` candidate pool without the player-choice throw (the per-pick is collapsed by
+  the greedy resolution); `resolveV2Selector` is refactored to call it then apply the existing throw, so
+  its behavior is unchanged.
+- **Already non-vacuous on the bare board.** The attacker's cost energy is still attached at
+  `applyEffects`, so even a bare board discards it and scales.
+
+**What it found — a 5th native card-file bug.** `sv6-123` **Heatran TWM — Steel Burst** ("Discard all
+**[M]** Energy from this Pokémon. 50 damage for each card discarded") natively discards **all** attached
+energy — `CheckProvidedEnergyEffect.energyMap` is mapped unfiltered, with no `[M]` filter
+([heatran.ts:44-55](../../set-twilight-masquerade/heatran.ts)) — inflating both the discarded count and
+the `50×count` damage; it is further compounded by the out-of-scope **Incandescent Body** ability
+(burns the attacker). The IR/interp faithfully discard only `[M]` Energy and model only the attack body.
+→ **Twinleaf bug**, allow-listed by printing (`KNOWN_NATIVE_BUGS_BY_PRINTING`), never fixed
+([memory: rotomancer-no-card-fixes]).
+
+`compared` rose **bare 501→517, primed 508→524**; **0 mismatches** after the allow-list. A direct
+non-vacuity assertion proves the damage scales with the bound discard set (1 Fire → 50, 2 Fire → 100)
+and that the matching energy is actually discarded (attacker emptied). **Deferred** as an honest counted
+gap: `cards.move` with `bindAs` (4 corpus cards, all `me3`-unmapped → no oracle to verify against; a
+`countOf` over its unbound ref throws → counted skip). Rotomancer suite **58 specs, 0 failures**.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

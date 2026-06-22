@@ -108,7 +108,7 @@ Status legend used throughout:
 |---|---:|:--:|---|
 | `damage.deal` | 1680 | ✅ | Defender damage routes through the normal pipeline (`effect.damage +=`, so weakness/resistance/prevention apply); multi‑target/spread damage is direct `PutDamageEffect` (weakness‑free), matching how native spread works. `ignore` (weakness/resistance/defenderEffects) is inert in a mirror → no‑op. |
 | `cards.move` | 307 | ✅ | `MOVE_CARDS` between zones hand/deck/discard/lostzone. `chooser:'auto'` → first‑N matching; `chooser:'player'` → **emits a `ChooseCardsPrompt`** (predicate → `blocked`; the filter‑aware harness picks the same first‑N matching, §12.7). **bench→active (same owner) = a SWITCH** via `player.switchPokemon` + a Bench `ChoosePokemonPrompt`. Counts `exactly`/`all`/`upTo`. **Throws** on `opponent`/`random` chooser, deck **search** (`visibility:search`/`searchTyped`), and place‑a‑Pokémon / prize / attached endpoints. |
-| `energy.discard` | 197 | 🟡 | Discards matching attached energy from the resolved target(s). Counts `exactly`/`all`. **Throws** on non‑`attached` source and `upTo`/`anyAmount` (player‑choice amount). |
+| `energy.discard` | 197 | ✅ | Discards matching attached energy from the resolved target(s). Counts `exactly`/`all`, plus the player‑chosen `anyAmount`/`upTo` (collapsed to the greedy maximum the harness auto‑resolves native's `DiscardEnergyPrompt` to — §8.2). When the source is a player‑choice pool ("from among your Pokémon", `chooser`/`quantity:'one'`), resolves the spatial pool directly (§6, `spatialPool`). With `bindAs` it records the discarded list for a later `countOf` (discard‑and‑scale — §8.1). **Throws** on non‑`attached` source. |
 | `condition.apply` | 197 | ✅ | `AddSpecialConditionsEffect`. **Throws** on `removeMode` (condition removal — not yet wired). |
 | `rule.override` | 192 | 🟡 | See §5. `retreatShutoff`/defending and `attackShutoff`/`ownNextAttack` are reproduced (probed by the lock differential); the rest are **🟦 no‑op** (snapshot‑neutral this turn, not yet probed). |
 | `continuous.modifier` | 131 | 🟡 | See §4. `damageReduction`/`preventDamage`/`damageDebuff` are reproduced (lock‑probed); the rest are **🟦 no‑op**. |
@@ -183,6 +183,7 @@ resolves the deterministic shapes; an op's `target.where` then filters via `ir-p
 | `quantity: each` / `all` | ✅ | all matching Pokémon (a forced set). |
 | `quantity: one` | ✅ (affect‑target) / ⛔ (else) | A single **player‑picked** Pokémon. On an *affect‑target* op (damage/condition/heal/placeCounters) Stage B emits a `ChoosePokemonPrompt` the harness resolves identically to native (§12.5); `op.targetCount` chooses N distinct. As a predicate/`forEach` subject it still throws → skip. |
 | `chooser: player` / `opponent` / `auto` | ✅ (affect‑target) / ⛔ (else) | Explicit chooser on an affect‑target selector → same Stage B prompt path. A `chooser` with `quantity:'each'`/`'all'`, or on a non‑affect selector, still throws → skip. |
+| `spatialPool` (energy.discard source) | ✅ | The `side × spot` candidate pool a player‑choice **discard** ranges over ("discard any amount from among your Pokémon") — resolved directly, *without* the affect‑target choice throw, because the harness collapses the per‑Pokémon/per‑energy pick to greedy first‑eligible (§8.2). `resolveV2Selector` is refactored to build the pool via `spatialPool` then apply the choice throw, so its behavior is unchanged. |
 | `bind: atInstall` / `now` | ✅ (inert) | Snapshot‑timing for "the Defending Pokémon at trigger time." In a single‑turn differential it's the same Pokémon, so the timing is inert. |
 | `where: <predicate>` | ✅ | Post‑filter on resolved targets, evaluated by §8 with the target as subject. |
 | `extremum` / `excludeSelf` | ⛔ | Superlative ("the most‑damaged") / self‑exclusion refinements — not yet handled; throw → skip. |
@@ -235,7 +236,7 @@ Two distinct vocabularies: **amounts** (a damage/heal magnitude, evaluated by `e
 | `forEach` | 229 | ✅ | board cardinality (§9). |
 | `plusIf` | 153 | ✅ | `base + (when ? bonus : 0)`, `when` via §7. |
 | `coinFlipHeads` | 118 | ✅ | `headsOf(n)` under `ALL_HEADS`. |
-| `countOf` | 34 | ⛔ | Cardinality of a runtime **binding** (e.g. `discarded` energy) — bindings (`bindAs`) aren't tracked. Throw → skip. |
+| `countOf` | 34 | ✅ | Cardinality of a runtime **binding** a preceding op named via `bindAs` ("90 damage for each card you discarded in this way" — discard-and-scale, e.g. Inferno X). A fragment-scoped register threaded through the op runner holds the discarded card list; `countOf` returns its `.length`. **Throws → skip** on an unbound ref (e.g. the `cards.move bindAs` producer, deferred — §8.2). |
 | `coinFlipsUntilTails` | 19 | ⛔ | Unbounded flip sequence — under `ALL_HEADS` it never terminates; semantically a player‑felt RNG. Throw → skip. |
 | `minusPerCount` | 6 | ✅ | `max(0, base − per × count)`. |
 | (spec‑only: `coinFlipTails`, `scaled`, `incomingDamageCounters`, `Amount.All`) | 0 | ⬜ | Not emitted. |
@@ -246,8 +247,8 @@ Two distinct vocabularies: **amounts** (a damage/heal magnitude, evaluated by `e
 |---|---:|:--:|---|
 | `exactly` | 345 | ✅ | first N (after predicate filter). |
 | `all` | 79 | ✅ | the whole filtered set. |
-| `upTo` | 135 | ✅ (cards/energy.attach) | first up‑to‑max — the harness takes the max (a forced upper bound); genuinely optional picks are guarded. |
-| `anyAmount` | 10 | ⛔ | "discard any amount" — a player‑chosen count. Throw → skip. |
+| `upTo` | 135 | ✅ (cards/energy.attach/discard) | first up‑to‑max — the harness takes the max (a forced upper bound); genuinely optional picks are guarded. On `energy.discard` it's the "discard up to N" producer half (e.g. Erasure Ball). |
+| `anyAmount` | 10 | ✅ (energy.discard) / ⛔ (else) | "discard any amount" — the discard‑and‑scale producer (Inferno X). Collapsed to the greedy maximum, exactly what the harness resolves native's `DiscardEnergyPrompt` to (first‑eligible up to max; it never bumps the ambiguity guard, §12.2), so both engines discard the same set. As a discard *cost* (not a scale producer) it stays a player choice → skip. |
 | `untilHandSize` / `untilHandSizeTrim` | 14/1 | ⛔ | Draw/discard until a hand size — interacts with hidden deck order / choice. Throw → skip. |
 | search counts (`UpToSearchTyped`, …) | — | ⛔ | Deck search → throw → skip. |
 
@@ -403,10 +404,10 @@ not card identity — an honest partial coverage, consistent with every other zo
 | ~~1~~ ✅ | **Stage B — full** (§12.5, §12.7): affect‑targets, `choice`, `cards.move chooser:'player'` (incl. switches), `iterate`, `energy.move` + the three harness‑resolution expansions | **Done** — the player‑choice class flipped from skip to compared (`compared` bare 449→501, primed 450→508). |
 | ~~2~~ ✅ | **Own‑turn damage probe** (§12.4): `damageBuff` + `attackBaseDamageOverride` reproduced via native prefabs and verified | **Done** — `damageBuff` compared on 2 mapped cards, `attackBaseDamageOverride` verified by direct assertion; `damageVulnerability` deferred (no damaging mapped case). |
 | ~~3~~ ✅ | **Play‑block probe** (§12.4): `itemPlayRestriction` reproduced via `ATTACK_EFFECT_ITEM_LOCK` and verified | **Done** — compared on 4 mapped cards (Galvantula ex, Frillish); `evolvePlayRestriction` deferred (no engine evolve‑lock mechanism). |
-| **1** | Amount `countOf` (runtime bindings) + `bindAs` tracking | Unlocks the discard‑and‑scale attacks (e.g. Mega Charizard X / Inferno X). |
-| 2 | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
-| 3 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction` mapped cards, and more comparable. |
-| 4 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
+| ~~4~~ ✅ | Amount `countOf` (runtime bindings) + `bindAs` tracking | **Done** — discard‑and‑scale (Inferno X shape) wired end to end via a fragment‑scoped binding register + greedy‑discard pool; `compared` rose bare 501→517, primed 508→524. Surfaced a 5th native card‑file bug (Heatran TWM Steel Burst discards all energy, not just `[M]`). Deferred: `cards.move bindAs` (4 `me3`‑unmapped cards, no oracle). |
+| **1** | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
+| 2 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs` mapped cards, and more comparable. |
+| 3 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built.

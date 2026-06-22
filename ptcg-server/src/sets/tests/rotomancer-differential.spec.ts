@@ -363,6 +363,49 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[1].active.damage).toBe(0);    // bench-only target — Active untouched
   });
 
+  // countOf / bindAs non-vacuity: a discard-and-scale attack (the Inferno X shape — "Discard any amount
+  // of [R] Energy from among your Pokémon, and this attack does N damage for each card you discarded in
+  // this way") must (a) discard the matching energy and (b) deal N × the count it BOUND, so the damage
+  // scales with the bound discard set — not a constant, not a no-op. The `energy.discard` resolves the
+  // player-choice pool greedily (the harness's policy for native's DiscardEnergyPrompt) and binds the
+  // discarded list; `countOf` reads its cardinality. A regression that ignored the binding would deal 0
+  // (unbound throw → skip) or a constant. Hosted on Koraidon (mirror-safe; 130 HP survives 50 and 100).
+  it('countOf: damage scales with the energy discarded and bound via bindAs (discard-and-scale)', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const infernoX: IrFragment[] = [{
+      label: 'Discard Burst', cost: ['Fire'],
+      body: [
+        { kind: 'energy.discard', bindAs: 'discarded', count: { kind: 'anyAmount' },
+          card: { from: { owner: 'self', zone: 'attached' }, predicate: { kind: 'isa', energyType: 'Fire' } },
+          target: { of: { chooser: 'player', quantity: 'one', side: 'self', spot: 'anywhere' } } },
+        { kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+          amount: { kind: 'perCount', base: 0, per: 50, count: { kind: 'countOf', ref: 'discarded' } } },
+      ],
+    }];
+    const run = (fireCount: number) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: Array(fireCount).fill('Fire Energy SVE') }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, infernoX);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      useAttack(game.store, game.state, 0, 'Discard Burst');
+      return {
+        defenderDamage: game.state.players[1].active.damage,
+        attackerFire: game.state.players[0].active.cards.filter(c => c instanceof EnergyCard).length,
+      };
+    };
+    const one = run(1);
+    const two = run(2);
+    expect(one.defenderDamage).toBe(50);   // 1 Fire discarded × 50
+    expect(two.defenderDamage).toBe(100);  // 2 Fire discarded × 50 — strictly more (countOf scales with the bound set)
+    expect(two.attackerFire).toBe(0);      // every matching energy discarded — the discard is observable, not a no-op
+  });
+
   // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
   // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
   it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {
@@ -454,6 +497,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     'sv9-103': 'N\'s Klink JTG — Double Spin: printed damage 10 PLUS `effect.damage += 10*heads` double-counts the base (30 on two heads, not 20). IR/interp do 10 per head. → Twinleaf bug. (Label "Double Spin" also belongs to Gossifleur sv7-10, which is correct — hence keyed by printing.)',
     'sv6-6': 'Sunkern TWM — Bullet Seed: the coin-flip logic is guarded on WAS_ATTACK_USED(effect, 1) but Bullet Seed is attack index 0, so it never runs (always base 10). IR/interp flip per the text. → Twinleaf bug',
     'sv6-32': 'Monferno TWM — Heat Blow: the "Discard an Energy from this Pokémon" rider is wired only to attack index 0 (Chop); Heat Blow (index 1) never discards. IR/interp discard. → Twinleaf bug',
+    'sv6-123': 'Heatran TWM — Steel Burst: text/IR are "Discard all [M] Energy from this Pokémon. 50 damage for each card discarded", but native discards ALL attached energy (CheckProvidedEnergyEffect.energyMap, unfiltered — no [M] filter), inflating the discard count and the 50×count damage. (Compounded by the out-of-scope Incandescent Body ability, which burns the attacker.) IR/interp faithfully discard only [M] Energy and model only the attack body. → Twinleaf bug',
   };
 
   // (6c) Native bugs that only manifest on the BENCHLESS board (opponent holds just the active),

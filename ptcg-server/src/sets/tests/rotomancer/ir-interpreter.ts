@@ -20,7 +20,14 @@ import { GameMessage } from '../../../game/game-message';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
 import { executeCardsMove, matchesCardPredicate } from './ir-cards';
-import { resolveV2Selector, resolveChoiceTarget, isSingleChoiceTarget, Target, V2Selector } from './ir-selectors';
+import { resolveV2Selector, resolveChoiceTarget, isSingleChoiceTarget, spatialPool, Target, V2Selector } from './ir-selectors';
+
+// A fragment-scoped binding register: a producing op (`energy.discard` with `bindAs`) records the
+// card list it discarded under a name, and a later `countOf` amount reads its cardinality ("90 damage
+// for each card you discarded in this way"). Single-assignment, fragment-execution lifetime; threaded
+// as one mutable object through runOps so a producer's write is visible to a later consumer — even
+// across a deferred-prompt continuation (the same object is captured in the prompt callback).
+export type Bindings = Record<string, Card[]>;
 
 /**
  * A minimal interpreter that executes a Rotomancer IR **v2** program as a Twinleaf card. Each
@@ -44,12 +51,14 @@ export interface CountForm {
   bonus?: number;      // plusIf
   when?: any;          // plusIf predicate
   n?: number;          // coinFlipHeads: number of coins flipped
+  ref?: string;        // countOf: name of the runtime binding whose cardinality this returns
 }
 
 export interface IrOp {
   kind: string;
   amount?: CountForm;
   count?: number | CountForm;
+  bindAs?: string;            // energy.discard / cards.move: name the moved card list for a later countOf
   untilHpRemaining?: number;  // damage.placeCounters: place counters until the target has N HP left
   targetCount?: number;       // affect-target ops: choose N distinct Pokémon, each taking `amount` ("2 of your opponent's Pokémon")
   condition?: string;
@@ -125,7 +134,7 @@ function countOf(effect: AttackEffect, form: CountForm): number {
   }
 }
 
-function evalAmount(state: State, effect: AttackEffect, amount?: number | CountForm): number {
+function evalAmount(state: State, effect: AttackEffect, amount?: number | CountForm, bindings?: Bindings): number {
   if (typeof amount === 'number') {
     return amount;
   }
@@ -141,12 +150,22 @@ function evalAmount(state: State, effect: AttackEffect, amount?: number | CountF
     case 'coinFlipHeads':
       return headsOf(amount.n ?? 0);
     case 'perCount':
-      return (amount.base ?? 0) + (amount.per ?? 0) * evalAmount(state, effect, amount.count);
+      return (amount.base ?? 0) + (amount.per ?? 0) * evalAmount(state, effect, amount.count, bindings);
     case 'minusPerCount':
       // "base, minus per for each X" — damage can't go negative.
-      return Math.max(0, (amount.base ?? 0) - (amount.per ?? 0) * evalAmount(state, effect, amount.count));
+      return Math.max(0, (amount.base ?? 0) - (amount.per ?? 0) * evalAmount(state, effect, amount.count, bindings));
     case 'plusIf':
       return (amount.base ?? 0) + (evalPredicate(state, effect, amount.when) ? (amount.bonus ?? 0) : 0);
+    case 'countOf': {
+      // Cardinality of a runtime binding a PRECEDING op named via `bindAs` ("90 damage for each card
+      // you discarded in this way"). Unbound → a producer shape we don't reproduce; throw → the card
+      // is a counted skip (never a false count).
+      const ref = amount.ref;
+      if (ref === undefined || !bindings || !(ref in bindings)) {
+        throw new Error(`[ir-interpreter] countOf ref "${ref}" not bound`);
+      }
+      return bindings[ref].length;
+    }
     default:
       throw new Error(`[ir-interpreter] unsupported count form "${amount.kind}"`);
   }
@@ -170,32 +189,59 @@ function resolveTargets(state: State, effect: AttackEffect, target?: { of?: V2Se
   return target?.where ? targets.filter(t => matchesV2Where(state, effect, t.list, target.where)) : targets;
 }
 
-// energy.discard. The deterministic forms: discard exactly-N / all attached energy (optionally
-// filtered by an isa predicate, e.g. a [R] Energy) from the target Pokémon — self or opponent's
-// active. (energy.attach / energy.move, and upTo/anyAmount counts, are player-choice or
-// zone-dependent and are separate v2 kinds / forms left unsupported — they throw → card skipped.)
-function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+// energy.discard. Discards attached energy (optionally filtered by an isa predicate, e.g. a [R]
+// Energy) from the resolved source(s). Counts: `exactly`/`all`, plus the player-chosen `anyAmount`
+// ("discard any amount") and `upTo {max}` — collapsed to the greedy maximum, which is exactly what the
+// harness resolves native's DiscardEnergyPrompt to (first-eligible up to max; it never bumps the
+// ambiguity guard), so the two engines discard the same set. When the source is a player-choice pool
+// ("from among your Pokémon", chooser/quantity:'one'), resolve the spatial pool directly (the per-pick
+// choice is forced by the greedy resolution). With `bindAs`, record the discarded list for a later
+// `countOf` ("90 damage for each card you discarded in this way"). (Non-`attached` sources are a
+// separate v2 kind / unsupported — they throw → card skipped.)
+function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, bindings: Bindings): State {
   const from = op.card?.from;
   if (from?.zone !== 'attached') {
     throw new Error(`[ir-interpreter] energy.discard from ${from?.owner}/${from?.zone} not supported`);
   }
   const count: any = op.count;
-  // The energies discarded are those attached to the resolved target Pokémon (each goes to its
-  // owner's discard), matching the card predicate (Energy supertype / specific type / Special).
+  // How many of `available` eligible energies to discard — the greedy upper bound (the harness resolves
+  // native's prompt to the same first-eligible-up-to-max set). `exactly`/`upTo` clamp to availability.
+  const take = (available: number): number => {
+    if (count?.kind === 'all' || count?.kind === 'anyAmount') { return available; }
+    if (count?.kind === 'exactly') { return Math.min(count.n ?? 0, available); }
+    if (count?.kind === 'upTo') { return Math.min(count.max ?? count.n ?? 0, available); }
+    throw new Error(`[ir-interpreter] energy discard count "${count?.kind}" not supported`);
+  };
   // NB: the predicate lives at op.card.predicate (a sibling of op.card.from), not op.card.from.predicate.
   const predicate = op.card?.predicate;
-  for (const { player, list } of resolveTargets(state, effect, op.target)) {
-    const energies = list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, predicate));
-    let n: number;
-    if (count?.kind === 'all') {
-      n = energies.length;
-    } else if (count?.kind === 'exactly') {
-      n = count.n ?? 0;
-    } else {
-      throw new Error(`[ir-interpreter] energy discard count "${count?.kind}" not supported`);
+  const discarded: Card[] = [];
+  const sel = op.target?.of;
+
+  if (isSingleChoiceTarget(sel)) {
+    // "Discard <amount> Energy from among your Pokémon" — the per-Pokémon / per-energy pick is a player
+    // choice the harness collapses to greedy first-eligible across the pool. Take the matching energy in
+    // harness order (active before bench, low index), so we discard exactly the set native discards.
+    const eligible: Array<Target & { card: Card }> = [];
+    for (const { player, list } of spatialPool(effect, sel!).filter(t => t.list.getPokemonCard() !== undefined)) {
+      for (const card of list.cards) {
+        if (card instanceof EnergyCard && matchesCardPredicate(card, predicate)) { eligible.push({ player, list, card }); }
+      }
     }
-    list.moveCardsTo(energies.slice(0, n), player.discard);
+    for (const { player, list, card } of eligible.slice(0, take(eligible.length))) {
+      list.moveCardsTo([card], player.discard);
+      discarded.push(card);
+    }
+  } else {
+    // Forced (non-choice) source: discard from each resolved target (a single Pokémon in the corpus).
+    for (const { player, list } of resolveTargets(state, effect, op.target)) {
+      const energies = list.cards.filter(c => c instanceof EnergyCard && matchesCardPredicate(c, predicate));
+      const chosen = energies.slice(0, take(energies.length));
+      list.moveCardsTo(chosen, player.discard);
+      discarded.push(...chosen);
+    }
   }
+
+  if (op.bindAs) { bindings[op.bindAs] = discarded; }
   return state;
 }
 
@@ -207,11 +253,11 @@ function executeEnergyDiscard(store: StoreLike, state: State, effect: AttackEffe
 // emit no prompt.
 function runOps(
   store: StoreLike, state: State, effect: AttackEffect,
-  ops: IrOp[], index: number, done: (state: State) => State
+  ops: IrOp[], index: number, done: (state: State) => State, bindings: Bindings
 ): State {
   if (index >= ops.length) { return done(state); }
   return executeOp(store, state, effect, ops[index],
-    next => runOps(store, next, effect, ops, index + 1, done));
+    next => runOps(store, next, effect, ops, index + 1, done, bindings), bindings);
 }
 
 // Stage B: a single player-choice affect-target. Emit the SAME ChoosePokemonPrompt native emits
@@ -284,19 +330,19 @@ function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffec
   return state;
 }
 
-function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State): State {
+function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State, bindings: Bindings): State {
   switch (op.kind) {
     case 'damage.deal': {
       if (isSingleChoiceTarget(op.target?.of)) {
         // Chosen-target damage is weakness-free (like native DAMAGE_OPPONENT_POKEMON), applied in the callback.
         return affectChoiceTarget(store, state, effect, op, (s, t) => {
-          const put = new PutDamageEffect(effect, evalAmount(s, effect, op.amount));
+          const put = new PutDamageEffect(effect, evalAmount(s, effect, op.amount, bindings));
           put.target = t.list;
           return store.reduceEffect(s, put);
         }, cont);
       }
       // `ignore` (weakness/resistance/defenderEffects) is inert in a mirror match — no-op.
-      const value = evalAmount(state, effect, op.amount);
+      const value = evalAmount(state, effect, op.amount, bindings);
       const of = op.target?.of;
       const toDefender = !!of && (of.role === 'defending' || (of.side === 'opponent' && of.spot === 'active'));
       for (const { list } of resolveTargets(state, effect, op.target)) {
@@ -323,7 +369,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
           const card = list.getPokemonCard() as PokemonCard;
           value = Math.max(0, (card.hp - list.damage) - op.untilHpRemaining);
         } else {
-          value = evalAmount(s, effect, op.count) * 10;
+          value = evalAmount(s, effect, op.count, bindings) * 10;
         }
         const put = new PutCountersEffect(effect, value);
         put.target = list;
@@ -361,9 +407,9 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'heal': {
       if (isSingleChoiceTarget(op.target?.of)) {
         return affectChoiceTarget(store, state, effect, op,
-          (s, t) => store.reduceEffect(s, new HealEffect(t.player, t.list, evalAmount(s, effect, op.amount))), cont);
+          (s, t) => store.reduceEffect(s, new HealEffect(t.player, t.list, evalAmount(s, effect, op.amount, bindings))), cont);
       }
-      const value = evalAmount(state, effect, op.amount);
+      const value = evalAmount(state, effect, op.amount, bindings);
       for (const { player, list } of resolveTargets(state, effect, op.target)) {
         state = store.reduceEffect(state, new HealEffect(player, list, value));
       }
@@ -372,7 +418,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'cards.move':
       return executeCardsMove(store, state, effect, op, cont);
     case 'energy.discard':
-      return cont(executeEnergyDiscard(store, state, effect, op));
+      return cont(executeEnergyDiscard(store, state, effect, op, bindings));
     case 'energy.attach':
       return cont(executeEnergyAttach(store, state, effect, op));
     case 'energy.move': {
@@ -487,10 +533,10 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     }
     case 'coinFlip':
       // Under the harness (ALL_HEADS) a coin flip is heads → the `then` branch, then the rest of the body.
-      return runOps(store, state, effect, op.then ?? [], 0, cont);
+      return runOps(store, state, effect, op.then ?? [], 0, cont, bindings);
     case 'if':
       return runOps(store, state, effect,
-        (evalPredicate(state, effect, op.when) ? op.then : op.else) ?? [], 0, cont);
+        (evalPredicate(state, effect, op.when) ? op.then : op.else) ?? [], 0, cont, bindings);
     case 'choice': {
       // A "you may <then>" optional effect (corpus `else` is always empty). Native emits a
       // ConfirmPrompt, which the harness always resolves to `true` (and never increments the
@@ -500,7 +546,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       }
       const prompt = new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_USE_ABILITY);
       return store.prompt(state, prompt, (use: boolean) =>
-        use ? runOps(store, state, effect, op.then ?? [], 0, cont) : cont(state));
+        use ? runOps(store, state, effect, op.then ?? [], 0, cont, bindings) : cont(state));
     }
     case 'iterate': {
       // The only corpus shape: "put N damage counters on your opponent's <spot> in any way you like"
@@ -515,7 +561,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         || sel?.side !== 'opponent' || sel?.quantity !== 'one') {
         throw new Error('[ir-interpreter] iterate shape not supported (only "put N counters on opponent")');
       }
-      const counters = (op.over.n ?? 0) * evalAmount(state, effect, inner.count);
+      const counters = (op.over.n ?? 0) * evalAmount(state, effect, inner.count, bindings);
       state = PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(counters, store, state, effect, slotsOf(sel.spot));
       return cont(state);
     }
@@ -556,8 +602,10 @@ export class InterpretedCard extends PokemonCard {
     for (let i = 0; i < this.program.length; i++) {
       if (WAS_ATTACK_USED(effect, i, this)) {
         // Continuation-passing so a player-choice op can emit a prompt and resume the rest of the body
-        // in its callback (Stage B); the terminal continuation applies the next-turn buffs.
-        return runOps(store, state, effect as AttackEffect, this.program[i].body, 0, applyBuffs);
+        // in its callback (Stage B); the terminal continuation applies the next-turn buffs. A fresh
+        // binding register per fragment execution holds any `bindAs` collection for a later `countOf`.
+        const bindings: Bindings = {};
+        return runOps(store, state, effect as AttackEffect, this.program[i].body, 0, applyBuffs, bindings);
       }
     }
     return applyBuffs(state);
