@@ -9,11 +9,13 @@ import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER } from '../../../game/store/prefabs/prefabs';
+import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
 import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
+import { SlotType } from '../../../game/store/actions/play-card-action';
 import { GameMessage } from '../../../game/game-message';
 import { costToCardType } from './bridge';
 import { evalPredicate, matchesV2Where } from './ir-predicates';
@@ -463,9 +465,36 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       return store.prompt(state, prompt, (use: boolean) =>
         use ? runOps(store, state, effect, op.then ?? [], 0, cont) : cont(state));
     }
+    case 'iterate': {
+      // The only corpus shape: "put N damage counters on your opponent's <spot> in any way you like"
+      // — `iterate over exactly:N { damage.placeCounters count:k, target quantity:'one' opponent <spot> }`.
+      // Native does this with one PutDamagePrompt (PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE), which the
+      // harness now resolves to the first in-slot target; a per-iteration ChoosePokemonPrompt loop would
+      // instead increment the ambiguity guard N× and get the attack skipped. So use the exact same prefab.
+      const body = op.body ?? [];
+      const inner = body.length === 1 ? body[0] : undefined;
+      const sel = inner?.target?.of;
+      if (op.over?.kind !== 'exactly' || !inner || inner.kind !== 'damage.placeCounters'
+        || sel?.side !== 'opponent' || sel?.quantity !== 'one') {
+        throw new Error('[ir-interpreter] iterate shape not supported (only "put N counters on opponent")');
+      }
+      const counters = (op.over.n ?? 0) * evalAmount(state, effect, inner.count);
+      state = PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(counters, store, state, effect, slotsOf(sel.spot));
+      return cont(state);
+    }
     default:
-      // iterate / costGate and the new pokemon.* / damage.move ops are unsupported.
+      // costGate and the new pokemon.* / damage.move ops are unsupported.
       throw new Error(`[ir-interpreter] unsupported op "${op.kind}"`);
+  }
+}
+
+// Map an IR selector `spot` to the Twinleaf SlotType[] (used by the distribute-counters prefab).
+function slotsOf(spot?: string): SlotType[] {
+  switch (spot) {
+    case 'active': return [SlotType.ACTIVE];
+    case 'bench': return [SlotType.BENCH];
+    case 'anywhere': return [SlotType.ACTIVE, SlotType.BENCH];
+    default: throw new Error(`[ir-interpreter] iterate unsupported spot "${spot}"`);
   }
 }
 

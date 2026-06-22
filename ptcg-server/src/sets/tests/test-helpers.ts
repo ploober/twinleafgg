@@ -762,10 +762,14 @@ class TestStoreHandler implements StoreHandler {
     if (!player) return null;
 
     const blockedSet = new Set(prompt.options.blocked.map(b => this.toTargetKey(b)));
+    // Respect the prompt's slot restriction: maxAllowedDamage may list every Pokémon (incl. the Active),
+    // but a prompt scoped to e.g. [BENCH] must only land damage on those slots — otherwise the auto-pick
+    // (first eligible = the Active) is rejected by PutDamagePrompt.validate and the whole attack throws.
+    const allowedSlots = new Set(prompt.slots);
 
     let fallbackTarget: CardTarget | undefined;
     for (const dm of prompt.maxAllowedDamage) {
-      if (dm.damage <= 0 || blockedSet.has(this.toTargetKey(dm.target))) {
+      if (dm.damage <= 0 || blockedSet.has(this.toTargetKey(dm.target)) || !allowedSlots.has(dm.target.slot)) {
         continue;
       }
       if (fallbackTarget === undefined) {

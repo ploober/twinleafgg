@@ -332,6 +332,37 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(game.state.players[0].bench[0].damage).toBe(50); // the damaged old Active demoted to the Bench
   });
 
+  // Stage B non-vacuity: `iterate` ("put N counters … in any way you like") places all N counters via
+  // the native distribute prefab; the harness (slot-aware PutDamage) lands them on the first eligible
+  // benched Pokémon. A dropped iterate would leave the Bench untouched.
+  it('Stage B: `iterate` places all N counters on the opponent Bench (native distribute prefab)', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+      player2: {
+        active: { card: res.fullName! },
+        bench: [{ card: res.fullName! }, { card: res.fullName! }],
+        deck: padDeck(10),
+      },
+    });
+    const native = game.state.players[0].active.cards[0];
+    const interpreted = buildInterpretedCard(native, [{
+      label: 'Six Counters', cost: ['Colorless'],
+      body: [{
+        kind: 'iterate', over: { kind: 'exactly', n: 6 },
+        body: [{ kind: 'damage.placeCounters', count: 1, target: { of: { quantity: 'one', side: 'opponent', spot: 'bench' } } }],
+      }],
+    }]);
+    interpreted.id = native.id;
+    game.state.players[0].active.cards[0] = interpreted;
+    useAttack(game.store, game.state, 0, 'Six Counters');
+    expect(game.state.players[1].bench[0].damage).toBe(60); // 6 counters, all on the first benched (harness greedy-first, slot-aware)
+    expect(game.state.players[1].bench[1].damage).toBe(0);
+    expect(game.state.players[1].active.damage).toBe(0);    // bench-only target — Active untouched
+  });
+
   // Native-vs-interpreted disagreements across the whole attack corpus (coin flips deterministic —
   // see test-helpers flipCoin). Two kinds, catalogued in FINDINGS.md: families (1)–(5) are
   // interpreter/IR-faithfulness gaps (the IR models *less* than the real attack); family (6) is the
