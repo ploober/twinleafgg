@@ -406,6 +406,96 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
     expect(two.attackerFire).toBe(0);      // every matching energy discarded — the discard is observable, not a no-op
   });
 
+  // Turn-state predicate non-vacuity (movedToActive): the +bonus must land ONLY when the attacker
+  // actually switched into the Active this turn. The interpreter reads the engine's real signal
+  // (player.movedToActiveThisTurn). Proving BOTH branches (switched-in → bonus, placed → no bonus)
+  // guards against the single-turn-setup trap where the predicate is vacuously false: a model that
+  // ignored the array would never produce the +100, so this would fail. Hosted on Koraidon (130 HP).
+  it('movedToActive non-vacuity: +bonus only when the attacker switched into Active this turn', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const frag: IrFragment[] = [{
+      label: 'Charge In', cost: ['Colorless'],
+      body: [{ kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+        amount: { kind: 'plusIf', base: 20, bonus: 100, when: { kind: 'movedToActive', selector: { role: 'self' } } } }],
+    }];
+    const run = (switchedIn: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, frag);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      if (switchedIn) { game.state.players[0].movedToActiveThisTurn = [interpreted.id]; } // engine's switched-in signal
+      useAttack(game.store, game.state, 0, 'Charge In');
+      return game.state.players[1].active.damage;
+    };
+    expect(run(false)).toBe(20);   // placed Active, not switched this turn → base only
+    expect(run(true)).toBe(120);   // switched in this turn → base + 100
+  });
+
+  // Turn-state predicate non-vacuity (turn): "went second" reads the real state.turn parity (the active
+  // player went first iff state.turn is odd). At turn 2 the acting player went second → +bonus; at turn 3
+  // (a normal later turn, the acting player went first) → no bonus. Both branches proven, so a model that
+  // hard-coded a constant fails. Native reads the same state.turn, so this designation is mirror-faithful.
+  it('turn non-vacuity: wentSecond +bonus reflects the real state.turn parity', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const frag: IrFragment[] = [{
+      label: 'Second Wind', cost: ['Colorless'],
+      body: [{ kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+        amount: { kind: 'plusIf', base: 20, bonus: 80, when: { kind: 'turn', aspect: 'wentSecond', who: 'self' } } }],
+    }];
+    const run = (turn: number) => {
+      const game = setupGame({
+        turn,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, frag);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      useAttack(game.store, game.state, 0, 'Second Wind');
+      return game.state.players[1].active.damage;
+    };
+    expect(run(2)).toBe(100);  // turn 2 (even) → acting player went second → base + 80
+    expect(run(3)).toBe(20);   // turn 3 (odd) → acting player went first → base only
+  });
+
+  // Turn-state predicate non-vacuity (history.evolved): the +bonus lands only when the attacker was
+  // played/evolved THIS turn (pokemonPlayedTurn === state.turn — the signal native evolution-bonus cards
+  // read). Both branches proven; in the corpus setup the attacker is placed (pokemonPlayedTurn 0 ≠ turn),
+  // so this is the determinable-false case — the true branch here is what makes the modeling non-vacuous.
+  it('history.evolved non-vacuity: +bonus only when the attacker evolved this turn', () => {
+    const res = resolvePrinting('sv8-116', 'Koraidon');
+    expect(res.status).toBe('exact');
+    const frag: IrFragment[] = [{
+      label: 'Fresh Evolution', cost: ['Colorless'],
+      body: [{ kind: 'damage.deal', target: { of: { side: 'opponent', spot: 'active' } },
+        amount: { kind: 'plusIf', base: 20, bonus: 80, when: { kind: 'history', event: 'evolved', window: 'thisTurn', subject: { role: 'self' } } } }],
+    }];
+    const run = (evolvedThisTurn: boolean) => {
+      const game = setupGame({
+        turn: 2,
+        player1: { active: { card: res.fullName!, energy: ['Water Energy SVE'] }, deck: padDeck(10) },
+        player2: { active: { card: res.fullName! }, deck: padDeck(10) },
+      });
+      const native = game.state.players[0].active.cards[0];
+      const interpreted = buildInterpretedCard(native, frag);
+      interpreted.id = native.id;
+      game.state.players[0].active.cards[0] = interpreted;
+      if (evolvedThisTurn) { game.state.players[0].active.pokemonPlayedTurn = game.state.turn; } // evolved this turn
+      useAttack(game.store, game.state, 0, 'Fresh Evolution');
+      return game.state.players[1].active.damage;
+    };
+    expect(run(false)).toBe(20);   // placed at setup (pokemonPlayedTurn 0 ≠ turn) → base only
+    expect(run(true)).toBe(100);   // evolved this turn → base + 80
+  });
+
   // Stage B non-vacuity: a `cards.move chooser:'player'` zone move emits a ChooseCardsPrompt and moves
   // the filter-MATCHING card (the harness is now filter-aware) — not a no-op, and not the wrong card.
   it('Stage B: cards.move chooser:player moves a chosen filter-matching card from discard to hand', () => {

@@ -213,9 +213,9 @@ is the opponent's active (the implicit subject of an attack's riders).
 | `hpRemaining` | 4 | ✅ | `hp − damage` vs N. |
 | `compare` | 4 | ✅ | Compare two `attr` operands (`energyAttached`/`damageCounters`/`prizeRemaining`). |
 | `boardCount` | 2 | ✅ | Count in‑play (filtered) Pokémon vs N. |
-| `turn` | 16 | ⛔ | "went first/second", "is own first turn" — history/turn state not modeled. Throw → skip. |
-| `history` | 10 | ⛔ | "evolved this turn from X", KO cause, etc. — event history not tracked. Throw → skip. |
-| `movedToActive` | 9 | ⛔ | "switched in from bench this turn" — turn‑local history. Throw → skip. |
+| `turn` | 16 | ✅ | "went first/second", "is your first turn" — read from `state.turn`/`activePlayer` (convention: turn 1 = first player's first turn, turn 2 = second player's; active player went first iff `state.turn` odd; "your first turn" = `state.turn ≤ 2`). Native reads the same `state.turn`, so they agree. In the single‑turn differential (`turn:2`) the value is determinable, so a true‑branch non‑vacuity assertion (§12.3) proves the model isn't vacuously matching. |
+| `history` | 10 | 🟡 | `event:'evolved'` (`window:'thisTurn'`) ✅ — `pokemonPlayedTurn === state.turn` (the signal native evolution‑bonus cards read; `fromName` inert in a mirror). `attackUsed`/`healed` **⛔ throw → skip**: they need cross‑turn / heal history the engine doesn't expose (and `yourLastTurn` can't be exercised in a single‑turn differential). |
+| `movedToActive` | 9 | ✅ | "switched into the Active this turn" — read from the engine's `player.movedToActiveThisTurn` (the `IS_POKEMON_MOVED_TO_ACTIVE_THIS_TURN` signal). Determinable‑false in the placed‑attacker setup; a switched‑in non‑vacuity assertion proves the true branch. |
 | `hasTool` | 5 | ⛔ | Tool attached — the differential's bare board has no tools; throw → skip. |
 | `nameTag` | 4 | 🟡 | Supported by `matchesCardPredicate` for **card** matching (substring/owner); throws as a standalone **state** predicate (rare). |
 | `resistanceType` / `retreatCost` / `sharedTypeInPlay` / `hasAttack` / `hasAbility` / `cardPlayed` | 2/1/… | ⛔ | Spec leaves not yet modeled (board‑shape or history dependent). Throw → skip. |
@@ -405,8 +405,9 @@ not card identity — an honest partial coverage, consistent with every other zo
 | ~~2~~ ✅ | **Own‑turn damage probe** (§12.4): `damageBuff` + `attackBaseDamageOverride` reproduced via native prefabs and verified | **Done** — `damageBuff` compared on 2 mapped cards, `attackBaseDamageOverride` verified by direct assertion; `damageVulnerability` deferred (no damaging mapped case). |
 | ~~3~~ ✅ | **Play‑block probe** (§12.4): `itemPlayRestriction` reproduced via `ATTACK_EFFECT_ITEM_LOCK` and verified | **Done** — compared on 4 mapped cards (Galvantula ex, Frillish); `evolvePlayRestriction` deferred (no engine evolve‑lock mechanism). |
 | ~~4~~ ✅ | Amount `countOf` (runtime bindings) + `bindAs` tracking | **Done** — discard‑and‑scale (Inferno X shape) wired end to end via a fragment‑scoped binding register + greedy‑discard pool; `compared` rose bare 501→517, primed 508→524. Surfaced a 5th native card‑file bug (Heatran TWM Steel Burst discards all energy, not just `[M]`). Deferred: `cards.move bindAs` (4 `me3`‑unmapped cards, no oracle). |
-| **1** | Predicate `turn` / `history` / `movedToActive` modeling | Unlocks first‑turn and evolution‑rider conditionals. |
-| 2 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs` mapped cards, and more comparable. |
+| ~~4~~ ✅ | Predicate `turn` / `history` / `movedToActive` modeling | **Done** — `turn` (state.turn parity) + `movedToActive` (engine signal) + `history.evolved` (pokemonPlayedTurn) modeled; `compared` rose **+6 per variant** (bare 517→523, primed 524→530), 0 mismatches. True‑branch non‑vacuity assertions discharge the determinable‑at‑`turn:2` caveat. Deferred: `history.attackUsed`/`healed` (no engine signal). |
+| **1** | `cards.move` `prize` + `attached` zone endpoints | Deterministic, observable zone moves currently counted under "unsupported zone" ("put 1 Prize into your hand", "move an Energy off this Pokémon"). The bench/deck‑search endpoints stay a counted skip. |
+| 2 | Map `me2pt5` / `me3` (when Twinleaf implements those sets) | Makes the `attackShutoff`‑defending family (§5), `damageVulnerability`/`attackBaseDamageOverride`/`evolvePlayRestriction`/`cards.move bindAs`/`history.attackUsed` mapped cards, and more comparable. |
 | 3 | **ABILITY / RULE_BOX origin** harness | Extends beyond attacks — the largest *scope* expansion; reuses all selector/predicate/amount machinery. |
 
 The guiding metric is the scorecards: every deferred item above is currently a precise, counted

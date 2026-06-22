@@ -14,9 +14,11 @@ import { matchesCardPredicate } from './ir-cards';
  * single-discriminator sum type ({ kind, … }) instead of the v1 god-record. Supports the
  * deterministic leaves that appear in attack conditionals: and/or/not, isa (intrinsic, on a
  * contextual subject), damageState, conditionOn, stadiumInPlay, energyAttachedCount, boardCount,
- * hpRemaining, prize, handSize, deckSize, cardInZone, and compare. Non-deterministic / history
- * leaves (turn, history, movedToActive, hasTool, nameTag, resistanceType, …) throw, so the
- * differential simply skips that card rather than guessing.
+ * hpRemaining, prize, handSize, deckSize, cardInZone, compare, plus the turn-state leaves read from
+ * engine signals: turn (went-first / own-first-turn via state.turn), movedToActive (switched-in this
+ * turn via player.movedToActiveThisTurn), and history event:'evolved' (via pokemonPlayedTurn). The
+ * remaining history events (attackUsed/healed) and other leaves (hasTool, nameTag, resistanceType, …)
+ * throw, so the differential simply skips that card rather than guessing.
  */
 
 const CONDITIONS: Record<string, SpecialCondition> = {
@@ -26,6 +28,24 @@ const CONDITIONS: Record<string, SpecialCondition> = {
 
 function playerOf(effect: AttackEffect, who?: string): Player {
   return who === 'opponent' ? effect.opponent : effect.player;
+}
+
+// Going-first / first-turn game attribute, read from the same engine state native cards read
+// (state.turn + state.activePlayer). Convention (sets/AGENTS.md): turn 1 is the first player's first
+// turn, turn 2 the second player's first turn — so the active player went first iff state.turn is odd,
+// and "your first turn" is state.turn <= 2. Native and the interpreter read the identical state.turn,
+// so they always agree; only the boundary of which branch fires varies with the turn the game is on.
+function turnAspect(state: State, player: Player, aspect: string): boolean {
+  const pActive = state.players.indexOf(player) === state.activePlayer;
+  const activeWentFirst = state.turn % 2 === 1;
+  const wentFirst = pActive ? activeWentFirst : !activeWentFirst;
+  switch (aspect) {
+    case 'wentFirst': return wentFirst;
+    case 'wentSecond': return !wentFirst;
+    case 'isFirstTurn': return state.turn === 1;             // the game's very first turn
+    case 'isOwnFirstTurn': return pActive && state.turn <= 2; // the acting player's own first turn
+    default: throw new Error(`[ir-predicates] turn aspect "${aspect}" not modeled`);
+  }
 }
 
 function compareOp(op: string, l: number, r: number): boolean {
@@ -134,6 +154,34 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
     }
     case 'compare':
       return compareOp(pred.op, evalAttr(effect, pred.lhs), evalAttr(effect, pred.rhs));
+
+    case 'turn':
+      // "went first/second" / "is your first turn" — a game attribute, read from state.turn (§ helper).
+      return turnAspect(state, playerOf(effect, pred.who), pred.aspect);
+
+    case 'movedToActive': {
+      // "this Pokémon switched into the Active this turn" — the engine tracks it on
+      // player.movedToActiveThisTurn (set on a switch, cleared at turn start); read it directly, the
+      // same signal native cards read via IS_POKEMON_MOVED_TO_ACTIVE_THIS_TURN. In the single-turn
+      // differential the attacker is placed (not switched), so this is false unless a test switches it.
+      return resolveV2Selector(effect, pred.selector).some(({ player, list }) => {
+        const card = list.getPokemonCard();
+        return !!card && player.movedToActiveThisTurn.includes(card.id);
+      });
+    }
+    case 'history': {
+      // Only "evolved this turn" is engine-observable: a Pokémon's pokemonPlayedTurn equals the current
+      // turn when it was played/evolved this turn — exactly what native evolution-bonus cards check
+      // (e.g. Mothim, Accelgor). `fromName` is inert: in a mirror the evolved card's own pre-evo IS the
+      // fromName, and native doesn't re-verify it. `attackUsed`/`healed` need cross-turn / heal history
+      // the engine doesn't expose, so they throw → counted skip (and "yourLastTurn" can't be exercised
+      // in a single-turn differential anyway).
+      if (pred.event === 'evolved' && (pred.window === undefined || pred.window === 'thisTurn')) {
+        const list = pred.subject ? resolveV2Single(effect, pred.subject) : subj();
+        return list.pokemonPlayedTurn === state.turn;
+      }
+      throw new Error(`[ir-predicates] history event "${pred.event}" (window "${pred.window}") not modeled`);
+    }
 
     default:
       throw new Error(`[ir-predicates] unsupported predicate kind "${pred.kind}"`);

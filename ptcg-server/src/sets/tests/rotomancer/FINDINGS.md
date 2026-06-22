@@ -533,6 +533,35 @@ and that the matching energy is actually discarded (attacker emptied). **Deferre
 gap: `cards.move` with `bindAs` (4 corpus cards, all `me3`-unmapped → no oracle to verify against; a
 `countOf` over its unbound ref throws → counted skip). Rotomancer suite **58 specs, 0 failures**.
 
+### 18. Turn-state predicates — `turn` + `movedToActive` + `history.evolved`
+
+Three turn-local predicates used to throw → skip the whole attack: `turn` ("went first/second", "is your
+first turn"), `movedToActive` ("switched into the Active this turn"), and `history` ("evolved this turn").
+Each is now evaluated by reading the **same engine signal native cards read**, so native and interp agree:
+
+- `turn` → `state.turn` + `state.activePlayer`. Convention ([sets/AGENTS.md](../../AGENTS.md)): turn 1 is the
+  first player's first turn, turn 2 the second player's; the active player went first iff `state.turn` is
+  odd; "your first turn" is `state.turn ≤ 2`.
+- `movedToActive` → `player.movedToActiveThisTurn` ([player.ts:102](../../../game/store/state/player.ts), the
+  `IS_POKEMON_MOVED_TO_ACTIVE_THIS_TURN` signal).
+- `history event:'evolved'` → `PokemonCardList.pokemonPlayedTurn === state.turn` (what native
+  evolution-bonus cards like Mothim / Accelgor check; `fromName` is inert in a mirror — the evolved card's
+  own pre-evo *is* the fromName, and native doesn't re-verify it).
+
+**The faithfulness discipline.** In the single-turn differential the attacker is placed at setup (`turn:2`),
+so these gates evaluate to **determinable constants** (`movedToActive`/`evolved` false; `wentSecond`/
+`isOwnFirstTurn` true). A model that returned the right constant for the *wrong* reason would agree
+**vacuously** and hide a bug (the north-star trap, §1). So each predicate has a **true-branch non-vacuity
+assertion** that exercises the side the corpus never reaches: a switched-in attacker (`movedToActiveThisTurn`
+populated → +bonus), a later turn (turn 3, odd → wentSecond false → no bonus, vs turn 2 → bonus), and an
+evolved-this-turn attacker (`pokemonPlayedTurn = state.turn` → +bonus). A constant model fails all three.
+
+`compared` rose **+6 per board variant** (bare 517→523, primed/conditions 524→530); **0 mismatches** — no
+native bug surfaced. **Deferred** (honest counted gaps, specific throw messages): `history event:'attackUsed'`
+(needs cross-turn per-Pokémon attack history; its `yourLastTurn` window is unreachable in a single-turn
+differential) and `history event:'healed'` (no heal-this-turn engine signal). Rotomancer suite **61 specs,
+0 failures**.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
