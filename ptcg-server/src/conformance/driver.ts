@@ -232,7 +232,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
   let accum: WirePick[] = [];
-  let turnAlreadyEnded = false;
+  // The actor whose turn was auto-ended by their own declareAttack (or null). Used to absorb only
+  // that player's *own* redundant trailing endTurn — never the opponent's legitimate pass on the
+  // turn the attack handed them (which must advance the turn, matching the real rules).
+  let turnEndedBy: NeutralPlayerId | null = null;
 
   // The system actor's inline coin source: consume the next `flip` action from the same cursor the
   // loop walks, so inline flips (CoinFlipEffect) and the loop stay aligned in log order.
@@ -344,14 +347,16 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         throw new Error(`[conformance] stray system action '${action.type}' with no pending system decision`);
       }
       cursor.i++;
-      if (action.type === 'endTurn' && turnAlreadyEnded) {
-        turnAlreadyEnded = false; // attack already ran the boundary; the explicit endTurn is a no-op
+      if (action.type === 'endTurn' && turnEndedBy === action.actor) {
+        // The attacker's own redundant endTurn after their attack auto-ran the boundary: no-op it.
+        // The opponent's endTurn (a different actor) is a real pass and falls through to dispatch.
+        turnEndedBy = null;
         continue;
       }
       dispatchAndCollect(() => dispatchAction(game, action));
-      if (action.type === 'declareAttack') {
-        turnAlreadyEnded = true;
-      }
+      // Only an attack auto-ends a turn; any other dispatched action clears the "just attacked" state,
+      // so the absorption window is exactly attack → (effect prompts) → that attacker's endTurn.
+      turnEndedBy = action.type === 'declareAttack' ? action.actor : null;
       continue;
     }
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
