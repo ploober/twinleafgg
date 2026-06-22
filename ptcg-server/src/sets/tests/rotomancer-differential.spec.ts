@@ -994,4 +994,92 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       stadium: 'Town Store OBF',
     }));
   });
+
+  // ── Coverage audit ──────────────────────────────────────────────────────────────────────────────
+  // The variant differentials guard "0 mismatches on what we compare"; this guards the COMPARISON SET
+  // itself. It classifies every corpus card by integration status on a single `primed` baseline (mirroring
+  // runCorpusDifferential's filter pipeline), prints the authoritative coverage scorecard, and fails on
+  // exactly two regressions: a previously-compared card silently dropping to a skip, or a brand-new
+  // unexplained skip reason. Both are coverage erosions a green mismatch-suite would otherwise hide.
+  // The baseline (fixtures/coverage-baseline.json) is self-bootstrapping: absent → written + committed;
+  // present → asserted against. To intentionally re-pin (after a coverage-changing phase), delete + re-run.
+  it('coverage audit — classifies all corpus cards and guards against coverage regressions', () => {
+    const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+    const scenarios = JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+      printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+    }>;
+    const makeBoard = (hp: number): Board => ({
+      attackerDamage: Math.min(30, hp - 20), defenderDamage: Math.min(30, hp - 20), benchCount: 2,
+    });
+    const key = (s: { printingId: string; attackLabel: string }) => `${s.printingId} ${s.attackLabel}`;
+
+    const comparedKeys: string[] = [];
+    const skipReasons: Record<string, string[]> = {}; // normalized reason → keys (interp throws + ambiguity)
+    const tally: Record<string, number> = {};         // every other bucket → count
+    const bump = (b: string) => { tally[b] = (tally[b] ?? 0) + 1; };
+    const skip = (reason: string, s: { printingId: string; attackLabel: string }) => {
+      (skipReasons[reason] = skipReasons[reason] ?? []).push(key(s));
+    };
+
+    for (const s of scenarios) {
+      const res = resolvePrinting(s.printingId, s.name);
+      if (res.status !== 'exact') { bump(`non-exact:${res.status}`); continue; }
+      const card = getCardByName(res.fullName!);
+      if (!(card instanceof PokemonCard)) { bump('non-pokemon'); continue; }
+      if (card.weakness?.some(w => w.type === card.cardType)) { bump('self-weak'); continue; }
+      if (KNOWN_MISMATCHES[s.attackLabel]) { bump('allowlist-mismatch'); continue; }
+      if (KNOWN_NATIVE_BUGS_BY_PRINTING[s.printingId]) { bump('allowlist-native-bug'); continue; }
+
+      const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
+      const board = makeBoard(card.hp);
+      const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+      let native: AttackRun, interpreted: AttackRun;
+      try {
+        native = buildAndAttack(res.fullName!, energies, s.attackLabel, null, board);
+      } catch {
+        bump('native-error'); continue; // native attack-name/energy errors (catalogued by the corpus spec)
+      }
+      try {
+        interpreted = buildAndAttack(res.fullName!, energies, s.attackLabel, fragments, board);
+      } catch (e: any) {
+        skip(String(e?.message ?? e).replace(/"[^"]*"/g, '…').replace(/^\[[^\]]*\]\s*/, ''), s);
+        continue;
+      }
+      if (native.ambiguous !== interpreted.ambiguous) { skip('native made an ambiguous choice', s); continue; }
+      comparedKeys.push(key(s));
+    }
+    comparedKeys.sort();
+    const observedReasons = Object.keys(skipReasons).sort();
+    const skipTotal = observedReasons.reduce((n, r) => n + skipReasons[r].length, 0);
+    const otherTotal = Object.values(tally).reduce((a, b) => a + b, 0);
+
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer coverage audit [primed baseline] ──`);
+    console.log(`  total corpus     : ${scenarios.length}`);
+    console.log(`  compared         : ${comparedKeys.length}`);
+    console.log(`  counted skips    : ${skipTotal}`);
+    observedReasons.forEach(r => console.log(`     • ${skipReasons[r].length}×  ${r}`));
+    Object.entries(tally).sort((a, b) => b[1] - a[1]).forEach(([b, n]) => console.log(`  ${b.padEnd(20)}: ${n}`));
+    /* eslint-enable no-console */
+
+    // (1) Completeness — every scenario lands in exactly one bucket.
+    expect(comparedKeys.length + skipTotal + otherTotal).toBe(scenarios.length);
+
+    const baseFile = path.join(__dirname, 'rotomancer', 'fixtures', 'coverage-baseline.json');
+    if (!fs.existsSync(baseFile)) {
+      fs.writeFileSync(baseFile, JSON.stringify({ comparedKeys, expectedSkipReasons: observedReasons }, null, 2) + '\n');
+      // eslint-disable-next-line no-console
+      console.log('  coverage-baseline.json bootstrapped — commit it to pin coverage.');
+      return;
+    }
+    const base = JSON.parse(fs.readFileSync(baseFile, 'utf8')) as { comparedKeys: string[]; expectedSkipReasons: string[] };
+    const comparedSet = new Set(comparedKeys);
+    const expected = new Set(base.expectedSkipReasons);
+    // (2) No previously-compared card silently dropped to a skip (additions are allowed → ⊇, not ===).
+    const dropped = base.comparedKeys.filter(k => !comparedSet.has(k));
+    // (3) No new unexplained skip reason (a regression that introduces a fresh throw).
+    const newReasons = observedReasons.filter(r => !expected.has(r));
+    expect(dropped).toEqual([]);
+    expect(newReasons).toEqual([]);
+  });
 });

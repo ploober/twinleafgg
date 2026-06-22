@@ -765,6 +765,37 @@ ATTACK-side gains require either the **risky** Stage B choice-alignment extensio
 prompt-geometry verification; false-positive-prone) or new **IR origins** (ABILITY/RULE_BOX, still blocked at
 0% of the corpus) — not more vocabulary.
 
+### 26. Coverage audit — the plateau, made auditable and regression-guarded
+
+With the deterministic vocabulary exhausted, this phase hardens rather than extends. The variant
+differentials assert *0 mismatches on what we compare*, but nothing guarded the comparison **set** — a
+refactor could silently move a card `compared → skipped` (coverage erodes, suite stays green). The **coverage
+audit** ([rotomancer-differential.spec.ts](../rotomancer-differential.spec.ts), §12.9) classifies all 1851
+corpus cards on a `primed` baseline and pins the result. The authoritative scorecard (2026-06-22):
+
+| bucket | n | meaning |
+|---|---:|---|
+| **compared** | **759** | resolves exact → built + attacked → snapshot compared (matches the primed differential) |
+| counted skip | 78 | interpreter throws a known unsupported reason (full histogram below) |
+| `non-exact:mismatch` | 813 | printing doesn't name-validate to a Twinleaf card (number drift / Japan-only print with no Twinleaf equivalent) |
+| `native-error` | 139 | resolves, but the **native** card throws on attack (catalogued by the corpus replay spec; the differential silently skips these — the audit makes them visible) |
+| `allowlist-mismatch` | 41 | `KNOWN_MISMATCHES` (IR-faithfulness gap / native bug, by label) |
+| `allowlist-native-bug` | 13 | `KNOWN_NATIVE_BUGS_BY_PRINTING` (by printing) |
+| `self-weak` | 7 | mirror-unsafe (weak to its own type) — filtered |
+| `non-pokemon` | 1 | not a `PokemonCard` |
+| **total** | **1851** | ✓ completeness asserted |
+
+Full skip histogram (the audit surfaces 3 reasons the differential's top-8 hides — `history event` 1,
+`unsupported card subtype` 1, `unsupported predicate kind` 1): deck search 18, `cards.move chooser` 14, zone
+11, ambiguous-choice 10, Stage-B affect-target 8, count form 5, `energy.attach` from zone 5, attached
+multi-Pokémon source 2, unsupported op 2, + the three singletons.
+
+**Two regression guards** (both verified to bite — a phantom compared key and a removed reason each fail with
+a precise message): the current `compared` set must **⊇** the pinned baseline (a drop fails; additions pass),
+and the observed skip-reason set must **⊆** the pinned `expectedSkipReasons` (a new throw fails). Coverage can
+now only be lost on purpose, never by accident. The baseline (`fixtures/coverage-baseline.json`)
+self-bootstraps and is re-pinned by delete + re-run after an intentional coverage change.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

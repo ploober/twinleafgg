@@ -424,6 +424,26 @@ name discrepancy (catalogued, allow‑listed). One reprint artifact: with no `se
 `SCR‑49` now resolves the Lost Thunder Lanturn reprint (labelled `set='SCR'`) — surfaced by the structural/
 official checks, allow‑listed. Verified safe across the **sets (22/0)** and **conformance (191/0)** suites.
 
+### 12.9 Coverage audit (regression‑guarding the plateau)
+The variant differentials guard *"0 mismatches on what we compare"*; they do **not** guard the comparison
+*set* — a refactor could silently move a card `compared → skipped` (coverage erodes, suite stays green) or
+introduce a brand‑new throw, and nothing would notice. The **coverage audit** (a `it()` in
+[rotomancer-differential.spec.ts](../rotomancer-differential.spec.ts)) closes that gap. On a single `primed`
+baseline it classifies **every** corpus card (1851) into one bucket — `compared`, a counted `skip:<reason>`,
+`allowlist-mismatch`/`allowlist-native-bug`, `non-exact:{mismatch,unmapped}`, `native-error`, `non-pokemon`,
+`self-weak` — reusing `runCorpusDifferential`'s exact filter pipeline + reason normalization, and prints the
+authoritative scorecard (the *full* skip‑reason histogram, not just the differential's top‑8). It then asserts
+three invariants:
+1. **Completeness** — the buckets sum to 1851 (nothing falls through).
+2. **No compared card silently drops** — the current `compared` key set **⊇** the pinned baseline (a *drop*
+   fails and names the keys; *additions* pass, so growing coverage never breaks the audit).
+3. **No new unexplained skip** — the observed skip‑reason set **⊆** the pinned `expectedSkipReasons` (a fresh
+   throw fails and names the offending cards).
+The baseline (`fixtures/coverage-baseline.json`) self‑bootstraps (absent → written; present → asserted);
+re‑pin after a coverage‑changing phase by deleting + re‑running. The two guards were verified to bite (a
+phantom compared key and a removed reason both fail with precise messages). Zero oracle risk — additive,
+touching none of the 7 variant differentials.
+
 ---
 
 ## 13. Roadmap (prioritized)
@@ -446,6 +466,9 @@ official checks, allow‑listed. Verified safe across the **sets (22/0)** and **
 
 The guiding metric is the scorecards: every deferred item above is a precise, counted
 `unsupported`/`skipped` number, so the value of each unlock is measurable before it's built. With
-`untilHandSize` done, the differential has reached a **plateau** — the largest remaining skip buckets have
-no deterministic oracle, so further ATTACK‑side gains require either an oracle‑bearing harness extension
-(choice‑alignment for more affect‑target shapes) or new IR origins (ABILITY/RULE_BOX), not more vocabulary.
+`untilHandSize` + `cards.move bindAs` done, the differential has reached a **plateau** — the deterministic
+vocabulary is exhausted; the largest remaining skip buckets have no oracle, so further ATTACK‑side gains
+require either a **risky** oracle‑bearing harness extension (choice‑alignment for the residual player‑choice
+ops) or new IR origins (ABILITY/RULE_BOX, still 0% of the corpus), not more vocabulary. The plateau is now
+**regression‑guarded** by the coverage audit (§12.9): a previously‑compared card silently dropping, or a new
+unexplained skip, fails the suite — so the coverage can only be lost on purpose, never by accident.
