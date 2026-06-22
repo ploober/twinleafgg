@@ -321,6 +321,31 @@ export function choosePokemonCandidates(state: State, prompt: ChoosePokemonPromp
   return targets;
 }
 
+// True when `card` matches every own-enumerable field of the partial `filter` (shallow strict-equality) —
+// the canonical eligibility check the ChooseCards/AttachEnergy auto-resolvers use. Module-level so the
+// rotomancer card-choice differential can enumerate a ChooseCardsPrompt's eligible cards the same way.
+export function cardMatchesPartialFilter(card: Card, filter: Partial<Card>): boolean {
+  for (const key in filter) {
+    if (!Object.prototype.hasOwnProperty.call(filter, key)) { continue; }
+    if ((card as any)[key] !== (filter as any)[key]) { return false; }
+  }
+  return true;
+}
+
+// The eligible card indices for a ChooseCardsPrompt — the filter-matching, non-blocked cards, in prompt
+// order. Shared by the harness auto-resolver (first-eligible is `chooseCardsCandidates(prompt).slice(0, max)`)
+// and the rotomancer card-choice differential, which enumerates *every* eligible card to verify the two
+// engines offer the same set and that each pick does the same thing.
+export function chooseCardsCandidates(prompt: ChooseCardsPrompt): number[] {
+  const blocked = new Set(prompt.options.blocked);
+  const indices: number[] = [];
+  for (let i = 0; i < prompt.cards.cards.length; i++) {
+    if (blocked.has(i) || !cardMatchesPartialFilter(prompt.cards.cards[i], prompt.filter)) { continue; }
+    indices.push(i);
+  }
+  return indices;
+}
+
 // ── TestStoreHandler ──
 
 class TestStoreHandler implements StoreHandler {
@@ -451,37 +476,20 @@ class TestStoreHandler implements StoreHandler {
   }
 
   private cardMatchesPartialFilter(card: Card, filter: Partial<Card>): boolean {
-    for (const key in filter) {
-      if (!Object.prototype.hasOwnProperty.call(filter, key)) {
-        continue;
-      }
-      const expected = (filter as any)[key];
-      const actual = (card as any)[key];
-      if (actual !== expected) {
-        return false;
-      }
-    }
-    return true;
+    return cardMatchesPartialFilter(card, filter); // delegates to the module-level helper (now shared, §12.11)
   }
 
   private resolveChooseCardsRaw(prompt: ChooseCardsPrompt): any {
-    const blocked = new Set(prompt.options.blocked);
-    const indices: number[] = [];
-    const max = prompt.options.max;
-    let eligible = 0;
-    for (let i = 0; i < prompt.cards.cards.length; i++) {
-      // Respect the prompt's card `filter` (e.g. "a [R] Energy", "a Basic Pokémon"): a card that
-      // doesn't match it is not a legal pick, so it must not be auto-selected — the real eligible set
-      // is the filter-matching, non-blocked cards. (Mirrors resolveAttachEnergyRaw's filter handling.)
-      if (blocked.has(i) || !this.cardMatchesPartialFilter(prompt.cards.cards[i], prompt.filter)) { continue; }
-      eligible++;
-      if (indices.length < max) { indices.push(i); }
-    }
-    if (eligible > indices.length) { this.ambiguousChoices++; } // more candidates than picked → a choice
-    if (indices.length < prompt.options.min && prompt.options.allowCancel) {
+    // The eligible set is the filter-matching, non-blocked cards (a card that doesn't match the prompt's
+    // `filter` is not a legal pick). First-eligible is `candidates.slice(0, max)`; the rotomancer card-choice
+    // differential reuses the same `chooseCardsCandidates` enumerator to compare option sets across engines.
+    const indices = chooseCardsCandidates(prompt);
+    const result = indices.slice(0, prompt.options.max);
+    if (indices.length > result.length) { this.ambiguousChoices++; } // more candidates than picked → a choice
+    if (result.length < prompt.options.min && prompt.options.allowCancel) {
       return null;
     }
-    return indices;
+    return result;
   }
 
   private resolveChoosePokemonRaw(state: State, prompt: ChoosePokemonPrompt): any {

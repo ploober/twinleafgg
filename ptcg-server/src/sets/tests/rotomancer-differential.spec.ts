@@ -1,15 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { setupGame, padDeck, getCardByName, SetupGameResult, choosePokemonCandidates, cardTargetKey } from './test-helpers';
+import { setupGame, padDeck, getCardByName, SetupGameResult, choosePokemonCandidates, cardTargetKey, chooseCardsCandidates } from './test-helpers';
 import { useAttack, getDamage } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
+import { Card } from '../../game/store/card/card';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { EnergyCard } from '../../game/store/card/energy-card';
 import { SpecialCondition } from '../../game/store/card/card-types';
 import { State } from '../../game/store/state/state';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 import { ChoosePokemonPrompt, ChoosePokemonPromptType } from '../../game/store/prompts/choose-pokemon-prompt';
+import { ChooseCardsPrompt, ChooseCardsPromptType } from '../../game/store/prompts/choose-cards-prompt';
 import { CardTarget } from '../../game/store/actions/play-card-action';
 
 /**
@@ -34,6 +36,12 @@ interface SideSnapshot {
   discard: number;
   prizes: number;
   stadium: number;     // cards in this side's Stadium zone — makes a Stadium discard observable (stadium-loaded variant)
+  // Identity-aware fields (opt-in via snapshot(state, true), §12.11): sorted name-multisets of the observable
+  // pile zones a `cards.move chooser:'player'` touches. The count-based fields above can't tell WHICH card
+  // moved, so a per-pick card-choice differential needs these to make Invariant B bite. Left undefined in the
+  // default count-only mode → existing toEqual comparisons (7-variant + ChoosePokemon differentials) unaffected.
+  handNames?: string[];
+  discardNames?: string[];
 }
 interface Snapshot { p0: SideSnapshot; p1: SideSnapshot; }
 
@@ -49,10 +57,10 @@ function pokeSnap(list: PokemonCardList): PokeSnap {
   };
 }
 
-function snapshot(state: State): Snapshot {
+function snapshot(state: State, identity = false): Snapshot {
   const side = (i: number): SideSnapshot => {
     const p = state.players[i];
-    return {
+    const snap: SideSnapshot = {
       active: pokeSnap(p.active),
       bench: p.bench.filter(b => b.getPokemonCard() !== undefined).map(pokeSnap),
       hand: p.hand.cards.length,
@@ -61,6 +69,11 @@ function snapshot(state: State): Snapshot {
       prizes: p.getPrizeLeft(),
       stadium: p.stadium.cards.length,
     };
+    if (identity) {
+      snap.handNames = p.hand.cards.map(c => c.name).sort();
+      snap.discardNames = p.discard.cards.map(c => c.name).sort();
+    }
+    return snap;
   };
   return { p0: side(0), p1: side(1) };
 }
@@ -1229,6 +1242,218 @@ describe('Rotomancer choice differential — option-set equivalence', () => {
     expect(perOptionMismatches).toEqual([]);
   });
   it('actually exercised multi-option choices (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Card-choice differential (§12.11) — extends option-set equivalence from ChoosePokemonPrompt (above) to
+// `cards.move chooser:'player'` choices, which the main differential still resolves first-eligible via a
+// ChooseCardsPrompt. The masking risk is live there too: if native's *eligible card set* differs from the
+// interp's, both still move the same COUNT and the count-based snapshot agrees for the wrong reason. So we
+// (A) verify the two engines offer the same eligible cards + bounds and (B) that each pick does the same
+// thing — comparing the IDENTITY-AWARE snapshot, since for these moves the count is identical across picks
+// and only WHICH card moved distinguishes them.
+describe('Rotomancer card-choice differential — ChooseCards option-set equivalence', () => {
+  // Native divergences the full-option-set check surfaces (a wrong eligible set, a wrong bound, or a pick
+  // that misbehaves). In every case interp faithfully encodes the IR/printed text and native diverges, so per
+  // the standing rule these are allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by
+  // printingId. (A genuine *interp* filter/move bug would be fixed in executeCardsMoveChoice / the IR instead.)
+  const KNOWN_CARD_CHOICE_BUGS: Record<string, string> = {
+    // Slowpoke SCR — Dangle Tail: native MOVE_CARDS is given a fresh CardList as the source instead of
+    // player.discard, so the chosen Pokémon is COPIED into hand and LEFT in the discard — the IR/text "put …
+    // into your hand" is a move. Invariant B catches it via discardNames (native discard keeps the card). → Twinleaf bug.
+    'sv7-57': 'Slowpoke SCR — Dangle Tail: copies (leaves the card in discard) instead of moving discard→hand',
+    // Iron Leaves TWM — Recovery Net: text "Choose up to 2 … put them into your hand" permits choosing 0, but
+    // native's ChooseCardsPrompt is min:1 (forces ≥1). The IR `upTo` → min 0 is faithful. → Twinleaf bug (min).
+    'sv6-19': 'Iron Leaves TWM — Recovery Net: native prompt min:1 forbids choosing 0, but "up to 2" permits 0',
+    // Luxray ex TWM — Piercing Gaze: text "discard 1 card" is mandatory, but native's prompt is min:0 (lets you
+    // discard 0). The IR `exactly:1` → min 1 is faithful. → Twinleaf bug (min). Two printings.
+    'sv6-195': 'Luxray ex TWM — Piercing Gaze: native prompt min:0 makes a mandatory "discard 1 card" optional',
+    'sv6-68': 'Luxray ex TWM — Piercing Gaze: native prompt min:0 makes a mandatory "discard 1 card" optional',
+    // Dedenne SSP — Electromagnetic Sonar: text "Put a Trainer card … into your hand" is mandatory, but
+    // native's prompt is min:0. The IR `exactly:1` → min 1 is faithful. → Twinleaf bug (min).
+    'sv8-87': 'Dedenne SSP — Electromagnetic Sonar: native prompt min:0 makes a mandatory "put a card" optional',
+  };
+
+  // Guaranteed-registered, inert seed cards (basic energies + SSP basics/items) for the eligible pile —
+  // distinct names so each option leaves a distinct identity-aware snapshot.
+  const SEED_ENERGY = ['Fire Energy SVE', 'Grass Energy SVE', 'Lightning Energy SVE', 'Psychic Energy SVE'];
+  const SEED_POKEMON = ['Togepi SSP', 'Turtonator SSP', 'Trapinch SSP'];
+  const SEED_TRAINER = ['Dusk Ball SSP', 'Miraculous Intercom SSP', 'Precious Trolley SSP'];
+
+  // Distinct eligible fullNames matching `where`, plus one non-matching decoy — so the *filter agreement*
+  // part of Invariant A bites: both engines must exclude the decoy. `eligible.length < 2` → not seedable
+  // (skipped). Predicates we don't synthesize a pile for (name/evolvesFrom — the place-a-Pokémon shapes that
+  // throw on to:bench anyway) return empty.
+  function eligiblePileFor(where: any): { eligible: string[]; decoy: string | null } {
+    if (!where) { return { eligible: [SEED_ENERGY[0], SEED_POKEMON[0], SEED_TRAINER[0]], decoy: null }; }
+    if (where.name !== undefined || where.evolvesFrom !== undefined) { return { eligible: [], decoy: null }; }
+    const sup = where.supertype;
+    if (sup === 'Energy') {
+      if (where.energyType !== undefined) { const e = energyToCard(where.energyType); return { eligible: [e, e], decoy: SEED_POKEMON[0] }; }
+      return { eligible: SEED_ENERGY.slice(), decoy: SEED_POKEMON[0] };
+    }
+    if (sup === 'Pokémon') { return { eligible: SEED_POKEMON.slice(), decoy: SEED_ENERGY[0] }; }
+    if (sup === 'Trainer') { return { eligible: SEED_TRAINER.slice(), decoy: SEED_ENERGY[0] }; }
+    return { eligible: [], decoy: null };
+  }
+
+  // The in-scope class: a `cards.move chooser:'player'` op on the flat resolveZone path (from/to in
+  // {hand,deck,discard,lostzone}) — i.e. a genuine ChooseCardsPrompt. Excludes deck-search (throws),
+  // switches (bench→active → ChoosePokemonPrompt), discard→bench place-a-Pokémon (to:bench throws), and
+  // attached/prize/stadium moves (separate paths). Returns the op or null.
+  const FLAT_ZONES = new Set(['hand', 'deck', 'discard', 'lostzone']);
+  function flatPlayerCardMove(body: any[]): any | null {
+    for (const op of body) {
+      if (op.kind !== 'cards.move' || op.select?.chooser !== 'player') { continue; }
+      if (op.visibility === 'search' || op.count?.searchTyped) { continue; }
+      if (!FLAT_ZONES.has(op.from?.zone) || !FLAT_ZONES.has(op.to?.zone)) { continue; }
+      return op;
+    }
+    return null;
+  }
+
+  type Elig = { card: Card; index: number };
+  const byName = (a: Elig, b: Elig) => a.card.name < b.card.name ? -1 : a.card.name > b.card.name ? 1 : a.index - b.index;
+
+  // One mirror game seeding the op's from-zone (of the right owner) with the eligible pile + decoy. Registers
+  // a ChooseCardsPrompt override that captures the eligible name-multiset + (min,max) and resolves via `pick`;
+  // returns the IDENTITY-AWARE post-attack snapshot + bookkeeping.
+  function runCardChoice(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    owner: 'self' | 'opponent', zone: 'hand' | 'discard', seedCards: string[],
+    pick: (eligible: Elig[], prompt: ChooseCardsPrompt) => number[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; eligibleNames: string[] } {
+    const p0seed: any = owner === 'self' ? { [zone]: seedCards.slice() } : {};
+    const p1seed: any = owner === 'opponent' ? { [zone]: seedCards.slice() } : {};
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, deck: padDeck(10), ...p0seed },
+      player2: { active: { card: fullName }, deck: padDeck(10), ...p1seed },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let eligibleNames: string[] = [];
+    game.overridePrompt(ChooseCardsPromptType, (prompt) => {
+      promptCount++;
+      const p = prompt as ChooseCardsPrompt;
+      const idxs = chooseCardsCandidates(p);
+      if (promptCount === 1) {
+        eligibleNames = idxs.map(i => p.cards.cards[i].name).sort();
+        min = p.options.min; max = p.options.max;
+      }
+      return pick(idxs.map(i => ({ card: p.cards.cards[i], index: i })), p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state, true), promptCount, min, max, eligibleNames };
+  }
+
+  const firstEligiblePick = (elig: Elig[], p: ChooseCardsPrompt) => elig.slice(0, p.options.max).map(e => e.index);
+  // Pick the k-th eligible card (sorted by name → identical card on both engines once Invariant A holds).
+  const singletonPick = (k: number) => (elig: Elig[]) => { const s = [...elig].sort(byName); return s[k] ? [s[k].index] : []; };
+  // Pick the max-count subset (first min(N,max) eligible, sorted) — the multi-select case.
+  const maxPick = (elig: Elig[], p: ChooseCardsPrompt) => { const s = [...elig].sort(byName); return s.slice(0, Math.min(s.length, p.options.max)).map(e => e.index); };
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).map(s => ({ s, op: flatPlayerCardMove(s.body) })).filter(x => x.op !== null) as Array<{ s: any; op: any }>;
+
+  let enumerated = 0, picksChecked = 0, multiOption = 0, distinctOption = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perPickMismatches: string[] = [];
+
+  for (const { s, op } of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_CARD_CHOICE_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const { eligible, decoy } = eligiblePileFor(op.select?.where);
+    if (eligible.length < 2) { skip('unseedable-predicate'); continue; }
+    const seedCards = decoy ? [...eligible, decoy] : eligible.slice();
+    try { seedCards.forEach(getCardByName); } catch { skip('seed-unavailable'); continue; }
+
+    const owner: 'self' | 'opponent' = op.from?.owner === 'opponent' ? 'opponent' : 'self';
+    const zone: 'hand' | 'discard' = op.from?.zone === 'hand' ? 'hand' : 'discard';
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (e: Elig[], p: ChooseCardsPrompt) => number[]) =>
+      runCardChoice(res.fullName!, energies, s.attackLabel, frags, owner, zone, seedCards, pick);
+
+    let nat, intp;
+    try { nat = run(null, firstEligiblePick); intp = run(fragments, firstEligiblePick); }
+    catch { skip('build-error'); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choosecards-prompt'); continue; }
+    if (nat.promptCount > 1 || intp.promptCount > 1) { skip('multi-prompt (deferred)'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — same eligible cards AND same (min,max). Compared by card identity (sorted name multiset),
+    // robust to prompt-order / filter-vs-blocked representation differences between the engines.
+    const aKey = (r: { eligibleNames: string[]; min: number; max: number }) =>
+      JSON.stringify({ names: r.eligibleNames, min: r.min, max: r.max });
+    if (aKey(nat) !== aKey(intp)) {
+      optionSetMismatches.push(`${tag}: native ${aKey(nat)} vs interp ${aKey(intp)}`);
+      continue; // can't pair picks when the eligible sets differ
+    }
+    if (nat.eligibleNames.length > 1) { multiOption++; }
+    if (new Set(nat.eligibleNames).size > 1) { distinctOption++; }
+
+    // Invariant B — each pick does the same thing (every eligible card as a singleton, plus the max-count
+    // pick — bounded N+1, not 2^N). The identity-aware snapshot is load-bearing here: for discard-and-scale
+    // the damage is count-only, so only handNames/discardNames distinguish "moved the card you picked" from
+    // "moved a different one of the same count".
+    const picks: Array<{ label: string; pick: (e: Elig[], p: ChooseCardsPrompt) => number[] }> = [];
+    for (let k = 0; k < nat.eligibleNames.length; k++) {
+      picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+    }
+    picks.push({ label: 'max', pick: maxPick });
+    for (const { label, pick } of picks) {
+      picksChecked++;
+      try {
+        const sn = run(null, pick).snap;
+        const si = run(fragments, pick).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perPickMismatches.push(`${tag} pick ${label}: native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perPickMismatches.push(`${tag} pick ${label}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer card-choice differential [ChooseCards option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-option: ${multiOption}, distinct-identity: ${distinctOption})`);
+    console.log(`  picks checked       : ${picksChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-pick mismatch   : ${perPickMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perPickMismatches.map(m => `PICK ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same eligible card set + bounds for every ChooseCards move', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('every pick produces the same observable in both engines', () => {
+    expect(perPickMismatches).toEqual([]);
+  });
+  it('actually exercised multi-option card choices (non-vacuity)', () => {
     expect(multiOption).toBeGreaterThan(0);
   });
 });

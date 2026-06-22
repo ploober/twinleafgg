@@ -470,10 +470,49 @@ surfaced a native bug invisible to first‑eligible: **Armarouge SSP *Crimson Bl
 target though the text is "1 of your opponent's **Benched** Pokémon" (option set `{active,bench0,bench1}` vs the
 IR's `{bench0,bench1}`) — the same bug `KNOWN_BENCHLESS_NATIVE_BUGS` only caught on the bare board; allow‑listed
 (`KNOWN_CHOICE_BUGS`). Both invariants were verified to bite (A caught Crimson Blaster; B caught a deliberate
-off‑by‑one skew → 71 per‑option mismatches). This **retires the masking risk** for the choice class — a
-geometry mismatch can no longer hide. Follow‑ups the harness enables: multi‑select (`targetCount`≥2 → option
-*combinations*), `ChooseCardsPrompt`, and the residual choice‑ops (`energy.move` destination, KO/return),
-including `chooser:'opponent'` (now safe to align, since the full option set is checked).
+off‑by‑one skew → 71 per‑option mismatches). This **retires the masking risk** for the `ChoosePokemonPrompt`
+choice class — a geometry mismatch can no longer hide. The same retirement is now extended to the
+**`ChooseCardsPrompt`** class in §12.11. Follow‑ups the harness enables: multi‑select (`targetCount`≥2 → option
+*combinations*) and the residual choice‑ops (`energy.move` destination, KO/return), including
+`chooser:'opponent'` (now safe to align, since the full option set is checked).
+
+### 12.11 Card‑choice differential (ChooseCards option‑set equivalence) + identity‑aware snapshot
+§12.10 retired the masking risk for `ChoosePokemonPrompt`, but the main differential still resolved every
+**`cards.move chooser:'player'`** choice first‑eligible via a `ChooseCardsPrompt` — so the same risk was live
+for card choices ("choose a card from your discard to your hand"; "discard up to N Energy from your hand"). Two
+things made it bite there: (1) a filter/geometry mismatch in the *eligible card set* still moves the same
+**count**, and (2) the snapshot was **count‑only** for piles (`hand`/`discard` are `.length`), so even with the
+same option set a per‑pick check was *vacuous* — every pick of the same size yields the same count. The
+**card‑choice differential** (second `describe` in [rotomancer-differential.spec.ts](../rotomancer-differential.spec.ts))
+closes both:
+- **Identity‑aware snapshot (the load‑bearing partner):** `snapshot(state, identity = true)` adds sorted
+  name‑multisets `handNames`/`discardNames` for the observable pile zones these moves touch. Opt‑in — left
+  `undefined` in the default count‑only mode, so the 7‑variant and §12.10 differentials are byte‑identical
+  (zero blast radius). Without it, Invariant B below is vacuous for card moves.
+- **Seed a real choice:** a mirror game seeds the op's from‑zone (of the right owner) with **distinct eligible
+  cards + one non‑matching decoy** (the decoy makes the *filter agreement* part of Invariant A bite — both
+  engines must exclude it). Eligible cards are enumerated via the shared `chooseCardsCandidates` (extracted
+  from `resolveChooseCardsRaw`, §12, so the option list is the *same* one native resolves).
+- **Invariant A — same options:** native's and interp's eligible **card‑name multisets + `(min,max)`** are
+  equal (a filter/geometry/bound divergence fails here, paired by identity → robust to prompt‑order /
+  filter‑vs‑`blocked` representation differences).
+- **Invariant B — each pick does the same thing:** every eligible card as a singleton plus the max‑count pick
+  (bounded `N+1`, not `2^N`), re‑run on both engines, comparing the **identity‑aware** snapshot.
+
+Result: **7 attacks (all multi‑option, all distinct‑identity), 32 picks checked, 0 mismatches** after triage —
+the discard‑and‑scale energy class (Mega Clefable ex *Shooting Moons* me3‑31/103/119, Mawile *Double Eater*
+me3‑32) and the opponent‑hand discard (Mega Absol ex *Claw of Darkness*) flip clean. It surfaced **5 native
+bugs** invisible to first‑eligible (allow‑listed, `KNOWN_CARD_CHOICE_BUGS`): **Slowpoke SCR *Dangle Tail***
+COPIES instead of moving (native `MOVE_CARDS` is handed a fresh `CardList` source, not `player.discard`, so the
+card stays in the discard — Invariant B caught it via `discardNames`); and four `min` bugs where native's
+prompt contradicts its printed text — **Iron Leaves TWM *Recovery Net*** ("up to 2" but native min:1 forbids
+0), **Luxray ex TWM *Piercing Gaze*** ×2 and **Dedenne SSP *Electromagnetic Sonar*** (a mandatory "discard/put
+1 card" but native min:0). Both invariants were verified to bite (the real run; plus a deliberate
+ignore‑the‑pick skew → 22 per‑pick mismatches with **identical counts, differing only in `discardNames`** —
+the precise case a count‑only snapshot would have passed, proving the identity snapshot load‑bearing). This
+**retires the masking risk** for the `ChooseCardsPrompt` class. Out of scope (documented deferrals): switches
+(`bench→active` → `ChoosePokemonPrompt`; needs an *active‑Pokémon* identity snapshot), `discard→bench`
+place‑a‑Pokémon (`resolveZone` throws on `to:bench`), deck‑search, and attached/prize moves.
 
 ---
 
@@ -503,3 +542,10 @@ require either a **risky** oracle‑bearing harness extension (choice‑alignmen
 ops) or new IR origins (ABILITY/RULE_BOX, still 0% of the corpus), not more vocabulary. The plateau is now
 **regression‑guarded** by the coverage audit (§12.9): a previously‑compared card silently dropping, or a new
 unexplained skip, fails the suite — so the coverage can only be lost on purpose, never by accident.
+
+The plateau's *quality* (not breadth) is what later work hardens: the **choice differentials** (§12.10
+`ChoosePokemonPrompt`, §12.11 `ChooseCardsPrompt`) retire the masking risk for the two player‑choice prompt
+classes by verifying the *whole option set* + each option's outcome (identity‑aware for card moves), not just
+first‑eligible. With both done, the remaining first‑eligible‑resolved choice points are switches
+(`bench→active` → `ChoosePokemonPrompt`, needs an active‑Pokémon identity snapshot), `chooser:'opponent'`
+(now safe to align), and multi‑select `targetCount`≥2 — the documented next steps.

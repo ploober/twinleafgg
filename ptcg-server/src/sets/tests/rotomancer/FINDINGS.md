@@ -820,8 +820,49 @@ a native bug first-eligible can't see:
 **Both invariants verified to bite:** A flagged the real Crimson Blaster option-set divergence with a precise
 message; a deliberate off-by-one skew of the interp's per-option pick produced **71** per-option mismatches
 (each showing native landing on the chosen Pokémon vs interp on the wrong one) — exactly the masking case, now
-impossible to hide. Follow-ups the harness enables: multi-select (`targetCount`≥2), `ChooseCardsPrompt`, and the
-residual choice-ops including `chooser:'opponent'` (now safe to align, since the full option set is checked).
+impossible to hide. Follow-ups the harness enables: multi-select (`targetCount`≥2), `ChooseCardsPrompt` (now
+done, §28), and the residual choice-ops including `chooser:'opponent'` (now safe to align).
+
+### 28. Card-choice differential — ChooseCards option-set equivalence + identity-aware snapshot
+
+§27 retired the masking risk for `ChoosePokemonPrompt`, but the differential still resolved every
+**`cards.move chooser:'player'`** choice first-eligible via a `ChooseCardsPrompt` ("choose a card from your
+discard to your hand"; "discard up to N Energy"). The risk was live there *and* worse: the snapshot was
+**count-only** for piles (`hand`/`discard` are `.length`), so even with the same option set a per-pick check
+was vacuous — every pick of the same size yields the same count. The fix has two intertwined parts:
+
+1. **Identity-aware snapshot** (`snapshot(state, identity)`): adds sorted name-multisets `handNames`/
+   `discardNames` for the observable pile zones, **opt-in** so the count-only callers (7-variant + §27
+   differentials) are byte-identical — zero blast radius. Without it, Invariant B is vacuous for card moves.
+2. **Card-choice differential** (2nd `describe`): seeds the op's from-zone with **distinct eligible cards + a
+   non-matching decoy** (the decoy makes the *filter agreement* part of Invariant A bite), enumerates the
+   eligible set via the shared `chooseCardsCandidates` (extracted from `resolveChooseCardsRaw`, behavior-
+   preserving), and asserts **A — same eligible card-name multiset + `(min,max)`** and **B — each pick (every
+   singleton + the max-count pick) produces the same identity-aware snapshot**.
+
+**Result: 7 attacks (all multi-option, all distinct-identity), 32 picks checked, 0 mismatches** after triage —
+the discard-and-scale energy class (Mega Clefable ex *Shooting Moons*, Mawile *Double Eater*) and opponent-hand
+discard (Mega Absol ex *Claw of Darkness*) flip clean. It surfaced **5 native bugs** invisible to first-eligible
+(all allow-listed, `KNOWN_CARD_CHOICE_BUGS`; in every case interp is faithful to the printed text/IR and native
+diverges):
+
+| card | bug | adjudication |
+|---|---|---|
+| Slowpoke SCR *Dangle Tail* (sv7-57) | **copies instead of moving** — native `MOVE_CARDS` is handed a fresh `CardList` source, not `player.discard`, so the chosen Pokémon enters the hand **and stays in the discard**. Invariant B caught it via `discardNames` (native discard count 4 vs interp 3). | Twinleaf bug |
+| Iron Leaves TWM *Recovery Net* (sv6-19) | text "Choose **up to 2**" permits 0, but native's prompt is **min:1** (forbids choosing 0). IR `upTo` → min 0 is faithful. | Twinleaf bug (min) |
+| Luxray ex TWM *Piercing Gaze* (sv6-195, sv6-68) | text "**discard 1 card**" is mandatory, but native's prompt is **min:0** (lets you skip). IR `exactly:1` → min 1 is faithful. | Twinleaf bug (min) |
+| Dedenne SSP *Electromagnetic Sonar* (sv8-87) | text "**Put a Trainer card** … into your hand" is mandatory, but native's prompt is **min:0**. IR `exactly:1` → min 1 is faithful. | Twinleaf bug (min) |
+
+(The Dangle Tail copy bug is distinct from Slowpoke's already-noted retreat data bug, sv7-57 below.)
+
+**Both invariants verified to bite, and the identity snapshot proven load-bearing:** the real run flagged the 4
+`min` divergences (Invariant A) and the Slowpoke copy (Invariant B); a deliberate ignore-the-pick skew of the
+interp run produced **22** per-pick mismatches with **identical discard counts and damage, differing only in
+`discardNames`/`handNames`** (e.g. *Shooting Moons* picking Grass: native discards Grass, skewed-interp
+discards Fire — both count 1, both 160 damage) — exactly the case a count-only snapshot would have passed,
+proving the identity snapshot is what makes Invariant B bite for card moves. **Out of scope** (documented
+deferrals): switches (`bench→active` → `ChoosePokemonPrompt`, needs an active-Pokémon identity snapshot),
+`discard→bench` place-a-Pokémon (`resolveZone` throws on `to:bench`), deck-search, attached/prize moves.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
