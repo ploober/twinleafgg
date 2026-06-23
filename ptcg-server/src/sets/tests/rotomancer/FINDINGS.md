@@ -993,6 +993,41 @@ harness/interpreter bug to fix this round** — the new findings are an IR-data 
 ordering limitation already documented (Icicle Loop), and a latent `countOf` predicate gap — all *identify*-only
 per the standing rule.
 
+### 34. Interpreter-throw skip buckets — audit (identification-only)
+
+The remaining skip surface: cards the **interpreter** throws on (an IR construct it doesn't model). Instrumented
+the interp-throw catch on the primed board and bucketed all **64**:
+
+| reason | n | verdict |
+|---|---|---|
+| `cards.move deck search` | 18 | **genuine deferral** — a deck search is a player choice over the whole (filler) deck; no deterministic oracle |
+| `unsupported zone "active"` | 8 | self-bounce / place-on-Active (Tuck Tail, Assassin's Return) — place-a-Pokémon family, deferred |
+| `cards.move chooser:"random"` | 8 | **genuine deferral** — random discard from the opponent's hand; can't match native's RNG deterministically |
+| `needs choice-alignment (Stage B)` | 8 | **fixable-but-deep** (see below) — `energy.attach` / `pokemon.knockOut` player-choice targets |
+| `count form "coinFlipsUntilTails"` | 5 | **genuine deferral** — under the harness's ALL_HEADS policy "flip until tails" never terminates |
+| `energy.attach from zone "deck"` | 5 | deck search (same un-oracled problem) |
+| `unsupported zone "bench"` | 3 | place-a-Pokémon onto the Bench (Kingdra *King's Order*, Duskull) — deferred |
+| `unsupported op "costGate"`/`"damage.move"`/`"pokemon.return"` | 3 | conditional-cost / counter-move (no oracle) / self-bounce-to-deck — 1 card each, identified |
+| `cards.move attached multi-Pokémon source` | 2 | source-selector shape, deferred |
+| `predicate "sharedTypeInPlay"`, subtype `"Ancient"`, `history attackUsed`, switch-ordering | 1 ea | singleton predicate/subtype gaps + the documented Push Down ordering guard (§30) |
+
+**The one fixable-in-principle bucket — `needs Stage B` — was probed and reverted.** `energy.attach` (Aura Jab,
+Pick and Stick) and `pokemon.knockOut` (Euclase) throw because they resolve a *player-choice target* via
+`resolveTargets` instead of the `affectChoiceTarget` path `damage.deal` already uses. Routing them through it is
+a clean, correct interpreter change — **but it produced zero coverage gain**: behind Stage B lies a *gap chain*.
+Euclase's KO target carries a `where: damageState {cmp:'eq', n:6}` filter (a predicate form the evaluator
+doesn't support, only `hasAny`/`full`); adding that, the cards *still* don't compare — they move to
+`native made an ambiguous choice` (the interp's choice geometry doesn't align with native's on the mirror
+board). So unblocking these 8 is a **multi-gap dedicated phase** (Stage-B routing + `damageState {cmp,n}` +
+choice-alignment for these ops), not an audit quick-fix — reverted to avoid churn with no measurable coverage.
+
+**Conclusion (parallel to §33):** the interp-throw surface is overwhelmingly **genuine deferrals** (deck-search
+34 total counting `energy.attach from deck`, `chooser:random`, `coinFlipsUntilTails`, `damage.move`,
+place-a-Pokémon, multi-source) or **deep gap chains** (Stage-B residual choice-ops). No clean low-hanging
+interpreter bug — the remaining coverage is genuinely hard, which is itself the finding: the differential is not
+hiding easy coverage behind interpreter throws. The best *future* fix candidate is the Stage-B residual
+choice-ops phase, whose full gap chain is now mapped.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
