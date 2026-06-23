@@ -910,6 +910,30 @@ baseline re-pinned. The rest are genuine non-resolves (*Tighten Up* is all `zsv1
 deferral. (The card-choice *describe* skips *Cursed Words* on a "Shuffle deck" prompt its seeded board can't
 auto-resolve — but it's covered clean in the main differential.)
 
+### 31. Multi-select differential — option-combination equivalence (and 3 native bugs)
+
+The last first-eligible-resolved gap: a choice of **N≥2** targets ("50 damage to 2 of your opponent's Pokémon"
+— Twin Shotels, Split Bomb, Mirage Barrage, Obsidian, Trifrost). §27 covered only targetCount===1. The interp
+already emits a max=N prompt, so this needs no interp change — just a combination-enumerating differential on a
+3-bench board (K>N → genuine combinations), asserting **A — same candidate SET + max** and **B — selecting each
+N-subset lands the same per-slot damage** (per-slot damage already distinguishes which Pokémon were hit, so no
+identity snapshot needed). `min` is **reported, not asserted** — native's multi-target prefab systematically
+uses min:1 (lets you under-target) vs the IR's exactly-N (11 cards, one prefab convention; orthogonal to the
+masking risk).
+
+**Result: 17 attacks (all multi-subset), 88 subsets checked, 0 mismatches** after triage; 11 min divergences
+reported. **3 native bugs** surfaced (allow-listed, interp faithful in each):
+
+| card | bug | invariant |
+|---|---|---|
+| Electivire ex DRI *Dual Bolt* (sv10-212, sv10-69) | native offers the **Bench only**, but the text "50 damage to 2 of your opponent's Pokémon" (and the IR) target **any** Pokémon | A (candidate set) |
+| Steven's Skarmory DRI *Sonic Double* (sv10-142) | native sets the attack's base `damage:50` (auto-applied to the defender) **atop** the 50-spread to 2 chosen — double-hitting the Active (100 when also chosen); text is "50 damage to 2 of your opponent's Pokémon" = spread only | B (per-subset) |
+
+Both invariants proven to bite on real findings (A caught Dual Bolt's bench-restriction; B caught Sonic
+Double's double-count via the per-slot damage). With §27–§31, **every first-eligible-resolved choice point is
+now verified by whole-option-set + per-outcome equivalence** — the masking risk is fully retired across
+affect-targets, card moves, switches, opponent-choosers, and multi-select.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

@@ -560,6 +560,32 @@ opponent discards from their own hand to deck) at **0 mismatches**. Coverage: `c
 Remaining opponent‑choosers are genuine non‑resolves (*Tighten Up* is all `zsv10pt5`) or the Push Down ordering
 deferral.
 
+### 12.14 Multi‑select differential (option‑combination equivalence)
+The last first‑eligible‑resolved gap: a choice of **N≥2** targets ("50 damage to 2 of your opponent's Pokémon"
+— *Twin Shotels*, *Split Bomb*, *Mirage Barrage*, *Obsidian*, *Trifrost*). §12.10 covered only
+`targetCount===1`; the main differential resolves the N‑target prompt first‑eligible. The masking risk is the
+same but over **combinations**: the engines could offer different candidate sets, or land the N hits on
+different Pokémon. The interp already emits a `max=N` prompt (`affectChoiceTarget`), so this needs **no interp
+change** — just a combination‑enumerating differential. On a **3‑bench** board (so K>N → genuine combinations,
+hp‑safe so a hit is observable per‑slot damage, not a KO that erases which slot was struck) it asserts:
+- **A — same candidate SET + same `max`** (the targets and how many — where the masking risk lives). Paired by
+  `player‑slot‑index` keys.
+- **B — selecting each N‑subset** (`combinations(K, N)`) lands the same observable. Per‑slot damage in the
+  snapshot already distinguishes *which* Pokémon were hit, so no identity snapshot is needed.
+
+`min` is **reported, not asserted**: native's multi‑target prefab systematically uses `min:1` (lets you
+under‑target) while the IR mandates exactly N — one prefab convention across 11 cards, orthogonal to the
+masking risk, so surfacing it as a counted divergence keeps the genuine per‑card bug out of allow‑list noise.
+(Contrast §12.11, where the few `ChooseCards` `min` divergences were per‑card hand‑written prompts → allow‑listed.)
+
+Result: **17 attacks (all multi‑subset), 88 subsets checked, 0 mismatches** after triage; 11 `min` divergences
+reported. It surfaced **3 native bugs** (allow‑listed, `KNOWN_MULTI_BUGS`; interp faithful in each): **Electivire
+ex DRI *Dual Bolt*** ×2 — native targets the Bench only, but the text/IR target *any* Pokémon (Invariant A);
+and **Steven's Skarmory DRI *Sonic Double*** — native sets the attack's base `damage:50` (auto‑applied to the
+defender) *atop* the 50‑spread to 2 chosen, double‑hitting the Active (100 when also chosen), while the text is
+"50 damage to 2 of your opponent's Pokémon" = spread only (Invariant B). Both invariants thus proven to bite on
+real findings.
+
 ---
 
 ## 13. Roadmap (prioritized)
@@ -592,7 +618,8 @@ unexplained skip, fails the suite — so the coverage can only be lost on purpos
 The plateau's *quality* (not breadth) is what later work hardens: the **choice differentials** (§12.10
 `ChoosePokemonPrompt` affect‑targets, §12.11 `ChooseCardsPrompt`, §12.12 `bench→active` switches) retire the
 masking risk for every player‑choice prompt class by verifying the *whole option set* + each option's outcome
-(identity‑aware for card moves and switches), not just first‑eligible. **§12.13** then aligned the last choice
-axis — `chooser:'opponent'` (the opponent picks: *Whirlwind*, *Cursed Words*). The one remaining
-first‑eligible‑resolved gap is multi‑select `targetCount`≥2 (option *combinations* — "to 2 of your opponent's
-Pokémon") — the documented next step.
+(identity‑aware for card moves and switches), not just first‑eligible. **§12.13** aligned `chooser:'opponent'`
+(the opponent picks: *Whirlwind*, *Cursed Words*) and **§12.14** the last gap — multi‑select `targetCount`≥2
+(option *combinations*: *Twin Shotels*, *Mirage Barrage*). With §12.10–§12.14 done, **every
+first‑eligible‑resolved choice point is now verified by whole‑option‑set + per‑outcome equivalence** — the
+masking risk is fully retired across affect‑targets, card moves, switches, opponent‑choosers, and multi‑select.

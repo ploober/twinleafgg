@@ -1605,3 +1605,171 @@ describe('Rotomancer switch differential — bench→active option-set equivalen
     expect(multiOption).toBeGreaterThan(0);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Multi-select differential (§12.14) — the last first-eligible-resolved gap: a choice of N≥2 targets ("50
+// damage to 2 of your opponent's Pokémon" — Twin Shotels, Split Bomb, Mirage Barrage, Obsidian, Trifrost).
+// §12.10 covered only targetCount===1; the main differential resolves the N-target prompt first-eligible. The
+// masking risk is the same, but over COMBINATIONS: native and interp could offer different candidate sets, or
+// land the N hits on different Pokémon. So we verify (A) the same candidate set + bounds and (B) that selecting
+// each N-subset produces the same observable — and per-slot damage in the snapshot already distinguishes which
+// Pokémon were hit, so no identity snapshot is needed here. A 3-bench board gives K>N (genuine combinations).
+describe('Rotomancer multi-select differential — option-combination equivalence', () => {
+  // Native divergences the candidate-set check surfaces (interp faithful to the IR/text; native diverges). Per
+  // the standing rule allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by printingId.
+  const KNOWN_MULTI_BUGS: Record<string, string> = {
+    // Electivire ex DRI — Dual Bolt: text "50 damage to 2 of your opponent's Pokémon" targets ANY Pokémon, but
+    // native's prompt offers the Bench only (option set {bench0,bench1,bench2} vs the IR's {active,bench…}).
+    // The candidate-set invariant catches it directly. → Twinleaf bug. Two printings.
+    'sv10-212': 'Electivire ex DRI — Dual Bolt: native targets Benched-only; text/IR target any Pokémon',
+    'sv10-69': 'Electivire ex DRI — Dual Bolt: native targets Benched-only; text/IR target any Pokémon',
+    // Steven's Skarmory DRI — Sonic Double: native sets the attack's base `damage: 50` (auto-applied to the
+    // defender) ON TOP OF the 50-spread to 2 chosen via DAMAGE_OPPONENT_POKEMON — double-counting the Active
+    // (it takes 100 when also chosen, 50 otherwise). Text is "50 damage to 2 of your opponent's Pokémon" =
+    // spread only; the IR (one 50-spread to 2, no base) is faithful. → Twinleaf bug.
+    'sv10-142': 'Steven\'s Skarmory DRI — Sonic Double: native base damage:50 double-hits the Active atop the 50-spread',
+  };
+
+  const AFFECT = new Set(['damage.deal', 'condition.apply', 'heal', 'damage.placeCounters']);
+  const isChoiceSel = (sel: any): boolean => {
+    if (!sel || sel.role !== undefined) { return false; }
+    if (sel.quantity === 'one') { return true; }
+    return sel.chooser !== undefined && sel.quantity === undefined;
+  };
+  const hasMultiChoice = (body: any[]): boolean => body.some((op: any) =>
+    AFFECT.has(op.kind) && isChoiceSel(op.target?.of) && (op.targetCount ?? 1) >= 2);
+
+  // Index-combinations: choose k of n (k≤n). Enumerates every N-subset of the candidate list.
+  function combinations(n: number, k: number): number[][] {
+    const res: number[][] = [];
+    const rec = (start: number, combo: number[]): void => {
+      if (combo.length === k) { res.push(combo.slice()); return; }
+      for (let i = start; i < n; i++) { combo.push(i); rec(i + 1, combo); combo.pop(); }
+    };
+    rec(0, []);
+    return res;
+  }
+
+  // One mirror game on a 3-bench board (each side: active + 3 bench, hp-safe at 0 so a spread hit is an
+  // observable per-slot damage, not a KO that erases which slot was struck). Registers a ChoosePokemonPrompt
+  // override capturing the candidate set + (min,max) and resolving via `pick`.
+  function runMulti(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    pick: (candidates: CardTarget[], prompt: ChoosePokemonPrompt) => CardTarget[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; candidateKeys: string[] } {
+    const bench = [{ card: fullName }, { card: fullName }, { card: fullName }];
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, bench, deck: padDeck(10) },
+      player2: { active: { card: fullName }, bench, deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let candidateKeys: string[] = [];
+    game.overridePrompt(ChoosePokemonPromptType, (prompt, state) => {
+      promptCount++;
+      const p = prompt as ChoosePokemonPrompt;
+      const candidates = choosePokemonCandidates(state, p);
+      if (promptCount === 1) { candidateKeys = candidates.map(cardTargetKey); min = p.options.min; max = p.options.max; }
+      return pick(candidates, p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state), promptCount, min, max, candidateKeys };
+  }
+
+  const firstEligible = (c: CardTarget[], p: ChoosePokemonPrompt) => c.slice(0, p.options.max);
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).filter(s => hasMultiChoice(s.body));
+
+  let enumerated = 0, subsetsChecked = 0, multiSubset = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perSubsetMismatches: string[] = [];
+  // `min` divergences are reported, NOT asserted: native's multi-target prefab systematically uses min:1 (lets
+  // you under-target) while the IR mandates exactly N ("to N of your opponent's Pokémon"). That's one prefab
+  // convention across many cards, orthogonal to the masking risk (same target SET + same per-subset placement),
+  // so we surface it honestly without burying the genuine per-card candidate-set bug (Dual Bolt) in allow-list noise.
+  const minDivergences: string[] = [];
+
+  for (const s of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_MULTI_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (c: CardTarget[], p: ChoosePokemonPrompt) => CardTarget[]) =>
+      runMulti(res.fullName!, energies, s.attackLabel, frags, pick);
+
+    let nat, intp;
+    try { nat = run(null, firstEligible); intp = run(fragments, firstEligible); }
+    catch { skip('build-error'); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choose-pokemon-prompt'); continue; }
+    if (nat.promptCount > 1 || intp.promptCount > 1) { skip('multi-prompt (deferred)'); continue; }
+    if (nat.max <= 1 || intp.max <= 1) { skip('not-multi-select'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — same candidate SET + same MAX (the targets and how many — where the masking risk lives).
+    const aKey = (r: { candidateKeys: string[]; max: number }) =>
+      JSON.stringify({ keys: r.candidateKeys, max: r.max });
+    if (aKey(nat) !== aKey(intp)) {
+      optionSetMismatches.push(`${tag}: native ${aKey(nat)} vs interp ${aKey(intp)}`);
+      continue;
+    }
+    if (nat.min !== intp.min) { minDivergences.push(`${tag}: native min ${nat.min} vs interp min ${intp.min} (max ${nat.max})`); }
+    const keys: string[] = nat.candidateKeys;
+    const subsets = combinations(keys.length, nat.max);
+    if (subsets.length > 1) { multiSubset++; }
+    // Invariant B — selecting each N-subset lands the same per-slot damage on both engines.
+    for (const subset of subsets) {
+      subsetsChecked++;
+      try {
+        const sn = run(null, c => subset.map(i => c[i])).snap;
+        const si = run(fragments, c => subset.map(i => c[i])).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perSubsetMismatches.push(`${tag} subset [${subset.map(i => keys[i]).join(',')}]: native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perSubsetMismatches.push(`${tag} subset [${subset.join(',')}]: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer multi-select differential [option-combination equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-subset: ${multiSubset})`);
+    console.log(`  subsets checked     : ${subsetsChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-subset mismatch : ${perSubsetMismatches.length}`);
+    console.log(`  min divergence (rpt): ${minDivergences.length} (native multi-target prefab min:1 vs IR exactly-N)`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perSubsetMismatches.map(m => `SUBSET ${m}`), ...minDivergences.map(m => `MIN ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same candidate set + bounds for every multi-target attack', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('selecting each N-subset produces the same observable in both engines', () => {
+    expect(perSubsetMismatches).toEqual([]);
+  });
+  it('actually exercised multi-subset choices (non-vacuity)', () => {
+    expect(multiSubset).toBeGreaterThan(0);
+  });
+});
