@@ -1423,8 +1423,12 @@ describe('Rotomancer card-choice differential — ChooseCards option-set equival
     // the damage is count-only, so only handNames/discardNames distinguish "moved the card you picked" from
     // "moved a different one of the same count".
     const picks: Array<{ label: string; pick: (e: Elig[], p: ChooseCardsPrompt) => number[] }> = [];
-    for (let k = 0; k < nat.eligibleNames.length; k++) {
-      picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+    // Singletons are only LEGAL picks when min ≤ 1; a min>1 prompt (e.g. Cursed Words "choose 3 cards",
+    // min:3) rejects a one-card selection, so for those only the max-count pick (size min(N,max) ≥ min) applies.
+    if (nat.min <= 1) {
+      for (let k = 0; k < nat.eligibleNames.length; k++) {
+        picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+      }
     }
     picks.push({ label: 'max', pick: maxPick });
     for (const { label, pick } of picks) {

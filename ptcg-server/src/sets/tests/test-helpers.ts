@@ -456,7 +456,12 @@ class TestStoreHandler implements StoreHandler {
     log?: any
   ): ResolvePromptAction {
     const decoded = prompt.decode(rawResult, state);
-    if (prompt.validate(decoded, state) === false) {
+    // ShuffleDeckPrompt/ShuffleHandPrompt (both type 'Shuffle deck') validate the order with a lexicographic
+    // `array.sort()` (no numeric comparator), so they wrongly reject the identity permutation for any deck of
+    // ≥ 11 cards — `[0,1,…,28].sort()` → `[0,1,10,11,…,2,…]`, so `s[i] !== i` (a native engine bug). The
+    // auto-resolved order here is the deterministic NO_SHUFFLE identity (correct by construction), so the
+    // harness skips validation for shuffle prompts rather than choke on that native validate bug.
+    if (prompt.type !== 'Shuffle deck' && prompt.validate(decoded, state) === false) {
       throw new Error(`[test-helpers] Invalid auto-resolved prompt result for "${prompt.type}"`);
     }
     return new ResolvePromptAction(prompt.id, decoded, log);

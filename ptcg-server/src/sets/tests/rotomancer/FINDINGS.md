@@ -934,6 +934,41 @@ Double's double-count via the per-slot damage). With §27–§31, **every first-
 now verified by whole-option-set + per-outcome equivalence** — the masking risk is fully retired across
 affect-targets, card moves, switches, opponent-choosers, and multi-select.
 
+### 32. Native-error skip bucket — audit ("false-skip" surface)
+
+Symmetric to the masking risk (two engines agreeing for the wrong reason), the **"false skip"** risk is a card
+the harness silently drops behind a reason that hides a real divergence. The coverage audit's largest unexamined
+bucket is **`native-error`** — cards that resolve but the *native* run throws on attack (swallowed at
+[rotomancer-differential.spec.ts:1058](../rotomancer-differential.spec.ts)). Census of all **139**:
+
+| error | n | cause | verdict |
+|---|---|---|---|
+| `UNKNOWN_ATTACK` | 109 | native card lacks that attack label (attack-name drift, mostly `me`-set) | native data (catalogued by the structural spec) |
+| `CANNOT_USE_ATTACK` | 20 | native attack **precondition** the generic board doesn't satisfy: Unified Beatdown (`turn≤2`), Erasure Ball (≥4 Team Rocket Pokémon), Lucky Attachment (a basic Energy in hand), Blazing Destruction (a Stadium in play), Regi Charge ([F] Energy in discard) | honest skip (board too sparse; unblocking each is card-specific and risks surfacing IR gaps) |
+| `NOT_ENOUGH_ENERGY` | 3 | harness attaches the IR cost; native's cost differs → throws (Wash Rotom, Duosion, Inteleon) | downstream of already-known native **cost** data bugs |
+| `CANNOT_USE_POWER` | 3 | Duskull *Come and Get You* — place-a-Pokémon (`to:bench`, deferred) + native gates on a hand-Duskull precondition (and the wrong error message — it's an attack) | honest skip + native quirk |
+| `forEachPokemon` TypeError | 3 | Rotom ex *Thunderbolt* calls `effect.player.forEachPokemon` in a `CheckTableStateEffect` handler where `effect.player` is undefined | **native card crash** (doesn't guard) |
+| Invalid auto-resolved prompt `"Shuffle deck"` | 1 | see below | **harness gap → fixed** |
+
+**Conclusion: the bucket is overwhelmingly legitimate** — native data drift, native attack preconditions the
+fixed board doesn't meet, and native bugs — **not** a systematic harness gap hiding fixable coverage. The
+"false-skip" concern is retired for this bucket.
+
+**The one harness fix (and a native engine bug it exposed).** Gholdengo *Surf Back* (and the opponent-chooser
+*Cursed Words*) shuffle the deck, and the auto-resolution threw `Invalid auto-resolved prompt result for
+"Shuffle deck"`. Root cause: **`ShuffleDeckPrompt.validate` / `ShuffleHandPrompt.validate` sort the order with
+a bare `array.sort()` (no numeric comparator)** — so `[0,1,…,28].sort()` → `[0,1,10,11,…,2,…]` and the
+`s[i]===i` permutation check fails for **any deck ≥ 11 cards**. The arbiter returns a correct identity (NO_SHUFFLE)
+order; the native validate wrongly rejects it. That's a genuine **native engine bug**
+([game/store/prompts/shuffle-prompt.ts](../../../game/store/prompts/shuffle-prompt.ts)) — *not fixed* per the
+standing rule (engine/card bugs are the user's). The **harness** fix is to skip validation for shuffle prompts
+(the auto-resolved order is deterministic and correct by construction), in
+[test-helpers.ts](../test-helpers.ts)'s `decodeAndValidatePromptResult`. This unblocked *Surf Back* (native-error
+139→138) and, in the card-choice differential, *Cursed Words* ×3 — which then exposed that the card-choice
+Invariant B enumerated singletons even for a `min>1` prompt (Cursed Words is "choose **3** cards", min:3); fixed
+by gating singletons on `min ≤ 1` (the max-count pick covers min>1). Both are genuine **harness** fixes; no
+native card/engine was touched.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
