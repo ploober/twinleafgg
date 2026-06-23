@@ -969,6 +969,30 @@ Invariant B enumerated singletons even for a `min>1` prompt (Cursed Words is "ch
 by gating singletons on `min ≤ 1` (the max-count pick covers min>1). Both are genuine **harness** fixes; no
 native card/engine was touched.
 
+### 33. "Native made an ambiguous choice" skip bucket — audit (identification-only)
+
+The next-largest skip bucket: the main differential skips when `native.ambiguous !== interp.ambiguous` (the
+divergence guard — the engines disagree on prompt geometry, so a first-eligible comparison isn't trustworthy).
+Instrumented it on the primed board and compared `native.snap` vs `interp.snap` to separate *false skips*
+(would compare cleanly) from real divergences. All **10**:
+
+| card(s) | nat/intp | snap | classification |
+|---|---|---|---|
+| Explosion Y (Mega Charizard Y ex) ×2 | 2 / 1 | **MATCH** | **false skip** — native prompts the greedy energy-discard; the interp resolves it directly. Identical outcome, different ambiguity count — the guard is over-conservative here (refining it risks re-introducing false mismatches, so left as-is). |
+| Sonic Double, Dual Bolt ×2, Crimson Blaster | — | MISMATCH | already-identified **native bugs** (§31, §31, §27) — the guard correctly skips them. |
+| **Round (Wigglytuff me2-105/me2-77)** ×2 | 0 / 1 | MISMATCH | **IR card-data issue** — the IR encodes `perCount per:40`, but native (NXD Wigglytuff) and the printed text are *"20 damage **times** the number of your Pokémon with the Round attack"* (`damage:20, 'x'`). The interp's `40×3=120` over-damages → KOs the mirror defender → promotes (the spurious `intp=1` choice). Either the IR's `per` is doubled (40 vs 20) or `me2-105` is a Mega-era reprint mis-resolved to NXD Wigglytuff. → *identify*. |
+| **Icicle Loop (Chien-Pao sv8-56/svp-152)** ×2 | 1 / 2 | MISMATCH | the 120 KOs the low-HP mirror defender, and the KO→promote prompt races the **deferred defender damage vs the inline energy-return** — the same ordering limitation as Push Down (§30). → *identify* (interp deferred-damage ordering). |
+
+**Latent interpreter gap (identified, doesn't currently bite):** `countOf` evaluates `forEach.of` (`pokemonInPlay`
+etc.) but **ignores `form.predicate`** — so Round's `hasAttack:'Round'` filter is dropped. On a mirror board
+every Pokémon matches, so the count is unaffected; on a non-uniform board the interp would over-count.
+
+**Conclusion:** the guard is doing its job — 8/10 are real divergences it correctly skips (4 known native bugs +
+2 new IR-data/ordering findings); 2/10 (Explosion Y) are over-conservative false skips. **No clean
+harness/interpreter bug to fix this round** — the new findings are an IR-data error (Round `per`), an interp
+ordering limitation already documented (Icicle Loop), and a latent `countOf` predicate gap — all *identify*-only
+per the standing rule.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
