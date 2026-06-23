@@ -201,12 +201,14 @@
     "me3-104 Gaia Wave",
     "me3-105 Dark Strike",
     "me3-105 Soul Destroyer",
+    "me3-107 Tuck Tail",
     "me3-11 Feather Shot",
     "me3-118 Jetting Blow",
     "me3-118 Nebula Beam",
     "me3-119 Shooting Moons",
     "me3-12 Crushing Arrow",
     "me3-120 Gaia Wave",
+    "me3-121 Tuck Tail",
     "me3-124 Gaia Wave",
     "me3-16 Dire Nails",
     "me3-17 Heat Breath",
@@ -250,6 +252,7 @@
     "me3-60 Take Down",
     "me3-61 Retaliatory Incisors",
     "me3-61 Scrape Off",
+    "me3-62 Tuck Tail",
     "me3-63 Collapse",
     "me3-65 Earthquake",
     "me3-8 Hide",
@@ -803,7 +806,6 @@
     "unsupported cards.move chooser …",
     "unsupported count form …",
     "unsupported op …",
-    "unsupported predicate kind …",
-    "unsupported zone …"
+    "unsupported predicate kind …"
   ]
 }

@@ -183,6 +183,11 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   if (op.from?.zone === 'stadium') {
     return executeStadiumMove(store, state, effect, op, cont);
   }
+  // active → hand/discard ("put this Pokémon and all attached cards into your hand" — self-bounce). The active
+  // is a PokemonCardList, not a flat CardList; move its cards off, then the engine promotes a new Active.
+  if (op.from?.zone === 'active') {
+    return executeActiveMove(store, state, effect, op, cont);
+  }
 
   const from = resolveZone(effect, op.from);   // throws on bench/active → counted skip
   // → bench ("put a Pokémon from your discard/hand onto your Bench"): the Bench is per-slot, so resolveZone
@@ -399,6 +404,32 @@ function executeStadiumMove(store: StoreLike, state: State, effect: AttackEffect
   if (source === undefined) { return cont(state); }   // no Stadium in play → no-op
   source.moveTo(resolveZone(effect, op.to));
   return cont(state);
+}
+
+// "Put this Pokémon and all attached cards into your hand/discard" (active → hand/discard — a self-bounce).
+// Mirrors native (e.g. Meowth ex Tuck Tail): clear the active's effects, move its Tools, then move every
+// remaining card (the Pokémon stack + any still-attached energy) to the destination. The prior
+// `attached → hand/discard all` op has usually already moved the energy/Tools, so what's left is the Pokémon
+// stack. Emptying the Active makes the engine promote a new Active from the Bench (checkState, after the
+// attack — the harness auto-resolves that promotion first-eligible, so native and interp align).
+function executeActiveMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
+  if (op.to?.zone !== 'hand' && op.to?.zone !== 'discard') {
+    throw new Error(`[ir-cards] cards.move active → ${op.to?.zone} not supported`);
+  }
+  const owner = op.from?.owner === 'opponent' ? effect.opponent : effect.player;
+  // You can't put your Active into your hand with no Benched Pokémon to promote into the Active spot — native
+  // gates the whole bounce (attached + Pokémon) on having a Bench. On a benchless board this isn't a
+  // comparable forced outcome (native no-ops the effect, the IR's separate ops don't), so skip it there.
+  if (!owner.bench.some(b => b.getPokemonCard() !== undefined)) {
+    throw new Error('[ir-cards] cards.move active → hand/discard needs a Benched Pokémon to promote');
+  }
+  const dest = resolveZone(effect, op.to);
+  const active = owner.active;
+  const tools = [...active.tools];
+  active.clearEffects();
+  for (const tool of tools) { active.moveCardTo(tool, dest); }
+  const cards = active.cards.slice();
+  return cont(cards.length ? MOVE_CARDS(store, state, active, dest, { cards }) : state);
 }
 
 // cards.move from a Pokémon's attached cards (Energy / Tool) to hand/discard. The `from` carries a

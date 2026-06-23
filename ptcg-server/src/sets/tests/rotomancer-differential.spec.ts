@@ -840,6 +840,15 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
   // allow-listed, not fixed (see memory: rotomancer-no-card-fixes), so the patches were reverted and
   // the bugs catalogued here. In every case the interpreter does the real attack and native is wrong.
   const KNOWN_NATIVE_BUGS_BY_PRINTING: Record<string, string> = {
+    // Team Rocket's Crobat ex DRI — Assassin's Return: text "Discard all attached cards" (then put this
+    // Pokémon into your hand). Native's `otherCards = active.cards.filter(not PokemonCard)` catches only the
+    // Energy (Tools live in `active.tools`, not `.cards`), so an attached Tool is left behind, NOT discarded
+    // (team-rockets-crobat-ex.ts). IR/interp discard all attached incl. the Tool (the auto-gather reads
+    // `.tools`). Surfaced by the tools-loaded variant once the active→hand self-bounce was implemented. → Twinleaf bug. Four printings.
+    'sv10-122': 'Team Rocket\'s Crobat ex — Assassin\'s Return: native leaves an attached Tool behind instead of discarding it ("discard all attached cards")',
+    'sv10-217': 'Team Rocket\'s Crobat ex — Assassin\'s Return: native leaves an attached Tool behind instead of discarding it ("discard all attached cards")',
+    'sv10-234': 'Team Rocket\'s Crobat ex — Assassin\'s Return: native leaves an attached Tool behind instead of discarding it ("discard all attached cards")',
+    'sv10-242': 'Team Rocket\'s Crobat ex — Assassin\'s Return: native leaves an attached Tool behind instead of discarding it ("discard all attached cards")',
     'sv10-41': 'Combusken DRI — Double Kick: native sets effect.damage = 40*heads OUTSIDE the async COIN_FLIP_PROMPT callbacks, so heads is always 0 → the attack always does 0. IR/interp do 40 per head. → Twinleaf bug',
     'sv9-103': 'N\'s Klink JTG — Double Spin: printed damage 10 PLUS `effect.damage += 10*heads` double-counts the base (30 on two heads, not 20). IR/interp do 10 per head. → Twinleaf bug. (Label "Double Spin" also belongs to Gossifleur sv7-10, which is correct — hence keyed by printing.)',
     'sv6-6': 'Sunkern TWM — Bullet Seed: the coin-flip logic is guarded on WAS_ATTACK_USED(effect, 1) but Bullet Seed is attack index 0, so it never runs (always base 10). IR/interp flip per the text. → Twinleaf bug',

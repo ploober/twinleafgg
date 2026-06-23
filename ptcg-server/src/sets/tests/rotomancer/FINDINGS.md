@@ -1136,6 +1136,29 @@ attacks (Flareon ex ×2), 16 picks, 0 mismatches**; Invariant B verified to bite
 Supporting interp add: the **Future / Ancient** Paradox subtypes in `matchesCardPredicate` (Miraidon's
 destination filter; also Iron Moth's Ancient modifier). No native bugs surfaced by this phase.
 
+### 39. Active self-bounce phase — interpreter support + a native Tool-discard bug (IR-SUPPORT-DESIGN §9 `cards.move`)
+
+`cards.move active→hand/discard` ("put this Pokémon and all attached cards into your hand" — a self-bounce,
+Meowth ex *Tuck Tail* ×3, Lillie's Comfey *Fade Out*, Team Rocket's Crobat ex *Assassin's Return* ×4) is now
+executed (`executeActiveMove`: clear effects, move the Active's Tools + remaining cards off; the engine then
+promotes a new Active from the Bench via checkState, which the harness auto-resolves first-eligible). **`compared`
+794 → 797** (the 3 Tuck Tail; Fade Out skips on the benign promote-choice ambiguity).
+
+**Gated on a Bench (a structural native-vs-IR difference).** With no Benched Pokémon to promote into, you
+can't put your Active into your hand — native no-ops the *whole* compound bounce (the IR splits it into
+`attached→… ` + `active→…` ops, which individually don't know about the gate). So `executeActiveMove` throws
+when the owner has no Bench → the benchless board skips it; the primed board (2 Bench) compares.
+
+**Native bug surfaced — Team Rocket's Crobat ex *Assassin's Return* leaves an attached Tool behind.** Text:
+*"You may put this Pokémon into your hand. (Discard all attached cards.)"* Native's
+`otherCards = active.cards.filter(c => !(c instanceof PokemonCard))`
+([set-destined-rivals/team-rockets-crobat-ex.ts](../../set-destined-rivals/team-rockets-crobat-ex.ts) line 79)
+catches only the Energy — Tools live in `active.tools`, not `.cards` — so an attached **Tool is never
+discarded**, contradicting "discard all attached cards". The IR/interp discard all attached incl. the Tool
+(the `attached→discard` auto-gather reads `.tools`). Surfaced by the tools-loaded board variant once the
+self-bounce ran the card end to end. → **Twinleaf bug**; allow-listed by printing (sv10-122/217/234/242),
+interp faithful.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
