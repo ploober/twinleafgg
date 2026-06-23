@@ -499,6 +499,7 @@
     "sv6-83 Dual Headbutt",
     "sv6-84 Eerie Wave",
     "sv6-84 One-derful Rumble",
+    "sv6-93 Love Resonance",
     "sv6-94 Crunch",
     "sv6-95 Mind Bend",
     "sv6-96 Energy Feather",
@@ -805,7 +806,6 @@
     "switch-the-defender after pending defender damage not supported (ordering)",
     "unsupported cards.move chooser …",
     "unsupported count form …",
-    "unsupported op …",
-    "unsupported predicate kind …"
+    "unsupported op …"
   ]
 }

@@ -1159,6 +1159,22 @@ discarded**, contradicting "discard all attached cards". The IR/interp discard a
 self-bounce ran the card end to end. → **Twinleaf bug**; allow-listed by printing (sv10-122/217/234/242),
 interp faithful.
 
+### 40. Reachable 1-offs — `sharedTypeInPlay` predicate (and the deferred remainder)
+
+After the energy-from-deck (§38) and self-bounce (§39) phases, a census of the remaining throw buckets left a
+handful of single-card gaps. The clean one is now done: **`sharedTypeInPlay`** (Enamorus *Love Resonance* —
+"+120 if any of your in-play Pokémon share a type with any of your opponent's") is wired in `evalPredicate`
+(intersect the two sides' in-play `cardType` + `additionalCardTypes` sets, like the native card). On the mirror
+board both sides share types → the bonus fires and is observable (KO vs not). **`compared` 797 → 798.**
+
+**Deferred (low-ROI, one card each, bespoke machinery):** `costGate` (Porygon *Hacking* — a cost-gated
+opponent-hand discard), `damage.move` (Wobbuffet *Rocket Mirror* — relocate counters; vacuous without seeded
+Bench damage), and `pokemon.return` (Gholdengo *Surf Back* — return self to deck + promote, a self-bounce
+variant). Each needs its own op handler for a single printing, so they're left as documented skips rather than
+built out. The remaining throw buckets are now dominated by genuine permanent skips — random choosers
+(non-deterministic), `coinFlipsUntilTails` (unbounded coin sequence), and native-vs-IR geometry/timing
+differences — so the differential's coverage frontier is effectively closed.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

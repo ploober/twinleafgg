@@ -218,7 +218,8 @@ is the opponent's active (the implicit subject of an attack's riders).
 | `movedToActive` | 9 | ✅ | "switched into the Active this turn" — read from the engine's `player.movedToActiveThisTurn` (the `IS_POKEMON_MOVED_TO_ACTIVE_THIS_TURN` signal). Determinable‑false in the placed‑attacker setup; a switched‑in non‑vacuity assertion proves the true branch. |
 | `hasTool` | 5 | ✅ | "this / the Defending Pokémon has a Pokémon Tool" — reads the engine's per‑Pokémon `tools` array (`list.tools.length > 0`). Exercised non‑trivially on the tools‑loaded board variant (§12.3). |
 | `nameTag` | 4 | 🟡 | Supported by `matchesCardPredicate` for **card** matching (substring/owner); throws as a standalone **state** predicate (rare). |
-| `resistanceType` / `retreatCost` / `sharedTypeInPlay` / `hasAttack` / `hasAbility` / `cardPlayed` | 2/1/… | ⛔ | Spec leaves not yet modeled (board‑shape or history dependent). Throw → skip. |
+| `sharedTypeInPlay` | 1 | ✅ | "If any of your Pokémon in play share a type with any of your opponent's, +N damage" (Enamorus *Love Resonance*) — do the two sides' in‑play Pokémon type sets intersect (reads `cardType` + `additionalCardTypes`, like the native card)? On the mirror board both sides share types → the +120 fires and is observed (KO vs not). |
+| `resistanceType` / `retreatCost` / `hasAttack` / `hasAbility` / `cardPlayed` | 2/1/… | ⛔ | Spec leaves not yet modeled (board‑shape or history dependent). Throw → skip. |
 
 ---
 

@@ -4,7 +4,7 @@ import { Player } from '../../../game/store/state/player';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { SpecialCondition } from '../../../game/store/card/card-types';
+import { SpecialCondition, CardType } from '../../../game/store/card/card-types';
 import { StateUtils } from '../../../game/store/state-utils';
 import { resolveV2Single, resolveV2Selector, V2Selector } from './ir-selectors';
 import { matchesCardPredicate } from './ir-cards';
@@ -116,6 +116,24 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
     }
     case 'stadiumInPlay':
       return StateUtils.getStadiumCard(state) !== undefined;
+    case 'sharedTypeInPlay': {
+      // "If any of your Pokémon in play are the same type as any of your opponent's Pokémon in play, +N damage"
+      // (Enamorus Love Resonance) — do the two sides' in-play Pokémon type sets intersect? Reads cardType plus
+      // additionalCardTypes (dual-type / Tera), exactly like the native card.
+      const typesOf = (p: Player): Set<CardType> => {
+        const set = new Set<CardType>();
+        for (const list of [p.active, ...p.bench]) {
+          const c = list.getPokemonCard() as PokemonCard | undefined;
+          if (!c) { continue; }
+          set.add(c.cardType);
+          (c.additionalCardTypes ?? []).forEach(t => set.add(t));
+        }
+        return set;
+      };
+      const theirs = typesOf(effect.opponent);
+      for (const t of typesOf(effect.player)) { if (theirs.has(t)) { return true; } }
+      return false;
+    }
     case 'damageState': {
       const dmg = listOf(pred.selector).damage;
       if (pred.hasAny !== undefined) return pred.hasAny ? dmg > 0 : dmg === 0;
