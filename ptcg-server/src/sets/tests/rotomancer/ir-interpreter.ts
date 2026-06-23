@@ -309,7 +309,7 @@ function affectChoiceTarget(
 // target Pokémon. On the differential's board the source is usually empty (→ no-op, a genuine
 // forced outcome); a non-trivial pick (e.g. a deck search over many energies) is flagged by the
 // harness's ambiguity guard and skipped, so this never false-mismatches.
-function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffect, op: IrOp): State {
+function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State): State {
   const from = op.card?.from;
   const owner = from?.owner === 'opponent' ? effect.opponent : effect.player;
   let source: any;
@@ -330,11 +330,19 @@ function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffec
   // The predicate lives at op.card.predicate (sibling of op.card.from), not op.card.from.predicate.
   const matching = source.cards.filter((c: any) => c instanceof EnergyCard && matchesCardPredicate(c, op.card?.predicate));
   const toAttach = matching.slice(0, n === Infinity ? matching.length : n);
+  // Nothing to attach → no prompt, no move (matches native, which doesn't ask where to put zero cards).
+  // This keeps the ambiguity guard aligned: the destination choice only exists when there's energy to place.
+  if (toAttach.length === 0) { return cont(state); }
+  // Player-choice destination ("attach to 1 of your Pokémon") → emit the same ChoosePokemonPrompt native
+  // does (Stage B), aligning first-eligible on both engines, rather than throwing.
+  if (isSingleChoiceTarget(op.target?.of)) {
+    return affectChoiceTarget(store, state, effect, op, (s, t) => { source.moveCardsTo(toAttach, t.list); return s; }, cont);
+  }
   const targets = resolveTargets(state, effect, op.target);
   if (targets.length > 0) {
     source.moveCardsTo(toAttach, targets[0].list);
   }
-  return state;
+  return cont(state);
 }
 
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State, bindings: Bindings): State {
@@ -427,7 +435,7 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
     case 'energy.discard':
       return cont(executeEnergyDiscard(store, state, effect, op, bindings));
     case 'energy.attach':
-      return cont(executeEnergyAttach(store, state, effect, op));
+      return executeEnergyAttach(store, state, effect, op, cont);
     case 'energy.move': {
       // Move attached energy from a source Pokémon to a (usually player-chosen) destination. Resolved
       // deterministically to the first-eligible source/destination — the same target the harness's
@@ -452,11 +460,17 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       // Knock out each resolved target by dealing lethal damage through the normal pipeline, so the
       // engine awards the prize, discards, and promotes (a direct KnockOutEffect skips the prize
       // flow). Mirrors how native "knock out" attacks do it (e.g. KnockOutOpponentEffect(_, 999)).
-      for (const { list } of resolveTargets(state, effect, op.target)) {
+      const ko = (s: State, list: any): State => {
         const put = new PutDamageEffect(effect, 999);
         put.target = list;
-        state = store.reduceEffect(state, put);
+        return store.reduceEffect(s, put);
+      };
+      // Player-choice target ("knock out 1 of your opponent's Pokémon …") → emit the same
+      // ChoosePokemonPrompt native does (Stage B), so the harness aligns first-eligible on both engines.
+      if (isSingleChoiceTarget(op.target?.of)) {
+        return affectChoiceTarget(store, state, effect, op, (s, t) => ko(s, t.list), cont);
       }
+      for (const { list } of resolveTargets(state, effect, op.target)) { state = ko(state, list); }
       return cont(state);
     }
     case 'pokemon.discard': {

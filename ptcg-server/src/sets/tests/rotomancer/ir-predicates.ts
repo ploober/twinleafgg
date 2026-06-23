@@ -120,6 +120,9 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
       const dmg = listOf(pred.selector).damage;
       if (pred.hasAny !== undefined) return pred.hasAny ? dmg > 0 : dmg === 0;
       if (pred.full !== undefined) return pred.full ? dmg === 0 : dmg > 0;
+      // `{cmp, n}`: compare damage COUNTERS (n is in counters, 10 dmg each) — e.g. "a Pokémon with exactly
+      // 6 damage counters" (Glaceon ex Euclase). The subject is the contextual candidate (where-filter).
+      if (pred.cmp !== undefined && pred.n !== undefined) { return compareOp(pred.cmp, dmg / 10, pred.n); }
       throw new Error('[ir-predicates] damageState needs hasAny/full');
     }
     case 'conditionOn': {

@@ -1026,7 +1026,34 @@ choice-alignment for these ops), not an audit quick-fix — reverted to avoid ch
 place-a-Pokémon, multi-source) or **deep gap chains** (Stage-B residual choice-ops). No clean low-hanging
 interpreter bug — the remaining coverage is genuinely hard, which is itself the finding: the differential is not
 hiding easy coverage behind interpreter throws. The best *future* fix candidate is the Stage-B residual
-choice-ops phase, whose full gap chain is now mapped.
+choice-ops phase, whose full gap chain is now mapped. **(Done — §35.)**
+
+### 35. Stage-B residual choice-ops phase — interpreter fixes + a native-vs-IR geometry finding
+
+Closed the gap chain mapped in §34. Three **interpreter** fixes (all fair game per the standing rule):
+- **`energy.attach` / `pokemon.knockOut` player-choice targets** now route through `affectChoiceTarget` (emit
+  the same ChoosePokemonPrompt native does) instead of throwing `needs Stage B`.
+- **`damageState {cmp, n}`** predicate — compare damage *counters* (Euclase's `where: damageState {eq, 6}`); the
+  `where`-filter subject is the contextual candidate, so it reads the right Pokémon.
+- **empty-source guard** in `energy.attach` — no matching energy → no prompt, no move (matches native). Without
+  it the interp prompted for a destination native never asked for, tripping the ambiguity guard.
+
+**Result: `compared` 764 → 770** (+6, the `energy.attach` cards; baseline re-pinned, `needs Stage B` retired).
+Honest caveats: **Aura Jab** (Mega Lucario ex ×5) attaches *[F]* energy, but the differential's boards only carry
+Fire/Lightning/Water — so its printings compare as **no-ops** (a valid "both engines correctly do nothing"
+check, not a real attach); **Pick and Stick** (Morpeko — any Basic) does a **real attach** on the zones-loaded
+board.
+
+**The one genuine finding — Euclase stays ambiguity-skipped (a native-vs-IR *geometry* difference).** Glaceon ex
+*Euclase* text is *"Knock Out 1 of your opponent's Pokémon that has exactly 6 damage counters on it."* The IR
+**pre-filters** the target (`where: damageState eq 6` — you may only *choose* a 60-damage Pokémon), faithful to
+the text. **Native prompts over *all* the opponent's Pokémon** (`[ACTIVE, BENCH]`) and checks `damage === 60`
+*after* the choice (KO only if it matches). Same *outcome* (only a 60-damage Pokémon is ever KO'd), but a
+different *prompt geometry* (native offers all targets; the IR offers only eligible ones) — so the divergence
+guard correctly skips it. The IR's pre-filter is the faithful reading; native's prompt-all-then-check is a
+looser implementation. → **identify** (native modeling difference, not a bug — outcomes match). So the `needs
+Stage B` cards split cleanly: `energy.attach` unblocked (+6); `pokemon.knockOut` (Euclase) is a documented
+geometry difference.
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 

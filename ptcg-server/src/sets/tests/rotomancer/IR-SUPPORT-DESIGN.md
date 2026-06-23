@@ -586,6 +586,30 @@ defender) *atop* the 50‑spread to 2 chosen, double‑hitting the Active (100 w
 "50 damage to 2 of your opponent's Pokémon" = spread only (Invariant B). Both invariants thus proven to bite on
 real findings.
 
+### 12.15 Stage‑B residual choice‑ops (`energy.attach` / `pokemon.knockOut` player‑choice targets)
+§12.10 wired Stage‑B choice alignment for the AFFECT ops (`damage.deal` / `heal` / `condition.apply` /
+`damage.placeCounters`); two more ops resolved a *player‑choice target* via the non‑prompting `resolveTargets`
+and so threw `needs choice‑alignment (Stage B)`: **`energy.attach`** ("attach to 1 of your Pokémon" — Aura Jab,
+Pick and Stick) and **`pokemon.knockOut`** ("Knock Out 1 of your opponent's Pokémon …" — Euclase). Both now
+route a single‑choice target through the same `affectChoiceTarget` (emit the ChoosePokemonPrompt native does,
+aligned first‑eligible). Two supporting fixes:
+- **`damageState {cmp, n}`** predicate (compare damage *counters*) — Euclase's KO target carries
+  `where: damageState {cmp:'eq', n:6}` ("a Pokémon with exactly 6 damage counters"); the evaluator handled only
+  `hasAny`/`full`. The `where`‑filter subject is the contextual candidate (`matchesV2Where` passes it), so it
+  reads the right Pokémon.
+- **empty‑source guard** in `energy.attach`: when no matching energy exists in the source, emit *no* prompt and
+  move nothing — matching native (which doesn't ask where to put zero cards). Without it the interp prompted
+  for a destination native never asked for, so the divergence guard skipped the card.
+
+Result: **`compared` 764 → 770** (+6 — the `energy.attach` cards), baseline re‑pinned, `needs Stage B` retired
+as a deferral. Honest caveat: Aura Jab attaches *[F]* energy and the differential's boards only ever carry
+Fire/Lightning/Water, so its 5 printings compare as **no‑ops** (a valid "both engines correctly do nothing"
+check); Pick and Stick (any Basic) does a **real attach** on the zones‑loaded board (discard = `[R]` energy).
+**Euclase stays ambiguity‑skipped** by design — a native‑vs‑IR *geometry* difference, not a comparable case (see
+FINDINGS §35). The `energy.attach` destination choice is verified first‑eligible (uniform mirror geometry +
+ambiguity‑guard count protection); a full option‑set choice‑differential pass over these two ops is a noted
+follow‑up.
+
 ---
 
 ## 13. Roadmap (prioritized)
