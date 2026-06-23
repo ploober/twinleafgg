@@ -1,17 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { setupGame, padDeck, getCardByName, SetupGameResult, choosePokemonCandidates, cardTargetKey, chooseCardsCandidates } from './test-helpers';
+import { setupGame, padDeck, getCardByName, SetupGameResult, choosePokemonCandidates, cardTargetKey, chooseCardsCandidates, cardMatchesPartialFilter } from './test-helpers';
 import { useAttack, getDamage } from './card-test-helpers';
 import { resolvePrinting, energyToCard } from './rotomancer/bridge';
 import { buildInterpretedCard, IrFragment } from './rotomancer/ir-interpreter';
 import { Card } from '../../game/store/card/card';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { EnergyCard } from '../../game/store/card/energy-card';
-import { SpecialCondition } from '../../game/store/card/card-types';
+import { SpecialCondition, SuperType } from '../../game/store/card/card-types';
 import { State } from '../../game/store/state/state';
 import { PokemonCardList } from '../../game/store/state/pokemon-card-list';
 import { ChoosePokemonPrompt, ChoosePokemonPromptType } from '../../game/store/prompts/choose-pokemon-prompt';
 import { ChooseCardsPrompt, ChooseCardsPromptType } from '../../game/store/prompts/choose-cards-prompt';
+import { AttachEnergyPrompt, AttachEnergyPromptType } from '../../game/store/prompts/attach-energy-prompt';
 import { CardTarget } from '../../game/store/actions/play-card-action';
 
 /**
@@ -1775,5 +1776,165 @@ describe('Rotomancer multi-select differential — option-combination equivalenc
   });
   it('actually exercised multi-subset choices (non-vacuity)', () => {
     expect(multiSubset).toBeGreaterThan(0);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Energy-attach destination differential (§12.16) — the masking-safety follow-up for the §12.15 residual
+// op. `energy.attach` to a player-chosen Pokémon ("attach to 1 of your Pokémon" — Pick and Stick, Aura Jab)
+// can't be verified by the §12.10 ChoosePokemonPrompt differential because **native uses an
+// `AttachEnergyPrompt`, not a `ChoosePokemonPrompt`** — the interp models the destination via
+// `affectChoiceTarget`'s ChoosePokemonPrompt. Both prompts expose the same `playerType`/`slots`/`blocked`
+// geometry, so we capture each engine's destination set with the SAME `choosePokemonCandidates` (a shim for
+// AttachEnergyPrompt) and verify (A) the same destination set and (B) attaching to each lands the energy on
+// the same Pokémon — closing the option-set masking risk these two prompt types would otherwise hide.
+describe('Rotomancer energy-attach differential — destination option-set equivalence', () => {
+  // Native divergences surfaced (interp faithful; native diverges) — allow-listed, never fixed
+  // (memory: rotomancer-no-card-fixes); keyed by printingId.
+  const KNOWN_ATTACH_BUGS: Record<string, string> = {};
+
+  // Source energy in discard so an `energy.attach`-from-discard choice actually fires and lands observably
+  // (3 [F] for Aura Jab's Fighting filter, +1 [R] so any-Basic cards have ≥2 distinct picks).
+  const SOURCE_ENERGY = ['Fighting Energy SVE', 'Fighting Energy SVE', 'Fighting Energy SVE', 'Fire Energy SVE'];
+
+  const isSingleChoiceSel = (sel: any): boolean => {
+    if (!sel || sel.role !== undefined) { return false; }
+    if (sel.quantity === 'one') { return true; }
+    return sel.chooser !== undefined && sel.quantity === undefined;
+  };
+  const hasEnergyAttachChoice = (body: any[]): boolean => body.some((op: any) =>
+    op.kind === 'energy.attach' && isSingleChoiceSel(op.target?.of) && (op.targetCount ?? 1) === 1);
+
+  // Destination candidates a prompt offers — reuse choosePokemonCandidates via a shim, since both
+  // AttachEnergyPrompt (native) and ChoosePokemonPrompt (interp) expose playerId/playerType/slots/blocked.
+  const destFrom = (state: State, playerId: number, playerType: any, slots: any, blocked: any): CardTarget[] =>
+    choosePokemonCandidates(state, { playerId, playerType, slots, options: { blocked } } as any);
+
+  // One mirror game (attacker + 2 bench, discard seeded). Overrides BOTH the interp's ChoosePokemonPrompt and
+  // native's AttachEnergyPrompt: capture the destination set, then resolve to destination `pick(cands)` (or
+  // first-eligible when pick returns <0). Returns the post-attack snapshot + the destination keys.
+  function runAttach(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    pick: (cands: CardTarget[]) => number
+  ): { snap: Snapshot; promptCount: number; destKeys: string[] } {
+    const bench = [{ card: fullName }, { card: fullName }];
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, bench, deck: padDeck(10), discard: SOURCE_ENERGY },
+      player2: { active: { card: fullName }, bench, deck: padDeck(10), discard: SOURCE_ENERGY },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0;
+    let destKeys: string[] = [];
+    // interp destination — ChoosePokemonPrompt (affectChoiceTarget)
+    game.overridePrompt(ChoosePokemonPromptType, (prompt, state) => {
+      promptCount++;
+      const p = prompt as ChoosePokemonPrompt;
+      const cands = choosePokemonCandidates(state, p);
+      if (promptCount === 1) { destKeys = cands.map(cardTargetKey); }
+      const i = pick(cands);
+      return i < 0 ? cands.slice(0, p.options.max) : (cands[i] ? [cands[i]] : []);
+    });
+    // native destination — AttachEnergyPrompt (assign up to max eligible energy to the chosen Pokémon)
+    game.overridePrompt(AttachEnergyPromptType, (prompt, state) => {
+      promptCount++;
+      const p = prompt as AttachEnergyPrompt;
+      const cands = destFrom(state, p.playerId, p.playerType, p.slots, p.options.blockedTo);
+      if (promptCount === 1) { destKeys = cands.map(cardTargetKey); }
+      const i = pick(cands);
+      const dest = i < 0 ? cands[0] : cands[i];
+      if (!dest) { return p.options.allowCancel ? null : []; }
+      const blockedE = new Set(p.options.blocked);
+      const eIdx: number[] = [];
+      for (let k = 0; k < p.cardList.cards.length; k++) {
+        const c = p.cardList.cards[k];
+        if (!blockedE.has(k) && c.superType === SuperType.ENERGY && cardMatchesPartialFilter(c, p.filter)) { eIdx.push(k); }
+      }
+      return eIdx.slice(0, p.options.max).map(idx => ({ to: dest, index: idx }));
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state), promptCount, destKeys };
+  }
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).filter(s => hasEnergyAttachChoice(s.body));
+
+  let enumerated = 0, destChecked = 0, multiDest = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perDestMismatches: string[] = [];
+
+  for (const s of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_ATTACH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (c: CardTarget[]) => number) =>
+      runAttach(res.fullName!, energies, s.attackLabel, frags, pick);
+
+    let nat, intp;
+    try { nat = run(null, () => -1); intp = run(fragments, () => -1); }
+    catch { skip('build-error'); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-attach-prompt'); continue; }
+    if (nat.promptCount > 1 || intp.promptCount > 1) { skip('multi-prompt (deferred)'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — native (AttachEnergyPrompt) and interp (ChoosePokemonPrompt) offer the same destinations.
+    if (JSON.stringify(nat.destKeys) !== JSON.stringify(intp.destKeys)) {
+      optionSetMismatches.push(`${tag}: native ${JSON.stringify(nat.destKeys)} vs interp ${JSON.stringify(intp.destKeys)}`);
+      continue;
+    }
+    if (nat.destKeys.length > 1) { multiDest++; }
+    // Invariant B — attaching to each destination lands the energy on the same Pokémon.
+    for (let i = 0; i < nat.destKeys.length; i++) {
+      destChecked++;
+      try {
+        const sn = run(null, () => i).snap;
+        const si = run(fragments, () => i).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perDestMismatches.push(`${tag} dest ${i} (${nat.destKeys[i]}): native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perDestMismatches.push(`${tag} dest ${i}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer energy-attach differential [destination option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-dest: ${multiDest})`);
+    console.log(`  destinations checked: ${destChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-dest mismatch   : ${perDestMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perDestMismatches.map(m => `DEST ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same energy-attach destinations (across prompt types)', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('attaching to each destination lands the energy on the same Pokémon in both engines', () => {
+    expect(perDestMismatches).toEqual([]);
+  });
+  it('actually exercised multi-destination attaches (non-vacuity)', () => {
+    expect(multiDest).toBeGreaterThan(0);
   });
 });

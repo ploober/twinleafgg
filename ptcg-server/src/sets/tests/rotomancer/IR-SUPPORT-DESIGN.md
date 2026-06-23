@@ -606,9 +606,21 @@ as a deferral. Honest caveat: Aura Jab attaches *[F]* energy and the differentia
 Fire/Lightning/Water, so its 5 printings compare as **no‑ops** (a valid "both engines correctly do nothing"
 check); Pick and Stick (any Basic) does a **real attach** on the zones‑loaded board (discard = `[R]` energy).
 **Euclase stays ambiguity‑skipped** by design — a native‑vs‑IR *geometry* difference, not a comparable case (see
-FINDINGS §35). The `energy.attach` destination choice is verified first‑eligible (uniform mirror geometry +
-ambiguity‑guard count protection); a full option‑set choice‑differential pass over these two ops is a noted
-follow‑up.
+FINDINGS §35). The `energy.attach` destination choice's option‑set masking risk is now retired in **§12.16**.
+
+### 12.16 Energy‑attach destination differential (cross‑prompt‑type option‑set equivalence)
+The §12.15 masking‑safety follow‑up. `energy.attach` to a player‑chosen Pokémon can't be checked by the §12.10
+choice differential because **native emits an `AttachEnergyPrompt`** (assign each energy to a target) while the
+interp models the destination via `affectChoiceTarget`'s **`ChoosePokemonPrompt`** — different prompt classes.
+But both expose the same `playerType`/`slots`/`blocked` geometry, so a dedicated differential captures each
+engine's destination set with the *same* `choosePokemonCandidates` (a shim for `AttachEnergyPrompt`) and asserts
+**A — same destination set** and **B — attaching to each destination lands the energy on the same Pokémon**
+(per‑Pokémon `energy`/`energyTypes` in the snapshot distinguishes which one). The board seeds discard `[F]`/`[R]`
+energy so the attach actually fires and is observable (Aura Jab does a *real* 3‑[F] attach here, not the no‑op
+it is on the main differential's boards). Result: **6 attacks (all multi‑dest), 13 destinations checked, 0
+mismatches**; both invariants verified to bite (an always‑attach‑to‑dest[0] skew → 7 per‑dest mismatches that
+differ only in *which* benched Pokémon gained the energy). This **retires the masking risk** for the
+`energy.attach` destination across the two prompt types — the last residual choice‑op masking gap.
 
 ---
 

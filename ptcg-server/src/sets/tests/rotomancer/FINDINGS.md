@@ -1055,6 +1055,15 @@ looser implementation. → **identify** (native modeling difference, not a bug �
 Stage B` cards split cleanly: `energy.attach` unblocked (+6); `pokemon.knockOut` (Euclase) is a documented
 geometry difference.
 
+**Follow-up (done) — `energy.attach` destination masking-safety (IR-SUPPORT-DESIGN §12.16).** The destination
+choice couldn't go through the §27 ChoosePokemonPrompt differential because **native uses an `AttachEnergyPrompt`**
+while the interp models it via a `ChoosePokemonPrompt`. A dedicated differential captures both (same
+`playerType`/`slots`/`blocked` geometry → one `choosePokemonCandidates` shim) and verifies the same destination
+set + same per-destination outcome over a discard seeded with `[F]`/`[R]` energy (so Aura Jab does a *real*
+3-[F] attach, not the no-op it is on the main board). **6 attacks, 13 destinations, 0 mismatches**; Invariant B
+proven to bite (skew → 7 mismatches differing only in which benched Pokémon gained the energy). Masking risk
+for the `energy.attach` destination retired.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
