@@ -1,6 +1,7 @@
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
+import { Player } from '../../../game/store/state/player';
 import { Card } from '../../../game/store/card/card';
 import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
@@ -182,6 +183,11 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   }
 
   const from = resolveZone(effect, op.from);   // throws on bench/active → counted skip
+  // → bench ("put a Pokémon from your discard/hand onto your Bench"): the Bench is per-slot, so resolveZone
+  // can't return it — place the chosen cards on open Bench slots directly (reuses the deck-search Bench path).
+  if (op.to?.zone === 'bench' && (chooser === 'player' || chooser === 'opponent')) {
+    return executeMoveToBench(store, state, effect, op, from, cont, bindings);
+  }
   const to = resolveZone(effect, op.to);
 
   // `chooser:'player'`/`'opponent'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`,
@@ -270,6 +276,46 @@ function executeCardsMoveChoice(
   });
 }
 
+// Place chosen cards onto the first open Bench slots, one at a time (re-find each iteration as the previous
+// placement fills a slot). Callers cap the count by open slots, so every card lands. Shared by deck-search
+// → Bench and the discard → Bench place-a-Pokémon path.
+function placeOnOpenBench(player: Player, source: CardList, cards: Card[]): void {
+  for (const card of cards) {
+    const slot = player.bench.find(b => b.getPokemonCard() === undefined);
+    if (slot) { source.moveCardTo(card, slot); }
+  }
+}
+
+// "Put up to N <Pokémon> from your discard pile onto your Bench" — a player-chosen cards.move → Bench (the
+// Bench is per-slot, so resolveZone can't return it). The same ChooseCardsPrompt over the source native emits
+// (where → blocked), the picks placed on the first open Bench slots (capped by open slots); no shuffle (the
+// source is a public pile). Bench identity is observable in the snapshot's per-Pokémon `name`, so §12.18
+// verifies WHICH species lands.
+function executeMoveToBench(
+  store: StoreLike, state: State, effect: AttackEffect, op: any,
+  from: CardList, cont: (state: State) => State, bindings: Record<string, Card[]>
+): State {
+  const benchOwner = op.to?.owner === 'opponent' ? effect.opponent : effect.player;
+  const chooserPlayer = op.select?.chooser === 'opponent' ? effect.opponent : effect.player;
+  const where = op.select?.where;
+  const blocked: number[] = [];
+  from.cards.forEach((c, i) => { if (!matchesCardPredicate(c, where)) { blocked.push(i); } });
+  const eligible = from.cards.length - blocked.length;
+  const openBench = benchOwner.bench.filter(b => b.getPokemonCard() === undefined).length;
+  const cap = countToMinMax(op.count, eligible);
+  const max = Math.max(0, Math.min(cap.max, openBench));
+  const min = Math.min(cap.min, max);
+  const prompt = new ChooseCardsPrompt(
+    chooserPlayer, GameMessage.CHOOSE_CARD_TO_HAND, from, {}, { min, max, allowCancel: false, blocked }
+  );
+  return store.prompt(state, prompt, (selected: Card[] | null) => {
+    const cards = selected ?? [];
+    if (op.bindAs) { bindings[op.bindAs] = cards; }
+    placeOnOpenBench(benchOwner, from, cards);
+    return cont(state);
+  });
+}
+
 // Deck search: "search your deck for a card → hand" or "for a Basic Pokémon → Bench, then shuffle".
 // Mirrors the native idiom (Scatterbug "Call for Family", Korrina, Farfetch'd): a ChooseCardsPrompt over
 // the deck with the `where` predicate as `blocked` (so the filter-aware harness picks the identical
@@ -309,12 +355,7 @@ function executeDeckSearch(
       if (toHand) {
         s = MOVE_CARDS(store, s, deck, player.hand, { cards });
       } else {
-        // Place onto open Bench slots one at a time (re-find each iteration as slots fill); `max` already
-        // clamped to open slots so every chosen card lands.
-        for (const card of cards) {
-          const slot = player.bench.find(b => b.getPokemonCard() === undefined);
-          if (slot) { deck.moveCardTo(card, slot); }
-        }
+        placeOnOpenBench(player, deck, cards); // `max` already clamped to open slots so every card lands
       }
     }
     return store.prompt(s, new ShuffleDeckPrompt(player.id), (order: number[] | null) => {

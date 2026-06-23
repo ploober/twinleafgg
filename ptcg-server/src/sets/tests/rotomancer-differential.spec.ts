@@ -2148,3 +2148,194 @@ describe('Rotomancer deck-search differential — search option-set equivalence'
     expect(multiOption).toBeGreaterThan(0);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Discard→Bench place differential (§12.18) — `cards.move discard→bench chooser:'player'` ("put up to N
+// <Pokémon> from your discard pile onto your Bench", e.g. Kingdra ex King's Order). The interpreter now
+// executes these (ir-cards executeMoveToBench, reusing the deck-search Bench placement), but the main
+// differential's discard is empty → no eligible target → vacuous no-op. So this seeds the DISCARD with
+// distinct findable Pokémon + a decoy the filter excludes, and verifies (A) the engines offer the same
+// eligible set + bounds and (B) each pick lands the same SPECIES on the Bench (the per-Bench-Pokémon `name`).
+describe('Rotomancer discard→bench differential — place option-set equivalence', () => {
+  // Native bound divergences the option-set check surfaces. interp encodes the IR/printed text faithfully, so
+  // per the standing rule these are allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by
+  // printingId. The allow-list suppresses only the (min,max) check — the eligible-set and per-pick placement
+  // (Invariants A-names / B) are still asserted, so the placement itself stays verified.
+  const KNOWN_DISCARD_BENCH_BUGS: Record<string, string> = {
+    // Kingdra ex SFA/SVP — King's Order: text "Put up to 3 [W] Pokémon from your discard onto your Bench"
+    // permits choosing 0, but native's ChooseCardsPrompt is min:1 (set-shrouded-fable/kingdra-ex.ts) — forces
+    // ≥1. The IR `upTo` → min 0 is faithful. → Twinleaf bug (min), same class as Recovery Net (§12.11).
+    'sv6pt5-12': 'Kingdra ex King\'s Order: native prompt min:1 forbids "up to 3" choosing 0',
+    'sv6pt5-80': 'Kingdra ex King\'s Order: native prompt min:1 forbids "up to 3" choosing 0',
+    'svp-131': 'Kingdra ex King\'s Order: native prompt min:1 forbids "up to 3" choosing 0',
+  };
+
+  const SEED_POKEMON = ['Togepi SSP', 'Turtonator SSP', 'Trapinch SSP']; // Turtonator is [R] → a non-[W] decoy
+  const SEED_ENERGY = ['Fire Energy SVE'];
+  const WATER_BASICS = ['Magikarp BS', 'Poliwag BS', 'Squirtle BS'];     // distinct [W] Basics for the [W] filter
+
+  // Distinct eligible Pokémon matching the place `where`, plus a decoy the filter excludes. The two corpus
+  // shapes are `energyType:'Water' Pokémon` (Kingdra) and `name:'Duskull'` (Duskull); the name shape is
+  // unseedable as an *identity* check (every match has the same name) → returns empty → skipped.
+  function pileFor(where: any): { eligible: string[]; decoy: string | null } {
+    if (!where) { return { eligible: SEED_POKEMON.slice(0, 2), decoy: SEED_ENERGY[0] }; }
+    if (where.name !== undefined || where.evolvesFrom !== undefined) { return { eligible: [], decoy: null }; }
+    if (where.supertype === 'Pokémon') {
+      if (where.energyType === 'Water') { return { eligible: WATER_BASICS.slice(), decoy: SEED_POKEMON[1] }; }
+      if (where.energyType !== undefined) { return { eligible: [], decoy: null }; } // other types not seeded
+      return { eligible: SEED_POKEMON.slice(), decoy: SEED_ENERGY[0] };
+    }
+    return { eligible: [], decoy: null };
+  }
+
+  function findDiscardToBench(ops: any[]): any | null {
+    for (const op of ops ?? []) {
+      if (op?.kind === 'cards.move' && (op.select?.chooser === 'player' || op.select?.chooser === 'opponent')
+        && op.from?.zone === 'discard' && op.to?.zone === 'bench') {
+        return op;
+      }
+      for (const k of ['then', 'else']) {
+        if (Array.isArray(op?.[k])) { const f = findDiscardToBench(op[k]); if (f) { return f; } }
+      }
+    }
+    return null;
+  }
+
+  type Elig = { card: Card; index: number };
+  const byName = (a: Elig, b: Elig) => a.card.name < b.card.name ? -1 : a.card.name > b.card.name ? 1 : a.index - b.index;
+  const firstEligiblePick = (elig: Elig[], p: ChooseCardsPrompt) => elig.slice(0, p.options.max).map(e => e.index);
+  const singletonPick = (k: number) => (elig: Elig[]) => { const s = [...elig].sort(byName); return s[k] ? [s[k].index] : []; };
+  const maxPick = (elig: Elig[], p: ChooseCardsPrompt) => { const s = [...elig].sort(byName); return s.slice(0, Math.min(s.length, p.options.max)).map(e => e.index); };
+
+  // One mirror game seeding the searcher's DISCARD with the eligible pile + decoy, empty Bench so placement
+  // has room. Captures the ChooseCardsPrompt over the discard and resolves via `pick`.
+  function runDiscardBench(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    seedDiscard: string[], pick: (eligible: Elig[], prompt: ChooseCardsPrompt) => number[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; eligibleNames: string[] } {
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, deck: padDeck(10), discard: seedDiscard.slice() },
+      player2: { active: { card: fullName }, deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let eligibleNames: string[] = [];
+    game.overridePrompt(ChooseCardsPromptType, (prompt) => {
+      promptCount++;
+      const p = prompt as ChooseCardsPrompt;
+      const idxs = chooseCardsCandidates(p);
+      if (promptCount === 1) {
+        eligibleNames = idxs.map(i => p.cards.cards[i].name).sort();
+        min = p.options.min; max = p.options.max;
+      }
+      return pick(idxs.map(i => ({ card: p.cards.cards[i], index: i })), p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state, true), promptCount, min, max, eligibleNames };
+  }
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).map(s => ({ s, op: findDiscardToBench(s.body) })).filter(x => x.op !== null) as Array<{ s: any; op: any }>;
+
+  let enumerated = 0, picksChecked = 0, multiOption = 0, allowlistedBoundBugs = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perPickMismatches: string[] = [];
+
+  for (const { s, op } of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+
+    const { eligible, decoy } = pileFor(op.select?.where);
+    if (eligible.length < 2) { skip('unseedable-predicate'); continue; }
+    const seedDiscard = decoy ? [...eligible, decoy] : eligible.slice();
+    try { seedDiscard.forEach(getCardByName); } catch { skip('seed-unavailable'); continue; }
+
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (e: Elig[], p: ChooseCardsPrompt) => number[]) =>
+      runDiscardBench(res.fullName!, energies, s.attackLabel, frags, seedDiscard, pick);
+
+    let nat, intp;
+    try { nat = run(null, firstEligiblePick); }
+    catch { skip('native-error'); continue; }
+    try { intp = run(fragments, firstEligiblePick); }
+    catch (e: any) { skip(`interp-error: ${String(e?.message ?? e).replace(/"[^"]*"/g, '…')}`); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choosecards-prompt'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — the eligible Pokémon (names) ALWAYS must match; (min,max) must match too UNLESS the card
+    // has an allow-listed native bound bug (the decoy is excluded by both either way). Splitting names from
+    // bounds lets an allow-listed min bug (Kingdra) still have its PLACEMENT (Invariant B) verified.
+    const namesKey = (r: { eligibleNames: string[] }) => JSON.stringify(r.eligibleNames);
+    if (namesKey(nat) !== namesKey(intp)) {
+      optionSetMismatches.push(`${tag} names: native ${namesKey(nat)} vs interp ${namesKey(intp)}`);
+      continue;
+    }
+    if (nat.min !== intp.min || nat.max !== intp.max) {
+      if (KNOWN_DISCARD_BENCH_BUGS[s.printingId]) { allowlistedBoundBugs++; }
+      else {
+        optionSetMismatches.push(`${tag} bounds: native (min ${nat.min},max ${nat.max}) vs interp (min ${intp.min},max ${intp.max})`);
+        continue;
+      }
+    }
+    if (nat.eligibleNames.length > 1) { multiOption++; }
+
+    const picks: Array<{ label: string; pick: (e: Elig[], p: ChooseCardsPrompt) => number[] }> = [];
+    if (nat.min <= 1) {
+      for (let k = 0; k < nat.eligibleNames.length; k++) {
+        picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+      }
+    }
+    picks.push({ label: 'max', pick: maxPick });
+    for (const { label, pick } of picks) {
+      picksChecked++;
+      try {
+        const sn = run(null, pick).snap;
+        const si = run(fragments, pick).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perPickMismatches.push(`${tag} pick ${label}: native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perPickMismatches.push(`${tag} pick ${label}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer discard→bench differential [place option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-option: ${multiOption}, allowlisted native bound bugs: ${allowlistedBoundBugs})`);
+    console.log(`  picks checked       : ${picksChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-pick mismatch   : ${perPickMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perPickMismatches.map(m => `PICK ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same discard→bench placement set + bounds', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('every pick lands the same species on the Bench in both engines', () => {
+    expect(perPickMismatches).toEqual([]);
+  });
+  it('actually exercised a multi-option discard→bench place (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
+  });
+});

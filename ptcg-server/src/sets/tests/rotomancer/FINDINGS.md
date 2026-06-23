@@ -1097,6 +1097,28 @@ subtype switch), but the §12.17 seeded Trainer decks exercise it directly. **Ou
 deck-searches whose **native** card throws on attack (9, benign — the main differential skips these too) and
 typed/named/Tool targets we don't synthesize a seed pile for. No native bugs surfaced by this phase.
 
+### 37. Discard→Bench place phase — interpreter support + a native min bug (IR-SUPPORT-DESIGN §12.18)
+
+The `unsupported zone` skip bucket's largest reachable chunk was `cards.move discard→bench chooser:'player'`
+("put up to N Pokémon from your discard onto your Bench"). The interpreter now executes it (`executeMoveToBench`,
+reusing the deck-search Bench placement: `ChooseCardsPrompt` over the discard → `placeOnOpenBench`, no shuffle).
+Corpus shapes: Kingdra ex *King's Order* (Water Pokémon, ×3) and Duskull *Come and Get You* (`name:Duskull`,
+×3). **`compared` 788 → 791** (+3 Kingdra; the 3 Duskull are native-error in the main audit).
+
+A dedicated differential (§12.18) seeds the discard with distinct Water Basics + a non-Water decoy and asserts
+**A — same eligible set** and **B — each pick lands the same species on the Bench** (per-Bench `name`). **3
+attacks, 12 picks, 0 mismatches**; Invariant B verified to bite (skew the interp to place first-eligible → 6
+per-pick mismatches). Duskull's `name` filter is unseedable as an identity check (every match is the same name)
+→ skipped.
+
+**Native bug surfaced — Kingdra ex *King's Order* prompt is `min:1`.** Text: *"Put up to 3 [W] Pokémon from
+your discard pile onto your Bench."* "Up to 3" permits choosing **0**, but native's `ChooseCardsPrompt` is
+`min:1` ([set-shrouded-fable/kingdra-ex.ts](../../set-shrouded-fable/kingdra-ex.ts) line 38), forcing ≥1. The
+IR's `upTo`→`min:0` is faithful. → **Twinleaf bug (min)**, the same class as Recovery Net / Piercing Gaze
+(§12.11). Per the standing rule it is **allow-listed, not fixed**; the differential allow-lists only the
+`(min,max)` mismatch so the placement (Invariant B) stays verified. Affects all 3 printings (sv6pt5-12,
+sv6pt5-80, svp-131).
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
