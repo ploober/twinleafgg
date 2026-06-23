@@ -1,0 +1,5 @@
+# Vendored (gitignored) copy of Rotomancer's peg-emit-v2 v2 IR corpus — the raw input the
+# tools/*.py generators read to (re)build the committed fixtures/*.json. Bulky and upstream-owned,
+# so it's kept local, not committed. Vendor it in with:
+#   cp ~/projects/pokemon-cards/tools/template-parser-probe/peg-emit-v2/*.json ir-v2/
+ir-v2/

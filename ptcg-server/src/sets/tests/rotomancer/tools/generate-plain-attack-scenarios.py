@@ -10,16 +10,24 @@ value is the expected damage, and a mirror-match defender (same species) avoids 
 The output is committed so the Twinleaf test suite is hermetic (no cross-repo dependency
 at test time). Re-run when the Rotomancer snapshot changes.
 
+Reads the raw v2 IRs from the vendored (gitignored) in-project copy at rotomancer/ir-v2/ — vendor
+it in once from Rotomancer's peg-emit-v2 snapshot:
+  cp ~/projects/pokemon-cards/tools/template-parser-probe/peg-emit-v2/*.json \
+     src/sets/tests/rotomancer/ir-v2/
+Pass a directory argument to read the v2 IR json from somewhere else instead.
+
 Usage:
-  python3 generate-plain-attack-scenarios.py [ROTOMANCER_DIR] > ../fixtures/plain-attack-scenarios.json
+  python3 generate-plain-attack-scenarios.py [IR_DIR] > ../fixtures/plain-attack-scenarios.json
 """
 import json
 import glob
 import os
 import sys
 
-DEFAULT_ROOT = os.path.expanduser("~/projects/pokemon-cards")
-SNAPSHOT = "tools/template-parser-probe/peg-emit-v2"
+HERE = os.path.dirname(os.path.abspath(__file__))
+# Vendored (gitignored) copy of Rotomancer's peg-emit-v2 v2 IR corpus (a flat dir of *.json).
+DEFAULT_IR_DIR = os.path.normpath(os.path.join(HERE, "..", "ir-v2"))
+SNAPSHOT = "tools/template-parser-probe/peg-emit-v2"  # provenance: source of the vendored copy
 
 # v2 damage-application ignores that are no-ops in a mirror match (weakness/resistance never apply).
 NOOP_IGNORES = {"weakness", "resistance"}
@@ -30,9 +38,15 @@ def modifiers_ok(op):
 
 
 def main():
-    root = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ROOT
+    ir_dir = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_IR_DIR
+    files = sorted(glob.glob(os.path.join(ir_dir, "*.json")))
+    if not files:
+        sys.stderr.write(
+            "no v2 IR json in %s\nvendor it first:  "
+            "cp ~/projects/pokemon-cards/%s/*.json %s/\n" % (ir_dir, SNAPSHOT, DEFAULT_IR_DIR))
+        sys.exit(1)
     scenarios = []
-    for f in glob.glob(os.path.join(root, SNAPSHOT, "*.json")):
+    for f in files:
         try:
             d = json.load(open(f))
         except Exception:

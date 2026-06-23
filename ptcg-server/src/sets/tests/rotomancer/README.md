@@ -21,8 +21,9 @@ and the god-record predicate with a `{kind}`-tagged sum type. The interpreter re
 | `ir-interpreter.ts` | execute an IR v2 program as a Twinleaf card: damage/condition/heal/counters/cards.move/energy.discard ops; const/forEach/perCount/plusIf/coinFlipHeads counts; `coinFlip`/`if` control; `continuous.modifier`/`rule.override` no-ops |
 | `ir-predicates.ts` | evaluate v2 sum-type predicates (isa / damageState / conditionOn / stadiumInPlay / energyAttachedCount / boardCount / hpRemaining / prize / handSize / cardInZone / compare / and-or-not) |
 | `ir-cards.ts` | v2 card-predicate matcher (isa / nameTag / and-or-not) + deterministic `cards.move` execution |
-| `tools/*.py` | regenerate the vendored fixtures from the Rotomancer snapshot |
-| `fixtures/*.json` | vendored corpora (hermetic — no cross-repo dependency at test time) |
+| `tools/*.py` | regenerate the vendored fixtures from the `ir-v2/` corpus |
+| `ir-v2/*.json` | **gitignored** local copy of Rotomancer's raw `peg-emit-v2` v2 IRs — the generators' input (vendor it in, see below) |
+| `fixtures/*.json` | committed corpora (hermetic — no cross-repo dependency at test time) |
 
 ## The five cross-checks (spec files in `../`)
 | spec | what it compares | finds |
@@ -46,10 +47,18 @@ discrepancy fails the suite. So the corpus is a standing regression net, and the
 `FINDINGS.md` are the running catalogue (~55 discrepancies to date).
 
 ## Regenerating fixtures
+The two attack-scenario generators read the raw v2 IRs from the **gitignored** `ir-v2/` corpus.
+Vendor it in once (bulky + upstream-owned, so it's kept local, not committed):
 ```
 cd ptcg-server
+cp ~/projects/pokemon-cards/tools/template-parser-probe/peg-emit-v2/*.json src/sets/tests/rotomancer/ir-v2/
+```
+Then regenerate (each generator defaults to `ir-v2/`; pass a dir arg to override):
+```
 python3 src/sets/tests/rotomancer/tools/generate-plain-attack-scenarios.py > .../fixtures/plain-attack-scenarios.json
 python3 src/sets/tests/rotomancer/tools/generate-attack-scenarios.py       > .../fixtures/attack-scenarios.json
 python3 src/sets/tests/rotomancer/tools/generate-official-metadata.py      > .../fixtures/official-metadata.json
 ```
+(`generate-official-metadata.py` reads the snapshot's official card data, not the v2 IRs, so it
+still points at `~/projects/pokemon-cards`.)
 Run the suite with `npm run test:sets` (uses the project-local `jasmine-ts`; works on node 12+).
