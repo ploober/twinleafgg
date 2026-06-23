@@ -431,7 +431,7 @@ Strong fit on serialization, weaker on determinism:
     **replay-from-initial** (§4.2): the closure fires synchronously within one
     replayed `dispatch`; it never crosses a request boundary.
 
-### 12.2 `sim/` (this project, Java) — implement second
+### 12.2 `sim/` (Java) — implement second
 
 Strong fit on determinism, missing an output serializer:
 
