@@ -1119,6 +1119,23 @@ IR's `upTo`→`min:0` is faithful. → **Twinleaf bug (min)**, the same class as
 `(min,max)` mismatch so the placement (Invariant B) stays verified. Affects all 3 printings (sv6pt5-12,
 sv6pt5-80, svp-131).
 
+### 38. Energy-attach-from-deck phase — interpreter support + Future/Ancient subtypes (IR-SUPPORT-DESIGN §12.19)
+
+`energy.attach card.from.zone:'deck'` ("search your deck for up to N Energy, attach, then shuffle") is now
+executed (`executeEnergyAttach` deck branch: a `ChooseCardsPrompt` over the deck for the matching energy →
+attach to the destination → `ShuffleDeckPrompt`). The destination reuses the §12.15 Stage-B logic. **`compared`
+791 → 794** (the deck-attach cards with a single-target destination — Flareon ex; +1 from Iron Moth once
+Ancient was added). Cards that attach "in any way you like" (Miraidon *Peak Acceleration*, via an
+`AttachEnergyPrompt`) are the §12.16 spread-geometry case and ambiguity-skip — not a bug, a documented native-
+vs-IR difference.
+
+A dedicated differential (§12.19) seeds the deck with distinct-type Basic Energy + a non-matching decoy, on a
+one-Bench board so Bench-guarded cards fire and a single-target destination aligns first-eligible. It asserts
+**A — same deck-energy set** and **B — each pick attaches the same energy TYPE** (recipient `energyTypes`). **2
+attacks (Flareon ex ×2), 16 picks, 0 mismatches**; Invariant B verified to bite (skew → 16 per-pick mismatches).
+Supporting interp add: the **Future / Ancient** Paradox subtypes in `matchesCardPredicate` (Miraidon's
+destination filter; also Iron Moth's Ancient modifier). No native bugs surfaced by this phase.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |

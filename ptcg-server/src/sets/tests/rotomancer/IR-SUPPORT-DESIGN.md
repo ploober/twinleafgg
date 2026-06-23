@@ -114,7 +114,7 @@ Status legend used throughout:
 | `continuous.modifier` | 131 | 🟡 | See §4. `damageReduction`/`preventDamage`/`damageDebuff` are reproduced (lock‑probed); the rest are **🟦 no‑op**. |
 | `coinFlip` | 104 | ✅ | Under the `ALL_HEADS` harness a flip is heads → run the `then` branch. The interpreter's `headsOf(n)` reproduces the exact head count the native card's real flips would yield. |
 | `heal` | 86 | ✅ | `HealEffect` on each resolved target. |
-| `energy.attach` | 52 | 🟡 | Moves first‑N matching energy from hand/discard onto the target. Counts `exactly`/`upTo`/`all`. **Throws** on `deck` source (a search over filler energy — not a forced outcome). On the differential's bare board the source is usually empty (a genuine forced no‑op). |
+| `energy.attach` | 52 | ✅ | Attaches matching energy onto the target. From hand/discard it's the first‑N matching (deterministic; a non‑trivial pick over many matching energies is ambiguity‑skipped). From the **`deck`** it's a search — the same `ChooseCardsPrompt` over the deck native emits (energy predicate → `blocked`), first‑eligible up to N, then a `ShuffleDeckPrompt` (auto‑resolved NO_SHUFFLE); masking‑safety in **§12.19**. The destination is the shared Stage‑B logic (player‑choice → a `ChoosePokemonPrompt`, all N to the one chosen Pokémon; else the forced target). Counts `exactly`/`upTo`/`all`. |
 | `choice` | 37 | ✅ | Always "you may ⟨then⟩" (empty `else`). Emits a `ConfirmPrompt` (harness always confirms, no ambiguity increment) and runs `then` through the continuation runner — mirrors native. |
 | `if` | 24 | ✅ | Evaluates `when` via `ir-predicates`, runs `then`/`else`. |
 | `energy.move` | 23 | ✅ | Move the first `count` matching attached energy from the source selector to the first‑eligible destination — the same target the harness's `resolveMoveEnergyRaw` picks for native's `MoveEnergyPrompt` (§12.7), so the two agree. (Energy prompts don't touch the ambiguity guard, so no prompt is emitted.) |
@@ -289,7 +289,7 @@ field of energy/`cards.move` ops, and `matching` on modifiers. It **throws on un
 | `energyType` | ✅ | Matches an Energy card's `provides` **and** a Pokémon's own `cardType` (the fix from FINDINGS §9 — `isa energyType:Colorless` on a Pokémon now reads its type). |
 | `subtype: Basic` / `Special` / `Stage 1` / `Stage 2` / `ex` / `Tera` | ✅ | Basic handles both basic energy and Basic Pokémon. |
 | `subtype: Pokémon Tool` / `Supporter` / `Item` / `Stadium` | ✅ | `TrainerCard` with the matching `trainerType` (`TOOL`/`SUPPORTER`/`ITEM`/`STADIUM`). Tool is used by `attached`→discard(Tools); the Trainer subtypes are used by deck‑search reveal cards ("search for a Supporter/Item/Stadium"), verified in §12.17. |
-| `subtype: Ancient` / `Future` | ⛔ | Unsupported subtypes throw → skip (board rarely contains them anyway). |
+| `subtype: Ancient` / `Future` | ✅ | `card.tags.includes(CardTag.ANCIENT / FUTURE)` (the Paradox tags), like `ex`/`Tera`. Used by the energy.attach‑from‑deck destination filter (Miraidon *Peak Acceleration* — "to your Future Pokémon") and Iron Moth's modifier. |
 | `hpAtMost` / `hasRuleBox` / `zoneIs` | ⛔ | spec leaves not yet wired. |
 | `and` / `or` / `not` | ✅ | combinators. |
 
@@ -652,6 +652,22 @@ and `name:Duskull` (Duskull ×3, unseedable as an *identity* check — every mat
 **Native bug surfaced:** King's Order's prompt is `min:1` ([kingdra-ex.ts](../../set-shrouded-fable/kingdra-ex.ts))
 for text that says *"up to 3"* (0 permitted); the IR's `upTo`→`min:0` is faithful → allow‑listed (same class as
 Recovery Net, §12.11), with placement still verified.
+
+### 12.19 Energy‑attach‑from‑deck source differential (source option‑set equivalence)
+`energy.attach card.from.zone:'deck'` ("search your deck for up to N <Energy>, attach …, then shuffle") is now
+executed (`executeEnergyAttach` deck branch). The interpreter already handled the *destination* (the §12.15
+Stage‑B `ChoosePokemonPrompt`); the new part is the *source* — a `ChooseCardsPrompt` over the deck for the
+matching energy + a `ShuffleDeckPrompt`. **`compared` 791→794** (the deck‑attach cards whose destination is a
+single `ChoosePokemonPrompt` — Flareon ex; Miraidon attaches "in any way you like" via an `AttachEnergyPrompt`
+and is the §12.16 spread‑geometry case, ambiguity‑skipped). §12.19 seeds the deck with distinct‑type Basic
+Energy + a non‑matching decoy and runs on a one‑Bench board (so Bench‑guarded cards like Flareon's `hasBenched`
+fire, and a single‑target destination resolves first‑eligible identically on both engines — aligning the
+destination so the SOURCE is what's compared). Asserts **A — same deck‑energy set + bounds** and **B — each
+pick attaches the same energy TYPE** (the recipient's `energyTypes`). Result: **2 attacks (Flareon ex ×2), 16
+picks, 0 mismatches**; Invariant B verified to bite (skew the interp to attach first‑eligible → 16 per‑pick
+mismatches). A supporting interp add: the **Future / Ancient** Paradox subtypes in `matchesCardPredicate`
+(Miraidon's "to your Future Pokémon" destination filter; also unblocks Iron Moth's Ancient modifier → +1
+compared).
 
 ---
 

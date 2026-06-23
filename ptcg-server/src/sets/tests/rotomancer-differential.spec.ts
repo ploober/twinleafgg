@@ -2339,3 +2339,178 @@ describe('Rotomancer discard→bench differential — place option-set equivalen
     expect(multiOption).toBeGreaterThan(0);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Energy-attach-from-deck source differential (§12.19) — `energy.attach card.from.zone:'deck'` ("search your
+// deck for up to N <Energy>, attach …, then shuffle", e.g. Flareon ex Burning Charge, Miraidon Peak
+// Acceleration). The interpreter now executes these (ir-interpreter executeEnergyAttach deck branch: a
+// ChooseCardsPrompt over the deck for the matching energy → attach → ShuffleDeckPrompt). The main differential
+// runs them on a filler deck (ambiguous source); this seeds the deck with distinct Energy + a non-matching
+// decoy and runs on an ACTIVE-ONLY board (so the destination is forced to the Active, isolating the SOURCE
+// choice). It asserts (A) the engines offer the same deck-energy set + bounds and (B) each pick attaches the
+// same energy TYPE (the Active's `energyTypes` multiset distinguishes which energy was searched).
+describe('Rotomancer energy-attach-from-deck differential — source option-set equivalence', () => {
+  const KNOWN_ATTACH_DECK_BUGS: Record<string, string> = {};
+
+  const TYPED: Record<string, string> = {
+    Fire: 'Fire Energy SVE', Grass: 'Grass Energy SVE', Lightning: 'Lightning Energy SVE', Water: 'Water Energy SVE',
+    Psychic: 'Psychic Energy SVE', Fighting: 'Fighting Energy SVE', Darkness: 'Darkness Energy SVE', Metal: 'Metal Energy SVE',
+  };
+  const DISTINCT_BASICS = ['Fire Energy SVE', 'Grass Energy SVE', 'Lightning Energy SVE']; // 3 distinct types
+
+  // Distinct eligible Energy fullNames matching the `predicate`, plus a decoy the filter excludes. Untyped
+  // "Basic Energy" → 3 distinct types (identity-discriminating); a typed filter → 2 of that type (option-set
+  // verified, identity vacuous) + a different-type decoy. A Pokémon decoy tests the supertype gate.
+  function pileForEnergy(pred: any): { eligible: string[]; decoy: string | null } {
+    if (!pred || pred.supertype !== 'Energy') { return { eligible: [], decoy: null }; }
+    if (pred.energyType !== undefined) {
+      const e = TYPED[pred.energyType];
+      if (!e) { return { eligible: [], decoy: null }; }
+      return { eligible: [e, e], decoy: DISTINCT_BASICS.find(x => x !== e) ?? 'Togepi SSP' };
+    }
+    return { eligible: DISTINCT_BASICS.slice(), decoy: 'Togepi SSP' }; // Pokémon decoy → excluded by supertype
+  }
+
+  function findAttachDeck(ops: any[]): any | null {
+    for (const op of ops ?? []) {
+      if (op?.kind === 'energy.attach' && ((op.card || {}).from || {}).zone === 'deck') { return op; }
+      for (const k of ['then', 'else']) {
+        if (Array.isArray(op?.[k])) { const f = findAttachDeck(op[k]); if (f) { return f; } }
+      }
+    }
+    return null;
+  }
+
+  type Elig = { card: Card; index: number };
+  const byName = (a: Elig, b: Elig) => a.card.name < b.card.name ? -1 : a.card.name > b.card.name ? 1 : a.index - b.index;
+  const firstEligiblePick = (elig: Elig[], p: ChooseCardsPrompt) => elig.slice(0, p.options.max).map(e => e.index);
+  const singletonPick = (k: number) => (elig: Elig[]) => { const s = [...elig].sort(byName); return s[k] ? [s[k].index] : []; };
+  const maxPick = (elig: Elig[], p: ChooseCardsPrompt) => { const s = [...elig].sort(byName); return s.slice(0, Math.min(s.length, p.options.max)).map(e => e.index); };
+
+  // One mirror game seeding the searcher's DECK with the eligible energy + decoy, on a board with exactly one
+  // Benched Pokémon (so cards that require a Bench to attach — e.g. Flareon's `hasBenched` guard — actually
+  // fire, while a single-target "attach to 1 of your Pokémon" destination resolves first-eligible identically
+  // on both engines, aligning the destination so the SOURCE choice is what's compared). Captures the
+  // deck-energy ChooseCardsPrompt and resolves via `pick`; the destination + ShuffleDeckPrompt auto-resolve.
+  function runAttachDeck(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    seedDeck: string[], pick: (eligible: Elig[], prompt: ChooseCardsPrompt) => number[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; eligibleNames: string[] } {
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, bench: [{ card: fullName }], deck: seedDeck.slice() },
+      player2: { active: { card: fullName }, deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let eligibleNames: string[] = [];
+    game.overridePrompt(ChooseCardsPromptType, (prompt) => {
+      promptCount++;
+      const p = prompt as ChooseCardsPrompt;
+      const idxs = chooseCardsCandidates(p);
+      if (promptCount === 1) {
+        eligibleNames = idxs.map(i => p.cards.cards[i].name).sort();
+        min = p.options.min; max = p.options.max;
+      }
+      return pick(idxs.map(i => ({ card: p.cards.cards[i], index: i })), p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state), promptCount, min, max, eligibleNames };
+  }
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).map(s => ({ s, op: findAttachDeck(s.body) })).filter(x => x.op !== null) as Array<{ s: any; op: any }>;
+
+  let enumerated = 0, picksChecked = 0, multiOption = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perPickMismatches: string[] = [];
+
+  for (const { s, op } of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_ATTACH_DECK_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const { eligible, decoy } = pileForEnergy(op.card?.predicate);
+    if (eligible.length < 2) { skip('unseedable-predicate'); continue; }
+    const seedDeck = (decoy ? [...eligible, decoy] : eligible.slice()).concat(padDeck(4));
+    try { seedDeck.forEach(getCardByName); } catch { skip('seed-unavailable'); continue; }
+
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (e: Elig[], p: ChooseCardsPrompt) => number[]) =>
+      runAttachDeck(res.fullName!, energies, s.attackLabel, frags, seedDeck, pick);
+
+    let nat, intp;
+    try { nat = run(null, firstEligiblePick); }
+    catch { skip('native-error'); continue; }
+    try { intp = run(fragments, firstEligiblePick); }
+    catch (e: any) { skip(`interp-error: ${String(e?.message ?? e).replace(/"[^"]*"/g, '…')}`); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choosecards-prompt'); continue; }
+
+    enumerated++;
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    const aKey = (r: { eligibleNames: string[]; min: number; max: number }) =>
+      JSON.stringify({ names: r.eligibleNames, min: r.min, max: r.max });
+    if (aKey(nat) !== aKey(intp)) {
+      optionSetMismatches.push(`${tag}: native ${aKey(nat)} vs interp ${aKey(intp)}`);
+      continue;
+    }
+    if (nat.eligibleNames.length > 1 && new Set(nat.eligibleNames).size > 1) { multiOption++; }
+
+    const picks: Array<{ label: string; pick: (e: Elig[], p: ChooseCardsPrompt) => number[] }> = [];
+    if (nat.min <= 1) {
+      for (let k = 0; k < nat.eligibleNames.length; k++) {
+        picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+      }
+    }
+    picks.push({ label: 'max', pick: maxPick });
+    for (const { label, pick } of picks) {
+      picksChecked++;
+      try {
+        const sn = run(null, pick).snap;
+        const si = run(fragments, pick).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perPickMismatches.push(`${tag} pick ${label}: native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perPickMismatches.push(`${tag} pick ${label}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer energy-attach-from-deck differential [source option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (multi-type: ${multiOption})`);
+    console.log(`  picks checked       : ${picksChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-pick mismatch   : ${perPickMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perPickMismatches.map(m => `PICK ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same deck-energy set + bounds', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('every pick attaches the same energy type in both engines', () => {
+    expect(perPickMismatches).toEqual([]);
+  });
+  it('actually exercised a multi-type deck-energy search (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
+  });
+});

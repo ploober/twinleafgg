@@ -13,7 +13,10 @@ import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/p
 import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
+import { CardList } from '../../../game/store/state/card-list';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
+import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
 import { SlotType } from '../../../game/store/actions/play-card-action';
 import { GameMessage } from '../../../game/game-message';
@@ -305,21 +308,15 @@ function affectChoiceTarget(
   });
 }
 
-// energy.attach: move the first-N matching energy from a source zone (hand/deck/discard) onto the
-// target Pokémon. On the differential's board the source is usually empty (→ no-op, a genuine
-// forced outcome); a non-trivial pick (e.g. a deck search over many energies) is flagged by the
-// harness's ambiguity guard and skipped, so this never false-mismatches.
+// energy.attach: attach matching energy from a source zone onto the target Pokémon. From hand/discard it's
+// the first-N matching (deterministic; a non-trivial pick over many matching energies is flagged by the
+// ambiguity guard and skipped). From the DECK it's a search — emit the same ChooseCardsPrompt native does,
+// pick first-eligible up to N, then shuffle. The predicate lives at op.card.predicate (sibling of
+// op.card.from). The destination is the shared Stage-B logic (a player-choice target → a ChoosePokemonPrompt;
+// else the forced target, e.g. role:'self').
 function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State): State {
   const from = op.card?.from;
   const owner = from?.owner === 'opponent' ? effect.opponent : effect.player;
-  let source: any;
-  switch (from?.zone) {
-    case 'hand': source = owner.hand; break;
-    case 'discard': source = owner.discard; break;
-    // 'deck' is a search (a player choice over the whole deck — and the differential's deck is
-    // filler energy), so attaching from it isn't a genuine forced outcome → leave unsupported.
-    default: throw new Error(`[ir-interpreter] energy.attach from zone "${from?.zone}" not supported`);
-  }
   const count: any = op.count;
   let n: number;
   if (count?.kind === 'exactly') { n = count.n ?? 0; }
@@ -327,22 +324,45 @@ function executeEnergyAttach(store: StoreLike, state: State, effect: AttackEffec
   else if (count?.kind === 'all') { n = Infinity; }
   else { throw new Error(`[ir-interpreter] energy.attach count "${count?.kind}" not supported`); }
 
-  // The predicate lives at op.card.predicate (sibling of op.card.from), not op.card.from.predicate.
-  const matching = source.cards.filter((c: any) => c instanceof EnergyCard && matchesCardPredicate(c, op.card?.predicate));
+  // Attach the resolved `toAttach` energies to the destination, then run `after`. Player-choice target →
+  // the same ChoosePokemonPrompt native emits, attaching all N to the one chosen Pokémon (native's
+  // any-way-you-like AttachEnergyPrompt geometry differs and is ambiguity-skipped when >1 dest is eligible);
+  // else the forced target. Nothing to attach → no prompt, no move (matches native).
+  const attachThen = (s: State, src: CardList, toAttach: Card[], after: (s: State) => State): State => {
+    if (toAttach.length === 0) { return after(s); }
+    if (isSingleChoiceTarget(op.target?.of)) {
+      return affectChoiceTarget(store, s, effect, op, (s2, t) => { src.moveCardsTo(toAttach, t.list); return s2; }, after);
+    }
+    const targets = resolveTargets(s, effect, op.target);
+    if (targets.length > 0) { src.moveCardsTo(toAttach, targets[0].list); }
+    return after(s);
+  };
+
+  // Deck source = "search your deck for up to N <Energy>, attach …, then shuffle." Emit the ChooseCardsPrompt
+  // over the deck native does (energy predicate → `blocked`), pick first-eligible up to N, attach, then a
+  // ShuffleDeckPrompt (auto-resolved to NO_SHUFFLE). §12.19 seeds the deck for a non-vacuous check.
+  if (from?.zone === 'deck') {
+    const deck = owner.deck;
+    const blocked: number[] = [];
+    deck.cards.forEach((c, i) => { if (!(c instanceof EnergyCard) || !matchesCardPredicate(c, op.card?.predicate)) { blocked.push(i); } });
+    const max = n === Infinity ? deck.cards.length - blocked.length : n;
+    const prompt = new ChooseCardsPrompt(
+      owner, GameMessage.CHOOSE_CARD_TO_ATTACH, deck, {}, { min: 0, max, allowCancel: false, blocked }
+    );
+    return store.prompt(state, prompt, (selected: Card[] | null) =>
+      attachThen(state, deck, selected ?? [], (s) =>
+        store.prompt(s, new ShuffleDeckPrompt(owner.id), (order: number[] | null) => { if (order) { deck.applyOrder(order); } return cont(s); })));
+  }
+
+  let source: CardList;
+  switch (from?.zone) {
+    case 'hand': source = owner.hand; break;
+    case 'discard': source = owner.discard; break;
+    default: throw new Error(`[ir-interpreter] energy.attach from zone "${from?.zone}" not supported`);
+  }
+  const matching = source.cards.filter((c: Card) => c instanceof EnergyCard && matchesCardPredicate(c, op.card?.predicate));
   const toAttach = matching.slice(0, n === Infinity ? matching.length : n);
-  // Nothing to attach → no prompt, no move (matches native, which doesn't ask where to put zero cards).
-  // This keeps the ambiguity guard aligned: the destination choice only exists when there's energy to place.
-  if (toAttach.length === 0) { return cont(state); }
-  // Player-choice destination ("attach to 1 of your Pokémon") → emit the same ChoosePokemonPrompt native
-  // does (Stage B), aligning first-eligible on both engines, rather than throwing.
-  if (isSingleChoiceTarget(op.target?.of)) {
-    return affectChoiceTarget(store, state, effect, op, (s, t) => { source.moveCardsTo(toAttach, t.list); return s; }, cont);
-  }
-  const targets = resolveTargets(state, effect, op.target);
-  if (targets.length > 0) {
-    source.moveCardsTo(toAttach, targets[0].list);
-  }
-  return cont(state);
+  return attachThen(state, source, toAttach, cont);
 }
 
 function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrOp, cont: (state: State) => State, bindings: Bindings): State {

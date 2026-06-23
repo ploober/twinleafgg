@@ -90,6 +90,8 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
       case 'Stage 2': if ((card as PokemonCard).stage !== Stage.STAGE_2) return false; break;
       case 'ex': if (!card.tags.includes(CardTag.POKEMON_ex)) return false; break;
       case 'Tera': if (!card.tags.includes(CardTag.POKEMON_TERA)) return false; break;
+      case 'Future': if (!card.tags.includes(CardTag.FUTURE)) return false; break;
+      case 'Ancient': if (!card.tags.includes(CardTag.ANCIENT)) return false; break;
       case 'Pokémon Tool': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.TOOL) return false; break;
       case 'Supporter': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.SUPPORTER) return false; break;
       case 'Item': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.ITEM) return false; break;
