@@ -356,7 +356,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       dispatchAndCollect(() => dispatchAction(game, action));
       // Only an attack auto-ends a turn; any other dispatched action clears the "just attacked" state,
       // so the absorption window is exactly attack → (effect prompts) → that attacker's endTurn.
-      turnEndedBy = action.type === 'declareAttack' ? action.actor : null;
+      turnEndedBy = action.type === 'declareAttack' && (action.actor === 'A' || action.actor === 'B')
+        ? action.actor : null;
       continue;
     }
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
