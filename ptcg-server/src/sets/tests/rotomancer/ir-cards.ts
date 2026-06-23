@@ -11,6 +11,7 @@ import { SuperType, EnergyType, CardType, CardTag, Stage, TrainerType } from '..
 import { MOVE_CARDS, TAKE_X_PRIZES } from '../../../game/store/prefabs/prefabs';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
+import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { GameMessage } from '../../../game/game-message';
 import { resolveV2Selector } from './ir-selectors';
@@ -19,10 +20,11 @@ import { resolveV2Selector } from './ir-selectors';
  * Executes the deterministic subset of the IR `cards.move` op (and the card-predicate vocabulary
  * it shares with other selectors). Supports zones hand/deck/discard/lostzone, the bench→active
  * switch, attached → hand/discard (move a card off a Pokémon via PokemonCardList.moveCardsTo), and
- * prize → hand (the native TAKE_X_PRIZES prefab); select modes `None` (top-N), `auto`
- * (predicate-filtered), and `player` (a ChooseCardsPrompt); counts exactly/all/upTo. Anything that
- * needs a deck search or randomness throws — the differential then skips that card rather than risk a
- * choice-alignment false positive.
+ * prize → hand (the native TAKE_X_PRIZES prefab), and deck search → hand/Bench (ChooseCardsPrompt over
+ * the deck + ShuffleDeckPrompt, mirroring native); select modes `None` (top-N), `auto`
+ * (predicate-filtered), and `player` (a ChooseCardsPrompt); counts exactly/all/upTo. Reveal show-then-take
+ * and randomness still throw — the differential then skips that card rather than risk a choice-alignment
+ * false positive.
  */
 
 const ENERGY_TYPE_BY_NAME: Record<string, CardType> = {
@@ -88,6 +90,9 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
       case 'ex': if (!card.tags.includes(CardTag.POKEMON_ex)) return false; break;
       case 'Tera': if (!card.tags.includes(CardTag.POKEMON_TERA)) return false; break;
       case 'Pokémon Tool': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.TOOL) return false; break;
+      case 'Supporter': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.SUPPORTER) return false; break;
+      case 'Item': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.ITEM) return false; break;
+      case 'Stadium': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.STADIUM) return false; break;
       default: throw new Error(`[ir-cards] unsupported card subtype "${pred.subtype}"`);
     }
   }
@@ -145,7 +150,18 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player' && chooser !== 'opponent') {
     throw new Error(`[ir-cards] unsupported cards.move chooser "${chooser}"`);
   }
-  if (op.visibility === 'search' || op.count?.searchTyped) {
+  // Deck search ("search your deck for …, then shuffle"). The supported shapes — search your OWN deck,
+  // player-chosen, into hand or onto the Bench — emit the same ChooseCardsPrompt + shuffle native does
+  // (see executeDeckSearch). `reveal → hand` ("reveal it, put it into your hand") is included: the reveal
+  // is a ShowCards step that is inert to the snapshot (it changes only opponent knowledge), so mechanically
+  // it is a search → hand. Anything else (opponent's deck, other destinations) keeps the single
+  // deck-search skip reason so no new audit bucket appears.
+  if (op.visibility === 'search' || op.visibility === 'reveal' || op.count?.searchTyped) {
+    const toZone = op.to?.zone;
+    if (op.from?.zone === 'deck' && op.from?.owner !== 'opponent'
+      && chooser === 'player' && (toZone === 'hand' || toZone === 'bench')) {
+      return executeDeckSearch(store, state, effect, op, cont, bindings);
+    }
     throw new Error('[ir-cards] cards.move deck search not supported');
   }
 
@@ -251,6 +267,60 @@ function executeCardsMoveChoice(
     const cards = selected ?? [];
     if (op.bindAs) { bindings[op.bindAs] = cards; } // discard-and-scale: record what was moved for countOf
     return cont(cards.length ? MOVE_CARDS(store, state, from, to, { cards }) : state);
+  });
+}
+
+// Deck search: "search your deck for a card → hand" or "for a Basic Pokémon → Bench, then shuffle".
+// Mirrors the native idiom (Scatterbug "Call for Family", Korrina, Farfetch'd): a ChooseCardsPrompt over
+// the deck with the `where` predicate as `blocked` (so the filter-aware harness picks the identical
+// first-N matching cards), owned by the searcher; the picks move to hand (MOVE_CARDS) or onto the first
+// open Bench slots (PokemonCardList placement); then a ShuffleDeckPrompt — which the harness auto-resolves
+// to the NO_SHUFFLE identity (and skips its lexicographic-sort validate bug). The Bench fetch is capped by
+// open Bench slots, exactly as native ("put it onto your Bench" needs a free slot). Native shuffles
+// regardless of whether anything was found, so the shuffle is emitted unconditionally; it's
+// snapshot-neutral (the snapshot reads deck COUNT, not order). The deck is private, so this is only a
+// meaningful cross-check when the deck is seeded with a findable target — see the §12.17 differential.
+function executeDeckSearch(
+  store: StoreLike, state: State, effect: AttackEffect, op: any,
+  cont: (state: State) => State, bindings: Record<string, Card[]>
+): State {
+  const player = effect.player;
+  const deck = player.deck;
+  const toHand = op.to?.zone === 'hand';
+  const where = op.select?.where;
+  const blocked: number[] = [];
+  deck.cards.forEach((c, i) => { if (!matchesCardPredicate(c, where)) { blocked.push(i); } });
+  const eligible = deck.cards.length - blocked.length;
+  // max is the nominal count bound, capped only by open Bench slots for a Bench fetch (native does the same —
+  // you can't fetch more Pokémon than you have room for). NOT capped by `eligible`: native's prompt max is
+  // nominal and ineligible cards are excluded via `blocked`, so the harness already picks at most `eligible`.
+  const openBench = player.bench.filter(b => b.getPokemonCard() === undefined).length;
+  const benchCap = toHand ? Number.MAX_SAFE_INTEGER : openBench;
+  const max = Math.max(0, Math.min(countToMinMax(op.count, eligible).max, benchCap));
+
+  const prompt = new ChooseCardsPrompt(
+    player, GameMessage.CHOOSE_CARD_TO_HAND, deck, {}, { min: 0, max, allowCancel: false, blocked }
+  );
+  return store.prompt(state, prompt, (selected: Card[] | null) => {
+    const cards = selected ?? [];
+    if (op.bindAs) { bindings[op.bindAs] = cards; }
+    let s = state;
+    if (cards.length) {
+      if (toHand) {
+        s = MOVE_CARDS(store, s, deck, player.hand, { cards });
+      } else {
+        // Place onto open Bench slots one at a time (re-find each iteration as slots fill); `max` already
+        // clamped to open slots so every chosen card lands.
+        for (const card of cards) {
+          const slot = player.bench.find(b => b.getPokemonCard() === undefined);
+          if (slot) { deck.moveCardTo(card, slot); }
+        }
+      }
+    }
+    return store.prompt(s, new ShuffleDeckPrompt(player.id), (order: number[] | null) => {
+      if (order) { deck.applyOrder(order); }
+      return cont(s);
+    });
   });
 }
 

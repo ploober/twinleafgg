@@ -1938,3 +1938,213 @@ describe('Rotomancer energy-attach differential — destination option-set equiv
     expect(multiDest).toBeGreaterThan(0);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// Deck-search differential (§12.17) — extends option-set equivalence to `cards.move` ops that SEARCH the
+// deck ("search your deck for … → hand/Bench, then shuffle"; includes the reveal→hand variant, whose
+// reveal is a snapshot-inert ShowCards). The main differential now resolves these (ir-cards executeDeckSearch),
+// but on its padDeck filler deck the search finds nothing → both engines no-op → they agree VACUOUSLY, and
+// the deck is private so the snapshot has no deckNames to tell which card moved. So this differential SEEDS
+// the deck with distinct findable targets + a decoy the filter must exclude, and verifies (A) native and
+// interp offer the same search results + bounds and (B) each pick lands the same card in hand / the same
+// species on the Bench — reading the identity-aware snapshot (handNames for → hand, the per-Bench-Pokémon
+// `name` for → Bench).
+describe('Rotomancer deck-search differential — search option-set equivalence', () => {
+  // Native deck-search divergences the full-option-set check surfaces (a wrong result set/bound, or a pick
+  // that lands the wrong card). interp faithfully encodes the IR/printed text, so per the standing rule these
+  // are allow-listed, never fixed (memory: rotomancer-no-card-fixes); keyed by printingId.
+  const KNOWN_DECK_SEARCH_BUGS: Record<string, string> = {};
+
+  // Distinct, guaranteed-registered seed cards. SEED_POKEMON are all Basic (so they satisfy a "Basic Pokémon"
+  // Bench search AND an "any Pokémon" reveal search); distinct names so each pick leaves a distinct snapshot.
+  const SEED_POKEMON = ['Togepi SSP', 'Turtonator SSP', 'Trapinch SSP'];
+  const SEED_ENERGY = ['Fire Energy SVE', 'Grass Energy SVE', 'Lightning Energy SVE'];
+  // Distinct registered Trainers per subtype, so a "search for a Supporter / Item / Stadium" reveal lands a
+  // matching card AND a wrong-subtype Trainer decoy is excluded by the subtype filter (exercising the
+  // matchesCardPredicate Supporter/Item/Stadium cases that back this).
+  const SUPPORTERS = ['Copycat EX', 'Town Volunteers AQ'];
+  const ITEMS = ['Bill BS', 'Defender BS'];
+  const STADIUMS = ['Pokemon Tower PR', 'Energy Stadium N4'];
+
+  // Distinct eligible fullNames matching the search `where`, plus one decoy the filter must exclude (so the
+  // *filter agreement* part of Invariant A bites: both engines must drop the decoy — a cross-subtype Trainer
+  // where possible, so the subtype filter itself is the discriminator). `where` shapes we don't synthesize
+  // (name/evolvesFrom/typed-Pokémon/Tool — rare, mostly unmapped) return empty → skipped.
+  function searchPileFor(where: any): { eligible: string[]; decoy: string | null } {
+    if (!where) { return { eligible: [SUPPORTERS[0], SEED_POKEMON[0], SEED_ENERGY[0]], decoy: null }; }
+    if (where.name !== undefined || where.evolvesFrom !== undefined || where.energyType !== undefined) {
+      return { eligible: [], decoy: null };
+    }
+    const sup = where.supertype;
+    if (sup === 'Pokémon') { return { eligible: SEED_POKEMON.slice(), decoy: SEED_ENERGY[0] }; }
+    if (sup === 'Energy') { return { eligible: SEED_ENERGY.slice(), decoy: SEED_POKEMON[0] }; }
+    if (sup === 'Trainer') {
+      const st = where.subtype;
+      if (st === 'Supporter') { return { eligible: SUPPORTERS.slice(), decoy: ITEMS[0] }; }
+      if (st === 'Item') { return { eligible: ITEMS.slice(), decoy: SUPPORTERS[0] }; }
+      if (st === 'Stadium') { return { eligible: STADIUMS.slice(), decoy: ITEMS[0] }; }
+      if (st === undefined) { return { eligible: [SUPPORTERS[0], ITEMS[0]], decoy: SEED_ENERGY[0] }; }
+      return { eligible: [], decoy: null }; // Pokémon Tool etc. — not seeded
+    }
+    return { eligible: [], decoy: null };
+  }
+
+  // The in-scope class: a player-chosen `cards.move` searching your OWN deck → hand/Bench (the shapes
+  // executeDeckSearch handles), found anywhere in the body — recurse into choice/if `then`/`else` so the
+  // optional "you may search" (unbounded → hand) variant is caught too.
+  function findDeckSearch(ops: any[]): any | null {
+    for (const op of ops ?? []) {
+      if (op?.kind === 'cards.move' && op.select?.chooser === 'player'
+        && (op.visibility === 'search' || op.visibility === 'reveal' || op.count?.searchTyped)
+        && op.from?.zone === 'deck' && op.from?.owner !== 'opponent'
+        && (op.to?.zone === 'hand' || op.to?.zone === 'bench')) {
+        return op;
+      }
+      for (const k of ['then', 'else']) {
+        if (Array.isArray(op?.[k])) { const f = findDeckSearch(op[k]); if (f) { return f; } }
+      }
+    }
+    return null;
+  }
+
+  type Elig = { card: Card; index: number };
+  const byName = (a: Elig, b: Elig) => a.card.name < b.card.name ? -1 : a.card.name > b.card.name ? 1 : a.index - b.index;
+  const firstEligiblePick = (elig: Elig[], p: ChooseCardsPrompt) => elig.slice(0, p.options.max).map(e => e.index);
+  const singletonPick = (k: number) => (elig: Elig[]) => { const s = [...elig].sort(byName); return s[k] ? [s[k].index] : []; };
+  const maxPick = (elig: Elig[], p: ChooseCardsPrompt) => { const s = [...elig].sort(byName); return s.slice(0, Math.min(s.length, p.options.max)).map(e => e.index); };
+
+  // One mirror game seeding the searcher's DECK with the eligible pile + decoy, empty Bench so Bench fetches
+  // have room. Registers a ChooseCardsPrompt override capturing the eligible name-multiset + (min,max) and
+  // resolving via `pick`; ShuffleDeckPrompt/ShowCardsPrompt fall through to the default auto-resolver.
+  function runDeckSearch(
+    fullName: string, energies: string[], attackLabel: string, fragments: IrFragment[] | null,
+    seedDeck: string[], pick: (eligible: Elig[], prompt: ChooseCardsPrompt) => number[]
+  ): { snap: Snapshot; promptCount: number; min: number; max: number; eligibleNames: string[] } {
+    const game = setupGame({
+      turn: 2,
+      player1: { active: { card: fullName, energy: energies }, deck: seedDeck.slice() },
+      player2: { active: { card: fullName }, deck: padDeck(10) },
+    });
+    if (fragments) {
+      const native = game.state.players[0].active.cards[0];
+      const ic = buildInterpretedCard(native, fragments);
+      ic.id = native.id;
+      game.state.players[0].active.cards[0] = ic;
+    }
+    let promptCount = 0, min = 0, max = 0;
+    let eligibleNames: string[] = [];
+    game.overridePrompt(ChooseCardsPromptType, (prompt) => {
+      promptCount++;
+      const p = prompt as ChooseCardsPrompt;
+      const idxs = chooseCardsCandidates(p);
+      if (promptCount === 1) {
+        eligibleNames = idxs.map(i => p.cards.cards[i].name).sort();
+        min = p.options.min; max = p.options.max;
+      }
+      return pick(idxs.map(i => ({ card: p.cards.cards[i], index: i })), p);
+    });
+    useAttack(game.store, game.state, 0, attackLabel);
+    return { snap: snapshot(game.state, true), promptCount, min, max, eligibleNames };
+  }
+
+  const file = path.join(__dirname, 'rotomancer', 'fixtures', 'attack-scenarios.json');
+  const scenarios = (JSON.parse(fs.readFileSync(file, 'utf8')).scenarios as Array<{
+    printingId: string; name: string; attackLabel: string; cost: string[]; body: IrFragment['body'];
+  }>).map(s => ({ s, op: findDeckSearch(s.body) })).filter(x => x.op !== null) as Array<{ s: any; op: any }>;
+
+  let enumerated = 0, picksChecked = 0, multiOption = 0, benchEnumerated = 0, handEnumerated = 0;
+  const skips: Record<string, number> = {};
+  const skip = (r: string) => { skips[r] = (skips[r] ?? 0) + 1; };
+  const optionSetMismatches: string[] = [];
+  const perPickMismatches: string[] = [];
+
+  for (const { s, op } of scenarios) {
+    const res = resolvePrinting(s.printingId, s.name);
+    if (res.status !== 'exact') { skip('non-exact'); continue; }
+    const card = getCardByName(res.fullName!);
+    if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
+    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (KNOWN_DECK_SEARCH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
+
+    const { eligible, decoy } = searchPileFor(op.select?.where);
+    if (eligible.length < 2) { skip('unseedable-predicate'); continue; }
+    // Filler (excluded by any Pokémon/Trainer filter); for an unbounded search it is eligible too, which is
+    // fine — Invariant A just compares the whole-deck set both engines see.
+    const seedDeck = (decoy ? [...eligible, decoy] : eligible.slice()).concat(padDeck(6));
+    try { seedDeck.forEach(getCardByName); } catch { skip('seed-unavailable'); continue; }
+
+    const toBench = op.to?.zone === 'bench';
+    const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
+    const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
+    const run = (frags: IrFragment[] | null, pick: (e: Elig[], p: ChooseCardsPrompt) => number[]) =>
+      runDeckSearch(res.fullName!, energies, s.attackLabel, frags, seedDeck, pick);
+
+    let nat, intp;
+    // Native throwing = a native-error card (the native impl raises on attack — benign, the main differential
+    // skips these too). Interp throwing = a real executeDeckSearch bug → surfaced with its message.
+    try { nat = run(null, firstEligiblePick); }
+    catch { skip('native-error'); continue; }
+    try { intp = run(fragments, firstEligiblePick); }
+    catch (e: any) { skip(`interp-error: ${String(e?.message ?? e).replace(/"[^"]*"/g, '…')}`); continue; }
+
+    if (nat.promptCount === 0 || intp.promptCount === 0) { skip('no-choosecards-prompt'); continue; }
+
+    enumerated++;
+    if (toBench) { benchEnumerated++; } else { handEnumerated++; }
+    const tag = `${s.printingId} ${s.attackLabel} (${s.name})`;
+    // Invariant A — same search results AND same (min,max), by card identity (sorted name multiset).
+    const aKey = (r: { eligibleNames: string[]; min: number; max: number }) =>
+      JSON.stringify({ names: r.eligibleNames, min: r.min, max: r.max });
+    if (aKey(nat) !== aKey(intp)) {
+      optionSetMismatches.push(`${tag}: native ${aKey(nat)} vs interp ${aKey(intp)}`);
+      continue;
+    }
+    if (nat.eligibleNames.length > 1) { multiOption++; }
+
+    // Invariant B — each pick lands the same card/species (every eligible card as a singleton, plus the
+    // max-count pick). The identity-aware snapshot is load-bearing: → hand is distinguished by handNames,
+    // → Bench by the per-Bench-Pokémon `name` (which species was searched out).
+    const picks: Array<{ label: string; pick: (e: Elig[], p: ChooseCardsPrompt) => number[] }> = [];
+    if (nat.min <= 1) {
+      for (let k = 0; k < nat.eligibleNames.length; k++) {
+        picks.push({ label: `single[${nat.eligibleNames[k]}]`, pick: singletonPick(k) });
+      }
+    }
+    picks.push({ label: 'max', pick: maxPick });
+    for (const { label, pick } of picks) {
+      picksChecked++;
+      try {
+        const sn = run(null, pick).snap;
+        const si = run(fragments, pick).snap;
+        if (JSON.stringify(sn) !== JSON.stringify(si)) {
+          perPickMismatches.push(`${tag} pick ${label}: native ${JSON.stringify(sn)} vs interp ${JSON.stringify(si)}`);
+        }
+      } catch (e: any) {
+        perPickMismatches.push(`${tag} pick ${label}: threw ${String(e?.message ?? e)}`);
+      }
+    }
+  }
+
+  beforeAll(() => {
+    /* eslint-disable no-console */
+    console.log(`\n── Rotomancer deck-search differential [search option-set equivalence] ──`);
+    console.log(`  candidate scenarios : ${scenarios.length}`);
+    console.log(`  enumerated          : ${enumerated} (→bench: ${benchEnumerated}, →hand: ${handEnumerated}, multi-option: ${multiOption})`);
+    console.log(`  picks checked       : ${picksChecked}`);
+    console.log(`  option-set mismatch : ${optionSetMismatches.length}`);
+    console.log(`  per-pick mismatch   : ${perPickMismatches.length}`);
+    console.log(`  skipped             : ${JSON.stringify(skips)}`);
+    [...optionSetMismatches.map(m => `OPTSET ${m}`), ...perPickMismatches.map(m => `PICK ${m}`)].forEach(m => console.log(`   • ${m}`));
+    /* eslint-enable no-console */
+  });
+
+  it('native and interp offer the same deck-search results + bounds', () => {
+    expect(optionSetMismatches).toEqual([]);
+  });
+  it('every pick lands the same card/species in both engines', () => {
+    expect(perPickMismatches).toEqual([]);
+  });
+  it('actually exercised a multi-result deck search (non-vacuity)', () => {
+    expect(multiOption).toBeGreaterThan(0);
+  });
+});

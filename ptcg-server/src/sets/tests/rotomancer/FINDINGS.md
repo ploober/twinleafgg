@@ -1064,6 +1064,39 @@ set + same per-destination outcome over a discard seeded with `[F]`/`[R]` energy
 proven to bite (skew → 7 mismatches differing only in which benched Pokémon gained the energy). Masking risk
 for the `energy.attach` destination retired.
 
+### 36. Deck-search phase — interpreter support + masking-safe differential (IR-SUPPORT-DESIGN §12.17)
+
+The largest reachable counted-skip bucket was deck search (`cards.move from:deck` → hand/Bench, "search your
+deck for … then shuffle"). The interpreter now **executes** it (`executeDeckSearch`): the same
+`ChooseCardsPrompt` over the deck native emits (predicate → `blocked`) → move to hand (`MOVE_CARDS`) or onto the
+first open Bench slots (`moveCardTo`, capped by open slots) → `ShuffleDeckPrompt` (the harness auto-resolves it
+to the NO_SHUFFLE identity, skipping its lexicographic-sort `validate` bug). The **`reveal`→hand** variant is
+included: its reveal is a `ShowCards` step that is **inert to the snapshot** (it changes only opponent
+knowledge), so mechanically it is a search→hand. **Result: `compared` 770 → 788** (+18; baseline re-pinned, the
+`cards.move deck search not supported` skip reason retired).
+
+**Corpus reality check (a correction).** An early exploration reported the reveal variant as "1 card, complex
+show-then-take semantics." The corpus actually has **36** `reveal`→hand ops, and of the **18** Twinleaf-mapped
+comparable deck-searches, **16 are reveal**, only 2 are plain search→bench/hand — so deferring reveal would have
+deferred 16 of 18. Including it (a one-line dispatch change, since reveal is snapshot-inert) is where the
+coverage actually lives.
+
+**Why a dedicated differential.** The main differential seeds every deck with `padDeck` filler, so a "search for
+a Basic Pokémon" finds nothing → both engines no-op → they agree **vacuously**, and the deck is private (no
+`deckNames`) so a count-based check can't see *which* card moved. §12.17 **seeds the deck** with distinct
+findable targets + a cross-subtype decoy and asserts **A — same search results + bounds** (filter agreement; the
+decoy must be dropped) and **B — each pick lands the same card/species** (identity snapshot: `handNames` for
+→hand, the per-Bench-Pokémon `name` for →Bench). **16 attacks (2 →Bench, 14 →hand), 71 picks, 0 mismatches**;
+both invariants verified to bite (disable the interp deck filter → 16 option-set mismatches; move first-eligible
+instead of the pick → 45 per-pick mismatches).
+
+**Supporting interp fix (fair game, faithful).** `matchesCardPredicate` gained the **Supporter / Item / Stadium**
+Trainer subtypes (it had only `Pokémon Tool`); the reveal "search for a Supporter/Item/Stadium" cards need them.
+On the main differential's energy-filler deck this is invisible (energy fails the `supertype` check before the
+subtype switch), but the §12.17 seeded Trainer decks exercise it directly. **Out of scope, documented:**
+deck-searches whose **native** card throws on attack (9, benign — the main differential skips these too) and
+typed/named/Tool targets we don't synthesize a seed pile for. No native bugs surfaced by this phase.
+
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 
 | bucket | count | who's wrong (Limitless-verified) |
