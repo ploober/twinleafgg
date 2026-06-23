@@ -1310,7 +1310,10 @@ describe('Rotomancer card-choice differential — ChooseCards option-set equival
   const FLAT_ZONES = new Set(['hand', 'deck', 'discard', 'lostzone']);
   function flatPlayerCardMove(body: any[]): any | null {
     for (const op of body) {
-      if (op.kind !== 'cards.move' || op.select?.chooser !== 'player') { continue; }
+      if (op.kind !== 'cards.move') { continue; }
+      // `player` (you choose) or `opponent` (your opponent chooses from their own zone — Cursed Words /
+      // Tighten Up); both emit a ChooseCardsPrompt owned by the chooser, verified the same way.
+      if (op.select?.chooser !== 'player' && op.select?.chooser !== 'opponent') { continue; }
       if (op.visibility === 'search' || op.count?.searchTyped) { continue; }
       if (!FLAT_ZONES.has(op.from?.zone) || !FLAT_ZONES.has(op.to?.zone)) { continue; }
       return op;

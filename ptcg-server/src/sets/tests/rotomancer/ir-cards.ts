@@ -107,16 +107,29 @@ function resolveZone(effect: AttackEffect, ref: any): CardList {
 
 // A bench→active "move" of the same owner is a Pokémon SWITCH (promote / gust-up), not a card-zone
 // move — the engine does it with player.switchPokemon, exactly like native switch attacks (e.g.
-// Honchkrow). `chooser:'player'` → emit the same ChoosePokemonPrompt over the Bench native does, so
-// the harness picks the identical first-eligible benched Pokémon on both runs. No legal target → no-op.
+// Honchkrow). Emit the same ChoosePokemonPrompt over the Bench native does, so the harness picks the
+// identical first-eligible benched Pokémon on both runs. No legal target → no-op.
 function executeSwitch(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State): State {
-  const owner = op.from?.owner === 'opponent' ? effect.opponent : effect.player;
-  const ownerType = op.from?.owner === 'opponent' ? PlayerType.TOP_PLAYER : PlayerType.BOTTOM_PLAYER;
+  const owner = op.from?.owner === 'opponent' ? effect.opponent : effect.player; // whose Active is swapped
+  const chooserPlayer = op.select?.chooser === 'opponent' ? effect.opponent : effect.player; // who picks
+  // The Bench prompt is framed from the CHOOSER's perspective: BOTTOM if they own that Bench, else TOP —
+  // matching native. A player-chosen gust (Follow Me/Pull) prompts the attacker over the opponent's Bench
+  // (TOP); an opponent-chosen switch (Whirlwind/Push Down) uses SWITCH_ACTIVE_WITH_BENCHED(opponent) →
+  // the opponent over their own Bench (opponent.id, BOTTOM).
+  const ownerType = owner === chooserPlayer ? PlayerType.BOTTOM_PLAYER : PlayerType.TOP_PLAYER;
+  // Ordering guard: the defender's attack damage is accrued in `effect.damage` and applied by the framework
+  // AFTER this reduce (so weakness/resistance/prevention run). Native applies that damage to the CURRENT
+  // Active, then switches in AfterAttackEffect — but switching the defender HERE, inline, would land the
+  // pending damage on the switched-in Pokémon instead (e.g. Push Down: 50 then opponent switches). We can't
+  // faithfully order deferred‑defender‑damage before an inline switch‑of‑the‑defender → defer (throw → skip).
+  if (owner === effect.opponent && effect.damage > 0) {
+    throw new Error('[ir-cards] switch-the-defender after pending defender damage not supported (ordering)');
+  }
   if (!owner.bench.some(b => b.getPokemonCard() !== undefined)) {
     return cont(state); // nothing on the Bench to switch in — snapshot-neutral, as native guards
   }
   const prompt = new ChoosePokemonPrompt(
-    effect.player.id, GameMessage.CHOOSE_POKEMON_TO_SWITCH, ownerType, [SlotType.BENCH],
+    chooserPlayer.id, GameMessage.CHOOSE_POKEMON_TO_SWITCH, ownerType, [SlotType.BENCH],
     { min: 1, max: 1, allowCancel: false }
   );
   return store.prompt(state, prompt, (chosen: PokemonCardList[] | null) => {
@@ -129,7 +142,7 @@ function executeSwitch(store: StoreLike, state: State, effect: AttackEffect, op:
 export function executeCardsMove(store: StoreLike, state: State, effect: AttackEffect, op: any, cont: (state: State) => State, bindings: Record<string, Card[]>): State {
   // v2: select.chooser (player/opponent/auto) + select.where (predicate).
   const chooser = op.select?.chooser;
-  if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player') {
+  if (chooser !== undefined && chooser !== 'auto' && chooser !== 'player' && chooser !== 'opponent') {
     throw new Error(`[ir-cards] unsupported cards.move chooser "${chooser}"`);
   }
   if (op.visibility === 'search' || op.count?.searchTyped) {
@@ -155,9 +168,11 @@ export function executeCardsMove(store: StoreLike, state: State, effect: AttackE
   const from = resolveZone(effect, op.from);   // throws on bench/active → counted skip
   const to = resolveZone(effect, op.to);
 
-  // `chooser:'player'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`, so the
-  // now-filter-aware harness picks the identical first-N matching cards), aligning the ambiguity guard.
-  if (chooser === 'player') {
+  // `chooser:'player'`/`'opponent'` → emit the same ChooseCardsPrompt native does (predicate → `blocked`,
+  // so the now-filter-aware harness picks the identical first-N matching cards), owned by the chooser, so
+  // the ambiguity guard aligns. (`opponent` = "your opponent chooses a card from their hand", e.g. Cursed
+  // Words / Tighten Up.)
+  if (chooser === 'player' || chooser === 'opponent') {
     return executeCardsMoveChoice(store, state, effect, op, from, to, cont, bindings);
   }
 
@@ -226,8 +241,11 @@ function executeCardsMoveChoice(
     return cont(state);                          // snapshot-neutral no-op
   }
   const { min, max } = countToMinMax(op.count, eligible);
+  // The prompt is owned by the chooser — `opponent` ("your opponent chooses") frames it to the opponent,
+  // matching native (which prompts the card's controller's opponent).
+  const chooserPlayer = op.select?.chooser === 'opponent' ? effect.opponent : effect.player;
   const prompt = new ChooseCardsPrompt(
-    effect.player, GameMessage.CHOOSE_CARD_TO_HAND, from, {}, { min, max, allowCancel: false, blocked }
+    chooserPlayer, GameMessage.CHOOSE_CARD_TO_HAND, from, {}, { min, max, allowCancel: false, blocked }
   );
   return store.prompt(state, prompt, (selected: Card[] | null) => {
     const cards = selected ?? [];

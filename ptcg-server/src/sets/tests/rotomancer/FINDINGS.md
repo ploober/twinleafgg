@@ -880,8 +880,35 @@ Ploy*) and opponent-switch (*Follow Me*, *Pull*) all clean, **no native bugs**. 
 verified load-bearing: a deliberate always-switch-to-bench[0] skew produced **26** per-target mismatches that
 differ *only* in `name` (native promotes e.g. Turtonator, skewed-interp promotes Togepi — both 0 damage, 0
 energy) — exactly the case a count-only snapshot would have passed. Honest counted skips: 18 non-exact, 5
-build-error (2 native name-drift `UNKNOWN_ATTACK` — Ninjask *U-turn*; and **3 `chooser:'opponent'`** switches —
-Bayleef *Push Down*, Yanma *Whirlwind* ×2 — the throw-to-skip for the `chooser:'opponent'` deferral).
+build-error (2 native name-drift `UNKNOWN_ATTACK` — Ninjask *U-turn*; and `chooser:'opponent'` — addressed in §30).
+
+### 30. `chooser:'opponent'` alignment — the opponent picks
+
+The last choice axis the differentials couldn't align: a choice the **opponent** makes. Census: **0**
+affect-target opponent-choosers; **23** `cards.move chooser:'opponent'` (16 bench→active switches — *Whirlwind*,
+*Push Down*, …; 7 hand→deck/discard — *Cursed Words*, *Tighten Up*), all previously throwing
+`unsupported cards.move chooser "opponent"`. Three interp changes align it (the IR interpreter *is* the
+integration under test): `executeSwitch` frames the Bench prompt from the **chooser's** perspective
+(`opponent.id`/`BOTTOM`, matching native's `SWITCH_ACTIVE_WITH_BENCHED(opponent)`); `executeCardsMoveChoice`
+owns the prompt by the chooser; the guard admits `'opponent'`.
+
+**An ordering limitation surfaced and is honestly deferred.** Defender attack damage is deferred in
+`effect.damage` (applied after the reduce, so weakness/resistance run), but a switch executes inline — so
+`[deal 50 to the defender, then the defender switches]` (Bayleef *Push Down* me1-9) lands the 50 on the
+*switched-in* Pokémon, while native applies the damage first (end of attack) then switches in
+`AfterAttackEffect`. The harness caught exactly this (the 50 KO'ing the promoted Pokémon and yielding a prize)
+before the guard was added. Since we can't faithfully order deferred-defender-damage before an inline
+switch-of-the-defender, `executeSwitch` throws → skip when `owner === effect.opponent && effect.damage > 0`.
+This is an interp limitation deferred (not a native bug), consistent with the project's throw-to-skip rule
+(never a wrong answer).
+
+**Result (no new harness — verified by the existing differentials):** the switch differential now enumerates
+*Whirlwind* (sv10-2/183, opponent-chosen) and the main differential compares *Cursed Words* (Banette ×3 —
+opponent discards from their own hand to deck) at **0 mismatches, no native bugs**. Coverage `compared` rose
+**759 → 764** (+5: *Whirlwind* ×2 + *Cursed Words* ×3); one new honest skip reason (the ordering deferral);
+baseline re-pinned. The rest are genuine non-resolves (*Tighten Up* is all `zsv10pt5`) or the Push Down ordering
+deferral. (The card-choice *describe* skips *Cursed Words* on a "Shuffle deck" prompt its seeded board can't
+auto-resolve — but it's covered clean in the main differential.)
 
 ## Summary (~50 discrepancies; data findings 40/41 verified as Twinleaf bugs)
 

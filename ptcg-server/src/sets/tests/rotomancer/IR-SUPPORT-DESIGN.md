@@ -525,13 +525,40 @@ Around*, *Follow Me*, *Pull*, …). §12.10 only covered AFFECT‑target choices
   `ChoosePokemonPrompt` override, then assert **A — same bench targets + `(min,max)`** and **B — switching to
   each target promotes the same species** (the identity‑aware snapshot).
 
-Result: **13 switches (all multi‑option), 39 targets checked, 0 mismatches** — self‑switch (*Run Around*,
+Result: **15 switches (all multi‑option), 45 targets checked, 0 mismatches** — self‑switch (*Run Around*,
 *Trading Places*, *Leap Out*, *Teleportation Attack*, *Hydro Turn*, *Reverse Thrust*, *Dire Nails*, *Poisonous
-Ploy*) and opponent‑switch (*Follow Me*, *Pull*) all clean. The active‑species snapshot was verified
-load‑bearing (a deliberate always‑switch‑to‑bench[0] skew → 26 per‑target mismatches that differ *only* in
-`name`; a count‑only snapshot would have passed them all). Honest counted skips: 18 non‑exact, 5 build‑error —
-the latter being 2 native name‑drift (`UNKNOWN_ATTACK`, Ninjask *U‑turn*) and **3 `cards.move chooser:'opponent'`**
-switches (Bayleef *Push Down*, Yanma *Whirlwind* ×2) — the throw‑to‑skip for §13's `chooser:'opponent'` deferral.
+Ploy*), player‑chosen opponent‑switch (*Follow Me*, *Pull*), and (after §12.13) opponent‑*chosen* switch
+(*Whirlwind* ×2) all clean. The active‑species snapshot was verified load‑bearing (a deliberate
+always‑switch‑to‑bench[0] skew → 26 per‑target mismatches that differ *only* in `name`; a count‑only snapshot
+would have passed them all). Honest counted skips: 18 non‑exact, 3 build‑error — 2 native name‑drift
+(`UNKNOWN_ATTACK`, Ninjask *U‑turn*) and 1 ordering deferral (Bayleef *Push Down*, see §12.13).
+
+### 12.13 `chooser:'opponent'` alignment (the opponent picks)
+The last first‑eligible‑resolved choice axis: a choice the **opponent** makes. Census: **0** affect‑target
+opponent‑choosers, **23** `cards.move chooser:'opponent'` (16 bench→active switches — *Whirlwind*, *Push Down*,
+*Kick Away*, *Roar*, *Send Back*; 7 hand→deck/discard — *Cursed Words*, *Tighten Up*), all previously a
+throw‑to‑skip (`unsupported cards.move chooser "opponent"`). Three interp changes (the IR interpreter *is* the
+integration under test, so making it faithful is in‑scope) align it with native:
+- **executeSwitch** now frames the Bench prompt from the **chooser's** perspective — `chooser:'opponent'` →
+  `ChoosePokemonPrompt(opponent.id, …, BOTTOM)`, matching native's `SWITCH_ACTIVE_WITH_BENCHED(opponent)`
+  (the attacker‑framed `TOP` it uses for a player‑chosen gust would mismatch the candidate keys).
+- **executeCardsMoveChoice** owns the `ChooseCardsPrompt` by the chooser (`opponent` → `effect.opponent`).
+- The `chooser` guard admits `'opponent'`.
+
+An **ordering guard** was required: defender attack damage is deferred in `effect.damage` (applied by the
+framework after this reduce, so weakness/resistance run), but a switch executes inline — so `[deal N to the
+defender, then the defender switches]` (Push Down) would land the pending N on the *switched‑in* Pokémon. Native
+applies the damage first (end of attack), then switches in `AfterAttackEffect`. We can't faithfully order
+deferred‑defender‑damage before an inline switch‑of‑the‑defender, so `executeSwitch` throws → skip when
+`owner === effect.opponent && effect.damage > 0` (verified it bit: it surfaced exactly the Push Down
+mis‑ordering — the 50 landing on the promoted Pokémon — before the guard).
+
+Verified by the existing differentials (no new harness): the **switch differential** now enumerates *Whirlwind*
+(opponent‑chosen, `opponent.id`/`BOTTOM`); the **main differential** compares *Cursed Words* (Banette ×3,
+opponent discards from their own hand to deck) at **0 mismatches**. Coverage: `compared` **759 → 764** (+5:
+*Whirlwind* ×2 + *Cursed Words* ×3), one new honest skip reason (the ordering deferral), baseline re‑pinned.
+Remaining opponent‑choosers are genuine non‑resolves (*Tighten Up* is all `zsv10pt5`) or the Push Down ordering
+deferral.
 
 ---
 
@@ -565,6 +592,7 @@ unexplained skip, fails the suite — so the coverage can only be lost on purpos
 The plateau's *quality* (not breadth) is what later work hardens: the **choice differentials** (§12.10
 `ChoosePokemonPrompt` affect‑targets, §12.11 `ChooseCardsPrompt`, §12.12 `bench→active` switches) retire the
 masking risk for every player‑choice prompt class by verifying the *whole option set* + each option's outcome
-(identity‑aware for card moves and switches), not just first‑eligible. With all three done, the remaining
-first‑eligible‑resolved choice points are `chooser:'opponent'` (now safe to align — affect‑targets and the 3
-`Whirlwind`/`Push Down` switches) and multi‑select `targetCount`≥2 — the documented next steps.
+(identity‑aware for card moves and switches), not just first‑eligible. **§12.13** then aligned the last choice
+axis — `chooser:'opponent'` (the opponent picks: *Whirlwind*, *Cursed Words*). The one remaining
+first‑eligible‑resolved gap is multi‑select `targetCount`≥2 (option *combinations* — "to 2 of your opponent's
+Pokémon") — the documented next step.
