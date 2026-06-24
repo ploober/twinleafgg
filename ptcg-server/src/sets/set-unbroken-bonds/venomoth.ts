@@ -1,6 +1,5 @@
-import { GameError, GameMessage, PokemonCard, Stage, State, StateUtils, StoreLike } from '../../game';
+import { GameError, GameMessage, PokemonCard, Stage, State, StoreLike } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
-import { AfterAttackEffect } from '../../game/store/effects/game-phase-effects';
 import { THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON } from '../../game/store/prefabs/attack-effects';
 import { ADD_POISON_TO_PLAYER_ACTIVE, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
@@ -22,7 +21,7 @@ export class Venomoth extends PokemonCard {
     name: 'Poison Powder',
     cost: [G],
     damage: 30,
-    text: ''
+    text: 'Your opponent\'s Active Pokémon is now Poisoned.'
   }];
 
   public set = 'UNB';
@@ -30,8 +29,6 @@ export class Venomoth extends PokemonCard {
   public cardImage: string = 'assets/cardback.png';
   public name: string = 'Venomoth';
   public fullName = 'Venomoth UNB';
-
-  public usedPoisonPowder = false;
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
@@ -44,12 +41,7 @@ export class Venomoth extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      this.usedPoisonPowder = true;
-    }
-
-    if (effect instanceof AfterAttackEffect && this.usedPoisonPowder === true) {
-      this.usedPoisonPowder = false;
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, StateUtils.getOpponent(state, effect.player), this);
+      ADD_POISON_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
     }
 
     return state;

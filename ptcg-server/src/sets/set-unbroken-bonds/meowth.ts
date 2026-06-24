@@ -37,11 +37,15 @@ export class Meowth extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      const before = player.hand.cards.length;
       player.deck.moveTo(player.hand, 2);
 
-      const specialConditionEffect = new AddSpecialConditionsEffect(effect, [SpecialCondition.ASLEEP]);
-      specialConditionEffect.target = player.active;
-      store.reduceEffect(state, specialConditionEffect);
+      // "If you do" — only fall asleep if at least one card was actually drawn.
+      if (player.hand.cards.length > before) {
+        const specialConditionEffect = new AddSpecialConditionsEffect(effect, [SpecialCondition.ASLEEP]);
+        specialConditionEffect.target = player.active;
+        store.reduceEffect(state, specialConditionEffect);
+      }
     }
 
     return state;
