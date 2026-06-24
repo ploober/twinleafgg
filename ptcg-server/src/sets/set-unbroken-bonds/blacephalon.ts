@@ -22,7 +22,7 @@ export class Blacephalon extends PokemonCard {
     {
       name: 'Fireball Circus',
       cost: [R, R, R],
-      damage: 0,
+      damage: 50,
       damageCalculation: 'x',
       text: 'Discard any number of [R] Energy cards from your hand. This attack does 50 damage for each card you discarded in this way.'
     },
@@ -64,7 +64,7 @@ export class Blacephalon extends PokemonCard {
         { superType: SuperType.ENERGY, name: 'Fire Energy' },
         { min: 1, allowCancel: false }
       ), selected => {
-        effect.damage += (50 * selected.length);
+        effect.damage = (50 * selected.length);
         player.hand.moveCardsTo(selected, player.discard);
       });
     }

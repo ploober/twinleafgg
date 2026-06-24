@@ -19,7 +19,7 @@ export class Venomoth extends PokemonCard {
     text: 'You can use this attack only if your opponent\'s Active Pokémon is affected by a Special Condition. This attack does 90 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
   },
   {
-    name: 'Poision Powder',
+    name: 'Poison Powder',
     cost: [G],
     damage: 30,
     text: ''
