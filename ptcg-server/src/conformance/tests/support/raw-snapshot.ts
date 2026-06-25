@@ -78,10 +78,11 @@ export interface RawSnapshot {
 // ── card collection (mirrors card-test-helpers' `collectAllCardLists` zone set) ──
 
 /**
- * Every Card physically present in the game, in a stable zone walk. Attached energy/tools already
- * live in each Pokemon's `.cards`, so this is the canonical, non-double-counting set — and it is a
- * superset of every card the projection reads (stack/energies/tools ⊆ slot.cards; plus the stadium,
- * supporter, prize, and pile zones).
+ * Every Card physically present in the game, in a stable zone walk. Attached energy lives in each
+ * Pokemon's `.cards`, but attached tools live ONLY in `.tools` (mirroring the engine's real attach,
+ * which splices the tool out of `.cards`), so we walk `.tools` separately. This is the canonical,
+ * non-double-counting set and a superset of every card the projection reads (stack/energies ⊆
+ * slot.cards, tools ⊆ slot.tools; plus the stadium, supporter, prize, and pile zones).
  */
 export function collectAllCards(state: State): Card[] {
   const cards: Card[] = [];
@@ -92,6 +93,10 @@ export function collectAllCards(state: State): Card[] {
     ];
     for (const list of lists) {
       cards.push(...list.cards);
+    }
+    // Attached tools are not in `.cards` — collect them from each Pokemon slot's `.tools`.
+    for (const slot of [player.active, ...player.bench]) {
+      cards.push(...slot.tools);
     }
   }
   return cards;

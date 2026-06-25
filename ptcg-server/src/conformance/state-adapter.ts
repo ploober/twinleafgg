@@ -161,7 +161,10 @@ class Importer {
     }
     for (const ref of pip.tools) {
       const tool = this.materialize(ref);
-      slot.cards.push(tool);
+      // Tools live ONLY in `.tools`, never in `.cards` — this mirrors the real attach path
+      // (AttachPokemonToolEffect splices the tool out of `.cards`). If a tool is also left in
+      // `.cards`, store.propagateEffect (which walks `.cards` AND `.tools`) reduces the tool's
+      // effect twice, so e.g. a pre-placed Muscle Band would add +40 instead of +20.
       slot.tools.push(tool);
     }
   }

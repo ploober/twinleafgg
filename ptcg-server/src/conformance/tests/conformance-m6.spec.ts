@@ -127,7 +127,7 @@ describe('Conformance M6 — capabilities', () => {
     expect(caps.implementedCards).not.toContain(toPrinting(getCardByName('Iono PAL'))); // excluded: inline Math.random
     expect(caps.implementedCards.every(p => /^[a-z0-9]+-/.test(p))).toBe(true);          // set-number printings
     expect(caps.supportedSets).toContain('sit');
-    expect(caps.supportedSets).not.toContain('svi'); // load-failing set: its cards never registered
+    expect(caps.supportedSets).toContain('svi'); // loads once the stray exp-share.js build shadow is removed
   });
 
   it('EXCLUDED_RANDOM_CARDS matches the cards that call Math.random in source (drift guard)', () => {

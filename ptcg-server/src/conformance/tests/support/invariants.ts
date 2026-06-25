@@ -30,15 +30,18 @@ export function assertInvariants(state: State, opts: { idsBefore?: number[] } = 
       if (slot.damage % 10 !== 0) {
         throw new Error(`[invariants] player ${i} slot damage ${slot.damage} is not a multiple of 10`);
       }
-      // Attached energy/tools are mirrored into the slot's canonical `.cards`; the mirror must agree.
+      // Attached energy is mirrored into the slot's canonical `.cards`; the mirror must agree.
       for (const energy of slot.energies.cards) {
         if (!slot.cards.includes(energy)) {
           throw new Error(`[invariants] player ${i} attached energy "${energy.fullName}" is not in slot.cards`);
         }
       }
+      // Attached tools live ONLY in `.tools`, never in `.cards` — this is the engine's real
+      // invariant (AttachPokemonToolEffect splices the tool out of `.cards`). A tool left in
+      // `.cards` would be double-reduced by store.propagateEffect (which walks `.cards` AND `.tools`).
       for (const tool of slot.tools) {
-        if (!slot.cards.includes(tool)) {
-          throw new Error(`[invariants] player ${i} attached tool "${tool.fullName}" is not in slot.cards`);
+        if (slot.cards.includes(tool)) {
+          throw new Error(`[invariants] player ${i} attached tool "${tool.fullName}" must NOT be in slot.cards (would double-reduce)`);
         }
       }
     }

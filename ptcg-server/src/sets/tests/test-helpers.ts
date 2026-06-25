@@ -1120,7 +1120,10 @@ function buildPokemonSlot(slot: PokemonCardList, config: PokemonSlotConfig): voi
     for (const toolName of config.tools) {
       const tool = getCardByName(toolName);
       tool.id = nextCardId++;
-      slot.cards.push(tool);
+      // Tools live ONLY in `.tools`, never in `.cards` — matches the engine's real attach
+      // (AttachPokemonToolEffect splices the tool out of `.cards`). Mirroring a tool into
+      // `.cards` makes store.propagateEffect (which walks `.cards` AND `.tools`) reduce the
+      // tool's effect twice (e.g. Muscle Band would add +40 instead of +20).
       slot.tools.push(tool);
     }
   }
