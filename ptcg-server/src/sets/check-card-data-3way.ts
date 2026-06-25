@@ -65,6 +65,23 @@ function nameTypeMultiset(names: string[]): string { return multiset(names || []
 function letterCostMultiset(letters: string[]): string {
   return multiset((letters || []).filter(l => l !== '0' && l !== '+').map(l => COST_LETTER[l] ?? l));
 }
+
+// The project standard for inline energy in CLASS text is the [X] bracket (per README). Class text is
+// therefore compared BYTE-FOR-BYTE (rawText) — accents (é !== e), quotes, dashes, whitespace all matter.
+// The data sources only differ on the inline-symbol STANDARD: limitless already uses [X]; pokemontcg.io
+// spells it out ("Grass Energy"). canonText canonicalizes the data TO [X], so a pure representation
+// difference is a match — while any class that DEVIATES from the [X] standard (spells energy out, or uses
+// <span> markup) no longer matches the canonical [X] and is flagged.
+const ENERGY_WORD: Record<string, string> = {
+  Grass: 'G', Fire: 'R', Water: 'W', Lightning: 'L', Psychic: 'P', Fighting: 'F',
+  Darkness: 'D', Metal: 'M', Fairy: 'Y', Dragon: 'N', Colorless: 'C',
+};
+function rawText(s: any): string { return s === null || s === undefined ? '' : String(s); }
+function canonText(s: any): string {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/\b(Grass|Fire|Water|Lightning|Psychic|Fighting|Darkness|Metal|Fairy|Dragon|Colorless)\b/g,
+    m => `[${ENERGY_WORD[m]}]`);
+}
 function dataDamage(s: any): number { const d = String(s ?? '').replace(/[^0-9]/g, ''); return d ? parseInt(d, 10) : 0; }
 
 // Reference weakness/resistance/types is a string, an array, or null — and joins MULTIPLE types with
@@ -187,6 +204,25 @@ function compareCard(set: string, cardName: string, cls: any, ours: any, ref: an
       c0 ? (c0.damage || 0) : undefined,
       o0 ? dataDamage(o0.damage) : undefined,
       r0 ? dataDamage(r0.damage) : undefined);
+    add(`attack[${i}].text`,
+      c0 ? rawText(c0.text) : undefined,
+      o0 ? canonText(o0.text) : undefined,
+      r0 ? canonText(r0.text) : undefined);
+  }
+
+  // abilities / Poké-Powers / Poké-Bodies — name + rules text, paired by position
+  const cp = (cls && cls.powers) || [], op = (ours && ours.abilities) || [], rp = (ref && ref.abilities) || [];
+  const m = Math.max(cp.length, op.length, rp.length);
+  if (new Set([cls && cp.length, ours && op.length, ref && rp.length].filter(x => x !== undefined && x !== null)).size > 1) {
+    add('ability-count', cls ? cp.length : undefined, ours ? op.length : undefined, ref ? rp.length : undefined);
+  }
+  for (let i = 0; i < m; i++) {
+    const c1 = cp[i], o1 = op[i], r1 = rp[i];
+    add(`ability[${i}].name`, c1 && c1.name, o1 && o1.name, r1 && r1.name);
+    add(`ability[${i}].text`,
+      c1 ? rawText(c1.text) : undefined,
+      o1 ? canonText(o1.text) : undefined,
+      r1 ? canonText(r1.text) : undefined);
   }
 }
 
