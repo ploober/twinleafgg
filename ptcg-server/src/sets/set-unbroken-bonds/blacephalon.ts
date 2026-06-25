@@ -17,7 +17,7 @@ export class Blacephalon extends PokemonCard {
       cost: [R],
       damage: 10,
       damageCalculation: '+',
-      text: 'Turn 1 of your face-down Prize cards face up. If it\'s a [R] Energy card, this attack does 50 more damage. (That Prize card remains face up for the rest of the game.) '
+      text: 'Turn 1 of your face-down Prize cards face up. If it\'s a [R] Energy card, this attack does 50 more damage. (That Prize card remains face up for the rest of the game.)'
     },
     {
       name: 'Fireball Circus',
