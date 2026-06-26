@@ -36,7 +36,9 @@ Module._resolveFilename = function (request: string, ...rest: any[]) {
 };
 import { Card } from '../game/store/card/card';
 import { PokemonCard } from '../game/store/card/pokemon-card';
-import { CardType } from '../game/store/card/card-types';
+import { TrainerCard } from '../game/store/card/trainer-card';
+import { EnergyCard } from '../game/store/card/energy-card';
+import { CardType, TrainerType, EnergyType } from '../game/store/card/card-types';
 
 const REF_DIR = process.env.REF_DIR || path.join(os.homedir(), 'projects/pmtcg-conformance-tests/card-data');
 
@@ -83,6 +85,70 @@ function canonText(s: any): string {
     m => `[${ENERGY_WORD[m]}]`);
 }
 function dataDamage(s: any): number { const d = String(s ?? '').replace(/[^0-9]/g, ''); return d ? parseInt(d, 10) : 0; }
+
+// ── Trainer / Energy: structural subtype + printed rules text ───────────────────────────────────────
+// Trainers carry a subtype (Item/Supporter/Stadium/Tool); Energy is Basic vs Special. Their printed effect
+// text lives in the class `text` (one string; paragraphs split by \n\n) and in the data sources' `rules`
+// array (one entry per paragraph — our card-data also appends the universal "You may play only 1 Supporter
+// card..." reminder). To compare the card's OWN printed text we flatten paragraph breaks to a single space
+// (a representation difference, not a content one — intra-line spacing stays significant), strip that
+// universal Supporter reminder from every source, and — exactly as for Pokémon text — leave the CLASS
+// energy raw while canonicalizing the data sources to [X], so a class that spells energy out still surfaces.
+const TRAINER_TYPE_NAME: Record<number, string> = {
+  [TrainerType.ITEM]: 'Item', [TrainerType.SUPPORTER]: 'Supporter',
+  [TrainerType.STADIUM]: 'Stadium', [TrainerType.TOOL]: 'Tool',
+};
+function trainerTypeName(t: any): string | undefined { return t === undefined ? undefined : (TRAINER_TYPE_NAME[t] ?? String(t)); }
+// One resolver for BOTH our-data and the reference (both tag the subtype as a string), MOST-SPECIFIC first
+// so a "Pokémon Tool" (sometimes also tagged "Item") resolves to Tool, not Item.
+function subtypeTrainerType(subs: string[]): number | undefined {
+  const s = subs || [];
+  if (s.some(x => /Tool/i.test(x))) return TrainerType.TOOL;
+  if (s.some(x => /Stadium/i.test(x))) return TrainerType.STADIUM;
+  if (s.some(x => /Supporter/i.test(x))) return TrainerType.SUPPORTER;
+  if (s.some(x => /Item/i.test(x))) return TrainerType.ITEM;
+  return undefined;
+}
+function energyTypeName(t: any): string | undefined {
+  return t === EnergyType.SPECIAL ? 'Special' : t === EnergyType.BASIC ? 'Basic' : undefined;
+}
+function subtypeEnergyType(subs: string[]): number | undefined {
+  const s = subs || [];
+  if (s.some(x => /Special/i.test(x))) return EnergyType.SPECIAL;
+  if (s.some(x => /Basic/i.test(x))) return EnergyType.BASIC;
+  return undefined;
+}
+// Universal rules-reminder boilerplate that pokemontcg.io prints on EVERY card of a kind but that the
+// class (and often the reference) omit. Stripping it from every source focuses the diff on the card's own
+// effect text — otherwise hundreds of Items/Stadiums/Tools would falsely read as ourdata-wrong. (Apostrophe
+// flexible; "(before your attack)" and the older "attached"/"attached to it" wordings both covered.)
+const REMINDERS: RegExp[] = [
+  // Supporter (current + legacy "play only one ... each turn", + pre-2013 "put it next to your Active")
+  /You may play only 1 Supporter card during your turn( \(before your attack\))?\./gi,
+  /You can play only one Supporter card each turn\./gi,
+  /When you play this card, put it next to your Active Pokémon\./gi,
+  /When your turn ends, discard this card\./gi,
+  // Item (current + newer "any number" wording)
+  /You may play as many Item cards as you like during your turn( \(before your attack\))?\./gi,
+  /You may play any number of Item cards during your turn( \(before your attack\))?\./gi,
+  // Pokémon Tool attach reminder (generic "a Pokémon Tool" + named "Attach <CardName>"), + KO/end-of-turn discard
+  /Attach [^.]*? to 1 of your Pokémon that doesn['’]t already have a Pokémon Tool attached( to it)?\./gi,
+  /If that Pokémon is Knocked Out, discard this card\./gi,
+  /Discard this card at the end of your turn\./gi,
+  // Stadium
+  /This card stays in play when you play it\./gi,
+  /Discard this (card|Stadium card) if another Stadium card (comes into play|is put into play)\./gi,
+  /If another card with the same name is in play, you can['’]t play this card\./gi,
+  // ACE SPEC
+  /You can['’]t have more than 1 ACE SPEC card in your deck\./gi,
+];
+function flattenParas(s: string): string { return String(s).split(/\n+/).map(x => x.trim()).filter(Boolean).join(' '); }
+function stripReminder(s: string): string {
+  for (const r of REMINDERS) s = s.replace(r, ' ');
+  return s.replace(/\s{2,}/g, ' ').trim();          // collapse only the seams left by removed reminders
+}
+function classRulesText(s: any): string { return stripReminder(flattenParas(rawText(s))); }            // class: energy RAW
+function dataRulesText(rules: any): string { return stripReminder(flattenParas(canonText((rules || []).join('\n')))); } // data: energy → [X]
 
 // Reference weakness/resistance/types is a string, an array, or null — and joins MULTIPLE types with
 // "/" ("Fire/Fighting", delta-species "Fighting/Metal"). Normalize to a flat list of type names.
@@ -155,12 +221,17 @@ function verdictOf(a: string, b: string, c: string): string {
   return 'three-way-split';                            // all three differ
 }
 
-function compareCard(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[]): void {
-  const add = (field: string, a: any, b: any, c: any) => {
+type AddFn = (field: string, a: any, b: any, c: any) => void;
+function makeAdd(set: string, cardName: string, out: Triple[]): AddFn {
+  return (field, a, b, c) => {
     const av = val(a), bv = val(b), cv = val(c);
     const verdict = verdictOf(av, bv, cv);
     if (verdict !== 'agree') out.push({ set, card: cardName, field, cls: av, ours: bv, ref: cv, verdict });
   };
+}
+
+function compareCard(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[]): void {
+  const add = makeAdd(set, cardName, out);
 
   // hp
   add('hp',
@@ -226,6 +297,32 @@ function compareCard(set: string, cardName: string, cls: any, ours: any, ref: an
   }
 }
 
+// Trainer cards: printed subtype (Item/Supporter/Stadium/Tool) + rules text.
+function compareTrainer(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[]): void {
+  const add = makeAdd(set, cardName, out);
+  add('trainer-type',
+    cls ? trainerTypeName(cls.trainerType) : undefined,
+    ours ? trainerTypeName(subtypeTrainerType(ours.subtypes)) : undefined,
+    ref ? trainerTypeName(subtypeTrainerType(ref.subtypes)) : undefined);
+  add('text',
+    cls ? classRulesText(cls.text) : undefined,
+    ours ? dataRulesText(ours.rules) : undefined,
+    ref ? dataRulesText(ref.rules) : undefined);
+}
+
+// Energy cards: Basic vs Special + rules text (Special carries effect text; Basic is empty on all sides).
+function compareEnergy(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[]): void {
+  const add = makeAdd(set, cardName, out);
+  add('energy-type',
+    cls ? energyTypeName(cls.energyType) : undefined,
+    ours ? energyTypeName(subtypeEnergyType(ours.subtypes)) : undefined,
+    ref ? energyTypeName(subtypeEnergyType(ref.subtypes)) : undefined);
+  add('text',
+    cls ? classRulesText(cls.text) : undefined,
+    ours ? dataRulesText(ours.rules) : undefined,
+    ref ? dataRulesText(ref.rules) : undefined);
+}
+
 function checkSet(setDir: string, refIdx: any): { triples: Triple[]; refFile?: string; noRef?: boolean } {
   const dataPath = path.join(__dirname, setDir, 'card-data.json');
   if (!fs.existsSync(dataPath)) return { triples: [] };
@@ -239,19 +336,35 @@ function checkSet(setDir: string, refIdx: any): { triples: Triple[]; refFile?: s
     for (const d of arr) { if (!pred(d)) continue; const k = normName(d.name); (m.get(k) ?? m.set(k, []).get(k)!).push(d); }
     return m;
   };
-  const ourIdx = indexBy(ourData, d => d.supertype === 'Pokémon');
-  const refIdxByName = indexBy(refSet.cards, d => d.supertype === 'Pokémon');
+  const ourPoke = indexBy(ourData, d => d.supertype === 'Pokémon');
+  const refPoke = indexBy(refSet.cards, d => d.supertype === 'Pokémon');
+  const ourTrainer = indexBy(ourData, d => d.supertype === 'Trainer');
+  const refTrainer = indexBy(refSet.cards, d => d.supertype === 'Trainer');
+  const ourEnergy = indexBy(ourData, d => d.supertype === 'Energy');
+  const refEnergy = indexBy(refSet.cards, d => d.supertype === 'Energy');
   const pick = (cands: any[] | undefined, num: any) =>
     cands ? (cands.find(c => String(c.number) === String(num)) ?? cands[0]) : undefined;
 
   const triples: Triple[] = [];
   for (const card of collectClassCards(setDir)) {
-    if (!(card instanceof PokemonCard)) continue;
     const key = normName(card.name);
-    const ours = pick(ourIdx.get(key), card.setNumber);
-    const ref = pick(refIdxByName.get(key), card.setNumber);
-    if (!ours && !ref) continue;                       // gallery/promo subset with no data either side
-    compareCard(setDir, `${card.fullName} (#${card.setNumber})`, card, ours, ref, triples);
+    const named = `${card.fullName} (#${card.setNumber})`;
+    if (card instanceof PokemonCard) {
+      const ours = pick(ourPoke.get(key), card.setNumber);
+      const ref = pick(refPoke.get(key), card.setNumber);
+      if (!ours && !ref) continue;                     // gallery/promo subset with no data either side
+      compareCard(setDir, named, card, ours, ref, triples);
+    } else if (card instanceof TrainerCard) {
+      const ours = pick(ourTrainer.get(key), card.setNumber);
+      const ref = pick(refTrainer.get(key), card.setNumber);
+      if (!ours && !ref) continue;
+      compareTrainer(setDir, named, card, ours, ref, triples);
+    } else if (card instanceof EnergyCard) {
+      const ours = pick(ourEnergy.get(key), card.setNumber);
+      const ref = pick(refEnergy.get(key), card.setNumber);
+      if (!ours && !ref) continue;
+      compareEnergy(setDir, named, card, ours, ref, triples);
+    }
   }
   return { triples, refFile: refSet.file };
 }
