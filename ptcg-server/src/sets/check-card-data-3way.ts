@@ -89,6 +89,25 @@ function canonText(s: any): string {
 }
 function dataDamage(s: any): number { const d = String(s ?? '').replace(/[^0-9]/g, ''); return d ? parseInt(d, 10) : 0; }
 
+// For a multiplier/additive attack ("50×", "30+"), the class stores a base of 0 (or the per-unit value)
+// and computes the real damage in reduceEffect — so a base-field mismatch is only a real bug if the printed
+// per-unit value is ALSO absent from the attack's effect code. Find the source file that DEFINES the attack
+// and check the number is present (and, for the math note, that it co-occurs with a damage/scaling token).
+function multiplierInSource(srcFiles: { file: string; text: string }[], attackName: string, value: string)
+  : { defined: boolean; present: boolean; inMath: boolean; file?: string } {
+  if (!attackName || !value) return { defined: false, present: false, inMath: false };
+  const numRe = new RegExp(`(^|[^0-9])${value}([^0-9]|$)`);
+  for (const sf of srcFiles) {
+    const text = sf.text.replace(/\\'/g, "'");                          // un-escape apostrophes in source
+    if (!text.includes(`'${attackName}'`) && !text.includes(`"${attackName}"`)) continue;   // defines this attack
+    const present = numRe.test(text);
+    const inMath = present && text.split('\n').some(l =>
+      numRe.test(l) && /(damage|applyDamage|deal|\*|length|count|heads|tails|amount|counters|markers|prizes|each)/i.test(l));
+    return { defined: true, present, inMath, file: sf.file };
+  }
+  return { defined: false, present: false, inMath: false };             // attack not defined in a readable .ts (prefab-only / inherited)
+}
+
 // ── Trainer / Energy: structural subtype + printed rules text ───────────────────────────────────────
 // Trainers carry a subtype (Item/Supporter/Stadium/Tool); Energy is Basic vs Special. Their printed effect
 // text lives in the class `text` (one string; paragraphs split by \n\n) and in the data sources' `rules`
@@ -254,7 +273,7 @@ function makeAdd(set: string, cardName: string, out: Triple[]): AddFn {
   };
 }
 
-function compareCard(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[]): void {
+function compareCard(set: string, cardName: string, cls: any, ours: any, ref: any, out: Triple[], srcFiles: { file: string; text: string }[]): void {
   const add = makeAdd(set, cardName, out);
 
   // hp
@@ -295,15 +314,29 @@ function compareCard(set: string, cardName: string, cls: any, ours: any, ref: an
       c0 ? (classTypeMultiset(c0.cost || []) || '(none)') : undefined,
       o0 ? (nameTypeMultiset(o0.cost || []) || '(none)') : undefined,
       r0 ? (letterCostMultiset(r0.cost || []) || '(none)') : undefined);
-    // Skip damage on multiplier/additive attacks ("50×", "30+"): the class stores a base of 0 (or the
-    // per-unit value) and computes the real total in reduceEffect, so the printed field isn't comparable —
-    // flagging it produces false positives (see Blacephalon, Gholdengo ex's "Make It Rain" = 50×).
-    const computedDmg = /[×x+]/.test(String((o0 && o0.damage) || '')) || /[×x+]/.test(String((r0 && r0.damage) || ''));
-    if (!computedDmg) {
-      add(`attack[${i}].damage`,
-        c0 ? (c0.damage || 0) : undefined,
-        o0 ? dataDamage(o0.damage) : undefined,
-        r0 ? dataDamage(r0.damage) : undefined);
+    // Damage: compare the printed base. For multiplier/additive attacks ("50×", "30+") the class typically
+    // computes the total in reduceEffect (base field 0 or per-unit), so a base mismatch is NOT automatically
+    // a bug — but rather than blindly trusting it, verify the printed per-unit value actually appears in the
+    // attack's effect code. Suppress only when it's there; if the number is MISSING from the code, the
+    // mismatch is a real bug (wrong/typo'd multiplier or unimplemented scaling) and the finding stands.
+    {
+      const clsD = c0 ? (c0.damage || 0) : undefined;
+      const ourD = o0 ? dataDamage(o0.damage) : undefined;
+      const refD = r0 ? dataDamage(r0.damage) : undefined;
+      const refRaw = String((r0 && r0.damage) || (o0 && o0.damage) || '');
+      if (/[×x+]/.test(refRaw) && verdictOf(val(clsD), val(ourD), val(refD)) === 'class-wrong') {
+        const printedVal = (refRaw.match(/\d+/) || [])[0];
+        const chk = multiplierInSource(srcFiles, c0 && c0.name, printedVal);
+        if (chk.defined && !chk.present) {
+          add(`attack[${i}].damage`, clsD, ourD, refD);   // attack defined here but the printed value is absent → real bug
+        } else if (chk.defined && !chk.inMath) {
+          add(`attack[${i}].damage(×?)`, `${printedVal} present but not in a damage expr`, ourD, refD);  // soft: review
+        }
+        // value present in a damage expression → verified OK; attack not defined in THIS set (inherited /
+        // cross-set reprint / prefab) → can't verify here, suppress rather than false-flag.
+      } else {
+        add(`attack[${i}].damage`, clsD, ourD, refD);
+      }
     }
     add(`attack[${i}].text`,
       c0 ? rawText(c0.text) : undefined,
@@ -375,6 +408,12 @@ function checkSet(setDir: string, refIdx: any): { triples: Triple[]; refFile?: s
   const pick = (cands: any[] | undefined, num: any) =>
     cands ? (cands.find(c => String(c.number) === String(num)) ?? cands[0]) : undefined;
 
+  // Read the set's source files once, to verify multiplier-attack damage against the actual effect code.
+  const setAbs = path.join(__dirname, setDir);
+  const srcFiles = fs.readdirSync(setAbs)
+    .filter((f: string) => f.endsWith('.ts'))
+    .map((f: string) => ({ file: f, text: fs.readFileSync(path.join(setAbs, f), 'utf8') }));
+
   const triples: Triple[] = [];
   for (const card of collectClassCards(setDir)) {
     const key = normName(card.name);
@@ -383,7 +422,7 @@ function checkSet(setDir: string, refIdx: any): { triples: Triple[]; refFile?: s
       const ours = pick(ourPoke.get(key), card.setNumber);
       const ref = pick(refPoke.get(key), card.setNumber);
       if (!ours && !ref) continue;                     // gallery/promo subset with no data either side
-      compareCard(setDir, named, card, ours, ref, triples);
+      compareCard(setDir, named, card, ours, ref, triples, srcFiles);
     } else if (card instanceof TrainerCard) {
       const ours = pick(ourTrainer.get(key), card.setNumber);
       const ref = pick(refTrainer.get(key), card.setNumber);
