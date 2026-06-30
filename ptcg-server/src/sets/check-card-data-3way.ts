@@ -41,6 +41,9 @@ import { EnergyCard } from '../game/store/card/energy-card';
 import { CardType, TrainerType, EnergyType } from '../game/store/card/card-types';
 
 const REF_DIR = process.env.REF_DIR || path.join(os.homedir(), 'projects/pmtcg-conformance-tests/card-data');
+// The authoritative "final" reference (cleaner schema: { code, cards: { "code-NNN": {...} } }). When a set
+// matches here by ptcgoCode it takes precedence over the legacy top-level files. Override with FINAL_DIR=.
+const FINAL_DIR = process.env.FINAL_DIR || path.join(REF_DIR, 'final');
 
 // ── type / cost normalization ─────────────────────────────────────────────────────────────────────
 const TYPE_TO_CARDTYPE: Record<string, CardType> = {
@@ -180,25 +183,46 @@ function collectClassCards(setDir: string): Card[] {
 
 // ── reference index: match our set dir to a reference file by ptcgoCode, then by set name ───────────
 interface RefSet { file: string; cards: any[]; }
-function buildRefIndex(): { byCode: Map<string, string>; byName: Map<string, string> } {
+interface RefIndex { byCode: Map<string, string>; byName: Map<string, string>; finalByCode: Map<string, string>; }
+function buildRefIndex(): RefIndex {
   const byCode = new Map<string, string>();
   const byName = new Map<string, string>();
-  if (!fs.existsSync(REF_DIR)) return { byCode, byName };
-  for (const f of fs.readdirSync(REF_DIR)) {
-    if (!f.endsWith('.json')) continue;
-    let j: any;
-    try { j = JSON.parse(fs.readFileSync(path.join(REF_DIR, f), 'utf8')); } catch (e) { continue; }
-    const set = j && j.set;
-    if (set && set.code) byCode.set(String(set.code).toUpperCase(), f);
-    if (set && set.name) byName.set(normName(set.name), f);
+  const finalByCode = new Map<string, string>();
+  if (fs.existsSync(REF_DIR)) {
+    for (const f of fs.readdirSync(REF_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      let j: any;
+      try { j = JSON.parse(fs.readFileSync(path.join(REF_DIR, f), 'utf8')); } catch (e) { continue; }
+      const set = j && j.set;
+      if (set && set.code) byCode.set(String(set.code).toUpperCase(), f);
+      if (set && set.name) byName.set(normName(set.name), f);
+    }
   }
-  return { byCode, byName };
+  if (fs.existsSync(FINAL_DIR)) {                       // authoritative source, keyed by its own `code`
+    for (const f of fs.readdirSync(FINAL_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      let j: any;
+      try { j = JSON.parse(fs.readFileSync(path.join(FINAL_DIR, f), 'utf8')); } catch (e) { continue; }
+      if (j && j.code) finalByCode.set(String(j.code).toUpperCase(), f);
+    }
+  }
+  return { byCode, byName, finalByCode };
 }
 
-function loadRefForSet(ourData: any[], refIdx: { byCode: Map<string, string>; byName: Map<string, string> }): RefSet | undefined {
+function loadRefForSet(ourData: any[], refIdx: RefIndex): RefSet | undefined {
   const meta = (ourData.find((d: any) => d.set) || {}).set || {};
   const code = meta.ptcgoCode ? String(meta.ptcgoCode).toUpperCase() : undefined;
-  let file = (code && refIdx.byCode.get(code)) || (meta.name && refIdx.byName.get(normName(meta.name)));
+  // Prefer the authoritative final/ source (by ptcgoCode). Its cards are an object keyed "code-NNN";
+  // flatten to an array. All card-field shapes (hp/types/weakness/retreat/attacks/abilities/rules) already
+  // match what compareCard reads, EXCEPT attack cost is full type-names (handled by letterCostMultiset's
+  // pass-through) and damage keeps the "×"/"+" marker (handled by the multiplier-skip below).
+  const finalFile = code && refIdx.finalByCode.get(code);
+  if (finalFile) {
+    const j = JSON.parse(fs.readFileSync(path.join(FINAL_DIR, finalFile), 'utf8'));
+    const cards = j && j.cards ? (Array.isArray(j.cards) ? j.cards : Object.values(j.cards)) : [];
+    return { file: 'final/' + finalFile, cards };
+  }
+  const file = (code && refIdx.byCode.get(code)) || (meta.name && refIdx.byName.get(normName(meta.name)));
   if (!file) return undefined;
   const j = JSON.parse(fs.readFileSync(path.join(REF_DIR, file), 'utf8'));
   return { file, cards: (j && j.cards) || [] };
@@ -271,10 +295,16 @@ function compareCard(set: string, cardName: string, cls: any, ours: any, ref: an
       c0 ? (classTypeMultiset(c0.cost || []) || '(none)') : undefined,
       o0 ? (nameTypeMultiset(o0.cost || []) || '(none)') : undefined,
       r0 ? (letterCostMultiset(r0.cost || []) || '(none)') : undefined);
-    add(`attack[${i}].damage`,
-      c0 ? (c0.damage || 0) : undefined,
-      o0 ? dataDamage(o0.damage) : undefined,
-      r0 ? dataDamage(r0.damage) : undefined);
+    // Skip damage on multiplier/additive attacks ("50×", "30+"): the class stores a base of 0 (or the
+    // per-unit value) and computes the real total in reduceEffect, so the printed field isn't comparable —
+    // flagging it produces false positives (see Blacephalon, Gholdengo ex's "Make It Rain" = 50×).
+    const computedDmg = /[×x+]/.test(String((o0 && o0.damage) || '')) || /[×x+]/.test(String((r0 && r0.damage) || ''));
+    if (!computedDmg) {
+      add(`attack[${i}].damage`,
+        c0 ? (c0.damage || 0) : undefined,
+        o0 ? dataDamage(o0.damage) : undefined,
+        r0 ? dataDamage(r0.damage) : undefined);
+    }
     add(`attack[${i}].text`,
       c0 ? rawText(c0.text) : undefined,
       o0 ? canonText(o0.text) : undefined,
@@ -381,8 +411,8 @@ function main() {
   const setArgs = args.filter(a => !a.startsWith('--'));
 
   const refIdx = buildRefIndex();
-  if (refIdx.byCode.size === 0) {
-    console.error(`No reference files found at ${REF_DIR} — set REF_DIR or check the path.`);
+  if (refIdx.byCode.size === 0 && refIdx.finalByCode.size === 0) {
+    console.error(`No reference files found at ${REF_DIR} (or ${FINAL_DIR}) — set REF_DIR/FINAL_DIR or check the path.`);
     process.exit(1);
   }
 
