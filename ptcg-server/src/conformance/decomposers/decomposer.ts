@@ -25,6 +25,7 @@ export type WirePick =
   | { kind: 'attack'; index: number; attack: string }      // ChooseAttack (single-select)
   | { kind: 'prize'; index: number }                       // ChoosePrize (one prize pile)
   | { kind: 'confirm'; value: boolean }                    // Confirm (yes/no)
+  | { kind: 'option'; index: number }                      // SelectOption (one option index)
   | { kind: 'done' };
 
 /**

@@ -266,6 +266,14 @@ export interface ConfirmAction {
   value: boolean;
 }
 
+/** One option chosen from a SelectOptionPrompt (`Prompt<number>` → the chosen index). */
+export interface SelectOptionAction {
+  actor: NeutralPlayerId;
+  type: 'selectOption';
+  /** Index into the prompt's `values` list. */
+  option: number;
+}
+
 // ── System actions (the `system` actor — design §5) ────────────────────────
 // Randomness externalized to the action log: the harness supplies shuffle orders and coin faces.
 
@@ -316,6 +324,7 @@ export type NeutralAction =
   | DiscardPickAction
   | TakePrizeAction
   | ConfirmAction
+  | SelectOptionAction
   | ShuffleSystemAction
   | FlipSystemAction
   | PickSystemAction
@@ -363,6 +372,7 @@ export type LegalAction =
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
   | { type: 'takePrize'; index: number }
   | { type: 'confirm'; value: boolean }
+  | { type: 'selectOption'; option: number }
   // `endChoice` is the INTERNAL variable-count terminator only — it is never emitted on the wire
   // (the contract has no such Action; completion is signalled by the next non-pick action, R1). The
   // wire transform (`toWirePending`) strips it; decomposers still append it to mark "stop allowed".
