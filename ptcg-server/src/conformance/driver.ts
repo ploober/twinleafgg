@@ -205,17 +205,20 @@ interface LoopResult {
 
 /**
  * Project an internal `PendingDecision` to the contract-shaped `WirePending` (OpenAPI `Pending`):
- * strip the internal `endChoice` terminator (no such contract Action — completion is signalled by
- * the next non-pick action, R1) and stamp each surviving legalAction with the pending's `actor`
- * (contract `Action.actor`, required on every action).
+ * stamp each legalAction with the pending's `actor` (contract `Action.actor`, required on every
+ * action). The internal `endChoice` terminator is surfaced as the CF-4 explicit stop —
+ * `confirm {value:false}` = "stop at the current count" — so a client playing only offered actions
+ * (the fuzzer, an interactive frontend) can decline the rest of a min<max aggregate. Completion by
+ * the next non-pick action (R1) remains valid for replay logs.
  */
 function toWirePending(p: PendingDecision): WirePending {
   return {
     actor: p.actor,
     descriptor: p.descriptor,
     legalActions: p.legalActions
-      .filter(a => a.type !== 'endChoice')
-      .map(a => ({ actor: p.actor, ...a }) as WireLegalAction),
+      .map(a => a.type === 'endChoice'
+        ? ({ actor: p.actor, type: 'confirm', value: false } as WireLegalAction)
+        : ({ actor: p.actor, ...a } as WireLegalAction)),
   };
 }
 
@@ -384,6 +387,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       const pickTypes = new Set<string>(sub.legalActions.filter(a => a.type !== 'endChoice').map(a => a.type));
       if (!pickTypes.has(nextAction.type)) {
         if (canStop) {
+          // CF-4 explicit stop: `confirm {value:false}` at an aggregate decision is the advertised
+          // terminator — CONSUME it and finalize. (Only when `confirm` is not itself a pick type;
+          // a real confirm decision handles its own confirms above.)
+          if (nextAction.type === 'confirm' && (nextAction as { value?: boolean }).value === false) {
+            cursor.i++;
+          }
+          // Otherwise R1: the next non-pick action completes the decision without being consumed.
           accum.push({ kind: 'done' });
           continue;
         }
