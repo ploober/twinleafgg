@@ -32,7 +32,7 @@ export class Vibrava extends PokemonCard {
         text: 'During your next turn, the Defending Pokémon takes 50 more damage from this Pokémon\'s attacks'
       },
       {
-        name: 'Cutter Wind',
+        name: 'Cutting Wind',
         cost: [CardType.FIGHTING, CardType.COLORLESS],
         damage: 50,
         text: ''

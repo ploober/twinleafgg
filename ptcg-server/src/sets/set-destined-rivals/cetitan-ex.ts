@@ -19,7 +19,7 @@ export class Cetitanex extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Crush Press',
+    name: 'Crushing Press',
     cost: [W, W, W, C],
     damage: 140,
     damageCalculation: '+',
@@ -51,7 +51,7 @@ export class Cetitanex extends PokemonCard {
       effect.preventDefault = true;
     }
 
-    // Crush Press
+    // Crushing Press
     if (WAS_ATTACK_USED(effect, 0, this)) {
       if (StateUtils.getStadiumCard(state) === undefined) { return state; }
 

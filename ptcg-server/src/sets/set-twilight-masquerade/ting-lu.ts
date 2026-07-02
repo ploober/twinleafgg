@@ -23,7 +23,7 @@ export class TingLu extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Ground Crack',
+      name: 'Ground Crasher',
       cost: [CardType.FIGHTING],
       damage: 30,
       text: 'If a Stadium is in play, this attack does 30 damage to each of your opponent\'s Benched Pokémon. Then, discard that Stadium. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

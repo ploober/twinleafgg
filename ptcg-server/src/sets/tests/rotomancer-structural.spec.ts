@@ -17,25 +17,16 @@ interface Scenario { printingId: string; name: string; attackLabel: string; cost
 // printingId + attackLabel -> reason. Real name/cost discrepancies; adjudication deferred. See
 // FINDINGS.md. Close variants (spacing/plural/hyphen) are likely cosmetic; wholly different names
 // mean one project has the wrong attack for that printing.
-// The sv-era entries below were adjudicated against the official card data (rotomancer-official.spec.ts):
-// in all cases the IR matches the official attack name, so TWINLEAF has the wrong name/cost. The me3/POR
-// entry is a Japan-only Mega-era set whose English attack name isn't yet canonical → adjudication deferred.
+// The sv-era entries previously adjudicated "Twinleaf bug" against the official card data
+// (rotomancer-official.spec.ts) were FIXED at the source on 2026-07-01 — the card .ts files now
+// carry the official names (Cutting Wind, Headbutt Bounce, Haughty Order, Crushing Press,
+// Dyna-Blast, Explode Together Now, Cruel Slash, Thunder Raid, Chiming Commotion, Ground Crasher,
+// Stick 'n' Draw, World Ender, Zapping Short) — so they no longer appear here. What remains:
+// pokemontcg.io-side data errors (Twinleaf correct) and Japan-only Mega-era sets whose English
+// names aren't yet canonical → adjudication deferred.
 const KNOWN: Record<string, string> = {
-  'sv8-105 Cutting Wind': 'Twinleaf "Cutter Wind"; official + IR "Cutting Wind" → Twinleaf bug',
   'me3-46 Vengeful Kick': 'Hawlucha (Perfect Order, Japan-only Mega-era set): Twinleaf "Revenge Kick" vs IR/pokemontcg.io "Vengeful Kick" (リベンジキック ≈ "Revenge Kick" literal). Translation discrepancy — English name not yet canonical; adjudication deferred.',
-  'sv10-82 Headbutt Bounce': 'Twinleaf printing has no attack by that name → Twinleaf bug',
   'sv8-137 Steaming Stomp': 'Twinleaf cost Fire; pokemontcg.io + IR Fighting; Limitless (independent) confirms FIRE → pokemontcg.io/IR dataset error, Twinleaf correct',
-  'sv10-219 Haughty Order': 'Twinleaf "Haughty Orders"; official + IR "Haughty Order" → Twinleaf bug',
-  'sv10-65 Crushing Press': 'Twinleaf "Crush Press"; official + IR "Crushing Press" → Twinleaf bug',
-  'sv8-141 Dyna-Blast': 'Twinleaf "Dynablast"; official + IR "Dyna-Blast" → Twinleaf bug',
-  'sv10-199 Explode Together Now': 'Twinleaf "All-Out Explosion"; official + IR "Explode Together Now" → Twinleaf bug',
-  'sv10-219 Cruel Slash': 'Twinleaf "Slash and Cash"; official + IR "Cruel Slash" → Twinleaf bug',
-  'sv10-78 Thunder Raid': 'Twinleaf "Thunder Blitz"; official + IR "Thunder Raid" → Twinleaf bug',
-  'sv10-85 Chiming Commotion': 'Twinleaf "Ring Ring Noise"; official + IR "Chiming Commotion" → Twinleaf bug',
-  'sv6-110 Ground Crasher': 'Twinleaf "Ground Crack"; official + IR "Ground Crasher" → Twinleaf bug',
-  'sv8-128 Stick \'n\' Draw': 'Twinleaf "Plug and Draw"; official + IR "Stick \'n\' Draw" → Twinleaf bug',
-  'sv8-141 World Ender': 'Twinleaf "World\'s End"; official + IR "World Ender" → Twinleaf bug',
-  'sv9-49 Zapping Short': 'Twinleaf "Crackling Short"; official + IR "Zapping Short" → Twinleaf bug',
   // me1→MEG / me2pt5→ASC are Japan-only Mega-era sets whose English attack names aren't yet canonical;
   // these are translation/cosmetic differences (Twinleaf localisation vs IR/pokemontcg.io). Adjudication
   // deferred (cf. me3-46 Hawlucha). Surfaced when the loader fix made MEG/ASC loadable.

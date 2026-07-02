@@ -23,7 +23,7 @@ export class Klefki extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Plug and Draw',
+      name: 'Stick \'n\' Draw',
       cost: [CardType.COLORLESS],
       damage: 0,
       text: 'Discard a card from your hand. If you do, draw 2 cards.'

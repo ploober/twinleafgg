@@ -15,7 +15,7 @@ export class TeamRocketsWeezing extends PokemonCard {
 
   public attacks = [
     {
-      name: 'All-Out Explosion',
+      name: 'Explode Together Now',
       cost: [D, C],
       damage: 40,
       damageCalculation: 'x',

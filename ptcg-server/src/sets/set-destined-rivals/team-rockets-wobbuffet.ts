@@ -19,7 +19,7 @@ export class TeamRocketsWobbuffet extends PokemonCard {
       text: 'Move all damage counters from 1 of your Benched Team Rocket\'s Pokemon to your opponent\'s Active Pokemon.'
     },
     {
-      name: 'Jet Headbutt',
+      name: 'Headbutt Bounce',
       cost: [P, C, C],
       damage: 70,
       text: ''

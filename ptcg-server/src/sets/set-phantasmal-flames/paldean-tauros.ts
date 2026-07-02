@@ -23,7 +23,7 @@ export class PaldeanTauros extends PokemonCard {
     text: 'This attack does 40 damage for each damage counter on all of your Pokemon with "Tauros" in their name in play.',
   },
   {
-    name: 'Double Edge',
+    name: 'Double-Edge',
     cost: [F, F],
     damage: 70,
     text: 'This Pokemon does 20 damage to itself.',

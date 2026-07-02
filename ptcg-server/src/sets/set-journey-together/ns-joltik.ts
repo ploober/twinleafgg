@@ -16,7 +16,7 @@ export class NsJoltik extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Crackling Short',
+      name: 'Zapping Short',
       cost: [CardType.COLORLESS, CardType.COLORLESS],
       damage: 30,
       text: 'Before doing damage, discard all Pokémon Tool cards from your opponent\'s Active Pokémon. If you discarded a Pokémon Tool card in this way, your opponent\'s Active Pokémon is now Paralyzed.'

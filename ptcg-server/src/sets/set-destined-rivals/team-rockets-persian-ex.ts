@@ -87,13 +87,13 @@ export class TeamRocketsPersianex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Haughty Orders',
+      name: 'Haughty Order',
       cost: [C, C],
       damage: 0,
       text: 'Your opponent reveals the top 10 cards of their deck. You may choose an attack from a Pokemon you find there and use it as this attack. Your opponent shuffles the revealed cards back into their deck.'
     },
     {
-      name: 'Slash and Cash',
+      name: 'Cruel Slash',
       cost: [C, C, C],
       damage: 140,
       text: 'Your opponent\'s Active Pokemon is now Confused.'
@@ -108,13 +108,13 @@ export class TeamRocketsPersianex extends PokemonCard {
   public fullName: string = 'Team Rocket\'s Persian ex DRI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Haughty Orders
+    // Haughty Order
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const generator = useHaughtyOrders(() => generator.next(), store, state, effect);
       return generator.next().value;
     }
 
-    // Slash and Cash (thanks Pf987 for this name)
+    // Cruel Slash
     if (AFTER_ATTACK(effect, 1, this)) {
       ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
     }

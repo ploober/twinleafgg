@@ -15,7 +15,7 @@ export class TeamRocketsChingling extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Ring Ring Noise',
+      name: 'Chiming Commotion',
       cost: [],
       damage: 0,
       text: 'Discard a random card from your opponent\'s hand.'

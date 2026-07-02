@@ -21,14 +21,14 @@ export class Eternatus extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Dynablast',
+      name: 'Dyna-Blast',
       cost: [D],
       damage: 10,
       damageCalculation: '+',
       text: 'If your opponent\'s Active Pokémon is a Pokémon ex, this attack does 80 more damage.'
     },
     {
-      name: 'World\'s End',
+      name: 'World Ender',
       cost: [R, D, D],
       damage: 230,
       text: 'Discard a Stadium in play. If you can\'t, this attack does nothing.'
