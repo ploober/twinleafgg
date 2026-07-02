@@ -173,6 +173,9 @@ interface LoopResult {
   applied: number;
   /** Set when a dispatched action was rejected by the engine (M6). */
   rejection?: RejectionInfo;
+  /** Set when the log ran dry MID-decomposition: the open prompt + the picks made so far. Lets the
+   *  projection apply the decomposer's take-immediately fix-up (CF-1). */
+  midPrompt?: { prompt: Prompt<any>; picks: WirePick[] };
 }
 
 /**
@@ -324,7 +327,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // sub !== null — more picks are possible for this decision.
       const nextAction = cursor.i < actions.length ? actions[cursor.i] : undefined;
       if (nextAction === undefined) {
-        return { events, pending: toWirePending(sub), applied: cursor.i }; // log dry mid-decision
+        // Log dry mid-decision: carry the open prompt + picks so the projection can apply the
+        // decomposer's take-immediately fix-up (CF-1).
+        return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum } };
       }
       // R1 (next-action-completes): if the next action is not one of this decision's pick types and
       // the decision permits stopping (its internal `endChoice` marker is present), synthesize the
@@ -335,7 +340,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         accum.push({ kind: 'done' });
         continue;
       }
-      accum.push(dec.toPick(prompt, nextAction, game.ctx, game.state));
+      accum.push(dec.toPick(prompt, nextAction, game.ctx, game.state, accum));
       cursor.i++;
       continue;
     }
@@ -394,8 +399,14 @@ export function projectGame(game: ImportedGame): NeutralState {
  */
 export function step(initial: NeutralState, actions: NeutralAction[]): StepResponse {
   const game = importState(initial);
-  const { events, pending, applied, rejection } = runLoop(game, actions);
+  const { events, pending, applied, rejection, midPrompt } = runLoop(game, actions);
   const state = projectGame(game);
+  if (midPrompt !== undefined) {
+    // Mid-decomposition pause: apply the decomposer's take-immediately projection fix-up (CF-1) so
+    // picks already made read as applied (e.g. a picked prize is in the hand, not the pile).
+    const dec = decomposerFor(midPrompt.prompt);
+    dec.fixupProjection?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state);
+  }
   if (rejection !== undefined) {
     // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
     // The cursor advances past an action before dispatch, so `applied` is the offending action's index.

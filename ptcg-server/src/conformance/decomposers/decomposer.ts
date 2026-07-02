@@ -7,7 +7,7 @@ import { SuperType, CardType } from '../../game/store/card/card-types';
 import { PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
 import { StateUtils } from '../../game/store/state-utils';
 import { IidContext } from '../state-adapter';
-import { NeutralAction, PendingDecision, LegalAction, Actor } from '../neutral-types';
+import { NeutralAction, NeutralState, PendingDecision, LegalAction, Actor } from '../neutral-types';
 import { playerIdToActor } from '../iid-targets';
 
 /**
@@ -31,15 +31,23 @@ export type WirePick =
 /**
  * Turns one aggregate prompt into N single decisions. `next` returns the next decision to surface
  * (its legalActions are the Phase-1 candidate set), or null when the accumulated picks are a
- * complete answer. `toPick` maps one neutral pick-action to a WirePick. `assemble` reassembles the
- * picks into the raw wire form `prompt.decode()` expects. (validate/decode run on the final result,
- * not the pick form, so accumulation is dumb.)
+ * complete answer. `toPick` maps one neutral pick-action to a WirePick (it receives the picks
+ * accumulated so far, for decomposers whose wire indexing is relative to the remaining options —
+ * take-immediately semantics, CF-1). `assemble` reassembles the picks into the raw wire form
+ * `prompt.decode()` expects. (validate/decode run on the final result, not the pick form, so
+ * accumulation is dumb.)
+ *
+ * `fixupProjection` (optional) rewrites the observable state projection at a mid-decision pause so
+ * already-made picks read as already-applied (CF-1 take-immediately: a picked prize is projected in
+ * the hand, not the pile, before the next `takePrize` pending). The native engine resolves the
+ * prompt atomically, so without the fix-up the projection would not explain the pending's menu.
  */
 export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
   readonly type: string;
   next(prompt: P, picks: WirePick[], ctx: IidContext, state: State): PendingDecision | null;
-  toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State): WirePick;
+  toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State, picks?: WirePick[]): WirePick;
   assemble(prompt: P, picks: WirePick[]): unknown;
+  fixupProjection?(prompt: P, picks: WirePick[], ctx: IidContext, state: State, projected: NeutralState): void;
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────
