@@ -32,10 +32,6 @@ function retreatPokemon(store: StoreLike, state: State, effect: RetreatEffect) {
   player.switchPokemon(player.bench[effect.benchIndex], store, state);
 }
 
-function flatMap<T, U>(array: T[], fn: (item: T) => U[]): U[] {
-  return array.reduce((acc, item) => acc.concat(fn(item)), [] as U[]);
-}
-
 function promptBenchAndRetreat(store: StoreLike, state: State, player: Player): State {
   return store.prompt(state, new ChoosePokemonPrompt(
     player.id,
@@ -92,25 +88,8 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
       throw new GameError(GameMessage.NOT_ENOUGH_ENERGY);
     }
 
-    if (StateUtils.checkExactEnergy(checkProvidedEnergy.energyMap, checkRetreatCost.cost)) {
-      const cards = flatMap(checkProvidedEnergy.energyMap, e => Array.from({ length: e.provides.length }, () => e.card));
-      player.active.clearEffects();
-      player.active.moveCardsTo(cards, player.discard);
-      return promptBenchAndRetreat(store, state, player);
-    }
-
-    if (StateUtils.allEnergyProvidesIdentical(checkProvidedEnergy.energyMap)) {
-      const selection = StateUtils.selectMinimalEnergyForCost(
-        checkProvidedEnergy.energyMap, checkRetreatCost.cost
-      );
-      if (selection && selection.length > 0) {
-        const cards = selection.map(e => e.card);
-        player.active.clearEffects();
-        player.active.moveCardsTo(cards, player.discard);
-        return promptBenchAndRetreat(store, state, player);
-      }
-    }
-
+    // Paying the retreat cost is always the player's choice (official clients prompt even when the
+    // selection is forced) — no auto-pay shortcut, same principle as the prize-take fix.
     return store.prompt(state, new ChooseEnergyPrompt(
       player.id,
       GameMessage.CHOOSE_ENERGY_TO_PAY_RETREAT_COST,
@@ -161,29 +140,8 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
       throw new GameError(GameMessage.NOT_ENOUGH_ENERGY);
     }
 
-    // If the player has the exact energy cost, automatically discard the energy and retreat
-    if (StateUtils.checkExactEnergy(checkProvidedEnergy.energyMap, checkRetreatCost.cost)) {
-      const cards = flatMap(checkProvidedEnergy.energyMap, e => Array.from({ length: e.provides.length }, () => e.card));
-      player.active.clearEffects();
-      player.active.moveCardsTo(cards, effect.moveRetreatCostTo);
-      retreatPokemon(store, state, effect);
-      return state;
-    }
-
-    // If all attached energy is identical, no meaningful choice - auto-select minimal and retreat
-    if (StateUtils.allEnergyProvidesIdentical(checkProvidedEnergy.energyMap)) {
-      const selection = StateUtils.selectMinimalEnergyForCost(
-        checkProvidedEnergy.energyMap, checkRetreatCost.cost
-      );
-      if (selection && selection.length > 0) {
-        const cards = selection.map(e => e.card);
-        player.active.clearEffects();
-        player.active.moveCardsTo(cards, effect.moveRetreatCostTo);
-        retreatPokemon(store, state, effect);
-        return state;
-      }
-    }
-
+    // Paying the retreat cost is always the player's choice (official clients prompt even when the
+    // selection is forced) — no auto-pay shortcut, same principle as the prize-take fix.
     return store.prompt(state, new ChooseEnergyPrompt(
       player.id,
       GameMessage.CHOOSE_ENERGY_TO_PAY_RETREAT_COST,

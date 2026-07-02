@@ -1,6 +1,13 @@
+import { Card } from '../game/store/card/card';
 import { PokemonCard } from '../game/store/card/pokemon-card';
 import { TrainerCard } from '../game/store/card/trainer-card';
 import { EnergyCard } from '../game/store/card/energy-card';
+import { GameError } from '../game/game-error';
+import { Store } from '../game/store/store';
+import { UseAbilityAction as UseAbilityGameAction } from '../game/store/actions/game-actions';
+import { CardTarget, PlayerType, SlotType } from '../game/store/actions/play-card-action';
+import { deepClone } from '../utils/utils';
+import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
   SuperType, TrainerType, Stage, SpecialCondition, BoardEffect, CardType
 } from '../game/store/card/card-types';
@@ -205,6 +212,43 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
   return benchSlots.map((_slot, k) => ({ type: 'retreat', to: k } as LegalAction));
 }
 
+/**
+ * Dry-run one ability on a CLONED store. Many abilities gate usage only by throwing inside their
+ * `reduceEffect` (e.g. Lunar Cycle's "if you have Solrock in play" / "a Basic [F] Energy in hand")
+ * — invisible to any static enumeration, so without probing the menu offers moves the engine then
+ * rejects (a §10.3 contract violation the fuzzer flags as "rejected its own legalAction").
+ * `deepClone(state, [Card])` preserves Card instances, so the source card locates the same slot on
+ * the clone. A GameError rejection = not offered; any other throw (e.g. the effect reaching a coin
+ * flip with no provider installed) gets the benefit of the doubt and the move is offered.
+ */
+function abilityProbeAccepts(state: State, player: Player, ability: string, sourceCard: PokemonCard): boolean {
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[state.players.indexOf(player)];
+  let target: CardTarget | undefined;
+  if (cloned.active.cards.includes(sourceCard)) {
+    target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+  } else {
+    for (let i = 0; i < cloned.bench.length; i++) {
+      if (cloned.bench[i].cards.includes(sourceCard)) {
+        target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: i };
+        break;
+      }
+    }
+  }
+  if (target === undefined) {
+    return false;
+  }
+  try {
+    probe.dispatch(new UseAbilityGameAction(cloned.id, ability, target));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+}
+
 function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidContext): LegalAction[] {
   const out: LegalAction[] = [];
   for (const s of ownInPlay(player, ctx)) {
@@ -216,15 +260,15 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
     // ELEGANT_HEAL_MARKER, added through USE_ABILITY_ONCE_PER_TURN). A card that has added a
     // self-sourced player marker this turn has already spent its once-per-turn ability, so don't
     // offer it again — the engine would reject the re-use with POWER_ALREADY_USED, and legalActions
-    // must not contain a move the engine refuses (design §10.3). This is an approximation: twinleaf
-    // exposes no read-only "is this ability usable" query and the marker names are card-private, so
-    // we key on the source card; the fuzzer's "rejected its own legalAction" invariant guards drift.
+    // must not contain a move the engine refuses (design §10.3).
     if (player.marker.markers.some(m => m.source === pokemon)) { continue; }
     const powersEffect = new CheckPokemonPowersEffect(player, pokemon);
     store.reduceEffect(state, powersEffect);
     for (const power of powersEffect.powers) {
       if (power.powerType !== PowerType.ABILITY) { continue; }
       if (power.useWhenInPlay !== true) { continue; } // only player-activated in-play abilities
+      // Final gate: dry-run on a clone — card-private preconditions live inside reduceEffect (TA-14).
+      if (!abilityProbeAccepts(state, player, power.name, pokemon)) { continue; }
       out.push({ type: 'useAbility', source: s.iid, ability: power.name });
     }
   }

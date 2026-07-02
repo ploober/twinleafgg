@@ -151,7 +151,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       A: emptyPlayer({
         active: {
           stack: [{ iid: 'A-active', printing: RALTS }],
-          energy: [{ iid: 'A-pre', printing: PSY }],   // exactly retreat cost [C] -> prompt-free
+          energy: [{ iid: 'A-pre', printing: PSY }],   // covers retreat cost [C]; paying always prompts
           tools: [], damage: 0, conditions: [], markers: markers(1),
         },
         bench: [{
@@ -177,14 +177,15 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
     const actions: NeutralAction[] = [
       { actor: 'A', type: 'attachEnergy', card: 'A-psy', target: 'A-bench0' },  // attach to the retreat target
-      { actor: 'A', type: 'retreat', to: 0 },                                   // exact-energy retreat (A-pre discarded)
+      { actor: 'A', type: 'retreat', to: 0 },                                   // paying the cost always prompts
+      { actor: 'A', type: 'discard', target: 'A-pre' },                         // the retreat-cost discard pick
       { actor: 'A', type: 'endTurn' },                                          // real PassTurnAction
-    ];
+    ] as NeutralAction[];
 
     const res = step(initial, actions);
 
     expect(res.status).toBe('awaitingAction');
-    expect(res.applied).toBe(3);
+    expect(res.applied).toBe(4);
 
     // the benched Ralts (with its freshly attached energy) is now active
     expect(res.state.players.A.active!.stack).toEqual([{ iid: 'A-bench0', printing: RALTS }]);

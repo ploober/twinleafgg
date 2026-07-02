@@ -146,11 +146,23 @@ describe('Conformance M5 — legalActions (the main-phase menu)', () => {
   });
 
   it('phase 2: a usable in-play ability is enumerated', () => {
+    // The opponent must carry damage: Painful Spoons (move damage counters) rejects on an
+    // undamaged board, and the menu dry-run probe (TA-14) only offers abilities the engine accepts.
+    const m = menu(board(
+      player({ active: pip('A-act', ALAKAZAM) }),
+      player({ active: pip('B-act', RALTS, { damage: 20 }) }),
+    ));
+    expect(has(m, a => a.type === 'useAbility' && a.source === 'A-act' && a.ability === 'Painful Spoons')).toBe(true);
+  });
+
+  it('phase 2: an ability whose own preconditions fail is NOT enumerated (TA-14 probe)', () => {
+    // Painful Spoons moves opponent damage counters — with nothing damaged the engine would
+    // reject it, so the menu must not offer it (§10.3: legalActions must be executable).
     const m = menu(board(
       player({ active: pip('A-act', ALAKAZAM) }),
       player({ active: pip('B-act', RALTS) }),
     ));
-    expect(has(m, a => a.type === 'useAbility' && a.source === 'A-act' && a.ability === 'Painful Spoons')).toBe(true);
+    expect(has(m, a => a.type === 'useAbility' && a.ability === 'Painful Spoons')).toBe(false);
   });
 
   it('phase 2: an ability drops off the menu once used (ABILITY_USED)', () => {

@@ -328,7 +328,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         if (prompt.type.startsWith('Shuffle') && next !== undefined && next.type === 'shuffle') {
           const perm = shuffleOrderToPermutation(game, prompt, next as ShuffleSystemAction);
           if (!prompt.validate(perm, game.state)) {
-            throw new Error(`[conformance] shuffle order invalid for prompt '${prompt.type}'`);
+            const player = game.state.players.find(p => p.id === prompt.playerId);
+            throw new Error(`[conformance] shuffle order invalid for prompt '${prompt.type}': `
+              + `order len=${(next as ShuffleSystemAction).order.length}, perm=[${perm.join(',')}], `
+              + `deck len=${player ? player.deck.cards.length : '?'}, playerId=${prompt.playerId}`);
           }
           cursor.i++;
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
@@ -379,9 +382,16 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // terminator and finalize on the next iteration — without consuming the action.
       const canStop = sub.legalActions.some(a => a.type === 'endChoice');
       const pickTypes = new Set<string>(sub.legalActions.filter(a => a.type !== 'endChoice').map(a => a.type));
-      if (!pickTypes.has(nextAction.type) && canStop) {
-        accum.push({ kind: 'done' });
-        continue;
+      if (!pickTypes.has(nextAction.type)) {
+        if (canStop) {
+          accum.push({ kind: 'done' });
+          continue;
+        }
+        // Not a continuation and the decision cannot stop: an illegal MOVE (the pending's
+        // legalActions don't offer it) — reject cleanly (invalidAction), don't fault the adapter.
+        // The rejection path expects the cursor one past the offending action.
+        cursor.i++;
+        throw new GameError(GameMessage.ILLEGAL_ACTION);
       }
       accum.push(dec.toPick(prompt, nextAction, game.ctx, game.state, accum));
       cursor.i++;

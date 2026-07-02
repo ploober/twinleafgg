@@ -21,7 +21,10 @@ export class ShuffleDeckPrompt extends Prompt<number[]> {
       return false;
     }
     const s = result.slice();
-    s.sort();
+    // Numeric comparator required: default Array.sort is LEXICOGRAPHIC, which scrambles any
+    // permutation containing indexes >= 10 (e.g. 10 sorts before 2) and so rejected every valid
+    // shuffle of a deck larger than 10 cards.
+    s.sort((a, b) => a - b);
     for (let i = 0; i < s.length; i++) {
       if (s[i] !== i) {
         return false;

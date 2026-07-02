@@ -88,15 +88,45 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
   const beforeDmg = damageByIid(before);
   const afterDmg = damageByIid(after);
 
-  // damaged — survivors with a positive net damage delta.
+  // Checkup condition ticks (poison/burn) logged this batch, per afflicted player. An attack that
+  // auto-ends the turn runs the checkup in the SAME dispatch, so a survivor's damage delta can mix
+  // attack damage and tick damage — one aggregated `damaged` where the tick is a distinct event
+  // (TA-16). The tick logs (TA-13) let us split the delta back into per-source events.
+  const ticksByPlayer = new Map<NeutralPlayerId, number[]>();
+  for (const log of logs) {
+    if (log.message === GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE
+      || log.message === GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE) {
+      const a = logActor(log);
+      if (a) {
+        const list = ticksByPlayer.get(a) ?? [];
+        list.push(logNum(log, 'damage'));
+        ticksByPlayer.set(a, list);
+      }
+    }
+  }
+
+  // damaged — survivors with a positive net damage delta. The player's ACTIVE splits its delta
+  // into the logged condition ticks + the remainder (ticks only ever hit the active).
   let survivorDamage = 0;
   for (const [iid, dmgBefore] of beforeDmg) {
     const dmgAfter = afterDmg.get(iid);
     if (dmgAfter !== undefined && dmgAfter > dmgBefore) {
-      const hp = dmgAfter - dmgBefore;
-      survivorDamage += hp;
+      const delta = dmgAfter - dmgBefore;
+      survivorDamage += delta;
       const at = identify(after, iid); // survivor: still in `after`
-      significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp });
+      const isActive = after.players[at.player].active?.stack[0]?.iid === iid;
+      const ticks = isActive ? (ticksByPlayer.get(at.player) ?? []) : [];
+      const tickSum = ticks.reduce((a, b) => a + b, 0);
+      if (tickSum > 0 && tickSum <= delta) {
+        for (const t of ticks) {
+          significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: t });
+        }
+        if (delta - tickSum > 0) {
+          significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: delta - tickSum });
+        }
+      } else {
+        significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: delta });
+      }
     }
   }
 

@@ -40,7 +40,9 @@ export function playerTurnReducer(store: StoreLike, state: State, action: Action
 
       const retreatEffect = new RetreatEffect(player, action.benchIndex);
       state = store.reduceEffect(state, retreatEffect);
-      player.active.clearEffects();
+      // No clearEffects() here: the retreat effect clears on every COMPLETING path itself. When it
+      // pauses on the energy prompt, the retreat has not happened yet — clearing here would cure
+      // the still-active Pokemon's special conditions at declaration (even on a cancel).
       return state;
     }
 
