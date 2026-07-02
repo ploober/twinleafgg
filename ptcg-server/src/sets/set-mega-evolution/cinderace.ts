@@ -20,7 +20,7 @@ export class Cinderace extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Flame Turbo',
+    name: 'Turbo Flare',
     cost: [C],
     damage: 50,
     text: 'Search your deck for up to 3 Basic Energy cards and attach them to your Benched Pokémon in any way you like. Then, shuffle your deck.'

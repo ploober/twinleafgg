@@ -68,7 +68,6 @@ export function initNextTurn(store: StoreLike, state: State): State {
   }
 
   // Draw card at the beginning
-  store.log(state, GameLog.LOG_PLAYER_DRAWS_CARD, { name: player.name });
   if (player.deck.cards.length === 0) {
     store.log(state, GameLog.LOG_PLAYER_NO_CARDS_IN_DECK, { name: player.name });
     const winner = state.activePlayer ? GameWinner.PLAYER_1 : GameWinner.PLAYER_2;
@@ -88,6 +87,9 @@ export function initNextTurn(store: StoreLike, state: State): State {
     return state;
   }
 
+  // Logged only once the draw actually happens: a deck-out or a blocked draw moves no card, so
+  // logging earlier would record a draw that never occurred (phantom `draw` event downstream).
+  store.log(state, GameLog.LOG_PLAYER_DRAWS_CARD, { name: player.name });
   player.deck.moveTo(player.hand, 1);
 
   // Check the drawn card
@@ -126,15 +128,21 @@ function handleSpecialConditions(store: StoreLike, state: State, effect: Between
     switch (sp) {
       case SpecialCondition.POISONED:
         player.active.damage += effect.poisonDamage;
+        store.log(state, GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE,
+          { name: player.name, damage: effect.poisonDamage });
         break;
       case SpecialCondition.BURNED:
         player.active.damage += effect.burnDamage;
+        store.log(state, GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE,
+          { name: player.name, damage: effect.burnDamage });
 
         if (effect.burnFlipResult === true) {
           break;
         }
         if (effect.burnFlipResult === false) {
           player.active.damage += effect.burnDamage;
+          store.log(state, GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE,
+            { name: player.name, damage: effect.burnDamage });
           break;
         }
         store.prompt(state, new CoinFlipPrompt(

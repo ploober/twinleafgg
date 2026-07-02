@@ -68,7 +68,20 @@ function logNum(log: StateLog, key: string): number {
   return typeof value === 'number' ? value : 0;
 }
 
-export function deriveEvents(before: NeutralState, after: NeutralState, logs: StateLog[]): NeutralEvent[] {
+/**
+ * Cross-batch turn-boundary memory, owned by one replay loop (driver) and threaded through every
+ * deriveEvents call. The native LOG_PLAYER_ENDS_TURN lands in the batch that processes the end-turn
+ * action, but the deferred `turnEnded` (TA-2) may only become emittable batches later — when the
+ * turn actually advances or the game goes terminal mid-checkup (TA-8: e.g. endTurn → flip → checkup
+ * KO → takePrize → gameOver, where the terminal batch no longer contains the ENDS_TURN log).
+ */
+export interface TurnCarry {
+  /** The player whose end-turn is processed but whose `turnEnded` is not yet emitted. */
+  endedBy?: NeutralPlayerId;
+}
+
+export function deriveEvents(before: NeutralState, after: NeutralState, logs: StateLog[],
+  carry?: TurnCarry): NeutralEvent[] {
   const informational = mapDelta(logs);
   const significant: NeutralEvent[] = [];
 
@@ -88,11 +101,18 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
   }
 
   // ko — a basic iid present before, gone after. For a single KO, attribute the lethal hit (the
-  // dealt-damage delta not accounted for by survivors) as its `damaged` before the `ko`.
+  // dealt-damage delta not accounted for by survivors) as its `damaged` before the `ko`. Damage
+  // sources: attack damage (LOG_PLAYER_DEALS_DAMAGE) and checkup condition ticks (poison/burn),
+  // which can KO within the same dispatch (TA-13: a lethal poison tick emitted no `damaged`).
+  const DAMAGE_LOGS = new Set<string>([
+    GameLog.LOG_PLAYER_DEALS_DAMAGE,
+    GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE,
+    GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE,
+  ]);
   const koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid));
   if (koList.length === 1) {
     const dealt = logs
-      .filter(l => l.message === GameLog.LOG_PLAYER_DEALS_DAMAGE)
+      .filter(l => DAMAGE_LOGS.has(l.message))
       .reduce((sum, l) => sum + logNum(l, 'damage'), 0);
     const lethal = dealt - survivorDamage;
     if (lethal > 0) {
@@ -111,15 +131,24 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
   // observably over at such a pause (the projection still shows the old turn/activePlayer and
   // phase=checkup), so emitting `turnEnded` there would contradict the state (TA-2). Defer: emit
   // `turnEnded` only in the batch where the turn actually advances (LOG_TURN, placed before
-  // `turnStarted`) or where the game reaches a terminal outcome mid-checkup (no LOG_TURN follows).
+  // `turnStarted`) or where the game reaches a terminal outcome (no LOG_TURN follows). The deferral
+  // spans batches via `carry` (TA-8): the ENDS_TURN log and the terminal/advance batch need not be
+  // the same dispatch (e.g. endTurn → flip answered → checkup KO → takePrize → gameOver).
   const turnAdvanced = logs.some(l => l.message === GameLog.LOG_TURN);
   const endsTurnLog = logs.find(l => l.message === GameLog.LOG_PLAYER_ENDS_TURN);
   const wentTerminal = before.outcome === 'ongoing' && after.outcome !== 'ongoing';
-  if (turnAdvanced || (endsTurnLog !== undefined && wentTerminal)) {
+  const endedBy = (endsTurnLog && logActor(endsTurnLog)) ?? carry?.endedBy;
+  if (carry !== undefined) {
+    carry.endedBy = endedBy;
+  }
+  if (turnAdvanced || (endedBy !== undefined && wentTerminal)) {
     // Deferred across batches, the ENDS_TURN log may be in an earlier batch: the ending player is
     // then the one whose turn is NOT starting.
-    const a = (endsTurnLog && logActor(endsTurnLog)) ?? (after.activePlayer === 'A' ? 'B' : 'A');
+    const a = endedBy ?? (after.activePlayer === 'A' ? 'B' : 'A');
     significant.push({ kind: 'turnEnded', player: a });
+    if (carry !== undefined) {
+      carry.endedBy = undefined;
+    }
   }
   if (turnAdvanced) {
     significant.push({ kind: 'turnStarted', player: after.activePlayer });

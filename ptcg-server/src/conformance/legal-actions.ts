@@ -199,7 +199,10 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
     store.reduceEffect(state, provided);
     if (!StateUtils.checkEnoughEnergy(provided.energyMap, cost.cost)) { return []; }
   }
-  return benchSlots.map(x => ({ type: 'retreat', to: x.i } as LegalAction));
+  // `to` indexes the PROJECTED bench (occupied slots only, in order) — native slot numbers are
+  // engine-private and drift from the projection once a promote/KO leaves a hole (TA-9). The
+  // driver's dispatchRetreat translates back to the native slot.
+  return benchSlots.map((_slot, k) => ({ type: 'retreat', to: k } as LegalAction));
 }
 
 function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidContext): LegalAction[] {

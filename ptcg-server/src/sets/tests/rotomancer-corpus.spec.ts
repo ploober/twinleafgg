@@ -39,8 +39,6 @@ const KNOWN_DISAGREEMENTS: Record<string, string> = {
   // encodes a flat 170. Twinleaf implements the rider, so with no Grass Energy in hand the
   // attack does 0 and the mirror survives. → IR faithfulness gap.
   'sv6pt5-5 Power Shot': 'IR omits the conditional discard rider (flat 170 vs real "discard or nothing")',
-  // Twinleaf "Beat" throws CANNOT_PLAY_THIS_CARD when used — likely an attack-wiring bug.
-  'sv5-136 Beat': 'Twinleaf Beat errors (CANNOT_PLAY_THIS_CARD) — Twinleaf bug candidate',
   // Twinleaf Fire vs IR Fighting. Limitless (independent) confirms FIRE, so the IR/pokemontcg.io
   // dataset is wrong and Twinleaf is correct — NOT a Twinleaf bug.
   'sv8-137 Steaming Stomp': 'Twinleaf Fire vs IR Fighting; Limitless confirms FIRE → IR/dataset error, Twinleaf correct',

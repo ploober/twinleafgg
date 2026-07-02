@@ -14,7 +14,7 @@ export class Houndstone extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Horror Bite',
+    name: 'Horrifying Bite',
     cost: [P],
     damage: 30,
     text: 'Flip a coin until you get tails. For each heads, choose a random card from your opponent\'s hand. Your opponent reveals those cards and shuffles them into their deck.'

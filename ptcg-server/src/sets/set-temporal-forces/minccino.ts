@@ -110,7 +110,8 @@ export class Minccino extends PokemonCard {
   public fullName: string = 'Minccino TEF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Cleaning Up is attack index 1 — index 0 is Beat, a plain-damage attack with no effect.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const generator = useCleaningUp(() => generator.next(), store, state, effect);
       return generator.next().value;
     }

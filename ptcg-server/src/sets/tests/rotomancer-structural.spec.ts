@@ -34,10 +34,11 @@ const KNOWN: Record<string, string> = {
   'me1-17 U-turn': 'Ninjask MEG (alt print): Twinleaf "U-Turn" vs IR "U-turn" — casing. Deferred.',
   'me1-156 Volcanic Meteor': 'Mega Camerupt ex MEG: Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
   'me1-22 Volcanic Meteor': 'Mega Camerupt ex MEG (alt print): Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
-  'me1-28 Turbo Flare': 'Cinderace MEG: Twinleaf "Flame Turbo" vs IR "Turbo Flare". Translation. Deferred.',
+  // 'me1-28 Turbo Flare' retired 2026-07-02: fixed at source (card-data/final corroborates "Turbo
+  // Flare"; the intersection attack-name audit aligned all rotomancer-implemented cards to final).
   'me1-64 Geo Gate': 'Xerneas MEG: Twinleaf "Geogate" vs IR "Geo Gate" — spacing. Deferred.',
   'me2pt5-161 Fury Swipes': 'Team Rocket\'s Meowth ASC: IR "Fury Swipes" not among Twinleaf\'s [Cat Nab, Wild Scratch]. Japan-only name discrepancy. Deferred.',
-  'me2pt5-26 Shining Feathers': 'Ethan\'s Ho-Oh ex ASC: Twinleaf "Shining Feather" vs IR "Shining Feathers" — plural. Deferred.',
+  // 'me2pt5-26 Shining Feathers' retired 2026-07-02: fixed at source (final corroborates the plural).
   'me2pt5-33 Back Draft': 'N\'s Darmanitan ASC: Twinleaf "Backdraft" vs IR "Back Draft" — spacing. Deferred.',
   'me2pt5-33 Flamebody Cannon': 'N\'s Darmanitan ASC: Twinleaf "Darman-i-cannon" vs IR "Flamebody Cannon". Translation. Deferred.',
   'me2pt5-44 Beset': 'Sneasel ASC: IR "Beset" not among Twinleaf\'s [Cut, Draw Near]. Japan-only name discrepancy. Deferred.',

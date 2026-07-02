@@ -21,7 +21,7 @@ export class Alakazam extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Hand Power',
+    name: 'Powerful Hand',
     cost: [P],
     damage: 0,
     text: 'Put 2 damage counters on your opponent\'s Active Pokémon for each card in your hand.'

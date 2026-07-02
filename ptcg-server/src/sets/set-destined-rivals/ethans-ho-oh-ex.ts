@@ -29,7 +29,7 @@ export class EthansHoOhex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Shining Feather',
+      name: 'Shining Feathers',
       cost: [R, R, R, R],
       damage: 160,
       text: 'Heal 50 damage from each of your Pokémon.'

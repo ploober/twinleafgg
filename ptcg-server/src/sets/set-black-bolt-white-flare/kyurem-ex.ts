@@ -20,10 +20,10 @@ export class Kyuremex extends PokemonCard {
     text: ''
   },
   {
-    name: 'Freezing Flames',
+    name: 'Blizzard Burst',
     cost: [W, W, C],
     damage: 130,
-    text: 'This attack does 10 damage to each of your opponent\'s Benched Pokémon for each Prize card your opponent has taken.'
+    text: 'This attack also does 10 damage to each of your opponent\'s Benched Pokémon for each Prize card your opponent has taken. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
   }];
 
   public regulationMark = 'I';

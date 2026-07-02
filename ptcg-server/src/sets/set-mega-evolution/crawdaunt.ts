@@ -13,13 +13,13 @@ export class Crawdaunt extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Vice Grip',
+    name: 'Vise Grip',
     cost: [C],
     damage: 30,
     text: ''
   },
   {
-    name: 'Vengeful Scissors',
+    name: 'Cutting Riposte',
     cost: [D, D, C],
     damage: 130,
     text: 'If this Pokémon has any damage counters on it, this attack can be used for [D].'

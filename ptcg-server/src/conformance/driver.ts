@@ -1,4 +1,6 @@
 import { Card } from '../game/store/card/card';
+import { GameError } from '../game/game-error';
+import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
 import { Prompt } from '../game/store/prompts/prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
@@ -8,7 +10,7 @@ import {
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
-import { deriveEvents } from './events';
+import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
 import { classify, decomposerFor, WirePick } from './decomposers';
 import { topLevelMenu } from './legal-actions';
@@ -106,7 +108,17 @@ function dispatchAttachTool(game: ImportedGame, action: AttachToolAction): void 
 
 function dispatchRetreat(game: ImportedGame, action: RetreatAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  game.store.dispatch(new RetreatGameAction(player.id, action.to));
+  // The wire `to` indexes the PROJECTED bench (occupied slots only, in order) — native slot
+  // numbers are engine-private and drift from the projection once a promote/KO leaves a hole.
+  const occupied = player.bench
+    .map((b, i) => ({ b, i }))
+    .filter(x => x.b.cards.length > 0);
+  const slot = occupied[action.to];
+  if (slot === undefined) {
+    // No such occupied bench position: an illegal MOVE (clean invalidAction), not an adapter fault.
+    throw new GameError(GameMessage.CANNOT_RETREAT);
+  }
+  game.store.dispatch(new RetreatGameAction(player.id, slot.i));
 }
 
 function dispatchDeclareAttack(game: ImportedGame, action: DeclareAttackAction): void {
@@ -166,6 +178,19 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
 }
 
 // ── the replay loop ────────────────────────────────────────────────────────
+
+/**
+ * Thrown by the inline flip provider when an in-effect coin flip (CoinFlipEffect, e.g. a
+ * flip-until-tails attack) needs a result the action log doesn't have yet. `Store.reduce` deep-clones
+ * before reducing and restores the clone on ANY throw, so the dispatch that hit this unwinds cleanly;
+ * the loop catches it and pauses with a system flip pending instead of faulting (TA-12).
+ */
+class FlipStarvation extends Error {
+  constructor() {
+    super('[conformance] coin flip needed but the next action is not a flip');
+    this.name = 'FlipStarvation';
+  }
+}
 
 interface LoopResult {
   events: NeutralEvent[];
@@ -245,18 +270,21 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   game.handler.setFlipProvider((): boolean => {
     const next = cursor.i < actions.length ? actions[cursor.i] : undefined;
     if (next === undefined || next.type !== 'flip') {
-      throw new Error('[conformance] coin flip needed but the next action is not a flip');
+      throw new FlipStarvation();
     }
     cursor.i++;
     return (next as FlipSystemAction).face === 'heads';
   });
+
+  // Cross-batch turn-boundary memory for the deferred `turnEnded` (TA-2/TA-8) — one per replay.
+  const turnCarry: TurnCarry = {};
 
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeState = projectState(game.state, game.ctx);
     fire();
     const afterState = projectState(game.state, game.ctx);
-    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs)));
+    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry));
   };
 
   // A GameError from any dispatch (top-level action OR a prompt resolution) means the engine rejected
@@ -266,6 +294,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   try {
     return loop();
   } catch (err) {
+    // Store.reduce restores a pre-dispatch CLONE on a throw, so store.state and the driver's
+    // game.state alias diverge (game.state keeps any partial mutations). Resync before projecting.
+    game.state = game.store.state;
     const rejection = mapRejection(err);
     if (rejection === undefined) {
       throw err;
@@ -325,6 +356,18 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         continue; // the callback may have raised the next prompt
       }
       // sub !== null — more picks are possible for this decision.
+      const canStopNow = sub.legalActions.some(a => a.type === 'endChoice');
+      if (sub.legalActions.filter(a => a.type !== 'endChoice').length === 0) {
+        // Zero real candidates (e.g. "put a Trainer from your discard into your hand" with an empty
+        // discard): there is no decision content, so pausing would surface an unanswerable empty
+        // pending (TA-6). Auto-complete if the decision permits stopping; otherwise it is an engine
+        // prompt that can never be answered — fault loudly.
+        if (!canStopNow) {
+          throw new Error(`[conformance] prompt '${prompt.type}' decomposed to zero options and cannot stop`);
+        }
+        accum.push({ kind: 'done' });
+        continue;
+      }
       const nextAction = cursor.i < actions.length ? actions[cursor.i] : undefined;
       if (nextAction === undefined) {
         // Log dry mid-decision: carry the open prompt + picks so the projection can apply the
@@ -358,7 +401,25 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         turnEndedBy = null;
         continue;
       }
-      dispatchAndCollect(() => dispatchAction(game, action));
+      try {
+        dispatchAndCollect(() => dispatchAction(game, action));
+      } catch (err) {
+        if (err instanceof FlipStarvation) {
+          // An in-effect coin flip (e.g. a flip-until-tails attack) ran past the log. Store.reduce
+          // restored its pre-dispatch clone, so resync the driver's alias and pause with a system
+          // flip pending (TA-12). `applied` counts everything consumed, including flips the
+          // rolled-back attempt used — on resume the same dispatch replays and re-consumes them.
+          // Only THIS site may pause: a starvation inside a prompt-resolution callback has no
+          // rollback, so it keeps propagating as a loud adapter fault rather than a wrong pause.
+          game.state = game.store.state;
+          const flipPending: PendingDecision = {
+            actor: 'system', descriptor: 'Coin flip',
+            legalActions: [{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }],
+          };
+          return { events, pending: toWirePending(flipPending), applied: cursor.i };
+        }
+        throw err;
+      }
       // Only an attack auto-ends a turn; any other dispatched action clears the "just attacked" state,
       // so the absorption window is exactly attack → (effect prompts) → that attacker's endTurn.
       turnEndedBy = action.type === 'declareAttack' && (action.actor === 'A' || action.actor === 'B')

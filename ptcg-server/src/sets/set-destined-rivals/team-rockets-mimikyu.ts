@@ -79,7 +79,7 @@ export class TeamRocketsMimikyu extends PokemonCard {
   public retreat = [];
 
   public attacks = [{
-    name: 'Gemstone Hunt',
+    name: 'Gemstone Mimicry',
     cost: [P, C],
     damage: 0,
     copycatAttack: true,

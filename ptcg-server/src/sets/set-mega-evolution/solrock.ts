@@ -12,7 +12,7 @@ export class Solrock extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Cosmo Beam',
+    name: 'Cosmic Beam',
     cost: [F],
     damage: 70,
     text: 'If you don\'t have Lunatone on your Bench, this attack does nothing. This attack\'s damage isn\'t affected by Weakness or Resistance.'
