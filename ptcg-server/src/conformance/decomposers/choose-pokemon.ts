@@ -1,10 +1,9 @@
 import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-prompt';
-import { PlayerType, CardTarget } from '../../game/store/actions/play-card-action';
-import { StateUtils } from '../../game/store/state-utils';
+import { CardTarget } from '../../game/store/actions/play-card-action';
 import { GameMessage } from '../../game/game-message';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, enumerateTargets, targetKey } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, playerIdToActor } from '../iid-targets';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 
 /**
  * ChoosePokemonPrompt: one pick = one CardTarget; raw result = CardTarget[]. The post-KO "choose a
@@ -25,7 +24,6 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
     }
 
     const player = promptPlayer(state, prompt.playerId);
-    const opponent = StateUtils.getOpponent(state, player);
     const isPromote = prompt.message === GameMessage.CHOOSE_NEW_ACTIVE_POKEMON;
     const pickedKeys = new Set(rp.map(p => targetKey((p as { target: CardTarget }).target)));
     const candidates = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blocked)
@@ -33,9 +31,11 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
 
     const legalActions: LegalAction[] = candidates.map(t => {
       const target = pokemonTargetToIid(state, player, ctx, t);
+      // Contract: a `choose` carries `target` only (the iid is globally unique — owner is
+      // redundant, and the action table specs `owner` for `discard` alone).
       return isPromote
         ? { type: 'promoteBench', target }
-        : { type: 'choose', target, owner: playerIdToActor(state, t.player === PlayerType.BOTTOM_PLAYER ? player.id : opponent.id) };
+        : { type: 'choose', target };
     });
     if (rp.length >= min && max > min) {
       legalActions.push(END_CHOICE);
