@@ -105,14 +105,23 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     significant.push({ kind: 'ko', player: at.player, target: at.printing });
   }
 
-  // turn boundary — `turnEnded` carries the ending player (log); `turnStarted` the new active player.
-  for (const log of logs) {
-    if (log.message === GameLog.LOG_PLAYER_ENDS_TURN) {
-      const a = logActor(log);
-      if (a) { significant.push({ kind: 'turnEnded', player: a }); }
-    }
+  // turn boundary — `turnEnded` carries the ending player; `turnStarted` the new active player.
+  // The native log writes LOG_PLAYER_ENDS_TURN as soon as the end-turn action processes — BEFORE
+  // the between-turns Checkup resolves, whose coin flips can pause the replay. The turn is not
+  // observably over at such a pause (the projection still shows the old turn/activePlayer and
+  // phase=checkup), so emitting `turnEnded` there would contradict the state (TA-2). Defer: emit
+  // `turnEnded` only in the batch where the turn actually advances (LOG_TURN, placed before
+  // `turnStarted`) or where the game reaches a terminal outcome mid-checkup (no LOG_TURN follows).
+  const turnAdvanced = logs.some(l => l.message === GameLog.LOG_TURN);
+  const endsTurnLog = logs.find(l => l.message === GameLog.LOG_PLAYER_ENDS_TURN);
+  const wentTerminal = before.outcome === 'ongoing' && after.outcome !== 'ongoing';
+  if (turnAdvanced || (endsTurnLog !== undefined && wentTerminal)) {
+    // Deferred across batches, the ENDS_TURN log may be in an earlier batch: the ending player is
+    // then the one whose turn is NOT starting.
+    const a = (endsTurnLog && logActor(endsTurnLog)) ?? (after.activePlayer === 'A' ? 'B' : 'A');
+    significant.push({ kind: 'turnEnded', player: a });
   }
-  if (logs.some(l => l.message === GameLog.LOG_TURN)) {
+  if (turnAdvanced) {
     significant.push({ kind: 'turnStarted', player: after.activePlayer });
   }
 
