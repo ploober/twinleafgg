@@ -331,6 +331,19 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, heads)));
           continue;
         }
+        if (prompt.type.startsWith('Shuffle') && !(next !== undefined && next.type === 'shuffle')) {
+          // CF-11: a deck of 0 or 1 cards has exactly one possible order — a forced
+          // non-decision — so the `system shuffle` pending is NOT surfaced; auto-resolve
+          // with the identity order. The `shuffled` event still fires (uniform-emit).
+          const player = game.state.players.find(p => p.id === prompt.playerId);
+          const deckLen = player ? player.deck.cards.length : 0;
+          if (deckLen <= 1) {
+            const perm = Array.from({ length: deckLen }, (_, i) => i);
+            dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
+            events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
+            continue;
+          }
+        }
         if (prompt.type.startsWith('Shuffle') && next !== undefined && next.type === 'shuffle') {
           const perm = shuffleOrderToPermutation(game, prompt, next as ShuffleSystemAction);
           if (!prompt.validate(perm, game.state)) {
