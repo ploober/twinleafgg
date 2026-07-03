@@ -57,6 +57,19 @@ export class Pikachuex extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
+      // "Discard 3 Energy from this Pokémon." When 3 or fewer Energy are attached,
+      // every attached Energy must go — there is no which-choice, so apply the
+      // discard atomically with no prompt (CF-8 forced-discard boundary: a discard
+      // whose count >= the available pool is a non-decision). Only with 4+ attached
+      // is it a genuine "which 3" choice that surfaces the discard picks.
+      if (checkProvidedEnergy.energyMap.length <= 3) {
+        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+        return state;
+      }
+
       state = store.prompt(state, new ChooseEnergyPrompt(
         player.id,
         GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
