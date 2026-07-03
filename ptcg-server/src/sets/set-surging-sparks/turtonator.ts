@@ -26,7 +26,7 @@ export class Turtonator extends PokemonCard {
     },
     {
       name: 'Steaming Stomp',
-      cost: [CardType.FIRE, CardType.COLORLESS, CardType.COLORLESS],
+      cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],
       damage: 100,
       text: ''
     }

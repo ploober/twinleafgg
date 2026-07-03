@@ -41,11 +41,10 @@ export class Kyogre extends PokemonCard {
       const player = effect.player;
       // counting the energies
       const energiesInDiscard = player.discard.cards.filter(c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Water Energy');
+      effect.damage = 20 * energiesInDiscard.length;
       if (energiesInDiscard.length === 0) {
         return state;
       }
-
-      effect.damage = 20 * energiesInDiscard.length;
       // slapping those energies back into the deck
       MOVE_CARDS(store, state, player.discard, player.deck, { cards: energiesInDiscard, sourceCard: this, sourceEffect: this.attacks[0] });
       SHUFFLE_DECK(store, state, player);

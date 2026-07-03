@@ -4,8 +4,6 @@ import { CardTag } from '../../game/store/card/card-types';
 import { StoreLike, State } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
 
-import { PlayPokemonEffect } from '../../game/store/effects/play-card-effects';
-import { EndTurnEffect } from '../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class Koraidon extends PokemonCard {
@@ -50,34 +48,21 @@ export class Koraidon extends PokemonCard {
 
   public fullName: string = 'Koraidon SSP';
 
-  public readonly UNRELENTING_ONSLAUGHT_MARKER = 'UNRELENTING_ONSLAUGHT_MARKER';
-  public readonly UNRELENTING_ONSLAUGHT_2_MARKER = 'UNRELENTING_ONSLAUGHT_2_MARKER';
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
-    if (effect instanceof PlayPokemonEffect && effect.pokemonCard === this) {
-      effect.player.marker.removeMarker(this.UNRELENTING_ONSLAUGHT_MARKER, this);
-      effect.player.marker.removeMarker(this.UNRELENTING_ONSLAUGHT_2_MARKER, this);
-    }
-
-    if (effect instanceof EndTurnEffect && effect.player.marker.hasMarker(this.UNRELENTING_ONSLAUGHT_2_MARKER, this)) {
-      effect.player.marker.removeMarker(this.UNRELENTING_ONSLAUGHT_MARKER, this);
-      effect.player.marker.removeMarker(this.UNRELENTING_ONSLAUGHT_2_MARKER, this);
-    }
-
-    if (effect instanceof EndTurnEffect && effect.player.marker.hasMarker(this.UNRELENTING_ONSLAUGHT_MARKER, this)) {
-      effect.player.marker.addMarker(this.UNRELENTING_ONSLAUGHT_2_MARKER, this);
-    }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const playerLastAttackInfo = state.playerLastAttack?.[player.id];
       const originalCard = playerLastAttackInfo ? playerLastAttackInfo.sourceCard : null;
 
-      if (originalCard && originalCard.tags.includes(CardTag.ANCIENT) && !player.marker.hasMarker(this.UNRELENTING_ONSLAUGHT_MARKER)) {
+      // "1 of your other Ancient Pokémon used an attack during your last turn":
+      // the previous attack must be from the player's immediately preceding turn,
+      // by an Ancient Pokémon that is not this one.
+      if (originalCard && originalCard !== this
+        && originalCard.tags.includes(CardTag.ANCIENT)
+        && playerLastAttackInfo?.turn === state.turn - 2) {
         effect.damage += 150;
       }
-      player.marker.addMarker(this.UNRELENTING_ONSLAUGHT_MARKER, this);
     }
     return state;
   }

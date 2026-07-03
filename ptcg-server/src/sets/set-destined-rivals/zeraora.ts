@@ -1,4 +1,4 @@
-import { Attack, Card, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameError, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
+import { Attack, Card, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
 import { DiscardCardsEffect, PutDamageEffect } from '../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../game/store/effects/check-effects';
 import { Effect } from '../../game/store/effects/effect';
@@ -36,18 +36,6 @@ export class Zeraora extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      let exPokemonOnOppBench = false;
-
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card) => {
-        if (card.tags.includes(CardTag.POKEMON_ex)) {
-          exPokemonOnOppBench = true;
-        }
-      });
-
-      if (!exPokemonOnOppBench) {
-        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-      }
-
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
@@ -55,6 +43,17 @@ export class Zeraora extends PokemonCard {
       const discardEnergy = new DiscardCardsEffect(effect, cards);
       discardEnergy.target = player.active;
       store.reduceEffect(state, discardEnergy);
+
+      const benchHasEx = opponent.bench.some(b => {
+        const pokemon = b.getPokemonCard();
+        return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
+      });
+
+      // The attack is usable with no Benched Pokemon ex to hit; the energy is
+      // still discarded and the damage simply does not happen.
+      if (!benchHasEx) {
+        return state;
+      }
 
       const blocked: CardTarget[] = [];
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {

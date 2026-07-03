@@ -11,7 +11,7 @@ export class Karrablast extends PokemonCard {
   public cardType: CardType = G;
   public hp: number = 60;
   public weakness = [{ type: R }];
-  public retreat = [C, C, C];
+  public retreat = [C];
 
   public powers = [{
     name: 'Stimulated Evolution',

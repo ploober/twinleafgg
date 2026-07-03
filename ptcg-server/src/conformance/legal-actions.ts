@@ -199,8 +199,14 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
     .filter(x => x.b.cards.length > 0);
   if (benchSlots.length === 0) { return []; }
 
+  // A card effect may forbid the retreat outright (e.g. "this Pokemon can't
+  // retreat during your next turn") by throwing from the cost query.
   const cost = new CheckRetreatCostEffect(player);
-  store.reduceEffect(state, cost);
+  try {
+    store.reduceEffect(state, cost);
+  } catch (e) {
+    return [];
+  }
   if (cost.cost.length > 0) {
     const provided = new CheckProvidedEnergyEffect(player, player.active);
     store.reduceEffect(state, provided);

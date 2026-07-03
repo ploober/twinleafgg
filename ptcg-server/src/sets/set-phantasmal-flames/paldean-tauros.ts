@@ -20,7 +20,8 @@ export class PaldeanTauros extends PokemonCard {
     name: 'Raging Charge',
     cost: [F],
     damage: 0,
-    text: 'This attack does 40 damage for each damage counter on all of your Pokemon with "Tauros" in their name in play.',
+    damageCalculation: 'x',
+    text: 'This attack does 40 damage for each of your Pokémon that has "Tauros" in its name that has any damage counters on it.',
   },
   {
     name: 'Double-Edge',
@@ -39,17 +40,15 @@ export class PaldeanTauros extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      let totalDamage = 0;
+      let damagedTauros = 0;
 
-      // Count damage counters on all Pokemon with "Tauros" in their name
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        if (card && card.name.includes('Tauros')) {
-          totalDamage += cardList.damage;
+        if (card && card.name.includes('Tauros') && cardList.damage > 0) {
+          damagedTauros += 1;
         }
       });
 
-      // Set damage to 40x the total damage counters
-      effect.damage = totalDamage * 40;
+      effect.damage = 40 * damagedTauros;
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

@@ -46,7 +46,7 @@ export class State {
 
   public lastAttack: Attack | null = null;
 
-  public playerLastAttack: { [playerId: number]: { attack: Attack, sourceCard: PokemonCard } } = {};
+  public playerLastAttack: { [playerId: number]: { attack: Attack, sourceCard: PokemonCard, turn?: number } } = {};
 
   public isSuddenDeath?: boolean;
 

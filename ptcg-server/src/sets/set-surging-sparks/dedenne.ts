@@ -37,12 +37,20 @@ export class Dedenne extends PokemonCard {
       const player = effect.player;
       const opponent = effect.opponent;
 
+      // "Put a Trainer card from your discard pile into your hand." is not
+      // optional ("up to"/"you may") — exactly 1 when possible; with no
+      // Trainer in the discard pile the effect simply does nothing.
+      const hasTrainerInDiscard = player.discard.cards.some(c => c.superType === SuperType.TRAINER);
+      if (!hasTrainerInDiscard) {
+        return state;
+      }
+
       store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.discard,
         { superType: SuperType.TRAINER },
-        { min: 0, max: 1, allowCancel: false }
+        { min: 1, max: 1, allowCancel: false }
       ), selected => {
         if (selected) {
           SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);

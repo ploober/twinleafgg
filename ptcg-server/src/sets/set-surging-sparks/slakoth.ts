@@ -40,7 +40,8 @@ export class Slakoth extends PokemonCard {
 
   public fullName: string = 'Slakoth SSP';
 
-  private readonly CANT_RETREAT_NEXT_TURN_MARKER = 'CANT_RETREAT_NEXT_TURN_MARKER';
+  private readonly CANT_RETREAT_PENDING_MARKER = 'CANT_RETREAT_PENDING_MARKER';
+  private readonly CANT_RETREAT_ACTIVE_MARKER = 'CANT_RETREAT_ACTIVE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Take It Easy
@@ -52,24 +53,33 @@ export class Slakoth extends PokemonCard {
       const healEffect = new HealEffect(player, cardList, 60);
       store.reduceEffect(state, healEffect);
 
-      // Put a marker that states we can't retreat next turn
-      player.marker.addMarker(this.CANT_RETREAT_NEXT_TURN_MARKER, this);
+      // "During your next turn, this Pokemon can't retreat." — two-stage
+      // marker on this Pokemon's own card list: armed at the end of the turn
+      // the attack was used, expired at the end of the player's next turn.
+      cardList.marker.addMarker(this.CANT_RETREAT_PENDING_MARKER, this);
     }
 
-    // Handle putting on the real "can't retreat this turn" marker on ourselves.
     if (effect instanceof EndTurnEffect) {
-      const marker = effect.player.marker;
-      if (marker.hasMarker(this.CANT_RETREAT_NEXT_TURN_MARKER, this)) {
-        marker.addMarker(PokemonCardList.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this);
+      const cardList = StateUtils.findCardList(state, this);
+      if (cardList instanceof PokemonCardList
+        && StateUtils.findOwner(state, cardList) === effect.player) {
+        if (cardList.marker.hasMarker(this.CANT_RETREAT_ACTIVE_MARKER, this)) {
+          cardList.marker.removeMarker(this.CANT_RETREAT_ACTIVE_MARKER, this);
+        } else if (cardList.marker.hasMarker(this.CANT_RETREAT_PENDING_MARKER, this)) {
+          cardList.marker.removeMarker(this.CANT_RETREAT_PENDING_MARKER, this);
+          cardList.marker.addMarker(this.CANT_RETREAT_ACTIVE_MARKER, this);
+        }
       }
-      marker.removeMarker(this.CANT_RETREAT_NEXT_TURN_MARKER, this);
     }
 
-    // Handle no retreat effect for ourselves.
-    if (effect instanceof CheckRetreatCostEffect &&
-      effect.player.active.marker.hasMarker(PokemonCardList.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this)
-    ) {
-      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    // Block this Pokemon's retreat while the marker is armed.
+    if (effect instanceof CheckRetreatCostEffect) {
+      const cardList = StateUtils.findCardList(state, this);
+      if (cardList === effect.player.active
+        && cardList instanceof PokemonCardList
+        && cardList.marker.hasMarker(this.CANT_RETREAT_ACTIVE_MARKER, this)) {
+        throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+      }
     }
 
     return state;
