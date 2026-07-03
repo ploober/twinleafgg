@@ -4,7 +4,7 @@ import { Card, ChooseCardsPrompt, CoinFlipPrompt, GameMessage, PlayerType, State
 import { StoreLike, State } from '../../game';
 
 import { Effect } from '../../game/store/effects/effect';
-import { DiscardCardsEffect, PutCountersEffect } from '../../game/store/effects/attack-effects';
+import { DealDamageEffect, DiscardCardsEffect, PutCountersEffect } from '../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class Yveltal extends PokemonCard {
@@ -60,6 +60,12 @@ export class Yveltal extends PokemonCard {
       if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
         return state;
       }
+
+      // Rulebook attack step F: damage first, then the post-damage effect flip
+      // (compendium #649) — the flip pauses, so the 100 must already be placed.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       return store.prompt(state, [
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)

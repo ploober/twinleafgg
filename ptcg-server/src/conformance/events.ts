@@ -139,7 +139,17 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE,
     GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE,
   ]);
-  const koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid));
+  // A Pokemon whose basic iid reappears in a player's hand or deck was BOUNCED by an effect
+  // ("Put this Pokemon and all attached cards into your hand" — Tuck Tail), not Knocked Out:
+  // no `ko`, and its vanished damage is not a damage placement (TL-8/run-6 por-062).
+  const bounced = new Set<string>();
+  for (const p of PLAYERS) {
+    const side = after.players[p];
+    for (const ref of [...side.hand, ...side.deck]) {
+      if (beforeDmg.has(ref.iid) && !afterDmg.has(ref.iid)) { bounced.add(ref.iid); }
+    }
+  }
+  const koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid) && !bounced.has(iid));
   if (koList.length === 1) {
     const dealt = logs
       .filter(l => DAMAGE_LOGS.has(l.message))
@@ -147,7 +157,26 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     const lethal = dealt - survivorDamage;
     if (lethal > 0) {
       const koHit = identify(before, koList[0]); // KO'd: gone from `after`, identify in `before`
-      significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal });
+      // CF-6: one `damaged` event per damage placement. The KO'd Pokemon's condition ticks
+      // (it was its owner's active when the checkup ran) are placements distinct from the
+      // attack's single post-calculation placement — emit each tick, then the remainder.
+      const wasOwnersActive = before.players[koHit.player].active?.stack[0]?.iid === koList[0];
+      const afterActive = after.players[koHit.player].active;
+      const ticksConsumedBySurvivor = afterActive !== null && afterActive.stack.length > 0
+        && (afterDmg.get(afterActive.stack[0].iid) ?? 0) > (beforeDmg.get(afterActive.stack[0].iid) ?? Infinity);
+      const ticks = wasOwnersActive && !ticksConsumedBySurvivor
+        ? (ticksByPlayer.get(koHit.player) ?? []) : [];
+      const tickSum = ticks.reduce((a, b) => a + b, 0);
+      if (tickSum > 0 && tickSum <= lethal) {
+        for (const t of ticks) {
+          significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: t });
+        }
+        if (lethal - tickSum > 0) {
+          significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal - tickSum });
+        }
+      } else {
+        significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal });
+      }
     }
   }
   for (const iid of koList) {

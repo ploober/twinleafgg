@@ -74,8 +74,11 @@ export class WalkingWake extends PokemonCard {
 function* attack(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // "Put up to 9 damage counters on THIS Pokemon" — the only legal target is
+  // this (active) Pokemon; do not offer the bench in the damage map.
   const maxAllowedDamage: DamageMap[] = [];
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+    if (cardList !== player.active) { return; }
     const checkHpEffect = new CheckHpEffect(player, cardList);
     store.reduceEffect(state, checkHpEffect);
     maxAllowedDamage.push({ target, damage: checkHpEffect.hp + 90 });

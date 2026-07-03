@@ -45,6 +45,15 @@ export function initNextTurn(store: StoreLike, state: State): State {
   }
 
   if (state.phase === GamePhase.BETWEEN_TURNS) {
+    // Rotate the ENDING player's prize tally atomically with the turn advance.
+    // Doing this in the EndTurnEffect handler is too early: an attack-KO's
+    // prize choice resolves via prompts AFTER that handler runs, so the take
+    // was credited to an already-rotated counter and lingered a full turn.
+    player.prizesTakenLastTurn = player.prizesTakenThisTurn;
+    player.prizesTakenThisTurn = 0;
+  }
+
+  if (state.phase === GamePhase.BETWEEN_TURNS) {
     if (player.usedTurnSkip) {
       // eslint-disable-next-line no-self-assign
       state.activePlayer = state.activePlayer;
@@ -234,9 +243,9 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
     player.supporterTurn = 0;
     player.active.attacksThisTurn = 0;
 
-    // Preserve prizes taken this turn for "last turn" tracking
-    player.prizesTakenLastTurn = player.prizesTakenThisTurn;
-    player.prizesTakenThisTurn = 0;
+    // NOTE: the prizesTaken tally rotation happens in `initNextTurn`, atomic
+    // with the turn advance — an attack-KO's prize prompts resolve after this
+    // handler, so rotating here would credit the take to the wrong turn.
 
     if (player === undefined) {
       throw new GameError(GameMessage.NOT_YOUR_TURN);

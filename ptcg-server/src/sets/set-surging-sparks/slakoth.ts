@@ -13,7 +13,7 @@ export class Slakoth extends PokemonCard {
 
   public cardType: CardType = CardType.COLORLESS;
 
-  public hp: number = 90;
+  public hp: number = 60;
 
   public weakness = [{ type: CardType.FIGHTING }];
 

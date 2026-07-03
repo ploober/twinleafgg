@@ -12,7 +12,7 @@ export class HopsSilicobra extends PokemonCard {
 
   public cardType: CardType = F;
 
-  public hp: number = 60;
+  public hp: number = 80;
 
   public weakness = [{ type: G }];
 

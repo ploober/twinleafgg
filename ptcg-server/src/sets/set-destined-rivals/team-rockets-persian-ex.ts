@@ -83,7 +83,7 @@ export class TeamRocketsPersianex extends PokemonCard {
   public cardType: CardType = C;
   public hp: number = 260;
   public weakness = [{ type: F }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

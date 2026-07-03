@@ -12,7 +12,7 @@ export class Inteleon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Drizzile';
   public cardType: CardType = W;
-  public hp: number = 100;
+  public hp: number = 150;
   public weakness = [{ type: L }];
   public retreat = [C];
 
@@ -24,7 +24,7 @@ export class Inteleon extends PokemonCard {
   },
   {
     name: 'Water Shot',
-    cost: [W, W],
+    cost: [W],
     damage: 110,
     text: 'Discard an Energy from this Pokémon.'
   }];

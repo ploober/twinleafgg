@@ -86,11 +86,10 @@ export class ChooseCardsPrompt extends Prompt<Card[]> {
       }
     }
 
-    if (!this.options.isSecret) {
-      if (this.cards === this.player.deck || this.cards === this.player.discard) {
-        this.cards.sort();
-      }
-    }
+    // NOTE: do NOT sort the underlying CardList here for display grouping —
+    // it MUTATES the real deck/discard order (game state). A search that is
+    // not followed by a shuffle would leak the reorder, and replays diverge.
+    // Clients may sort their own display copy.
 
     if (this.options.blocked.length > 0) {
       this.options.blocked = [];

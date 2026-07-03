@@ -173,7 +173,10 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
       dispatchPlayTrainer(game, action as { actor: NeutralPlayerId; type: string; card: string }); break;
     case 'useAbility': dispatchUseAbility(game, action as UseAbilityAction); break;
     default:
-      throw new Error(`[conformance] action "${action.type}" is not a top-level action`);
+      // A pending-only action type (takePrize, promoteBench, choose, …) arriving with no
+      // matching pending open is an ILLEGAL move by the client, not an engine fault — reject
+      // cleanly as invalidAction instead of a 500 (same family as the TA-5 post-terminal 500).
+      throw new GameError(GameMessage.ILLEGAL_ACTION);
   }
 }
 

@@ -8,6 +8,7 @@ import { Effect } from '../../game/store/effects/effect';
 import { CardTag } from '../../game/store/card/card-types';
 import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../game';
 import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
+import { DealDamageEffect } from '../../game/store/effects/attack-effects';
 
 export class Miraidon extends PokemonCard {
 
@@ -53,6 +54,12 @@ export class Miraidon extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
 
       const player = effect.player;
+
+      // Rulebook attack step F: damage first, then the search/attach effect —
+      // the deck search pauses, so the 40 must already be placed.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,
