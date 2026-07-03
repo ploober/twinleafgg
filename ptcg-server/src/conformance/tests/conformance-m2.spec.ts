@@ -89,13 +89,15 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       (cards || []).forEach((c: any) => p.hand.moveCardTo(c, p.discard));
     });
 
-    // first decision: 3 candidates (fixed count, 2 of 3)
+    // first decision: 3 candidates (fixed count, 2 of 3) — a discard pick surfaces
+    // as `discard {owner, target}` (CF-8), not generic `choose`
     const la = firstDecision(game);
-    expect(la.filter(a => a.type === 'choose').length).toBe(3);
+    expect(la.filter(a => a.type === 'discard').length).toBe(3);
+    expect((la[0] as any).owner).toBe('A');
 
     const res = replay(game, [
-      { actor: 'A', type: 'choose', target: 'h0' },
-      { actor: 'A', type: 'choose', target: 'h1' },
+      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'discard', target: 'h1', owner: 'A' },
     ]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY, WATER]);
     expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
@@ -117,14 +119,14 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
     // The wire never exposes an `endChoice` terminator (contract has no such Action; R1). After one
     // pick the decision still offers more `choose` candidates (max not yet reached).
-    const d2 = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }]).pending!.legalActions;
+    const d2 = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }]).pending!.legalActions;
     expect(d2.some(a => (a as { type: string }).type === 'endChoice')).toBe(false);
-    expect(d2.some(a => a.type === 'choose')).toBe(true);
+    expect(d2.some(a => a.type === 'discard')).toBe(true);
 
     // next-action-completes: a non-pick next action (endTurn) stops the "up to 2" choice at one pick.
     // `captured` is set only if the discard RESOLVED (a log that dried mid-choice would surface a
     // pending and never fire the callback), so [PSY] proves the early stop; both actions are consumed.
-    const res = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }, { actor: 'A', type: 'endTurn' }]);
+    const res = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }, { actor: 'A', type: 'endTurn' }]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY]);
     expect(res.applied).toBe(2);
   });
@@ -138,7 +140,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     game.store.prompt(game.state, new ChooseCardsPrompt(
       p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 1, blocked: [0] }
     ), () => { /* noop */ });
-    const targets = firstDecision(game).filter(a => a.type === 'choose').map(a => (a as any).target);
+    const targets = firstDecision(game).filter(a => a.type === 'discard').map(a => (a as any).target);
     expect(targets).toEqual(['h1']); // h0 (index 0) blocked
   });
 
@@ -302,7 +304,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), (order: number[]) => { p.deck.applyOrder(order); });
     });
 
-    const res = replay(game, [{ actor: 'A', type: 'choose', target: 'h0' }]);
+    const res = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }]);
     expect(res.pending).not.toBeNull();
     expect(res.pending!.actor).toBe('system');
     expect(res.pending!.legalActions[0].type).toBe('shuffle');
@@ -322,7 +324,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     });
 
     const res = replay(game, [
-      { actor: 'A', type: 'choose', target: 'h0' },
+      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
       { actor: 'system', type: 'shuffle', order: ['d1', 'd0'] },
     ]);
     expect(res.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);

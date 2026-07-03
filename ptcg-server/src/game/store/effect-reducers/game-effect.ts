@@ -377,6 +377,17 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
         effect.target.clearEffects();
         state = MOVE_CARDS(store, state, effect.target, effect.player.discard);
       }
+
+      // A KO dispatched directly by a card effect bypasses the checkState sweep's
+      // prize accounting (findKoPokemons no longer sees the discarded target) —
+      // record the owed prize so the next sweep awards it (compendium #2026:
+      // prizes are taken before the replacement Active is chosen).
+      if (!effect.viaCheckState && effect.preventDefault === false) {
+        const playerNum = state.players.findIndex(p => p.id === effect.player.id);
+        if (playerNum !== -1) {
+          state.pendingDirectKoPrizes.push({ playerNum, count: effect.prizeCount });
+        }
+      }
     }
   }
 

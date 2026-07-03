@@ -216,6 +216,10 @@ export class KnockOutEffect implements Effect {
   public prizeDestination?: CardList;
   public isLostCity: boolean = false;
   public prizeIncreased: boolean = false;
+  /** Set by the checkState KO sweep, which accounts the prize itself. A KnockOutEffect
+   * dispatched directly by a card effect ("Knock Out each of your opponent's Pokemon …")
+   * leaves this false, so the core handler records the owed prize for the next sweep. */
+  public viaCheckState: boolean = false;
 
   constructor(player: Player, target: PokemonCardList) {
     this.player = player;

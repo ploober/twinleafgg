@@ -382,11 +382,27 @@ function setupSuddenDeathGame(store: StoreLike, state: State, firstPlayer: numbe
 export function* executeCheckState(next: Function, store: StoreLike, state: State, onComplete?: () => void): IterableIterator<State> {
   const prizeGroups: PrizeGroup[][] = state.players.map(() => []);
 
+  // Prizes owed for KOs card effects dispatched directly ("Knock Out each …") — the target
+  // is already discarded, so findKoPokemons cannot see it; the KnockOutEffect handler
+  // recorded the owed prize instead. Drain it into this sweep's prize choices, so the
+  // cascade is prize-first here too (compendium #2026 / CF-7).
+  for (const owed of state.pendingDirectKoPrizes.splice(0)) {
+    const opponentIndex = owed.playerNum === 0 ? 1 : 0;
+    const destination = state.players[opponentIndex].hand;
+    let group = prizeGroups[opponentIndex].find(g => g.destination === destination);
+    if (!group) {
+      group = { destination, count: 0 };
+      prizeGroups[opponentIndex].push(group);
+    }
+    group.count += owed.count;
+  }
+
   // Handle KOs first
   const pokemonsToDiscard = findKoPokemons(store, state);
   for (const pokemonToDiscard of pokemonsToDiscard) {
     const owner = state.players[pokemonToDiscard.playerNum];
     const knockOutEffect = new KnockOutEffect(owner, pokemonToDiscard.cardList);
+    knockOutEffect.viaCheckState = true;
     state = store.reduceEffect(state, knockOutEffect);
 
     if (store.hasPrompts()) {

@@ -1,6 +1,14 @@
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
+import { GameMessage } from '../../game/game-message';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
+import { playerIdToActor } from '../iid-targets';
+
+/** A card-pick whose purpose is discarding surfaces as `discard {owner, target}` (the wire's
+ * specific type — matches the retreat-cost / energy-discard convention and rotomancer). */
+function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
+  return prompt.message === GameMessage.CHOOSE_CARD_TO_DISCARD;
+}
 
 /**
  * ChooseCardsPrompt: one pick = one index into prompt.cards.cards; raw result = number[].
@@ -37,7 +45,13 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       }
       const iid = ctx.cardToIid.get(card);
       if (iid !== undefined) {
-        legalActions.push(secret ? { type: 'pick', target: iid } : { type: 'choose', target: iid });
+        if (secret) {
+          legalActions.push({ type: 'pick', target: iid });
+        } else if (isDiscardPick(prompt)) {
+          legalActions.push({ type: 'discard', owner: playerIdToActor(state, prompt.player.id), target: iid } as LegalAction);
+        } else {
+          legalActions.push({ type: 'choose', target: iid });
+        }
       }
     }
     if (rp.length >= min && max > min) {
@@ -50,7 +64,8 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
   },
 
   toPick(prompt, action, ctx) {
-    const expected = prompt.options.isSecret === true ? 'pick' : 'choose';
+    const expected = prompt.options.isSecret === true ? 'pick'
+      : isDiscardPick(prompt) ? 'discard' : 'choose';
     if (action.type !== expected) {
       throw new Error(`[conformance] ChooseCards expected '${expected}', got '${action.type}'`);
     }

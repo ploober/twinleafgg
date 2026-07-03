@@ -1,4 +1,4 @@
-import { Attack, Card, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
+import { Attack, Card, CardTag, CardTarget, CardType, ChooseEnergyPrompt, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
 import { DiscardCardsEffect, PutDamageEffect } from '../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../game/store/effects/check-effects';
 import { Effect } from '../../game/store/effects/effect';
@@ -39,43 +39,57 @@ export class Zeraora extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
-
-      const benchHasEx = opponent.bench.some(b => {
-        const pokemon = b.getPokemonCard();
-        return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
-      });
-
-      // The attack is usable with no Benched Pokemon ex to hit; the energy is
-      // still discarded and the damage simply does not happen.
-      if (!benchHasEx) {
-        return state;
-      }
-
-      const blocked: CardTarget[] = [];
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
-        if (!card.tags.includes(CardTag.POKEMON_ex)) {
-          blocked.push(target);
-        }
-      });
-
-      return store.prompt(state, new ChoosePokemonPrompt(
-        player.id,
-        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-        PlayerType.TOP_PLAYER,
-        [SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false, blocked }
-      ), selected => {
-        const targets = selected || [];
-        targets.forEach(target => {
-          const damageEffect = new PutDamageEffect(effect, 210);
-          damageEffect.target = target;
-          store.reduceEffect(state, damageEffect);
+      const dealDamage = (): State => {
+        const benchHasEx = opponent.bench.some(b => {
+          const pokemon = b.getPokemonCard();
+          return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
         });
-        return state;
+        // The attack is usable with no Benched Pokemon ex to hit; the energy is
+        // still discarded and the damage simply does not happen.
+        if (!benchHasEx) {
+          return state;
+        }
+        const blocked: CardTarget[] = [];
+        opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
+          if (!card.tags.includes(CardTag.POKEMON_ex)) {
+            blocked.push(target);
+          }
+        });
+        return store.prompt(state, new ChoosePokemonPrompt(
+          player.id,
+          GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+          PlayerType.TOP_PLAYER,
+          [SlotType.BENCH],
+          { min: 1, max: 1, allowCancel: false, blocked }
+        ), selected => {
+          const targets = selected || [];
+          targets.forEach(target => {
+            const damageEffect = new PutDamageEffect(effect, 210);
+            damageEffect.target = target;
+            store.reduceEffect(state, damageEffect);
+          });
+          return state;
+        });
+      };
+
+      // "Discard all Energy from this Pokémon" — surfaced as the discard choice
+      // like every other energy-discard cost/effect (prompt-even-forced), then
+      // the 210 targeting follows in text order.
+      if (checkProvidedEnergy.energyMap.length === 0) {
+        return dealDamage();
+      }
+      return store.prompt(state, new ChooseEnergyPrompt(
+        player.id,
+        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+        checkProvidedEnergy.energyMap,
+        checkProvidedEnergy.energyMap.map(() => CardType.COLORLESS),
+        { allowCancel: false }
+      ), energy => {
+        const cards: Card[] = (energy || []).map(e => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+        return dealDamage();
       });
     }
     return state;

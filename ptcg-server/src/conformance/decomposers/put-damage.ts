@@ -40,7 +40,9 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
       }
       legalActions.push({ type: 'placeCounter', target: pokemonTargetToIid(state, player, ctx, entry.target) });
     }
-    if (prompt.options.allowPlacePartialDamage && placed > 0) {
+    // CF-4: partial placement ("up to N counters") means min=0 — the explicit stop is
+    // advertised from the first pending, not only once a counter has been placed.
+    if (prompt.options.allowPlacePartialDamage) {
       legalActions.push(END_CHOICE);
     }
     if (legalActions.length === 0) {

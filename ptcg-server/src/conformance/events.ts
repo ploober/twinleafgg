@@ -150,32 +150,48 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     }
   }
   const koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid) && !bounced.has(iid));
-  if (koList.length === 1) {
+  if (koList.length > 0) {
+    // CF-6: one `damaged` event per damage placement, reconstructed for the KO'd (their damage
+    // is no longer diffable from state). Conservation: everything dealt this batch that the
+    // survivor diff didn't absorb landed on the KO'd. Split that pool per placement:
+    //  - each KO'd owner's-active gets its owner's (unconsumed) condition-tick logs, one event per tick;
+    //  - the remainder is the attack's single post-calculation placement, attributed to the
+    //    attack dealer's opponent-side KO'd active (multi-KO batches: attack + own-tick, e.g.
+    //    Vine Slap KOs the defender while the attacker's own poison tick KOs it too).
     const dealt = logs
       .filter(l => DAMAGE_LOGS.has(l.message))
       .reduce((sum, l) => sum + logNum(l, 'damage'), 0);
-    const lethal = dealt - survivorDamage;
-    if (lethal > 0) {
-      const koHit = identify(before, koList[0]); // KO'd: gone from `after`, identify in `before`
-      // CF-6: one `damaged` event per damage placement. The KO'd Pokemon's condition ticks
-      // (it was its owner's active when the checkup ran) are placements distinct from the
-      // attack's single post-calculation placement — emit each tick, then the remainder.
-      const wasOwnersActive = before.players[koHit.player].active?.stack[0]?.iid === koList[0];
-      const afterActive = after.players[koHit.player].active;
-      const ticksConsumedBySurvivor = afterActive !== null && afterActive.stack.length > 0
-        && (afterDmg.get(afterActive.stack[0].iid) ?? 0) > (beforeDmg.get(afterActive.stack[0].iid) ?? Infinity);
-      const ticks = wasOwnersActive && !ticksConsumedBySurvivor
-        ? (ticksByPlayer.get(koHit.player) ?? []) : [];
-      const tickSum = ticks.reduce((a, b) => a + b, 0);
-      if (tickSum > 0 && tickSum <= lethal) {
-        for (const t of ticks) {
-          significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: t });
+    let pool = dealt - survivorDamage;
+    if (pool > 0) {
+      const dealsLogs = logs.filter(l => l.message === GameLog.LOG_PLAYER_DEALS_DAMAGE);
+      const dealer = dealsLogs.length > 0 ? logActor(dealsLogs[dealsLogs.length - 1]) : undefined;
+      const koHits = koList.map(iid => {
+        const hit = identify(before, iid);
+        const wasOwnersActive = before.players[hit.player].active?.stack[0]?.iid === iid;
+        const afterActive = after.players[hit.player].active;
+        const ticksConsumedBySurvivor = afterActive !== null && afterActive.stack.length > 0
+          && (afterDmg.get(afterActive.stack[0].iid) ?? 0) > (beforeDmg.get(afterActive.stack[0].iid) ?? Infinity);
+        const ticks = wasOwnersActive && !ticksConsumedBySurvivor
+          ? (ticksByPlayer.get(hit.player) ?? []) : [];
+        return { ...hit, wasOwnersActive, ticks };
+      });
+      const tickSum = koHits.reduce((s, k) => s + k.ticks.reduce((a, b) => a + b, 0), 0);
+      if (tickSum > 0 && tickSum <= pool) {
+        for (const k of koHits) {
+          for (const t of k.ticks) {
+            significant.push({ kind: 'damaged', player: k.player, target: k.printing, hp: t });
+            pool -= t;
+          }
         }
-        if (lethal - tickSum > 0) {
-          significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal - tickSum });
+      }
+      if (pool > 0) {
+        // The attack placement: the dealer's opponent-side KO'd active if identifiable,
+        // else (single KO) the sole victim — emitted as one aggregate placement.
+        const defender = koHits.find(k => k.wasOwnersActive && dealer !== undefined && k.player !== dealer)
+          ?? (koHits.length === 1 ? koHits[0] : undefined);
+        if (defender) {
+          significant.push({ kind: 'damaged', player: defender.player, target: defender.printing, hp: pool });
         }
-      } else {
-        significant.push({ kind: 'damaged', player: koHit.player, target: koHit.printing, hp: lethal });
       }
     }
   }

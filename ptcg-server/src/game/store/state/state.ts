@@ -48,6 +48,10 @@ export class State {
 
   public playerLastAttack: { [playerId: number]: { attack: Attack, sourceCard: PokemonCard, turn?: number } } = {};
 
+  /** Prizes owed for KOs dispatched directly by card effects (outside the checkState sweep);
+   * drained by the next executeCheckState into its prize-choice prompts. */
+  public pendingDirectKoPrizes: { playerNum: number, count: number }[] = [];
+
   public isSuddenDeath?: boolean;
 
   public benchSizeChangeHandled: boolean = false;

@@ -1,5 +1,5 @@
 import { PokemonCard, CardTag, Stage, CardType, StoreLike, State, StateUtils, PowerType, Card, ChooseEnergyPrompt, GameMessage } from '../../game';
-import { DiscardCardsEffect, PutDamageEffect } from '../../game/store/effects/attack-effects';
+import { DealDamageEffect, DiscardCardsEffect, PutDamageEffect } from '../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../game/store/effects/check-effects';
 import { Effect } from '../../game/store/effects/effect';
 
@@ -47,6 +47,12 @@ export class Pikachuex extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
+
+      // Rulebook attack step F / compendium #649: the 300 is placed before the
+      // post-damage discard effect pauses on its energy choice.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
