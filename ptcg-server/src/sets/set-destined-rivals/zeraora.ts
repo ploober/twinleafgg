@@ -1,9 +1,8 @@
-import { Attack, Card, CardTag, CardTarget, CardType, ChooseEnergyPrompt, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
-import { DiscardCardsEffect, PutDamageEffect } from '../../game/store/effects/attack-effects';
-import { CheckProvidedEnergyEffect } from '../../game/store/effects/check-effects';
+import { Attack, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, PokemonCardList, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../game';
+import { PutDamageEffect } from '../../game/store/effects/attack-effects';
 import { Effect } from '../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
+import { DISCARD_ALL_ENERGY_FROM_POKEMON, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class Zeraora extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -36,63 +35,51 @@ export class Zeraora extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const dealDamage = (): State => {
-        const benchHasEx = opponent.bench.some(b => {
-          const pokemon = b.getPokemonCard();
-          return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
-        });
-        // The attack is usable with no Benched Pokemon ex to hit; the energy is
-        // still discarded and the damage simply does not happen.
-        if (!benchHasEx) {
-          return state;
+      // "Discard all Energy" is FORCED (no which/how-many choice) — apply it
+      // atomically, then place the 210. Both happen AFTER the Step-D target
+      // choice below.
+      const discardThenDamage = (target?: PokemonCardList): State => {
+        DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+        if (target !== undefined) {
+          const damageEffect = new PutDamageEffect(effect, 210);
+          damageEffect.target = target;
+          store.reduceEffect(state, damageEffect);
         }
-        const blocked: CardTarget[] = [];
-        opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
-          if (!card.tags.includes(CardTag.POKEMON_ex)) {
-            blocked.push(target);
-          }
-        });
-        return store.prompt(state, new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-          PlayerType.TOP_PLAYER,
-          [SlotType.BENCH],
-          { min: 1, max: 1, allowCancel: false, blocked }
-        ), selected => {
-          const targets = selected || [];
-          targets.forEach(target => {
-            const damageEffect = new PutDamageEffect(effect, 210);
-            damageEffect.target = target;
-            store.reduceEffect(state, damageEffect);
-          });
-          return state;
-        });
+        return state;
       };
 
-      // "Discard all Energy from this Pokémon" — surfaced as the discard choice
-      // like every other energy-discard cost/effect (prompt-even-forced), then
-      // the 210 targeting follows in text order.
-      if (checkProvidedEnergy.energyMap.length === 0) {
-        return dealDamage();
+      // Rulebook p.19 Step D — "Make any choices the attack requires you to
+      // make … For example, if an attack says 'Choose 1 of your opponent's
+      // Benched Pokémon,' you would make that choice now." The bench-ex target
+      // is chosen BEFORE the energy discard (a Step-E/F effect) resolves.
+      const benchHasEx = opponent.bench.some(b => {
+        const pokemon = b.getPokemonCard();
+        return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
+      });
+
+      // The attack is usable with no Benched Pokemon ex to hit; there is no
+      // Step-D choice, the energy is still discarded and no damage happens.
+      if (!benchHasEx) {
+        return discardThenDamage();
       }
-      return store.prompt(state, new ChooseEnergyPrompt(
+
+      const blocked: CardTarget[] = [];
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
+        if (!card.tags.includes(CardTag.POKEMON_ex)) {
+          blocked.push(target);
+        }
+      });
+      return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
-        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
-        checkProvidedEnergy.energyMap,
-        checkProvidedEnergy.energyMap.map(() => CardType.COLORLESS),
-        { allowCancel: false }
-      ), energy => {
-        const cards: Card[] = (energy || []).map(e => e.card);
-        const discardEnergy = new DiscardCardsEffect(effect, cards);
-        discardEnergy.target = player.active;
-        store.reduceEffect(state, discardEnergy);
-        return dealDamage();
+        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+        PlayerType.TOP_PLAYER,
+        [SlotType.BENCH],
+        { min: 1, max: 1, allowCancel: false, blocked }
+      ), selected => {
+        const targets = selected || [];
+        return discardThenDamage(targets[0]);
       });
     }
     return state;
   }
 }
-
