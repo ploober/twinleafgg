@@ -63,9 +63,12 @@ export class Slakoth extends PokemonCard {
       const cardList = StateUtils.findCardList(state, this);
       if (cardList instanceof PokemonCardList
         && StateUtils.findOwner(state, cardList) === effect.player) {
+        // NOT else-if: a re-use during the blocked turn has BOTH markers at this
+        // end-of-turn — the old block expires AND the new one arms.
         if (cardList.marker.hasMarker(this.CANT_RETREAT_ACTIVE_MARKER, this)) {
           cardList.marker.removeMarker(this.CANT_RETREAT_ACTIVE_MARKER, this);
-        } else if (cardList.marker.hasMarker(this.CANT_RETREAT_PENDING_MARKER, this)) {
+        }
+        if (cardList.marker.hasMarker(this.CANT_RETREAT_PENDING_MARKER, this)) {
           cardList.marker.removeMarker(this.CANT_RETREAT_PENDING_MARKER, this);
           cardList.marker.addMarker(this.CANT_RETREAT_ACTIVE_MARKER, this);
         }
