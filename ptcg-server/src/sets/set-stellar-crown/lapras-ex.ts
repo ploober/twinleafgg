@@ -78,72 +78,44 @@ export class Laprasex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const temp = new CardList();
-      // Create deckBottom and move hand into it
-      const deckBottom = new CardList();
+      player.deck.moveTo(temp, 20); // look at the top 20 (or fewer)
 
-      player.deck.moveTo(temp, 20);
-      // Check if any cards drawn are basic energy
-      const energyCardsDrawn = temp.cards.filter(card => {
-        return card instanceof EnergyCard;
-      });
+      // "Shuffle the other cards back into your deck." — after the optional attach,
+      // return every card still in `temp` (non-attached energy + all non-energy) to
+      // the deck and shuffle ONCE. (The old code fired a ShuffleDeckPrompt per card,
+      // which stranded most of them and left the deck/shuffle inconsistent.)
+      const returnAndShuffle = (): void => {
+        temp.moveTo(player.deck);
+        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
+      };
 
-      // If no energy cards were drawn, move all cards to deck & shuffle
-      if (energyCardsDrawn.length == 0) {
+      const energyInTemp = temp.cards.filter(card => card instanceof EnergyCard);
 
-        store.prompt(state, [new ShowCardsPrompt(
+      // No attachable Energy in the top 20: reveal them, then shuffle back.
+      if (energyInTemp.length === 0) {
+        return store.prompt(state, new ShowCardsPrompt(
           player.id,
           GameMessage.CARDS_SHOWED_BY_EFFECT,
           temp.cards
-        )], () => {
-          temp.cards.forEach(card => {
-            store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-              temp.applyOrder(order);
-              temp.moveCardTo(card, deckBottom);
-              deckBottom.applyOrder(order);
-              deckBottom.moveTo(player.deck);
-
-            });
-            return state;
-          });
-          return state;
-        });
+        ), () => { returnAndShuffle(); });
       }
 
-      if (energyCardsDrawn.length >= 1) {
-
-        // Prompt to attach energy if any were drawn
-        return store.prompt(state, new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_CARDS,
-          temp, // Only show drawn energies
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH, SlotType.ACTIVE],
-          { superType: SuperType.ENERGY },
-          { min: 0, max: energyCardsDrawn.length }
-        ), transfers => {
-
-          // Attach energy based on prompt selection
-          if (transfers) {
-            for (const transfer of transfers) {
-              const target = StateUtils.getTarget(state, player, transfer.to);
-              temp.moveCardTo(transfer.card, target); // Move card to target
-            }
-            temp.cards.forEach(card => {
-              store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-                temp.applyOrder(order);
-                temp.moveCardTo(card, deckBottom);
-                deckBottom.applyOrder(order);
-                deckBottom.moveTo(player.deck);
-              });
-              return state;
-            });
-          }
-        });
-      }
-      // Shuffle the deck
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
-        return state;
+      return store.prompt(state, new AttachEnergyPrompt(
+        player.id,
+        GameMessage.ATTACH_ENERGY_CARDS,
+        temp,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.BENCH, SlotType.ACTIVE],
+        { superType: SuperType.ENERGY },
+        { min: 0, max: energyInTemp.length }
+      ), transfers => {
+        for (const transfer of (transfers || [])) {
+          const target = StateUtils.getTarget(state, player, transfer.to);
+          temp.moveCardTo(transfer.card, target);
+        }
+        returnAndShuffle();
       });
     }
 
