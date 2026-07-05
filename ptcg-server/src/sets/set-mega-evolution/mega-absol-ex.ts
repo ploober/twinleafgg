@@ -3,6 +3,7 @@ import { StoreLike } from '../../game/store/store-like';
 import { State } from '../../game/store/state/state';
 import { Effect } from '../../game/store/effects/effect';
 import { ChooseCardsPrompt, GameMessage, PokemonCard, StateUtils } from '../../game';
+import { DealDamageEffect } from '../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class MegaAbsolex extends PokemonCard {
@@ -46,6 +47,11 @@ export class MegaAbsolex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // Rulebook Step F: deal the 200 damage BEFORE the post-damage hand-discard effect.
+      const dealDamage = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, dealDamage);
+      effect.damage = 0;
 
       if (opponent.hand.cards.length == 0) {
         return state;

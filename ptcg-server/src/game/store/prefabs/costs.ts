@@ -241,6 +241,23 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
   const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
   state = store.reduceEffect(state, checkProvidedEnergy);
 
+  // CF-8 forced-discard boundary: when the attacker has `amount` or fewer ELIGIBLE
+  // Energy, there is no which-choice — every eligible card must go — so apply the
+  // discard ATOMICALLY with no `ChooseEnergyPrompt`. Colorless discards count all
+  // attached Energy; typed discards count Energy providing that type (or ANY).
+  const eligible = checkProvidedEnergy.energyMap.filter(em =>
+    type === CardType.COLORLESS
+    || em.provides.includes(type)
+    || em.provides.includes(CardType.ANY));
+  if (eligible.length <= amount) {
+    if (eligible.length > 0) {
+      const discardEnergy = new DiscardCardsEffect(effect, eligible.map(em => em.card));
+      discardEnergy.target = player.active;
+      state = store.reduceEffect(state, discardEnergy);
+    }
+    return state;
+  }
+
   const energyList: CardType[] = [];
   for (let i = 0; i < amount; i++) {
     energyList.push(type);
