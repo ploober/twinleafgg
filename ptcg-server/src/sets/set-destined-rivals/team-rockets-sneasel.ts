@@ -19,7 +19,7 @@ export class TeamRocketsSneasel extends PokemonCard {
       text: ''
     },
     {
-      name: 'Backstab',
+      name: 'Strike the Sleeper',
       cost: [D, D],
       damage: 0,
       text: 'This attack does 20 damage to 1 of your opponent\'s Benched Pokémon for each damage counter already on that Pokémon (Don\'t apply Weakness or Resistance for Benched Pokémon).'

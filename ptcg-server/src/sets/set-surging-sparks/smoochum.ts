@@ -25,7 +25,7 @@ export class Smoochum extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Happy Kiss',
+      name: 'Delightful Kiss',
       cost: [],
       damage: 0,
       text: 'Search your deck for up to 2 Basic [P] Energy cards and attach them to your Benched Pokemon in any way you like. Then, shuffle your deck.'

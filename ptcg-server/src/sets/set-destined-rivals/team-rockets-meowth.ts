@@ -12,13 +12,13 @@ export class TeamRocketsMeowth extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Cat Nab',
+      name: 'Paw-cket Pilfer',
       cost: [C],
       damage: 0,
       text: 'Choose a random card from your opponent\'s hand. Your opponent reveals that card and shuffles it into their deck.'
     },
     {
-      name: 'Wild Scratch',
+      name: 'Fury Swipes',
       cost: [C, C],
       damage: 20,
       damageCalculation: 'x',

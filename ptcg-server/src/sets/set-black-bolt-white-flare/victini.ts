@@ -11,7 +11,7 @@ export class Victini extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'V Force',
+    name: 'V-Force',
     cost: [R, R],
     damage: 120,
     text: 'If you have less than 5 Benched Pokémon, this attack does nothing.'

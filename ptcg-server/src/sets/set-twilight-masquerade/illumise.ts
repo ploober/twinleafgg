@@ -15,7 +15,7 @@ export class Illumise extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Slowing Perfume ',
+      name: 'Slowing Perfume',
       cost: [C],
       damage: 0,
       text: 'You can use this attack only if you go second, and only during your first turn. Shuffle 1 of your opponent\'s Benched Pokémon and all attached cards into their deck.'

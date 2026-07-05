@@ -13,7 +13,7 @@ export class Carvanha extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Assault',
+    name: 'Reckless Charge',
     cost: [D],
     damage: 30,
     text: 'This Pokémon also does 10 damage to itself.'

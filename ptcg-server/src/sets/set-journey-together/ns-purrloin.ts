@@ -15,7 +15,7 @@ export class NsPurrloin extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Pilfer',
+      name: 'Thieving Swipe',
       cost: [CardType.DARK, CardType.COLORLESS],
       damage: 30,
       text: 'Your opponent reveals their hand. Put a card you find there on the bottom of their deck.'

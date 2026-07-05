@@ -17,13 +17,13 @@ export class EthansPinsir extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Vice Grip',
+      name: 'Vise Grip',
       cost: [G],
       damage: 20,
       text: ''
     },
     {
-      name: 'One-Point Return',
+      name: 'Rallying Horn',
       cost: [C, C, C],
       damage: 70,
       damageCalculation: '+',

@@ -12,13 +12,13 @@ export class TeamRocketsMareep extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Provision',
+      name: 'Procurement',
       cost: [C],
       damage: 0,
       text: 'Search your deck for an Item card, reveal it, and put it into your hand. Then, shuffle your deck.'
     },
     {
-      name: 'Petibolt',
+      name: 'Tiny Bolt',
       cost: [L],
       damage: 10,
       text: ''

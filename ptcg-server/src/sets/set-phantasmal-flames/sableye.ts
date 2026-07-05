@@ -10,7 +10,7 @@ export class Sableye extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Angry Claw',
+    name: 'Cocky Claw',
     cost: [D],
     damage: 20,
     damageCalculation: '+',

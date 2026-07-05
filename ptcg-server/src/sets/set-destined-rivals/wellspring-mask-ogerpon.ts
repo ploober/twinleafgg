@@ -13,7 +13,7 @@ export class WellspringMaskOgerpon extends PokemonCard {
 
   public attacks: Attack[] = [
     {
-      name: 'Water Dance',
+      name: 'Water Kagura',
       cost: [C],
       damage: 0,
       text: 'Search your deck for a Basic [W] Energy card and attach it to 1 of your Pokémon. Then, shuffle your deck.'

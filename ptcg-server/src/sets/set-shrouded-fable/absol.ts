@@ -21,7 +21,7 @@ export class Absol extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Bad Fall',
+      name: 'Darkfall',
       cost: [CardType.COLORLESS],
       damage: 20,
       damageCalculation: '+',

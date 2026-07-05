@@ -14,7 +14,7 @@ export class TeamRocketsEkans extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Hold Back',
+      name: 'Drag Down',
       cost: [C],
       damage: 0,
       text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.'

@@ -14,7 +14,7 @@ export class TeamRocketsNidoranFemale extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Suprise Attack',
+      name: 'Surprise Attack',
       cost: [D],
       damage: 30,
       text: 'Flip a coin. If tails, this attack does nothing.',

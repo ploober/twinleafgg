@@ -55,7 +55,7 @@ export class Swinub extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Call For Family',
+      name: 'Call for Family',
       cost: [C],
       damage: 0,
       text: 'Search your deck for up to 2 Basic Pokémon and put them onto your Bench. Then, shuffle your deck.'

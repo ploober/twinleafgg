@@ -16,7 +16,7 @@ export class Dondozoex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Tsunami Reversal',
+      name: 'Avenging Billow',
       cost: [W, C],
       damage: 30,
       damageCalculation: '+',

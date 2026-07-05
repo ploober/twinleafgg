@@ -13,7 +13,7 @@ export class MarniesPurrloin extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Sharp Nail',
+    name: 'Pointy Nails',
     cost: [D],
     damage: 20,
     text: 'If your opponent\'s Active Pokémon is a Pokémon ex, this attack does 40 more damage.'

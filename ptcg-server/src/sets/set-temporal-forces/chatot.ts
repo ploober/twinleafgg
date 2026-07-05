@@ -55,7 +55,7 @@ export class Chatot extends PokemonCard {
 
   public attacks = [
     {
-      name: 'A Capella',
+      name: 'A Cappella',
       cost: [CardType.COLORLESS],
       damage: 0,
       text: 'Search your deck for up to 3 Basic Pokémon and put them onto your Bench. Then, shuffle your deck.'

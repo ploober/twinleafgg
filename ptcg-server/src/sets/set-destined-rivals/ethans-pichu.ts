@@ -17,7 +17,7 @@ export class EthansPichu extends PokemonCard {
   public retreat = [];
 
   public attacks = [{
-    name: 'Sparking Draw',
+    name: 'Zapping Draw',
     cost: [],
     damage: 30,
     text: 'Draw a card.'

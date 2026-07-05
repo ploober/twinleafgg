@@ -15,7 +15,7 @@ export class Darumaka extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Blazing Ball',
+    name: 'Blaze Ball',
     cost: [C, C, C],
     damage: 10,
     text: 'This attack does 20 more damage for each [R] Energy attached to this Pokémon.',

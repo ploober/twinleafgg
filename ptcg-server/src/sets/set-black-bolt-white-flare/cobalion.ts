@@ -12,7 +12,7 @@ export class Cobalion extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Holy Edge',
+      name: 'Righteous Edge',
       cost: [M],
       damage: 20,
       text: 'Discard 1 Special Energy from your opponent\'s Active Pokémon.'

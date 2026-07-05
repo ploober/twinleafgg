@@ -15,13 +15,13 @@ export class TeamRocketsZapdos extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Jamming Wave',
+      name: 'Jamming Wing',
       cost: [C, C],
       damage: 30,
       text: 'You may move an Energy from your opponent\'s Active Pokémon to 1 of their Benched Pokémon.'
     },
     {
-      name: 'Bad Thunder',
+      name: 'Wicked Thunder',
       cost: [L, C, C],
       damage: 60,
       damageCalculation: '+',

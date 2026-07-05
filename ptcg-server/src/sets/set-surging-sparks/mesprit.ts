@@ -19,12 +19,12 @@ export class Mesprit extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Heart Fulfilment',
+    name: 'Full Heart',
     cost: [C],
     damage: 0,
     text: 'Attach up to 2 Basic [P] Energy cards from your hand to your Pokémon in any way you like.'
   }, {
-    name: 'Legendary Burst',
+    name: 'Guardian Burst',
     cost: [P, P],
     damage: 160,
     text: 'You can only use this attack if you have Uxie and Azelf on your Bench.'

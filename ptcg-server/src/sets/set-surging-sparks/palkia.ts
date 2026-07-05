@@ -18,7 +18,7 @@ export class Palkia extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Special Crash',
+      name: 'Space Crash',
       cost: [CardType.GRASS, CardType.WATER],
       damage: 40,
       damageCalculation: 'x',

@@ -10,16 +10,16 @@ export class TealMaskOgerpon extends PokemonCard {
   public retreat: CardType[] = [C];
 
   public attacks: Attack[] = [{
-    name: 'Grass Dance',
+    name: 'Grass Kagura',
     cost: [C],
     damage: 0,
     text: 'Search your deck for a Basic [G] Energy card and attach it to 1 of your Pokémon. Then, shuffle your deck.'
   },
   {
-    name: 'Ogre Hammer',
+    name: 'Ogre\'s Hammer',
     cost: [G, G, C],
     damage: 120,
-    text: 'During your next turn, this Pokémon can\'t use Ogre Hammer.'
+    text: 'During your next turn, this Pokémon can\'t use Ogre\'s Hammer.'
   }];
 
   public regulationMark: string = 'I';
@@ -43,8 +43,8 @@ export class TealMaskOgerpon extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre Hammer')) {
-        player.active.cannotUseAttacksNextTurnPending.push('Ogre Hammer');
+      if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre\'s Hammer')) {
+        player.active.cannotUseAttacksNextTurnPending.push('Ogre\'s Hammer');
       }
     }
 

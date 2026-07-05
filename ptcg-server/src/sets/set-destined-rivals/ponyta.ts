@@ -14,7 +14,7 @@ export class Ponyta extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Double Strike',
+      name: 'Double Headbutt',
       cost: [C],
       damage: 10,
       damageCalculation: 'x',

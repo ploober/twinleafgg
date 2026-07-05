@@ -26,14 +26,14 @@ export class SlitherWing extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Iron Buster',
+      name: 'Iron Smasher',
       cost: [CardType.FIGHTING, CardType.COLORLESS],
       damage: 20,
       damageCalculation: '+',
       text: 'If your opponent has a Future Pokémon in play, this attack does 120 more damage.'
     },
     {
-      name: 'Smashing Wings',
+      name: 'Smashing Wing',
       cost: [CardType.FIGHTING, CardType.FIGHTING, CardType.COLORLESS],
       damage: 130,
       text: 'Discard 2 Energy from this Pokémon.'

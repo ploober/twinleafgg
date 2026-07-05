@@ -11,7 +11,7 @@ export class Sprigatito extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Stomp Repeatedly',
+    name: 'Tons of Treading',
     cost: [C],
     damage: 10,
     damageCalculation: 'x',

@@ -10,7 +10,7 @@ export class Foongus extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Poison Spore',
+    name: 'Toxic Spore',
     cost: [C],
     damage: 0,
     text: 'Your opponent\'s Active Pokémon is now Poisoned.'

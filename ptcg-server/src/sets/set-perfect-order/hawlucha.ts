@@ -12,7 +12,7 @@ export class Hawlucha extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Revenge Kick',
+    name: 'Vengeful Kick',
     cost: [F],
     damage: 30,
     damageCalculation: '+',

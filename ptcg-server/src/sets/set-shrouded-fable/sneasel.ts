@@ -20,7 +20,7 @@ export class Sneasel extends PokemonCard {
     text: ''
   },
   {
-    name: 'Draw Near',
+    name: 'Beset',
     cost: [W, W],
     damage: 30,
     text: 'During your opponent\'s next turn, the Defending Pokémon can\'t retreat.'

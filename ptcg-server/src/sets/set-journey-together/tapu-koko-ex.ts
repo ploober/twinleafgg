@@ -15,7 +15,7 @@ export class TapuKokoex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Thunder Connect',
+      name: 'Linked Lightning',
       cost: [L, C],
       damage: 60,
       damageCalculation: '+',

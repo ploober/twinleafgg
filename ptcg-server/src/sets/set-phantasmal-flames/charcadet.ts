@@ -15,7 +15,7 @@ export class Charcadet extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Gather Power',
+    name: 'Gather Strength',
     cost: [R],
     damage: 0,
     text: 'Search your deck for up to 2 Basic Energy cards, reveal them, and put them into your hand. Then, shuffle your deck.',

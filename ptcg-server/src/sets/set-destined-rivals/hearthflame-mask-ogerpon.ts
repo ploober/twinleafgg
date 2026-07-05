@@ -12,7 +12,7 @@ export class HearthflameMaskOgerpon extends PokemonCard {
 
   public attacks: Attack[] = [
     {
-      name: 'Flame Dance',
+      name: 'Fire Kagura',
       cost: [C],
       damage: 0,
       text: 'Search your deck for a Basic [R] Energy card and attach it to 1 of your Pokémon. Then, shuffle your deck.'

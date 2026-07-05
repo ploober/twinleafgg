@@ -12,7 +12,7 @@ export class Xerneas extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Geogate',
+    name: 'Geo Gate',
     cost: [P],
     damage: 0,
     text: 'Search your deck for up to 3 Basic [P] Pokémon and put them onto your Bench. Then, shuffle your deck.'
