@@ -22,7 +22,7 @@ export class Durant extends PokemonCard {
     damageCalculation: '+',
     text: 'If Durant is on your Bench, this attack does 20 more damage.'
   }, {
-    name: 'Vice Grip',
+    name: 'Vise Grip',
     cost: [M, C],
     damage: 50,
     text: ''

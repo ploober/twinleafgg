@@ -11,7 +11,7 @@ export class StevensBeldum extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Metal Slash',
+    name: 'Ram',
     cost: [M, C],
     damage: 30,
     text: ''

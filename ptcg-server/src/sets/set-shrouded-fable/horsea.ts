@@ -27,7 +27,7 @@ export class Horsea extends PokemonCard {
       text: 'Heal 30 damage from this Pokémon.'
     },
     {
-      name: 'Fin Cutter',
+      name: 'Razor Fin',
       cost: [CardType.COLORLESS, CardType.COLORLESS],
       damage: 20,
       text: ''

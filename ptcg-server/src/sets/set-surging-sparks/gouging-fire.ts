@@ -17,7 +17,7 @@ export class GougingFire extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Knock Down',
+      name: 'Lunge Out',
       cost: [R],
       damage: 30,
       text: ''

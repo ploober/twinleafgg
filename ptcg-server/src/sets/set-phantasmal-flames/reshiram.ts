@@ -15,7 +15,7 @@ export class Reshiram extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Flame',
+    name: 'Combustion',
     cost: [R],
     damage: 30,
     text: '',

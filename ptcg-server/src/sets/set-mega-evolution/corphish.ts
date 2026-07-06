@@ -12,7 +12,7 @@ export class Corphish extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Vice Grip',
+    name: 'Vise Grip',
     cost: [C],
     damage: 10,
     text: ''
