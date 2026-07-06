@@ -48,12 +48,14 @@ export class Regirockex extends PokemonCard {
 
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
+        GameMessage.ATTACH_ENERGY_TO_ACTIVE,
         player.discard,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, max: 3, sameTarget: true }
+        // "Attach up to 2 Basic [F] Energy" — restrict to Basic Fighting (was any Energy) and cap at
+        // 2 (was 3). Matches the Regice/Registeel "Regi Charge" pattern and the printed card text.
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user
