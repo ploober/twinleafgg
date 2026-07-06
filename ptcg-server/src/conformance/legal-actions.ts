@@ -4,7 +4,7 @@ import { TrainerCard } from '../game/store/card/trainer-card';
 import { EnergyCard } from '../game/store/card/energy-card';
 import { GameError } from '../game/game-error';
 import { Store } from '../game/store/store';
-import { UseAbilityAction as UseAbilityGameAction } from '../game/store/actions/game-actions';
+import { UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction } from '../game/store/actions/game-actions';
 import { CardTarget, PlayerType, SlotType } from '../game/store/actions/play-card-action';
 import { deepClone } from '../utils/utils';
 import { ConformanceStoreHandler } from './conformance-store-handler';
@@ -158,6 +158,33 @@ function attackUnlocked(state: State, source: PokemonCardList, attack: Attack): 
   return true;
 }
 
+/**
+ * Dry-run one attack declaration on a CLONED store — the attack analog of `abilityProbeAccepts`
+ * (TA-14). Some attacks gate usage only by throwing inside their `reduceEffect` on the AttackEffect,
+ * invisible to the static `attackUnlocked`/`enoughEnergyFor` checks: a card-imposed "that Pokemon
+ * can't use that attack" marker (the ~28-card `OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK_MARKER`
+ * family — Klefki "Memory Lock", Murkrow "Torment", …) or a printed use-restriction ("You can use
+ * this attack only if you go second …" — Illumise "Slowing Perfume", per compendium #4637 / RE-25).
+ * Without probing, the menu offers an attack the engine then rejects — a §10.3 contract violation the
+ * fuzzer flags as "rejected its own legalAction". This mirrors exactly what the driver dispatches
+ * (`AttackAction(id, name)`), so a `GameError` here = the real declaration would `invalidAction` =
+ * don't offer. Any other throw (an effect reaching a coin flip / prompt with no provider on the
+ * clone) gets the benefit of the doubt and the move is offered, as with the ability probe.
+ */
+function attackProbeAccepts(state: State, player: Player, attackName: string): boolean {
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[state.players.indexOf(player)];
+  try {
+    probe.dispatch(new AttackGameAction(cloned.id, attackName));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+}
+
 function attackMenu(store: StoreLike, state: State, player: Player, ctx: IidContext): LegalAction[] {
   // PARALYZED / ASLEEP block ALL attacks (checked on the active regardless of attacker).
   const sp = player.active.specialConditions;
@@ -170,6 +197,9 @@ function attackMenu(store: StoreLike, state: State, player: Player, ctx: IidCont
     for (const attack of attacks) {
       if (!attackUnlocked(state, source, attack)) { continue; }
       if (!enoughEnergyFor(store, state, player, source, attack)) { continue; }
+      // Final gate: dry-run on a clone — card-private "can't use this attack" blocks (markers,
+      // printed use-restrictions) live inside reduceEffect and are invisible to the static checks.
+      if (!attackProbeAccepts(state, player, attack.name)) { continue; }
       out.push({ type: 'declareAttack', source: iid, name: attack.name });
     }
   };
