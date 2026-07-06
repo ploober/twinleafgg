@@ -358,6 +358,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
           continue;
         }
+        // CF-12 (strict): a further action that isn't THIS system pending's `flip`/`shuffle` is
+        // not offered — reject it as `invalidAction`. Only pause (return the pending) when the
+        // log has no further action to submit.
+        if (cursor.i < actions.length) {
+          cursor.i++;
+          throw new GameError(GameMessage.ILLEGAL_ACTION);
+        }
         return { events, pending: toWirePending(systemPending(game, prompt)), applied: cursor.i };
       }
       if (kind === 'unsupported') {
@@ -402,19 +409,16 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       const canStop = sub.legalActions.some(a => a.type === 'endChoice');
       const pickTypes = new Set<string>(sub.legalActions.filter(a => a.type !== 'endChoice').map(a => a.type));
       if (!pickTypes.has(nextAction.type)) {
-        if (canStop) {
-          // CF-4 explicit stop: `confirm {value:false}` at an aggregate decision is the advertised
-          // terminator — CONSUME it and finalize. (Only when `confirm` is not itself a pick type;
-          // a real confirm decision handles its own confirms above.)
-          if (nextAction.type === 'confirm' && (nextAction as { value?: boolean }).value === false) {
-            cursor.i++;
-          }
-          // Otherwise R1: the next non-pick action completes the decision without being consumed.
+        // CF-12 (strict; R1 deprecated): the ONLY way to stop an aggregate is its advertised
+        // explicit stop, `confirm {value:false}` — consume that and finalize. Any OTHER action
+        // that isn't a pick is not offered at this pending, so reject it as `invalidAction` at
+        // its index (matches rotomancer). Previously R1 let any non-pick action implicitly
+        // complete the decision; now that the stop is always advertised, that leniency is gone.
+        if (canStop && nextAction.type === 'confirm' && (nextAction as { value?: boolean }).value === false) {
+          cursor.i++;
           accum.push({ kind: 'done' });
           continue;
         }
-        // Not a continuation and the decision cannot stop: an illegal MOVE (the pending's
-        // legalActions don't offer it) — reject cleanly (invalidAction), don't fault the adapter.
         // The rejection path expects the cursor one past the offending action.
         cursor.i++;
         throw new GameError(GameMessage.ILLEGAL_ACTION);

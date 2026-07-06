@@ -106,7 +106,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect(proj.players.A.discard.map(c => c.iid).sort()).toEqual(['h0', 'h1']);
   });
 
-  it('ChooseCards: "up to 2" stops early when the next action is not a pick (R1)', () => {
+  it('ChooseCards: "up to 2" stops at one pick via the explicit stop; a non-pick action is invalid (CF-12, R1 deprecated)', () => {
     const game = importState(board(
       player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }, { iid: 'h1', printing: WATER }] }),
       player({ active: ralts('B-act') }),
@@ -117,18 +117,29 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 2, allowCancel: false }
     ), cards => { captured = cards; });
 
-    // The wire never exposes an `endChoice` terminator (contract has no such Action; R1). After one
-    // pick the decision still offers more `choose` candidates (max not yet reached).
+    // After one pick (min satisfied, max not reached) the decision offers more `discard` picks PLUS
+    // the advertised explicit stop `confirm{value:false}` (CF-4). The internal `endChoice` marker is
+    // never on the wire — it surfaces as `confirm`.
     const d2 = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }]).pending!.legalActions;
     expect(d2.some(a => (a as { type: string }).type === 'endChoice')).toBe(false);
     expect(d2.some(a => a.type === 'discard')).toBe(true);
+    expect(d2.some(a => a.type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(true);
 
-    // next-action-completes: a non-pick next action (endTurn) stops the "up to 2" choice at one pick.
-    // `captured` is set only if the discard RESOLVED (a log that dried mid-choice would surface a
-    // pending and never fire the callback), so [PSY] proves the early stop; both actions are consumed.
-    const res = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }, { actor: 'A', type: 'endTurn' }]);
+    // CF-4/CF-12: the explicit stop finalizes the "up to 2" at one pick -> [PSY]; both actions consumed.
+    const res = replay(game, [
+      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'confirm', value: false },
+    ]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY]);
     expect(res.applied).toBe(2);
+
+    // CF-12 (R1 deprecated): a non-pick, non-stop action (endTurn) is not offered here, so it is
+    // rejected rather than implicitly completing the decision.
+    const rej = replay(game, [
+      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'endTurn' },
+    ]);
+    expect(rej.rejection).toBeDefined();
   });
 
   it('ChooseCards: blocked indices are not offered', () => {
