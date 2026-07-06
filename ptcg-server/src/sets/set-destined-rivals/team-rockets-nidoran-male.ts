@@ -18,7 +18,7 @@ export class TeamRocketsNidoranMale extends PokemonCard {
     },
     {
       name: 'Hammer In',
-      cost: [D, D],
+      cost: [D, C],
       damage: 30,
       text: '',
     },

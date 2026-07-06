@@ -13,7 +13,7 @@ export class WashRotom extends PokemonCard {
 
   public attacks: Attack[] = [{
     name: 'Manual Wash',
-    cost: [L],
+    cost: [W],
     damage: 20,
     text: 'Heal 10 damage from each of your Pokémon.'
   }, {
