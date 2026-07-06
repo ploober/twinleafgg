@@ -26,13 +26,13 @@ export class Flygonex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Storm Bug',
+      name: 'Reversing Storm',
       cost: [CardType.FIGHTING],
       damage: 130,
       text: 'You may switch this Pokémon with a Pokémon on your Bench.'
     },
     {
-      name: 'Peridot Sonic',
+      name: 'Sonic Peridot',
       cost: [CardType.WATER, CardType.FIGHTING, CardType.METAL],
       damage: 0,
       text: 'This attack does 100 damage to each of your opponent\'s Pokémon ex and Pokémon V. (Don\'t apply Weakness or Resistance for this damage.)'

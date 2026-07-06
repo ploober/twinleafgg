@@ -46,9 +46,9 @@ export class Grubbin extends PokemonCard {
 
   public cardType: CardType = G;
 
-  public hp: number = 60;
+  public hp: number = 70;
 
-  public weakness = [{ type: F }];
+  public weakness = [{ type: R }];
 
   public retreat = [C];
 

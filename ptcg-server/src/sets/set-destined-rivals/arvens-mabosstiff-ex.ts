@@ -14,14 +14,14 @@ export class ArvensMabosstiffex extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Hustle Tackle',
+    name: 'Vigorous Tackle',
     cost: [C],
     damage: 30,
     damageCalculation: '+',
     text: 'If this Pokemon has no damage counters on it, this attack does 120 more damage.'
   },
   {
-    name: 'Boss\'s Headbutt',
+    name: 'Boss Headbutt',
     cost: [C, C, C],
     damage: 210,
     text: 'During your next turn, this Pokémon can\'t use Boss\'s Headbutt.'

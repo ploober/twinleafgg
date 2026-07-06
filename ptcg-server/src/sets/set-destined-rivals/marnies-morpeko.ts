@@ -10,7 +10,7 @@ export class MarniesMorpeko extends PokemonCard {
   public cardType: CardType = D;
   public hp: number = 70;
   public weakness = [{ type: G }];
-  public retreat = [C];
+  public retreat = [];
 
   public attacks = [{
     name: 'Spiky Wheel',

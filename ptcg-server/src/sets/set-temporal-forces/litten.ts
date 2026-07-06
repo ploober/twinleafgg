@@ -12,7 +12,7 @@ export class Litten extends PokemonCard {
 
   public cardType: CardType = CardType.FIRE;
 
-  public hp: number = 60;
+  public hp: number = 70;
 
   public weakness = [{ type: CardType.WATER }];
 

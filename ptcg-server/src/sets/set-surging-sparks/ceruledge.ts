@@ -13,13 +13,13 @@ export class Ceruledge extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Blaze Curse',
+    name: 'Cursed Edge',
     cost: [C],
     damage: 0,
     text: 'Discard all Special Energy from each of your opponent\'s Pokémon.'
   },
   {
-    name: 'Amethyst Rage',
+    name: 'Black Blaze Slash',
     cost: [R, R, C],
     damage: 160,
     text: 'During your next turn, this Pokémon can\'t attack..'

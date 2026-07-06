@@ -21,7 +21,7 @@ export class MistysGyarados extends PokemonCard {
   },
   {
     name: 'Waterfall',
-    cost: [W, C, C],
+    cost: [W, W, C],
     damage: 120,
     text: ''
   }];

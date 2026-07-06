@@ -22,8 +22,11 @@ export class StevensSkarmory extends PokemonCard {
     },
     {
       name: 'Sonic Double',
+      // Printed damage is empty: all damage is dealt by the effect (50 to each of 2 chosen Pokémon
+      // via DAMAGE_OPPONENT_POKEMON below). A non-zero field here would add a phantom 50 to the
+      // Active on top of the effect's damage. Keep it 0.
       cost: [M, M, C],
-      damage: 50,
+      damage: 0,
       text: 'This attack does 50 damage to 2 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     }
   ];

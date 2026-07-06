@@ -16,7 +16,7 @@ export class Primeape extends PokemonCard {
   public attacks = [
     {
       name: 'Drag Off',
-      cost: [C],
+      cost: [F],
       damage: 0,
       text: 'Switch in 1 of your opponent\'s Benched Pokémon to the Active Spot. This attack does 30 damage to the new Active Pokémon.'
     }

@@ -20,7 +20,7 @@ export class Blaziken extends PokemonCard {
       text: ''
     },
     {
-      name: 'Inferno Legs',
+      name: 'Inferno Kick Flurry',
       cost: [R, R, C],
       damage: 120,
       text: 'Discard 2 Energy from this Pokémon, and this attack also does 120 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

@@ -26,7 +26,7 @@ export class Vikavolt extends PokemonCard {
       text: ''
     },
     {
-      name: 'Serial Cannon',
+      name: 'Circuit Cannon',
       cost: [CardType.LIGHTNING, CardType.LIGHTNING],
       damage: 120,
       damageCalculation: '+',

@@ -5,7 +5,7 @@ export class Toedscool extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType = G;
   public hp: number = 60;
-  public weakness = [{ type: F }];
+  public weakness = [{ type: R }];
   public retreat = [C];
 
   public attacks = [

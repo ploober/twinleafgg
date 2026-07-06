@@ -15,7 +15,7 @@ export class AlolanExeggutorex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Tropical Fever',
+      name: 'Tropical Frenzy',
       cost: [CardType.GRASS, CardType.WATER],
       damage: 150,
       text: 'Choose any number of Basic Energy cards from your hand and attach them to your Pokemon in any way you like.'

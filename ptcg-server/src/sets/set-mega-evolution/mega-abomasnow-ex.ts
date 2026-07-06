@@ -15,7 +15,7 @@ export class MegaAbomasnowEx extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public attacks = [{
-    name: 'Avalanche Hammer',
+    name: 'Hammer-lanche',
     cost: [W, W],
     damage: 100,
     damageCalculation: 'x',

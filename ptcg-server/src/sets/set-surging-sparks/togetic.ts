@@ -13,7 +13,7 @@ export class Togetic extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Drain Kiss',
+      name: 'Draining Kiss',
       cost: [C, C],
       damage: 30,
       text: 'Heal 30 damage from this Pokémon.'

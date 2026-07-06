@@ -13,7 +13,7 @@ export class Combusken extends PokemonCard {
   public attacks = [
     {
       name: 'Combustion',
-      cost: [R],
+      cost: [C],
       damage: 20,
       text: ''
     },

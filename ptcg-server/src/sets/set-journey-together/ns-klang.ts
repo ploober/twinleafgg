@@ -10,13 +10,14 @@ export class NsKlang extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'N\'s Klink';
   public cardType: CardType = M;
-  public hp: number = 160;
+  public hp: number = 90;
   public weakness = [{ type: R }];
+  public resistance = [{ type: G, value: -30 }];
   public retreat = [C, C, C];
 
   public attacks = [
     {
-      name: 'Twirling Gear',
+      name: 'Spinning Gears',
       cost: [C],
       damage: 20,
       damageCalculation: 'x',

@@ -25,13 +25,13 @@ export class NsDarmanitan extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Backdraft',
+      name: 'Back Draft',
       cost: [C, C],
       damage: 30,
       text: 'This attack does 30 damage for each Basic Energy card in your opponent\'s discard pile.'
     },
     {
-      name: 'Darman-i-cannon',
+      name: 'Flamebody Cannon',
       cost: [R, R, C],
       damage: 90,
       text: 'Discard all Energy from this Pokémon. This attack also does 90 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

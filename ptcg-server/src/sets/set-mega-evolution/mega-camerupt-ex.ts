@@ -22,7 +22,7 @@ export class MegaCameruptEx extends PokemonCard {
     text: 'If your opponent\'s Active Pokémon is Burned, this attack does 160 more damage.',
   },
   {
-    name: 'Volcano Meteor',
+    name: 'Volcanic Meteor',
     cost: [R, C, C, C],
     damage: 280,
     text: 'Discard 2 Energy from this Pokémon.',

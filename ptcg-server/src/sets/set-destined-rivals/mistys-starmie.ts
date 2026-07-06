@@ -16,7 +16,7 @@ export class MistysStarmie extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Sudden Flash',
+    name: 'Abrupt Flash',
     cost: [W],
     damage: 60,
     damageCalculation: '+',

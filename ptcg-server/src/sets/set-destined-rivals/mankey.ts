@@ -12,7 +12,7 @@ export class Mankey extends PokemonCard {
   public attacks = [
     {
       name: 'Wild Kick',
-      cost: [C],
+      cost: [F],
       damage: 30,
       text: 'Flip a coin. If tails, this attack does nothing.'
     }

@@ -17,14 +17,14 @@ export class Ceruledgeex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Abyssal Flame',
+      name: 'Abyssal Flames',
       cost: [CardType.FIRE],
       damage: 30,
       damageCalculation: '+',
       text: 'This attack does 20 more damage for each Energy card in your discard pile.'
     },
     {
-      name: 'Amethyst Rage',
+      name: 'Raging Amethyst',
       cost: [CardType.FIRE, CardType.PSYCHIC, CardType.METAL],
       damage: 280,
       text: 'Discard all Energy from this Pokémon.'

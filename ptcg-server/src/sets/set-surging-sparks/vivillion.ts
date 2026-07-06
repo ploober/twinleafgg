@@ -113,7 +113,7 @@ export class Vivillion extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Evolution Powder',
+      name: 'Evo-Powder',
       cost: [C],
       damage: 0,
       text: 'For each of your Benched Pokémon, search your deck for a card that evolves from that Pokémon and put it onto that Pokémon to evolve it. Then, shuffle your deck.'
@@ -128,8 +128,8 @@ export class Vivillion extends PokemonCard {
 
   public regulationMark = 'H';
   public set: string = 'SSP';
-  public name: string = 'Vivillion';
-  public fullName: string = 'Vivillion SSP';
+  public name: string = 'Vivillon';
+  public fullName: string = 'Vivillon SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '7';
 

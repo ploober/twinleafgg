@@ -27,7 +27,7 @@ export class Duosion extends PokemonCard {
 
   public attacks = [{
     name: 'Double Trick',
-    cost: [CardType.PSYCHIC],
+    cost: [CardType.COLORLESS],
     damage: 30,
     damageCalculation: 'x',
     text: 'Flip 2 coins. This attack does 30 damage for each heads.'

@@ -15,7 +15,7 @@ export class Metagross extends PokemonCard {
   public attacks: Attack[] = [
     { name: 'Wrack Down', cost: [P], damage: 60, text: '' },
     {
-      name: 'Zen Headbutt',
+      name: 'Conjoined Beams',
       cost: [P, P],
       damage: 130,
       damageCalculation: '+',

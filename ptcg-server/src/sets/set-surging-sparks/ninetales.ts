@@ -16,7 +16,7 @@ export class Ninetales extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Fiery Spirits',
+      name: 'Fire Soul',
       cost: [R],
       damage: 50,
       text: 'This attack also does 30 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

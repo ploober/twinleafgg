@@ -23,7 +23,7 @@ export class Electivireex extends PokemonCard {
       text: 'This attack does 50 damage to 2 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     },
     {
-      name: 'High Voltage Press',
+      name: 'High-Voltage Press',
       cost: [L, L, C],
       damage: 180,
       damageCalculation: '+',

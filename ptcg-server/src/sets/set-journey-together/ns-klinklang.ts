@@ -12,6 +12,7 @@ export class NsKlinklang extends PokemonCard {
   public cardType: CardType = M;
   public hp: number = 160;
   public weakness = [{ type: R }];
+  public resistance = [{ type: G, value: -30 }];
   public retreat = [C, C, C];
 
   public attacks = [

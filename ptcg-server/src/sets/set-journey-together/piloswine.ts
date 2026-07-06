@@ -17,7 +17,7 @@ export class Piloswine extends PokemonCard {
       text: ''
     },
     {
-      name: 'Piercing Fangs',
+      name: 'Impaling Tusk',
       cost: [F, F],
       damage: 50,
       text: ''

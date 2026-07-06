@@ -12,7 +12,7 @@ export class Taillow extends PokemonCard {
   public attacks = [{
     name: 'Wing Attack',
     cost: [C],
-    damage: 10,
+    damage: 20,
     text: ''
   }];
 

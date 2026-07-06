@@ -45,7 +45,7 @@ export class TeamRocketsPupitar extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Explosive Awakening',
+      name: 'Explosive Ascension',
       cost: [C],
       damage: 30,
       text: 'Search your deck for a card that evolves from this Pokémon and put it onto this Pokémon to evolve it. Then, shuffle your deck.'

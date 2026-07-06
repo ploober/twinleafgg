@@ -15,13 +15,13 @@ export class TeamRocketsNidokingex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Dirty Horns',
+      name: 'Tainted Horn',
       cost: [D, D, C],
       damage: 100,
       text: 'Your opponent\'s Active Pokémon is now Poisoned. During Pokémon Checkup, put 8 damage counters on that Pokémon instead of 1.'
     },
     {
-      name: 'King\'s Impact',
+      name: 'Kingly Impact',
       cost: [D, D, D, C],
       damage: 240,
       text: ''

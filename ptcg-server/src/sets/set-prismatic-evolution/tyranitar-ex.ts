@@ -23,7 +23,7 @@ export class Tyranitarex extends PokemonCard {
       text: 'This attack does 50 damage for each Energy attached to this Pokémon.'
     },
     {
-      name: 'Tyranical Crush',
+      name: 'Tyrannical Crush',
       cost: [D, C, C],
       damage: 150,
       text: 'Discard a random card from your opponent\'s hand.'

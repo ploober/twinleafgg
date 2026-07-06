@@ -7,13 +7,13 @@ export class MowRotom extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = G;
   public hp: number = 70;
-  public weakness: Weakness[] = [{ type: F }];
+  public weakness: Weakness[] = [{ type: R }];
   public retreat: CardType[] = [C];
 
   public attacks: Attack[] = [{
     name: 'Trimming Mower',
     cost: [G],
-    damage: 0,
+    damage: 20,
     text: 'Discard a Stadium in play.'
   }, {
     name: 'Gadget Show',

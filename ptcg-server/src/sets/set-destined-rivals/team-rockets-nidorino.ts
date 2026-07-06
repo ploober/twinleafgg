@@ -21,7 +21,7 @@ export class TeamRocketsNidorino extends PokemonCard {
       text: '',
     },
     {
-      name: 'Horned Gouge',
+      name: 'Horn Rend',
       cost: [D, D, C],
       damage: 60,
       damageCalculation: '+',
