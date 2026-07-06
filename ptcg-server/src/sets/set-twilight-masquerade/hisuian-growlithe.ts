@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, GameError, GameMessage } from '../../game';
+import { StoreLike, State, StateUtils } from '../../game';
 
 import { Effect } from '../../game/store/effects/effect';
 import { DealDamageEffect } from '../../game/store/effects/attack-effects';
@@ -37,15 +37,14 @@ export class HisuianGrowlithe extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // "Discard a Stadium in play." With no Stadium there is nothing to discard, but the attack is
+      // still legal to use — it just does nothing (compendium #361: an attack is usable even when
+      // its effect can't be carried out). Do not reject it.
       const stadiumCard = StateUtils.getStadiumCard(state);
-
-      if (!stadiumCard) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      } else {
+      if (stadiumCard) {
         const cardList = StateUtils.findCardList(state, stadiumCard);
         const player = StateUtils.findOwner(state, cardList);
         cardList.moveTo(player.discard);
-        return state;
       }
       return state;
     }

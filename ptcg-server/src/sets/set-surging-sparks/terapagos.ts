@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, GameMessage, GameError, StateUtils, AttachEnergyPrompt, CardTag, CardTarget, EnergyType, PlayerType, SlotType, SuperType } from '../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, GameMessage, StateUtils, AttachEnergyPrompt, CardTag, CardTarget, EnergyType, PlayerType, SlotType, SuperType } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
 
 import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
@@ -44,8 +44,12 @@ export class Terapagos extends PokemonCard {
         }
       });
 
+      // Prism Charge attaches "to your Tera Pokémon" — and Terapagos itself is a Basic (not Tera).
+      // With no Tera Pokémon in play there is no valid attach target, so the whole effect fails and
+      // (per compendium #361, Call for Family with a full Bench) "you can't even search your deck":
+      // the attack is still legal to use, it just does nothing. Do not reject it.
       if (!teraPokemonInPlay) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       const blocked2: CardTarget[] = [];
