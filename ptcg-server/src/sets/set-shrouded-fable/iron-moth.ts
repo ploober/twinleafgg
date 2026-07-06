@@ -41,10 +41,11 @@ export class IronMoth extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      // Absorption
+      // "Heal from THIS Pokémon the same amount of damage you did" — heal Iron Moth itself, not
+      // the opponent's Active. Targeting effect.target healed the wrong Pokémon and, when the
+      // attack KO'd the opponent's Active, resolved to undefined → `Cannot read 'player'` (500).
       if (effect.damage > 0) {
-        const target = StateUtils.getTarget(state, player, effect.target);
-        const healEffect = new HealEffect(player, target, effect.damage);
+        const healEffect = new HealEffect(player, player.active, effect.damage);
         state = store.reduceEffect(state, healEffect);
       }
     }

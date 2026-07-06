@@ -24,7 +24,11 @@ function* useAscension(next: Function, store: StoreLike, state: State,
     GameMessage.CHOOSE_CARD_TO_EVOLVE,
     player.deck,
     { superType: SuperType.POKEMON, stage: Stage.STAGE_1, evolvesFrom: 'Dwebble' },
-    { min: 1, max: 1, allowCancel: true }
+    // A deck search may find nothing (no evolution present, or a voluntary fail), so min:0 — a
+    // min:1 prompt with zero eligible cards crashes the conformance decomposer instead of
+    // resolving to "found nothing → shuffle" (which rotomancer does). The evolve is guarded on
+    // cards.length below; the shuffle fires unconditionally.
+    { min: 0, max: 1, allowCancel: true }
   ), selected => {
     cards = selected || [];
     next();
