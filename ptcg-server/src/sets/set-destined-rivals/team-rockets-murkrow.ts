@@ -67,24 +67,25 @@ export class TeamRocketsMurkrow extends PokemonCard {
       ), selected => {
         const cards = selected || [];
 
+        // CF-13 / compendium #2171: a deck search obligates the trailing "Then, shuffle your
+        // deck" even on a (forced or voluntary) zero-take, so the shuffle is unconditional.
+        const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
+
         if (cards.length === 0) {
-          return state;
+          return shuffle();
         }
 
         // Move card to hand
         player.deck.moveCardsTo(cards, player.hand);
 
-        // Show opponent the revealed card
+        // Show opponent the revealed card, then shuffle
         return store.prompt(state, new ShowCardsPrompt(
           opponent.id,
           GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
           cards
-        ), () => {
-          // Shuffle deck
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-            player.deck.applyOrder(order);
-          });
-        });
+        ), () => shuffle());
       });
     }
 

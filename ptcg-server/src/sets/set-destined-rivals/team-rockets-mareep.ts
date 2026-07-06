@@ -51,10 +51,13 @@ export class TeamRocketsMareep extends PokemonCard {
       ), selected => {
         cards = selected || [];
 
-        if (selected.length === 0) { return state; }
+        if (cards.length > 0) {
+          MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
+          SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);
+        }
 
-        MOVE_CARDS(store, state, player.deck, player.hand, { cards: selected, sourceCard: this });
-        SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);
+        // CF-13 / compendium #2171: a deck search obligates the trailing "Then, shuffle your
+        // deck" even on a (forced or voluntary) zero-take, so the shuffle is unconditional.
         SHUFFLE_DECK(store, state, player);
       });
     }
