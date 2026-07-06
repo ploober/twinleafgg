@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameError, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils } from '../../game';
+import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
@@ -41,8 +41,10 @@ export class Registeelex extends PokemonCard {
           && (c as EnergyCard).energyType === EnergyType.BASIC
           && (c as EnergyCard).provides && (c as EnergyCard).provides.includes(CardType.METAL);
       });
+      // "Attach up to 2" is a whiff: with no Metal Energy in the discard there is nothing to attach,
+      // but the attack is still legal to declare (do not reject it — that was an offer-then-reject).
       if (!hasEnergyInDiscard) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(
@@ -52,7 +54,7 @@ export class Registeelex extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Metal Energy' },
-        { allowCancel: false, min: 1, max: 2 }
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         if (transfers.length === 0) {

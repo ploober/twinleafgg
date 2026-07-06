@@ -40,7 +40,10 @@ export class Dunsparce extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // "Dig" is attack index 1 ("Gnaw" is index 0, a vanilla 10-damage attack). The coin flip +
+    // prevent-damage belongs to Dig; it was wrongly gated on index 0, so Dig did nothing (no flip,
+    // turn just ended) while Gnaw wrongly flipped.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, result => {
         if (result) {
           PREVENT_DAMAGE(store, state, effect, this);
