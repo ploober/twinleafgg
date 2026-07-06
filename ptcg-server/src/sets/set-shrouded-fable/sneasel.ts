@@ -35,7 +35,8 @@ export class Sneasel extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // "Beset" (attack index 1) is the retreat-blocker; "Cut" (index 0) is vanilla.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       return BLOCK_RETREAT(store, state, effect, this);
     }
 

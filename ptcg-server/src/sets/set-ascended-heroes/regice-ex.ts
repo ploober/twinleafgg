@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameError, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils, DiscardEnergyPrompt, SpecialCondition } from '../../game';
+import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils, DiscardEnergyPrompt, SpecialCondition } from '../../game';
 import { AddSpecialConditionsEffect } from '../../game/store/effects/attack-effects';
 import { Effect } from '../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
@@ -42,8 +42,10 @@ export class Regiceex extends PokemonCard {
           && (c as EnergyCard).energyType === EnergyType.BASIC
           && (c as EnergyCard).provides && (c as EnergyCard).provides.includes(CardType.WATER);
       });
+      // "Attach UP TO 2" is a whiff: with no Water Energy in the discard there is simply nothing to
+      // attach, but the attack is still legal to use (do not reject it — that was an offer-then-reject).
       if (!hasEnergyInDiscard) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(
@@ -53,7 +55,7 @@ export class Regiceex extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
-        { allowCancel: false, min: 1, max: 2 }
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         if (transfers.length === 0) {

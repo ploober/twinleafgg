@@ -72,6 +72,7 @@ import {
   CheckPokemonTypeEffect,
   CheckPrizesDestinationEffect,
   CheckProvidedEnergyEffect,
+  CheckRetreatCostEffect,
   CheckTableStateEffect,
 } from '../effects/check-effects';
 import { Effect } from '../effects/effect';
@@ -83,7 +84,6 @@ import {
   MoveCardsEffect,
   MoveDamageCountersEffect,
   PowerEffect,
-  RetreatEffect,
   SpecialEnergyEffect,
 } from '../effects/game-effects';
 import { AfterAttackEffect, EndTurnEffect } from '../effects/game-phase-effects';
@@ -3120,7 +3120,10 @@ export function CLEAR_MARKER_AND_OPPONENTS_POKEMON_MARKER_AT_END_OF_TURN(
 }
 
 export function BLOCK_RETREAT_IF_MARKER(effect: Effect, marker: string, source: Card) {
-  if (effect instanceof RetreatEffect && effect.player.active.marker.hasMarker(marker, source))
+  // Hook CheckRetreatCostEffect (the cost query), NOT RetreatEffect: the cost query runs during
+  // BOTH legal-action enumeration (retreatMenu) and the retreat dispatch, so the block gates the
+  // menu too — otherwise twinleaf offers a retreat it then rejects (offer-then-reject). CF/RE-15.
+  if (effect instanceof CheckRetreatCostEffect && effect.player.active.marker.hasMarker(marker, source))
     throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
 }
 
