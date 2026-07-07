@@ -33,6 +33,7 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Honchkrow DRX",
   "Hooligans Jim & Cas DEX",
   "Houndstone M1S",
+  "Inkay M6",
   "Inkay ROS",
   "Inteleon SSH 59",
   "Iono PAL",
