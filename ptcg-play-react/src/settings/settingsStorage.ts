@@ -12,8 +12,8 @@ export const SETTINGS_KEYS = {
   sfxEnabled: 'sfxEnabled',
   sfxVolume: 'sfxVolume',
   board2dPerspectiveEnabled: 'board2dPerspectiveEnabled',
-  /** React-only: admin preference for matchmade games (both admins must opt in on server). */
-  defaultSandboxMode: 'defaultSandboxMode',
+  /** React-only: show active game markers in the card info pane (debug). */
+  debugMarkersEnabled: 'debugMarkersEnabled',
 } as const;
 
 export interface ClientSettingsSnapshot {
@@ -27,8 +27,7 @@ export interface ClientSettingsSnapshot {
   cardTextKerning: number;
   sfxEnabled: boolean;
   sfxVolume: number;
-  /** Admin-only client flag; honored when joining matchmaking (see server). */
-  defaultSandboxMode: boolean;
+  debugMarkersEnabled: boolean;
 }
 
 function loadHoloSetting(): boolean {
@@ -69,7 +68,7 @@ export function loadHiddenFormats(): Format[] {
 
 function loadUse3dBoardDefaultSetting(): boolean {
   const saved = localStorage.getItem(SETTINGS_KEYS.use3dBoardDefault);
-  return saved ? JSON.parse(saved) : false;
+  return saved ? JSON.parse(saved) : true;
 }
 
 function loadCardTextKerning(): number {
@@ -92,8 +91,8 @@ function loadBoard2dPerspectiveSetting(): boolean {
   return saved ? JSON.parse(saved) : true;
 }
 
-function loadDefaultSandboxMode(): boolean {
-  const saved = localStorage.getItem(SETTINGS_KEYS.defaultSandboxMode);
+function loadDebugMarkersEnabled(): boolean {
+  const saved = localStorage.getItem(SETTINGS_KEYS.debugMarkersEnabled);
   return saved ? JSON.parse(saved) : false;
 }
 
@@ -109,7 +108,7 @@ export function readClientSettingsSnapshot(): ClientSettingsSnapshot {
     cardTextKerning: loadCardTextKerning(),
     sfxEnabled: loadSfxSetting(),
     sfxVolume: loadSfxVolume(),
-    defaultSandboxMode: loadDefaultSandboxMode(),
+    debugMarkersEnabled: loadDebugMarkersEnabled(),
   };
 }
 
@@ -133,11 +132,7 @@ export function writeHiddenFormats(formats: Format[]): void {
   localStorage.setItem(SETTINGS_KEYS.hiddenFormats, JSON.stringify(formats));
 }
 
-export function writeUse3dBoardDefault(enabled: boolean, has3dBoardAccess: boolean): void {
-  if (!has3dBoardAccess) {
-    localStorage.removeItem(SETTINGS_KEYS.use3dBoardDefault);
-    return;
-  }
+export function writeUse3dBoardDefault(enabled: boolean): void {
   localStorage.setItem(SETTINGS_KEYS.use3dBoardDefault, JSON.stringify(enabled));
 }
 
@@ -158,10 +153,6 @@ export function writeSfxVolume(volume: number): void {
   localStorage.setItem(SETTINGS_KEYS.sfxVolume, clamped.toString());
 }
 
-export function writeDefaultSandboxMode(enabled: boolean, isAdmin: boolean): void {
-  if (!isAdmin) {
-    localStorage.removeItem(SETTINGS_KEYS.defaultSandboxMode);
-    return;
-  }
-  localStorage.setItem(SETTINGS_KEYS.defaultSandboxMode, JSON.stringify(enabled));
+export function writeDebugMarkersEnabled(enabled: boolean): void {
+  localStorage.setItem(SETTINGS_KEYS.debugMarkersEnabled, JSON.stringify(enabled));
 }

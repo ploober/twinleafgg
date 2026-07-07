@@ -1,5 +1,6 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 import {
+  ChooseCardsPrompt,
   ChoosePokemonPrompt,
   GameMessage,
   MoveDamagePrompt,
@@ -12,14 +13,54 @@ import {
   type StateLog,
 } from 'ptcg-server';
 import { cardTargetKey } from './prompts/removeDamagePromptModel';
+import {
+  chooseCardsHandIndicesToCards,
+  chooseCardsHandIndexToPromptIndex,
+  chooseCardsHandTargetsToPromptIndices,
+  countEligibleUnselectedSetupHandBasics,
+  getChooseHandCardSelectionHandIndices,
+  isChooseCardsHandIndexEligible,
+  isChooseCardsFromPlayerHand,
+  isChooseStartingPokemonsHandPrompt,
+  isSetupActivePhaseSkipped,
+} from './prompts/chooseCardsHandSelection';
 
-type SelectionOverlayKind = 'choose-pokemon' | 'remove-damage' | 'move-damage' | 'put-damage' | null;
+/** Pause before trainer effect prompts so the hand → board play animation can finish. */
+export const TRAINER_PLAY_EFFECT_PROMPT_DELAY_MS = 2500;
+
+type SelectionOverlayKind =
+  | 'choose-pokemon'
+  | 'choose-hand-cards'
+  | 'remove-damage'
+  | 'move-damage'
+  | 'put-damage'
+  | 'hand-play-target'
+  | null;
 
 export interface BasicEntranceAnimationEvent {
   playerId: number;
   cardId: number | string;
   slot: string;
   index?: number;
+}
+
+export interface AbilityAnimationEvent extends BasicEntranceAnimationEvent {
+  abilityName: string;
+}
+
+export interface AbilityFocusPoint {
+  x: number;
+  y: number;
+}
+
+export interface AbilityFocusAnchor {
+  /** Card front face in viewport pixels (perspective quad matching the 3D mesh). */
+  polygon: readonly AbilityFocusPoint[];
+}
+
+export interface AbilityFocusState {
+  abilityName: string;
+  anchor: AbilityFocusAnchor | null;
 }
 
 export interface CoinFlipAnimationEvent {
@@ -74,7 +115,13 @@ export class BoardInteractionService {
 
   private selectionCallback: ((targets: CardTarget[] | null) => void) | null = null;
 
+  private chooseCardsPrompt: ChooseCardsPrompt | null = null;
+  private chooseCardsCallback: ((indices: number[] | null) => void) | null = null;
+
   private overlayKind: SelectionOverlayKind = null;
+
+  /** Explicit eligible targets when playing attach/evolution cards from hand. */
+  private handPlayEligibleTargets: CardTarget[] = [];
 
   /** Client pixel position for Remove damage floating +/- HUD (updated by Board3dController each frame). */
   private removeDamageHudAnchor: { x: number; y: number } | null = null;
@@ -98,6 +145,12 @@ export class BoardInteractionService {
 
   private attackAnimationSubject = new Subject<BasicEntranceAnimationEvent>();
   public attackAnimation$ = this.attackAnimationSubject.asObservable();
+
+  private abilityAnimationSubject = new Subject<AbilityAnimationEvent>();
+  public abilityAnimation$ = this.abilityAnimationSubject.asObservable();
+
+  private abilityFocusSubject = new BehaviorSubject<AbilityFocusState | null>(null);
+  public abilityFocus$ = this.abilityFocusSubject.asObservable();
 
   private coinFlipAnimationSubject = new Subject<CoinFlipAnimationEvent>();
   public coinFlipAnimation$ = this.coinFlipAnimationSubject.asObservable();
@@ -142,6 +195,171 @@ export class BoardInteractionService {
   }
 
   /**
+   * Glow valid Pokémon and wait for a click when attaching energy/tools or evolving
+   * with multiple legal targets.
+   */
+  public startHandPlayTargetSelection(
+    eligibleTargets: CardTarget[],
+    onComplete: (target: CardTarget | null) => void,
+  ): void {
+    if (this.isReplayModeActive) {
+      return;
+    }
+
+    this.endBoardSelection();
+
+    this.overlayKind = 'hand-play-target';
+    this.handPlayEligibleTargets = [...eligibleTargets];
+    this.promptSubject.next(null);
+    this.selectionModeSubject.next(true);
+    this.selectedTargetsSubject.next([]);
+    this.blockedTargetsSubject.next([]);
+    this.eligiblePlayerTypeSubject.next(PlayerType.ANY);
+    this.eligibleSlotsSubject.next([SlotType.ACTIVE, SlotType.BENCH]);
+    this.minSelectionsSubject.next(1);
+    this.maxSelectionsSubject.next(1);
+    this.selectionCallback = (targets) => {
+      onComplete(targets?.[0] ?? null);
+    };
+  }
+
+  public isHandPlayTargetSelectionActive(): boolean {
+    return this.overlayKind === 'hand-play-target';
+  }
+
+  public isChooseHandCardsSelectionActive(): boolean {
+    return this.overlayKind === 'choose-hand-cards';
+  }
+
+  public isChooseStartingPokemonsSelectionActive(): boolean {
+    return (
+      this.overlayKind === 'choose-hand-cards' &&
+      this.chooseCardsPrompt != null &&
+      isChooseStartingPokemonsHandPrompt(this.chooseCardsPrompt)
+    );
+  }
+
+  public getChooseCardsPrompt(): ChooseCardsPrompt | null {
+    return this.chooseCardsPrompt;
+  }
+
+  public getChooseHandCardSelectionHandIndices(): number[] {
+    return getChooseHandCardSelectionHandIndices(this.selectedTargetsSubject.value);
+  }
+
+  public removeChooseHandCardByHandIndex(handIndex: number): void {
+    if (this.isChooseStartingPokemonsSelectionActive()) {
+      return;
+    }
+    const currentTargets = this.selectedTargetsSubject.value;
+    const newTargets = currentTargets.filter(
+      t => !(t.slot === SlotType.HAND && t.index === handIndex),
+    );
+    if (newTargets.length !== currentTargets.length) {
+      this.selectedTargetsSubject.next(newTargets);
+    }
+  }
+
+  /** Initial setup: Active is chosen and cannot be changed. */
+  public isSetupActivePhaseSkipped(): boolean {
+    const prompt = this.chooseCardsPrompt;
+    if (!prompt || !this.isChooseStartingPokemonsSelectionActive()) {
+      return false;
+    }
+    return isSetupActivePhaseSkipped(prompt);
+  }
+
+  public isSetupActiveLocked(): boolean {
+    if (!this.isChooseStartingPokemonsSelectionActive()) {
+      return false;
+    }
+    if (this.isSetupActivePhaseSkipped()) {
+      return true;
+    }
+    return this.getChooseHandCardSelectionHandIndices().length >= 1;
+  }
+
+  public isSetupActiveSelection(handIndex: number): boolean {
+    if (this.isSetupActivePhaseSkipped()) {
+      return false;
+    }
+    const indices = this.getChooseHandCardSelectionHandIndices();
+    return indices.length > 0 && indices[0] === handIndex;
+  }
+
+  /** Initial setup: any placed Basic (Active or Bench) cannot be returned to hand. */
+  public isSetupSelectionLocked(handIndex: number): boolean {
+    if (!this.isChooseStartingPokemonsSelectionActive()) {
+      return false;
+    }
+    return this.getChooseHandCardSelectionHandIndices().includes(handIndex);
+  }
+
+  public hasMoreSetupBenchBasicsAvailable(): boolean {
+    const prompt = this.chooseCardsPrompt;
+    if (!prompt || !this.isChooseStartingPokemonsSelectionActive()) {
+      return false;
+    }
+    const selected = this.getChooseHandCardSelectionHandIndices();
+    if (selected.length >= this.maxSelectionsSubject.value) {
+      return false;
+    }
+    return countEligibleUnselectedSetupHandBasics(prompt, selected) > 0;
+  }
+
+  /** Pick a Basic during setup (click or drop). Active is chosen first and locked. */
+  public addChooseHandCardForSetup(handIndex: number): boolean {
+    if (!this.isChooseStartingPokemonsSelectionActive() || !this.chooseCardsPrompt) {
+      return false;
+    }
+    const target: CardTarget = {
+      player: PlayerType.BOTTOM_PLAYER,
+      slot: SlotType.HAND,
+      index: handIndex,
+    };
+    if (!this.isTargetEligible(target)) {
+      return false;
+    }
+
+    const currentTargets = this.selectedTargetsSubject.value;
+    if (currentTargets.some(t => t.slot === SlotType.HAND && t.index === handIndex)) {
+      return false;
+    }
+
+    const maxSelections = this.maxSelectionsSubject.value;
+
+    if (!this.isSetupActiveLocked()) {
+      this.selectedTargetsSubject.next([target]);
+      return true;
+    }
+
+    if (currentTargets.length >= maxSelections) {
+      return false;
+    }
+
+    this.selectedTargetsSubject.next([...currentTargets, target]);
+    return true;
+  }
+
+  public cancelHandPlayTargetSelection(): void {
+    if (this.overlayKind !== 'hand-play-target') {
+      return;
+    }
+    if (this.selectionCallback) {
+      this.selectionCallback(null);
+    }
+    this.endBoardSelection();
+  }
+
+  /** End hand-play-target glow without invoking the play callback. */
+  public clearHandPlayTargetSelectionSilently(): void {
+    if (this.overlayKind !== 'hand-play-target') {
+      return;
+    }
+    this.endBoardSelection();
+  }
+
+  /**
    * Start board selection mode for a Pokémon selection prompt
    */
   public startBoardSelection(
@@ -163,6 +381,53 @@ export class BoardInteractionService {
     this.minSelectionsSubject.next(prompt.options.min);
     this.maxSelectionsSubject.next(prompt.options.max);
     this.selectionCallback = onComplete;
+  }
+
+  /**
+   * Select cards from the 3D hand for a Choose cards prompt (own hand only).
+   */
+  public startChooseHandCardsSelection(
+    prompt: ChooseCardsPrompt,
+    onComplete: (indices: number[] | null) => void,
+  ): void {
+    if (this.isReplayModeActive) {
+      return;
+    }
+
+    if (!isChooseCardsFromPlayerHand(prompt)) {
+      return;
+    }
+
+    const cards = prompt.cards.cards;
+    const blocked = prompt.options.blocked ?? [];
+    const blockedTargets: CardTarget[] = [];
+    const handCards = prompt.player.hand.cards;
+    for (let handIndex = 0; handIndex < handCards.length; handIndex++) {
+      const promptIndex = chooseCardsHandIndexToPromptIndex(prompt, handIndex);
+      if (
+        promptIndex === -1 ||
+        !isChooseCardsHandIndexEligible(cards, prompt.filter, blocked, promptIndex)
+      ) {
+        blockedTargets.push({
+          player: PlayerType.BOTTOM_PLAYER,
+          slot: SlotType.HAND,
+          index: handIndex,
+        });
+      }
+    }
+
+    this.overlayKind = 'choose-hand-cards';
+    this.chooseCardsPrompt = prompt;
+    this.chooseCardsCallback = onComplete;
+    this.promptSubject.next(null);
+    this.selectionModeSubject.next(true);
+    this.selectedTargetsSubject.next([]);
+    this.blockedTargetsSubject.next(blockedTargets);
+    this.eligiblePlayerTypeSubject.next(PlayerType.BOTTOM_PLAYER);
+    this.eligibleSlotsSubject.next([SlotType.HAND]);
+    this.minSelectionsSubject.next(prompt.options.min);
+    this.maxSelectionsSubject.next(prompt.options.max);
+    this.selectionCallback = null;
   }
 
   /**
@@ -309,6 +574,7 @@ export class BoardInteractionService {
   public endBoardSelection(): void {
     this.removeDamageHudAnchor = null;
     this.overlayKind = null;
+    this.handPlayEligibleTargets = [];
     this.clearPutDamagePlacementPreview();
     this.selectionModeSubject.next(false);
     this.promptSubject.next(null);
@@ -317,6 +583,8 @@ export class BoardInteractionService {
     this.eligiblePlayerTypeSubject.next(null);
     this.eligibleSlotsSubject.next([]);
     this.selectionCallback = null;
+    this.chooseCardsPrompt = null;
+    this.chooseCardsCallback = null;
   }
 
   /**
@@ -334,6 +602,29 @@ export class BoardInteractionService {
    * Toggle selection of a card target
    */
   public toggleTarget(target: CardTarget): void {
+    if (this.overlayKind === 'hand-play-target') {
+      if (!this.isTargetEligible(target) || !this.selectionCallback) {
+        return;
+      }
+      this.selectionCallback([target]);
+      this.endBoardSelection();
+      return;
+    }
+
+    if (this.isChooseStartingPokemonsSelectionActive() && target.slot === SlotType.HAND) {
+      const currentTargets = this.selectedTargetsSubject.value;
+      const targetIndex = currentTargets.findIndex(t =>
+        t.player === target.player &&
+        t.slot === target.slot &&
+        t.index === target.index
+      );
+      if (targetIndex !== -1) {
+        return;
+      }
+      this.addChooseHandCardForSetup(target.index);
+      return;
+    }
+
     const currentTargets = this.selectedTargetsSubject.value;
     const maxSelections = this.maxSelectionsSubject.value;
 
@@ -365,6 +656,12 @@ export class BoardInteractionService {
    * Check if a target is eligible for selection
    */
   public isTargetEligible(target: CardTarget): boolean {
+    if (this.overlayKind === 'hand-play-target') {
+      return this.handPlayEligibleTargets.some(
+        (t) => t.player === target.player && t.slot === target.slot && t.index === target.index,
+      );
+    }
+
     const eligiblePlayerType = this.eligiblePlayerTypeSubject.value;
     const eligibleSlots = this.eligibleSlotsSubject.value;
     const blockedTargets = this.blockedTargetsSubject.value;
@@ -408,6 +705,24 @@ export class BoardInteractionService {
    * Confirm the current selection
    */
   public confirmSelection(): void {
+    if (this.overlayKind === 'choose-hand-cards') {
+      if (!this.chooseCardsPrompt || !this.chooseCardsCallback) {
+        return;
+      }
+      const prompt = this.chooseCardsPrompt;
+      const handIndices = this.selectedTargetsSubject.value
+        .filter(t => t.slot === SlotType.HAND)
+        .map(t => t.index);
+      const indices = chooseCardsHandTargetsToPromptIndices(prompt, handIndices);
+      const selectedCards = chooseCardsHandIndicesToCards(prompt, indices);
+      if (!prompt.validate(selectedCards)) {
+        return;
+      }
+      this.chooseCardsCallback(indices);
+      this.endBoardSelection();
+      return;
+    }
+
     if (this.overlayKind !== 'choose-pokemon') {
       return;
     }
@@ -422,6 +737,14 @@ export class BoardInteractionService {
    * Cancel the current selection
    */
   public cancelSelection(): void {
+    if (this.overlayKind === 'choose-hand-cards') {
+      if (this.chooseCardsCallback) {
+        this.chooseCardsCallback(null);
+      }
+      this.endBoardSelection();
+      return;
+    }
+
     if (this.overlayKind !== 'choose-pokemon') {
       return;
     }
@@ -442,6 +765,15 @@ export class BoardInteractionService {
    * Check if the current selection meets requirements
    */
   public isSelectionValid(): boolean {
+    if (this.overlayKind === 'choose-hand-cards' && this.chooseCardsPrompt) {
+      const prompt = this.chooseCardsPrompt;
+      const handIndices = this.selectedTargetsSubject.value
+        .filter(t => t.slot === SlotType.HAND)
+        .map(t => t.index);
+      const indices = chooseCardsHandTargetsToPromptIndices(prompt, handIndices);
+      return prompt.validate(chooseCardsHandIndicesToCards(prompt, indices));
+    }
+
     if (
       this.overlayKind === 'remove-damage'
       || this.overlayKind === 'move-damage'
@@ -466,6 +798,55 @@ export class BoardInteractionService {
 
   public triggerAttackAnimation(event: BasicEntranceAnimationEvent) {
     this.attackAnimationSubject.next(event);
+  }
+
+  /**
+   * Latest 3D ability activation promise (set when the motion starts).
+   * {@link abilityAnimationStartedAt} must be checked so settled promises from prior abilities are ignored.
+   */
+  private pendingAbilityAnimationPromise: Promise<void> | null = null;
+  private abilityAnimationStartedAt = 0;
+  private lastAbilityAnimationEvent: AbilityAnimationEvent | null = null;
+
+  public setPendingAbilityAnimationPromise(p: Promise<void> | null): void {
+    this.pendingAbilityAnimationPromise = p;
+    if (p) {
+      this.abilityAnimationStartedAt = Date.now();
+    }
+  }
+
+  public getPendingAbilityAnimationPromise(): Promise<void> | null {
+    return this.pendingAbilityAnimationPromise;
+  }
+
+  public getAbilityAnimationStartedAt(): number {
+    return this.abilityAnimationStartedAt;
+  }
+
+  public clearPendingAbilityAnimation(): void {
+    this.pendingAbilityAnimationPromise = null;
+    this.abilityAnimationStartedAt = 0;
+  }
+
+  public triggerAbilityAnimation(event: AbilityAnimationEvent) {
+    this.lastAbilityAnimationEvent = event;
+    this.clearPendingAbilityAnimation();
+    this.abilityAnimationSubject.next(event);
+  }
+
+  /** Re-fire the last socket ability event when the server WaitPrompt arrives before the animation starts. */
+  public requestAbilityAnimationPlayback(): void {
+    if (this.lastAbilityAnimationEvent && !this.pendingAbilityAnimationPromise) {
+      this.abilityAnimationSubject.next(this.lastAbilityAnimationEvent);
+    }
+  }
+
+  public setAbilityFocus(state: AbilityFocusState | null): void {
+    this.abilityFocusSubject.next(state);
+  }
+
+  public clearAbilityFocus(): void {
+    this.abilityFocusSubject.next(null);
   }
 
   /**
@@ -503,7 +884,7 @@ export class BoardInteractionService {
   /**
    * Hide table prompts briefly after playing a trainer from the 3D board so the play animation is not overlapped.
    */
-  public beginTrainerPlayEffectPromptDelay(ms: number = 2000): void {
+  public beginTrainerPlayEffectPromptDelay(ms: number = TRAINER_PLAY_EFFECT_PROMPT_DELAY_MS): void {
     if (this.trainerEffectPromptDelayTimer != null) {
       clearTimeout(this.trainerEffectPromptDelayTimer);
       this.trainerEffectPromptDelayTimer = null;

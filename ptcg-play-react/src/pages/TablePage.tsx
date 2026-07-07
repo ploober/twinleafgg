@@ -6,7 +6,6 @@ import { GamePhase } from 'ptcg-server';
 import { useAuth } from '../context/AuthContext';
 import { useDeckCardScanUrl } from '../context/CardImagesContext';
 import { useCoreSession } from '../context/CoreSessionContext';
-import { useSettings } from '../context/SettingsContext';
 import tablePageStyles from './TablePage.module.css';
 import { getSocketManager } from '../socket/socketManager';
 import { ApiError, formatUnknownError } from '../api/apiError';
@@ -20,10 +19,10 @@ import type { Board3dGameActions } from '../table/board3d/board3dGameActions';
 import { Board3DCanvas } from '../table/board3d/Board3DCanvas';
 import { TablePromptLayer } from '../table/prompts/TablePromptLayer';
 import { TableBoardOverlay } from '../table/hud/TableBoardOverlay';
+import type { AdminSpectatorReveal } from '../table/hud/AdminSpectatorControls';
 import { GameOverOverlay } from '../table/end-game/GameOverOverlay';
 import { MatchResultsSplash } from '../table/end-game/MatchResultsSplash';
 import { SandboxControlPanel } from '../table/sandbox/SandboxControlPanel';
-import { SandboxTableHint } from '../table/sandbox/SandboxTableHint';
 import { ShellButton } from '../components/ui/ShellButton';
 import { selfPlayFocusPlayerId } from '../table/selfPlayFocusPlayerId';
 import promptStyles from '../table/prompts/TablePromptLayer.module.css';
@@ -71,7 +70,6 @@ export function TablePage() {
   const catalog = useMemo(() => cardsInfo?.cards ?? EMPTY_CATALOG, [cardsInfo?.cards]);
   const getScanUrl = useDeckCardScanUrl(serverConfig?.scansUrl);
   const { clientId, connected: coreConnected } = useCoreSession();
-  const { has3dBoardAccess, use3dBoardDefault, defaultSandboxMode } = useSettings();
 
   const hasReplayParam = matchIdParam != null && matchIdParam !== '';
   const replayMatchId = hasReplayParam ? Number(matchIdParam) : NaN;
@@ -84,6 +82,10 @@ export function TablePage() {
   const [leaveConfirmKind, setLeaveConfirmKind] = useState<'live' | 'replay' | null>(null);
   const [suppressChoosePrizePrompt, setSuppressChoosePrizePrompt] = useState(false);
   const [boardFps, setBoardFps] = useState<number | null>(null);
+  const [adminSpectatorReveal, setAdminSpectatorReveal] = useState<AdminSpectatorReveal>({
+    revealPrizes: false,
+    revealHands: false,
+  });
   const clientIdRef = useRef(clientId);
   clientIdRef.current = clientId;
   const choosePrizeRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -226,6 +228,15 @@ export function TablePage() {
       }) => {
         boardInteraction.triggerAttackAnimation(data);
       };
+      const onAbility = (data: {
+        playerId: number;
+        cardId: number | string;
+        slot: string;
+        index?: number;
+        abilityName: string;
+      }) => {
+        boardInteraction.triggerAbilityAnimation(data);
+      };
       const onCoin = (data: { playerId: number; result: boolean }) => {
         boardInteraction.triggerCoinFlipAnimation(data.result, data.playerId);
       };
@@ -234,6 +245,7 @@ export function TablePage() {
       raw.on(`game[${gameId}]:playBasicAnimation`, onBasic);
       raw.on(`game[${gameId}]:evolution`, onEvo);
       raw.on(`game[${gameId}]:attack`, onAttack);
+      raw.on(`game[${gameId}]:ability`, onAbility);
       raw.on(`game[${gameId}]:coinFlip`, onCoin);
 
       return () => {
@@ -241,6 +253,7 @@ export function TablePage() {
         raw.off(`game[${gameId}]:playBasicAnimation`, onBasic);
         raw.off(`game[${gameId}]:evolution`, onEvo);
         raw.off(`game[${gameId}]:attack`, onAttack);
+        raw.off(`game[${gameId}]:ability`, onAbility);
         raw.off(`game[${gameId}]:coinFlip`, onCoin);
       };
     },
@@ -434,12 +447,18 @@ export function TablePage() {
   }, [isLiveRoute, onGameSocketError, serverGameId]);
 
   const onLeave = useCallback(() => {
-    const leaveReplay = isReplayRoute || localGame?.replay != null;
-    if (!leaveReplay && localGame?.deleted) {
+    const isReplay = isReplayRoute || localGame?.replay != null;
+    const isSpectatingLive =
+      !isReplay &&
+      localGame != null &&
+      clientId != null &&
+      clientId !== 0 &&
+      !localGame.state.players.some((p) => p.id === clientId);
+    if (!isReplay && !isSpectatingLive && localGame?.deleted) {
       return;
     }
-    setLeaveConfirmKind(leaveReplay ? 'replay' : 'live');
-  }, [isReplayRoute, localGame?.deleted, localGame?.replay]);
+    setLeaveConfirmKind(isReplay || isSpectatingLive ? 'replay' : 'live');
+  }, [clientId, isReplayRoute, localGame?.deleted, localGame?.replay, localGame?.state.players]);
 
   const dismissLeaveConfirm = useCallback(() => {
     setLeaveConfirmKind(null);
@@ -492,8 +511,6 @@ export function TablePage() {
     navigate(localGame?.replay != null ? '/spectate' : '/games');
   }, [localGame?.replay, navigate]);
 
-  const show3d = has3dBoardAccess && use3dBoardDefault;
-
   if (error) {
     const backTarget = isReplayRoute ? '/spectate' : '/games';
     return (
@@ -541,23 +558,13 @@ export function TablePage() {
     return <div style={{ padding: 24 }}>{t('REACT_LOADING')}</div>;
   }
 
-  if (!show3d) {
-    const backTarget = isReplayRoute ? '/spectate' : '/games';
-    return (
-      <div style={{ padding: 24 }}>
-        <p>{t('REACT_TABLE_3D_DISABLED', 'Enable the 3D board in Settings and ensure your account has access.')}</p>
-        <button type="button" onClick={() => navigate(backTarget)}>
-          {t('BUTTON_BACK')}
-        </button>
-      </div>
-    );
-  }
-
   const { bottomPlayer, topPlayer, bottomHand, topHand, isPlaying, isObserver } = tableView;
 
   const sandboxGameEnabled = Boolean(localGame.state.gameSettings?.sandboxMode);
   const showSandboxDock =
-    user?.roleId === 4 && localGame.replay == null && (sandboxGameEnabled || defaultSandboxMode);
+    user?.roleId === 4 && localGame.replay == null && sandboxGameEnabled;
+  const showAdminSpectatorControls =
+    user?.roleId === 4 && isObserver && localGame.replay == null;
 
   const showEndGame =
     localGame.state.phase === GamePhase.FINISHED &&
@@ -586,16 +593,12 @@ export function TablePage() {
       >
         {showSandboxDock ? (
           <div className={tablePageStyles.sandboxDock}>
-            {sandboxGameEnabled ? (
-              <SandboxControlPanel
-                gameId={localGame.gameId}
-                gameState={localGame.state}
-                players={localGame.state.players}
-                clientId={tableClientId}
-              />
-            ) : (
-              <SandboxTableHint />
-            )}
+            <SandboxControlPanel
+              gameId={localGame.gameId}
+              gameState={localGame.state}
+              players={localGame.state.players}
+              clientId={tableClientId}
+            />
           </div>
         ) : null}
       <Board3DCanvas
@@ -606,6 +609,7 @@ export function TablePage() {
         topPlayerHand={topHand}
         clientId={tableClientId}
         catalog={catalog}
+        adminSpectatorReveal={showAdminSpectatorControls ? adminSpectatorReveal : undefined}
         boardInteraction={boardInteraction}
         gameActions={gameActions}
         onKoSequenceActiveChange={onKoSequenceActiveChange}
@@ -618,6 +622,9 @@ export function TablePage() {
         bottomPlayer={bottomPlayer}
         isPlaying={isPlaying}
         isObserver={isObserver}
+        showAdminSpectatorControls={showAdminSpectatorControls}
+        adminSpectatorReveal={adminSpectatorReveal}
+        onAdminSpectatorRevealChange={setAdminSpectatorReveal}
         onPassTurn={onPassTurn}
         onLeave={onLeave}
         onSwitchSides={toggleSwitchSides}

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Format } from 'ptcg-server';
-import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { DECK_FORMAT_OPTIONS } from '../deck-editor/deckFormatOptions';
 import { ShellButton } from '../components/ui/ShellButton';
@@ -11,8 +10,6 @@ import styles from './SettingsPage.module.css';
 export function SettingsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const isAdmin = user?.roleId === 4;
   const s = useSettings();
 
   const [draft, setDraft] = useState(() => ({
@@ -20,10 +17,9 @@ export function SettingsPage() {
     showCardName: s.showCardName,
     showTags: s.showTags,
     hiddenFormats: [...s.hiddenFormats],
-    use3dBoardDefault: s.use3dBoardDefault,
     board2dPerspectiveEnabled: s.board2dPerspectiveEnabled,
     sfxEnabled: s.sfxEnabled,
-    defaultSandboxMode: s.defaultSandboxMode,
+    debugMarkersEnabled: s.debugMarkersEnabled,
   }));
 
   function onHiddenFormatsChange(format: Format, isHidden: boolean) {
@@ -48,10 +44,10 @@ export function SettingsPage() {
       showCardName: draft.showCardName,
       showTags: draft.showTags,
       hiddenFormats: draft.hiddenFormats,
-      use3dBoardDefault: draft.use3dBoardDefault,
+      use3dBoardDefault: true,
       board2dPerspectiveEnabled: draft.board2dPerspectiveEnabled,
       sfxEnabled: draft.sfxEnabled,
-      defaultSandboxMode: draft.defaultSandboxMode,
+      debugMarkersEnabled: draft.debugMarkersEnabled,
       sfxVolumePercent: Math.round(s.sfxVolume * 100),
       cardSize: s.cardSize,
       cardTextKerning: s.cardTextKerning,
@@ -89,16 +85,14 @@ export function SettingsPage() {
           />
           Show Tags
         </label>
-        {s.has3dBoardAccess ? (
-          <label className={styles.row}>
-            <input
-              type="checkbox"
-              checked={draft.use3dBoardDefault}
-              onChange={(e) => setDraft((d) => ({ ...d, use3dBoardDefault: e.target.checked }))}
-            />
-            Start Games with 3D Board
-          </label>
-        ) : null}
+        <label className={styles.row}>
+          <input
+            type="checkbox"
+            checked={draft.debugMarkersEnabled}
+            onChange={(e) => setDraft((d) => ({ ...d, debugMarkersEnabled: e.target.checked }))}
+          />
+          Debug Markers Turned On
+        </label>
         <label className={styles.row}>
           <input
             type="checkbox"
@@ -109,22 +103,6 @@ export function SettingsPage() {
           />
           3D Board Perspective
         </label>
-
-        {isAdmin ? (
-          <div className={styles.sandboxBlock}>
-            <label className={styles.row}>
-              <input
-                type="checkbox"
-                checked={draft.defaultSandboxMode}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, defaultSandboxMode: e.target.checked }))
-                }
-              />
-              {t('GAMES_SANDBOX_MODE')}
-            </label>
-            <p className={styles.hint}>{t('REACT_SETTINGS_SANDBOX_MATCHMAKING_HINT')}</p>
-          </div>
-        ) : null}
 
         <div className={styles.sliderBlock}>
           <label htmlFor="settings-card-size">Card Size</label>

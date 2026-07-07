@@ -30,6 +30,7 @@ import { ShellButton } from '../../components/ui/ShellButton';
 import { CardFace } from '../../components/cards/CardFace';
 import { CardInfoPopup } from '../../card-info/CardInfoPopup';
 import { CheckboxField } from '../../components/ui/CheckboxField';
+import { useDeckName } from '../../hooks/useDeckName';
 import styles from './TablePromptLayer.module.css';
 import { AttachEnergyPromptPanel } from './AttachEnergyPromptPanel';
 import { ChooseAttackPromptPanel } from './ChooseAttackPromptPanel';
@@ -39,11 +40,14 @@ import { PutDamageOverlay } from './PutDamageOverlay';
 import { RemoveDamageOverlay } from './RemoveDamageOverlay';
 import { MoveDamageOverlay } from './MoveDamageOverlay';
 import { scanBlockedOwnZeroDamageFromState } from './pokemonPromptRows';
-import { BOARD3D_ATTACK_ANIMATION_DURATION_SEC } from '../board3d/services/board-3d-animation.service';
+import { BOARD3D_ATTACK_ANIMATION_DURATION_SEC, BOARD3D_ABILITY_ANIMATION_DURATION_SEC } from '../board3d/services/board-3d-animation.service';
 import {
   autoTakeChoosePrizeIndices,
   shouldAutoTakeChoosePrize,
 } from './choosePrizeAutoTake';
+import {
+  shouldUseBoardHandForChooseCards,
+} from './chooseCardsHandSelection';
 
 const CHOOSE_CARDS_CARD_BACK = '/assets/cardback.png';
 
@@ -89,6 +93,23 @@ function gameMessageText(t: TFunction, message: string | number): string {
   return t(key, { defaultValue: String(message) });
 }
 
+function setupStartingSnackbarMessage(
+  boardInteraction: BoardInteractionService,
+  t: TFunction,
+  fallback: string,
+): string {
+  if (!boardInteraction.isChooseStartingPokemonsSelectionActive()) {
+    return fallback;
+  }
+  if (!boardInteraction.isSetupActivePhaseSkipped() && !boardInteraction.isSetupActiveLocked()) {
+    return t('REACT_SETUP_CHOOSE_ACTIVE', { defaultValue: 'Choose your Active Pokémon' });
+  }
+  if (boardInteraction.hasMoreSetupBenchBasicsAvailable()) {
+    return t('REACT_SETUP_CHOOSE_BENCH', { defaultValue: 'Play any Benched Pokémon' });
+  }
+  return fallback;
+}
+
 /** Matches legacy server WaitPrompt message used before attack damage (see game-effect useAttack). */
 function isAttackAnimationWaitPrompt(wp: WaitPrompt): boolean {
   const m = wp.message;
@@ -96,6 +117,15 @@ function isAttackAnimationWaitPrompt(wp: WaitPrompt): boolean {
     return false;
   }
   return String(m).toLowerCase().includes('attack animation');
+}
+
+/** Matches server WaitPrompt before board Pokémon ability resolution (see game-effect usePower). */
+function isAbilityAnimationWaitPrompt(wp: WaitPrompt): boolean {
+  const m = wp.message;
+  if (m === undefined || m === null) {
+    return false;
+  }
+  return String(m).toLowerCase().includes('ability animation');
 }
 
 function AttackAnimationWaitPrompt(props: {
@@ -133,6 +163,67 @@ function AttackAnimationWaitPrompt(props: {
         return;
       }
       await sleep(BOARD3D_ATTACK_ANIMATION_DURATION_SEC * 1000);
+      finish();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [promptId, boardInteraction, resolve]);
+
+  return null;
+}
+
+function AbilityAnimationWaitPrompt(props: {
+  promptId: number;
+  boardInteraction: BoardInteractionService;
+  resolve: (id: number, result: unknown) => void | Promise<void>;
+}) {
+  const { promptId, boardInteraction, resolve } = props;
+  useEffect(() => {
+    let cancelled = false;
+    const finish = () => {
+      if (cancelled) return;
+      cancelled = true;
+      void resolve(promptId, null);
+    };
+
+    const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+
+    void (async () => {
+      const mountTime = Date.now();
+      const minDurationMs = BOARD3D_ABILITY_ANIMATION_DURATION_SEC * 1000;
+      const animationStartDeadline = mountTime + 1200;
+
+      boardInteraction.requestAbilityAnimationPlayback();
+
+      let animationPromise: Promise<void> | null = null;
+      while (Date.now() < animationStartDeadline && !cancelled) {
+        const startedAt = boardInteraction.getAbilityAnimationStartedAt();
+        // Socket animation may begin slightly before the WaitPrompt state arrives.
+        if (startedAt >= mountTime - 200) {
+          animationPromise = boardInteraction.getPendingAbilityAnimationPromise();
+          if (animationPromise) {
+            break;
+          }
+        }
+        await sleep(16);
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      if (animationPromise) {
+        await animationPromise;
+      }
+
+      const elapsed = Date.now() - mountTime;
+      const remaining = minDurationMs - elapsed;
+      if (remaining > 0) {
+        await sleep(remaining);
+      }
+
       finish();
     })();
 
@@ -187,6 +278,49 @@ function useChoosePokemonBoardEffect(
       boardInteraction.endBoardSelection();
     };
   }, [choosePokemonPromptId, clientId, boardInteraction, onResolvePrompt, replay]);
+}
+
+function useChooseHandCardsBoardEffect(
+  localGameRef: React.MutableRefObject<LocalGameState>,
+  clientId: number,
+  boardInteraction: BoardInteractionService,
+  onResolvePrompt: (promptId: number, result: unknown) => void,
+  chooseHandCardsPromptId: number | null,
+  replay: boolean | undefined,
+) {
+  useEffect(() => {
+    if (chooseHandCardsPromptId == null) {
+      return;
+    }
+
+    if (replay) {
+      boardInteraction.setReplayMode(true);
+      return () => {
+        boardInteraction.setReplayMode(false);
+      };
+    }
+
+    boardInteraction.setReplayMode(false);
+    const game = localGameRef.current;
+    const prompt = activeGamePrompt(game, clientId);
+    if (!prompt || prompt.id !== chooseHandCardsPromptId || prompt.type !== 'Choose cards') {
+      return;
+    }
+
+    const ccp = prompt as ChooseCardsPrompt;
+    if (!shouldUseBoardHandForChooseCards(ccp, clientId)) {
+      return;
+    }
+
+    const pid = ccp.id;
+    boardInteraction.startChooseHandCardsSelection(ccp, (indices) => {
+      void onResolvePrompt(pid, indices);
+    });
+
+    return () => {
+      boardInteraction.endBoardSelection();
+    };
+  }, [chooseHandCardsPromptId, clientId, boardInteraction, onResolvePrompt, replay]);
 }
 
 function useRemoveDamageBoardEffect(
@@ -342,6 +476,64 @@ function ChoosePokemonActionBar(props: {
   );
 }
 
+/** Board hand Choose cards: full-width instruction bar at top with inline OK. */
+function ChooseHandCardsBoardOverlay(props: {
+  boardInteraction: BoardInteractionService;
+  defaultMessage: string;
+  allowCancel: boolean;
+}) {
+  const { t } = useTranslation();
+  const { boardInteraction, defaultMessage, allowCancel } = props;
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const sub = merge(
+      boardInteraction.selectionMode$,
+      boardInteraction.selectedTargets$,
+      boardInteraction.maxSelections$,
+      boardInteraction.minSelections$,
+    ).subscribe(() => setTick((x) => x + 1));
+    return () => sub.unsubscribe();
+  }, [boardInteraction]);
+
+  const valid = boardInteraction.isSelectionValid();
+  const active = boardInteraction.isSelectionActive();
+  const message = setupStartingSnackbarMessage(boardInteraction, t, defaultMessage);
+
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <div className={styles.chooseStartingTopBar} role="status">
+      <div className={styles.chooseStartingTopBarContent}>
+        <div className={styles.chooseStartingTopBarMessage}>{message}</div>
+        <div className={styles.chooseStartingTopBarActions}>
+          {allowCancel ? (
+            <ShellButton
+              type="button"
+              variant="plain"
+              className={styles.chooseStartingTopBarCancelBtn}
+              onClick={() => boardInteraction.cancelSelection()}
+            >
+              {t('BUTTON_CANCEL')}
+            </ShellButton>
+          ) : null}
+          <ShellButton
+            type="button"
+            variant="plain"
+            className={styles.chooseStartingTopBarOkBtn}
+            disabled={!valid}
+            onClick={() => boardInteraction.confirmSelection()}
+          >
+            {t('BUTTON_OK')}
+          </ShellButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TablePromptLayer({
   localGame,
   clientId,
@@ -369,6 +561,13 @@ export function TablePromptLayer({
       ? activePrompt.id
       : null;
 
+  const chooseHandCardsId =
+    activePrompt?.type === 'Choose cards' &&
+    !localGame.replay &&
+    shouldUseBoardHandForChooseCards(activePrompt as ChooseCardsPrompt, clientId)
+      ? activePrompt.id
+      : null;
+
   const removeDamageId =
     activePrompt?.type === 'Remove damage' && !localGame.replay && !suppressTrainerEffectPrompts
       ? activePrompt.id
@@ -390,6 +589,15 @@ export function TablePromptLayer({
     boardInteraction,
     onResolvePrompt,
     choosePokemonId,
+    !!localGame.replay,
+  );
+
+  useChooseHandCardsBoardEffect(
+    localGameRef,
+    clientId,
+    boardInteraction,
+    onResolvePrompt,
+    chooseHandCardsId,
     !!localGame.replay,
   );
 
@@ -466,6 +674,23 @@ export function TablePromptLayer({
     suppressChoosePrizePrompt,
   ]);
 
+  const selfPlayGoFirstDeckId = useMemo(() => {
+    if (localGame.state.gameSettings?.selfPlay !== true) {
+      return undefined;
+    }
+    const p = activePrompt;
+    if (!p || p.type !== 'Confirm') {
+      return undefined;
+    }
+    const cp = p as ConfirmPrompt;
+    if (String(cp.message) !== 'GO_FIRST') {
+      return undefined;
+    }
+    return localGame.state.players.find((pl) => pl.id === cp.playerId)?.deckId;
+  }, [activePrompt, localGame.state.gameSettings?.selfPlay, localGame.state.players]);
+
+  const selfPlayGoFirstDeckName = useDeckName(selfPlayGoFirstDeckId);
+
   if (localGame.replay) {
     return null;
   }
@@ -475,6 +700,20 @@ export function TablePromptLayer({
   }
 
   if (suppressTrainerEffectPrompts) {
+    if (
+      activePrompt.type === 'Choose cards' &&
+      shouldUseBoardHandForChooseCards(activePrompt as ChooseCardsPrompt, clientId)
+    ) {
+      const ccp = activePrompt as ChooseCardsPrompt;
+      const msg = gameMessageText(t, ccp.message);
+      return (
+        <ChooseHandCardsBoardOverlay
+          boardInteraction={boardInteraction}
+          defaultMessage={msg}
+          allowCancel={ccp.options.allowCancel}
+        />
+      );
+    }
     return null;
   }
 
@@ -506,10 +745,17 @@ export function TablePromptLayer({
 
   if (p.type === 'Confirm') {
     const cp = p as ConfirmPrompt;
+    const isSelfPlayGoFirst =
+      localGame.state.gameSettings?.selfPlay === true && String(cp.message) === 'GO_FIRST';
+    const confirmTitleBase = t('PROMPT_CONFIRM_TITLE', { defaultValue: 'Confirm' });
+    const confirmTitle =
+      isSelfPlayGoFirst && selfPlayGoFirstDeckName != null && selfPlayGoFirstDeckName !== ''
+        ? `${confirmTitleBase} [${selfPlayGoFirstDeckName}]`
+        : confirmTitleBase;
     return (
       <div className={styles.backdrop} role="presentation">
         <div className={styles.panel} role="dialog" aria-modal="true">
-          <h2 className={styles.title}>{t('PROMPT_CONFIRM_TITLE', { defaultValue: 'Confirm' })}</h2>
+          <h2 className={styles.title}>{confirmTitle}</h2>
           <p className={styles.message}>{gameMessageText(t, cp.message)}</p>
           <div className={styles.actions}>
             <ShellButton variant="secondary" type="button" onClick={() => resolve(cp.id, false)}>
@@ -561,6 +807,16 @@ export function TablePromptLayer({
         />
       );
     }
+    if (isAbilityAnimationWaitPrompt(wp)) {
+      return (
+        <AbilityAnimationWaitPrompt
+          key={wp.id}
+          promptId={wp.id}
+          boardInteraction={boardInteraction}
+          resolve={resolve}
+        />
+      );
+    }
     return (
       <WaitPromptPanel key={wp.id} prompt={wp} t={t} gameMessageText={gameMessageText} resolve={resolve} />
     );
@@ -572,6 +828,7 @@ export function TablePromptLayer({
       <ShowCardsPanel
         key={sc.id}
         prompt={sc}
+        players={localGame.state.players}
         catalog={catalog}
         getScanUrl={getScanUrl}
         t={t}
@@ -588,6 +845,7 @@ export function TablePromptLayer({
       <ShowCardsPanel
         key={cc.id}
         prompt={cc}
+        players={localGame.state.players}
         catalog={catalog}
         getScanUrl={getScanUrl}
         t={t}
@@ -605,6 +863,7 @@ export function TablePromptLayer({
       <ShowMulliganPanel
         key={sm.id}
         prompt={sm}
+        players={localGame.state.players}
         catalog={catalog}
         getScanUrl={getScanUrl}
         t={t}
@@ -616,10 +875,21 @@ export function TablePromptLayer({
 
   if (p.type === 'Choose cards') {
     const ccp = p as ChooseCardsPrompt;
+    if (shouldUseBoardHandForChooseCards(ccp, clientId) && !localGame.replay) {
+      const msg = gameMessageText(t, ccp.message);
+      return (
+        <ChooseHandCardsBoardOverlay
+          boardInteraction={boardInteraction}
+          defaultMessage={msg}
+          allowCancel={ccp.options.allowCancel}
+        />
+      );
+    }
     return (
       <ChooseCardsPanel
         key={ccp.id}
         prompt={ccp}
+        players={localGame.state.players}
         catalog={catalog}
         getScanUrl={getScanUrl}
         t={t}
@@ -980,6 +1250,7 @@ function ChoosePrizePanel(props: {
         <CardInfoPopup
           card={detail.card}
           facedown={detail.facedown}
+          players={localGame.state.players}
           catalog={catalog}
           getScanUrl={getScanUrl}
           onClose={() => setDetail(null)}
@@ -992,6 +1263,7 @@ function ChoosePrizePanel(props: {
 
 function ChooseCardsPanel(props: {
   prompt: ChooseCardsPrompt;
+  players: LocalGameState['state']['players'];
   catalog: Card[];
   getScanUrl: (card: Card) => string;
   t: TFunction;
@@ -999,7 +1271,7 @@ function ChooseCardsPanel(props: {
   resolve: (id: number, result: unknown) => void;
   replay: boolean;
 }) {
-  const { prompt, catalog, getScanUrl, t, gameMessageText, resolve, replay } = props;
+  const { prompt, players, catalog, getScanUrl, t, gameMessageText, resolve, replay } = props;
   const cards = prompt.cards.cards;
   const blocked = prompt.options.blocked ?? [];
   const { min, max, allowCancel, isSecret } = prompt.options;
@@ -1162,6 +1434,7 @@ function ChooseCardsPanel(props: {
         <CardInfoPopup
           card={detail.card}
           facedown={facedownForPopup}
+          players={players}
           catalog={catalog}
           getScanUrl={getScanUrl}
           onClose={() => setDetail(null)}
@@ -1250,6 +1523,7 @@ function WaitPromptPanel(props: {
 
 function ShowCardsPanel(props: {
   prompt: ShowCardsPrompt | ConfirmCardsPrompt;
+  players: LocalGameState['state']['players'];
   catalog: Card[];
   getScanUrl: (card: Card) => string;
   t: TFunction;
@@ -1258,7 +1532,7 @@ function ShowCardsPanel(props: {
   confirmResult: true | null;
   allowCancel?: boolean;
 }) {
-  const { prompt, catalog, getScanUrl, t, gameMessageText, resolve, confirmResult, allowCancel } = props;
+  const { prompt, players, catalog, getScanUrl, t, gameMessageText, resolve, confirmResult, allowCancel } = props;
   const [detail, setDetail] = useState<Card | null>(null);
 
   useEffect(() => {
@@ -1308,6 +1582,7 @@ function ShowCardsPanel(props: {
       {detail ? (
         <CardInfoPopup
           card={detail}
+          players={players}
           catalog={catalog}
           getScanUrl={getScanUrl}
           onClose={() => setDetail(null)}
@@ -1319,13 +1594,14 @@ function ShowCardsPanel(props: {
 
 function ShowMulliganPanel(props: {
   prompt: ShowMulliganPrompt;
+  players: LocalGameState['state']['players'];
   catalog: Card[];
   getScanUrl: (card: Card) => string;
   t: TFunction;
   gameMessageText: (t: TFunction, message: string | number) => string;
   resolve: (id: number, result: unknown) => void;
 }) {
-  const { prompt, catalog, getScanUrl, t, gameMessageText, resolve } = props;
+  const { prompt, players, catalog, getScanUrl, t, gameMessageText, resolve } = props;
   const [detail, setDetail] = useState<Card | null>(null);
 
   return (
@@ -1361,6 +1637,7 @@ function ShowMulliganPanel(props: {
       {detail ? (
         <CardInfoPopup
           card={detail}
+          players={players}
           catalog={catalog}
           getScanUrl={getScanUrl}
           onClose={() => setDetail(null)}

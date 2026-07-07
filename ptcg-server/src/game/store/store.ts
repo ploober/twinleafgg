@@ -5,6 +5,7 @@ import { ConcedeAction } from './actions/concede-action';
 import { Card } from './card/card';
 import { ChangeAvatarAction } from './actions/change-avatar-action';
 import { Effect } from './effects/effect';
+import { PlayPokemonEffect } from './effects/play-card-effects';
 import { CheckAttackCostEffect, CheckRetreatCostEffect } from './effects/check-effects';
 import { GameError } from '../game-error';
 import { GameMessage, GameLog } from '../game-message';
@@ -93,7 +94,12 @@ export class Store implements StoreLike {
     }
 
     if (action instanceof ResolvePromptAction) {
-      state = this.reducePrompt(state, action);
+      try {
+        state = this.reducePrompt(state, action);
+      } catch (storeError) {
+        this.handler.onStateChange(state);
+        throw storeError;
+      }
       if (this.promptItems.length === 0) {
         state = checkState(this, state);
       }
@@ -239,8 +245,16 @@ export class Store implements StoreLike {
 
       this.resolveWaitItems();
     } catch (storeError) {
-      // Illegal action
-      prompt.result = undefined;
+      for (const id of promptItem.ids) {
+        const promptIndex = state.prompts.findIndex(item => item.id === id);
+        if (promptIndex !== -1) {
+          state.prompts.splice(promptIndex, 1);
+        }
+      }
+      const itemIndex = this.promptItems.indexOf(promptItem);
+      if (itemIndex !== -1) {
+        this.promptItems.splice(itemIndex, 1);
+      }
       throw storeError;
     }
 
@@ -390,8 +404,21 @@ export class Store implements StoreLike {
       player.deck.cards.forEach(c => cards.push(c));
       player.discard.cards.forEach(c => cards.push(c));
     }
+    const playPokemonTargetTools = effect instanceof PlayPokemonEffect
+      ? effect.target.tools.slice()
+      : [];
+
+    playPokemonTargetTools.forEach(t => {
+      state = this.callReduceEffect(t, this, state, effect);
+    });
+
     cards.sort(c => c.superType);
-    cards.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+    cards.forEach(c => {
+      if (playPokemonTargetTools.includes(c)) {
+        return;
+      }
+      state = this.callReduceEffect(c, this, state, effect);
+    });
     return state;
   }
 

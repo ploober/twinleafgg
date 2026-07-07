@@ -6,7 +6,7 @@ import { useCardImageMaps, useDeckCardScanUrl } from '../../context/CardImagesCo
 import { useAuth } from '../../context/AuthContext';
 import type { LocalGameState } from '../types/localGameState';
 import { BoardInteractionService } from '../BoardInteractionService';
-import type { Board3dController } from './board3dController';
+import type { AdminSpectatorReveal, Board3dController } from './board3dController';
 import { createBoard3dRuntime } from './createBoard3dRuntime';
 import { createBoard3dCardsAdapter } from './createBoard3dCardsAdapter';
 import type { Board3dCardsAdapter } from './board3dCardsAdapter';
@@ -21,6 +21,7 @@ import { CardInfoPopup } from '../../card-info/CardInfoPopup';
 import { CardInfoListPopup } from '../../card-info/CardInfoListPopup';
 import type { Board3dCardInfoData, CardInfoPaneActionResult } from './board3dCardsAdapter';
 import styles from './Board3DCanvas.module.css';
+import { Board3dAbilityActivationOverlay } from './Board3dAbilityActivationOverlay';
 import { appConfig } from '../../env/config';
 
 const EMPTY_CATALOG: Card[] = [];
@@ -39,6 +40,7 @@ export type Board3DCanvasProps = {
   topPlayerHand: CardList;
   clientId: number;
   catalog: Card[];
+  adminSpectatorReveal?: AdminSpectatorReveal;
   boardInteraction: BoardInteractionService;
   gameActions: Board3dGameActions;
   onKoSequenceActiveChange?: (active: boolean) => void;
@@ -116,7 +118,6 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
   const cardsAdapter: Board3dCardsAdapter = useMemo(
     () =>
       createBoard3dCardsAdapter({
-        catalog,
         maps,
         scansUrl: serverConfig?.scansUrl,
         apiBase: appConfig.apiUrl,
@@ -124,7 +125,7 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
         showCardInfo: queueInfo,
         showCardInfoList: queueList,
       }),
-    [catalog, maps, serverConfig?.scansUrl, serverConfig?.sleevesUrl, queueInfo, queueList],
+    [maps, serverConfig?.scansUrl, serverConfig?.sleevesUrl, queueInfo, queueList],
   );
 
   const runtime = useMemo(() => createBoard3dRuntime(cardsAdapter), [cardsAdapter]);
@@ -137,6 +138,7 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
       bottomPlayerHand: props.bottomPlayerHand,
       topPlayerHand: props.topPlayerHand,
       clientId: props.clientId,
+      adminSpectatorReveal: props.adminSpectatorReveal,
       onKoSequenceActiveChange: props.onKoSequenceActiveChange,
     }),
     [
@@ -146,6 +148,7 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
       props.bottomPlayerHand,
       props.topPlayerHand,
       props.clientId,
+      props.adminSpectatorReveal,
       props.onKoSequenceActiveChange,
     ],
   );
@@ -183,12 +186,14 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
             onBoardFps={props.onBoardFps}
           />
         </Canvas>
+        <Board3dAbilityActivationOverlay boardInteraction={props.boardInteraction} />
       </div>
 
       {cardPrompt?.kind === 'info' && cardPrompt.data.card ? (
         <CardInfoPopup
           card={cardPrompt.data.card}
           cardList={cardPrompt.data.cardList}
+          players={cardPrompt.data.players}
           facedown={cardPrompt.data.facedown}
           catalog={catalog}
           getScanUrl={getScanUrl}
@@ -208,6 +213,7 @@ export function Board3DCanvas(props: Board3DCanvasProps) {
       {cardPrompt?.kind === 'list' && cardPrompt.data.cardList ? (
         <CardInfoListPopup
           cardList={cardPrompt.data.cardList}
+          players={cardPrompt.data.players}
           catalog={catalog}
           getScanUrl={getScanUrl}
           facedown={cardPrompt.data.facedown}

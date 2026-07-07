@@ -6,7 +6,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { useAuth } from './AuthContext';
 import {
   readClientSettingsSnapshot,
   writeBoard2dPerspectiveEnabled,
@@ -19,7 +18,7 @@ import {
   writeSfxEnabled,
   writeSfxVolume,
   writeUse3dBoardDefault,
-  writeDefaultSandboxMode,
+  writeDebugMarkersEnabled,
   type ClientSettingsSnapshot,
 } from '../settings/settingsStorage';
 
@@ -32,7 +31,7 @@ export type SettingsDraftCommit = Pick<
   | 'use3dBoardDefault'
   | 'board2dPerspectiveEnabled'
   | 'sfxEnabled'
-  | 'defaultSandboxMode'
+  | 'debugMarkersEnabled'
 > & {
   /**0–100 UI percentage, stored0–1 */
   sfxVolumePercent: number;
@@ -41,7 +40,6 @@ export type SettingsDraftCommit = Pick<
 };
 
 interface SettingsContextValue extends ClientSettingsSnapshot {
-  has3dBoardAccess: boolean;
   setCardSize: (size: number) => void;
   setCardTextKerning: (value: number) => void;
   setSfxVolume: (volume01: number) => void;
@@ -50,20 +48,7 @@ interface SettingsContextValue extends ClientSettingsSnapshot {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-function computeHas3dAccess(userName: string | undefined, whitelist: string[] | undefined): boolean {
-  if (!userName || !whitelist?.length) {
-    return false;
-  }
-  return whitelist.includes(userName);
-}
-
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { user, serverConfig } = useAuth();
-  const has3dBoardAccess = useMemo(
-    () => computeHas3dAccess(user?.name, serverConfig?.board3dWhitelist),
-    [user?.name, serverConfig?.board3dWhitelist],
-  );
-
   const [state, setState] = useState<ClientSettingsSnapshot>(() => readClientSettingsSnapshot());
 
   const setCardSize = useCallback((size: number) => {
@@ -88,16 +73,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       writeShowTags(draft.showTags);
       writeCardSize(draft.cardSize);
       writeHiddenFormats(draft.hiddenFormats);
-      writeUse3dBoardDefault(draft.use3dBoardDefault, has3dBoardAccess);
+      writeUse3dBoardDefault(draft.use3dBoardDefault);
       writeBoard2dPerspectiveEnabled(draft.board2dPerspectiveEnabled);
       writeCardTextKerning(draft.cardTextKerning);
       writeSfxEnabled(draft.sfxEnabled);
       writeSfxVolume(draft.sfxVolumePercent / 100);
-
-      const use3dResolved = has3dBoardAccess ? draft.use3dBoardDefault : false;
-      const isAdmin = user?.roleId === 4;
-      const sandboxResolved = isAdmin ? draft.defaultSandboxMode : false;
-      writeDefaultSandboxMode(sandboxResolved, isAdmin);
+      writeDebugMarkersEnabled(draft.debugMarkersEnabled);
 
       setState({
         holoEnabled: draft.holoEnabled,
@@ -105,28 +86,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         showTags: draft.showTags,
         cardSize: draft.cardSize,
         hiddenFormats: draft.hiddenFormats,
-        use3dBoardDefault: use3dResolved,
+        use3dBoardDefault: draft.use3dBoardDefault,
         board2dPerspectiveEnabled: draft.board2dPerspectiveEnabled,
         cardTextKerning: draft.cardTextKerning,
         sfxEnabled: draft.sfxEnabled,
         sfxVolume: Math.max(0, Math.min(1, draft.sfxVolumePercent / 100)),
-        defaultSandboxMode: sandboxResolved,
+        debugMarkersEnabled: draft.debugMarkersEnabled,
       });
     },
-    [has3dBoardAccess, user?.roleId],
+    [],
   );
 
   const value = useMemo<SettingsContextValue>(
     () => ({
       ...state,
-      defaultSandboxMode: user?.roleId === 4 ? state.defaultSandboxMode : false,
-      has3dBoardAccess,
       setCardSize,
       setCardTextKerning,
       setSfxVolume,
       commitFromSave,
     }),
-    [state, user?.roleId, has3dBoardAccess, setCardSize, setCardTextKerning, setSfxVolume, commitFromSave],
+    [state, setCardSize, setCardTextKerning, setSfxVolume, commitFromSave],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

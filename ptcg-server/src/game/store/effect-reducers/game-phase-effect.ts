@@ -11,6 +11,7 @@ import { CoinFlipPrompt } from '../prompts/coin-flip-prompt';
 import { PlayerType } from '../actions/play-card-action';
 import { MarkerConstants } from '../markers/marker-constants';
 import { StateUtils } from '../state-utils';
+import { RESOLVE_PENDING_END_OF_OPPONENTS_NEXT_TURN_EFFECTS } from '../prefabs/attack-effects';
 
 function getActivePlayer(state: State): Player {
   return state.players[state.activePlayer];
@@ -201,6 +202,8 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
   if (effect instanceof EndTurnEffect) {
     const player = state.players[state.activePlayer];
 
+    state = RESOLVE_PENDING_END_OF_OPPONENTS_NEXT_TURN_EFFECTS(store, state, effect);
+
     player.canEvolve = false;
 
     player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
@@ -211,12 +214,33 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
     });
 
     effect.player.marker.removeMarker(effect.player.DAMAGE_DEALT_MARKER);
-    effect.player.marker.removeMarker(MarkerConstants.REVENGE_MARKER);
+    if (!player.usedTurnSkip) {
+      effect.player.marker.removeMarker(MarkerConstants.REVENGE_MARKER);
+    }
 
     // Clear damage reduction effects on opponent's Pokémon when their turn ends
     const opponent = StateUtils.getOpponent(state, player);
     opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
       cardList.damageReductionNextTurn = 0;
+    });
+
+    // Activate pending defending Pokemon extra damage at end of the defending player's turn
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+      if (cardList.defendingPokemonExtraDamagePending) {
+        cardList.defendingPokemonExtraDamagePending = false;
+      }
+    });
+
+    // Clear active defending Pokemon extra damage at end of the attacking player's turn
+    [player, opponent].forEach(p => {
+      p.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+        if (cardList.defendingPokemonExtraDamageAttackerId === player.id
+          && !cardList.defendingPokemonExtraDamagePending
+          && cardList.defendingPokemonExtraDamageNextTurn > 0) {
+          cardList.defendingPokemonExtraDamageNextTurn = 0;
+          cardList.defendingPokemonExtraDamageAttackerId = undefined;
+        }
+      });
     });
 
     // Handle "cannot attack next turn" restrictions with two-stage cleanup
@@ -237,6 +261,17 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
       if (cardList.cannotUseAttacksNextTurnPending.length > 0) {
         cardList.cannotUseAttacksNextTurn = [...cardList.cannotUseAttacksNextTurnPending];
         cardList.cannotUseAttacksNextTurnPending = [];
+      }
+
+      if (cardList.cannotRetreatNextTurn) {
+        cardList.cannotRetreatNextTurn = false;
+      }
+      if (cardList.cannotRetreatNextTurnPending) {
+        cardList.cannotRetreatNextTurn = true;
+        cardList.cannotRetreatNextTurnPending = false;
+      }
+      if (cardList.blockedAttackNameNextTurn !== undefined) {
+        cardList.blockedAttackNameNextTurn = undefined;
       }
     });
 

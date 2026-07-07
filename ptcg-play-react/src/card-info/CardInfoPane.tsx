@@ -1,24 +1,28 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Card, CardList, EnergyCard, PokemonCard, TrainerCard } from 'ptcg-server';
-import { CardType, EnergyType, PowerType, SuperType, TrainerType } from 'ptcg-server';
+import type { Card, CardList, EnergyCard, Player, PokemonCard, TrainerCard } from 'ptcg-server';
+import { CardType, BoardEffect, EnergyType, PokemonCardList, PowerType, SuperType, TrainerType } from 'ptcg-server';
 import { CardSwapDialog } from './CardSwapDialog';
 import { EnergyTypeIcon } from './EnergyTypeIcon';
 import { isFavoriteCard, toggleFavoriteCard } from './favoriteCardsStorage';
 import {
   getCardRuleText,
-  getCardsWithSameName,
+  getGroupedAlternativePrintings,
   getComputedHp,
   getCurrentHp,
   getDisplayAttacks,
+  getDisplayDebugMarkers,
   getDisplayPowers,
-  isToolCardInList,
+  getDisplayRuleBoxes,
   getDisplayTagLabels,
+  isToolCardInList,
   parseCardName,
   powerTypeLabel,
   stageLabel,
-  transformEnergyText,
+  formatCardText,
+  CARD_INFO_ENERGY_ICON_SIZE,
 } from './cardInfoUtils';
+import { useOptionalSettings } from '../context/SettingsContext';
 import { HoverHighlight } from './HoverHighlight';
 import { CardInfoImageColumn } from './CardInfoImageColumn';
 import styles from './CardInfoPane.module.css';
@@ -60,6 +64,8 @@ export type CardInfoPaneProps = {
   card: Card;
   /** In-play list (active/bench Pokémon) — used for HP bonus and damage like Angular `card-info-pane`. */
   cardList?: CardList;
+  /** In-game players — used to resolve player-scoped markers on this Pokémon. */
+  players?: Player[];
   facedown: boolean;
   catalog: Card[];
   getScanUrl: (card: Card) => string;
@@ -79,6 +85,7 @@ export type CardInfoPaneProps = {
 export function CardInfoPane({
   card,
   cardList,
+  players,
   facedown,
   catalog,
   getScanUrl,
@@ -93,6 +100,8 @@ export function CardInfoPane({
   onSwapOpenChange,
 }: CardInfoPaneProps) {
   const { t } = useTranslation();
+  const settings = useOptionalSettings();
+  const debugMarkersEnabled = settings?.debugMarkersEnabled ?? false;
   const [localSwapOpen, setLocalSwapOpen] = useState(false);
   const swapOpen = omitScanColumn ? (swapOpenProp ?? false) : localSwapOpen;
   const setSwapOpen = omitScanColumn
@@ -101,7 +110,7 @@ export function CardInfoPane({
   const [, favBump] = useState(0);
   const bumpFavorite = useCallback(() => favBump((n) => n + 1), []);
 
-  const alternatives = useMemo(() => getCardsWithSameName(catalog, card), [catalog, card]);
+  const groupedAlternatives = useMemo(() => getGroupedAlternativePrintings(catalog, card), [catalog, card]);
 
   function trainerSubtitle(trainerT: TrainerType): string {
     switch (trainerT) {
@@ -117,9 +126,15 @@ export function CardInfoPane({
   }
 
   const kerningStyle = { letterSpacing: `${cardTextKerning}px` } as const;
+  const formattedText = (text: string) => formatCardText(text, CARD_INFO_ENERGY_ICON_SIZE);
 
   const displayPowers = useMemo(() => getDisplayPowers(card, cardList), [card, cardList]);
   const displayAttacks = useMemo(() => getDisplayAttacks(card, cardList), [card, cardList]);
+  const displayRuleBoxes = useMemo(() => getDisplayRuleBoxes(card, cardList), [card, cardList]);
+
+  const abilityUsedThisTurn =
+    cardList instanceof PokemonCardList &&
+    cardList.boardEffect.includes(BoardEffect.ABILITY_USED);
 
   const enabledAbilities = useMemo(() => {
     const m: Record<string, boolean> = {};
@@ -127,13 +142,13 @@ export function CardInfoPane({
     if (!e) return m;
     for (const power of displayPowers) {
       const ok =
-        !!(e.useWhenInPlay && power.useWhenInPlay) ||
+        !!(e.useWhenInPlay && power.useWhenInPlay && !abilityUsedThisTurn) ||
         !!(e.useFromDiscard && power.useFromDiscard) ||
         !!(e.useFromHand && power.useFromHand);
       if (ok) m[power.name] = true;
     }
     return m;
-  }, [displayPowers, options.enableAbility]);
+  }, [abilityUsedThisTurn, displayPowers, options.enableAbility]);
 
   const viewingToolCard = isToolCardInList(card, cardList);
   const shouldEnableAttacks =
@@ -147,6 +162,10 @@ export function CardInfoPane({
   const energy = card as EnergyCard;
 
   const tagLabels = getDisplayTagLabels(card, showTags);
+  const debugMarkers = useMemo(
+    () => getDisplayDebugMarkers(card, cardList, players, debugMarkersEnabled),
+    [card, cardList, players, debugMarkersEnabled],
+  );
 
   const onSwapSelect = (replacement: Card) => {
     setSwapOpen(false);
@@ -185,7 +204,7 @@ export function CardInfoPane({
           <div className={styles.title}>
             {parsed.prefix ? (
               <>
-                <span className={styles.subtitleSetCode}>{parsed.prefix}</span>
+                <span className={styles.cardNamePrefix}>{parsed.prefix}</span>
                 <span>{parsed.rest}</span>
               </>
             ) : (
@@ -194,18 +213,34 @@ export function CardInfoPane({
             <span className={styles.subtitleSetCode}>
               {card.set} {card.setNumber}
             </span>
+            <span className={styles.regulationMark}>
+              {card.regulationMark}
+            </span>
             <div className={styles.spacer} />
-            <div className={styles.subtitleHp}>
-              <span className={styles.subtitleHpUnit}>{t('CARDS_HP')}</span>
-              <span className={styles.subtitleHpValue}>
-                {getCurrentHp(card, cardList) ?? '—'}/{getComputedHp(card, cardList) ?? '—'}
-              </span>
-            </div>
-            <div className={styles.subtitleCardType}>
-              <EnergyTypeIcon type={pokemon.cardType} style={{ transform: 'translateY(12px)' }} />
-              {pokemon.additionalCardTypes?.map((t) => (
-                <EnergyTypeIcon key={String(t)} type={t} style={{ transform: 'translateY(12px)' }} />
-              ))}
+            <div className={styles.subtitleHpRow}>
+              <div className={styles.subtitleHp}>
+                <span className={styles.subtitleHpUnit}>{t('CARDS_HP')}</span>
+                <span className={styles.subtitleHpValue}>
+                  {getCurrentHp(card, cardList) ?? '—'}/{getComputedHp(card, cardList) ?? '—'}
+                </span>
+              </div>
+              <div className={styles.subtitleCardType}>
+                <EnergyTypeIcon
+                  type={pokemon.cardType}
+                  size="compact"
+                  collapseLayout={false}
+                  className={styles.titleTypeIcon}
+                />
+                {pokemon.additionalCardTypes?.map((t) => (
+                  <EnergyTypeIcon
+                    key={String(t)}
+                    type={t}
+                    size="compact"
+                    collapseLayout={false}
+                    className={styles.titleTypeIcon}
+                  />
+                ))}
+              </div>
             </div>
           </div>
           <div className={styles.subtitle}>
@@ -231,6 +266,26 @@ export function CardInfoPane({
             ) : null}
           </div>
 
+          {debugMarkers.length > 0 ? (
+            <div className={styles.debugMarkers}>
+              <div className={styles.debugMarkersHeader}>Active Markers</div>
+              <div className={styles.debugMarkersList}>
+                {debugMarkers.map((marker) => (
+                  <span
+                    key={`${marker.location}:${marker.name}:${marker.sourceLabel ?? ''}`}
+                    className={styles.debugMarker}
+                    title={marker.sourceLabel ? `Source: ${marker.sourceLabel}` : marker.location}
+                  >
+                    {marker.name}
+                    <span className={styles.debugMarkerScope}>
+                      {marker.sourceLabel ? ` (${marker.sourceLabel})` : ` [${marker.location}]`}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {displayPowers.map((power) => (
             <HoverHighlight
               key={power.name}
@@ -255,7 +310,7 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(power.text ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(power.text ?? '') }}
                 />
               </div>
             </HoverHighlight>
@@ -275,13 +330,13 @@ export function CardInfoPane({
                 <div className={styles.attackHeader}>
                   <div className={styles.attackCost}>
                     {attack.cost.length === 0 ? (
-                      <EnergyTypeIcon type={CardType.NONE} style={{ transform: 'translateY(3px)' }} />
+                      <EnergyTypeIcon type={CardType.NONE} size="compact" />
                     ) : (
                       attack.cost.map((cost, i) => (
                         <EnergyTypeIcon
                           key={`${attack.name}-cost-${i}`}
                           type={cost}
-                          style={{ transform: 'translateY(3px)' }}
+                          size="compact"
                         />
                       ))
                     )}
@@ -298,10 +353,30 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(attack.text ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(attack.text ?? '') }}
                 />
               </div>
             </HoverHighlight>
+          ))}
+
+          {displayRuleBoxes.map((ruleBox) => (
+              <div className={styles.power}>
+                <div className={styles.powerHeader}>
+                  {ruleBox.isRuleBox ? (
+                    <div className={styles.powerType}>
+                        <span className={styles.ability}>
+                          Rule Box
+                        </span>
+                    </div>
+                  ) : null}
+                  <div className={styles.powerName}>{ruleBox.name}</div>
+                </div>
+                <div
+                  className={styles.cardText}
+                  style={kerningStyle}
+                  dangerouslySetInnerHTML={{ __html: formattedText(ruleBox.text ?? '') }}
+                />
+              </div>
           ))}
 
           <div className={styles.stats}>
@@ -310,7 +385,7 @@ export function CardInfoPane({
               {(pokemon.weakness ?? []).map((w, i) => (
                 <div key={i} className={styles.statsItemValue}>
                   <div className={styles.statsItemValueType}>
-                    <EnergyTypeIcon type={w.type} style={{ transform: 'translateY(5px)' }} />
+                    <EnergyTypeIcon type={w.type} size="compact" style={{ transform: 'translateY(4px)' }} />
                   </div>
                   <div className={styles.statsItemValueModifier}>{w.value ? `+${w.value}` : 'x2'}</div>
                 </div>
@@ -321,7 +396,7 @@ export function CardInfoPane({
               {(pokemon.resistance ?? []).map((r, i) => (
                 <div key={i} className={styles.statsItemValue}>
                   <div className={styles.statsItemValueType}>
-                    <EnergyTypeIcon type={r.type} style={{ transform: 'translateY(5px)' }} />
+                    <EnergyTypeIcon type={r.type} size="compact" style={{ transform: 'translateY(4px)' }} />
                   </div>
                   <div className={styles.statsItemValueModifier}>{r.value}</div>
                 </div>
@@ -341,7 +416,7 @@ export function CardInfoPane({
                 <div className={styles.statsItemValue}>
                   <div className={styles.statsItemValueType}>
                     {(pokemon.retreat ?? []).map((cost, i) => (
-                      <EnergyTypeIcon key={i} type={cost} style={{ transform: 'translateY(5px)' }} />
+                      <EnergyTypeIcon key={i} type={cost} size="compact" style={{ transform: 'translateY(4px)' }} />
                     ))}
                   </div>
                 </div>
@@ -357,7 +432,7 @@ export function CardInfoPane({
               <div
                 className={styles.cardText}
                 style={kerningStyle}
-                dangerouslySetInnerHTML={{ __html: transformEnergyText(getCardRuleText(card)) }}
+                dangerouslySetInnerHTML={{ __html: formattedText(getCardRuleText(card)) }}
               />
             </div>
           ) : null}
@@ -371,6 +446,9 @@ export function CardInfoPane({
             <span className={styles.subtitleSetCode}>
               {card.set} {card.setNumber}
             </span>
+            <span className={styles.regulationMark}>
+              {card.regulationMark}
+            </span>
             {!isInGame ? favoriteToggle : null}
           </div>
           <div className={styles.subtitle}>
@@ -379,7 +457,7 @@ export function CardInfoPane({
             </div>
             <div className={styles.spacer} />
             <div className={styles.subtitleCardType}>
-              <TrainerTypeStrip />
+              <TrainerTypeStrip className={styles.trainerStripCompact} />
             </div>
           </div>
           {getCardRuleText(card) ? (
@@ -390,7 +468,7 @@ export function CardInfoPane({
               <div
                 className={styles.cardText}
                 style={kerningStyle}
-                dangerouslySetInnerHTML={{ __html: transformEnergyText(getCardRuleText(card)) }}
+                dangerouslySetInnerHTML={{ __html: formattedText(getCardRuleText(card)) }}
               />
             </div>
           ) : null}
@@ -416,10 +494,30 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(power.text ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(power.text ?? '') }}
                 />
               </div>
             </HoverHighlight>
+          ))}
+
+          {displayRuleBoxes.map((ruleBox) => (
+              <div className={styles.power}>
+                <div className={styles.powerHeader}>
+                  {ruleBox.isRuleBox ? (
+                    <div className={styles.powerType}>
+                        <span className={styles.ability}>
+                          Rule Box
+                        </span>
+                    </div>
+                  ) : null}
+                  <div className={styles.powerName}>{ruleBox.name}</div>
+                </div>
+                <div
+                  className={styles.cardText}
+                  style={kerningStyle}
+                  dangerouslySetInnerHTML={{ __html: formattedText(ruleBox.text ?? '') }}
+                />
+              </div>
           ))}
         </div>
       )}
@@ -431,13 +529,16 @@ export function CardInfoPane({
             <span className={styles.subtitleSetCode}>
               {card.set} {card.setNumber}
             </span>
+            <span className={styles.regulationMark}>
+              {card.regulationMark}
+            </span>
             {!isInGame ? favoriteToggle : null}
           </div>
           <div className={styles.subtitle}>
             <div className={styles.subtitleStage}>{trainerSubtitle(trainer.trainerType)}</div>
             <div className={styles.spacer} />
             <div className={styles.subtitleCardType}>
-              <TrainerTypeStrip type={trainer.trainerType} />
+              <TrainerTypeStrip type={trainer.trainerType} className={styles.trainerStripCompact} />
             </div>
           </div>
           {getDisplayPowers(card).map((power) => (
@@ -462,7 +563,7 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(power.text ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(power.text ?? '') }}
                 />
               </div>
             </HoverHighlight>
@@ -480,9 +581,9 @@ export function CardInfoPane({
               <div className={styles.attack}>
                 <div className={styles.attackHeader}>
                   <div className={styles.attackCost}>
-                    {attack.cost.length === 0 ? <EnergyTypeIcon type={CardType.NONE} /> : null}
+                    {attack.cost.length === 0 ? <EnergyTypeIcon type={CardType.NONE} size="compact" /> : null}
                     {attack.cost.map((cost, i) => (
-                      <EnergyTypeIcon key={i} type={cost} />
+                      <EnergyTypeIcon key={i} type={cost} size="compact" />
                     ))}
                   </div>
                   <div className={styles.attackName}>{attack.name}</div>
@@ -492,7 +593,7 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(attack.text ?? '') }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(attack.text ?? '') }}
                 />
               </div>
             </HoverHighlight>
@@ -511,11 +612,31 @@ export function CardInfoPane({
                 <div
                   className={styles.cardText}
                   style={kerningStyle}
-                  dangerouslySetInnerHTML={{ __html: transformEnergyText(getCardRuleText(card)) }}
+                  dangerouslySetInnerHTML={{ __html: formattedText(getCardRuleText(card)) }}
                 />
               </div>
             ) : null}
           </HoverHighlight>
+
+          {displayRuleBoxes.map((ruleBox) => (
+              <div className={styles.power}>
+                <div className={styles.powerHeader}>
+                  {ruleBox.isRuleBox ? (
+                    <div className={styles.powerType}>
+                        <span className={styles.ability}>
+                          Rule Box
+                        </span>
+                    </div>
+                  ) : null}
+                  <div className={styles.powerName}>{ruleBox.name}</div>
+                </div>
+                <div
+                  className={styles.cardText}
+                  style={kerningStyle}
+                  dangerouslySetInnerHTML={{ __html: formattedText(ruleBox.text ?? '') }}
+                />
+              </div>
+          ))}
         </div>
       )}
 
@@ -538,7 +659,7 @@ export function CardInfoPane({
         open={swapOpen}
         onClose={() => setSwapOpen(false)}
         currentCard={card}
-        alternativeCards={alternatives}
+        groupedAlternatives={groupedAlternatives}
         getScanUrl={getScanUrl}
         onSelect={onSwapSelect}
       />
