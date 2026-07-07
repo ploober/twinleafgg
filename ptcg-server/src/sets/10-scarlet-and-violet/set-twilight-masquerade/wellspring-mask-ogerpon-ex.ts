@@ -4,7 +4,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { Card, ChooseEnergyPrompt, ChoosePokemonPrompt, ConfirmPrompt, GameMessage, PlayerType, PokemonCard, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
 
-import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { DealDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { WAS_ATTACK_USED, BLOCK_RETREAT } from '../../../game/store/prefabs/prefabs';
 
@@ -59,8 +59,17 @@ export class WellspringMaskOgerponex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
+      // Rulebook step F / compendium #649: deal the base 100 to the Active first, before the
+      // optional "you may shuffle 3 Energy → +120 to a Benched Pokémon" rider. The rider pauses
+      // the game (ConfirmPrompt / energy pick / bench target), so the main damage must already be
+      // placed — matching printed text order (the 100 precedes the rider). Same pattern as TA-44
+      // (Iron Hands "Volt Wave"). Without this, the confirm surfaces with the Active still at 0.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
+      const hasBench = opponent.bench.some(b => b.cards.length > 0);
       if (!hasBench) {
         return state;
       }
@@ -105,9 +114,6 @@ export class WellspringMaskOgerponex extends PokemonCard {
               });
             });
           });
-        }
-        else {
-          effect.damage = 100;
         }
         return state;
       });

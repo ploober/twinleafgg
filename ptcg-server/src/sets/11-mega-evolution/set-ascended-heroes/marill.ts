@@ -2,7 +2,7 @@ import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils } from '../.
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class Marill extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -35,7 +35,12 @@ export class Marill extends PokemonCard {
   public readonly PREVENT_DAMAGE_MARKER = 'PREVENT_DAMAGE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Flip during the attack (WAS_ATTACK_USED), not after it (AFTER_ATTACK): an in-effect coin
+    // flip that starves the action log is externalized as a `system` flip pending only when it
+    // fires inside the top-level attack dispatch — a flip raised in the after-attack WaitPrompt
+    // callback has no clean rollback and faults the conformance step (500). "Hide" deals 0 damage
+    // and only sets a next-turn prevent marker, so the flip timing within this turn is immaterial.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, (result) => {
         if (result) {
           const player = effect.player;
