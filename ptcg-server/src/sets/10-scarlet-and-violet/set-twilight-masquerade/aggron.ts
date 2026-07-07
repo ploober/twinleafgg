@@ -2,7 +2,7 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { GameError, GameMessage, PlayerType, PokemonCard } from '../../../game';
+import { PlayerType, PokemonCard } from '../../../game';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -55,20 +55,17 @@ export class Aggron extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasBenched = player.bench.some(b => b.cards.length > 0);
-      if (!hasBenched) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
-      let benchPokemonWithDamage = 0;
-
+      // "50 damage for each of your Pokémon that has any damage counters on it." No bench requirement —
+      // with no damaged Pokémon this is a legal 0-damage whiff, so do NOT reject it (an offer-then-reject
+      // hid the attack whenever the player had no Bench). forEachPokemon already covers Active + Bench.
+      let pokemonWithDamage = 0;
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
         if (cardList.damage !== 0) {
-          benchPokemonWithDamage++;
+          pokemonWithDamage++;
         }
       });
 
-      effect.damage = benchPokemonWithDamage * 50;
+      effect.damage = pokemonWithDamage * 50;
 
     }
     if (WAS_ATTACK_USED(effect, 1, this)) {

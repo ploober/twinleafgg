@@ -310,6 +310,13 @@
       ]
     },
     {
+      "file": "set-twilight-masquerade/aggron.ts",
+      "signatures": [
+        "effect.damage = pokemonWithDamage * 50;",
+        "let pokemonWithDamage = 0;"
+      ]
+    },
+    {
       "file": "set-twilight-masquerade/hisuian-growlithe.ts",
       "signatures": [
         "if (stadiumCard) {",
