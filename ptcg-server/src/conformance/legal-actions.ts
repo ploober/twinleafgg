@@ -5,6 +5,7 @@ import { EnergyCard } from '../game/store/card/energy-card';
 import { GameError } from '../game/game-error';
 import { Store } from '../game/store/store';
 import { UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction } from '../game/store/actions/game-actions';
+import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { CardTarget, PlayerType, SlotType } from '../game/store/actions/play-card-action';
 import { deepClone } from '../utils/utils';
 import { ConformanceStoreHandler } from './conformance-store-handler';
@@ -279,6 +280,18 @@ function abilityProbeAccepts(state: State, player: Player, ability: string, sour
   }
   try {
     probe.dispatch(new UseAbilityGameAction(cloned.id, ability, target));
+    // Since engine b0cdfed96 ("More Animation Additions") an activated ability first raises a no-op
+    // WaitPrompt (animation overlay); its real precondition — which may throw CANNOT_USE_POWER — runs
+    // only AFTER that prompt. Drive the probe past any WaitPrompt so the precondition surfaces. A
+    // genuine decision prompt (e.g. MoveDamagePrompt) means the ability IS usable → accept.
+    for (let guard = 0; guard < 32; guard++) {
+      const pending = probe.state.prompts.find(p => p.result === undefined);
+      if (pending === undefined) { return true; }
+      if (pending.type !== 'WaitPrompt') { return true; }
+      // Resolve with a non-undefined value: reducePrompt only fires the continuation when the result
+      // is !== undefined (WaitPrompt is Prompt<void> — its `then` ignores the value).
+      probe.dispatch(new ResolvePromptAction(pending.id, true));
+    }
     return true;
   } catch (err) {
     return !(err instanceof GameError);
