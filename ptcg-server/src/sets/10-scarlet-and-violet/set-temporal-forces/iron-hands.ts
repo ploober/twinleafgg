@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag, SpecialCondition } from '../../../game/store/
 import { StoreLike, State, GameMessage, CoinFlipPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
+import { AddSpecialConditionsEffect, DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { DEAL_MORE_DAMAGE_IF_OPPONENT_ACTIVE_HAS_CARD_TAG, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class IronHands extends PokemonCard {
@@ -54,6 +54,13 @@ export class IronHands extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
+
+      // Rulebook attack step F: do damage first, THEN post-damage effects —
+      // the paralysis flip pauses the game, so the 30 must already be placed
+      // (compendium #649: effects of attacks apply after damage is done).
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       state = store.prompt(state, new CoinFlipPrompt(
         player.id, GameMessage.COIN_FLIP

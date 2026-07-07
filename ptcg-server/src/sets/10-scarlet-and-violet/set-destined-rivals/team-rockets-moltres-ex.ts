@@ -2,8 +2,8 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, SuperType, EnergyType } from '../../../game/store/card/card-types';
 import { StoreLike, State, GameMessage, PlayerType, StateUtils, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DISCARD_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
 export class TeamRocketsMoltresex extends PokemonCard {
@@ -15,18 +15,20 @@ export class TeamRocketsMoltresex extends PokemonCard {
   public resistance = [{ type: F, value: -30 }];
   public retreat = [C, C];
 
-  public attacks = [{
-    name: 'Flame Screen',
-    cost: [R, C, C],
-    damage: 110,
-    text: 'During your opponent\'s next turn, this Pokémon takes 50 less damage from attacks (after applying Weakness and Resistance).'
-  },
-  {
-    name: 'Evil Incineration',
-    cost: [R, C, C, C],
-    damage: 0,
-    text: 'Discard a Team Rocket\'s Energy from this Pokémon. If you do, discard your opponent\'s Active Pokémon and all attached cards.'
-  }];
+  public attacks = [
+    {
+      name: 'Flame Screen',
+      cost: [R, C, C],
+      damage: 110,
+      text: 'During your opponent\'s next turn, this Pokémon takes 50 less damage from attacks (after applying Weakness and Resistance).'
+    },
+    {
+      name: 'Evil Incineration',
+      cost: [R, C, C, C],
+      damage: 0,
+      text: 'Discard a Team Rocket\'s Energy from this Pokémon. If you do, discard your opponent\'s Active Pokémon and all attached cards.'
+    }
+  ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
@@ -38,6 +40,12 @@ export class TeamRocketsMoltresex extends PokemonCard {
   public readonly CLEAR_FLAME_SCREEN_MARKER = 'CLEAR_FLAME_SCREEN_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Flame Screen damage reduction (after Weakness and Resistance)
+    if (effect instanceof PutDamageEffect
+      && effect.target.marker.hasMarker(this.FLAME_SCREEN_MARKER, this)) {
+      effect.damage = Math.max(0, effect.damage - 50);
+    }
+
     // Flame Screen
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
@@ -62,6 +70,7 @@ export class TeamRocketsMoltresex extends PokemonCard {
     // Evil Incineration
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+      const opponent = effect.opponent;
 
       if (!player.active.cards.some(c => c.superType === SuperType.ENERGY && c.name === 'Team Rocket Energy')) {
         return state;
@@ -77,7 +86,8 @@ export class TeamRocketsMoltresex extends PokemonCard {
         const cards = selected || [];
 
         player.active.moveCardsTo(cards, player.discard);
-        DISCARD_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+        opponent.active.clearEffects();
+        MOVE_CARDS(store, state, opponent.active, opponent.discard);
       });
     }
 

@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, State, StoreLike, GameError, GameMessage, ChooseCardsPrompt, Card, SuperType, CardList, GameLog } from '../../../game';
+import { PokemonCard, Stage, CardType, State, StoreLike, GameMessage, ChooseCardsPrompt, SuperType, CardList, GameLog } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -38,11 +38,13 @@ export class Slowpoke extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasCardInDiscard = player.discard.cards.some(c => {
-        return c instanceof Card;
-      });
-      if (!hasCardInDiscard) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+      // "Put a Pokémon from your discard pile into your hand." Whiff if there is no Pokémon to put
+      // (compendium #361: usable even when the effect can't be carried out). The pool must be
+      // Pokémon specifically — the prompt below requires min:1 Pokémon, so guarding on "any card"
+      // was both a wrong reject (empty discard) and a hang risk (non-Pokémon-only discard).
+      const hasPokemonInDiscard = player.discard.cards.some(c => c.superType === SuperType.POKEMON);
+      if (!hasPokemonInDiscard) {
+        return state;
       }
 
       return store.prompt(state, [

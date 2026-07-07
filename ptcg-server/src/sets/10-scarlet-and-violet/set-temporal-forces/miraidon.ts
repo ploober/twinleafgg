@@ -6,8 +6,9 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { CardTag } from '../../../game/store/card/card-types';
-import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
+import { AttachEnergyPrompt, CardTarget, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
 import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Miraidon extends PokemonCard {
 
@@ -54,6 +55,22 @@ export class Miraidon extends PokemonCard {
 
       const player = effect.player;
 
+      // Rulebook attack step F: damage first, then the search/attach effect —
+      // the deck search pauses, so the 40 must already be placed.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
+      // "attach them to your FUTURE Pokémon" — block every non-Future target
+      // up front (offering a target the callback would reject violates the
+      // never-reject-your-own-offer contract rule).
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+        if (!card.tags.includes(CardTag.FUTURE)) {
+          blockedTo.push(target);
+        }
+      });
+
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
@@ -61,7 +78,7 @@ export class Miraidon extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 0, max: 2 },
+        { allowCancel: false, min: 0, max: 2, blockedTo },
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user

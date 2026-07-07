@@ -1,9 +1,8 @@
-import { Attack, Card, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameError, GameMessage, PlayerType, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../../game';
-import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
+import { Attack, CardTag, CardTarget, CardType, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCard, PokemonCardList, SlotType, Stage, State, StateUtils, StoreLike, Weakness } from '../../../game';
+import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DISCARD_ALL_ENERGY_FROM_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Zeraora extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -36,25 +35,33 @@ export class Zeraora extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      let exPokemonOnOppBench = false;
-
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card) => {
-        if (card.tags.includes(CardTag.POKEMON_ex)) {
-          exPokemonOnOppBench = true;
+      // "Discard all Energy" is FORCED (no which/how-many choice) — apply it
+      // atomically, then place the 210. Both happen AFTER the Step-D target
+      // choice below.
+      const discardThenDamage = (target?: PokemonCardList): State => {
+        DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+        if (target !== undefined) {
+          const damageEffect = new PutDamageEffect(effect, 210);
+          damageEffect.target = target;
+          store.reduceEffect(state, damageEffect);
         }
+        return state;
+      };
+
+      // Rulebook p.19 Step D — "Make any choices the attack requires you to
+      // make … For example, if an attack says 'Choose 1 of your opponent's
+      // Benched Pokémon,' you would make that choice now." The bench-ex target
+      // is chosen BEFORE the energy discard (a Step-E/F effect) resolves.
+      const benchHasEx = opponent.bench.some(b => {
+        const pokemon = b.getPokemonCard();
+        return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
       });
 
-      if (!exPokemonOnOppBench) {
-        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+      // The attack is usable with no Benched Pokemon ex to hit; there is no
+      // Step-D choice, the energy is still discarded and no damage happens.
+      if (!benchHasEx) {
+        return discardThenDamage();
       }
-
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
 
       const blocked: CardTarget[] = [];
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
@@ -62,7 +69,6 @@ export class Zeraora extends PokemonCard {
           blocked.push(target);
         }
       });
-
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
@@ -71,15 +77,9 @@ export class Zeraora extends PokemonCard {
         { min: 1, max: 1, allowCancel: false, blocked }
       ), selected => {
         const targets = selected || [];
-        targets.forEach(target => {
-          const damageEffect = new PutDamageEffect(effect, 210);
-          damageEffect.target = target;
-          store.reduceEffect(state, damageEffect);
-        });
-        return state;
+        return discardThenDamage(targets[0]);
       });
     }
     return state;
   }
 }
-
