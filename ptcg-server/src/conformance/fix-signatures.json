@@ -158,6 +158,12 @@
       ]
     },
     {
+      "file": "set-phantasmal-flames/haunter.ts",
+      "signatures": [
+        "name: 'Spooky Shot',"
+      ]
+    },
+    {
       "file": "set-phantasmal-flames/paldean-tauros.ts",
       "signatures": [
         "text: 'This attack does 40 damage for each of your Pok\u00e9mon that has \"Tauros\" in its name that has any damage counters on it.',",
@@ -182,6 +188,13 @@
       "file": "set-shrouded-fable/iron-moth.ts",
       "signatures": [
         "const healEffect = new HealEffect(player, player.active, effect.damage);"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/revavroom-ex.ts",
+      "signatures": [
+        "player.active.moveTo(player.discard);",
+        "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect as AttackEffect, this);"
       ]
     },
     {

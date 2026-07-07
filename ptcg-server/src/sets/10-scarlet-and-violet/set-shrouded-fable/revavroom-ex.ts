@@ -2,9 +2,9 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { MOVED_TO_ACTIVE_THIS_TURN, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DISCARD_ALL_ENERGY_FROM_POKEMON, MOVED_TO_ACTIVE_THIS_TURN, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Revavroomex extends PokemonCard {
 
@@ -64,8 +64,15 @@ export class Revavroomex extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      const knockOutEffect = new KnockOutEffect(player, player.active);
-      state = store.reduceEffect(state, knockOutEffect);
+
+      // "Discard this Pokémon and all attached cards." A self-DISCARD, NOT a Knock Out — the opponent
+      // takes NO prize. (The prior KnockOutEffect wrongly awarded the opponent a prize and corrupted the
+      // prize/game-over accounting.) Discard the attached Energy FIRST via the prefab, which properly
+      // reconciles the Pokémon's energy sub-list — then move the now-bare Pokémon stack to the discard.
+      // (Discarding the stack while Energy is still attached leaves the energy sub-list dangling, and the
+      // Active-slot cleanup re-discards it, duplicating cards.) The emptied slot is refilled from the Bench.
+      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect as AttackEffect, this);
+      player.active.moveTo(player.discard);
       return state;
     }
 
