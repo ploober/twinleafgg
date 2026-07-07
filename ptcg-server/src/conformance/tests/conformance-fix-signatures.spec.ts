@@ -64,14 +64,15 @@ describe('Conformance — fix-signature anti-revert guard', () => {
     it(`fix survives in ${fix.file}`, () => {
       const paths = index.get(fix.file) ?? [];
       // Exactly one file must carry this suffix — a reorg that duplicates or removes it is itself a red flag.
-      expect(paths.length)
-        .withContext(`expected exactly one ${fix.file} under src/sets, found ${paths.length}`)
-        .toBe(1);
+      if (paths.length !== 1) {
+        fail(`expected exactly one ${fix.file} under src/sets, found ${paths.length}`);
+        return;
+      }
       const body = bodyOf(paths[0]);
       for (const sig of fix.signatures) {
-        expect(body.includes(norm(sig)))
-          .withContext(`${fix.file} lost fixed line: ${sig}`)
-          .toBe(true);
+        if (!body.includes(norm(sig))) {
+          fail(`${fix.file} lost fixed line: ${sig}`);
+        }
       }
     });
   }

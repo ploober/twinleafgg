@@ -282,6 +282,13 @@
       ]
     },
     {
+      "file": "set-temporal-forces/minccino.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 1, this)) {",
+        "const generator = useCleaningUp(() => generator.next(), store, state, effect);"
+      ]
+    },
+    {
       "file": "set-temporal-forces/miraidon.ts",
       "signatures": [
         "player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {",

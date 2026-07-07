@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PokemonCardList, GameMessage, CardTarget, ChoosePokemonPrompt, GameError, PlayerType, SlotType, StateUtils, ChooseCardsPrompt } from '../../../game';
+import { StoreLike, State, PokemonCardList, GameMessage, CardTarget, ChoosePokemonPrompt, PlayerType, SlotType, StateUtils, ChooseCardsPrompt } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -21,8 +21,11 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
     }
   });
 
+  // "Discard up to 2 Pokémon Tools" is a whiff: with no Tools in play there is nothing to discard,
+  // but the attack is still legal to use — it just does nothing. Do not reject it (an offer-then-reject
+  // would hide the attack from the menu). Same whiff-is-a-no-op class as regice-ex / slowpoke (TA-46/52).
   if (pokemonsWithTool === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
 
   // We will discard this card after prompt confirmation
@@ -110,7 +113,11 @@ export class Minccino extends PokemonCard {
   public fullName: string = 'Minccino TEF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // "Cleaning Up" is attack index 1 (index 0 is "Beat", a vanilla 10-damage attack with no
+    // reduceEffect). Binding this handler to index 0 made declaring "Beat" run the tool-discard —
+    // which throws CANNOT_PLAY_THIS_CARD when the opponent has no tools, so the attack menu hid
+    // "Beat" entirely and offered only "Cleaning Up". (Wrong-attack-index class, cf. TA-49/TA-58.)
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const generator = useCleaningUp(() => generator.next(), store, state, effect);
       return generator.next().value;
     }
