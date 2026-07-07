@@ -18,7 +18,7 @@ export class Zeraora extends PokemonCard {
     damage: 20,
     text: ''
   }, {
-    name: 'Thunder Blitz',
+    name: 'Thunder Raid',
     cost: [L, L, L],
     damage: 0,
     text: 'Discard all Energy from this Pokémon. This attack does 210 damage to 1 of your opponent\'s Benched ex Pokemon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

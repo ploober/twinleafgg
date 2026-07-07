@@ -19,7 +19,7 @@ export class Reshiramex extends PokemonCard {
     text: ''
   },
   {
-    name: 'Blaze Burst',
+    name: 'Blazing Burst',
     cost: [R, R, C],
     damage: 130,
     damageCalculation: '+',

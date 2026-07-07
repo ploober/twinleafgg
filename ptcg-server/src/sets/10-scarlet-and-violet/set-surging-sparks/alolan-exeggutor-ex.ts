@@ -14,7 +14,7 @@ export class AlolanExeggutorex extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Tropical Fever',
+    name: 'Tropical Frenzy',
     cost: [G, W],
     damage: 150,
     text: 'Choose any number of Basic Energy cards from your hand and attach them to your Pokemon in any way you like.'
@@ -34,7 +34,7 @@ export class AlolanExeggutorex extends PokemonCard {
   public fullName: string = 'Alolan Exeggutor ex SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Tropical Fever
+    // Tropical Frenzy
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 

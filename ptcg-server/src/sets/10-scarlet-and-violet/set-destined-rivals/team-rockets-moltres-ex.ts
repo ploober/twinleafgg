@@ -22,7 +22,7 @@ export class TeamRocketsMoltresex extends PokemonCard {
     text: 'During your opponent\'s next turn, this Pokémon takes 50 less damage from attacks (after applying Weakness and Resistance).'
   },
   {
-    name: 'Evil Burn',
+    name: 'Evil Incineration',
     cost: [R, C, C, C],
     damage: 0,
     text: 'Discard a Team Rocket\'s Energy from this Pokémon. If you do, discard your opponent\'s Active Pokémon and all attached cards.'
@@ -59,7 +59,7 @@ export class TeamRocketsMoltresex extends PokemonCard {
       });
     }
 
-    // Evil Burn
+    // Evil Incineration
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
