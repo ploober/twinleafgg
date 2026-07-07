@@ -4,7 +4,7 @@ import { StoreLike, State, StateUtils } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, DISCARD_ALL_ENERGY_FROM_POKEMON } from '../../../game/store/prefabs/prefabs';
 
 export class Ceruledgeex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -47,15 +47,11 @@ export class Ceruledgeex extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      const player = effect.player;
-      const cardList = StateUtils.findCardList(state, this);
-      if (cardList) {
-        const energyCards = cardList.cards.filter(c => c.superType === SuperType.ENERGY);
-        energyCards.forEach(c => {
-          player.discard.cards.push(c);
-        });
-        cardList.cards = cardList.cards.filter(c => c.superType !== SuperType.ENERGY);
-      }
+      // Discard all Energy from this Pokémon. The old manual push+cards-reassign added the Energy to
+      // the discard pile but did NOT remove it from the Pokémon (findCardList + `cards = filter(...)`
+      // leaves the PokemonCardList's derived energy stale), so the Energy stayed attached AND showed
+      // in discard (duplicated). Route through the proper DiscardCardsEffect prefab. [TA-59]
+      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
     }
 
     if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
