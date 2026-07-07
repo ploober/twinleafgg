@@ -35,7 +35,10 @@ export class NsKlang extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Spinning Gears is attack index 0 (Confront, index 1, is a vanilla 40). The Confuse belongs to
+    // Spinning Gears — was mis-wired to index 1, so it never fired on Spinning Gears (and would have
+    // wrongly fired on Confront). Surfaced by the rotomancer corpus differential after the main merge.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       opponent.active.addSpecialCondition(SpecialCondition.CONFUSED);
