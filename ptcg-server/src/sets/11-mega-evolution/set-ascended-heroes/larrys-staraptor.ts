@@ -51,6 +51,14 @@ export class LarrysStaraptor extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // Rulebook attack step F / compendium #649: place the main 150 on the Defending Pokémon
+      // BEFORE the Energy-discard prompt pauses the game (and before the optional bench-damage
+      // rider). Without this the discard prompt surfaced with the Active still at 0. Same
+      // damage-before-post-damage-effect pattern as TA-44.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
       // Discard 2 Energy
       const energyCount = player.active.cards.filter(card =>
         card.superType === SuperType.ENERGY

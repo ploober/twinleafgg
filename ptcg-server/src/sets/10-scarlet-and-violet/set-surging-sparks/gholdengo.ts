@@ -2,6 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, PokemonCardList, StateUtils, Resistance, ConfirmPrompt, GameMessage, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -48,6 +49,14 @@ export class Gholdengo extends PokemonCard {
       //From Mew V FST
     } else if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // Rulebook attack step F / compendium #649: place the 100 on the Defending Pokémon BEFORE
+      // the optional "you may shuffle this Pokémon into your deck" rider pauses at its confirm.
+      // Without this the confirm surfaced with the Active still at 0 (same pattern as TA-44).
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
       return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
         if (wantToUse) {
           player.active.moveTo(player.deck);
