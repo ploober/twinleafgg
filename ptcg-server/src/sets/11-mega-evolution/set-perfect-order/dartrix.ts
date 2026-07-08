@@ -15,7 +15,7 @@ export class Dartrix extends PokemonCard {
   public attacks = [{
     name: 'Leafage',
     cost: [G],
-    damage: 10,
+    damage: 20,
     text: ''
   },
   {

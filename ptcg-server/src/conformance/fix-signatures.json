@@ -351,6 +351,13 @@
       ]
     },
     {
+      "file": "set-temporal-forces/zeraora.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "effect.damage = 0;"
+      ]
+    },
+    {
       "file": "set-twilight-masquerade/aggron.ts",
       "signatures": [
         "effect.damage = pokemonWithDamage * 50;",

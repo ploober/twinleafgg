@@ -273,6 +273,36 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.damage).toBe(0);
   });
 
+  it('Zeraora "Shocking Knuckle" places its 20 BEFORE the paralyze coin flip [TA-69 tef-057]', () => {
+    // "20 damage. Flip a coin; if heads Paralyze." The flip externalizes as a system pending; the 20 is a
+    // post-damage-independent base hit that must already be on the defender at the flip pause (rulebook
+    // step F / compendium #543/#649). Pre-fix twinleaf deferred the 20 (defender read 0 at the flip). Same
+    // class as TA-31 Iron Hands "Volt Wave". Defender RALTS is not Lightning-weak, so damage is exactly 20.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['tef-057'], en(WATER, 1, 'a')) }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [attack('A-act', 'Shocking Knuckle')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).toContain('flip');                  // paused at the paralyze flip
+    expect(r.state.players.B.active!.damage).toBe(20);   // the 20 is already placed (damage-first)
+  });
+
+  it('Zeraora "Strong Volt" places its 120 BEFORE the energy-discard choice [TA-69 tef-057]', () => {
+    // "120. Discard an Energy from this Pokémon." With 3 energy attached the discard is a which-choice
+    // and pauses; the 120 must already be on the defender (rulebook step F). Pre-fix twinleaf showed 0
+    // at the discard pause (surfaced by the per-card re-fuzz after the Shocking Knuckle fix).
+    const r = step(
+      board(player({ active: inPlay('A-act', ['tef-057'],
+        [{ iid: 'e0', printing: 'sve-004' }, { iid: 'e1', printing: 'sve-004' }, { iid: 'e2', printing: WATER }]) }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [attack('A-act', 'Strong Volt')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).toContain('discard');               // paused at the which-energy discard
+    expect(r.state.players.B.active!.damage).toBe(120);  // the 120 is already placed (damage-first)
+  });
+
   it('Larry\'s Dunsparce "Rising Lunge" externalizes its coin flip, not a 500 [TA-68 asc-163]', () => {
     // "Flip a coin. If heads, +20." Pre-fix the flip fired in AFTER_ATTACK — which (a) faults the
     // conformance adapter ("coin flip needed but the next action is not a flip") and (b) is too late:
