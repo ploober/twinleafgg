@@ -272,4 +272,18 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.status).toBe('awaitingAction');
     expect(r.state.players.B.active!.damage).toBe(0);
   });
+
+  it('Larry\'s Dunsparce "Rising Lunge" externalizes its coin flip, not a 500 [TA-68 asc-163]', () => {
+    // "Flip a coin. If heads, +20." Pre-fix the flip fired in AFTER_ATTACK — which (a) faults the
+    // conformance adapter ("coin flip needed but the next action is not a flip") and (b) is too late:
+    // effect.damage += 20 after the damage step does nothing. WAS_ATTACK_USED externalizes the flip as
+    // a system pending BEFORE the damage step, so the +20 lands. (Same class + fix as TA-56 Marill "Hide".)
+    const r = step(
+      board(player({ active: inPlay('A-act', ['asc-163'], en(WATER, 1, 'a')) }),
+            player({ active: inPlay('B-act', [TANKY]) })),
+      [attack('A-act', 'Rising Lunge')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).toContain('flip');                  // externalized system flip, not a fault
+  });
 });

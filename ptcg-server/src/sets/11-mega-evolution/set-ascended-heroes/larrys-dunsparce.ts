@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class LarrysDunsparce extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -28,7 +28,10 @@ export class LarrysDunsparce extends PokemonCard {
   public fullName: string = 'Larry\'s Dunsparce MC';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Rulebook: the coin flip is part of resolving the attack — flip in WAS_ATTACK_USED so the
+    // +20 modifies effect.damage BEFORE the damage step (and the flip externalizes as a system
+    // pending rather than faulting the conformance adapter, per TA-56 Marill "Hide").
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, (result) => {
         if (result && effect instanceof AttackEffect) {
           effect.damage += 20;
