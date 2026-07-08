@@ -104,4 +104,27 @@ describe('Conformance — re-applied src/sets fix regression guards (merge-rever
       expect(attacksOffered(res)).toContain(attack);
     });
   }
+
+  // Complex-logic re-applies whose full effect needs multi-turn / specific-bench setup to assert exactly.
+  // A lighter guard still catches the three merge-revert failure modes: attack hidden from the menu,
+  // attack wrongly rejected (e.g. pre-fix Zeraora "Thunder Raid" threw CANNOT_PLAY with no ex on the
+  // Bench), or the handler faulting. Each must be offered on a bare board and declare to awaitingAction.
+  const DECLARES_CLEANLY: Array<[string, string, string]> = [
+    ['dri-078', 'Thunder Raid', 'zeraora'],
+    ['ssp-116', 'Unrelenting Onslaught', 'koraidon'],
+    ['ssp-145', 'Take It Easy', 'slakoth'],
+    ['dri-127', 'Torment', 'team-rockets-murkrow'],
+    ['dri-127', 'Deceit', 'team-rockets-murkrow'],
+    ['dri-031', 'Flame Screen', 'team-rockets-moltres-ex'],
+    ['tef-121', 'Sparking Strike', 'miraidon'],
+  ];
+  for (const [printing, attack, name] of DECLARES_CLEANLY) {
+    it(`${name} "${attack}" is offered and declares without rejection [${printing}]`, () => {
+      const start = board(player({ active: pip('A-act', printing, mixed('a')) }),
+                          player({ active: pip('B-act', RALTS) }));
+      expect(attacksOffered(step(start, []))).toContain(attack);
+      const res = step(start, [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: attack }]);
+      expect(res.status).toBe('awaitingAction');   // accepted + resolving, not invalidAction / engineFault
+    });
+  }
 });
