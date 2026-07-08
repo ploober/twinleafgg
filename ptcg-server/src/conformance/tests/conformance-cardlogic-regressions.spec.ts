@@ -190,6 +190,21 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(confront.state.players.B.active!.conditions).not.toContain('confused');
   });
 
+  it('Team Rocket\'s Moltres ex "Flame Screen" reduces the NEXT incoming attack by 50 [TA-25 dri-031]', () => {
+    // "During your opponent's next turn, this Pokémon takes 50 less damage from attacks." A uses Flame
+    // Screen (marks Moltres); on B's turn Terapagos "Hard Tackle" (100) hits Moltres for 100 − 50 = 50.
+    // Pre-fix the markers were set but there was no damage-reduction handler — the −50 did nothing.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-031'], [
+        { iid: 'm0', printing: FIRE }, { iid: 'm1', printing: METAL }, { iid: 'm2', printing: WATER }]) }),
+            player({ active: inPlay('B-act', ['ssp-161'], en(WATER, 3, 'b')) })),
+      [attack('A-act', 'Flame Screen'),
+       { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Hard Tackle' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.active!.damage).toBe(50);   // 100 Hard Tackle − 50 Flame Screen
+  });
+
   it('Ceruledge ex "Raging Amethyst" discards ALL its Energy exactly once [TA-59 ssp-036]', () => {
     // "Discard all Energy from this Pokémon." Pre-fix a manual push+reassign added the Energy to the
     // discard but left it attached (stale derived energy) — attached AND duplicated in discard.
