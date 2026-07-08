@@ -212,7 +212,7 @@ class Importer {
 
     // Per-turn / per-game flags -> twinleaf counters (each engine maps its bookkeeping; design §6.2).
     player.energyPlayedTurn = ps.flags.energyAttachedThisTurn ? turn : 0;
-    player.supporterTurn = ps.flags.supporterPlayedThisTurn ? turn : 0;
+    player.supporterTurn = ps.flags.supporterPlayedThisTurn ? 1 : 0;   // counter, not a turn number
     player.stadiumPlayedTurn = ps.flags.stadiumPlayedThisTurn ? turn : 0;
     player.retreatedTurn = ps.flags.retreatedThisTurn ? turn : 0;
     player.prizesTakenThisTurn = ps.flags.prizesTakenThisTurn;
@@ -340,7 +340,10 @@ function projectPip(ctx: IidContext, slot: PokemonCardList): PokemonInPlay {
 
 function projectFlags(player: Player, turn: number): PlayerFlags {
   return {
-    supporterPlayedThisTurn: player.supporterTurn === turn,
+    // `supporterTurn` is a per-turn COUNTER (0 = none played this turn; += 1 on each Supporter play;
+    // reset to 0 each turn; the one-per-turn rule gates on `=== 0`) — NOT a turn number like the other
+    // three flags. So the flag is "> 0", not "=== turn" (which compared the counter 1 to the turn no.).
+    supporterPlayedThisTurn: player.supporterTurn > 0,
     energyAttachedThisTurn: player.energyPlayedTurn === turn,
     stadiumPlayedThisTurn: player.stadiumPlayedTurn === turn,
     retreatedThisTurn: player.retreatedTurn === turn,

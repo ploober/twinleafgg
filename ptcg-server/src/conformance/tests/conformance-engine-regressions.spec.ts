@@ -126,4 +126,22 @@ describe('Conformance — engine fix regression guards (all-time backfill)', () 
     expect(attachTargets).toContain('A-act');            // Future Miraidon is a valid target
     expect(attachTargets).not.toContain('A-b');          // the non-Future bench is NOT offered
   });
+
+  it('playing a Supporter sets supporterPlayedThisTurn in the projection [adapter counter projection]', () => {
+    // twinleaf's engine tracks `player.supporterTurn` as a per-turn COUNTER (reset to 0 each turn,
+    // += 1 on a Supporter play; the one-Supporter rule gates on `=== 0`). The adapter projected the
+    // flag as `supporterTurn === turn` — comparing the counter (1) to the turn number (3) — so it
+    // read `false` after a fresh play. Surfaced by the cross-engine Carmine seed (rotomancer=true,
+    // twinleaf=false). Fixed to `supporterTurn > 0`.
+    const r = step(
+      board(player({
+        active: inPlay('A-act', [RALTS]),
+        hand: [{ iid: 'cm', printing: 'twm-145' }, { iid: 'h2', printing: WATER }, { iid: 'h3', printing: WATER }],
+        deck: Array.from({ length: 8 }, (_, i) => ({ iid: `ad${i}`, printing: WATER })),
+      }), player({ active: inPlay('B-act', [TANKY]) })),
+      [{ actor: 'A', type: 'playSupporter', card: 'cm' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.flags.supporterPlayedThisTurn).toBe(true);
+  });
 });

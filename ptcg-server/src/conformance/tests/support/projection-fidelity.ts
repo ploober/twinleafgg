@@ -80,7 +80,7 @@ export function assertProjectionMatchesState(proj: NeutralState, state: State, c
 
     // faithful flags (the four deferred-default fields are excluded by design)
     expect(pp.flags.energyAttachedThisTurn).toBe(player.energyPlayedTurn === state.turn);
-    expect(pp.flags.supporterPlayedThisTurn).toBe(player.supporterTurn === state.turn);
+    expect(pp.flags.supporterPlayedThisTurn).toBe(player.supporterTurn > 0);   // counter, not a turn number
     expect(pp.flags.stadiumPlayedThisTurn).toBe(player.stadiumPlayedTurn === state.turn);
     expect(pp.flags.retreatedThisTurn).toBe(player.retreatedTurn === state.turn);
     expect(pp.flags.prizesTakenThisTurn).toBe(player.prizesTakenThisTurn);
