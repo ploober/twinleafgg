@@ -16,6 +16,10 @@ import * as path from 'path';
 //
 // Maintenance: when you land a new src/sets fix worth protecting, add an entry. When you intentionally
 // refactor a fix (changing the lines), update its signatures here in the same commit.
+//
+// Remediation: when this spec fails after a merge, run the companion re-apply tool instead of hand-
+// restoring each card — `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then
+// `--apply`. It restores every reverted file from the newest commit that still carried its signatures.
 
 interface FixEntry { file: string; signatures: string[]; }
 interface Manifest { fixes: FixEntry[]; }
@@ -71,7 +75,8 @@ describe('Conformance — fix-signature anti-revert guard', () => {
       const body = bodyOf(paths[0]);
       for (const sig of fix.signatures) {
         if (!body.includes(norm(sig))) {
-          fail(`${fix.file} lost fixed line: ${sig}`);
+          fail(`${fix.file} lost fixed line: ${sig}\n` +
+            `      → restore with: python3 src/conformance/tools/reapply-reverted-fixes.py --apply`);
         }
       }
     });
