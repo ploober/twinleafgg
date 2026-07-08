@@ -130,6 +130,14 @@
       ]
     },
     {
+      "file": "set-mega-evolution/cinderace.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);",
+        "effect.damage = 0;"
+      ]
+    },
+    {
       "file": "set-mega-evolution/kyogre.ts",
       "signatures": [
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
@@ -176,6 +184,13 @@
       "signatures": [
         "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
         "text: 'This attack does 50 damage for each Energy attached to this Pok\u00e9mon.'"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/decidueye.ts",
+      "signatures": [
+        "const hasBasicGrass = player.hand.cards.some(",
+        "{ allowCancel: false, min: 1, max: 1 }"
       ]
     },
     {

@@ -2,6 +2,7 @@ import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, PowerType, Slot
 import { CardTag, CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Cinderace extends PokemonCard {
@@ -41,6 +42,13 @@ export class Cinderace extends PokemonCard {
       if (player.deck.cards.length === 0) {
         throw new GameError(GameMessage.CANNOT_USE_ATTACK);
       }
+
+      // Rulebook attack step F: the base damage lands in the damage step, BEFORE the search/attach
+      // effect pauses (the deck-search prompt below suspends the attack). Deal it now and zero the
+      // declared damage so the engine doesn't re-apply it at the end. (Mirrors Miraidon tef-121.)
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,

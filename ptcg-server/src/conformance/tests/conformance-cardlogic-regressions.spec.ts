@@ -22,8 +22,10 @@ import {
 //   TA-56  Dwebble dri-011           — "Ascension" with no evolution in deck whiffs to a shuffle (min 0)
 //   TA-58  N's Klang jtg-104         — "Spinning Gears" (index 0) Confuses; "Confront" (index 1) does not
 //   TA-59  Ceruledge ex ssp-036      — "Raging Amethyst" discards ALL its Energy (once — no duplication)
+//   TA-66  Cinderace meg-028         — "Turbo Flare" places its base damage BEFORE the attach effect pauses
+//   TA-67  Decidueye sfa-005         — "Power Shot" FORCES the Grass discard when able (no decline); whiffs with none
 
-const WATER = 'sve-003', FIRE = 'sve-002', PSY = 'sve-005', METAL = 'sve-008', FIGHT = 'sve-006';
+const WATER = 'sve-003', FIRE = 'sve-002', PSY = 'sve-005', METAL = 'sve-008', FIGHT = 'sve-006', GRASS = 'sve-009';
 const RALTS = 'Ralts SIT';                       // 70 HP neutral defender
 const TANKY = 'Wellspring Mask Ogerpon ex TWM';  // twm-064, 210 HP — survives ≤200 so a hit pauses
 
@@ -219,5 +221,55 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const discardIids = r.state.players.A.discard.map(c => c.iid);
     expect(discardIids.length).toBe(new Set(discardIids).size);     // and not duplicated
     expect(discardIids).toContain('ce0');
+  });
+
+  it('Cinderace "Turbo Flare" places its base damage before the attach effect pauses [TA-66 meg-028]', () => {
+    // "50 damage. Search your deck for up to 3 Basic Energy and attach them to your Benched Pokémon …
+    // Then, shuffle your deck." Rulebook attack step F: the 50 lands in the damage step, BEFORE the
+    // search/attach pause. Pre-fix twinleaf deferred its base damage to the END of the attack, so the
+    // defender still read 0 at the attach pending (rotomancer, correctly, showed the damage placed).
+    const r = step(
+      board(player({
+        active: inPlay('A-act', ['meg-028'], en(FIRE, 1, 'a')),
+        bench: [inPlay('A-bench', [RALTS])],            // an attach target so the effect actually pauses
+        deck: fillerDeck('A', 4),                       // Basic Energy to search → the attach prompt appears
+      }), player({ active: inPlay('B-act', [TANKY]) })),
+      [attack('A-act', 'Turbo Flare')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).toContain('attachEnergy');         // paused inside the search/attach effect
+    expect(r.state.players.B.active!.damage).toBeGreaterThan(0);   // damage already placed (step F first)
+  });
+
+  it('Decidueye "Power Shot" forces the Grass discard when able — no decline [TA-67 sfa-005]', () => {
+    // "170. Discard a Basic [G] Energy from your hand. If you can't, this attack does nothing." The discard
+    // is MANDATORY when able — pre-fix a min:0 ChooseCards let you DECLINE (offered a `confirm` stop) and
+    // whiff to 0. Now it is min:1 (forced): no decline is offered, and completing the discard lands the
+    // 170 (KOs the 70-HP defender here). (Twinleaf still surfaces the forced single-card discard as a
+    // pending — the known CF-14 twinleaf-side follow-up — so the cross-engine WITH-Grass seed diverges on
+    // granularity and only the no-Grass whiff seed conforms; the illegal-decline BUG is what this guards.)
+    const start = board(player({
+      active: inPlay('A-act', ['sfa-005'], en(GRASS, 1, 'a')),   // attached [G] pays the cost
+      hand: [{ iid: 'ah-grass', printing: GRASS }],              // a separate Grass to discard
+    }), player({ active: inPlay('B-act', [RALTS]) }));           // 70 HP → 170 KOs
+    const r = step(start, [attack('A-act', 'Power Shot')]);
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).not.toContain('confirm');          // no "decline the discard" option (the pre-fix bug)
+    expect(types(r)).toContain('discard');              // the discard is forced (min:1)
+    const done = step(start, [attack('A-act', 'Power Shot'), { actor: 'A', type: 'discard', target: 'ah-grass' }]);
+    expect(types(done)).toContain('takePrize');         // completing the forced discard → 170 → KO → prize
+  });
+
+  it('Decidueye "Power Shot" does nothing with no Basic [G] Energy in hand [TA-67 sfa-005]', () => {
+    // The "if you can't" branch: no Grass in hand → the attack whiffs to 0 (no discard, defender unharmed).
+    const r = step(
+      board(player({
+        active: inPlay('A-act', ['sfa-005'], en(GRASS, 1, 'a')),
+        hand: [{ iid: 'ah-fire', printing: FIRE }],                // no Basic Grass to discard
+      }), player({ active: inPlay('B-act', [RALTS]) })),
+      [attack('A-act', 'Power Shot')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.B.active!.damage).toBe(0);
   });
 });

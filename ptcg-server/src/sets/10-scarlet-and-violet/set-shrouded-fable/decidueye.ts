@@ -2,6 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
 import { StoreLike, State, GameMessage, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { EnergyCard } from '../../../game/store/card/energy-card';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -52,19 +53,25 @@ export class Decidueye extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      // Prompt player to choose cards to discard 
+      // "Discard a Basic [G] Energy from your hand. If you can't, this attack does nothing." The discard
+      // is MANDATORY when able — only the impossibility case (no Basic Grass in hand) whiffs. The former
+      // min:0 prompt wrongly let the player DECLINE the discard and keep the 170; it is min:1 (forced).
+      const hasBasicGrass = player.hand.cards.some(
+        c => c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(G)
+      );
+      if (!hasBasicGrass) {
+        effect.damage = 0;
+        return state;
+      }
+
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-        { allowCancel: false, min: 0, max: 1 }
+        { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
-        if (cards.length === 0) {
-          effect.damage = 0;
-          return state;
-        }
         player.hand.moveCardsTo(cards, player.discard);
         return state;
       });
