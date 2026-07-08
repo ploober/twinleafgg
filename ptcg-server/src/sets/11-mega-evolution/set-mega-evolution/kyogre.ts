@@ -42,11 +42,14 @@ export class Kyogre extends PokemonCard {
       const player = effect.player;
       // counting the energies
       const energiesInDiscard = player.discard.cards.filter(c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Water Energy');
+      // "20 damage for each [W] Energy card in your discard pile" — compute the damage BEFORE the
+      // empty-discard early-return, otherwise an empty discard leaves the printed base 20 in effect
+      // and wrongly deals 20 instead of 0. [TA-22]
+      effect.damage = 20 * energiesInDiscard.length;
       if (energiesInDiscard.length === 0) {
         return state;
       }
 
-      effect.damage = 20 * energiesInDiscard.length;
       // slapping those energies back into the deck
       MOVE_CARDS(store, state, player.discard, player.deck, { cards: energiesInDiscard, sourceCard: this, sourceEffect: this.attacks[0] });
       SHUFFLE_DECK(store, state, player);

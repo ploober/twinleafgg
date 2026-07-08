@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, GameMessage, GameError, StateUtils, AttachEnergyPrompt, CardTag, CardTarget, EnergyType, PlayerType, SlotType, SuperType } from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, GameMessage, StateUtils, AttachEnergyPrompt, CardTag, CardTarget, EnergyType, PlayerType, SlotType, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -44,8 +44,11 @@ export class Terapagos extends PokemonCard {
         }
       });
 
+      // Compendium #361: a conditional-target attach ("to your Tera Pokémon") is still a legal
+      // attack with no valid target — the effect simply does nothing (a whiff). Terapagos itself is
+      // a Basic (not Tera), so with no Tera Pokémon in play this is a no-op, NOT a rejection. [TA-52]
       if (!teraPokemonInPlay) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       const blocked2: CardTarget[] = [];

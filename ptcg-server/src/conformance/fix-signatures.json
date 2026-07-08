@@ -133,7 +133,8 @@
       "file": "set-mega-evolution/kyogre.ts",
       "signatures": [
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "state = store.reduceEffect(state, damageEffect);"
+        "state = store.reduceEffect(state, damageEffect);",
+        "and wrongly deals 20 instead of 0. [TA-22]"
       ]
     },
     {
@@ -281,6 +282,12 @@
       "file": "set-surging-sparks/turtonator.ts",
       "signatures": [
         "cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/terapagos.ts",
+      "signatures": [
+        "this is a no-op, NOT a rejection. [TA-52]"
       ]
     },
     {

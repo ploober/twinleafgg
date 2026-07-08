@@ -59,7 +59,7 @@ function board(A: PlayerState, B: PlayerState, turn = 3): NeutralState {
   };
 }
 const attacksOffered = (res: ReturnType<typeof step>): string[] =>
-  (res.pending?.legalActions ?? []).filter(a => a.type === 'declareAttack').map(a => a.name!).sort();
+  (res.pending?.legalActions ?? []).filter(a => a.type === 'declareAttack').map(a => (a as { name: string }).name).sort();
 
 describe('Conformance — evolution-coverage fix regression guards', () => {
 

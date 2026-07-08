@@ -16,7 +16,6 @@ import {
 //     legal to declare — it must appear in the menu, not be hidden by a thrown rejection.
 
 const WATER = 'sve-003';
-const PSY = 'sve-005';
 const RALTS = 'Ralts SIT';
 const TANKY = 'Wellspring Mask Ogerpon ex TWM';  // twm-064, 210 HP — survives ≤200 so the attack pauses
 
@@ -55,7 +54,7 @@ function board(A: PlayerState, B: PlayerState, turn = 3): NeutralState {
   };
 }
 const attacksOffered = (res: ReturnType<typeof step>): string[] =>
-  (res.pending?.legalActions ?? []).filter(a => a.type === 'declareAttack').map(a => a.name!);
+  (res.pending?.legalActions ?? []).filter(a => a.type === 'declareAttack').map(a => (a as { name: string }).name);
 
 // (printing, attackName) — each deals its base damage then pauses on a secondary prompt (discard/flip/
 // put-to-hand). The base must already be on the ≤200-damage-surviving Defending Pokémon at the pause.
