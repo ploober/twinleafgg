@@ -52,7 +52,7 @@ export function deepIterate(source: any, callback: (holder: any, key: string, va
   }
 }
 
-export function deepClone(source: any, ignores: Function[] = [], refMap: {s: Object, d: Object}[] = []): any {
+export function deepClone(source: any, ignores: Function[] = [], refMap: Map<object, object> = new Map()): any {
   if (source === null) { return null; }
 
   if (source instanceof Array) {
@@ -63,12 +63,15 @@ export function deepClone(source: any, ignores: Function[] = [], refMap: {s: Obj
     if (ignores.some(ignore => source instanceof ignore)) {
       return source;
     }
-    const ref = refMap.find(item => item.s === source);
-    if (ref !== undefined) {
-      return ref.d;
+    // refMap maps an already-cloned source object to its clone, so shared/cyclic references produce
+    // one shared clone (and recursion terminates). A Map keyed by object identity is O(1); this used
+    // to be an array + linear `find`, i.e. O(n^2) in the number of objects in a large game state.
+    const existing = refMap.get(source);
+    if (existing !== undefined) {
+      return existing;
     }
     const dest = Object.create(source);
-    refMap.push({s: source, d: dest});
+    refMap.set(source, dest);
     for (const key in source) {
       if (Object.prototype.hasOwnProperty.call(source, key)) {
         dest[key] = deepClone(source[key], ignores, refMap);
