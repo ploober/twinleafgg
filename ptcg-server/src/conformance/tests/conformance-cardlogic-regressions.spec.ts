@@ -461,4 +461,27 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(attacksOffered(four)).toContain('Crushing Arrow'); // passive fired: [G] pays [G,C,C,C]
     expect(attacksOffered(at(3))).not.toContain('Crushing Arrow'); // passive off: [G] can't pay [G,C,C,C]
   });
+
+  it('Latios "Luster Assist" is a triggered ability — not offered ungated, fires on Mega Latias ex promote [TA-78 meg-101]', () => {
+    // "Once during your turn, when your Mega Latias ex moves from the Bench to the Active Spot, you may move
+    // any number of Energy from your Benched Pokémon to that Active Pokémon." A TRIGGERED ability. Pre-fix it
+    // carried `useWhenInPlay: true` (offered as an ungated `useAbility` with any active — por-012/RE-31 class)
+    // AND checked `activePokemon.name === 'M Latias-EX'` which matches no card (twinleaf name is 'Mega Latias
+    // ex'), so the trigger was dead. Fix: drop useWhenInPlay + correct the name.
+    // (a) Not offered ungated with a plain Ralts active:
+    const ungated = step(
+      board(player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-latios', ['meg-101'], en(PSY, 2, 'lat'))] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      []);
+    expect((ungated.pending?.legalActions ?? []).filter((a: { type: string }) => a.type === 'useAbility').length).toBe(0);
+    // (b) Retreating Ralts into Mega Latias ex (slot 0) auto-fires the ability's ConfirmPrompt:
+    const promote = step(
+      board(player({
+        active: inPlay('A-act', [RALTS], en(WATER, 1, 'act')),
+        bench: [inPlay('A-mlx', ['meg-100']), inPlay('A-src', [RALTS], en(PSY, 2, 'src')), inPlay('A-latios', ['meg-101'])],
+      }), player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'acte0' }]);
+    expect(promote.state.players.A.active!.stack[0].iid).toBe('A-mlx'); // Mega Latias ex promoted
+    expect(types(promote)).toContain('confirm');                        // Luster Assist fired (was dead pre-fix)
+  });
 });

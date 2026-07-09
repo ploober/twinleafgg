@@ -396,6 +396,12 @@
       "signatures": [
         "// PASSIVE, always-on cost reduction (compendium #2311"
       ]
+    },
+    {
+      "file": "set-mega-evolution/latios.ts",
+      "signatures": [
+        "activePokemon.name === 'Mega Latias ex'"
+      ]
     }
   ]
 }

@@ -14,8 +14,11 @@ export class Latios extends PokemonCard {
 
   public powers = [{
     name: 'Luster Assist',
+    // TRIGGERED ability — it auto-fires (via the reduceEffect check below) WHEN Mega Latias ex moves from
+    // the Bench to the Active Spot; it is NOT player-activated. `useWhenInPlay: true` wrongly listed it as an
+    // activatable `useAbility` in legal-action enumeration (offered ungated with any active — a no-op the
+    // engine accepted; rotomancer never offers it). Same class as por-012 Sniper's Eye / RE-31.
     powerType: PowerType.ABILITY,
-    useWhenInPlay: true,
     text: 'Once during your turn, when your Mega Latias ex moves from the Bench to the Active Spot, you may move any number of Energy from your Benched Pokémon to that Active Pokémon.'
   }];
 
@@ -42,7 +45,10 @@ export class Latios extends PokemonCard {
     }
     const activePokemon = player.active.getPokemonCard();
 
-    if (activePokemon && activePokemon.name === 'M Latias-EX' && MOVED_TO_ACTIVE_THIS_TURN(player, activePokemon)) {
+    // The active must be Mega Latias ex (twinleaf card name 'Mega Latias ex') freshly moved to Active this
+    // turn. The prior literal 'M Latias-EX' matched no card, so the trigger never fired — the ability was
+    // dead (and only "reachable" via the spurious useWhenInPlay menu offering, which did nothing either).
+    if (activePokemon && activePokemon.name === 'Mega Latias ex' && MOVED_TO_ACTIVE_THIS_TURN(player, activePokemon)) {
       if (!player.marker.hasMarker(this.LUSTER_ASSIST_MARKER, this)) {
 
         let hasEnergyOnBench = false;
