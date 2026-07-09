@@ -44,6 +44,13 @@ interface PromptItem {
   then: (results: any) => void;
 }
 
+// Cached once — building an Intl.DateTimeFormat (which is what `Date.toLocaleTimeString(locale, opts)`
+// does on EVERY call) costs ~64us; reusing one formatter is ~3us for byte-identical output. log() runs
+// per game action, so this was ~20% of the conformance step() CPU (profiled 2026-07-09).
+const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
+  hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit'
+});
+
 export class Store implements StoreLike {
 
   //private effectHistory: Effect[] = [];
@@ -199,12 +206,7 @@ export class Store implements StoreLike {
   }
 
   public log(state: State, message: GameLog, params?: StateLogParam, client?: number): void {
-    const timestamp = new Date().toLocaleTimeString('en-US', {
-      hour12: true,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }).toString();
+    const timestamp = LOG_TIME_FORMAT.format(new Date());
 
     const log = new StateLog(message, params, client);
     log.params = { ...params, timestamp };
