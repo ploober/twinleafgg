@@ -284,7 +284,11 @@ export class Store implements StoreLike {
   }
 
   private reduce(state: State, action: Action): State {
-    const stateBackup = deepClone(state, [Card]);
+    // Rollback snapshot for an illegal action. StateLog entries are append-only and never mutated
+    // after creation, so they're shared (not deep-cloned) — the backup's `logs` array keeps the
+    // pre-action entries and drops any appended during a rolled-back action, without paying to clone
+    // the (unbounded, per-turn-growing) log history on every action.
+    const stateBackup = deepClone(state, [Card, StateLog]);
     this.promptItems.length = 0;
 
     try {
