@@ -33,6 +33,57 @@ export interface PrizeRef extends CardRef {
   faceUp: boolean;
 }
 
+/**
+ * Engine-neutral PRINTED card data (OpenAPI `Card`) served by `GET /v1/cards/{setCode}`.
+ * Field-aligned to the harness's canonical `card-data/final/<setcode>.json` so validation is a
+ * direct field compare. Optional fields are OMITTED when the engine does not model them (house
+ * style — absent ≡ not modeled); only printing/name/supertype/setCode/number are guaranteed.
+ */
+export interface NeutralTypeValue {
+  type: string;
+  value?: string; // printed modifier as a string (e.g. "×2", "-30")
+}
+
+export interface NeutralAttack {
+  name: string;
+  cost: string[];
+  damage?: string; // printed damage string ("60", "60×", "30+")
+  text?: string;
+}
+
+export interface NeutralAbility {
+  name: string;
+  text?: string;
+  type?: string; // "Ability" | "Poké-Power" | "Poké-Body"
+}
+
+export interface NeutralCard {
+  printing: string;
+  name: string;
+  supertype: string; // "Pokémon" | "Trainer" | "Energy"
+  setCode: string;
+  number: string;
+  stage?: string;
+  hp?: number;
+  types?: string[];
+  evolvesFrom?: string;
+  abilities?: NeutralAbility[];
+  attacks?: NeutralAttack[];
+  weakness?: NeutralTypeValue[];
+  resistance?: NeutralTypeValue[];
+  retreat?: number;
+  regulationMark?: string;
+  text?: string;
+  rarity?: string;      // OPTIONAL — twinleaf does not model it (always omitted)
+  illustrator?: string; // OPTIONAL — twinleaf does not model it (always omitted)
+  image?: string;       // OPTIONAL — twinleaf does not model it (always omitted)
+}
+
+export interface NeutralCardList {
+  setCode: string;
+  cards: NeutralCard[];
+}
+
 /** The canonical special-condition token set (a set; asleep/paralyzed/confused are exclusive). */
 export type ConditionToken = 'poisoned' | 'burned' | 'asleep' | 'paralyzed' | 'confused';
 

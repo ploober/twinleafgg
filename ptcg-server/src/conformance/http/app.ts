@@ -1,6 +1,7 @@
 import * as express from 'express';
 import { json } from 'body-parser';
-import { handleStep, handleCapabilities, BadRequestError, UnsupportedSchemaVersionError } from './handlers';
+import { handleStep, handleCapabilities, handleCards, BadRequestError, UnsupportedSchemaVersionError } from './handlers';
+import { UnknownSetError } from '../cards';
 
 /**
  * A standalone Express app for the conformance API (design §5, M6): a pure function of the request
@@ -10,6 +11,7 @@ import { handleStep, handleCapabilities, BadRequestError, UnsupportedSchemaVersi
  * Routes (OpenAPI `conformance-api.yaml`):
  *  - POST /v1/step          { schemaVersion, initialState, actions[] } → StepResponse
  *  - GET  /v1/capabilities  → Capabilities
+ *  - GET  /v1/cards/:set    → CardList (printed data of every implemented card in the set)
  *  - POST /v1/normalize     → 501 (optional; the runner normalizes in-process)
  *
  * The error body is the contract `Error` shape: `{ error: <string code>, message }`.
@@ -35,6 +37,19 @@ export function createConformanceApp(): express.Application {
 
   app.get('/v1/capabilities', (_req: express.Request, res: express.Response) => {
     res.json(handleCapabilities());
+  });
+
+  app.get('/v1/cards/:setCode', (req: express.Request, res: express.Response) => {
+    try {
+      res.json(handleCards(req.params.setCode));
+    } catch (err) {
+      if (err instanceof UnknownSetError) {
+        res.status(404).json({ error: 'unknownSet', message: err.message });
+      } else {
+        const message = err instanceof Error ? err.message : String(err);
+        res.status(500).json({ error: 'engineFault', message });
+      }
+    }
   });
 
   // Optional endpoint: this adapter does not normalize; the contract sanctions a 501 (the runner then

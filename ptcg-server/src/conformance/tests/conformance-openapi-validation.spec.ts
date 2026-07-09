@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { step } from '../driver';
 import { buildCapabilities } from '../capabilities';
+import { buildCardsForSet } from '../cards';
 import { NeutralState, PlayerState, PlayerFlags, PokemonInPlay, SCHEMA_VERSION } from '../neutral-types';
 import { toPrinting } from '../printing';
 import { getCardByName } from '../../sets/tests/test-helpers';
@@ -90,6 +91,15 @@ function relaxNullableRefs(schemas: Record<string, any>): void {
 
   it('Capabilities validates', () => {
     expect(check('Capabilities', buildCapabilities())).toBe(true);
+  });
+
+  it('a GET /v1/cards response validates as CardList (and each entry as Card)', () => {
+    const list = buildCardsForSet('sit');
+    expect(check('CardList', list)).toBe(true);
+    // every projected card independently satisfies the closed Card schema (additionalProperties:false)
+    for (const card of list.cards) {
+      expect(check('Card', card)).toBe(true);
+    }
   });
 
   it('a successful step state validates as GameState', () => {

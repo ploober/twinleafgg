@@ -10,7 +10,7 @@ export function startServer(port: number): http.Server {
   const app = createConformanceApp();
   return app.listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`[conformance] listening on http://localhost:${port} (POST /v1/step, GET /v1/capabilities)`);
+    console.log(`[conformance] listening on http://localhost:${port} (POST /v1/step, GET /v1/capabilities, GET /v1/cards/:setCode)`);
   });
 }
 

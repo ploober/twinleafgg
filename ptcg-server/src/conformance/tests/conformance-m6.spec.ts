@@ -7,6 +7,7 @@ import {
   ConditionToken, CardRef, SCHEMA_VERSION
 } from '../neutral-types';
 import { buildCapabilities } from '../capabilities';
+import { buildCardsForSet, UnknownSetError } from '../cards';
 import { toPrinting } from '../printing';
 import { getCardByName } from '../../sets/tests/test-helpers';
 import { EXCLUDED_RANDOM_CARDS } from '../excluded-random-cards';
@@ -117,17 +118,41 @@ describe('Conformance M6 — rejection codes', () => {
 
 describe('Conformance M6 — capabilities', () => {
 
-  it('reports engine identity and a filtered set-number card list', () => {
+  it('reports engine identity and a per-set implemented-card count map', () => {
     const caps = buildCapabilities();
     expect(caps.engine).toBe('twinleaf');
     expect(caps.version).toBeTruthy();
     expect(caps.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(caps.implementedCards.length).toBeGreaterThan(1000);
-    expect(caps.implementedCards).toContain(toPrinting(getCardByName('Ralts SIT')));   // an in-scope card
-    expect(caps.implementedCards).not.toContain(toPrinting(getCardByName('Iono PAL'))); // excluded: inline Math.random
-    expect(caps.implementedCards.every(p => /^[a-z0-9]+-/.test(p))).toBe(true);          // set-number printings
-    expect(caps.supportedSets).toContain('sit');
-    expect(caps.supportedSets).toContain('svi'); // loads once the stray exp-share.js build shadow is removed
+    const total = Object.values(caps.sets).reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(1000);
+    expect(caps.sets['sit']).toBeGreaterThan(0);
+    expect(caps.sets['svi']).toBeGreaterThan(0); // loads once the stray exp-share.js build shadow is removed
+    expect(Object.keys(caps.sets).every(code => code === code.toLowerCase())).toBe(true);
+    expect(Object.values(caps.sets).every(n => Number.isInteger(n) && n > 0)).toBe(true);
+  });
+
+  it('GET /v1/cards enumerates a set\'s printed data, consistent with the count', () => {
+    const caps = buildCapabilities();
+    const sit = buildCardsForSet('SIT'); // set code is case-insensitive
+    expect(sit.setCode).toBe('sit');
+    expect(sit.cards.length).toBe(caps.sets['sit']);            // list length === capabilities count
+    expect(sit.cards.every(c => /^[a-z0-9]+-/.test(c.printing))).toBe(true); // set-number printings
+    const printings = sit.cards.map(c => c.printing);
+    expect(printings).toEqual([...printings].sort((a, b) => a.localeCompare(b))); // sorted by printing
+
+    const ralts = sit.cards.find(c => c.printing === toPrinting(getCardByName('Ralts SIT')));
+    expect(ralts).toBeDefined();
+    expect(ralts!.name).toBe('Ralts');
+    expect(ralts!.supertype).toBe('Pokémon');
+    expect(typeof ralts!.hp).toBe('number');
+    expect((ralts!.attacks ?? []).length).toBeGreaterThan(0);
+    expect(ralts!.rarity).toBeUndefined(); // twinleaf does not model rarity — field omitted
+
+    // an excluded inline-Math.random card is absent from its set listing
+    expect(buildCardsForSet('pal').cards
+      .some(c => c.printing === toPrinting(getCardByName('Iono PAL')))).toBe(false);
+    // a set with no implemented cards → UnknownSetError (→ HTTP 404)
+    expect(() => buildCardsForSet('zzz')).toThrowError(UnknownSetError);
   });
 
   it('EXCLUDED_RANDOM_CARDS matches the cards that call Math.random in source (drift guard)', () => {
@@ -153,7 +178,8 @@ describe('Conformance M6 — HTTP handlers', () => {
 
   it('handleCapabilities returns the capabilities object', () => {
     const caps = handleCapabilities();
-    expect(Array.isArray(caps.implementedCards)).toBe(true);
+    expect(typeof caps.sets).toBe('object');
+    expect(Object.keys(caps.sets).length).toBeGreaterThan(0);
     expect(caps.schemaVersion).toBe(SCHEMA_VERSION);
   });
 

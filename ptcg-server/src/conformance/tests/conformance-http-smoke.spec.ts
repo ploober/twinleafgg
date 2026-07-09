@@ -55,11 +55,24 @@ describe('Conformance — HTTP smoke (end-to-end over a real socket)', () => {
     expect(res.json.schemaVersion).toBe(SCHEMA_VERSION);
     expect(res.json.engine).toBe('twinleaf');
     expect(typeof res.json.version).toBe('string');
-    expect(Array.isArray(res.json.implementedCards)).toBe(true);
-    expect(res.json.implementedCards.length).toBeGreaterThan(0);
-    expect(Array.isArray(res.json.supportedSets)).toBe(true);
+    expect(typeof res.json.sets).toBe('object');
+    expect(Object.keys(res.json.sets).length).toBeGreaterThan(0);
     // wire payload matches the in-process handler (no field lost in routing/serialization)
     expect(res.json).toEqual(overWire(handleCapabilities()));
+  });
+
+  it('GET /v1/cards/:setCode serves a set\'s printed-card list; unknown set is 404', async () => {
+    const res = await request(server, 'GET', '/v1/cards/sit');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+    expect(res.json.setCode).toBe('sit');
+    expect(Array.isArray(res.json.cards)).toBe(true);
+    expect(res.json.cards.length).toBeGreaterThan(0);
+    expect(res.json.cards[0].printing).toMatch(/^sit-/);
+
+    const miss = await request(server, 'GET', '/v1/cards/zzz');
+    expect(miss.status).toBe(404);
+    expect(miss.json.error).toBe('unknownSet');
   });
 
   it('POST /v1/step round-trips a non-trivial drive identically to in-process step()', async () => {

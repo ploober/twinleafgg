@@ -1,6 +1,7 @@
 import { step } from '../driver';
-import { StepResponse, NeutralState, NeutralAction, SCHEMA_VERSION } from '../neutral-types';
+import { StepResponse, NeutralState, NeutralAction, NeutralCardList, SCHEMA_VERSION } from '../neutral-types';
 import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
+import { buildCardsForSet } from '../cards';
 
 /**
  * Framework-agnostic request handlers for the conformance HTTP layer (design §5, M6). Kept pure so
@@ -66,4 +67,9 @@ export function handleStep(body: unknown): StepResponse {
 /** The `GET /v1/capabilities` payload. */
 export function handleCapabilities(): CapabilitiesResponse {
   return buildCapabilities();
+}
+
+/** The `GET /v1/cards/{setCode}` payload. Throws `UnknownSetError` (→ 404) for an unimplemented set. */
+export function handleCards(setCode: string): NeutralCardList {
+  return buildCardsForSet(setCode);
 }
