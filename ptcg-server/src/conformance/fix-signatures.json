@@ -94,7 +94,8 @@
     {
       "file": "set-destined-rivals/team-rockets-pupitar.ts",
       "signatures": [
-        "name: 'Explosive Ascension',"
+        "{ min: 0, max: 1, allowCancel: true }",
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
       ]
     },
     {
@@ -382,6 +383,18 @@
       "signatures": [
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
         "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/gothorita.ts",
+      "signatures": [
+        "if (opponent.deck.cards.length === 0) { return state;"
+      ]
+    },
+    {
+      "file": "set-perfect-order/decidueye-ex.ts",
+      "signatures": [
+        "// PASSIVE, always-on cost reduction (compendium #2311"
       ]
     }
   ]

@@ -17,7 +17,10 @@ export class Decidueyeex extends PokemonCard {
 
   public powers = [{
     name: 'Sniper\'s Eye',
-    useWhenInPlay: true,
+    // PASSIVE, always-on cost reduction (compendium #2311: "removes all colorless energy costs from any
+    // attack that Decidueye ex can use"). It is NOT player-activated — it works via the CheckAttackCostEffect
+    // hook below. `useWhenInPlay: true` wrongly made it an activatable ability: the engine accepted a no-op
+    // UsePowerEffect and legal-action enumeration offered `useAbility Sniper's Eye` (rotomancer never does).
     powerType: PowerType.ABILITY,
     text: 'If your opponent has exactly 4 cards in their hand, ignore all [C] Energy in the costs of attacks used by this Pokémon.'
   }];

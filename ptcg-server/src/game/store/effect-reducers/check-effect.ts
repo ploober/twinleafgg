@@ -314,9 +314,16 @@ export function checkWinner(store: StoreLike, state: State, onComplete?: () => v
     }
   }
 
-  // Check for Sudden Death condition
+  // Both players meet a loss condition at the same time (both last Pokémon Knocked Out, both took
+  // their last Prize, or one of each) → the game is a TIE per the base rulebook. Sudden death is a
+  // Play!-Pokémon TOURNAMENT tiebreaker overlay, not a base-game rule: it re-setups the whole game
+  // (resets decks/prizes, re-shuffles, re-flips for first player), which the differential contract
+  // cannot model and which native rotomancer — the conformance oracle — never does; twinleaf's
+  // auto-sudden-death left the game projecting `ongoing` with both boards empty (e.g. Revavroom ex
+  // "Shattering Speed" KOing the last defender while self-discarding the last attacker). Sudden death
+  // stays reachable only inside an already-sudden-death (sandbox-initiated) game.
   if (points[0] > 0 && points[1] > 0) {
-    return initiateSuddenDeath(store, state);
+    return state.isSuddenDeath ? initiateSuddenDeath(store, state) : endGame(store, state, GameWinner.DRAW);
   }
 
   if (points[0] + points[1] === 0) {

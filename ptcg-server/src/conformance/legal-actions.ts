@@ -224,6 +224,13 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
   const sp = player.active.specialConditions;
   if (sp.includes(SpecialCondition.PARALYZED) || sp.includes(SpecialCondition.ASLEEP)) { return []; }
   if (player.retreatedTurn === state.turn) { return []; }
+  // "The Defending Pokémon can't retreat during your opponent's next turn" (BLOCK_RETREAT /
+  // preventRetreatEffect, 179 cards) sets `cannotRetreatNextTurn`, which the retreat dispatch enforces
+  // via assertCanRetreat. Mirror it here so the MENU is gated too — otherwise twinleaf offers a retreat
+  // it then rejects (offer-then-reject vs rotomancer). TA-47 menu-gate class (meg-001 Bind Down repro).
+  // Gated here rather than by throwing from CheckRetreatCostEffect: ~30 reader cards query the opponent's
+  // retreat cost (Sharpedo "Aqua Impact" &c.) and a throw would crash them.
+  if (player.active.cannotRetreatNextTurn) { return []; }
 
   const benchSlots = player.bench
     .map((b, i) => ({ b, i }))

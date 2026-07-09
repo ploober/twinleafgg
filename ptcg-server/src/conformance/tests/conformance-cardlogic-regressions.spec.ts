@@ -316,4 +316,149 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.status).toBe('awaitingAction');
     expect(types(r)).toContain('flip');                  // externalized system flip, not a fault
   });
+
+  it('Bulbasaur "Bind Down" gates the Defending Pokémon\'s retreat MENU, not just the dispatch [TA-71 meg-001]', () => {
+    // "During your opponent's next turn, the Defending Pokémon can't retreat." BLOCK_RETREAT sets
+    // cannotRetreatNextTurn, which the retreat dispatch (assertCanRetreat) enforces — but pre-fix the
+    // legal-action MENU didn't, so twinleaf OFFERED B a retreat it then rejected (offer-then-reject vs
+    // rotomancer). Gate covers all 179 BLOCK_RETREAT cards. Ralts SIT has retreat [C]; B has a bench + energy.
+    const bBoard = (aActive: string) => board(
+      player({ active: inPlay('A-act', [aActive], en(GRASS, 1, 'a')), bench: [inPlay('A-b', [RALTS])] }),
+      player({ active: inPlay('B-act', [RALTS], en(WATER, 1, 'b')), bench: [inPlay('B-b', [RALTS])] }),
+    );
+    // Baseline: A ends its turn WITHOUT locking → B (Ralts + bench + energy) CAN retreat.
+    const base = step(bBoard(RALTS), [{ actor: 'A', type: 'endTurn' }]);
+    expect(base.state.activePlayer).toBe('B');
+    expect(types(base)).toContain('retreat');
+    // Locked: A uses Bind Down → B's retreat is gated out of the menu (was offered pre-fix).
+    const locked = step(bBoard('meg-001'), [attack('A-act', 'Bind Down')]);
+    expect(locked.state.activePlayer).toBe('B');
+    expect(types(locked)).not.toContain('retreat');
+  });
+
+  it('Gholdengo "Surf Back" shuffles the active + attached Energy into the deck ONCE, no duplication [TA-72 ssp-131]', () => {
+    // "You may shuffle this Pokémon and all attached cards into your deck." Attached Energy lives in both
+    // PokemonCardList.cards and .energies (an index into cards), and moveTo moved BOTH — so every attached
+    // Energy landed in the deck TWICE (card-conservation break, RA-5 class). Engine fix in
+    // PokemonCardList.moveTo: carry the cards once, reconcile the energy index. 3 Energy → deck grows by
+    // exactly 5 (Gimmighoul + Gholdengo + 3 Energy), each Energy iid present once.
+    const start = board(
+      player({ active: inPlay('A-act', ['ssp-097', 'ssp-131'], en(WATER, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const r = step(start, [
+      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Surf Back' },
+      { actor: 'A', type: 'confirm', value: true },
+    ]);
+    expect(r.state.players.B.active!.damage).toBe(100);       // damage-first landed
+    const iids = r.state.players.A.deck.map(c => c.iid);
+    const energyIids = iids.filter(i => i.startsWith('ae'));
+    expect(energyIids.sort()).toEqual(['ae0', 'ae1', 'ae2']);  // each once — pre-fix each appeared twice
+    expect(iids.length).toBe(6);                               // A-d + Gimmighoul + Gholdengo + 3 Energy
+  });
+
+  it('Team Rocket\'s Pupitar "Explosive Ascension" whiffs (no crash) with no Tyranitar, and places its 30 first [TA-73 dri-095]', () => {
+    // "Search your deck for a card that evolves from this Pokémon... Then, shuffle your deck." A deck
+    // search with zero eligible cards MUST be a legal whiff (compendium #902/#903 voluntary-fail; #2302
+    // still shuffle), not a 500 — pre-fix the min:1 ChooseCards crashed the decomposer. And the base 30
+    // lands BEFORE the search pauses (rulebook step F). Active stack: TR Larvitar → TR Pupitar.
+    const noTyr = board(
+      player({ active: inPlay('A-act', ['dri-094', 'dri-095'], en(FIGHT, 1, 'a')),
+               deck: [{ iid: 'A-dk0', printing: WATER }, { iid: 'A-dk1', printing: WATER }] }),
+      player({ active: inPlay('B-act', [TANKY]) }));
+    const whiff = step(noTyr, [attack('A-act', 'Explosive Ascension')]);
+    expect(whiff.status).toBe('awaitingAction');               // not invalidAction/500
+    expect(types(whiff)).toContain('shuffle');                 // resolves to the mandatory shuffle
+    expect(whiff.state.players.B.active!.damage).toBe(30);     // damage-first (was 0 at the pause pre-fix)
+    // With a valid Tyranitar in the deck the search IS offered (min:0 still lets it whiff via confirm).
+    const withTyr = board(
+      player({ active: inPlay('A-act', ['dri-094', 'dri-095'], en(FIGHT, 1, 'a')),
+               deck: [{ iid: 'A-tyr', printing: 'dri-096' }, { iid: 'A-dk1', printing: WATER }] }),
+      player({ active: inPlay('B-act', [TANKY]) }));
+    expect(types(step(withTyr, [attack('A-act', 'Explosive Ascension')]))).toContain('choose');
+  });
+
+  it('Gothorita "Fortunate Eye" resolves the opponent-deck reorder (no 500) and preserves the deck [TA-74 wht-042]', () => {
+    // "Look at the top 5 cards of your opponent's deck and put them back in any order." OrderCardsPrompt
+    // ('Order cards') has no wire pick action — pre-fix the driver threw "no decomposer (out of scope)".
+    // The adapter auto-resolves it with the identity order (a legal "put them back the same"), so the
+    // attack completes and card-conservation holds. Active stack: Gothita → Gothorita.
+    const Bdeck = Array.from({ length: 8 }, (_, i) => ({ iid: `B-dk${i}`, printing: WATER }));
+    const reorder = step(
+      board(player({ active: inPlay('A-act', ['wht-041', 'wht-042'], en(PSY, 1, 'a')) }),
+            player({ active: inPlay('B-act', [TANKY]), deck: Bdeck })),
+      [attack('A-act', 'Fortunate Eye')]);
+    expect(reorder.status).not.toBe('invalidAction');           // pre-fix: threw / 500
+    // The reorder is identity, so all 8 deck cards are conserved (none lost/duplicated). The turn then
+    // passes to B, whose draw step moves the top card (B-dk0) to hand — so count across deck+hand.
+    const bp = reorder.state.players.B;
+    const bDeckCards = [...bp.deck, ...bp.hand].map(c => c.iid).filter(i => i.startsWith('B-dk')).sort();
+    expect(bDeckCards).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']);
+    expect(bp.deck.map(c => c.iid)).toEqual(['B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']); // identity kept top order; B drew B-dk0
+
+    // Empty opponent deck → legal whiff (offered AND accepted), NOT a CANNOT_USE_ATTACK offer-then-reject.
+    const emptyStart = board(player({ active: inPlay('A-act', ['wht-041', 'wht-042'], en(PSY, 1, 'a')) }),
+                             player({ active: inPlay('B-act', [TANKY]) }));
+    emptyStart.players.B.deck = [];
+    const empty = step(emptyStart, [attack('A-act', 'Fortunate Eye')]);
+    expect(empty.status).not.toBe('invalidAction');             // pre-fix: invalidAction (CARD_SPECIFIC)
+  });
+
+  it('Lapras ex "Larimar Rain" keeps the looked-at deck cards observable at the attach pause [TA-75 scr-032]', () => {
+    // "Look at the top 20 cards of your deck and attach any number of Energy… Shuffle the rest back." The
+    // card pulls the top 20 into a card-local temp CardList that it hands to the AttachEnergyPrompt. That
+    // temp is not a projected zone, so pre-fix the 20 vanished from the wire at the attach pause — a
+    // card-conservation hole (RA-5). The attach-energy decomposer's fixupProjection now projects any
+    // source card missing from every zone back into the owner's deck (mirroring native rotomancer).
+    const Adeck = Array.from({ length: 22 }, (_, i) => ({ iid: `A-dk${i}`, printing: WATER }));
+    const cost = [{ iid: 'a-w', printing: WATER }, { iid: 'a-p', printing: PSY }, { iid: 'a-m', printing: METAL }];
+    const r = step(
+      board(player({ active: inPlay('A-act', ['scr-032'], cost), deck: Adeck }),
+            player({ active: inPlay('B-act', [TANKY]) })),
+      [attack('A-act', 'Larimar Rain')]);
+    expect(r.status).toBe('awaitingAction');
+    expect(types(r)).toContain('attachEnergy');                 // paused at the attach decision
+    const ap = r.state.players.A;
+    const visible = [...ap.deck, ...ap.hand, ...ap.discard].map(c => c.iid).filter(i => i.startsWith('A-dk'));
+    expect(visible.length).toBe(22);                            // pre-fix: only 2 (20 lost in temp)
+  });
+
+  it('Revavroom ex "Shattering Speed" ends in a TIE when both boards empty simultaneously [TA-76 sfa-015]', () => {
+    // "Discard this Pokémon and all attached cards." 250 dmg KOs the last defender while the self-discard
+    // clears the last attacker → both players Pokémon-less at the same checkup. Base rulebook = TIE, and
+    // native rotomancer ends gameOver/tie. Pre-fix twinleaf auto-triggered SUDDEN DEATH (a full re-setup:
+    // decks/prizes reset, re-shuffle) which the differential reads as `ongoing` with both boards empty.
+    // Active stacks: Varoom → Revavroom ex vs a lone Ralts (70 HP); neither has a Bench.
+    const start = board(
+      player({ active: inPlay('A-act', ['sfa-043', 'sfa-015'], en(METAL, 3, 'a')) }),
+      player({ active: inPlay('B-act', [RALTS]) }));
+    // The attack pauses at A's prize selection (A KO'd B → takes a prize), which is correct.
+    const paused = step(start, [attack('A-act', 'Shattering Speed')]);
+    expect(paused.status).toBe('awaitingAction');
+    const prize = (paused.pending?.legalActions ?? []).find((a: { type: string }) => a.type === 'takePrize') as { index: number } | undefined;
+    expect(prize).toBeDefined();
+    // Taking that prize resolves the checkup: both boards empty → TIE (was ongoing/sudden-death pre-fix).
+    const done = step(start, [attack('A-act', 'Shattering Speed'), { actor: 'A', type: 'takePrize', index: prize!.index }]);
+    expect(done.status).toBe('gameOver');
+    expect(done.state.outcome).toBe('tie');
+    expect(done.state.players.A.prizes.length).toBe(5);         // took exactly 1 (no sudden-death prize wipe)
+  });
+
+  it('Decidueye ex "Sniper\'s Eye" is a passive, NOT an activatable useAbility [TA-77 por-012]', () => {
+    // "If your opponent has exactly 4 cards in their hand, ignore all [C] Energy in the costs of attacks
+    // used by this Pokémon." A PASSIVE (compendium #2311) implemented via CheckAttackCostEffect — pre-fix
+    // it carried `useWhenInPlay: true`, so twinleaf offered `useAbility Sniper's Eye` (a no-op the engine
+    // accepted; rotomancer never offers it). Removing the flag drops it from the menu WITHOUT touching the
+    // passive: with a 4-card opponent, Crushing Arrow [G,C,C,C] is affordable on just [G] (3 [C] ignored);
+    // with a 3-card opponent it is not. Active: Rowlet → Dartrix → Decidueye ex.
+    const at = (bHand: number) => step(
+      board(player({ active: inPlay('A-act', ['por-10', 'por-11', 'por-12'], en(GRASS, 1, 'a')) }),
+            player({ active: inPlay('B-act', [TANKY]), hand: Array.from({ length: bHand }, (_, i) => ({ iid: `B-h${i}`, printing: WATER })) })),
+      []);
+    const four = at(4);
+    const useAbilities = (four.pending?.legalActions ?? []).filter((a: { type: string }) => a.type === 'useAbility');
+    expect(useAbilities.length).toBe(0);                    // pre-fix: offered useAbility "Sniper's Eye"
+    expect(attacksOffered(four)).toContain('Crushing Arrow'); // passive fired: [G] pays [G,C,C,C]
+    expect(attacksOffered(at(3))).not.toContain('Crushing Arrow'); // passive off: [G] can't pay [G,C,C,C]
+  });
 });

@@ -9,6 +9,7 @@ import {
   UseAbilityAction as UseAbilityGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
+import { OrderCardsPrompt, OrderCardsPromptType } from '../game/store/prompts/order-cards-prompt';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
@@ -317,6 +318,18 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
     if (prompt !== undefined) {
+      // 'Order cards' (reorder a revealed pile "in any order", e.g. Fortunate Eye's top-5 peek) sits
+      // OUTSIDE the wire decision model — there is no `order` pick action and the chosen order is
+      // private. Auto-resolve with the IDENTITY permutation ("put them back in the same order", always a
+      // legal answer), exactly the forced-order choice the shuffle path makes for a ≤1-card deck.
+      // Resolving here without surfacing a pending also keeps the card's in-flight temp CardList (the
+      // pulled cards, absent from every zone mid-prompt) from ever showing up in a projected state.
+      if (prompt.type === OrderCardsPromptType) {
+        const n = (prompt as OrderCardsPrompt).cards.cards.length;
+        const perm = Array.from({ length: n }, (_, i) => i);
+        dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
+        continue;
+      }
       const kind = classify(prompt);
 
       if (kind === 'wait') {

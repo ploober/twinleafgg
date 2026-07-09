@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { CardList, GameError, GameMessage, OrderCardsPrompt, State, StoreLike } from '../../../game';
+import { CardList, GameMessage, OrderCardsPrompt, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 
@@ -39,8 +39,11 @@ export class Gothorita extends PokemonCard {
       const player = effect.player;
       const opponent = effect.opponent;
 
+      // Empty opponent deck → nothing to look at. This is a legal whiff ("do as much as you can",
+      // compendium #576), NOT a CANNOT_USE_ATTACK: the 0-damage attack is still offered by the menu, so
+      // throwing here is an offer-then-reject (menu ≠ dispatch). Just do nothing.
       if (opponent.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       const deckTop = new CardList();

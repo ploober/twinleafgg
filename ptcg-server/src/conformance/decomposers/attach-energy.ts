@@ -2,12 +2,13 @@ import { AttachEnergyPrompt } from '../../game/store/prompts/attach-energy-promp
 import { EnergyCard } from '../../game/store/card/energy-card';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
-import { LegalAction } from '../neutral-types';
+import { LegalAction, PokemonInPlay } from '../neutral-types';
 import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, playerIdToActor } from '../iid-targets';
+import { toPrinting } from '../printing';
 
 /** AttachEnergyPrompt: one pick = {to, index} (energy index in cardList × target); raw = {to,index}[]. */
 export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
@@ -111,5 +112,34 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
 
   assemble(_prompt, picks): Array<{ to: CardTarget; index: number }> {
     return (realPicks(picks) as Array<{ to: CardTarget; index: number }>).map(p => ({ to: p.to, index: p.index }));
+  },
+
+  fixupProjection(prompt, _picks, ctx, state, projected) {
+    // "Look at the top N cards of your deck and attach any Energy you find there…" (Lapras ex "Larimar
+    // Rain", Blastoise, Rayquaza-GX, Max Elixir, Azumarill, …) pulls the looked-at cards into a
+    // card-local temp CardList and hands THAT to this prompt as its source. The temp is not a projected
+    // zone, so at the attach pause those cards vanish from the wire — a card-conservation hole (RA-5);
+    // native rotomancer keeps them in the deck. Mirror that: project any source card missing from every
+    // observable zone back into the prompt owner's deck. Idempotent — a hand/discard-sourced attach has
+    // its source cards already projected, so the present-set check adds nothing.
+    const player = promptPlayer(state, prompt.playerId);
+    const proj = projected.players[playerIdToActor(state, player.id)];
+    const present = new Set<string>();
+    const addPip = (pip: PokemonInPlay | null) => {
+      if (!pip) { return; }
+      pip.stack.forEach(c => present.add(c.iid));
+      pip.energy.forEach(c => present.add(c.iid));
+      pip.tools.forEach(c => present.add(c.iid));
+    };
+    [proj.deck, proj.hand, proj.discard, proj.lostZone].forEach(z => z.forEach(c => present.add(c.iid)));
+    proj.prizes.forEach(p => present.add(p.iid));
+    addPip(proj.active);
+    proj.bench.forEach(addPip);
+    for (const card of prompt.cardList.cards) {
+      const iid = ctx.cardToIid.get(card);
+      if (iid === undefined || present.has(iid)) { continue; }
+      proj.deck.push({ iid, printing: toPrinting(card) });
+      present.add(iid);
+    }
   },
 };

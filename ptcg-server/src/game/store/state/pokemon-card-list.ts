@@ -387,14 +387,17 @@ export class PokemonCardList extends CardList {
     return opponent.bench.includes(this);
   }
 
-  // Override the parent CardList's moveTo method to properly handle Pokemon acting as energy
+  // Override the parent CardList's moveTo to keep the `energies` index consistent with `cards`.
   public moveTo(destination: CardList, count?: number): void {
-    // Move energies CardList to destination before moving cards
-    if (this.energies.cards.length > 0) {
-      this.energies.moveTo(destination);
-    }
-
+    // Attached Energy (and Pokémon-acting-as-energy) live in BOTH `this.cards` and `this.energies.cards`
+    // — `energies` is an INDEX into `cards`, not a separate zone (play-energy-effect pushes the attached
+    // card to both). The base moveTo already carries them via `this.cards`, so moving `this.energies`
+    // separately made every attached card land in the destination TWICE (card duplication — e.g. Gholdengo
+    // "Surf Back" shuffled its active into the deck and each attached Energy appeared twice, breaking
+    // card-conservation). Move once through the base, then drop from the index only what actually left.
+    const attached = this.energies.cards.slice();
     super.moveTo(destination, count);
+    this.energies.cards = attached.filter(c => this.cards.includes(c));
   }
 
   public moveCardsTo(cards: Card[], destination: CardList): void {
