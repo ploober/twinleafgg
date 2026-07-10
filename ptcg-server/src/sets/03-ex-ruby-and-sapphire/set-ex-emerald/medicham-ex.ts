@@ -19,7 +19,7 @@ export class Medichamex extends PokemonCard {
   public cardType: CardType = F;
   public hp: number = 110;
   public weakness = [{ type: P }];
-  public retreat = [C, C];
+  public retreat = [C];
 
   public powers = [{
     name: 'Wise Aura',

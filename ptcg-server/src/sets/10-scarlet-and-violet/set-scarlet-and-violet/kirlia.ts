@@ -21,7 +21,7 @@ export class Kirlia extends PokemonCard {
     { name: 'Magical Shot', cost: [P, C], damage: 30, text: '' },
     {
       name: 'Psychic',
-      cost: [P, C, C],
+      cost: [P, P, C],
       damage: 60,
       damageCalculation: '+',
       text: 'This attack does 20 more damage for each Energy attached to your opponent\'s Active Pokémon.'

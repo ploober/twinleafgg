@@ -7,7 +7,7 @@ import { State, StoreLike } from '../../../game';
 export class Spheal extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = W;
-  public hp: number = 50;
+  public hp: number = 40;
   public weakness = [{ type: M }];
   public retreat = [C];
 

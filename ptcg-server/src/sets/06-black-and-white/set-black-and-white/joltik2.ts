@@ -9,14 +9,14 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 export class Joltik2 extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = L;
-  public hp: number = 40;
+  public hp: number = 30;
   public weakness = [{ type: F }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [
     {
       name: 'Leech Life',
-      cost: [L],
+      cost: [C],
       damage: 10,
       text: 'Heal from this Pokémon the same amount of damage you did to your opponent\'s Active Pokémon.'
     }

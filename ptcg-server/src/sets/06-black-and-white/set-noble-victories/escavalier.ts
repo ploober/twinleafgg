@@ -22,8 +22,8 @@ export class Escavalier extends PokemonCard {
     },
     {
       name: 'Guard Press',
-      cost: [M, C, C],
-      damage: 60,
+      cost: [M, C],
+      damage: 40,
       text: 'During your opponent\'s next turn, any damage done to this Pokémon by attacks is reduced by 20 (after applying Weakness and Resistance).'
     }
   ];

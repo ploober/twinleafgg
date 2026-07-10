@@ -31,8 +31,8 @@ export class Nidorina extends PokemonCard {
     },
     {
       name: 'Sharp Fang',
-      cost: [D, C],
-      damage: 50,
+      cost: [D],
+      damage: 30,
       text: '',
     },
   ];

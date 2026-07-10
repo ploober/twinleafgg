@@ -22,7 +22,7 @@ export class Purrloin extends PokemonCard {
 
   public attacks = [
     { name: 'Scratch', cost: [C], damage: 10, text: '' },
-    { name: 'Slash', cost: [D, C], damage: 20, text: '' }
+    { name: 'Slash', cost: [C, C], damage: 20, text: '' }
   ];
 
   public set: string = 'BLW';

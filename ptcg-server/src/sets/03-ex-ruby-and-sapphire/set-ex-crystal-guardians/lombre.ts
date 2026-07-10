@@ -15,7 +15,7 @@ export class Lombre extends PokemonCard {
   public attacks = [{
     name: 'Plunder',
     cost: [C, C],
-    damage: 30,
+    damage: 20,
     text: 'Before doing damage, discard all Trainer cards attached to the Defending Pokémon.'
   },
   {

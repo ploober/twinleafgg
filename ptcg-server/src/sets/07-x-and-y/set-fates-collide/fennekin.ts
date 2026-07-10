@@ -15,7 +15,7 @@ export class Fennekin extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = CardType.FIRE;
   public hp: number = 60;
-  public weakness = [{ type: CardType.FIRE }];
+  public weakness = [{ type: CardType.WATER }];
   public retreat = [CardType.COLORLESS];
 
   public attacks = [{

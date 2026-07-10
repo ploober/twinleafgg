@@ -15,7 +15,7 @@ export class Naclstack extends PokemonCard {
   public attacks = [{
     name: 'Rock Hurl',
     cost: [F, C],
-    damage: 0,
+    damage: 50,
     text: 'This attack\'s damage isn\'t affected by Resistance.'
   }];
 

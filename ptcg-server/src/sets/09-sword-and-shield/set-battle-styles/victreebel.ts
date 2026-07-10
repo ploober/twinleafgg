@@ -11,7 +11,7 @@ export class Victreebel extends PokemonCard {
   public hp: number = 150;
   public weakness = [{ type: R }];
   public resistance = [];
-  public retreat = [C];
+  public retreat = [C, C, C];
 
   public attacks = [{
     name: 'Panic Vine',

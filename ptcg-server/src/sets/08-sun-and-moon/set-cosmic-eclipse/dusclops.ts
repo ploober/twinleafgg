@@ -11,7 +11,7 @@ export class Dusclops extends PokemonCard {
   public hp: number = 90;
   public weakness = [{ type: CardType.DARK }];
   public resistance = [{ type: CardType.FIGHTING, value: -20 }];
-  public retreat = [CardType.COLORLESS];
+  public retreat = [C, C, C];
 
   public attacks = [{
     name: 'Disable',

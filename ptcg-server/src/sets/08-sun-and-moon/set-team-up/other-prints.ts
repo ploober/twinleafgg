@@ -259,7 +259,7 @@ export class AlolanMarowakTEU extends AlolanMarowak {
   public set: string = 'TEU';
   public setNumber: string = '64';
   public fullName: string = 'Alolan Marowak TEU';
-  public cardType: CardType = R;
+  public cardType: CardType = P;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -20 }];
 }

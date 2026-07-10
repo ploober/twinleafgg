@@ -10,7 +10,7 @@ export class Weezing extends PokemonCard {
   public cardType: CardType = P;
   public hp: number = 100;
   public weakness = [{ type: P }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public powers = [{
     name: 'Blow-Away Bomb',

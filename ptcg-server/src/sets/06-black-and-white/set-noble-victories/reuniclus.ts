@@ -17,7 +17,7 @@ export class Reuniclus extends PokemonCard {
   public attacks = [
     {
       name: 'Future Sight',
-      cost: [P],
+      cost: [C],
       damage: 0,
       text: 'Look at the top 5 cards of your deck and put them back on top of your deck in any order.'
     },

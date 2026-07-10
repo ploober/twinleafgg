@@ -10,8 +10,8 @@ import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effect
 export class Lunatone extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = P;
-  public hp: number = 70;
-  public weakness = [{ type: G }];
+  public hp: number = 60;
+  public weakness = [{ type: P }];
   public retreat = [C];
 
   public powers = [{

@@ -27,7 +27,7 @@ export class Silcoon extends PokemonCard {
   {
     name: 'Ram',
     cost: [CardType.GRASS, CardType.COLORLESS],
-    damage: 20,
+    damage: 30,
     text: ''
   }
   ];

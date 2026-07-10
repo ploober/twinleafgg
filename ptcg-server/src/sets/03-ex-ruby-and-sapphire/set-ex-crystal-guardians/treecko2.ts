@@ -23,7 +23,7 @@ export class Treecko2 extends PokemonCard {
     {
       name: 'Shining Claws',
       cost: [P],
-      damage: 30,
+      damage: 10,
       text: 'Flip a coin. If heads, the Defending Pokémon is now Confused.'
     }
   ];

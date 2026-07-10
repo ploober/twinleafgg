@@ -7,14 +7,14 @@ import { WAS_ATTACK_USED, THIS_POKEMON_DOES_DAMAGE_TO_ITSELF } from '../../../ga
 export class Bouffalant2 extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = C;
-  public hp: number = 100;
+  public hp: number = 90;
   public weakness = [{ type: F }];
   public retreat = [C, C];
 
   public attacks = [
     {
       name: 'Horn Attack',
-      cost: [C],
+      cost: [C, C],
       damage: 20,
       text: ''
     },

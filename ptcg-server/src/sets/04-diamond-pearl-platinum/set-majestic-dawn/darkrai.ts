@@ -14,7 +14,7 @@ export class Darkrai extends PokemonCard {
   public cardType: CardType = D;
   public hp: number = 80;
   public weakness = [{ type: F, value: +20 }];
-  public resistance = [{ type: F, value: -20 }];
+  public resistance = [{ type: P, value: -20 }];
   public retreat = [C, C];
 
   public powers = [{
@@ -26,7 +26,7 @@ export class Darkrai extends PokemonCard {
   public attacks = [{
     name: 'Dark Slumber',
     cost: [D],
-    damage: 20,
+    damage: 10,
     text: 'At the end of your opponent\'s next turn, the Defending Pokémon is now Asleep.'
   },
   {

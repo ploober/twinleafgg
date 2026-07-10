@@ -23,7 +23,7 @@ export class Skiploom extends PokemonCard {
   public attacks = [{
     name: 'Miracle Powder',
     cost: [C],
-    damage: 0,
+    damage: 10,
     text: 'Flip a coin. If heads, choose 1 Special Condition. The Defending Pokémon is now affected by that Special Condition.'
   }];
 

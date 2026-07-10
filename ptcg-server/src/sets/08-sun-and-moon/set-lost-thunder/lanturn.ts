@@ -73,7 +73,7 @@ export class Lanturn extends PokemonCard {
 
   public cardType: CardType = CardType.LIGHTNING;
 
-  public hp: number = 110;
+  public hp: number = 120;
 
   public weakness = [{ type: CardType.FIGHTING }];
 

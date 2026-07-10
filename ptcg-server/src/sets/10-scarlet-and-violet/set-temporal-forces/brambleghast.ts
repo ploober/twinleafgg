@@ -22,7 +22,7 @@ export class Brambleghast extends PokemonCard {
 
   public attacks = [{
     name: 'Powerful Needles',
-    cost: [CardType.GRASS, CardType.GRASS, CardType.COLORLESS],
+    cost: [G, C, C],
     damage: 80,
     damageCalculation: 'x',
     text: ' Flip a coin for each Energy attached to this Pokémon. This attack does 80 damage for each heads. '

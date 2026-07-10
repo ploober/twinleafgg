@@ -23,7 +23,7 @@ export class Cryogonal2 extends PokemonCard {
     },
     {
       name: 'Ice Chain',
-      cost: [W, W, C],
+      cost: [W],
       damage: 50,
       text: 'Switch the Defending Pokémon with 1 of your opponent\'s Benched Pokémon.'
     }

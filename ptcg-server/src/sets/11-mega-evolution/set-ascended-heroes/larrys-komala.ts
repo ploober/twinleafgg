@@ -10,7 +10,7 @@ export class LarrysKomala extends PokemonCard {
   public tags = [CardTag.LARRYS];
   public cardType: CardType = C;
   public hp: number = 90;
-  public weakness = [{ type: L }];
+  public weakness = [{ type: F }];
   public resistance = [];
   public retreat = [C, C];
 

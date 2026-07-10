@@ -20,7 +20,7 @@ export class Ralts extends PokemonCard {
   public attacks = [
     {
       name: 'Smack',
-      cost: [CardType.PSYCHIC],
+      cost: [C],
       damage: 10,
       text: ''
     },

@@ -10,7 +10,7 @@ export class Kyurem extends PokemonCard {
   public tags: string[] = [CardTag.TEAM_PLASMA];
   public hp: number = 130;
   public weakness: Weakness[] = [{ type: M }];
-  public retreat: CardType[] = [C];
+  public retreat: CardType[] = [C, C, C];
 
   public attacks: Attack[] = [
     {

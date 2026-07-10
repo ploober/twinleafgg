@@ -67,13 +67,13 @@ export class Annihilapeex extends PokemonCard {
   public attacks = [
     {
       name: 'Angry Grudge',
-      cost: [],
+      cost: [F],
       damage: 0,
       text: 'Put up to 12 damage counters on this Pokémon. This attack does 20 damage for each damage counter you placed in this way.'
     },
     {
       name: 'Seismic Toss',
-      cost: [CardType.FIGHTING],
+      cost: [F, C],
       damage: 150,
       text: ''
     }

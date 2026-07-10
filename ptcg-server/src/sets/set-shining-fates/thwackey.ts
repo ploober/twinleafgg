@@ -25,7 +25,7 @@ export class Thwackey extends PokemonCard {
   public attacks = [
     {
       name: 'Branch Poke',
-      cost: [CardType.COLORLESS],
+      cost: [G],
       damage: 20,
       text: ''
     }

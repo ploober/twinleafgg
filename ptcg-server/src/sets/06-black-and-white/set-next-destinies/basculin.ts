@@ -20,8 +20,8 @@ export class Basculin extends PokemonCard {
     },
     {
       name: 'Bared Fangs',
-      cost: [W, C],
-      damage: 60,
+      cost: [W],
+      damage: 40,
       text: 'If the Defending Pokémon has no damage counters on it, this attack does nothing.'
     }
   ];

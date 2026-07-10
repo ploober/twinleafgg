@@ -23,7 +23,7 @@ export class Eiscue extends PokemonCard {
   public attacks = [
     {
       name: 'Block Slider',
-      cost: [CardType.WATER, CardType.WATER],
+      cost: [W, C],
       damage: 0,
       text: 'This attack does 40 damage to 1 of your opponent\'s Pokémon for each Fusion Strike Energy attached to all of your Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     },

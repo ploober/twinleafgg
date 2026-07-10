@@ -20,7 +20,7 @@ export class Greavard extends PokemonCard {
   },
   {
     name: 'Take Down',
-    cost: [P],
+    cost: [P, C],
     damage: 40,
     text: 'This Pokémon also does 10 damage to itself.'
   }];

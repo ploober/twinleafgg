@@ -11,7 +11,7 @@ export class Nuzleaf extends PokemonCard {
   public cardType: CardType = CardType.GRASS;
   public hp: number = 90;
   public weakness = [{ type: CardType.FIRE }];
-  public retreat = [CardType.COLORLESS];
+  public retreat = [C, C];
 
   public attacks = [{
     name: 'Pound',

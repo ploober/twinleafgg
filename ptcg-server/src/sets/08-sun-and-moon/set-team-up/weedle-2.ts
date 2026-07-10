@@ -9,7 +9,7 @@ export class Weedle2 extends PokemonCard {
 
   public cardType: CardType = CardType.GRASS;
 
-  public hp: number = 50;
+  public hp: number = 40;
 
   public weakness = [{ type: CardType.FIRE }];
 

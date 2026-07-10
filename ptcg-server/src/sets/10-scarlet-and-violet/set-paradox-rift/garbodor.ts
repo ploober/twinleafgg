@@ -18,7 +18,7 @@ export class Garbodor extends PokemonCard {
 
   public weakness = [{ type: F }];
 
-  public retreat = [C, C];
+  public retreat = [C, C, C];
 
   public attacks = [
     {
@@ -32,7 +32,7 @@ export class Garbodor extends PokemonCard {
     {
       name: 'Venomous Hit',
       cost: [D, C, C],
-      damage: 30,
+      damage: 80,
       text: 'Your opponent\'s Active Pokémon is now Poisoned.'
     },
   ];

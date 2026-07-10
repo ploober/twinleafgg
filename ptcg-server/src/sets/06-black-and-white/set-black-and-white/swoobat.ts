@@ -11,7 +11,7 @@ export class Swoobat extends PokemonCard {
   public hp: number = 80;
   public weakness = [{ type: L }];
   public resistance = [{ type: F, value: -20 }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [
     {
@@ -22,8 +22,8 @@ export class Swoobat extends PokemonCard {
     },
     {
       name: 'Heart Stamp',
-      cost: [P, C, C],
-      damage: 60,
+      cost: [P, C],
+      damage: 40,
       text: 'Flip a coin. If heads, your opponent shuffles his or her hand into his or her deck.'
     }
   ];

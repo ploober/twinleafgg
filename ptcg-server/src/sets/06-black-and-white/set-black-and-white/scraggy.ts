@@ -21,7 +21,7 @@ export class Scraggy extends PokemonCard {
   public retreat = [C];
 
   public attacks = [
-    { name: 'Headbutt', cost: [C, C], damage: 20, text: '' }
+    { name: 'Headbutt', cost: [C], damage: 10, text: '' }
   ];
 
   public set: string = 'BLW';

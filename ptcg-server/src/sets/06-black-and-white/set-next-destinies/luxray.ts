@@ -12,7 +12,7 @@ export class Luxray extends PokemonCard {
   public cardType: CardType = L;
   public hp: number = 140;
   public weakness = [{ type: F }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [
     {

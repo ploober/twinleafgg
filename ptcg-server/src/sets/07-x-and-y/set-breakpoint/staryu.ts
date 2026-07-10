@@ -10,7 +10,7 @@ export class Staryu extends PokemonCard {
 
   public hp: number = 40;
 
-  public weakness = [{ type: CardType.METAL }];
+  public weakness = [{ type: CardType.GRASS }];
 
   public resistance = [];
 

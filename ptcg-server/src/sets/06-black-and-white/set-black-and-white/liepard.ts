@@ -9,9 +9,9 @@ export class Liepard extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Purrloin';
   public cardType: CardType = D;
-  public hp: number = 90;
+  public hp: number = 80;
   public weakness = [{ type: F }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [
     {

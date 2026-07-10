@@ -12,7 +12,7 @@ export class Chikorita extends PokemonCard {
   public hp: number = 40;
   public weakness = [{ type: R }];
   public resistance = [{ type: W, value: -30 }];
-  public retreat = [C, C];
+  public retreat = [C];
 
   public attacks = [{
     name: 'Sleep Powder',

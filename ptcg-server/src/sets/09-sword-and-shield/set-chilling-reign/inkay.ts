@@ -5,7 +5,7 @@ export class Inkay extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = CardType.PSYCHIC;
   public hp: number = 50;
-  public weakness = [{ type: CardType.PSYCHIC }];
+  public weakness = [{ type: CardType.DARK }];
   public retreat = [CardType.COLORLESS];
   public tags = [CardTag.RAPID_STRIKE];
   public evolvesInto = 'Malamar';

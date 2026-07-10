@@ -15,7 +15,7 @@ export class Absol extends PokemonCard {
   public hp: number = 100;
   public weakness = [{ type: F }];
   public resistance = [{ type: P, value: -20 }];
-  public retreat = [C, C];
+  public retreat = [C];
 
   public attacks = [
     {

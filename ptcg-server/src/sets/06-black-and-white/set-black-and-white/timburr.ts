@@ -13,10 +13,10 @@ export class Timburr extends PokemonCard {
     type: P
   }];
 
-  public retreat = [C, C];
+  public retreat = [C];
 
   public attacks = [
-    { name: 'Pound', cost: [F], damage: 10, text: '' }
+    { name: 'Pound', cost: [F, F], damage: 30, text: '' }
   ];
 
   public set: string = 'BLW';

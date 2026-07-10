@@ -21,7 +21,7 @@ export class Cherubi extends PokemonCard {
   public attacks = [
     {
       name: 'Leafage',
-      cost: [CardType.WATER],
+      cost: [G],
       damage: 10,
       text: ''
     },

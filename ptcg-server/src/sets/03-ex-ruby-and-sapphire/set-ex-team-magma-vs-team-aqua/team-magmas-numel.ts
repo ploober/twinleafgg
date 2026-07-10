@@ -21,7 +21,7 @@ export class TeamMagmasNumel extends PokemonCard {
   {
     name: 'Combustion',
     cost: [R, C],
-    damage: 10,
+    damage: 20,
     text: ''
   }];
 

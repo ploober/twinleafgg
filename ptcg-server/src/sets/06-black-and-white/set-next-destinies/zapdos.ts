@@ -23,7 +23,7 @@ export class Zapdos extends PokemonCard {
     },
     {
       name: 'Random Spark',
-      cost: [L, L, C],
+      cost: [L, C, C],
       damage: 50,
       text: 'This attack does 50 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     }

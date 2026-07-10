@@ -14,7 +14,7 @@ export class LatiasEX extends PokemonCard {
   public cardType: CardType = N;
   public hp: number = 160;
   public weakness = [{ type: N }];
-  public retreat = [C, C, C];
+  public retreat = [C];
 
   public powers: Power[] = [{
     name: 'Bright Down',

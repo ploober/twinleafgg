@@ -19,7 +19,7 @@ import { DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON } from '../../../game/sto
 export class Metagross extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Metang';
-  public hp: number = 170;
+  public hp: number = 180;
   public cardType: CardType = M;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];

@@ -21,7 +21,7 @@ export class Ursaring extends PokemonCard {
 
   public resistance = [];
 
-  public retreat = [CardType.COLORLESS, CardType.COLORLESS];
+  public retreat = [C, C, C];
 
   public attacks = [
     {

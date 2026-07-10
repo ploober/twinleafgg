@@ -15,13 +15,13 @@ export class Weepinbell extends PokemonCard {
 
   public cardType: CardType = CardType.GRASS;
 
-  public hp: number = 70;
+  public hp: number = 80;
 
   public weakness = [{ type: CardType.FIRE }];
 
   public resistance = [];
 
-  public retreat = [CardType.COLORLESS];
+  public retreat = [C, C];
 
   public powers = [{
     name: 'Dangerous Mucus',

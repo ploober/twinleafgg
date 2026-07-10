@@ -6,9 +6,9 @@ import { State, StoreLike } from '../../../game';
 export class Joltik extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = L;
-  public hp: number = 30;
+  public hp: number = 40;
   public weakness = [{ type: F }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [
     {

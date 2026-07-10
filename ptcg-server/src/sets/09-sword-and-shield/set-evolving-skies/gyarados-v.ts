@@ -17,11 +17,11 @@ export class GyaradosV extends PokemonCard {
 
   public cardType: CardType = CardType.WATER;
 
-  public hp: number = 330;
+  public hp: number = 220;
 
   public weakness = [{ type: CardType.LIGHTNING }];
 
-  public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
+  public retreat = [C, C, C];
 
   public attacks = [{
     name: 'Get Angry',

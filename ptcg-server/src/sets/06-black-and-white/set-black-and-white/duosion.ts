@@ -22,7 +22,7 @@ export class Duosion extends PokemonCard {
   {
     name: 'Rollout',
     cost: [P, C],
-    damage: 20,
+    damage: 30,
     text: ''
   }];
 

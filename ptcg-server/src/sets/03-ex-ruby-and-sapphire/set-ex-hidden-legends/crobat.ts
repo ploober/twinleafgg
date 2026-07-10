@@ -17,7 +17,7 @@ export class Crobat extends PokemonCard {
   public attacks = [{
     name: 'Flutter Trick',
     cost: [C],
-    damage: 0,
+    damage: 20,
     text: 'Flip a coin. If heads, look at your opponent\'s hand and choose 1 card. Your opponent discards the card you chose.'
   },
   {

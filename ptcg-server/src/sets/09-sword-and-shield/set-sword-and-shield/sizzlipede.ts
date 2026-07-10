@@ -11,7 +11,7 @@ export class Sizzlipede extends PokemonCard {
   public attacks = [
     {
       name: 'Bite',
-      cost: [R],
+      cost: [C],
       damage: 10,
       text: '',
     },

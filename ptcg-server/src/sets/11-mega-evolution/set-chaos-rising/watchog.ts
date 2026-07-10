@@ -26,7 +26,7 @@ export class Watchog extends PokemonCard {
     },
     {
       name: 'Low Kick',
-      cost: [C, C],
+      cost: [C],
       damage: 50,
       text: '',
     },

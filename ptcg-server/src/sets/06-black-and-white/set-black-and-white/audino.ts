@@ -8,9 +8,9 @@ import { AttackEffect } from '../../../game/store/effects/game-effects';
 export class Audino extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = C;
-  public hp: number = 90;
+  public hp: number = 80;
   public weakness = [{ type: F }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

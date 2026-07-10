@@ -16,7 +16,7 @@ export class GroudonStar extends PokemonCard {
   public attacks = [{
     name: 'Critical Collection',
     cost: [F],
-    damage: 0,
+    damage: 10,
     text: 'Count the number of Prize cards your opponent has taken. Search your discard pile for up to that many [F] Energy cards and attach them to Groudon Star.'
   },
   {

@@ -20,7 +20,7 @@ export class Teddiursa extends PokemonCard {
   {
     name: 'Dig Claws',
     cost: [C, C],
-    damage: 90,
+    damage: 20,
     text: ''
   }];
 

@@ -11,7 +11,7 @@ export class Beldum extends PokemonCard {
   public tags = [CardTag.DELTA_SPECIES];
   public cardType: CardType = L;
   public hp: number = 50;
-  public weakness = [{ type: F }];
+  public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
   public retreat = [C];
 

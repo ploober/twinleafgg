@@ -10,12 +10,12 @@ export class Musharna extends PokemonCard {
   public cardType: CardType = P;
   public hp: number = 90;
   public weakness = [{ type: P }];
-  public retreat = [C, C, C];
+  public retreat = [C, C];
 
   public attacks = [
     {
       name: 'Dream Eater',
-      cost: [P],
+      cost: [P, P],
       damage: 90,
       text: 'If the Defending Pokémon is not Asleep, this attack does nothing.'
     },

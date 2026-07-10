@@ -14,7 +14,7 @@ export class Wailmer extends PokemonCard {
 
   public attacks = [{
     name: 'Rest',
-    cost: [C],
+    cost: [C, C],
     damage: 0,
     text: 'Remove all Special Conditions and 4 damage counters from Wailmer (all if there are less than 4). Wailmer is now Asleep.'
   },

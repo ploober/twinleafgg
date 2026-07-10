@@ -11,7 +11,7 @@ export class Uxie extends PokemonCard {
   public hp: number = 70;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];
-  public retreat = [C, C];
+  public retreat = [C];
 
   public attacks = [{
     name: 'Wise Guidance',

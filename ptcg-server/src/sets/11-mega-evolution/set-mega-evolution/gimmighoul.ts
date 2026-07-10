@@ -7,7 +7,7 @@ export class Gimmighoul extends PokemonCard {
   public hp: number = 70;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [{
     name: 'Slap',

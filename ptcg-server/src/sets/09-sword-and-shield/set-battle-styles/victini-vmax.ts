@@ -18,7 +18,7 @@ export class VictiniVMAX extends PokemonCard {
 
   public cardType: CardType = CardType.FIRE;
 
-  public hp: number = 190;
+  public hp: number = 310;
 
   public weakness = [{ type: CardType.WATER }];
 

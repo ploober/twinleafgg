@@ -48,7 +48,7 @@ export class Stoutland extends PokemonCard {
   public attacks = [
     {
       name: 'Odor Sleuth',
-      cost: [C],
+      cost: [C, C],
       damage: 0,
       text: 'Search your deck for up to 2 cards and put them into your hand. Show those cards to your opponent. Shuffle your deck afterward.'
     },

@@ -24,13 +24,13 @@ export class Ivysaur extends PokemonCard {
     {
       name: 'Sleep Powder',
       cost: [G, C],
-      damage: 30,
+      damage: 20,
       text: 'The Defending Pokémon is now Asleep.',
     },
     {
       name: 'Poison Powder',
       cost: [G, G, C],
-      damage: 80,
+      damage: 50,
       text: 'The Defending Pokémon is now Poisoned.',
     }
   ];

@@ -6,9 +6,9 @@ import { State, StoreLike } from '../../../game';
 export class Venipede extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = P;
-  public hp: number = 50;
+  public hp: number = 70;
   public weakness = [{ type: P }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

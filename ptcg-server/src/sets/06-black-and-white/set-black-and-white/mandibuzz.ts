@@ -25,7 +25,7 @@ export class Mandibuzz extends PokemonCard {
     },
     {
       name: 'Punishment',
-      cost: [D, D],
+      cost: [D, C, C],
       damage: 40,
       damageCalculation: '+',
       text: 'If the Defending Pokémon has an Ability, this attack does 30 more damage.'

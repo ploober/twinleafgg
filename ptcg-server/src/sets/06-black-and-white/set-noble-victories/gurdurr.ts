@@ -12,7 +12,7 @@ export class Gurdurr extends PokemonCard {
   public cardType: CardType = F;
   public hp: number = 80;
   public weakness = [{ type: P }];
-  public retreat = [C, C];
+  public retreat = [C, C, C];
 
   public attacks = [{
     name: 'Strength',

@@ -21,7 +21,7 @@ export class Glalie extends PokemonCard {
 
   public attacks = [{
     name: 'Heavy Blizzard',
-    cost: [W],
+    cost: [W, C, C],
     damage: 50,
     text: 'Flip a coin. If heads, put 1 damage counter on each of your opponent\'s Benched Pokémon.'
   }];

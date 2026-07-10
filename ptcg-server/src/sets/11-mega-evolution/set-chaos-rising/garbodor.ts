@@ -11,7 +11,7 @@ export class Garbodor extends PokemonCard {
   public hp: number = 140;
   public cardType: CardType = D;
   public weakness = [{ type: F }];
-  public retreat = [C, C];
+  public retreat = [C, C, C];
 
   public powers = [
     {

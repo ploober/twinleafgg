@@ -12,7 +12,7 @@ export class Gothitelle extends PokemonCard {
   public hp: number = 150;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public powers = [{
     name: 'Read the Stars',

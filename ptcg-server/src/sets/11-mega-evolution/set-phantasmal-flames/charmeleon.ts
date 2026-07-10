@@ -5,7 +5,7 @@ export class Charmeleon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Charmander';
   public cardType: CardType = R;
-  public hp: number = 100;
+  public hp: number = 110;
   public weakness = [{ type: W }];
   public retreat = [C, C];
 

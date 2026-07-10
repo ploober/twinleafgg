@@ -25,7 +25,7 @@ export class Hydreigon extends PokemonCard {
 
   public attacks = [{
     name: 'Berserker Blade',
-    cost: [D, D, C, C],
+    cost: [D, D, D, D],
     damage: 60,
     text: 'Does 40 damage to 2 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
   }];

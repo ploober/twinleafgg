@@ -21,7 +21,7 @@ export class Omastar extends PokemonCard {
 
   public attacks = [{
     name: 'Drag Off',
-    cost: [W, C],
+    cost: [C],
     damage: 10,
     text: 'Before doing damage, you may choose 1 of your opponent\'s Benched Pokémon and switch it with 1 of the Defending Pokémon. Your opponent chooses the Defending Pokémon to switch.'
   },

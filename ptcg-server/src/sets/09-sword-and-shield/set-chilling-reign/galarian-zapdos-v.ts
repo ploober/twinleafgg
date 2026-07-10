@@ -19,7 +19,7 @@ export class GalarianZapdosV extends PokemonCard {
 
   public cardType: CardType = CardType.FIGHTING;
 
-  public hp: number = 210;
+  public hp: number = 200;
 
   public weakness = [{ type: CardType.PSYCHIC }];
 

@@ -11,7 +11,7 @@ export class Zebstrika extends PokemonCard {
   public cardType: CardType = L;
   public hp: number = 90;
   public weakness = [{ type: F }];
-  public retreat = [];
+  public retreat = [C];
 
   public attacks = [{
     name: 'Charge',

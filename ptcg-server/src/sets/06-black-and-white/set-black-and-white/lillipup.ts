@@ -11,7 +11,7 @@ export class Lillipup extends PokemonCard {
 
   public cardType: CardType = CardType.COLORLESS;
 
-  public hp: number = 60;
+  public hp: number = 50;
 
   public weakness = [{ type: CardType.FIGHTING }];
 

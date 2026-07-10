@@ -8,7 +8,7 @@ export class Regiceex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex];
   public cardType: CardType = W;
   public hp: number = 230;
-  public weakness = [{ type: L }];
+  public weakness = [{ type: M }];
   public resistance = [];
   public retreat = [C, C, C];
 

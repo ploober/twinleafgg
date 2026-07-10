@@ -18,7 +18,7 @@ export class Accelgor extends PokemonCard {
   public attacks = [
     {
       name: 'Acid Spray',
-      cost: [G],
+      cost: [C],
       damage: 20,
       text: 'Flip a coin. If heads, discard an Energy attached to the Defending Pokémon.'
     },

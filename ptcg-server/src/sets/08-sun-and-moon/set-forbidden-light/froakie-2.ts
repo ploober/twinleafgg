@@ -13,7 +13,7 @@ export class FroakieFrubbles extends PokemonCard {
 
   public cardType: CardType = CardType.WATER;
 
-  public hp: number = 70;
+  public hp: number = 50;
 
   public weakness = [{ type: CardType.GRASS }];
 

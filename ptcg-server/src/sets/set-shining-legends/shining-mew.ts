@@ -9,7 +9,7 @@ export class ShiningMew extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = CardType.PSYCHIC;
   public hp: number = 30;
-  public weakness = [{ type: CardType.DARK }];
+  public weakness = [{ type: CardType.PSYCHIC }];
   public retreat = [];
 
   public attacks = [{

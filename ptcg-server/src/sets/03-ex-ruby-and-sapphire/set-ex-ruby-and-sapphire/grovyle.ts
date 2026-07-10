@@ -23,7 +23,7 @@ export class Grovyle extends PokemonCard {
 
   public attacks = [{
     name: 'Slash',
-    cost: [W, C],
+    cost: [C, C],
     damage: 20,
     text: ''
   }];

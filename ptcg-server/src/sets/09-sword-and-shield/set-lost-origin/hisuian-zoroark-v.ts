@@ -15,7 +15,7 @@ export class HisuianZoroarkV extends PokemonCard {
 
   public cardType: CardType = CardType.COLORLESS;
 
-  public hp: number = 220;
+  public hp: number = 210;
 
   public weakness = [{ type: CardType.FIGHTING }];
 

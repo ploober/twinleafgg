@@ -36,7 +36,7 @@ export class GardevoirLVX extends PokemonCard {
   public cardType: CardType = P;
   public tags = [CardTag.POKEMON_LV_X];
   public hp: number = 130;
-  public weakness = [{ type: D }];
+  public weakness = [{ type: P }];
   public retreat = [C, C];
 
   public powers = [

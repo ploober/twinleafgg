@@ -25,7 +25,7 @@ export class Seadra extends PokemonCard {
     },
     {
       name: 'Hydro Jet',
-      cost: [C, C],
+      cost: [W],
       damage: 20,
       text: 'This attack does 20 damage to 1 of your opponent\'s Pokémon for each [W] Energy attached to this Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     },

@@ -10,7 +10,7 @@ export class Chikorita extends PokemonCard {
 
   public attacks = [{
     name: 'Razor Leaf',
-    cost: [C],
+    cost: [G],
     damage: 20,
     text: ''
   }];

@@ -17,7 +17,7 @@ export class Machop extends PokemonCard {
   {
     name: 'Kick',
     cost: [F, C, C],
-    damage: 20,
+    damage: 30,
     text: ''
   }];
 

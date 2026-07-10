@@ -22,7 +22,7 @@ export class Lilligant extends PokemonCard {
 
   public attacks = [{
     name: 'Spinning Attack',
-    cost: [G, G, C],
+    cost: [G, C, C],
     damage: 60,
     text: ''
   }];

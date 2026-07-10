@@ -6,7 +6,7 @@ export class Phanpy extends PokemonCard {
   public hp: number = 80;
   public cardType: CardType = F;
   public weakness = [{ type: G }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

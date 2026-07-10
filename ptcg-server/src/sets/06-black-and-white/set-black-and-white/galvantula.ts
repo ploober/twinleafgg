@@ -16,14 +16,14 @@ export class Galvantula extends PokemonCard {
   public attacks = [
     {
       name: 'Leech Life',
-      cost: [L],
-      damage: 30,
+      cost: [C, C],
+      damage: 40,
       text: 'Heal from this Pokémon the same amount of damage you did to your opponent\'s Active Pokémon.'
     },
     {
       name: 'Electroweb',
-      cost: [L, C, C],
-      damage: 60,
+      cost: [L],
+      damage: 20,
       text: 'The Defending Pokémon can\'t retreat during your opponent\'s next turn.'
     }
   ];

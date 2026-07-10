@@ -23,7 +23,7 @@ export class Nidorina extends PokemonCard {
     },
     {
       name: 'Double Kick',
-      cost: [C, C, C],
+      cost: [G, C, C],
       damage: 30,
       damageCalculation: 'x',
       text: 'Flip 2 coins. This attack does 30 damage times the number of heads.',

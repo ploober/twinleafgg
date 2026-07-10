@@ -9,7 +9,7 @@ import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs
 export class Magnemite extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = L;
-  public hp: number = 50;
+  public hp: number = 60;
   public weakness = [{ type: F }];
   public retreat = [C];
 

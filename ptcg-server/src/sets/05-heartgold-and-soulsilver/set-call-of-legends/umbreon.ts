@@ -11,7 +11,7 @@ export class Umbreon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Eevee';
   public cardType: CardType = D;
-  public hp: number = 80;
+  public hp: number = 90;
   public weakness = [{ type: F }];
   public resistance = [{ type: P, value: -20 }];
   public retreat = [C];

@@ -10,11 +10,11 @@ export class MegaSlowbroex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Slowpoke';
   public tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
-  public cardType: CardType = P;
-  public hp: number = 330;
-  public weakness = [{ type: D }];
+  public cardType: CardType = F;
+  public hp: number = 310;
+  public weakness = [{ type: G }];
   public resistance = [{ type: F, value: -30 }];
-  public retreat = [C, C, C];
+  public retreat = [C, C];
 
   public attacks = [{
     name: 'Shellnado Spin',

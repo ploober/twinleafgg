@@ -13,7 +13,7 @@ export class ErikasVileplumeex extends PokemonCard {
   public hp: number = 310;
   public weakness = [{ type: R }];
   public resistance = [];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public powers = [{
     name: 'Lovely Fragrance',

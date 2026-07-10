@@ -9,7 +9,7 @@ export class Lapras2 extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = W;
   public hp: number = 90;
-  public weakness = [{ type: L }];
+  public weakness = [{ type: M }];
   public retreat = [C, C];
 
   public attacks = [
@@ -21,8 +21,8 @@ export class Lapras2 extends PokemonCard {
     },
     {
       name: 'Surf',
-      cost: [W, C, C],
-      damage: 50,
+      cost: [W, W, C],
+      damage: 60,
       text: ''
     }
   ];

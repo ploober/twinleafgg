@@ -12,7 +12,7 @@ export class Altaria extends PokemonCard {
   public hp: number = 70;
   public weakness = [{ type: CardType.LIGHTNING }];
   public resistance = [{ type: CardType.FIGHTING, value: -30 }];
-  public retreat = [];
+  public retreat = [C];
   public powers = [
     {
       name: 'Safeguard',

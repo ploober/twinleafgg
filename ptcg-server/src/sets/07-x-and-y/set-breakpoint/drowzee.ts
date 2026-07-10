@@ -15,7 +15,7 @@ export class Drowzee extends PokemonCard {
   public attacks = [
     {
       name: 'Mumble',
-      cost: [P, C],
+      cost: [P],
       damage: 10,
       text: ''
     },

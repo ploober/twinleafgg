@@ -10,7 +10,7 @@ export class Metang extends PokemonCard {
   public cardType: CardType = M;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

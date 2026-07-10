@@ -15,13 +15,13 @@ export class Virizion extends PokemonCard {
   public attacks = [
     {
       name: 'Double Draw',
-      cost: [G],
+      cost: [C],
       damage: 0,
       text: 'Draw 2 cards.'
     },
     {
       name: 'Leaf Wallop',
-      cost: [G, G, C],
+      cost: [G, C],
       damage: 40,
       damageCalculation: '+',
       text: 'During your next turn, this Pokémon\'s Leaf Wallop attack does 40 more damage (before applying Weakness and Resistance).'

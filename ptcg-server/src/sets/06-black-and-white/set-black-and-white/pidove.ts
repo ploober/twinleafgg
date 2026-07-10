@@ -22,7 +22,7 @@ export class Pidove extends PokemonCard {
     },
     {
       name: 'Quick Attack',
-      cost: [C, C],
+      cost: [C],
       damage: 10,
       damageCalculation: '+',
       text: 'Flip a coin. If heads, this attack does 10 more damage.'

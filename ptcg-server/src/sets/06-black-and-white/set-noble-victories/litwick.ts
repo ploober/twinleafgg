@@ -6,7 +6,7 @@ import { State, StoreLike } from '../../../game';
 export class Litwick extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = P;
-  public hp: number = 60;
+  public hp: number = 50;
   public weakness = [{ type: D }];
   public retreat = [C];
 

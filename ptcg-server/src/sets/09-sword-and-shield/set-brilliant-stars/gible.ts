@@ -8,7 +8,7 @@ export class Gible extends PokemonCard {
 
   public attacks = [{
     name: 'Gnaw',
-    cost: [W, R],
+    cost: [W, F],
     damage: 30,
     text: ''
   }];

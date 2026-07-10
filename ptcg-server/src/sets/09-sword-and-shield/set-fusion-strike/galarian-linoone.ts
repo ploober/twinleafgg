@@ -9,7 +9,7 @@ export class GalarianLinoone extends PokemonCard {
 
   public cardType: CardType = CardType.DARK;
 
-  public hp: number = 60;
+  public hp: number = 90;
 
   public evolvesFrom = 'Galarian Zigzagoon';
 

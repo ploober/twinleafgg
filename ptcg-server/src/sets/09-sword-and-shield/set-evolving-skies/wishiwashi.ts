@@ -14,7 +14,7 @@ export class Wishiwashi extends PokemonCard {
 
   public hp: number = 30;
 
-  public weakness = [{ type: CardType.FIGHTING }];
+  public weakness = [{ type: CardType.LIGHTNING }];
 
   public retreat = [CardType.COLORLESS];
 

@@ -19,7 +19,7 @@ export class Combusken extends PokemonCard {
   public attacks = [
     {
       name: 'Lunge',
-      cost: [R, C],
+      cost: [C, C],
       damage: 60,
       text: 'Flip a coin. If tails, this attack does nothing.'
     }

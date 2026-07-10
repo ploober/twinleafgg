@@ -19,7 +19,7 @@ export class Corsola extends PokemonCard {
   },
   {
     name: 'Double Attack',
-    cost: [C],
+    cost: [W],
     damage: 0,
     text: 'Choose 2 of your opponent\'s Benched Pokémon. This attack does 10 damage to each of them. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
   }];

@@ -18,7 +18,7 @@ export class WhiteKyurem extends PokemonCard {
 
   public weakness = [{ type: CardType.METAL }];
 
-  public retreat = [CardType.COLORLESS, CardType.COLORLESS];
+  public retreat = [C, C, C];
 
   public attacks = [{
     name: 'Field Crush',

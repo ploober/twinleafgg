@@ -32,7 +32,7 @@ export class Charmeleon extends PokemonCard {
     {
       name: 'Fire Blast',
       cost: [CardType.FIRE, CardType.FIRE, CardType.FIRE],
-      damage: 70,
+      damage: 90,
       text: 'Discard an Energy from this Pokémon.',
     }
   ];

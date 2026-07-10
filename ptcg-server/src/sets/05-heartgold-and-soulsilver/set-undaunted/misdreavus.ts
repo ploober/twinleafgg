@@ -8,7 +8,7 @@ export class Misdreavus extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = P;
   public hp: number = 60;
-  public weakness = [{ type: P }];
+  public weakness = [{ type: D }];
   public resistance = [{ type: C, value: -20 }];
   public retreat = [C];
 

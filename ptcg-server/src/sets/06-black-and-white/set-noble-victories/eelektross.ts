@@ -14,8 +14,8 @@ export class Eelektross extends PokemonCard {
   public attacks = [
     {
       name: 'Wild Charge',
-      cost: [L, C, C],
-      damage: 80,
+      cost: [L, L, C],
+      damage: 90,
       text: 'This Pokémon does 20 damage to itself.'
     },
     {

@@ -11,18 +11,18 @@ export class Petilil extends PokemonCard {
 
   public stage: Stage = Stage.BASIC;
 
-  public cardType: CardType = CardType.GRASS;
+  public cardType: CardType = CardType.WATER;
 
-  public hp: number = 60;
+  public hp: number = 80;
 
-  public weakness = [{ type: CardType.FIRE }];
+  public weakness = [{ type: CardType.GRASS }];
 
   public resistance = [{
     type: CardType.WATER,
     value: -20
   }];
 
-  public retreat = [CardType.COLORLESS];
+  public retreat = [C, C];
 
   public attacks = [{
     name: 'Ram',

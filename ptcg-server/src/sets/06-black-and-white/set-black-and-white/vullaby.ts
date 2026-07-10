@@ -10,7 +10,7 @@ export class Vullaby extends PokemonCard {
   public cardType: CardType = D;
   public hp: number = 60;
   public weakness = [{ type: L }];
-  public resistance = [{ type: P, value: -20 }];
+  public resistance = [{ type: F, value: -20 }];
   public retreat = [C];
 
   public attacks = [

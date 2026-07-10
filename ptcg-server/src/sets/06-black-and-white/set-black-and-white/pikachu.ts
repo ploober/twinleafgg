@@ -16,13 +16,13 @@ export class Pikachu extends PokemonCard {
   public attacks = [
     {
       name: 'Energize',
-      cost: [C],
+      cost: [L],
       damage: 0,
       text: 'Search your discard pile for a [L] Energy card and attach it to this Pokémon.'
     },
     {
       name: 'Thunderbolt',
-      cost: [L, L, C],
+      cost: [L, C, C],
       damage: 80,
       text: 'Discard all Energy attached to this Pokémon.'
     }

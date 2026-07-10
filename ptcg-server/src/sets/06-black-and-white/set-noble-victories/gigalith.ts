@@ -17,8 +17,8 @@ export class Gigalith extends PokemonCard {
   public attacks = [
     {
       name: 'Power Gem',
-      cost: [F, C, C],
-      damage: 60,
+      cost: [F, C, C, C],
+      damage: 90,
       text: 'Does 10 damage to each of your opponent\'s Benched Pokémon for each Energy attached to this Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     }
   ];

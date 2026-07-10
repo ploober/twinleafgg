@@ -10,9 +10,9 @@ export class Gurdurr2 extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Timburr';
   public cardType: CardType = F;
-  public hp: number = 90;
+  public hp: number = 80;
   public weakness = [{ type: P }];
-  public retreat = [C, C, C];
+  public retreat = [C, C];
 
   public attacks = [
     {

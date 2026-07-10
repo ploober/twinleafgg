@@ -23,7 +23,7 @@ export class Arbok extends PokemonCard {
   },
   {
     name: 'Poison Fang',
-    cost: [G, G],
+    cost: [G, G, C],
     damage: 20,
     text: 'The Defending Pokémon is now Poisoned.'
   }];

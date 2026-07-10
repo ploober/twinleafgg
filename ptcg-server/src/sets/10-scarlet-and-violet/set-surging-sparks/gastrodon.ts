@@ -12,7 +12,7 @@ import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 export class Gastrodon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Shellos';
-  public cardType: CardType = W;
+  public cardType: CardType = F;
   public hp: number = 130;
   public weakness = [{ type: G }];
   public retreat = [C, C, C];

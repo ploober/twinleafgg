@@ -9,9 +9,9 @@ export class Scolipede extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Whirlipede';
   public cardType: CardType = P;
-  public hp: number = 140;
+  public hp: number = 150;
   public weakness = [{ type: P }];
-  public retreat = [C, C];
+  public retreat = [C, C, C];
 
   public attacks = [
     {

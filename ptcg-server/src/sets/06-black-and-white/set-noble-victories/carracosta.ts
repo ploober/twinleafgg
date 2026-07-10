@@ -14,7 +14,7 @@ export class Carracosta extends PokemonCard {
   public cardType: CardType = W;
   public hp: number = 140;
   public weakness = [{ type: G }];
-  public retreat = [C, C, C];
+  public retreat = [C, C, C, C];
 
   public powers = [{
     name: 'Solid Rock',

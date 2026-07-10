@@ -22,8 +22,8 @@ export class Klink extends PokemonCard {
     },
     {
       name: 'Bind',
-      cost: [M, C, C],
-      damage: 30,
+      cost: [M],
+      damage: 10,
       text: ''
     }
   ];

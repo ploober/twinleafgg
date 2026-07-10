@@ -27,10 +27,10 @@ export class Tranquill extends PokemonCard {
   public retreat = [C];
 
   public attacks = [
-    { name: 'Gust', cost: [C, C], damage: 30, text: '' },
+    { name: 'Gust', cost: [C], damage: 20, text: '' },
     {
       name: 'Quick Attack',
-      cost: [C, C, C],
+      cost: [C, C],
       damage: 20,
       damageCalculation: '+',
       text: 'Flip a coin. If heads, this attack does 30 more damage.'

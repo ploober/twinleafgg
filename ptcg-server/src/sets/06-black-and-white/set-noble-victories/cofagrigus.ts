@@ -17,7 +17,7 @@ export class Cofagrigus extends PokemonCard {
   public attacks = [
     {
       name: 'Damagriiigus',
-      cost: [P],
+      cost: [P, C],
       damage: 0,
       text: 'Move up to 3 damage counters from 1 of your Pokémon to 1 of your opponent\'s Pokémon.'
     },

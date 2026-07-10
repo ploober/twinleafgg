@@ -15,7 +15,7 @@ export class Haunter extends PokemonCard {
 
   public attacks = [{
     name: 'Hypnosis',
-    cost: [],
+    cost: [P],
     damage: 0,
     text: 'The Defending Pokémon is now Asleep.'
   },

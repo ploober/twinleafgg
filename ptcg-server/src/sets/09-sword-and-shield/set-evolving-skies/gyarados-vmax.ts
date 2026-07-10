@@ -26,7 +26,7 @@ export class GyaradosVMAX extends PokemonCard {
 
   public attacks = [{
     name: 'Hyper Beam',
-    cost: [CardType.WATER, CardType.COLORLESS, CardType.COLORLESS],
+    cost: [W, W, C],
     damage: 120,
     text: 'Discard an Energy from your opponent\'s Active Pokémon.'
   }, {

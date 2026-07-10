@@ -9,9 +9,9 @@ import { WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/p
 export class Sandile extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = F;
-  public hp: number = 60;
+  public hp: number = 70;
   public weakness = [{ type: W }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {
@@ -22,8 +22,8 @@ export class Sandile extends PokemonCard {
     },
     {
       name: 'Bite',
-      cost: [C, C],
-      damage: 20,
+      cost: [F, C, C],
+      damage: 30,
       text: ''
     }
   ];

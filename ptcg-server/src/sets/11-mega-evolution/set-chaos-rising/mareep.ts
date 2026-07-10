@@ -12,7 +12,7 @@ export class Mareep extends PokemonCard {
   public hp: number = 70;
   public cardType: CardType = L;
   public weakness = [{ type: F }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {

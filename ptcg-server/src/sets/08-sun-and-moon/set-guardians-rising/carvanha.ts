@@ -4,14 +4,14 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 export class Carvanha extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = W;
-  public hp: number = 60;
+  public hp: number = 50;
   public weakness = [{ type: G }];
   public retreat = [C];
 
   public attacks = [
     {
       name: 'Bite',
-      cost: [C],
+      cost: [W],
       damage: 10,
       text: ''
     }

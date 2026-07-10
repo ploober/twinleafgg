@@ -14,7 +14,7 @@ export class Flygonex extends PokemonCard {
   public hp: number = 150;
   public weakness = [{ type: C }];
   public resistance = [{ type: L, value: -30 }, { type: F, value: -30 }];
-  public retreat = [C, C, C];
+  public retreat = [C, C];
 
   public powers = [{
     name: 'Emerge Charge',
