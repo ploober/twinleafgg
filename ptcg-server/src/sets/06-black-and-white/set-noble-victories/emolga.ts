@@ -24,7 +24,7 @@ export class Emolga extends PokemonCard {
     {
       name: 'Electrichain',
       cost: [L, C, C],
-      damage: 40,
+      damage: 10,
       text: 'If the Defending Pokémon has any Energy attached to it, this attack does 20 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     }
   ];

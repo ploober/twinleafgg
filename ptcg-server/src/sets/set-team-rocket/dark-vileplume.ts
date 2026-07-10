@@ -24,7 +24,7 @@ export class DarkVileplume extends PokemonCard {
     {
       name: 'Petal Whirlwind',
       cost: [G, G, G],
-      damage: 10,
+      damage: 30,
       text: 'Flip 3 coins. This attack does 30 damage times the number of heads. If you get 2 or more heads, Dark Vileplume is now Confused (after doing damage).'
     },
   ];

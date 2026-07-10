@@ -16,7 +16,7 @@ export class Stonjourner extends PokemonCard {
   public attacks = [{
     name: 'Land\'s Pulse',
     cost: [F, C],
-    damage: 60,
+    damage: 30,
     text: 'If a Stadium is in play, this attack does 30 more damage.'
   },
   {

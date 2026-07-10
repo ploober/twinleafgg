@@ -13,7 +13,7 @@ export class Hoppip extends PokemonCard {
   public attacks = [{
     name: 'Continuous Spin',
     cost: [G],
-    damage: 10,
+    damage: 20,
     damageCalculationn: 'x',
     text: 'Flip a coin until you get tails. This attack does 20 damage for each heads.'
   }];
@@ -37,7 +37,7 @@ export class Hoppip extends PokemonCard {
           if (result === true) {
             return flipCoin(heads + 1);
           }
-          effect.damage = 10 * heads;
+          effect.damage = 20 * heads;
           return state;
         });
       };

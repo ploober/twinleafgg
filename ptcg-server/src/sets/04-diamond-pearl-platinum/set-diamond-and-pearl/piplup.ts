@@ -21,7 +21,7 @@ export class Piplup extends PokemonCard {
   {
     name: 'Water Splash',
     cost: [W, C],
-    damage: 10,
+    damage: 20,
     damageCalculation: '+',
     text: 'Flip a coin. If heads, this attack does 20 damage plus 10 more damage.'
   }];

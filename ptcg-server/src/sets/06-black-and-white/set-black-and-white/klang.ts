@@ -24,9 +24,9 @@ export class Klang extends PokemonCard {
     {
       name: 'Gear Grind',
       cost: [M, M, C],
-      damage: 80,
+      damage: 60,
       damageCalculation: 'x',
-      text: 'Flip 2 coins. This attack does 80 damage times the number of heads.'
+      text: 'Flip 2 coins. This attack does 60 damage times the number of heads.'
     }
   ];
 
@@ -41,7 +41,7 @@ export class Klang extends PokemonCard {
       const player = effect.player;
       MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 2, results => {
         const heads = results.filter(r => r).length;
-        (effect as AttackEffect).damage = 80 * heads;
+        (effect as AttackEffect).damage = 60 * heads;
       });
     }
     return state;

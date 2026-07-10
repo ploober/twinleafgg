@@ -31,7 +31,7 @@ export class Tranquill extends PokemonCard {
     {
       name: 'Quick Attack',
       cost: [C, C, C],
-      damage: 30,
+      damage: 20,
       damageCalculation: '+',
       text: 'Flip a coin. If heads, this attack does 30 more damage.'
     }
