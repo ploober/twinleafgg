@@ -559,6 +559,12 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/duosion.ts",
+      "signatures": [
+        "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);"
+      ]
     }
   ]
 }

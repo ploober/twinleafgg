@@ -53,7 +53,11 @@ function* useCellularEvolution(next: Function, store: StoreLike, state: State, e
   });
 
   if (cards.length === 0) {
-    return state;  // canceled by user
+    // Fail-to-find (deck holds no valid evolution) or a voluntary decline. A valid recipient exists
+    // (evolutionNames non-empty, checked above), so the deck search was legal and mandatory and owes the
+    // shuffle even when nothing is found — compendium #1108/#576/#126. (TA-82) [conformance]
+    SHUFFLE_DECK(store, state, player);
+    return state;
   }
 
   const evolution = cards[0] as PokemonCard;
