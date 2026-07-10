@@ -6,7 +6,7 @@ import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { StateUtils } from '../../../game/store/state-utils';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Salamenceex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex];
@@ -57,6 +57,9 @@ export class Salamenceex extends PokemonCard {
     // Dragon Impact
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       if (!player.active.cards.some(c => c.superType === SuperType.ENERGY)) {
         return state;

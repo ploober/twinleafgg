@@ -2,7 +2,7 @@ import { CardType, Stage, SpecialCondition, SuperType } from '../../../game/stor
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { State, StateUtils, StoreLike, DiscardEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Camerupt extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -49,6 +49,9 @@ export class Camerupt extends PokemonCard {
     // Power Stomp
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       // Check if this Pokémon has at least 2 energy attached
       const energyCount = player.active.cards.filter(card =>

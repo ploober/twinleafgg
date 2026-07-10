@@ -2,7 +2,7 @@ import { PokemonCard, Stage, CardType, StoreLike, State, Card } from '../../../g
 import { Effect } from '../../../game/store/effects/effect';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { StateUtils, ChooseCardsPrompt, CoinFlipPrompt, GameMessage, SuperType } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Servine extends PokemonCard {
 
@@ -36,6 +36,9 @@ export class Servine extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       return store.prompt(state, new CoinFlipPrompt(
         player.id, GameMessage.COIN_FLIP

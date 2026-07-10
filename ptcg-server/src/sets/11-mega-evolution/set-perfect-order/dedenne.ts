@@ -1,9 +1,8 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage } from '../../../game';
+import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage, CoinFlipPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { CoinFlipEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, ADD_PARALYZED_TO_PLAYER_ACTIVE } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, ADD_PARALYZED_TO_PLAYER_ACTIVE, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Dedenne extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -96,13 +95,16 @@ export class Dedenne extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const coinFlipEffect = new CoinFlipEffect(player, (result: boolean) => {
+      // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
+      // Uses CoinFlipPrompt (not the inline CoinFlipEffect) so the flip pauses without the
+      // FlipStarvation rollback that would discard the pre-flip damage (TA-79 / iron-hands TEF-61).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
+      return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (result: boolean) => {
         if (result === true) {
           ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);
         }
       });
-
-      return store.reduceEffect(state, coinFlipEffect);
     }
 
     return state;

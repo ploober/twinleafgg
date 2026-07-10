@@ -1,9 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils } from '../../../game';
+import { StoreLike, State, StateUtils, CoinFlipPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { ADD_MARKER, CLEAR_MARKER_AND_OPPONENTS_POKEMON_MARKER_AT_END_OF_TURN, COIN_FLIP_PROMPT, PREVENT_DAMAGE_IF_TARGET_HAS_MARKER, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ADD_MARKER, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, CLEAR_MARKER_AND_OPPONENTS_POKEMON_MARKER_AT_END_OF_TURN, PREVENT_DAMAGE_IF_TARGET_HAS_MARKER, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Shelmet extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -34,7 +34,10 @@ export class Shelmet extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      return COIN_FLIP_PROMPT(store, state, player, result => {
+      // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
+      return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), result => {
         if (!result)
           return;
         ADD_MARKER(this.SHELL_HIT_MARKER, player.active, this);

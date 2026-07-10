@@ -2,7 +2,7 @@ import { CardType, Stage, SuperType } from '../../../game/store/card/card-types'
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { State, StateUtils, StoreLike, DiscardEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class TapuKoko extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -52,6 +52,9 @@ export class TapuKoko extends PokemonCard {
     // Thunder Blast
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       // Check if this Pokémon has at least 2 energy attached
       const energyCount = player.active.cards.filter(card =>

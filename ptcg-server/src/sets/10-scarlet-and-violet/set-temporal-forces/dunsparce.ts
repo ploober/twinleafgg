@@ -2,11 +2,12 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
+import { CoinFlipPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AbstractAttackEffect } from '../../../game/store/effects/attack-effects';
 import { StateUtils } from '../../../game/store/state-utils';
 import { MarkerConstants } from '../../../game/store/markers/marker-constants';
-import { WAS_ATTACK_USED, COIN_FLIP_PROMPT, PREVENT_DAMAGE, CLEAR_MARKER_AND_OPPONENTS_POKEMON_MARKER_AT_END_OF_TURN } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, PREVENT_DAMAGE, CLEAR_MARKER_AND_OPPONENTS_POKEMON_MARKER_AT_END_OF_TURN, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Dunsparce extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -44,7 +45,10 @@ export class Dunsparce extends PokemonCard {
     // prevent-damage belongs to Dig; it was wrongly gated on index 0, so Dig did nothing (no flip,
     // turn just ended) while Gnaw wrongly flipped.
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      COIN_FLIP_PROMPT(store, state, effect.player, result => {
+      // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
+      state = store.prompt(state, new CoinFlipPrompt(effect.player.id, GameMessage.COIN_FLIP), result => {
         if (result) {
           PREVENT_DAMAGE(store, state, effect, this);
         }

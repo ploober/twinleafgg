@@ -5,7 +5,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { NEXT_TURN_ATTACK_BONUS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { NEXT_TURN_ATTACK_BONUS, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Metagross extends PokemonCard {
 
@@ -57,6 +57,9 @@ export class Metagross extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);

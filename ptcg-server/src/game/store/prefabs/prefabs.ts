@@ -116,6 +116,35 @@ export function PUT_DAMAGE(effect: Effect): effect is PutDamageEffect {
 }
 
 /**
+ * Rulebook attack step F / rulings compendium #543 ("Do damage first, then apply effects")
+ * and #649 ("the effects of attacks are not applied until after damage is done").
+ *
+ * For a "N damage. <post-damage rider>" attack whose rider PAUSES the game (a coin flip, a
+ * discard-Energy prompt, an Energy-move prompt, ...), call this at the TOP of the attack's
+ * WAS_ATTACK_USED block, before prompting the rider. It deals the base damage up front and
+ * zeroes effect.damage, so the rider resolves against the already-applied damage.
+ *
+ * Without it, the engine applies effect.damage only after reduceEffect returns (game-effect.ts),
+ * so the game pauses at the rider showing 0 damage on the target — a cross-engine observability
+ * gap (TA-79). Weakness/Resistance and all damage reducers apply identically to the default path:
+ * this issues the same DealDamageEffect the core would have issued, only earlier.
+ *
+ * Precedent: Iron Hands "Volt Wave" (TEF 61) already uses this ordering inline.
+ */
+export function APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+): State {
+  if (effect.damage > 0) {
+    const dealDamage = new DealDamageEffect(effect, effect.damage);
+    state = store.reduceEffect(state, dealDamage);
+    effect.damage = 0;
+  }
+  return state;
+}
+
+/**
  *
  * A basic effect for checking the use of abilites.
  * @returns whether or not a specific ability was used.

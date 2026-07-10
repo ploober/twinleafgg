@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, Card, ChooseCardsPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 
 export class MarniesScraggy extends PokemonCard {
@@ -36,6 +36,9 @@ export class MarniesScraggy extends PokemonCard {
       if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
         return state;
       }
+
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       let card: Card;
       return store.prompt(state, new ChooseCardsPrompt(

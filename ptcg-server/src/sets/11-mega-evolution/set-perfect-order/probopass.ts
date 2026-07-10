@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Probopass extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -34,6 +34,8 @@ export class Probopass extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Nose Bumper - discard 3 Energy from this Pokemon
     if (WAS_ATTACK_USED(effect, 1, this)) {
+      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 3);
     }
 
