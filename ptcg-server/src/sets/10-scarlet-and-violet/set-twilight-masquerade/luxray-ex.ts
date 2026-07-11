@@ -6,7 +6,7 @@ import { Card, ChooseCardsPrompt, GameMessage, PokemonCard, StateUtils } from '.
 
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Luxrayex extends PokemonCard {
 
@@ -57,6 +57,9 @@ export class Luxrayex extends PokemonCard {
 
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // TA-83: apply the 120 base damage before the reveal/discard-from-opp-hand rider (rulebook Step F; #543/#649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       if (opponent.hand.cards.length == 0) {
         return state;

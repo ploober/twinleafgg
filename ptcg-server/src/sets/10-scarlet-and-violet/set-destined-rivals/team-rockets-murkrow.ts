@@ -5,7 +5,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsMurkrow extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -93,6 +93,11 @@ export class TeamRocketsMurkrow extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // TA-83: apply the 30 base damage before the "choose an attack to disable" rider pending,
+      // so the pending shows dmg=30 (rulebook Step F; #543 "damage first, then apply effects", #649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
       const pokemonCard = opponent.active.getPokemonCard();
 
       if (pokemonCard === undefined || pokemonCard.attacks.length === 0) {

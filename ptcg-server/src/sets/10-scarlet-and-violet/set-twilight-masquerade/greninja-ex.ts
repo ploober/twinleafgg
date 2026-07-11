@@ -19,7 +19,7 @@ import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects
 import { GameMessage } from '../../../game/game-message';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { ChooseEnergyPrompt } from '../../../game/store/prompts/choose-energy-prompt';
-import { DAMAGE_OPPONENT_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DAMAGE_OPPONENT_POKEMON, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Greninjaex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
@@ -61,6 +61,9 @@ export class Greninjaex extends PokemonCard {
       if (player.deck.cards.length === 0) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
+
+      // TA-83: apply the 170 base damage before the optional search rider (rulebook Step F; #543/#649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       state = store.prompt(
         state,

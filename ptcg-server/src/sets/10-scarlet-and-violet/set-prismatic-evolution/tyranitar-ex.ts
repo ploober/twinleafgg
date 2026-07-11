@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/ca
 import { StoreLike, State, StateUtils, ChooseCardsPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Tyranitarex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -51,6 +51,9 @@ export class Tyranitarex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // TA-83: apply the 150 base damage before the discard-from-opp-hand rider (rulebook Step F; #543/#649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       if (opponent.hand.cards.length === 0) {
         return state;
