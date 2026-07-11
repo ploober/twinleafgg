@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, StateUtils, SlotType, ChoosePokemonPrompt } from '../../../game';
+import { StoreLike, State, GameMessage, StateUtils, SlotType, ChoosePokemonPrompt, CardTarget } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 //import { KnockOutOpponentEffect } from '../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
@@ -76,16 +76,34 @@ export class Glaceonex extends PokemonCard {
     // Euclase
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+      const opponent = StateUtils.getOpponent(state, player);
+
+      // TA-85: only opponent Pokémon with exactly 6 damage counters (60 damage) are legal targets.
+      // Block the ineligible ones, and whiff (no pending) when none qualify — an attack with no legal
+      // effect target is declarable and simply does nothing (rulebook p.20; CF-14: no legal target ⇒ no pending).
+      const blocked: CardTarget[] = [];
+      let eligible = 0;
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
+        if (cardList.damage === 60) {
+          eligible++;
+        } else {
+          blocked.push(target);
+        }
+      });
+
+      if (eligible === 0) {
+        return state;
+      }
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false }
+        { allowCancel: false, blocked }
       ), targets => {
-        if (targets[0].damage === 60) {
-          // shash their knees
+        if (targets && targets.length > 0 && targets[0].damage === 60) {
+          // KO by piling on lethal damage
           targets[0].damage += 999;
         }
       });
