@@ -119,11 +119,13 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
     // Rain", Blastoise, Rayquaza-GX, Max Elixir, Azumarill, …) pulls the looked-at cards into a
     // card-local temp CardList and hands THAT to this prompt as its source. The temp is not a projected
     // zone, so at the attach pause those cards vanish from the wire — a card-conservation hole (RA-5);
-    // native rotomancer keeps them in the deck. Mirror that: project any source card missing from every
-    // observable zone back into the prompt owner's deck. Idempotent — a hand/discard-sourced attach has
-    // its source cards already projected, so the present-set check adds nothing.
-    const player = promptPlayer(state, prompt.playerId);
-    const proj = projected.players[playerIdToActor(state, player.id)];
+    // native rotomancer keeps them in the deck. Mirror that: re-home any source card that is absent from
+    // EVERY zone of EITHER player back onto its OWNER's deck. Two corrections vs a naive prompt-owner
+    // restore: (1) presence is checked across BOTH players — a source that still lives in an opponent
+    // zone (Team Rocket's Zapdos "Jamming Wing" sources Energy from the OPPONENT's Active) is NOT
+    // homeless and must be left alone, else it is duplicated into the prompt owner's deck (a
+    // card-conservation break); (2) a genuinely homeless card is routed to ITS owner's deck (via the
+    // import-origin cardOwner map), not the prompt owner's. Idempotent for hand/discard-sourced attaches.
     const present = new Set<string>();
     const addPip = (pip: PokemonInPlay | null) => {
       if (!pip) { return; }
@@ -131,14 +133,18 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       pip.energy.forEach(c => present.add(c.iid));
       pip.tools.forEach(c => present.add(c.iid));
     };
-    [proj.deck, proj.hand, proj.discard, proj.lostZone].forEach(z => z.forEach(c => present.add(c.iid)));
-    proj.prizes.forEach(p => present.add(p.iid));
-    addPip(proj.active);
-    proj.bench.forEach(addPip);
+    for (const actor of ['A', 'B'] as const) {
+      const p = projected.players[actor];
+      [p.deck, p.hand, p.discard, p.lostZone].forEach(z => z.forEach(c => present.add(c.iid)));
+      p.prizes.forEach(pz => present.add(pz.iid));
+      addPip(p.active);
+      p.bench.forEach(addPip);
+    }
     for (const card of prompt.cardList.cards) {
       const iid = ctx.cardToIid.get(card);
-      if (iid === undefined || present.has(iid)) { continue; }
-      proj.deck.push({ iid, printing: toPrinting(card) });
+      const owner = ctx.cardOwner.get(card);
+      if (iid === undefined || owner === undefined || present.has(iid)) { continue; }
+      projected.players[playerIdToActor(state, state.players[owner].id)].deck.push({ iid, printing: toPrinting(card) });
       present.add(iid);
     }
   },
