@@ -41,6 +41,14 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
 
     const opponent = StateUtils.getOpponent(state, effect.player);
 
+    // TA-86: attacker-side "attacks do N less damage" (Growl / Intimidating Stare class) — applied to the
+    // ATTACKER before Weakness/Resistance ("before applying Weakness and Resistance"). Reads the attacking
+    // Pokémon's own reduction; defaults to 0, so no effect for any card that doesn't set it.
+    const attacker = effect.player.active;
+    if (attacker && attacker.attacksDamageReductionNextTurn > 0 && effect.damage > 0) {
+      effect.damage = Math.max(0, effect.damage - attacker.attacksDamageReductionNextTurn);
+    }
+
     if (effect.attackEffect && target === opponent.active && !effect.weaknessApplied) {
       // Apply weakness
       const applyWeakness = new ApplyWeaknessEffect(effect.attackEffect, effect.damage);

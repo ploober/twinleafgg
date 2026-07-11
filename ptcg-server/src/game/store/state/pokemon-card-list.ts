@@ -30,6 +30,9 @@ export class PokemonCardList extends CardList {
   public showBasicAnimation: boolean = false;
   public triggerAttackAnimation: boolean = false;
   public damageReductionNextTurn: number = 0;
+  // Attacker-side reduction: "attacks used by this Pokémon do N less damage during its owner's next turn"
+  // (Growl / Intimidating Stare / Leer class). Read on the ATTACKER before Weakness/Resistance. (TA-86)
+  public attacksDamageReductionNextTurn: number = 0;
   public defendingPokemonExtraDamageNextTurn: number = 0;
   public defendingPokemonExtraDamageAttackerId: number | undefined = undefined;
   public defendingPokemonExtraDamagePending: boolean = false;
@@ -169,6 +172,7 @@ export class PokemonCardList extends CardList {
     this.cannotRetreatNextTurnPending = false;
     this.blockedAttackNameNextTurn = undefined;
     this.damageReductionNextTurn = 0;
+    this.attacksDamageReductionNextTurn = 0;
     this.defendingPokemonExtraDamageNextTurn = 0;
     this.defendingPokemonExtraDamageAttackerId = undefined;
     this.defendingPokemonExtraDamagePending = false;
@@ -202,6 +206,7 @@ export class PokemonCardList extends CardList {
     this.burnDamage = 20;
     this.confusionDamage = 30;
     this.damageReductionNextTurn = 0;
+    this.attacksDamageReductionNextTurn = 0;
     this.defendingPokemonExtraDamageNextTurn = 0;
     this.defendingPokemonExtraDamageAttackerId = undefined;
     this.defendingPokemonExtraDamagePending = false;

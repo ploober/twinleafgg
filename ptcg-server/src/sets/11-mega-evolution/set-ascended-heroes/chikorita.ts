@@ -32,9 +32,11 @@ export class Chikorita extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-86: Growl weakens the DEFENDING Pokémon's *attacks* by 20 next turn (attacker-side), not this
+      // Pokémon's incoming damage. Set the attacker-side reduction on the opponent's Active.
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      opponent.active.damageReductionNextTurn = 20;
+      opponent.active.attacksDamageReductionNextTurn = 20;
     }
     return state;
   }

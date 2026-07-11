@@ -608,6 +608,12 @@
         "&& state.phase === GamePhase.ATTACK) {",
         "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
       ]
+    },
+    {
+      "file": "set-ascended-heroes/chikorita.ts",
+      "signatures": [
+        "opponent.active.attacksDamageReductionNextTurn = 20;"
+      ]
     }
   ]
 }

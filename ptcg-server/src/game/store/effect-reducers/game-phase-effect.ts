@@ -224,6 +224,12 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
       cardList.damageReductionNextTurn = 0;
     });
 
+    // TA-86: clear the attacker-side reduction on the turn-ending player's OWN Pokémon — they have now had
+    // their "attacks do N less damage" turn (Growl set it on them the turn before), so it expires here.
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+      cardList.attacksDamageReductionNextTurn = 0;
+    });
+
     // Activate pending defending Pokemon extra damage at end of the defending player's turn
     player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
       if (cardList.defendingPokemonExtraDamagePending) {
