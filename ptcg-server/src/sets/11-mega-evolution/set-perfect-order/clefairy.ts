@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, GameError, GameMessage, StateUtils } from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AFTER_ATTACK, GUST_OPPONENT_BENCHED_POKEMON } from '../../../game/store/prefabs/prefabs';
 
@@ -37,7 +37,10 @@ export class Clefairy extends PokemonCard {
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
       if (!hasBench) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        // No Benched Pokémon to switch in — the attack is still declarable and simply whiffs ("do as
+        // much of the attack as you can"). An attack that switches the opponent's Active is never a
+        // play-restriction (that rule is for Trainers). Compendium #8732/#14066/#14808/#15106. (TA-80)
+        return state;
       }
 
       return GUST_OPPONENT_BENCHED_POKEMON(store, state, effect.player, {

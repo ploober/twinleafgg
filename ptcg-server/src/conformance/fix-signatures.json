@@ -565,6 +565,12 @@
       "signatures": [
         "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);"
       ]
+    },
+    {
+      "file": "set-perfect-order/clefairy.ts",
+      "signatures": [
+        "(TA-80)\n        return state;"
+      ]
     }
   ]
 }
