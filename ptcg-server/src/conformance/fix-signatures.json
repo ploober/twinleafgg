@@ -601,6 +601,13 @@
         "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
         "if (eligible === 0) {"
       ]
+    },
+    {
+      "file": "set-mega-evolution/marshadow.ts",
+      "signatures": [
+        "&& state.phase === GamePhase.ATTACK) {",
+        "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
+      ]
     }
   ]
 }

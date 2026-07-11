@@ -40,16 +40,24 @@ export class Marshadow extends PokemonCard {
       this.usedShadowySideKick = true;
     }
 
-    // If opponent's Pokemon KO'd by this attack, add prevention marker
-    if (effect instanceof KnockOutEffect && this.usedShadowySideKick) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
+    // If an opponent's Pokemon is KO'd by this attack's damage, protect Marshadow next turn.
+    // TA-87: two bugs fixed here — (1) KnockOutEffect.player is the KO'd Pokémon's OWNER, not the attacker,
+    // so the old `effect.target === opponent.active` guard never matched and the marker was added to the
+    // wrong Pokémon; (2) the exact-lethal attack KO is processed LATE (after AFTER_ATTACK), so the old
+    // EndTurnEffect flag-reset — which fires mid-attack (still ATTACK phase) — cleared `usedShadowySideKick`
+    // before the KnockOutEffect arrived. We now consume the flag only in this branch (guarded to the ATTACK
+    // phase and to Marshadow being the attacker's Active, so a lingering flag can't mis-fire).
+    if (effect instanceof KnockOutEffect
+      && this.usedShadowySideKick
+      && state.phase === GamePhase.ATTACK) {
+      const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon
+      const attacker = StateUtils.getOpponent(state, koOwner);  // Marshadow's owner
 
-      if (state.phase === GamePhase.ATTACK && effect.target === opponent.active && effect.target.getPokemonCard()) {
-        player.active.marker.addMarker(this.PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
-        opponent.marker.addMarker(this.CLEAR_PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
+      if (attacker.active.getPokemonCard() === this && effect.target.getPokemonCard()) {
+        attacker.active.marker.addMarker(this.PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
+        koOwner.marker.addMarker(this.CLEAR_PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
+        this.usedShadowySideKick = false;
       }
-      this.usedShadowySideKick = false;
     }
 
     // Prevent damage and effects when marker is set
@@ -70,10 +78,10 @@ export class Marshadow extends PokemonCard {
       });
     }
 
-    // Reset flag at end of turn
-    if (effect instanceof EndTurnEffect) {
-      this.usedShadowySideKick = false;
-    }
+    // NB: no during-attack reset of `usedShadowySideKick` — the exact-lethal KO is processed *after*
+    // AFTER_ATTACK, so any earlier reset (the old EndTurnEffect one) races ahead of the KnockOutEffect.
+    // The flag is consumed in the KO branch above; a lingering flag (attack that didn't KO) is inert
+    // because the KO branch only fires while Marshadow is the ATTACKER's Active in the ATTACK phase.
 
     return state;
   }
