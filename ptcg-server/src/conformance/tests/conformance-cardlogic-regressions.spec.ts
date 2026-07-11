@@ -378,30 +378,53 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(step(withTyr, [attack('A-act', 'Explosive Ascension')]))).toContain('choose');
   });
 
-  it('Gothorita "Fortunate Eye" resolves the opponent-deck reorder (no 500) and preserves the deck [TA-74 wht-042]', () => {
-    // "Look at the top 5 cards of your opponent's deck and put them back in any order." OrderCardsPrompt
-    // ('Order cards') has no wire pick action — pre-fix the driver threw "no decomposer (out of scope)".
-    // The adapter auto-resolves it with the identity order (a legal "put them back the same"), so the
-    // attack completes and card-conservation holds. Active stack: Gothita → Gothorita.
+  it('Gothorita "Fortunate Eye" EXTERNALIZES the opponent-deck reorder as choose×N [TA-81 wht-042]', () => {
+    // "Look at the top 5 cards of your opponent's deck and put them back in any order." The chosen order
+    // is a MATERIAL, OBSERVABLE decision (the attacker controls B's next draws; the reordered pile is on
+    // the full-info wire), so the adapter must EXTERNALIZE it as a `choose`-per-position sequence, NOT
+    // auto-resolve to identity (§B.6 / RE-7; matches rotomancer's choose×N). TA-74's identity auto-
+    // resolve was itself the bug. Active stack: Gothita → Gothorita.
     const Bdeck = Array.from({ length: 8 }, (_, i) => ({ iid: `B-dk${i}`, printing: WATER }));
-    const reorder = step(
-      board(player({ active: inPlay('A-act', ['wht-041', 'wht-042'], en(PSY, 1, 'a')) }),
-            player({ active: inPlay('B-act', [TANKY]), deck: Bdeck })),
-      [attack('A-act', 'Fortunate Eye')]);
-    expect(reorder.status).not.toBe('invalidAction');           // pre-fix: threw / 500
-    // The reorder is identity, so all 8 deck cards are conserved (none lost/duplicated). The turn then
-    // passes to B, whose draw step moves the top card (B-dk0) to hand — so count across deck+hand.
-    const bp = reorder.state.players.B;
-    const bDeckCards = [...bp.deck, ...bp.hand].map(c => c.iid).filter(i => i.startsWith('B-dk')).sort();
-    expect(bDeckCards).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']);
-    expect(bp.deck.map(c => c.iid)).toEqual(['B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']); // identity kept top order; B drew B-dk0
+    const gothBoard = () => board(
+      player({ active: inPlay('A-act', ['wht-041', 'wht-042'], en(PSY, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]), deck: Bdeck }));
+    const choose = (target: string) => ({ actor: 'A' as const, type: 'choose' as const, target });
+
+    // (a) With no reorder pick supplied, the attack PAUSES at A's reorder pending — the attacker (not B)
+    //     decides, the turn has NOT advanced, and the 5 looked-at cards are the choose targets.
+    const reorder = step(gothBoard(), [attack('A-act', 'Fortunate Eye')]);
+    expect(reorder.status).toBe('awaitingAction');              // pre-fix: resolved+advanced to B
+    expect(reorder.pending!.actor).toBe('A');                   // the reorderer, not the deck owner
+    expect(reorder.state.activePlayer).toBe('A');               // turn did NOT advance (pre-fix: B drew)
+    const chooseTargets = (reorder.pending!.legalActions as { type: string; target: string }[])
+      .filter(a => a.type === 'choose').map(a => a.target).sort();
+    expect(chooseTargets).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4']); // top-5 peeked
+    expect(types(reorder).every(t => t === 'choose')).toBe(true);
+    // The homeless temp pile is re-projected onto the TOP of B's deck (fixupProjection), in original
+    // order, so all 8 cards stay observable (card conservation) and match rotomancer's pre-resolve view.
+    expect(reorder.state.players.B.deck.map(c => c.iid))
+      .toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']);
+
+    // (b) Round-trip: supplying the full choose sequence resolves the reorder. The i-th pick lands at new
+    //     deck position i (top-first); the attack then auto-ends A's turn and B draws the NEW top card.
+    //     Pick order [dk2,dk4,dk0,dk3,dk1] ⇒ new top-5 = that order, then dk5..dk7; B draws dk2.
+    const done = step(gothBoard(), [attack('A-act', 'Fortunate Eye'),
+      choose('B-dk2'), choose('B-dk4'), choose('B-dk0'), choose('B-dk3'), choose('B-dk1')]);
+    expect(done.status).not.toBe('invalidAction');
+    expect(done.state.activePlayer).toBe('B');                  // turn advanced after the reorder resolved
+    expect(done.state.players.B.hand.map(c => c.iid)).toContain('B-dk2'); // B drew the chosen top card
+    expect(done.state.players.B.deck.map(c => c.iid))
+      .toEqual(['B-dk4', 'B-dk0', 'B-dk3', 'B-dk1', 'B-dk5', 'B-dk6', 'B-dk7']);
+    const conserved = [...done.state.players.B.deck, ...done.state.players.B.hand]
+      .map(c => c.iid).filter(i => i.startsWith('B-dk')).sort();
+    expect(conserved).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']);
 
     // Empty opponent deck → legal whiff (offered AND accepted), NOT a CANNOT_USE_ATTACK offer-then-reject.
     const emptyStart = board(player({ active: inPlay('A-act', ['wht-041', 'wht-042'], en(PSY, 1, 'a')) }),
                              player({ active: inPlay('B-act', [TANKY]) }));
     emptyStart.players.B.deck = [];
     const empty = step(emptyStart, [attack('A-act', 'Fortunate Eye')]);
-    expect(empty.status).not.toBe('invalidAction');             // pre-fix: invalidAction (CARD_SPECIFIC)
+    expect(empty.status).not.toBe('invalidAction');             // no reorder prompt (nothing to look at)
   });
 
   it('Lapras ex "Larimar Rain" keeps the looked-at deck cards observable at the attach pause [TA-75 scr-032]', () => {

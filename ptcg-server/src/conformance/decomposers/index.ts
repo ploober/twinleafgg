@@ -11,6 +11,7 @@ import { chooseAttackDecomposer } from './choose-attack';
 import { choosePrizeDecomposer } from './choose-prize';
 import { confirmDecomposer } from './confirm';
 import { selectOptionDecomposer } from './select-option';
+import { orderCardsDecomposer } from './order-cards';
 
 export * from './decomposer';
 
@@ -29,6 +30,7 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   choosePrizeDecomposer,
   confirmDecomposer,
   selectOptionDecomposer,
+  orderCardsDecomposer,
 ];
 
 const REGISTRY = new Map<string, PromptDecomposer<any>>(DECOMPOSERS.map(d => [d.type, d]));

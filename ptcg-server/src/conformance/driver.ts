@@ -9,7 +9,6 @@ import {
   UseAbilityAction as UseAbilityGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { OrderCardsPrompt, OrderCardsPromptType } from '../game/store/prompts/order-cards-prompt';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
@@ -318,18 +317,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
     if (prompt !== undefined) {
-      // 'Order cards' (reorder a revealed pile "in any order", e.g. Fortunate Eye's top-5 peek) sits
-      // OUTSIDE the wire decision model — there is no `order` pick action and the chosen order is
-      // private. Auto-resolve with the IDENTITY permutation ("put them back in the same order", always a
-      // legal answer), exactly the forced-order choice the shuffle path makes for a ≤1-card deck.
-      // Resolving here without surfacing a pending also keeps the card's in-flight temp CardList (the
-      // pulled cards, absent from every zone mid-prompt) from ever showing up in a projected state.
-      if (prompt.type === OrderCardsPromptType) {
-        const n = (prompt as OrderCardsPrompt).cards.cards.length;
-        const perm = Array.from({ length: n }, (_, i) => i);
-        dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
-        continue;
-      }
+      // 'Order cards' ("put these cards back in any order", e.g. Fortunate Eye's top-5 peek) is now a
+      // real externalized decision — the `orderCardsDecomposer` surfaces it as a `choose`-per-position
+      // sequence and re-homes the in-flight temp pile via its `fixupProjection` (TA-81 / §B.6). It is
+      // no longer auto-resolved here; it falls through to the standard decomposable path below.
       const kind = classify(prompt);
 
       if (kind === 'wait') {
@@ -520,6 +511,17 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     // picks already made read as applied (e.g. a picked prize is in the hand, not the pile).
     const dec = decomposerFor(midPrompt.prompt);
     dec.fixupProjection?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state);
+  } else if (rejection !== undefined) {
+    // An action was rejected while a decomposable prompt with homeless temp cards was still open — e.g.
+    // an illegal action submitted mid-reorder (OrderCards) or mid-attach. The rollback state still
+    // holds that open prompt, but we are NOT surfacing it, so its fix-up never ran and its temp pile
+    // (absent from every zone) would vanish from the projected rejection state. Re-home it here; empty
+    // picks = the pre-pick projection, which matches the rolled-back store (picks accumulate adapter-
+    // side and are never dispatched until the decision completes).
+    const open = game.state.prompts.find(p => p.result === undefined);
+    if (open !== undefined && classify(open) === 'decomposable') {
+      decomposerFor(open).fixupProjection?.(open, [], game.ctx, game.state, state);
+    }
   }
   if (rejection !== undefined) {
     // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.

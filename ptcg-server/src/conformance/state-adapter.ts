@@ -48,6 +48,12 @@ function resolveCard(printing: string): Card {
 export interface IidContext {
   iidToCard: Map<string, Card>;
   cardToIid: Map<Card, string>;
+  /** Import-origin owner (player index 0/1) of each Card, recorded at build time. `Card` has no owner
+   *  field, so a decomposer that must re-home a card absent from every zone — e.g. the OrderCards
+   *  temp pile (Fortunate Eye peeks the OPPONENT's deck; the prompt owner ≠ the cards' owner) — reads
+   *  the source deck from here. Keyed on object identity, so it survives rollback deepClone like the
+   *  iid maps above. */
+  cardOwner: Map<Card, number>;
   /** The game-constant first player, echoed from `initialState.firstPlayer`. twinleaf's engine `State`
    *  has no first-player field (setup is out of scope), so it is carried here and projected verbatim. */
   firstPlayer: NeutralPlayerId;
@@ -123,10 +129,14 @@ function collectPrintings(initial: NeutralState): string[] {
 
 class Importer {
   private nextId = 1;
+  /** Player index whose zone is currently being built; stamped onto every materialized card as its
+   *  import-origin owner (see IidContext.cardOwner). buildPlayer sets it; the stadium passes an
+   *  explicit owner. -1 = unknown (not recorded). */
+  private owner = -1;
   constructor(private ctx: IidContext) { }
 
-  /** Resolve a printing to a fresh Card instance and register it in the iid map. */
-  materialize(ref: CardRef): Card {
+  /** Resolve a printing to a fresh Card instance and register it in the iid + owner maps. */
+  materialize(ref: CardRef, owner: number = this.owner): Card {
     const card = resolveCard(ref.printing);
     card.id = this.nextId++;
     if (this.ctx.iidToCard.has(ref.iid)) {
@@ -134,6 +144,9 @@ class Importer {
     }
     this.ctx.iidToCard.set(ref.iid, card);
     this.ctx.cardToIid.set(card, ref.iid);
+    if (owner >= 0) {
+      this.ctx.cardOwner.set(card, owner);
+    }
     return card;
   }
 
@@ -170,6 +183,7 @@ class Importer {
   }
 
   buildPlayer(index: number, ps: PlayerState, turn: number): Player {
+    this.owner = index; // every card materialized below is owned by this player
     const player = new Player();
     player.id = index + 1;
     // Name = neutral id so game logs carry a recoverable actor (display-only in the engine;
@@ -258,7 +272,7 @@ function ensurePrintingsLoaded(printings: string[]): void {
 export function importState(initial: NeutralState): ImportedGame {
   ensurePrintingsLoaded(collectPrintings(initial));
 
-  const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map(), firstPlayer: initial.firstPlayer };
+  const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map(), cardOwner: new Map(), firstPlayer: initial.firstPlayer };
   const importer = new Importer(ctx);
 
   const handler = new ConformanceStoreHandler();
@@ -276,8 +290,8 @@ export function importState(initial: NeutralState): ImportedGame {
   state.players = [playerA, playerB];
 
   if (initial.stadium) {
-    const owner = state.players[actorIndex(initial.stadium.owner)];
-    owner.stadium.cards.push(importer.materialize(initial.stadium));
+    const stadiumOwner = actorIndex(initial.stadium.owner);
+    state.players[stadiumOwner].stadium.cards.push(importer.materialize(initial.stadium, stadiumOwner));
   }
 
   store.state = state;
