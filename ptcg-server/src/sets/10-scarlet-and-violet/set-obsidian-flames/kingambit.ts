@@ -11,7 +11,7 @@ export class Kingambit extends PokemonCard {
   public evolvesFrom = 'Bisharp';
   public cardType: CardType = M;
   public hp: number = 180;
-  public weakness = [{ type: F }];
+  public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
   public retreat = [C, C, C, C];
 
