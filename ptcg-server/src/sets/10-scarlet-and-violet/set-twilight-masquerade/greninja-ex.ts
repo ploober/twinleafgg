@@ -9,7 +9,6 @@ import {
   PlayerType,
   SlotType,
   ShuffleDeckPrompt,
-  GameError,
   StateUtils,
   ConfirmPrompt,
 } from '../../../game';

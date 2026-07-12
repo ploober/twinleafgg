@@ -10,6 +10,7 @@ import { GameMessage } from '../../game/game-message';
 import { PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
 import { SuperType } from '../../game/store/card/card-types';
 import { StateUtils } from '../../game/store/state-utils';
+import { Card } from '../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-prompt';
 import { PutDamagePrompt } from '../../game/store/prompts/put-damage-prompt';
@@ -358,7 +359,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     let discarded: string[] | null = null;
     game.store.prompt(game.state, new ChooseCardsPrompt(
       p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 1, allowCancel: false }
-    ), cards => { discarded = cards.map(c => c.fullName); });
+    ), cards => { discarded = cards.map((c: Card) => c.fullName); });
 
     const res = replay(game, []); // submit NO action — a forced discard must not need one
     expect(discarded).not.toBeNull(); // auto-resolved atomically — the callback fired without an action

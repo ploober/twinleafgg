@@ -84,22 +84,24 @@ export interface RawSnapshot {
  * non-double-counting set and a superset of every card the projection reads (stack/energies ⊆
  * slot.cards, tools ⊆ slot.tools; plus the stadium, supporter, prize, and pile zones).
  */
-export function collectAllCards(state: State): Card[] {
+export function collectPlayerCards(player: Player): Card[] {
   const cards: Card[] = [];
-  for (const player of state.players) {
-    const lists: CardList[] = [
-      player.deck, player.hand, player.discard, player.lostzone, player.stadium, player.supporter,
-      player.active, ...player.bench, ...player.prizes,
-    ];
-    for (const list of lists) {
-      cards.push(...list.cards);
-    }
-    // Attached tools are not in `.cards` — collect them from each Pokemon slot's `.tools`.
-    for (const slot of [player.active, ...player.bench]) {
-      cards.push(...slot.tools);
-    }
+  const lists: CardList[] = [
+    player.deck, player.hand, player.discard, player.lostzone, player.stadium, player.supporter,
+    player.active, ...player.bench, ...player.prizes,
+  ];
+  for (const list of lists) {
+    cards.push(...list.cards);
+  }
+  // Attached tools are not in `.cards` — collect them from each Pokemon slot's `.tools`.
+  for (const slot of [player.active, ...player.bench]) {
+    cards.push(...slot.tools);
   }
   return cards;
+}
+
+export function collectAllCards(state: State): Card[] {
+  return state.players.flatMap(collectPlayerCards);
 }
 
 /**
@@ -113,12 +115,16 @@ export function collectAllCards(state: State): Card[] {
 export function synthCtx(state: State): IidContext {
   const iidToCard = new Map<string, Card>();
   const cardToIid = new Map<Card, string>();
-  for (const card of collectAllCards(state)) {
-    const iid = String(card.id);
-    iidToCard.set(iid, card);
-    cardToIid.set(card, iid);
-  }
-  return { iidToCard, cardToIid, firstPlayer: 'A' };
+  const cardOwner = new Map<Card, number>();
+  state.players.forEach((player, idx) => {
+    for (const card of collectPlayerCards(player)) {
+      const iid = String(card.id);
+      iidToCard.set(iid, card);
+      cardToIid.set(card, iid);
+      cardOwner.set(card, idx);
+    }
+  });
+  return { iidToCard, cardToIid, cardOwner, firstPlayer: 'A' };
 }
 
 // ── snapshot ──
