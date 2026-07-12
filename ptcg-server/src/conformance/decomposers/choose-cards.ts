@@ -55,11 +55,12 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     if (rp.length >= max) {
       return null;
     }
-    // CF-8: a forced, non-varying discard DECIDED BY THE ACTIVE PLAYER is a non-decision — auto-resolve
-    // atomically (assemble fills in the forced indices) instead of surfacing a 1-option `discard` pending.
-    // A forced discard decided by the NON-active player — e.g. "your opponent discards a card from their
-    // hand" (Salazzle scr-024), a control-handoff to the opponent — is SURFACED by rotomancer, so it is
-    // NOT collapsed here (the collapse is scoped to the active player's own forced picks).
+    // CF-8/CF-17: the forced-atomic collapse is scoped to the ACTIVE player. A forced, non-varying discard
+    // the active player makes (own or opponent-targeting) is a turn-flow non-decision — auto-resolve
+    // atomically (assemble fills in the forced indices), no 1-option `discard` pending. A forced discard
+    // handed to the NON-active player — "your opponent discards a card from their hand" (Salazzle scr-024),
+    // a control-handoff where the opponent must act — surfaces uniformly (CF-17). This is a
+    // decision-granularity convention (no rulebook truth; the game state is identical either way).
     const activePlayer = state.players[state.activePlayer];
     const ownerIsActive = activePlayer !== undefined && prompt.player.id === activePlayer.id;
     if (rp.length === 0 && ownerIsActive && forcedDiscardIndices(prompt) !== null) {
