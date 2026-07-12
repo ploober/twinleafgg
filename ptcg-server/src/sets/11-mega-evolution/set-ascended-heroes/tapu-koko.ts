@@ -39,8 +39,9 @@ export class TapuKoko extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // Discard all cards from hand
-      const cards = player.hand.cards;
+      // Discard all cards from hand. Snapshot with .slice() — passing the live cards array to
+      // moveCardsTo splices while iterating and skips every other card (only half the hand discarded).
+      const cards = player.hand.cards.slice();
       player.hand.moveCardsTo(cards, player.discard);
 
       // Draw 5 cards

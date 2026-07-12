@@ -67,8 +67,10 @@ export class HopsRookidee extends PokemonCard {
     if (effect instanceof EndTurnEffect
       && effect.player.marker.hasMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_DEALS_LESS_DAMAGE_MARKER, this)) {
       effect.player.marker.removeMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_DEALS_LESS_DAMAGE_MARKER, this);
-      const opponent = StateUtils.getOpponent(state, effect.player);
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+      // The damage-reduction marker lives on the debuffed player's OWN Pokémon (the Defending Pokémon
+      // that took Intimidating Stare). This clear fires at the end of that player's turn — remove the
+      // marker from effect.player's Pokémon, not the opponent's, or the −20 never expires.
+      effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
         cardList.marker.removeMarker(this.DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_DEALS_LESS_DAMAGE_MARKER, this);
       });
     }

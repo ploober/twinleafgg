@@ -1,5 +1,5 @@
 import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils, PlayerType, CardTag } from '../../../game';
-import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { ApplyWeaknessEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
@@ -44,8 +44,13 @@ export class IronMoth extends PokemonCard {
       // "Heal from THIS Pokémon the same amount of damage you did" — heal Iron Moth itself, not
       // the opponent's Active. Targeting effect.target healed the wrong Pokémon and, when the
       // attack KO'd the opponent's Active, resolved to undefined → `Cannot read 'player'` (500).
-      if (effect.damage > 0) {
-        const healEffect = new HealEffect(player, player.active, effect.damage);
+      // Heal the ACTUAL damage dealt (post-Weakness/Resistance), not the pre-Weakness base — e.g.
+      // 30 base against a Fire-weak Active deals 60, so it heals 60.
+      const applyWeakness = new ApplyWeaknessEffect(effect, effect.damage);
+      store.reduceEffect(state, applyWeakness);
+      const dealt = applyWeakness.damage;
+      if (dealt > 0) {
+        const healEffect = new HealEffect(player, player.active, dealt);
         state = store.reduceEffect(state, healEffect);
       }
     }

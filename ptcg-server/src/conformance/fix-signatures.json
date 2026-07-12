@@ -212,7 +212,7 @@
     {
       "file": "set-shrouded-fable/iron-moth.ts",
       "signatures": [
-        "const healEffect = new HealEffect(player, player.active, effect.damage);"
+        "const healEffect = new HealEffect(player, player.active, dealt);"
       ]
     },
     {
@@ -643,6 +643,30 @@
       "file": "set-destined-rivals/electivire-ex.ts",
       "signatures": [
         "const count = Math.min(2, opponent.getPokemonInPlay().length);"
+      ]
+    },
+    {
+      "file": "set-journey-together/hops-rookidee.ts",
+      "signatures": [
+        "effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/tapu-koko.ts",
+      "signatures": [
+        "const cards = player.hand.cards.slice();"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-sharpedo-ex.ts",
+      "signatures": [
+        "MOVE_CARDS(store, state, player.deck, player.hand, { count: 2 });"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/iron-moth.ts",
+      "signatures": [
+        "const applyWeakness = new ApplyWeaknessEffect(effect, effect.damage);"
       ]
     }
   ]

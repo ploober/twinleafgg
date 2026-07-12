@@ -33,17 +33,20 @@ export class MegaSharpedoex extends PokemonCard {
   public fullName: string = 'Mega Sharpedo ex M2';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Greedy Fang — "Draw 2 cards."
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
       if (player.deck.cards.length === 0) {
         return state;
       }
-      MOVE_CARDS(store, state, player.deck, player.hand, { count: 1 });
+      MOVE_CARDS(store, state, player.deck, player.hand, { count: 2 });
       return state;
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Hungry Jaws — "+150 more if this Pokémon has any damage counters." (This block re-checked
+    // attack index 0, so the bonus never fired for Hungry Jaws.)
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       if (THIS_POKEMON_HAS_ANY_DAMAGE_COUNTERS_ON_IT(effect, this)) {
         THIS_ATTACK_DOES_X_MORE_DAMAGE(effect, store, state, 150);
       }
