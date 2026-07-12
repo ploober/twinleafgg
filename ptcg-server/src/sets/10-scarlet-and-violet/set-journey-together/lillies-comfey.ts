@@ -4,6 +4,8 @@ import { StoreLike, State, PokemonCardList, Card, ChooseCardsPrompt, GameMessage
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
+import { AfterAttackEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
+import { PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useCallForFamily(next: Function, store: StoreLike, state: State,
@@ -89,10 +91,28 @@ export class LilliesComfey extends PokemonCard {
 
   public fullName: string = 'Lillie\'s Comfey JTG';
 
+  private wantsToFadeOut: boolean = false;
+
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const generator = useCallForFamily(() => generator.next(), store, state, effect);
       return generator.next().value;
+    }
+
+    // Fade Out — "Put this Pokémon and all attached cards into your hand." Runs after damage
+    // (AfterAttackEffect), mirroring the Greedent DAA "Smack and Run" idiom. This attack had NO
+    // handler before, so the self-bounce never happened.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
+      this.wantsToFadeOut = true;
+    }
+
+    if (effect instanceof AfterAttackEffect && this.wantsToFadeOut) {
+      this.wantsToFadeOut = false;
+      PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);
+    }
+
+    if (effect instanceof EndTurnEffect) {
+      this.wantsToFadeOut = false;
     }
 
     return state;

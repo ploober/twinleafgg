@@ -668,6 +668,24 @@
       "signatures": [
         "const applyWeakness = new ApplyWeaknessEffect(effect, effect.damage);"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/monferno.ts",
+      "signatures": [
+        "the discard was wrongly wired to index 0."
+      ]
+    },
+    {
+      "file": "set-temporal-forces/mr-mime.ts",
+      "signatures": [
+        "only Asleep/Paralyzed do, which the engine already enforces"
+      ]
+    },
+    {
+      "file": "set-journey-together/lillies-comfey.ts",
+      "signatures": [
+        "PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);"
+      ]
     }
   ]
 }

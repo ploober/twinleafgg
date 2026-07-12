@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, TrainerType, SpecialCondition } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, PokemonCardList, GameError, GameMessage, ChooseCardsPrompt, TrainerCard } from '../../../game';
+import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, TrainerCard } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 
@@ -54,15 +54,10 @@ export class MrMime extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const cardList = StateUtils.findCardList(state, this) as PokemonCardList;
 
-      if (cardList.specialConditions.length > 0) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
-      }
-      if (cardList !== player.active) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
-      }
-
+      // Look-Alike Show is an ATTACK: special conditions (Poison/Burn/Confusion) do NOT prevent
+      // attacking — only Asleep/Paralyzed do, which the engine already enforces. The old
+      // `specialConditions.length > 0` guard wrongly blocked a Poisoned/Burned Mr. Mime.
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_COPY_EFFECT,

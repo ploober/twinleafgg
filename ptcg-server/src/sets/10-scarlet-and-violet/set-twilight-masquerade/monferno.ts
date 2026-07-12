@@ -25,7 +25,7 @@ export class Monferno extends PokemonCard {
     name: 'Chop',
     cost: [CardType.FIRE, CardType.COLORLESS],
     damage: 40,
-    text: 'Discard an Energy from this Pokémon.'
+    text: ''
   },
   {
     name: 'Heat Blow',
@@ -47,7 +47,9 @@ export class Monferno extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Heat Blow (index 1) — "Discard an Energy from this Pokémon." Chop (index 0) is a vanilla 40
+    // with no rider; the discard was wrongly wired to index 0.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
