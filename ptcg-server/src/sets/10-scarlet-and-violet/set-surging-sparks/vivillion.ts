@@ -5,15 +5,17 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { GameMessage } from '../../../game/game-message';
-import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, GameError, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
+import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useEvolutionPowder(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-97: Evo-Powder is legal to use whenever its cost is met — with an empty deck there is nothing
+  // to search, so it simply does nothing. Do NOT block the attack (was: throw CANNOT_PLAY_THIS_CARD).
   if (player.deck.cards.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
 
   // Look through all known cards to find out if Pokemon can evolve
@@ -33,9 +35,9 @@ function* useEvolutionPowder(next: Function, store: StoreLike, state: State,
     });
   });
 
-  // There is nothing that can evolve
+  // There is nothing that can evolve — the attack does nothing (declarable no-op), not a block.
   if (evolutionNames.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
 
   const blocked2: CardTarget[] = [];

@@ -4,7 +4,6 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { GameError, GameMessage } from '../../../game';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { LOOK_AT_TOP_X_CARDS_AND_BENCH_UP_TO_Y_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -57,10 +56,8 @@ export class Reuniclus extends PokemonCard {
       const player = effect.player;
       const openSlots = player.bench.filter(b => b.cards.length === 0);
 
-      if (player.deck.cards.length === 0 || openSlots.length === 0) {
-        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-      }
-
+      // TA-97: legal to use whenever the cost is met — the look/bench prefab already no-ops safely on
+      // an empty deck or a full Bench, so do NOT block the attack (was: throw CANNOT_PLAY_THIS_CARD).
       // Legacy implementation:
       // - Moved top 8 into a temporary CardList.
       // - Prompted for any number of Pokémon to bench (up to open bench slots).

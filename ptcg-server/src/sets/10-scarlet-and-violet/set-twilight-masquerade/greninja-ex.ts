@@ -58,12 +58,14 @@ export class Greninjaex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
-      }
-
       // TA-83: apply the 170 base damage before the optional search rider (rulebook Step F; #543/#649).
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
+      // TA-97: the search is "you may" (optional) — with an empty deck there is nothing to search, so
+      // skip it; the 170 still lands. Do NOT block the attack (was: throw CANNOT_USE_POWER, #1106/#1458).
+      if (player.deck.cards.length === 0) {
+        return state;
+      }
 
       state = store.prompt(
         state,

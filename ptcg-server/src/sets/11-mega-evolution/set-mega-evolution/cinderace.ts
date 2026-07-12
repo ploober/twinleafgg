@@ -1,4 +1,4 @@
-import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
+import { AttachEnergyPrompt, GameMessage, PlayerType, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { CardTag, CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -39,16 +39,21 @@ export class Cinderace extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
       // Rulebook attack step F: the base damage lands in the damage step, BEFORE the search/attach
       // effect pauses (the deck-search prompt below suspends the attack). Deal it now and zero the
       // declared damage so the engine doesn't re-apply it at the end. (Mirrors Miraidon tef-121.)
       const damageEffect = new DealDamageEffect(effect, effect.damage);
       state = store.reduceEffect(state, damageEffect);
       effect.damage = 0;
+
+      // TA-97 / RE-38: the energy attaches to "your Benched Pokémon". With an empty deck (nothing to
+      // find) or NO Benched Pokémon (no legal destination, compendium #1108) there is no search — and
+      // therefore no shuffle. Deal the 50 and stop; do NOT block the attack (was: throw
+      // CANNOT_USE_ATTACK before the damage even landed).
+      const hasBench = player.bench.some(b => b.cards.length > 0);
+      if (player.deck.cards.length === 0 || !hasBench) {
+        return state;
+      }
 
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,

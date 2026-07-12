@@ -698,6 +698,30 @@
       "signatures": [
         "min:1, not min:0"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/greninja-ex.ts",
+      "signatures": [
+        "the 170 still lands"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/cinderace.ts",
+      "signatures": [
+        "const hasBench = player.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/vivillion.ts",
+      "signatures": [
+        "Evo-Powder is legal to use whenever its cost is met"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/reuniclus.ts",
+      "signatures": [
+        "the look/bench prefab already no-ops safely"
+      ]
     }
   ]
 }
