@@ -40,20 +40,23 @@ export class Armarouge extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // "180 damage to 1 of your opponent's Benched Pokémon" targets the Bench only. With no Benched
-      // Pokémon the attack does nothing (compendium #2050) — no discard, no damage. (Previously an
-      // any-target prefab hit the lone Active for 180 → 360 via Weakness, an illegitimate KO.)
-      const benched = opponent.bench.filter(b => b.cards.length > 0);
-      if (benched.length === 0) {
-        return state;
-      }
-
+      // Compendium #2050 (SSP FAQ, TPCi 2024-11-07): the Fire-Energy discard is UNCONDITIONAL — you
+      // discard all Fire Energy even when the opponent has no Benched Pokémon. Only the 180 bench
+      // damage is contingent on a Bench target, and it never redirects to the Active.
       const fireEnergy = player.active.cards.filter(card =>
         card instanceof EnergyCard && card.name === 'Fire Energy'
       );
       const discardEnergy = new DiscardCardsEffect(effect, fireEnergy);
       discardEnergy.target = player.active;
       store.reduceEffect(state, discardEnergy);
+
+      // "180 damage to 1 of your opponent's Benched Pokémon" targets the Bench only. With no Benched
+      // Pokémon there is no damage (#2050). (Previously an any-target prefab hit the lone Active for
+      // 180 → 360 via Weakness, an illegitimate KO.)
+      const benched = opponent.bench.filter(b => b.cards.length > 0);
+      if (benched.length === 0) {
+        return state;
+      }
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,

@@ -636,6 +636,7 @@
     {
       "file": "set-surging-sparks/armarouge.ts",
       "signatures": [
+        "the Fire-Energy discard is UNCONDITIONAL",
         "if (benched.length === 0) {"
       ]
     },
@@ -702,7 +703,7 @@
     {
       "file": "set-twilight-masquerade/greninja-ex.ts",
       "signatures": [
-        "the 170 still lands"
+        "const shuffle = (s: State): State =>"
       ]
     },
     {

@@ -61,35 +61,43 @@ export class Greninjaex extends PokemonCard {
       // TA-83: apply the 170 base damage before the optional search rider (rulebook Step F; #543/#649).
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
-      // TA-97: the search is "you may" (optional) — with an empty deck there is nothing to search, so
-      // skip it; the 170 still lands. Do NOT block the attack (was: throw CANNOT_USE_POWER, #1106/#1458).
-      if (player.deck.cards.length === 0) {
-        return state;
-      }
-
+      // TA-97: the search is "you may" (optional) — never block the attack; the 170 always lands
+      // (was: throw CANNOT_USE_POWER, #1106/#1458). The "you may" choice is part of resolving the
+      // attack and is OFFERED even with an empty deck (the cross-engine re-fuzz showed rotomancer
+      // correctly presents the confirm before the KO check); only the search body no-ops when the
+      // deck is empty, so we still prompt but guard the ChooseCards with deck.cards.length > 0.
       state = store.prompt(
         state,
         new ConfirmPrompt(effect.player.id, GameMessage.SEARCH_DECK_FOR_CARD),
         (wantToUse) => {
-          if (wantToUse) {
-            return store.prompt(
-              state,
-              new ChooseCardsPrompt(
-                player,
-                GameMessage.CHOOSE_CARD_TO_HAND,
-                player.deck,
-                {},
-                { min: 1, max: 1, allowCancel: false },
-              ),
-              (cards) => {
-                player.deck.moveCardsTo(cards, player.hand);
-
-                return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-                  player.deck.applyOrder(order);
-                });
-              },
-            );
+          if (!wantToUse) {
+            return;
           }
+          // Opted in: "Then, shuffle your deck" ALWAYS happens once you choose to search — even on an
+          // empty deck (nothing to find, but the shuffle still occurs). rotomancer emits the shuffled
+          // event here and the cross-engine re-fuzz flagged twinleaf for omitting it; only the
+          // search-for-a-card (ChooseCards) is skipped when the deck is empty.
+          const shuffle = (s: State): State =>
+            store.prompt(s, new ShuffleDeckPrompt(player.id), (order) => {
+              player.deck.applyOrder(order);
+            });
+          if (player.deck.cards.length === 0) {
+            return shuffle(state);
+          }
+          return store.prompt(
+            state,
+            new ChooseCardsPrompt(
+              player,
+              GameMessage.CHOOSE_CARD_TO_HAND,
+              player.deck,
+              {},
+              { min: 1, max: 1, allowCancel: false },
+            ),
+            (cards) => {
+              player.deck.moveCardsTo(cards, player.hand);
+              return shuffle(state);
+            },
+          );
         },
       );
     }

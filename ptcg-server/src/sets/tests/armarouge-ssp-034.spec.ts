@@ -3,13 +3,16 @@ import { useAttack, getDamage, getEnergyCount } from './card-test-helpers';
 
 // TA-93 — Armarouge ssp-034 "Crimson Blaster": "Discard all [R] Energy from this Pokémon, and this
 // attack does 180 damage to 1 of your opponent's BENCHED Pokémon." It targets a Benched Pokémon
-// only. With an empty opponent Bench the attack does nothing (compendium #2050). twinleaf used an
-// any-target prefab, so with no Bench it hit the ACTIVE for 180 (×2 weakness => 360) — illegitimate.
+// only. Compendium #2050 (SSP FAQ, TPCi 2024-11-07): with no opponent Bench you STILL discard all
+// Fire Energy — only the 180 is skipped (and it never redirects to the Active). twinleaf originally
+// used an any-target prefab (no Bench => hit the ACTIVE for 180 ×2 weakness = 360); the first TA-93
+// fix then over-corrected to a full no-op (skipped the mandatory discard) — the cross-engine re-fuzz
+// caught that against rotomancer, which correctly discards. This spec now pins #2050 exactly.
 beforeAll(() => { loadAllSets(); });
 
 describe('Armarouge SSP — Crimson Blaster (TA-93)', () => {
 
-  it('does nothing when the opponent has no Benched Pokemon (no Active hit)', () => {
+  it('discards all Fire Energy but deals no damage when the opponent has no Benched Pokemon (#2050)', () => {
     const game = setupGame({
       turn: 2,
       player1: {
@@ -25,14 +28,12 @@ describe('Armarouge SSP — Crimson Blaster (TA-93)', () => {
       }
     });
 
-    const attackerEnergyBefore = getEnergyCount(game.state, 0, 'active');
-
     useAttack(game.store, game.state, 0, 'Crimson Blaster');
 
-    // No Benched target => the attack does nothing: opponent Active untouched...
+    // No Benched target => no damage anywhere; the Active is NOT redirected into (#2050)...
     expect(getDamage(game.state, 1, 'active')).toBe(0);
-    // ...and the attacker's Fire Energy is not discarded (whole attack no-ops per #2050).
-    expect(getEnergyCount(game.state, 0, 'active')).toBe(attackerEnergyBefore);
+    // ...but all Fire Energy is STILL discarded — the discard is unconditional (#2050: "Yes").
+    expect(getEnergyCount(game.state, 0, 'active')).toBe(0);
   });
 
   it('does 180 to a Benched Pokemon (not the Active) and discards Fire Energy', () => {
