@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils, DiscardEnergyPrompt, SpecialCondition } from '../../../game';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Regiceex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -76,13 +76,26 @@ export class Regiceex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Discard 2 Energy
+      // TA-79: rulebook step F / compendium #543/#649 — apply the 140 base damage BEFORE the discard
+      // + Paralyze riders, so the defender shows dmg=140 at the discard pending (was deferred to 0).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
+      // "Discard 2 Energy from this Pokémon, AND your opponent's Active is now Paralyzed." — text order:
+      // the Paralyze is applied AFTER the discard resolves. It must live INSIDE the discard callback,
+      // otherwise twinleaf's synchronous prompt model applies Paralyze before the discard pending
+      // surfaces (rotomancer applies it strictly after — cross-engine parity, converges either way).
+      const applyParalyze = (s: State): State => {
+        const specialConditionEffect = new AddSpecialConditionsEffect(effect, [SpecialCondition.PARALYZED]);
+        specialConditionEffect.target = opponent.active;
+        return store.reduceEffect(s, specialConditionEffect);
+      };
+
       const energyCount = player.active.cards.filter(card =>
         card.superType === SuperType.ENERGY
       ).length;
 
       if (energyCount >= 2) {
-        state = store.prompt(state, new DiscardEnergyPrompt(
+        return store.prompt(state, new DiscardEnergyPrompt(
           player.id,
           GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
           PlayerType.BOTTOM_PLAYER,
@@ -91,20 +104,16 @@ export class Regiceex extends PokemonCard {
           { allowCancel: false, min: 2, max: 2 }
         ), transfers => {
           transfers = transfers || [];
-          if (transfers.length === 0) {
-            return state;
-          }
           for (const transfer of transfers) {
             const source = StateUtils.getTarget(state, player, transfer.from);
             source.moveCardTo(transfer.card, player.discard);
           }
+          applyParalyze(state);
         });
       }
 
-      // Apply Paralyzed
-      const specialConditionEffect = new AddSpecialConditionsEffect(effect, [SpecialCondition.PARALYZED]);
-      specialConditionEffect.target = opponent.active;
-      return store.reduceEffect(state, specialConditionEffect);
+      // Fewer than 2 Energy attached: no discard choice, so Paralyze applies directly.
+      return applyParalyze(state);
     }
 
     return state;
