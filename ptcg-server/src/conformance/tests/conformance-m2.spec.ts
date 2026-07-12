@@ -346,4 +346,42 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     ]);
     expect(res.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
   });
+
+  // ── CF-8 forced-atomic discard: scoped to the ACTIVE player ─────────────────
+
+  it('collapses the ACTIVE player forced single-card discard — no pending [CF-8]', () => {
+    const game = importState(board(
+      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }] }), // A active, one-card hand
+      player({ active: ralts('B-act') }),
+    ));
+    const p = game.state.players[0]; // A (active player)
+    let discarded: string[] | null = null;
+    game.store.prompt(game.state, new ChooseCardsPrompt(
+      p, GameMessage.CHOOSE_CARD_TO_DISCARD, p.hand, {}, { min: 1, max: 1, allowCancel: false }
+    ), cards => { discarded = cards.map(c => c.fullName); });
+
+    const res = replay(game, []); // submit NO action — a forced discard must not need one
+    expect(discarded).not.toBeNull(); // auto-resolved atomically — the callback fired without an action
+    // no 1-option `discard` pending surfaced (the game falls through to A's normal main-phase decision)
+    const kinds = (res.pending?.legalActions ?? []).map(a => a.type);
+    expect(kinds).not.toContain('discard');
+  });
+
+  it('SURFACES a NON-active player forced single-card discard [CF-8 scope — Salazzle scr-024]', () => {
+    // "Your opponent discards a card from their hand" (Salazzle): a control-handoff to the non-active
+    // player. Even forced (one card), rotomancer SURFACES it as B's decision — so we must NOT collapse it.
+    const game = importState(board(
+      player({ active: ralts('A-act') }),
+      player({ active: ralts('B-act'), hand: [{ iid: 'bh0', printing: PSY }] }), // B non-active, one-card hand
+    ));
+    const b = game.state.players[1]; // B (the opponent, non-active)
+    game.store.prompt(game.state, new ChooseCardsPrompt(
+      b, GameMessage.CHOOSE_CARD_TO_DISCARD, b.hand, {}, { min: 1, max: 1, allowCancel: false }
+    ), () => { /* the opponent chooses */ });
+
+    const res = replay(game, []);
+    expect(res.pending).not.toBeNull();
+    expect(res.pending!.actor).toBe('B');                      // surfaced as B's decision (matches roto)
+    expect(res.pending!.legalActions[0].type).toBe('discard');
+  });
 });

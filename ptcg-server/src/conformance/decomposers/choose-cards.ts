@@ -55,9 +55,14 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     if (rp.length >= max) {
       return null;
     }
-    // CF-8: a forced, non-varying discard is a non-decision — auto-resolve atomically (assemble fills
-    // in the forced indices) instead of surfacing a 1-option `discard` pending.
-    if (rp.length === 0 && forcedDiscardIndices(prompt) !== null) {
+    // CF-8: a forced, non-varying discard DECIDED BY THE ACTIVE PLAYER is a non-decision — auto-resolve
+    // atomically (assemble fills in the forced indices) instead of surfacing a 1-option `discard` pending.
+    // A forced discard decided by the NON-active player — e.g. "your opponent discards a card from their
+    // hand" (Salazzle scr-024), a control-handoff to the opponent — is SURFACED by rotomancer, so it is
+    // NOT collapsed here (the collapse is scoped to the active player's own forced picks).
+    const activePlayer = state.players[state.activePlayer];
+    const ownerIsActive = activePlayer !== undefined && prompt.player.id === activePlayer.id;
+    if (rp.length === 0 && ownerIsActive && forcedDiscardIndices(prompt) !== null) {
       return null;
     }
 
