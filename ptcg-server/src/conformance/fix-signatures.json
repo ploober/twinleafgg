@@ -692,6 +692,12 @@
       "signatures": [
         "store.reduceEffect(state, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect(effect, this, 50));"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/luxray-ex.ts",
+      "signatures": [
+        "min:1, not min:0"
+      ]
     }
   ]
 }

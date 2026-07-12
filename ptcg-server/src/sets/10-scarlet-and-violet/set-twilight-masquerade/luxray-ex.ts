@@ -65,22 +65,21 @@ export class Luxrayex extends PokemonCard {
         return state;
       }
 
+      // "Discard 1 card you find there" is mandatory when the opponent has cards (guarded above) —
+      // min:1, not min:0 (which let the attacker skip the discard).
       return store.prompt(state, new ChooseCardsPrompt(
         player,
-        GameMessage.CHOOSE_CARD_TO_DECK,
+        GameMessage.CHOOSE_CARD_TO_DISCARD,
         opponent.hand,
         {},
-        { allowCancel: false, min: 0, max: 1 }
+        { allowCancel: false, min: 1, max: 1 }
       ), selectedCard => {
         const selected = selectedCard || [];
-        if (selectedCard === null || selected.length === 0) {
+        if (selected.length === 0) {
           return;
         }
 
         opponent.hand.moveCardTo(selected[0], opponent.discard);
-
-        player.supporter.moveCardTo(this, player.discard);
-
       });
     }
 
