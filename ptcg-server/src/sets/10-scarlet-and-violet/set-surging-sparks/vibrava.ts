@@ -1,10 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, PlayerType } from '../../../game';
+import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect } from '../../../game/store/effects/effect-of-attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Vibrava extends PokemonCard {
@@ -49,35 +48,17 @@ export class Vibrava extends PokemonCard {
 
   public fullName: string = 'Vibrava SSP';
 
-  public readonly DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER = 'DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER';
-  public readonly CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER = 'CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER';
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
+    // "During your next turn, the Defending Pokémon takes 50 more damage from this Pokémon's attacks."
+    // Use the engine's purpose-built mechanism: it marks the Defending Pokémon (opponent's Active),
+    // scopes the bonus to THIS attacker, promotes it past the opponent's intervening turn, applies it
+    // during the attacker's next turn, and expires it at that turn's end. (The old custom markers set
+    // the flag on the wrong Pokémon and cleared it on the wrong player, so the +50 never applied.)
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      player.active.marker.addMarker(this.DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER, this);
-      opponent.marker.addMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER, this);
-
-      return state;
+      store.reduceEffect(state, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect(effect, this, 50));
     }
 
-    if (effect instanceof PutDamageEffect
-      && effect.target.marker.hasMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER)) {
-      effect.damage += 50;
-      return state;
-    }
-
-    if (effect instanceof EndTurnEffect
-      && effect.player.marker.hasMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER, this)) {
-      effect.player.marker.removeMarker(this.CLEAR_DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER, this);
-      const opponent = StateUtils.getOpponent(state, effect.player);
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
-        cardList.marker.removeMarker(this.DURING_OPPONENTS_NEXT_TURN_DEFENDING_POKEMON_TAKES_MORE_DAMAGE_MARKER, this);
-      });
-    }
     return state;
   }
 }

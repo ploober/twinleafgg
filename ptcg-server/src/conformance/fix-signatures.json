@@ -686,6 +686,12 @@
       "signatures": [
         "PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);"
       ]
+    },
+    {
+      "file": "set-surging-sparks/vibrava.ts",
+      "signatures": [
+        "store.reduceEffect(state, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect(effect, this, 50));"
+      ]
     }
   ]
 }
