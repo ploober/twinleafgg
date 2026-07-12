@@ -396,6 +396,10 @@ export type NeutralEvent =
   | { kind: 'turnEnded'; player: NeutralPlayerId }
   | { kind: 'shuffled'; player: NeutralPlayerId }
   | { kind: 'gameOver'; outcome: Outcome }
+  // CF-18 (proposed 2026-07-12): a PUBLIC reveal — otherwise-hidden cards made observable. Both
+  // engines emit it → differential-checked ONCE rotomancer also emits (informational meanwhile; see
+  // OpenAPI `Event`). `owner` owns the cards; `to:'all'` = public; a private look emits nothing.
+  | { kind: 'reveal'; owner: NeutralPlayerId; cards: string[]; from: string; to: NeutralPlayerId | 'all' }
   // ── Informational trace — never compared ──
   | { kind: 'benchedBasic'; actor: NeutralPlayerId; card: string }
   | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }

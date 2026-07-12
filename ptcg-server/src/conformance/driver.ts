@@ -2,7 +2,9 @@ import { Card } from '../game/store/card/card';
 import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
+import { State } from '../game/store/state/state';
 import { Prompt } from '../game/store/prompts/prompt';
+import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
 import {
   AttackAction, PassTurnAction, RetreatAction as RetreatGameAction,
@@ -262,6 +264,62 @@ function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, acti
   });
 }
 
+/**
+ * Locate a card among a player's zones → its owner + neutral zone name, or null if it sits in a temp
+ * pile detached from every player zone (e.g. a mid-effect look pile). Used to attribute a `reveal`
+ * event's `owner`/`from` (CF-18).
+ */
+function locateCard(state: State, card: Card): { owner: Player; zone: string } | null {
+  for (const owner of state.players) {
+    if (owner.hand.cards.includes(card)) { return { owner, zone: 'hand' }; }
+    if (owner.deck.cards.includes(card)) { return { owner, zone: 'deck' }; }
+    if (owner.discard.cards.includes(card)) { return { owner, zone: 'discard' }; }
+    if (owner.lostzone.cards.includes(card)) { return { owner, zone: 'lostZone' }; }
+    if (owner.active.cards.includes(card)) { return { owner, zone: 'play' }; }
+    for (const b of owner.bench) { if (b.cards.includes(card)) { return { owner, zone: 'play' }; } }
+    for (const p of owner.prizes) { if (p.cards.includes(card)) { return { owner, zone: 'prizes' }; } }
+  }
+  return null;
+}
+
+/**
+ * CF-18 (proposed): a `ShowCardsPrompt` is twinleaf's public-reveal signal ("reveal a Supporter you
+ * find there" — Attract Customers; "reveal it" search-tutors; etc). It carries the revealed `cards`
+ * and its `playerId` is the AUDIENCE being shown them — NOT the owner (the owner already knows their
+ * own card). Today the adapter auto-acks it (REVEAL_ACK_PROMPTS) and emits nothing, so the reveal
+ * never reaches the wire. Externalize it as a first-class `reveal{owner, cards, from, to:'all'}`
+ * event, captured at show time (before the ack, while the cards are still in their revealed zone).
+ * Returns null for an empty show or when no revealed card carries an iid.
+ *
+ * `to` is 'all': in 2-player PTCG a reveal to the non-owner is observationally public (the owner
+ * already sees their own cards), so every ShowCardsPrompt is a public reveal. Audience-scoped shows
+ * (`to:<player>`) and private looks (eventless) are the other CF-18 arms — not raised by this prompt.
+ */
+function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt): NeutralEvent | null {
+  const cards = prompt.cards;
+  if (cards.length === 0) {
+    return null;
+  }
+  const iids: string[] = [];
+  for (const c of cards) {
+    const iid = game.ctx.cardToIid.get(c);
+    if (iid !== undefined) {
+      iids.push(iid);
+    }
+  }
+  if (iids.length === 0) {
+    return null;
+  }
+  const loc = locateCard(game.state, cards[0]);
+  // Owner = the located zone's owner; fall back to the non-audience player (the prompt's playerId is
+  // the audience — a "shown by the opponent" reveal owns to that opponent).
+  const owner = loc !== null
+    ? playerIdToActor(game.state, loc.owner.id)
+    : (playerIdToActor(game.state, prompt.playerId) === 'A' ? 'B' : 'A');
+  const from = loc !== null ? loc.zone : 'unknown';
+  return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
+}
+
 function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
@@ -324,6 +382,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       const kind = classify(prompt);
 
       if (kind === 'wait') {
+        // CF-18: a public reveal (ShowCardsPrompt) is externalized as a `reveal` event, captured
+        // BEFORE the ack while the cards still sit in their revealed zone. All other wait prompts
+        // (WaitPrompt, Alert, non-cancelable Confirm cards) carry no observable and emit nothing.
+        if (prompt.type === 'Show cards') {
+          const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt);
+          if (revealEvent !== null) {
+            events.push(revealEvent);
+          }
+        }
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, true)));
         continue;
       }

@@ -69,6 +69,47 @@ describe('Conformance — ShowCardsPrompt auto-resolve + ConfirmPrompt decompose
     });
   });
 
+  // CF-18 (proposed 2026-07-12): a `ShowCardsPrompt` is a PUBLIC reveal. Auto-acking it (above) still
+  // drives past, but it now ALSO externalizes a first-class `reveal{owner, cards, from, to}` event so
+  // the reveal reaches the wire (previously it was silently dropped — RE-26 family). `owner`/`from` are
+  // attributed from the card's actual zone at show time; the prompt's playerId is the AUDIENCE, not the
+  // owner. This is the discriminating repro: RED before the driver emitted `reveal`, GREEN after.
+  it('CF-18: ShowCardsPrompt emits a public `reveal` event (owner from card zone, ordered iids, to:all)', () => {
+    const state = board();
+    state.players.A.hand = [{ iid: 'A-h1', printing: WATER }]; // the card A "found" and put into hand
+    const game = importState(state);
+    const revealed = game.state.players[0].hand.cards;         // owned by A, sitting in A's hand
+    // B is the audience ("cards shown by the opponent"); A owns the revealed card.
+    game.store.prompt(game.state, new ShowCardsPrompt(game.state.players[1].id,
+      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, revealed), () => { });
+
+    const res = replay(game, []);
+    expect(res.events.filter(e => e.kind === 'reveal')).toEqual([
+      { kind: 'reveal', owner: 'A', cards: ['A-h1'], from: 'hand', to: 'all' },
+    ]);
+    expect(res.pending!.descriptor).toBe('main'); // still drives past; reveal is an event, not a pending
+  });
+
+  it('CF-18: `reveal.from` reflects the actual source zone (deck-top reveal)', () => {
+    const state = board();
+    state.players.A.deck = [{ iid: 'A-d1', printing: WATER }]; // revealed while still on top of A's deck
+    const game = importState(state);
+    game.store.prompt(game.state, new ShowCardsPrompt(game.state.players[1].id,
+      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, game.state.players[0].deck.cards), () => { });
+
+    expect(replay(game, []).events.filter(e => e.kind === 'reveal')).toEqual([
+      { kind: 'reveal', owner: 'A', cards: ['A-d1'], from: 'deck', to: 'all' },
+    ]);
+  });
+
+  it('CF-18: an empty ShowCardsPrompt emits no reveal (nothing observable)', () => {
+    const game = importState(board()); // board() hands are empty
+    const a = game.state.players[0];
+    game.store.prompt(game.state, new ShowCardsPrompt(game.state.players[1].id,
+      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, a.hand.cards), () => { });
+    expect(replay(game, []).events.filter(e => e.kind === 'reveal')).toEqual([]);
+  });
+
   /** A fresh game with an open ConfirmPrompt for player A (replay mutates, so each case re-imports). */
   function withConfirm(): { game: ReturnType<typeof importState>; answer: () => boolean | undefined } {
     const game = importState(board());
