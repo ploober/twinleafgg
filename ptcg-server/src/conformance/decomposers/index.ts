@@ -10,8 +10,10 @@ import { chooseEnergyDecomposer } from './choose-energy';
 import { chooseAttackDecomposer } from './choose-attack';
 import { choosePrizeDecomposer } from './choose-prize';
 import { confirmDecomposer } from './confirm';
+import { confirmCardsDecomposer } from './confirm-cards';
 import { selectOptionDecomposer } from './select-option';
 import { orderCardsDecomposer } from './order-cards';
+import { ConfirmCardsPrompt } from '../../game/store/prompts/confirm-cards-prompt';
 
 export * from './decomposer';
 
@@ -29,6 +31,7 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   chooseAttackDecomposer,
   choosePrizeDecomposer,
   confirmDecomposer,
+  confirmCardsDecomposer,
   selectOptionDecomposer,
   orderCardsDecomposer,
 ];
@@ -40,11 +43,19 @@ const REGISTRY = new Map<string, PromptDecomposer<any>>(DECOMPOSERS.map(d => [d.
  * contract REQUIRES the adapter to auto-resolve them: they never surface in `pending` and consume no
  * action (OpenAPI `Action` §"NOT every engine prompt is a decision"; `Pending` §). Note twinleaf has
  * BOTH `'Confirm'` (a real yes/no, `Prompt<boolean>` → the `confirm` decomposer) and `'Confirm cards'`
- * (a `Prompt<true>` acknowledge → here); they are distinct types despite the shared word.
+ * (a `Prompt<true>`) — and `'Confirm cards'` is DUAL: `allowCancel:false` is a pure acknowledge (here),
+ * but `allowCancel:true` is a real "you may…" yes/no (→ the `confirmCards` decomposer; TA-98), routed
+ * below before this set is consulted.
  */
 const REVEAL_ACK_PROMPTS = new Set<string>(['Show cards', 'Show mulligan', 'Alert', 'Confirm cards']);
 
 export function classify(prompt: Prompt<any>): PromptKind {
+  // 'Confirm cards' is dual: a cancelable one is a genuine optional decision ("you may discard the top
+  // card" — Dig It Up); externalize it as a `confirm{value}` (TA-98). Only the non-cancelable reveal is
+  // an auto-acknowledge. Route by allowCancel BEFORE the reveal/ack set (which also lists the type).
+  if (prompt.type === 'Confirm cards') {
+    return (prompt as ConfirmCardsPrompt).options.allowCancel ? 'decomposable' : 'wait';
+  }
   // WaitPrompt (attack animation) + the reveal/ack prompts carry no decision: auto-resolve with `true`.
   if (prompt.type === 'WaitPrompt' || REVEAL_ACK_PROMPTS.has(prompt.type)) {
     return 'wait';
