@@ -244,20 +244,20 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
   it('Decidueye "Power Shot" forces the Grass discard when able — no decline [TA-67 sfa-005]', () => {
     // "170. Discard a Basic [G] Energy from your hand. If you can't, this attack does nothing." The discard
     // is MANDATORY when able — pre-fix a min:0 ChooseCards let you DECLINE (offered a `confirm` stop) and
-    // whiff to 0. Now it is min:1 (forced): no decline is offered, and completing the discard lands the
-    // 170 (KOs the 70-HP defender here). (Twinleaf still surfaces the forced single-card discard as a
-    // pending — the known CF-14 twinleaf-side follow-up — so the cross-engine WITH-Grass seed diverges on
-    // granularity and only the no-Grass whiff seed conforms; the illegal-decline BUG is what this guards.)
+    // whiff to 0. Now it is min:1 (forced): no decline. With exactly one Grass in hand the discard is a
+    // CF-8 forced-atomic single-card discard, so the adapter AUTO-RESOLVES it (no `discard` pending —
+    // choose-cards.ts; this closes the former CF-14 granularity follow-up and now matches rotomancer): the
+    // Grass leaves the hand, the 170 lands and KOs the 70-HP defender → straight to `takePrize`.
     const start = board(player({
       active: inPlay('A-act', ['sfa-005'], en(GRASS, 1, 'a')),   // attached [G] pays the cost
-      hand: [{ iid: 'ah-grass', printing: GRASS }],              // a separate Grass to discard
+      hand: [{ iid: 'ah-grass', printing: GRASS }],              // the one Grass to discard (forced)
     }), player({ active: inPlay('B-act', [RALTS]) }));           // 70 HP → 170 KOs
     const r = step(start, [attack('A-act', 'Power Shot')]);
     expect(r.status).toBe('awaitingAction');
     expect(types(r)).not.toContain('confirm');          // no "decline the discard" option (the pre-fix bug)
-    expect(types(r)).toContain('discard');              // the discard is forced (min:1)
-    const done = step(start, [attack('A-act', 'Power Shot'), { actor: 'A', type: 'discard', target: 'ah-grass' }]);
-    expect(types(done)).toContain('takePrize');         // completing the forced discard → 170 → KO → prize
+    expect(types(r)).not.toContain('discard');          // forced single discard auto-resolves — no pending
+    expect(types(r)).toContain('takePrize');            // Grass discarded → 170 → KO → prize
+    expect(r.state.players.A.hand.length).toBe(0);      // the Grass was actually discarded (not declined)
   });
 
   it('Decidueye "Power Shot" does nothing with no Basic [G] Energy in hand [TA-67 sfa-005]', () => {

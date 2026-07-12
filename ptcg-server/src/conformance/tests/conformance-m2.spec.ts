@@ -304,7 +304,10 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
   it('surfaces a chained ShuffleDeckPrompt as a system pending and stops (M2/M3 seam)', () => {
     const game = importState(board(
-      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }], deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
+      // 2-card hand → the CHOOSE_CARD_TO_DISCARD is a genuine choice that still SURFACES (a 1-card hand
+      // is now a CF-8 forced-atomic discard that auto-resolves — see choose-cards.ts — which would bypass
+      // this seam test); this test targets the chained-shuffle system seam, not discard granularity.
+      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }, { iid: 'h1', printing: PSY }], deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
       player({ active: ralts('B-act') }),
     ));
     const p = game.state.players[0];
@@ -324,7 +327,10 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
   it('resolving a chained shuffle emits a significant `shuffled` event for the deck owner', () => {
     const game = importState(board(
-      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }], deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
+      // 2-card hand → the CHOOSE_CARD_TO_DISCARD is a genuine choice that still SURFACES (a 1-card hand
+      // is now a CF-8 forced-atomic discard that auto-resolves — see choose-cards.ts — which would bypass
+      // this seam test); this test targets the chained-shuffle system seam, not discard granularity.
+      player({ active: ralts('A-act'), hand: [{ iid: 'h0', printing: PSY }, { iid: 'h1', printing: PSY }], deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
       player({ active: ralts('B-act') }),
     ));
     const p = game.state.players[0];

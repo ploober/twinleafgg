@@ -11,6 +11,31 @@ function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
 }
 
 /**
+ * CF-8 forced-atomic: a discard the player can neither decline (`allowCancel:false`) nor vary — the
+ * required count is at least the whole eligible pool (`min >= |eligible|`), so every valid selection is
+ * "all eligible" — is a NON-decision. The adapter resolves it atomically (no `discard` pending),
+ * matching rotomancer (and the `DISCARD_X_ENERGY` prefab's own-Pokémon atomic path, and the CF-11
+ * ≤1-card-shuffle collapse). e.g. Crunch ("Discard an Energy from your opponent's Active") when the
+ * Active has exactly one Energy. Returns the forced index list, or null when the pick is a genuine
+ * decision (2+ candidates for a single pick still surface — those already match rotomancer). Secret
+ * (randomized) picks are excluded: they are the system actor's, not a forced player choice.
+ */
+function forcedDiscardIndices(prompt: ChooseCardsPrompt): number[] | null {
+  if (!isDiscardPick(prompt) || prompt.options.allowCancel !== false || prompt.options.isSecret === true) {
+    return null;
+  }
+  const blocked = new Set(prompt.options.blocked);
+  const eligible: number[] = [];
+  for (let i = 0; i < prompt.cards.cards.length; i++) {
+    if (blocked.has(i) || !matchesFilter(prompt.cards.cards[i], prompt.filter)) {
+      continue;
+    }
+    eligible.push(i);
+  }
+  return eligible.length > 0 && prompt.options.min >= eligible.length ? eligible : null;
+}
+
+/**
  * ChooseCardsPrompt: one pick = one index into prompt.cards.cards; raw result = number[].
  *
  * When `options.isSecret` is set the selection is hidden/random (e.g. "discard a random card from
@@ -28,6 +53,11 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     const rp = realPicks(picks);
     const { min, max } = prompt.options;
     if (rp.length >= max) {
+      return null;
+    }
+    // CF-8: a forced, non-varying discard is a non-decision — auto-resolve atomically (assemble fills
+    // in the forced indices) instead of surfacing a 1-option `discard` pending.
+    if (rp.length === 0 && forcedDiscardIndices(prompt) !== null) {
       return null;
     }
 
@@ -81,7 +111,15 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     return { kind: 'index', index };
   },
 
-  assemble(_prompt, picks): number[] {
-    return realPicks(picks).map(p => (p as { index: number }).index);
+  assemble(prompt, picks): number[] {
+    const picked = realPicks(picks).map(p => (p as { index: number }).index);
+    if (picked.length === 0) {
+      // Auto-resolved forced discard (next() returned null with no picks): take all eligible (CF-8).
+      const forced = forcedDiscardIndices(prompt);
+      if (forced !== null) {
+        return forced;
+      }
+    }
+    return picked;
   },
 };
