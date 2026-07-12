@@ -731,6 +731,12 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ]
+    },
+    {
+      "file": "set-temporal-forces/raging-bolt-ex.ts",
+      "signatures": [
+        "is declarable even with an empty deck"
+      ]
     }
   ]
 }
