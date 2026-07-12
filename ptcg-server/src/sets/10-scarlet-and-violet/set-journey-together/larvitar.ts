@@ -53,7 +53,9 @@ export class Larvitar extends PokemonCard {
             GameMessage.CHOOSE_CARD_TO_DISCARD,
             opponent.active,
             { superType: SuperType.ENERGY },
-            { min: 1, max: 1, allowCancel: true }
+            // Mandatory on heads ("discard an Energy", no "may") — not declinable. allowCancel:false so the
+            // adapter's CF-8 forced-atomic collapse applies to a lone opponent Energy (matches rotomancer).
+            { min: 1, max: 1, allowCancel: false }
           ), selected => {
             cards = selected || [];
             const discardEnergy = new DiscardCardsEffect(effect, cards);
