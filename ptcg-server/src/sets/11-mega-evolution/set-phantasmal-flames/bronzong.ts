@@ -12,6 +12,7 @@ import { TrainerType } from '../../../game/store/card/card-types';
 
 export class Bronzong extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
+  public evolvesFrom = 'Bronzor';
   public cardType: CardType = M;
   public hp: number = 140;
   public weakness = [{ type: R }];

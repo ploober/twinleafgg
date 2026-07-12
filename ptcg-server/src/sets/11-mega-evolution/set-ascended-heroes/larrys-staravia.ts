@@ -1,7 +1,8 @@
 import { PokemonCard, Stage, CardTag, CardType } from '../../../game';
 
 export class LarrysStaravia extends PokemonCard {
-  public stage: Stage = Stage.BASIC;
+  public stage: Stage = Stage.STAGE_1;
+  public evolvesFrom = 'Larry\'s Starly';
   public tags = [CardTag.LARRYS];
   public cardType: CardType = C;
   public hp: number = 90;
