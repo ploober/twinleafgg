@@ -2,6 +2,12 @@
   "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly \u2014 the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` \u2014 it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
   "fixes": [
     {
+      "file": "set-temporal-forces/iron-thorns.ts",
+      "signatures": [
+        "const top5 = player.deck.cards.slice(0, 5);"
+      ]
+    },
+    {
       "file": "set-ascended-heroes/larrys-dunsparce.ts",
       "signatures": [
         "if (WAS_ATTACK_USED(effect, 0, this)) {"

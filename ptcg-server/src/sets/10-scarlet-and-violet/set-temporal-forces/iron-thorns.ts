@@ -50,41 +50,38 @@ export class IronThorns extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const deckTop = new CardList();
-      player.deck.moveTo(deckTop, 5);
-
-      // Filter for item cards
-      const futureCards = deckTop.cards.filter(c =>
-        c instanceof PokemonCard &&
-        c.tags.includes(CardTag.FUTURE)
-      );
-
-      if (futureCards.length > 0) {
-        state = store.prompt(state, new ShowCardsPrompt(
-          opponent.id,
-          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-          futureCards), () => state);
+      // "Reveal the top 5 cards of your deck" — ALL five, publicly, while they are still in the deck.
+      // The damage (70 × Future count) is decided from the same five, so compute it now; the discard
+      // + shuffle-back are deferred into the reveal's callback so the reveal is observed BEFORE the
+      // cards move — the reveal then carries `from:"deck"` and the full top-5 in top-first order,
+      // converging with rotomancer's CF-18 `reveal{owner, cards, from:"deck", to:"all"}`.
+      const top5 = player.deck.cards.slice(0, 5);
+      if (top5.length === 0) {
+        return state;
       }
 
-      if (futureCards.length > 0) {
-        state = store.prompt(state, new ShowCardsPrompt(
-          player.id,
-          GameMessage.CARDS_SHOWED_BY_EFFECT,
-          futureCards), () => state);
-      }
-
-      // Move item cards to hand
-      deckTop.moveCardsTo(futureCards, player.discard);
-
-      // Move all cards to discard
-      deckTop.moveTo(player.deck, deckTop.cards.length);
-
+      const futureCards = top5.filter(c =>
+        c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
       effect.damage = 70 * futureCards.length;
 
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
+      return store.prompt(state, new ShowCardsPrompt(
+        opponent.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        top5), () => {
 
-        return state;
+        const deckTop = new CardList();
+        player.deck.moveTo(deckTop, 5);
+
+        // Discard the revealed Future cards; shuffle the rest back into the deck.
+        const toDiscard = deckTop.cards.filter(c =>
+          c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
+        deckTop.moveCardsTo(toDiscard, player.discard);
+        deckTop.moveTo(player.deck, deckTop.cards.length);
+
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+          return state;
+        });
       });
     }
 
