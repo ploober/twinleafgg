@@ -44,14 +44,8 @@ export class Cinderaceex extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
 
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      const hasBenched = opponent.bench.some(b => b.cards.length > 0);
-      if (!hasBenched) {
-        return state;
-      }
-
+      // "180 damage to 1 of your opponent's Pokémon" — the Active is always a legal target, so do
+      // NOT bail on an empty Bench (that dropped 180 to 0 against a lone Active — a missed KO).
       return store.prompt(state, new ChoosePokemonPrompt(
         effect.player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,

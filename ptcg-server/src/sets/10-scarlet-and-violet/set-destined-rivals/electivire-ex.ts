@@ -1,8 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils } from '../../../game';
+import { StoreLike, State, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DealDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class Electivireex extends PokemonCard {
@@ -38,9 +39,37 @@ export class Electivireex extends PokemonCard {
   public fullName: string = 'Electivire ex DRI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Dual Bolt
+    // Dual Bolt — "50 damage to 2 of your opponent's Pokémon." The Active is a legal target; do as
+    // much as you can when the opponent has fewer than 2 Pokémon. Weakness/Resistance apply to the
+    // Active (DealDamageEffect) but NOT to Benched targets (PutDamageEffect).
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(50, effect, store, state, 2, 2);
+      const player = effect.player;
+      const opponent = StateUtils.getOpponent(state, player);
+
+      const count = Math.min(2, opponent.getPokemonInPlay().length);
+      if (count === 0) {
+        return state;
+      }
+
+      return store.prompt(state, new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+        PlayerType.TOP_PLAYER,
+        [SlotType.ACTIVE, SlotType.BENCH],
+        { min: count, max: count, allowCancel: false }
+      ), selected => {
+        (selected || []).forEach(target => {
+          if (target === opponent.active) {
+            const damageEffect = new DealDamageEffect(effect, 50);
+            damageEffect.target = target;
+            store.reduceEffect(state, damageEffect);
+          } else {
+            const damageEffect = new PutDamageEffect(effect, 50);
+            damageEffect.target = target;
+            store.reduceEffect(state, damageEffect);
+          }
+        });
+      });
     }
 
     // High Voltage Press

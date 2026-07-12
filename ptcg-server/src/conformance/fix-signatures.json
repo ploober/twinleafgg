@@ -620,6 +620,30 @@
       "signatures": [
         "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
       ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-hypno.ts",
+      "signatures": [
+        "effect.damage = 0;"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/cinderace-ex.ts",
+      "signatures": [
+        "the Active is always a legal target"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/armarouge.ts",
+      "signatures": [
+        "if (benched.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/electivire-ex.ts",
+      "signatures": [
+        "const count = Math.min(2, opponent.getPokemonInPlay().length);"
+      ]
     }
   ]
 }

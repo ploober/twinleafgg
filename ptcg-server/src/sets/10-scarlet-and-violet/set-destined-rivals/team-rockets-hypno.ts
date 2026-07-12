@@ -48,13 +48,16 @@ export class TeamRocketsHypno extends PokemonCard {
         coinFlips++;
       });
 
+      // Damage is entirely flip-derived (80 × tails). With no Benched Pokémon there are 0 flips,
+      // so the attack does 0 — the declared base 80 must not leak through as phantom damage.
+      effect.ignoreResistance = true;
+      effect.ignoreWeakness = true;
+      effect.damage = 0;
+
       if (coinFlips > 0) {
         MULTIPLE_COIN_FLIPS_PROMPT(store, state, effect.opponent, coinFlips, results => {
           const tails = results.filter(r => !r).length;
           effect.damage = 80 * tails;
-
-          effect.ignoreResistance = true;
-          effect.ignoreWeakness = true;
         });
       }
     }
