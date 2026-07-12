@@ -1,8 +1,8 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, Card } from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { StateUtils, ChooseCardsPrompt, CoinFlipPrompt, GameMessage, SuperType } from '../../../game';
+import { CoinFlipPrompt, GameMessage } from '../../../game';
 import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 
 export class Servine extends PokemonCard {
 
@@ -17,7 +17,7 @@ export class Servine extends PokemonCard {
     name: 'Wrap',
     cost: [G],
     damage: 20,
-    text: 'Flip a coin. If heads, discard an Energy from your opponent\'s Active Pokémon.'
+    text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.'
   }, {
     name: 'Vine Whip',
     cost: [G, C, C],
@@ -35,7 +35,6 @@ export class Servine extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
 
       // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
@@ -44,22 +43,7 @@ export class Servine extends PokemonCard {
         player.id, GameMessage.COIN_FLIP
       ), flipResult => {
         if (flipResult) {
-          // Defending Pokemon has no energy cards attached
-          if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
-            return state;
-          }
-          let cards: Card[] = [];
-          return store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_DISCARD,
-            opponent.active,
-            { superType: SuperType.ENERGY },
-            { min: 1, max: 1, allowCancel: false }
-          ), selected => {
-            cards = selected || [];
-            const discardEnergy = new DiscardCardsEffect(effect, cards);
-            return store.reduceEffect(state, discardEnergy);
-          });
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
         return state;
       });

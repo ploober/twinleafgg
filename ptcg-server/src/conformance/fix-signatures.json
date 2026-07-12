@@ -614,6 +614,12 @@
       "signatures": [
         "opponent.active.attacksDamageReductionNextTurn = 20;"
       ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/servine.ts",
+      "signatures": [
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
+      ]
     }
   ]
 }
