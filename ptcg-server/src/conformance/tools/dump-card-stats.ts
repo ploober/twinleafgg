@@ -17,7 +17,26 @@ import { NeutralCard } from '../neutral-types';
 
 loadAllSets();
 const out: { [printing: string]: NeutralCard } = {};
+// A printing-keyed map SILENTLY OVERWRITES: several twinleaf cards share a `set`+`setNumber`, so one
+// wins and the rest vanish with no error. `set`/`setNumber` are immutable identity keys (never edit
+// them), so these collisions are permanent — but a dump that quietly loses ~79 cards reads as
+// "complete coverage" when it isn't. That blind spot hid a real bug (`Nidorino MEW` evolvesFrom '♂'
+// was overwritten by Nidorina at mew-033) from the offline invariant checker; only a spec running
+// against the registry itself caught it. So: never truncate silently — report what was dropped, and
+// run STRUCTURAL checks against `CardManager`, not against this dump.
+const dropped: string[] = [];
 for (const card of CardManager.getInstance().getAllCards()) {
-  out[toPrinting(card)] = projectCard(card);
+  const printing = toPrinting(card);
+  if (out[printing] !== undefined) {
+    dropped.push(`${printing}: ${card.fullName} (kept ${out[printing].name})`);
+    continue;
+  }
+  out[printing] = projectCard(card);
+}
+if (dropped.length > 0) {
+  process.stderr.write(
+    `[dump-card-stats] ${dropped.length} card(s) DROPPED by printing-key collision ` +
+    `(${Object.keys(out).length} emitted). These are invisible to any printing-keyed analysis:\n` +
+    dropped.map(d => `  - ${d}\n`).join(''));
 }
 process.stdout.write(JSON.stringify(out, null, 1) + '\n');
