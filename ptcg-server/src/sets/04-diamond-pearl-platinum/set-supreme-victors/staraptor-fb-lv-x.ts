@@ -7,7 +7,7 @@ import { WAS_POWER_USED, BLOCK_EFFECT_IF_MARKER, BLOCK_IF_DECK_EMPTY, SHOW_CARDS
 
 export class StaraptorFBLVX extends PokemonCard {
 
-  public stage = Stage.STAGE_1;
+  public stage = Stage.LV_X;
   public evolvesFrom = 'Staraptor FB';
   public tags = [CardTag.POKEMON_SP];
   public cardType = C;

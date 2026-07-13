@@ -7,7 +7,8 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 export class RapidStrikeUrshifu extends PokemonCard {
   public regulationMark = 'E';
   public tags = [CardTag.RAPID_STRIKE];
-  public stage: Stage = Stage.BASIC;
+  public stage: Stage = Stage.STAGE_1;
+  public evolvesFrom = 'Kubfu';
   public cardType: CardType = W;
   public hp: number = 140;
   public weakness = [{ type: L }];

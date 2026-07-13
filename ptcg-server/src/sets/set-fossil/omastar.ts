@@ -7,7 +7,7 @@ import { CheckAttackCostEffect, CheckProvidedEnergyEffect } from '../../game/sto
 import { WAS_ATTACK_USED } from '../../game/store/prefabs/prefabs';
 
 export class Omastar extends PokemonCard {
-  public stage: Stage = Stage.STAGE_1;
+  public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Omanyte';
   public cardType: CardType = CardType.WATER;
   public hp: number = 70;

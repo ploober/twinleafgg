@@ -6,7 +6,7 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 import { HEAL_X_DAMAGE_FROM_THIS_POKEMON, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Cradily extends PokemonCard {
-  public stage: Stage = Stage.STAGE_2;
+  public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Lileep';
   public cardType: CardType = G;
   public hp: number = 120;

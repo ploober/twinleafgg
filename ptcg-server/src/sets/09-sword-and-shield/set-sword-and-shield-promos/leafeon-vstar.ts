@@ -9,7 +9,7 @@ import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/pre
 
 export class LeafeonVSTAR extends PokemonCard {
 
-  public stage = Stage.STAGE_1;
+  public stage = Stage.VSTAR;
 
   public evolvesFrom = 'Leafeon V';
 
