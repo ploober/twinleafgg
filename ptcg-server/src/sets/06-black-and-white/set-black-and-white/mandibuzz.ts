@@ -17,7 +17,7 @@ export class Mandibuzz extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Dark Pulse',
+      name: 'Blindside',
       cost: [D],
       damage: 20,
       damageCalculation: 'x',

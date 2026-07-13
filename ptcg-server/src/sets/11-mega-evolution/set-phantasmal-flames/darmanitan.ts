@@ -16,7 +16,7 @@ export class Darmanitan extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Blazing Ball',
+    name: 'Blaze Ball',
     cost: [C, C, C, C],
     damage: 40,
     text: 'This attack does 40 more damage for each [R] Energy attached to this Pokémon.',

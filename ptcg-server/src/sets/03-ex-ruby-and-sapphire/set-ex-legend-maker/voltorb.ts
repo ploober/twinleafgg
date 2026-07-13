@@ -14,7 +14,7 @@ export class Voltorb extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Thunderwave',
+      name: 'Thunder Wave',
       cost: [C],
       damage: 0,
       text: 'Flip a coin. If heads, the Defending Pokémon is now Paralyzed.'

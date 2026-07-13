@@ -16,7 +16,7 @@ export class Cryogonal2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Icy Wind',
+      name: 'Ice Chain',
       cost: [W],
       damage: 10,
       text: 'The Defending Pokémon is now Asleep.'

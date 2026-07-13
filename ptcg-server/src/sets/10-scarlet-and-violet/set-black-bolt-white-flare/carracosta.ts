@@ -19,7 +19,7 @@ export class Carracosta extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Bite Down',
+    name: 'Big Bite',
     cost: [W, C, C],
     damage: 150,
     text: 'During your opponent\'s next turn, the Defending Pokémon can\'t retreat. '

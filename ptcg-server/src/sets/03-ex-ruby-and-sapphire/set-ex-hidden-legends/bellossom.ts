@@ -29,7 +29,7 @@ export class Bellossom extends PokemonCard {
     text: 'Flip a coin. If heads, choose 1 Special Condition. The Defending Pokémon is now affected by that Special Condition.'
   },
   {
-    name: 'Solar Beam',
+    name: 'Solarbeam',
     cost: [G, C, C],
     damage: 50,
     text: ''

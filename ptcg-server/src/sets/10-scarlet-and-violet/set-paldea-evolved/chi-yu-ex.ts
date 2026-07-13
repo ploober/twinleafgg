@@ -24,7 +24,7 @@ export class ChiYuex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Jealousy Singe',
+      name: 'Jealously Singe',
       cost: [CardType.FIRE],
       damage: 0,
       text: 'Discard the top 2 cards of your opponent\'s deck.'

@@ -20,7 +20,7 @@ export class Mimikyu extends PokemonCard {
       text: 'Discard a Supporter card from your hand. If you do, use the effect of that card as the effect of this attack.'
     },
     {
-      name: 'Mischevious Hands',
+      name: 'Mischievous Hands',
       cost: [P],
       damage: 0,
       text: 'Choose 2 of your opponent\'s Pokémon and put 2 damage counters on each of them.'

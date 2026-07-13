@@ -16,7 +16,7 @@ export class Zapdos extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Thunder Claw',
+      name: 'Random Spark',
       cost: [L, C],
       damage: 30,
       text: 'Flip a coin. If heads, this attack does 20 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

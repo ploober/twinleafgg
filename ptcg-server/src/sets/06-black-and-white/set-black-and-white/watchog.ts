@@ -15,13 +15,13 @@ export class Watchog extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Lookout',
+      name: 'Confuse Ray',
       cost: [C],
       damage: 0,
       text: 'Draw 3 cards.'
     },
     {
-      name: 'Slam',
+      name: 'Hyper Fang',
       cost: [C, C, C],
       damage: 50,
       damageCalculation: 'x',

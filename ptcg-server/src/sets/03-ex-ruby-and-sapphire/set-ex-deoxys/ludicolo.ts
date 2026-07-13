@@ -20,7 +20,7 @@ export class Ludicolo extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Water Healing Steps',
+      name: 'Healing Steps',
       cost: [W],
       damage: 30,
       text: 'You may discard as many cards as you like from your hand. If you do, remove that many damage counters from Ludicolo.'

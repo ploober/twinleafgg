@@ -27,7 +27,7 @@ export class Scizor extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Metal Scizors',
+    name: 'Metal Scissors',
     cost: [M, C],
     damage: 30,
     damageCalculation: '+',

@@ -29,7 +29,7 @@ export class Genesect extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Magnet Blast',
+      name: 'Magnetic Blast',
       cost: [CardType.METAL, CardType.COLORLESS, CardType.COLORLESS],
       damage: 100,
       text: ''

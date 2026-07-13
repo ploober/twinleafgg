@@ -36,7 +36,7 @@ export class Gyarados extends PokemonCard {
       text: ''
     },
     {
-      name: 'Bubble Beam',
+      name: 'Bubblebeam',
       cost: [CardType.WATER, CardType.WATER, CardType.WATER, CardType.WATER],
       damage: 40,
       text: 'Flip a coin. If heads, the Defending Pokémon is now Paralyzed.'

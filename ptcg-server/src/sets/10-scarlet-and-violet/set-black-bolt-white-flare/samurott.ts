@@ -72,7 +72,7 @@ export class Samurott extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Energy Slash',
+    name: 'Energized Slash',
     cost: [W],
     damage: 30,
     damageCalculation: '+',

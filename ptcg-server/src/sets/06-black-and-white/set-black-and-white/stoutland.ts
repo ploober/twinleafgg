@@ -53,7 +53,7 @@ export class Stoutland extends PokemonCard {
       text: 'Search your deck for up to 2 cards and put them into your hand. Show those cards to your opponent. Shuffle your deck afterward.'
     },
     {
-      name: 'Wild Tackle',
+      name: 'Giga Impact',
       cost: [C, C, C, C],
       damage: 100,
       text: 'This Pokémon can\'t attack during your next turn.'

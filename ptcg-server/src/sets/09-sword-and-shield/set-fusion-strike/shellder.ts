@@ -9,7 +9,7 @@ export class Shellder extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public attacks = [{
-    name: 'Toungue Slap',
+    name: 'Tongue Slap',
     cost: [CardType.WATER],
     damage: 10,
     text: ''

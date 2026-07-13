@@ -22,7 +22,7 @@ export class Porygon2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Tri-Attack',
+      name: 'Tri Attack',
       cost: [CardType.COLORLESS, CardType.COLORLESS],
       damage: 30,
       damageCalculator: 'x',

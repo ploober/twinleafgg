@@ -23,7 +23,7 @@ export class Nidoqueen extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Vengence',
+    name: 'Vengeance',
     cost: [C, C, C],
     damage: 30,
     damageCalculation: '+',

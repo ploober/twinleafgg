@@ -23,7 +23,7 @@ export class DragapultV extends PokemonCard {
       text: ''
     },
     {
-      name: 'Jet Assult',
+      name: 'Jet Assault',
       cost: [P, P],
       damage: 60,
       text: 'If this Pokémon moved from your Bench to the Active Spot this turn, this attack does 80 more damage.'

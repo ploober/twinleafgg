@@ -23,7 +23,7 @@ export class Belliboltex extends PokemonCard {
       text: 'This attack does 50 damage to 1 of your opponent\'s Pokémon. (Don’t apply Weakness and Resistance for Benched Pokémon.)'
     },
     {
-      name: 'Paralyzing Bolt',
+      name: 'Paralyzing Ball',
       cost: [L, L, C],
       damage: 160,
       text: 'You may discard 2 [L] Energy from this Pokémon to make your opponent\'s Active Pokémon Paralyzed.'

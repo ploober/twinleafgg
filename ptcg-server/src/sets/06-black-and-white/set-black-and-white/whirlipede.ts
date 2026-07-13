@@ -14,13 +14,13 @@ export class Whirlipede extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Toxic Claws',
+      name: 'Poison Sting',
       cost: [P, C],
       damage: 30,
       text: 'The Defending Pokémon is now Poisoned. Put 2 damage counters instead of 1 on that Pokémon between turns.'
     },
     {
-      name: 'Steamroller',
+      name: 'Rollout',
       cost: [P, C, C],
       damage: 50,
       text: ''

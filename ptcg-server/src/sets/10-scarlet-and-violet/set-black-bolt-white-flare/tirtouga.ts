@@ -11,7 +11,7 @@ export class Tirtouga extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Ancient Debris',
+    name: 'Ancient Seaweed',
     cost: [W],
     damage: 30,
     damageCalculation: 'x',

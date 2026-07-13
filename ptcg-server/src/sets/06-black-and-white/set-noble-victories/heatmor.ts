@@ -13,7 +13,7 @@ export class Heatmor extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Lick',
+      name: 'Singe',
       cost: [C],
       damage: 10,
       text: ''

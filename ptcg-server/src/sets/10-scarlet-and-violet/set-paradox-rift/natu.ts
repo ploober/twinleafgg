@@ -24,7 +24,7 @@ export class Natu extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public attacks = [{
-    name: 'Triple Jab',
+    name: 'Triple Strike',
     cost: [CardType.PSYCHIC],
     damage: 10,
     damageCalculation: 'x',

@@ -13,7 +13,7 @@ export class Absol extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Swirling Diaster',
+      name: 'Swirling Disaster',
       cost: [D],
       damage: 0,
       text: 'This attack does 10 damage to each of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

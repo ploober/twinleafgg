@@ -26,7 +26,7 @@ export class EarthenSealStone extends TrainerCard {
   public text: string = 'The Pokémon V this card is attached to can use the VSTAR Power on this card. (You still need the necessary Energy to use this attack.) You may play any number of Item cards during your turn. Attach a Pokémon Tool to 1 of your Pokémon that doesn\'t already have a Pokémon Tool attached.';
 
   public attacks: Attack[] = [{
-    name: 'Stone Gift',
+    name: 'Star Gravity',
     cost: [CardType.COLORLESS],
     damage: 0,
     text: 'You may play any number of Item cards during your turn. Attach a Pokémon Tool to 1 of your Pokémon that doesn\'t already have a Pokémon Tool attached. (You can\'t use more than 1 VSTAR Power in a game.)'

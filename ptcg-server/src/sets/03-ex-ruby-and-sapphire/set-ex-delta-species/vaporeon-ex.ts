@@ -26,7 +26,7 @@ export class Vaporeonex extends PokemonCard {
     text: 'This attack\'s damage isn\'t affected by Resistance, Poké-Powers, Poké-Bodies, or any other effects on the Defending Pokémon.'
   },
   {
-    name: 'Hydro Splash',
+    name: 'Hydrosplash',
     cost: [W, C, C],
     damage: 60,
     text: ''

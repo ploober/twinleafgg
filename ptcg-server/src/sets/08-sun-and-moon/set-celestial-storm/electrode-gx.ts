@@ -40,7 +40,7 @@ export class ElectrodeGX extends PokemonCard {
       text: ''
     },
     {
-      name: 'Crash and Burn-GX',
+      name: 'Crush and Burn-GX',
       cost: [CardType.LIGHTNING, CardType.COLORLESS],
       damage: 30,
       damageCalculation: '+',

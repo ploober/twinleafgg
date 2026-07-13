@@ -13,7 +13,7 @@ export class Elgyem extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Psychic',
+      name: 'Headbutt',
       cost: [C],
       damage: 10,
       text: ''

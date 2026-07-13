@@ -24,7 +24,7 @@ export class GiratinaVSTAR extends PokemonCard {
     text: 'Put 2 Energy attached to your Pokémon in the Lost Zone.'
   },
   {
-    name: 'Star Requium',
+    name: 'Star Requiem',
     cost: [G, P],
     damage: 0,
     text: 'You can use this attack only if you have 10 or more cards in the Lost Zone. Your opponent\'s Active Pokémon is Knocked Out. (You can\'t use more than 1 VSTAR Power in a game.)'

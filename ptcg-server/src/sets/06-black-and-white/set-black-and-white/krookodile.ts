@@ -15,14 +15,14 @@ export class Krookodile extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Foul Play',
+      name: 'Torment',
       cost: [D],
       damage: 0,
       copycatAttack: true,
       text: 'Choose 1 of the Defending Pokémon\'s attacks and use it as this attack.'
     },
     {
-      name: 'Bombast',
+      name: 'Krookoroll',
       cost: [D, D, C, C],
       damage: 40,
       damageCalculation: '+',

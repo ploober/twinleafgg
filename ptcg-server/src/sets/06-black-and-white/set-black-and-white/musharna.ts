@@ -20,7 +20,7 @@ export class Musharna extends PokemonCard {
       text: 'If the Defending Pokémon is not Asleep, this attack does nothing.'
     },
     {
-      name: 'Psybeam',
+      name: 'Dream Eater',
       cost: [P, P, C],
       damage: 40,
       text: 'The Defending Pokémon is now Confused.'

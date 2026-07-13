@@ -14,8 +14,8 @@ export class Pawniard extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public attacks = [
-    { name: 'Stampede', cost: [CardType.COLORLESS], damage: 10, text: '' },
-    { name: 'Ram', cost: [CardType.DARK, CardType.COLORLESS], damage: 20, text: '' }
+    { name: 'Scratch', cost: [CardType.COLORLESS], damage: 10, text: '' },
+    { name: 'Pierce', cost: [CardType.DARK, CardType.COLORLESS], damage: 20, text: '' }
   ];
 
   public set: string = 'SVI';

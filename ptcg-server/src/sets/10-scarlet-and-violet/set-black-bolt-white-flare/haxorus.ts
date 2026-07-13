@@ -24,7 +24,7 @@ export class Haxorus extends PokemonCard {
     text: 'If your opponent\'s Active Pokémon is an Evolution Pokémon, this attack does 80 more damage.'
   },
   {
-    name: 'Axe Bomber',
+    name: 'Axe Blast',
     cost: [F, M, C],
     damage: 0,
     text: 'If your opponent\'s Active Pokémon is a Basic Pokémon, it is Knocked Out.'

@@ -15,13 +15,13 @@ export class Scolipede extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Megahorn',
+      name: 'Steamroller',
       cost: [P, C, C],
       damage: 70,
       text: 'Flip a coin. If tails, this attack does nothing.'
     },
     {
-      name: 'Venoshock',
+      name: 'Poison Claws',
       cost: [P, P, C, C],
       damage: 50,
       damageCalculation: '+',

@@ -23,7 +23,7 @@ export class Toxtricity extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Thwap',
+    name: 'Gentle Slap',
     cost: [D, D, C],
     damage: 100,
     text: ''

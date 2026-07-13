@@ -20,7 +20,7 @@ export class Snom extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Sprinkle Water',
+      name: 'Ram',
       cost: [CardType.WATER],
       damage: 10,
       text: ''

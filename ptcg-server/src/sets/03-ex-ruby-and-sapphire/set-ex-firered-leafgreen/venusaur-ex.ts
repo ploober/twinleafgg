@@ -28,7 +28,7 @@ export class Venusaurex extends PokemonCard {
     text: 'Your opponent\'s Active Pokémon is now Poisoned, Burned, and Confused.'
   },
   {
-    name: 'Solar Beam',
+    name: 'Solarbeam',
     cost: [G, G, G, C, C],
     damage: 90,
     text: ''

@@ -20,7 +20,7 @@ export class Parasect extends PokemonCard {
   public evolvesFrom = 'Paras';
 
   public attacks = [{
-    name: 'Sporte',
+    name: 'Spore',
     cost: [CardType.GRASS, CardType.GRASS],
     damage: 0,
     text: 'The Defending Pokémon is now Asleep.'

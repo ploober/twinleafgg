@@ -30,7 +30,7 @@ export class WalkingWakeex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Cathartic Roar',
+      name: 'Catharsis Roar',
       cost: [CardType.WATER, CardType.COLORLESS, CardType.COLORLESS],
       damage: 120,
       text: 'If your opponent\'s Active Pokémon is affected by a Special Condition, this attack does 120 more damage.'

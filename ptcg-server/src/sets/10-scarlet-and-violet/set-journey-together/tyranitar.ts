@@ -27,7 +27,7 @@ export class Tyranitar extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Crackling Stomp',
+    name: 'Cracking Stomp',
     cost: [CardType.DARK, CardType.COLORLESS],
     damage: 150,
     text: 'Discard the top 2 cards of your opponent\'s deck.'

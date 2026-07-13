@@ -29,7 +29,7 @@ export class GyaradosV extends PokemonCard {
     damage: 20,
     text: 'This attack does 20 damage for each damage counter on this Pokémon.'
   }, {
-    name: 'Max Tyrant',
+    name: 'Heavy Storm',
     cost: [CardType.WATER, CardType.WATER, CardType.WATER, CardType.COLORLESS],
     damage: 180,
     text: ''

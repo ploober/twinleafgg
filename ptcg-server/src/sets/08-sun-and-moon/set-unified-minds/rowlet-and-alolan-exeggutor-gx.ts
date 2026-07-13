@@ -146,7 +146,7 @@ export class RowletAlolanExeggutorGX extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Suepr Growth',
+      name: 'Super Growth',
       cost: [],
       damage: 0,
       text: 'Search your deck for a card that evolves from 1 of your [G] Pokémon and put it onto that Pokémon to evolve it. If that Pokémon is now a Stage 1 Pokémon, search your deck for a Stage 2 Pokémon that evolves from that Pokémon and put it onto that Pokémon to evolve it. Then, shuffle your deck. '

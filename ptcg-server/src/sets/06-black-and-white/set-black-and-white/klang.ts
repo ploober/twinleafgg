@@ -16,7 +16,7 @@ export class Klang extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Vice Grip',
+      name: 'Bind',
       cost: [C, C],
       damage: 30,
       text: ''

@@ -29,7 +29,7 @@ export class Clawitizer extends PokemonCard {
   public regulationMark = 'I';
   public cardImage: string = 'assets/cardback.png';
   public fullName: string = 'Clawitizer M1S';
-  public name: string = 'Clawitizer';
+  public name: string = 'Clawitzer';
 
   public readonly ABILITY_USED_MARKER = 'ABILITY_USED_MARKER';
 

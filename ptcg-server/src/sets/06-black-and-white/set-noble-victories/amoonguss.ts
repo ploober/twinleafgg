@@ -22,7 +22,7 @@ export class Amoonguss extends PokemonCard {
       text: 'The Defending Pokémon is now Poisoned. Put 2 damage counters instead of 1 on the Poisoned Pokémon between turns.'
     },
     {
-      name: 'Rising Lunge',
+      name: 'Body Slam',
       cost: [G, C, C],
       damage: 40,
       damageCalculation: '+',

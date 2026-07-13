@@ -20,7 +20,7 @@ export class MegaPyroarex extends PokemonCard {
       text: "During your opponent's next turn, attacks used by the Defending Pokémon do 50 less damage (before applying Weakness and Resistance).",
     },
     {
-      name: 'Big Bang Fire',
+      name: 'Fiery Big Bang',
       cost: [R, R, C],
       damage: 290,
       damageCalculation: '-',

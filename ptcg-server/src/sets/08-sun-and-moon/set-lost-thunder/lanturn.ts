@@ -83,13 +83,13 @@ export class Lanturn extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Salvage',
+      name: 'Disorienting Flash',
       cost: [CardType.COLORLESS],
       damage: 0,
       text: 'Shuffle 4 Item cards from your discard pile into your deck.'
     },
     {
-      name: 'Signal Beam',
+      name: 'Thunderous Bolt',
       cost: [CardType.LIGHTNING, CardType.COLORLESS],
       damage: 50,
       text: 'Your opponent\'s Active Pokémon is now Confused.'

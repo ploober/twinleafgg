@@ -23,7 +23,7 @@ export class TeamRocketsTyranitar extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Breakthrough Tackle',
+      name: 'Demolition Tackle',
       cost: [F, C, C, C],
       damage: 180,
       text: 'Discard an Energy from your opponent\'s Active Pokémon.'

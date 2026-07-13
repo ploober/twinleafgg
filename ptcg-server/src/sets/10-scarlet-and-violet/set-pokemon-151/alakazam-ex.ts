@@ -23,7 +23,7 @@ export class Alakazamex extends PokemonCard {
       text: 'This attack does 30 more damage for each of your opponent\'s Benched Pokémon.'
     },
     {
-      name: 'Dimensional Manipulation',
+      name: 'Dimensional Hand',
       cost: [P, P],
       damage: 120,
       useOnBench: true,

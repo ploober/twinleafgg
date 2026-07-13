@@ -14,13 +14,13 @@ export class Sawk extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Low Kick',
+      name: 'Low Sweep',
       cost: [F],
       damage: 30,
       text: ''
     },
     {
-      name: 'Double Kick',
+      name: 'Beatdown',
       cost: [F, C, C],
       damage: 50,
       damageCalculation: 'x',

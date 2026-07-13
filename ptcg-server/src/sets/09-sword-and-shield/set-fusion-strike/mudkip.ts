@@ -14,7 +14,7 @@ export class Mudkip extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Mud Slap',
+      name: 'Mud-Slap',
       cost: [CardType.COLORLESS, CardType.COLORLESS],
       damage: 20,
       text: ''

@@ -19,7 +19,7 @@ export class Bouffalant2 extends PokemonCard {
       text: ''
     },
     {
-      name: 'Afro Break',
+      name: 'Double Stomp',
       cost: [C, C, C],
       damage: 60,
       text: 'Bouffalant does 10 damage to itself.'

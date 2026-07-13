@@ -25,7 +25,7 @@ export class Accelgor extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Grass Tornado',
+      name: 'Ninja Tornado',
       cost: [CardType.GRASS, CardType.COLORLESS, CardType.COLORLESS],
       damage: 120,
       text: 'If this Pokémon moved from your Bench to the Active Spot this turn, this attack can be used for [G].'

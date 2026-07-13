@@ -13,7 +13,7 @@ export class Misdreavus extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Mummble',
+    name: 'Mumble',
     cost: [C],
     damage: 10,
     text: ''

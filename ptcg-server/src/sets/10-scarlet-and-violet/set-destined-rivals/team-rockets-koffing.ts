@@ -22,7 +22,7 @@ export class TeamRocketsKoffing extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Gas Leak',
+      name: 'Leaking Gas',
       cost: [D, C],
       damage: 30,
       text: ''

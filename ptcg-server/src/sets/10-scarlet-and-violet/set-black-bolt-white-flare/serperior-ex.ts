@@ -20,7 +20,7 @@ export class Serperiorex extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Grass Order',
+    name: 'Command the Grass',
     cost: [G, C, C, C],
     damage: 150,
     text: 'You may search your deck for up to 3 cards and put them into your hand. Then, shuffle your deck.'

@@ -14,7 +14,7 @@ export class Lillipup2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Pickup',
+      name: 'Collect',
       cost: [C],
       damage: 0,
       text: 'Choose a card from your discard pile and shuffle it into your deck.'

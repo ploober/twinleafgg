@@ -15,7 +15,7 @@ export class Golduck extends PokemonCard {
   public evolvesFrom = 'Psyduck';
 
   public attacks = [{
-    name: 'Psychock',
+    name: 'Psyshock',
     cost: [P],
     damage: 10,
     text: 'Flip a coin. If heads, the Defending Pokémon is now Paralyzed.'

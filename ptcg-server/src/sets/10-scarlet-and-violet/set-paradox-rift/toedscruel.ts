@@ -29,7 +29,7 @@ export class Toedscruel extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Scratch',
+      name: 'Mushroom Drain',
       cost: [G, C, C],
       damage: 80,
       text: 'Heal 30 damage from this Pokémon.',

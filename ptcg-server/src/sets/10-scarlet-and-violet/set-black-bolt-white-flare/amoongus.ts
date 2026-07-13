@@ -30,7 +30,7 @@ export class Amoongus extends PokemonCard {
   public set: string = 'BLK';
   public setNumber: string = '11';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Amoongus';
+  public name: string = 'Amoonguss';
   public fullName: string = 'Amoongus SV11B';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

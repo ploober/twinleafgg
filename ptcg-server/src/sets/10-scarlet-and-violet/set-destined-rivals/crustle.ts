@@ -26,7 +26,7 @@ export class Crustle extends PokemonCard {
   ];
 
   public attacks = [{
-    name: 'Great Scissors',
+    name: 'Superb Scissors',
     cost: [G, C, C],
     damage: 120,
     shredAttack: true,

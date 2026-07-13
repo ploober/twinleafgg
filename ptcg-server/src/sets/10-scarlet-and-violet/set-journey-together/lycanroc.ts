@@ -25,7 +25,7 @@ export class Lycanroc extends PokemonCard {
 
   public attacks: Attack[] = [
     {
-      name: 'Clutch Fang',
+      name: 'Clamping Fangs',
       cost: [C, C, C],
       damage: 40,
       damageCalculation: '+',

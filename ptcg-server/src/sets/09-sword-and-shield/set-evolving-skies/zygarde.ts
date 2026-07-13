@@ -19,7 +19,7 @@ export class Zygarde extends PokemonCard {
     text: ''
   },
   {
-    name: 'Judgement Surge',
+    name: 'Judgment Surge',
     cost: [G, F, C],
     damage: 0,
     text: 'This attack does 40 damage to 1 of your opponent\'s Pokémon for each Prize card your opponent has taken. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

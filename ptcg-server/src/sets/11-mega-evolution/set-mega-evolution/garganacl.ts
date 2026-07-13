@@ -21,7 +21,7 @@ export class Garganacl extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Rock Hurl',
+    name: 'Hammer In',
     cost: [F, F, C],
     damage: 130,
     text: ''

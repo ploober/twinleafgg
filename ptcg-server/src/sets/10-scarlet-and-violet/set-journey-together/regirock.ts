@@ -22,7 +22,7 @@ export class Regirock extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Buster Lariat',
+    name: 'Breaching Lariat',
     cost: [F, F, F],
     damage: 120,
     text: 'This attack\'s damage isn\'t affected by Resistance.'

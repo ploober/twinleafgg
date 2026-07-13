@@ -28,7 +28,7 @@ export class Dudunsparce extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Land Crash',
+      name: 'Land Crush',
       cost: [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
       damage: 90,
       text: ''

@@ -15,14 +15,14 @@ export class Liepard extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Assist',
+      name: 'Taunt',
       cost: [D],
       damage: 0,
       copycatAttack: true,
       text: 'Choose 1 of your Benched Pokémon\'s attacks and use it as this attack.'
     },
     {
-      name: 'Fury Swipes',
+      name: 'Sucker Punch',
       cost: [D, D, C],
       damage: 40,
       damageCalculation: 'x',

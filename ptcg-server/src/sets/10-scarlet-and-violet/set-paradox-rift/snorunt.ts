@@ -20,7 +20,7 @@ export class Snorunt extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public attacks = [{
-    name: 'Bite',
+    name: 'Ice Shard',
     cost: [CardType.WATER],
     damage: 10,
     damageCalculation: '+',

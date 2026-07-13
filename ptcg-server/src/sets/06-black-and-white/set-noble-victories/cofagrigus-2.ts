@@ -22,7 +22,7 @@ export class Cofagrigus2 extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Hex',
+    name: 'Ambush',
     cost: [P, C],
     damage: 0,
     text: 'Put 4 damage counters on the Defending Pokémon.'

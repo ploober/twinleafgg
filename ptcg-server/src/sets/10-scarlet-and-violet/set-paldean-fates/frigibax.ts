@@ -27,7 +27,7 @@ export class Frigibax extends PokemonCard {
       text: 'Draw a card.'
     },
     {
-      name: 'Bite',
+      name: 'Beat',
       cost: [CardType.WATER, CardType.COLORLESS],
       damage: 20,
       text: ''

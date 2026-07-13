@@ -18,7 +18,7 @@ export class Manaphy extends PokemonCard {
     text: 'Shuffle your hand into your deck. Then, draw 5 cards.'
   },
   {
-    name: 'Rain Splash',
+    name: 'Wave Splash',
     cost: [W],
     damage: 20,
     text: ''

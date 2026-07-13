@@ -12,7 +12,7 @@ export class Joltik extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Thunder Wave',
+      name: 'Stun Needle',
       cost: [L],
       damage: 10,
       text: 'Flip a coin. If heads, the Defending Pokémon is now Paralyzed.'

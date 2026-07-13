@@ -21,7 +21,7 @@ export class Blazikenex extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Burning Assault',
+    name: 'Smolder-sault',
     cost: [R, C],
     damage: 200,
     text: 'During your next turn, this Pokemon can\'t attack.'

@@ -23,7 +23,7 @@ export class Carracosta extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Hydro Pump',
+    name: 'Crunch',
     cost: [W, W, C],
     damage: 60,
     damageCalculation: '+',

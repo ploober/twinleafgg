@@ -23,7 +23,7 @@ export class Jellicent extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Absorb Life',
+    name: 'Hydro Pump',
     cost: [W, W, C],
     damage: 50,
     text: 'Heal 20 damage from this Pokémon.'

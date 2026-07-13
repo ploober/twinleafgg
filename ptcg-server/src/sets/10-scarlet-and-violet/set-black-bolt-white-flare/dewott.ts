@@ -13,7 +13,7 @@ export class Dewott extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Energy Shell',
+    name: 'Energized Shell',
     cost: [W],
     damage: 30,
     damageCalculation: 'x',

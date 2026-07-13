@@ -13,7 +13,7 @@ export class Elgyem2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Round Up',
+      name: 'First Contact',
       cost: [P],
       damage: 0,
       text: 'Search your deck for 2 Basic Pokémon and put them onto your Bench. Shuffle your deck afterward.'

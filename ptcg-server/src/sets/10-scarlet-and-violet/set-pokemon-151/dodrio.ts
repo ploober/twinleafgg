@@ -34,7 +34,7 @@ export class Dodrio extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Balliastic Beak',
+      name: 'Ballistic Beak',
       cost: [CardType.COLORLESS],
       damage: 10,
       damageCalculation: '+',

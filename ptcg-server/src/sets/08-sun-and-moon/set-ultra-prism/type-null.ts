@@ -11,7 +11,7 @@ export class TypeNull extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Merciless Stike',
+      name: 'Merciless Strike',
       cost: [C, C],
       damage: 30,
       damageCalculation: '+',

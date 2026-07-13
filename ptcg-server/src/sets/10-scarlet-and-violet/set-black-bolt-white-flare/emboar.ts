@@ -25,7 +25,7 @@ export class Emboar extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Heat Stamp',
+      name: 'Heat Crash',
       cost: [R, R, R, C],
       damage: 120,
       text: ''

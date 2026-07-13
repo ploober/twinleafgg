@@ -15,7 +15,7 @@ export class Sandile extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Sand-Attack',
+      name: 'Sand Tomb',
       cost: [F],
       damage: 10,
       text: 'Flip a coin. If heads, the Defending Pokémon\'s attacks do nothing during your opponent\'s next turn.'

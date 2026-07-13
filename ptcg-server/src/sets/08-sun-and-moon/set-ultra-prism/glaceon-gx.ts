@@ -33,7 +33,7 @@ export class GlaceonGX extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Frost Spear',
+      name: 'Frost Bullet',
       cost: [CardType.WATER, CardType.COLORLESS, CardType.COLORLESS],
       damage: 90,
       text: 'This attack does 30 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

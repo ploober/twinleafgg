@@ -22,7 +22,7 @@ export class Nacli extends PokemonCard {
     text: 'Heal 20 damage from 1 of your Pokémon.'
   },
   {
-    name: 'Slashing Strike',
+    name: 'Tackle',
     cost: [F, F],
     damage: 30,
     text: ''

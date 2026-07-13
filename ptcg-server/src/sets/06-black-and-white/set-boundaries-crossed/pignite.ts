@@ -21,7 +21,7 @@ export class Pignite extends PokemonCard {
       text: ''
     },
     {
-      name: 'Firebeathing',
+      name: 'Firebreathing',
       cost: [CardType.FIRE, CardType.COLORLESS, CardType.COLORLESS],
       damage: 40,
       text: 'Fliip a coin. If heads, this attack does 20 more damage.'

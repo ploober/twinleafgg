@@ -22,7 +22,7 @@ export class CynthiasRoserade extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Leaf Steps',
+      name: 'Leaf Step',
       cost: [G, C, C],
       damage: 80,
       text: ''

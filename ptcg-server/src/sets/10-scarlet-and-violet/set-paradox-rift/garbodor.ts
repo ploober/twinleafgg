@@ -22,7 +22,7 @@ export class Garbodor extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Suffocating Gas',
+      name: 'Chuck',
       cost: [D],
       damage: 50,
       damageCalculation: 'x',

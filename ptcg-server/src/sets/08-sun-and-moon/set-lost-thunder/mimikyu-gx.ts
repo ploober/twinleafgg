@@ -28,7 +28,7 @@ export class MimikyuGX extends PokemonCard {
       text: 'Your opponent\'s Active Pokémon is now Confused.'
     },
     {
-      name: 'Let\'s Snuggle and Fall',
+      name: 'Let\'s Snuggle & Fall',
       cost: [CardType.FAIRY, CardType.COLORLESS],
       damage: 10,
       text: 'This attack does 30 more damage for each damage counter on your opponent\'s Active Pokémon.'

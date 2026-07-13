@@ -18,7 +18,7 @@ export class Maractus extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [
-    { name: 'Venomous Hit', cost: [G], damage: 20, text: '' },
+    { name: 'Peck', cost: [G], damage: 20, text: '' },
     {
       name: 'Ditch and Shake',
       cost: [G, C],

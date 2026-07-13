@@ -27,7 +27,7 @@ export class CynthiasGabite extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Dragon Slice',
+      name: 'Dragonslice',
       cost: [F],
       damage: 40,
       text: ''

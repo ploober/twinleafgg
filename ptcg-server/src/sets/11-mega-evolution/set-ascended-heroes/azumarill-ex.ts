@@ -20,7 +20,7 @@ export class Azumarillex extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Energy Balloon',
+    name: 'Energized Balloon',
     cost: [C, C, C],
     damage: 60,
     damageCalculation: '+',

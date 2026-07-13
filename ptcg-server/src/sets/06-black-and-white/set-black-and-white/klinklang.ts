@@ -74,7 +74,7 @@ export class Klinklang extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Gear Saucer',
+    name: 'Gear Grind',
     cost: [M, M, C],
     damage: 80,
     text: 'Does 20 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

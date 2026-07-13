@@ -14,13 +14,13 @@ export class Zebstrika extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Charge',
+    name: 'Rear Kick',
     cost: [L],
     damage: 0,
     text: 'Search your deck for a [L] Energy card and attach it to this Pokémon. Shuffle your deck afterward.'
   },
   {
-    name: 'Lightning Crash',
+    name: 'Electrispark',
     cost: [L, L, C],
     damage: 80,
     text: 'The Defending Pokémon is now Paralyzed.'

@@ -16,7 +16,7 @@ export class Ceruledge extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Purgatory Slash',
+    name: 'Infernal Slash',
     cost: [R],
     damage: 220,
     text: 'Discard 4 Basic [R] Energy cards from your hand or this attack does nothing.',

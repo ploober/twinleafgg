@@ -27,7 +27,7 @@ export class MagnezoneVSTAR extends PokemonCard {
       text: 'Search your deck for up to 2 Item cards, reveal them, and put them into your hand. Then, shuffle your deck.'
     },
     {
-      name: 'Splitting Beam',
+      name: 'Electro Star',
       cost: [CardType.LIGHTNING, CardType.LIGHTNING],
       damage: 0,
       text: 'This attack does 90 damage to 2 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.) (You can\'t use more than 1 VSTAR Power in a game.)'

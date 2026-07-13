@@ -26,7 +26,7 @@ export class Tinkatuff extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Alloy Swing',
+      name: 'Alloy Aswing',
       cost: [CardType.PSYCHIC],
       damage: 20,
       damageCalculation: '+',

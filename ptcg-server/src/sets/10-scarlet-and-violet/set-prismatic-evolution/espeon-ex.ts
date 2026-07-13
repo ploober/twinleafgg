@@ -32,7 +32,7 @@ export class Espeonex extends PokemonCard {
       text: 'Discard 1 random card from your opponent\'s hand.'
     },
     {
-      name: 'Amethyst',
+      name: 'Amazez',
       cost: [G, P, D],
       damage: 0,
       text: 'Devolve each of your opponent\'s evolved Pokémon by shuffling the highest Stage Evolution card on it into your opponent\'s deck.'

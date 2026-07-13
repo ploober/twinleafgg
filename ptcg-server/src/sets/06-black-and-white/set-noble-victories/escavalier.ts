@@ -15,7 +15,7 @@ export class Escavalier extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Slash',
+      name: 'Guard Press',
       cost: [M, C],
       damage: 30,
       text: ''

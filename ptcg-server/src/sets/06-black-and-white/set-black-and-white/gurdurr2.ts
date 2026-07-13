@@ -16,13 +16,13 @@ export class Gurdurr2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Focus Energy',
+      name: 'Bulk Up',
       cost: [C],
       damage: 0,
       text: 'During your next turn, each of this Pokémon\'s attacks does 40 more damage (before applying Weakness and Resistance).'
     },
     {
-      name: 'Low Sweep',
+      name: 'Pound',
       cost: [F, C, C],
       damage: 60,
       text: ''

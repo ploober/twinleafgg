@@ -24,7 +24,7 @@ export class Conkeldurr2 extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Chip Away',
+    name: 'Top Down',
     cost: [F, C, C, C],
     damage: 80,
     text: 'Flip a coin until you get tails. For each heads, discard the top card of your opponent\'s deck.'

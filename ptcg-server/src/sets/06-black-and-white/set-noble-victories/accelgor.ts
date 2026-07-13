@@ -23,7 +23,7 @@ export class Accelgor extends PokemonCard {
       text: 'Flip a coin. If heads, discard an Energy attached to the Defending Pokémon.'
     },
     {
-      name: 'Deck and Cover',
+      name: 'Slashing Strike',
       cost: [C, C],
       damage: 50,
       text: 'The Defending Pokémon is now Paralyzed and Poisoned. Shuffle this Pokémon and all cards attached to it into your deck.'

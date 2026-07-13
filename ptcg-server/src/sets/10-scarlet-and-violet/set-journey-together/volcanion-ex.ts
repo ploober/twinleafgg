@@ -25,7 +25,7 @@ export class Volcanionex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Heat Cyclone',
+      name: 'Scorching Cyclone',
       cost: [CardType.FIRE, CardType.FIRE, CardType.COLORLESS],
       damage: 160,
       text: 'Move an Energy from this Pokémon to 1 of your Benched Pokémon.'

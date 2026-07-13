@@ -29,7 +29,7 @@ export class Yanmega extends PokemonCard {
     text: 'Choose 1 of your opponent\'s Pokémon. This attack does 40 damage to that Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
   },
   {
-    name: 'Sonic Boom',
+    name: 'Sonicboom',
     cost: [G, G, C],
     damage: 70,
     text: 'This attack\'s damage isn\'t affected by Weakness or Resistance.'

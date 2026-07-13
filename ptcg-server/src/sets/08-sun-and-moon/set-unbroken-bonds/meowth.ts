@@ -20,7 +20,7 @@ export class Meowth extends PokemonCard {
     text: 'Draw 2 cards. If you do, this Pokémon is now Asleep.'
   },
   {
-    name: 'Tail Whip',
+    name: 'Tail Whap',
     cost: [CardType.COLORLESS, CardType.COLORLESS],
     damage: 30,
     text: ''

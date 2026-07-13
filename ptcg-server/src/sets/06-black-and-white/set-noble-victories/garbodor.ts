@@ -20,7 +20,7 @@ export class Garbodor extends PokemonCard {
       text: 'The Defending Pokémon can\'t retreat during your opponent\'s next turn.'
     },
     {
-      name: 'Sludge Toss',
+      name: 'Gunk Shot',
       cost: [P, C, C, C],
       damage: 60,
       text: 'The Defending Pokémon is now Poisoned.'

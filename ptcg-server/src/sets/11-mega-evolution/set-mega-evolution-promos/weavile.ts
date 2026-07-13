@@ -13,7 +13,7 @@ export class Weavile extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Claws of Retribution',
+    name: 'Retaliatory Claw',
     cost: [D, D],
     damage: 20,
     damageCalculation: '+',

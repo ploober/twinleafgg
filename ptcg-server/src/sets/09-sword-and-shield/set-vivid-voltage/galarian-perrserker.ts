@@ -30,7 +30,7 @@ export class GalarianPerrserker extends PokemonCard {
   public regulationMark: string = 'D';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '113';
-  public name: string = 'Galarian Perserker';
+  public name: string = 'Galarian Perrserker';
   public fullName: string = 'Galarian Perserker VIV';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

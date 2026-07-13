@@ -57,7 +57,7 @@ export class Whimsicottex extends PokemonCard {
     text: 'Search your deck for up to 3 Basic Energy cards and attach them to your Pokémon in any way you like. Then, shuffle your deck.'
   },
   {
-    name: 'Wonder Cotton',
+    name: 'Wondrous Cotton',
     cost: [G],
     damage: 0,
     text: 'Your opponent reveals their hand. This attack does 50 damage for each Trainer card you find there.'

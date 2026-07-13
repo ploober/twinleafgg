@@ -62,7 +62,7 @@ export class Snorlax extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Collapse',
+      name: 'Thudding Press',
       cost: [C, C, C],
       damage: 130,
       text: 'This Pokémon also does 30 damage to itself.'

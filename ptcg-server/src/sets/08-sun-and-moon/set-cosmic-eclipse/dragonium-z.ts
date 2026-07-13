@@ -29,7 +29,7 @@ export class DragoniumZDragonClaw extends TrainerCard {
   public fullName: string = 'Dragonium Z: Dragon Claw CEC';
 
   public attacks: Attack[] = [{
-    name: 'Destructive Drake',
+    name: 'Destructive Drake-GX',
     cost: [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
     damage: 80,
     damageCalculation: 'x',

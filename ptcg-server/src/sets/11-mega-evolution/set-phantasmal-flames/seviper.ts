@@ -22,7 +22,7 @@ export class Seviper extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Jet Black Fang',
+    name: 'Pitch-Black Fangs',
     cost: [D, D, D],
     damage: 120,
     text: '',

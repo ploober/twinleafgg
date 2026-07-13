@@ -23,7 +23,7 @@ export class Meganium extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Solar Beam',
+    name: 'Solarbeam',
     cost: [G, G, C, C],
     damage: 80,
     text: ''

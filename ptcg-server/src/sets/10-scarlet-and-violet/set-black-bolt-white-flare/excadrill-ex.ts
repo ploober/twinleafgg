@@ -18,7 +18,7 @@ export class Excadrillex extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Penetrating Drill',
+    name: 'Piercing Drill',
     cost: [F, F],
     damage: 60,
     text: 'This attack also does 60 damage to 1 of your opponent\'s Benched Pokémon that has any damage counters on it. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

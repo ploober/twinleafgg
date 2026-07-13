@@ -15,7 +15,7 @@ export class Swoobat extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Gust',
+      name: 'Attract',
       cost: [C, C],
       damage: 20,
       text: ''

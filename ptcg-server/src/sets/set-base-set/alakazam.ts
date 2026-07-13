@@ -65,7 +65,7 @@ export class Alakazam extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Shadow Punch',
+    name: 'Confuse Ray',
     cost: [CardType.PSYCHIC, CardType.PSYCHIC, CardType.PSYCHIC],
     damage: 30,
     text: 'Flip a coin. If heads, the Defending Pokémon is now Confused.'

@@ -23,7 +23,7 @@ export class Bisharp2 extends PokemonCard {
       text: 'You may switch this Pokémon with 1 of your Benched Pokémon.'
     },
     {
-      name: 'Metal Claw',
+      name: 'Night Slash',
       cost: [D, C, C],
       damage: 50,
       damageCalculation: '+',
