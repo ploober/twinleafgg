@@ -6,6 +6,7 @@ import { ADD_CONFUSION_TO_PLAYER_ACTIVE, AFTER_ATTACK, HEAL_X_DAMAGE_FROM_THIS_P
 
 export class Primarina extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
+  public evolvesFrom = 'Brionne';
   public cardType: CardType = W;
   public hp: number = 150;
   public weakness = [{ type: G }];

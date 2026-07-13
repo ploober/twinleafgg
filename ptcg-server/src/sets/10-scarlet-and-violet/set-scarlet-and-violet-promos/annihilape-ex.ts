@@ -50,7 +50,7 @@ export class Annihilapeex extends PokemonCard {
 
   public stage: Stage = Stage.STAGE_2;
 
-  public evolvesFrom = 'Primape';
+  public evolvesFrom = 'Primeape';
 
   public regulationMark = 'G';
 

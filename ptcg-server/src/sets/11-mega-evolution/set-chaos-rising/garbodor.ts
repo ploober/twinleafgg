@@ -6,7 +6,7 @@ import { GamePhase } from '../../../game/store/state/state';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Garbodor extends PokemonCard {
-  public stage: Stage = Stage.STAGE_2;
+  public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Trubbish';
   public hp: number = 140;
   public cardType: CardType = D;

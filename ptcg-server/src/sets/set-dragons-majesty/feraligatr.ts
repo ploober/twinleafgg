@@ -7,7 +7,7 @@ import { Effect } from '../../game/store/effects/effect';
 import { MOVE_CARDS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../game/store/prefabs/prefabs';
 
 export class Feraligatr extends PokemonCard {
-  public stage: Stage = Stage.BASIC;
+  public stage: Stage = Stage.STAGE_2;
   public cardType: CardType = CardType.WATER;
   public hp: number = 160;
   public weakness = [{ type: CardType.GRASS }];

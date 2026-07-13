@@ -11,7 +11,7 @@ import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Floette extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom: string = 'Flabebe';
+  public evolvesFrom: string = 'Flabébé';
   public cardType: CardType = Y;
   public hp: number = 70;
   public weakness = [{ type: M }];

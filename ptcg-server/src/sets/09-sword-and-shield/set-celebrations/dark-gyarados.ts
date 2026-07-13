@@ -13,6 +13,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PowerType, State, StoreLike } from '../../../game';
 export class DarkGyarados extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
+  public evolvesFrom = 'Magikarp';
   public cardType: CardType = W;
   public hp: number = 70;
   public weakness = [{ type: G }];

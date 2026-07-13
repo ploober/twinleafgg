@@ -13,7 +13,6 @@ export class GyaradosV extends PokemonCard {
 
   public stage: Stage = Stage.BASIC;
 
-  public evolvesFrom = 'Gyarados V';
 
   public cardType: CardType = CardType.WATER;
 

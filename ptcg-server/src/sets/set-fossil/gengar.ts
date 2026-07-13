@@ -16,7 +16,7 @@ import { ABILITY_USED, WAS_ATTACK_USED, WAS_POWER_USED } from '../../game/store/
 
 export class Gengar extends PokemonCard {
 
-  public stage: Stage = Stage.BASIC;
+  public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Haunter';
   public cardType: CardType = P;
   public hp: number = 80;

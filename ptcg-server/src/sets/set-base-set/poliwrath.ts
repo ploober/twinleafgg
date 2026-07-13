@@ -23,6 +23,7 @@ export class Poliwrath extends PokemonCard {
   public setNumber: string = '13';
 
   public stage: Stage = Stage.STAGE_2;
+  public evolvesFrom = 'Poliwhirl';
 
   public cardType: CardType = CardType.WATER;
 

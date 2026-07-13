@@ -11,7 +11,7 @@ import { FLIP_A_COIN_IF_HEADS_DEAL_MORE_DAMAGE } from '../../../game/store/prefa
 
 export class Exeggutor extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom: string = 'タマタマ[Exeggcute]';
+  public evolvesFrom: string = 'Exeggcute';
   public cardType: CardType = G;
   public hp: number = 80;
   public weakness = [{ type: R }];

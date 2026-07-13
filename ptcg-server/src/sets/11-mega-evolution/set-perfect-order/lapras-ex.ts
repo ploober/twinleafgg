@@ -5,7 +5,7 @@ import { WAS_ATTACK_USED, AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from "../..
 
 
 export class Laprasex extends PokemonCard {
-  public stage: Stage = Stage.STAGE_1;
+  public stage: Stage = Stage.BASIC;
   public tags = [CardTag.POKEMON_ex];
   public cardType: CardType = W;
   public hp: number = 210;

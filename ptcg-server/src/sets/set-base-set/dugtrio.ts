@@ -17,6 +17,7 @@ export class Dugtrio extends PokemonCard {
   public fullName = 'Dugtrio BS';
 
   public stage: Stage = Stage.STAGE_1;
+  public evolvesFrom = 'Diglett';
 
   public cardType: CardType = CardType.FIGHTING;
 

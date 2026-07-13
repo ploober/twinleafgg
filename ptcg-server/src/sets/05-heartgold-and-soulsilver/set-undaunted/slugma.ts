@@ -9,7 +9,6 @@ import { ABILITY_USED, ADD_MARKER, REMOVE_MARKER, REMOVE_MARKER_AT_END_OF_TURN, 
 export class Slugma extends PokemonCard {
 
   public stage: Stage = Stage.BASIC;
-  public evolvesFrom = 'Slugma';
   public cardType: CardType = R;
   public hp = 60;
   public weakness = [{ type: W }];

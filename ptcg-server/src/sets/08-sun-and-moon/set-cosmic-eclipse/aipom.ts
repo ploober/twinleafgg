@@ -11,7 +11,6 @@ import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects
 export class Aipom extends PokemonCard {
 
   public stage: Stage = Stage.BASIC;
-  public evolvesFrom = 'Aipom';
   public cardType: CardType = C;
   public hp: number = 60;
   public weakness = [{ type: F }];

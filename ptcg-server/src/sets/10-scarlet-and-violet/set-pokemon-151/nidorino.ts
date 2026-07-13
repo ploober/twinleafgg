@@ -5,7 +5,7 @@ import { Attack } from '../../../game/store/card/pokemon-types';
 export class Nidorino extends PokemonCard {
   public cardType = CardType.DARK;
   public stage = Stage.STAGE_1;
-  public evolvesFrom = '♂';
+  public evolvesFrom = 'Nidoran ♂';
   public hp = 90;
   public weakness = [{ type: F }];
   public retreat = [C, C];
