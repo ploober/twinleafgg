@@ -14,7 +14,7 @@ export class Pikachuex extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public powers = [{
-    name: 'Tenacious Heart',
+    name: 'Resolute Heart',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has full HP and would be Knocked Out by an attack, it isn\'t Knocked Out and its remaining HP becomes 10 instead.'
   }];

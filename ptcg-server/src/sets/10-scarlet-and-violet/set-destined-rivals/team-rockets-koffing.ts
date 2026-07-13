@@ -15,7 +15,7 @@ export class TeamRocketsKoffing extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Alert Smog',
+    name: 'Smog Signals',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon is in the Active Spot and is damaged by an attack from your opponent\'s Pokémon (even if this Pokémon is Knocked Out), search your deck for up to 2 Pokémon with Koffing in their name and put them onto your Bench. Then, shuffle your deck.'
   }];

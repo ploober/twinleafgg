@@ -13,7 +13,7 @@ export class Cetitanex extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public powers = [{
-    name: 'Snow Cover',
+    name: 'Snow Camouflage',
     powerType: PowerType.ABILITY,
     text: 'Whenever your opponent plays an Item or Supporter card from their hand, prevent all effects of that card done to this Pokémon.'
   }];

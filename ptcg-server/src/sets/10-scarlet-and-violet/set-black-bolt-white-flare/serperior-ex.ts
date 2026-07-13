@@ -14,7 +14,7 @@ export class Serperiorex extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Royal Cheer',
+    name: 'Regal Cheer',
     powerType: PowerType.ABILITY,
     text: 'Attacks used by your Pokémon do 20 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).'
   }];

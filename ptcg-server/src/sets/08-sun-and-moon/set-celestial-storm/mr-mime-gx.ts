@@ -18,7 +18,7 @@ export class MrMimeGX extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Magic Odds',
+    name: 'Magic Evens',
     powerType: PowerType.ABILITY,
     text: 'Prevent all damage done to this Pokémon by your opponent\'s attacks if that damage is exactly 10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210, 230, or 250.'
   }];

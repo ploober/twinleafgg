@@ -15,7 +15,7 @@ export class Cofagrigus2 extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Chuck into the Chest',
+    name: 'Durable Body',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn (before your attack), you may choose a Pokémon from your Bench (excluding any Cofagrigus) and put it on top of your face-down Prize cards. If you do, put 1 of your face-down Prize cards onto your Bench. (You can\'t use this Ability if your Bench is full.) This ends your turn.'

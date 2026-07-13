@@ -16,7 +16,7 @@ export class Huntail extends PokemonCard {
 
   public powers = [
     {
-      name: 'Diver Catch',
+      name: 'Diver\'s Catch',
       powerType: PowerType.ABILITY,
       text: 'You may use this Ability whenever 1 of your [W] Pokémon is Knocked Out by damage from an opponent\'s Pokémon\'s attack. Return all Basic [W] Energy attached to the Knocked Out Pokémon to your hand instead of discarding them.'
     }

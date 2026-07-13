@@ -18,7 +18,7 @@ export class Meloettaex extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Live Debut',
+    name: 'Debut Performance',
     powerType: PowerType.ABILITY,
     text: 'If you go first, this Pokémon can attack on your first turn.'
   }];

@@ -15,7 +15,7 @@ export class TeamRocketsCrobatex extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Bite About',
+    name: 'Biting Spree',
     powerType: PowerType.ABILITY,
     text: 'When you play this Pokémon from your hand to evolve 1 of your Pokémon during your turn, you may put 2 damage counters on 2 of your opponent\'s Pokémon.'
   }];

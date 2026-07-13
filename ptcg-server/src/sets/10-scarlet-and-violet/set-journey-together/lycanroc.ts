@@ -17,7 +17,7 @@ export class Lycanroc extends PokemonCard {
   public retreat = [C, C];
 
   public powers: Power[] = [{
-    name: 'Spike Cloak',
+    name: 'Spike-Clad',
     powerType: PowerType.ABILITY,
     text: 'You may use this Ability when you play this Pokémon from your hand to evolve 1 of your Pokémon. ' +
       'Attach up to 2 Spiky Energy cards from your discard pile to this Pokémon.'

@@ -16,7 +16,7 @@ export class Seviper extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Excite Power',
+    name: 'Excited Power',
     powerType: PowerType.ABILITY,
     text: 'If you have a [D] Pokemon ex in play, this Pokemon\'s attacks do 120 more damage to your opponent\'s Active Pokemon.'
   }];

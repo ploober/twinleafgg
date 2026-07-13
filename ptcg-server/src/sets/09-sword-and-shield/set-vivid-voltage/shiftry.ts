@@ -14,7 +14,7 @@ export class Shiftry extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Shiftry Substitution',
+    name: 'Shifty Substitution',
     text: 'As long as this Pokémon is in the Active Spot, each Supporter card in your opponent\'s hand has the effect "Draw 3 cards." (This happens instead of the card\'s usual effect.)',
     useWhenInPlay: false,
     powerType: PowerType.ABILITY

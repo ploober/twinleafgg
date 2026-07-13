@@ -23,7 +23,7 @@ export class WalkingWakeex extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public powers = [{
-    name: 'Azure Wave',
+    name: 'Azure Seas',
     powerType: PowerType.ABILITY,
     text: 'Damage from attacks used by this Pokémon isn\'t affected by any effects on your opponent\'s Active Pokémon.'
   }];

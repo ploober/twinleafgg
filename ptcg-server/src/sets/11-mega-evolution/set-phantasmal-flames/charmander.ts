@@ -15,7 +15,7 @@ export class Charmander extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Nimble',
+    name: 'Agile',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has no Energy attached to it, this Pokémon has no Retreat Cost.'
   }];

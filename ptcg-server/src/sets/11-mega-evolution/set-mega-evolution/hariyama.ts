@@ -14,7 +14,7 @@ export class Hariyama extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Sumo Catcher',
+    name: 'Heave-Ho Catcher',
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, when you play this card from your hand to evolve one of your Pokémon, you may switch one of your opponent\'s Benched Pokémon with their Active Pokémon.'
   }];

@@ -13,7 +13,7 @@ export class Genesectex extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Metal Signal',
+    name: 'Metallic Signal',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, you may search your deck for up to 2 [M] Evolution Pokemon, reveal them, and put them into your hand. Then, shuffle your deck.'

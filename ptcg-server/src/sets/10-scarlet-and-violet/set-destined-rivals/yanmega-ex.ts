@@ -19,7 +19,7 @@ export class Yanmegaex extends PokemonCard {
 
   public powers = [
     {
-      name: 'Buzz Boost',
+      name: 'Buzzing Boost',
       powerType: PowerType.ABILITY,
       text: 'Once during your turn, when this Pokémon moves from your Bench to the Active Spot, you may search your deck for up to 3 Basic [G] Energy and attach them to this Pokémon. Then, shuffle your deck.'
     }

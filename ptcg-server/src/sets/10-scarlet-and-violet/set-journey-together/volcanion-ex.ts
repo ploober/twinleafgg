@@ -17,7 +17,7 @@ export class Volcanionex extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Scorching Steam',
+    name: 'Scalding Steam',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, if this Pokemon is in your Active Spot, you may make your opponent\'s Active Pokémon Burned.'

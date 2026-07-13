@@ -21,7 +21,7 @@ export class EthansMagcargo extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Melt and Flow',
+    name: 'Melt Away',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has no Energy attached, it has no Retreat Cost.'
   }];

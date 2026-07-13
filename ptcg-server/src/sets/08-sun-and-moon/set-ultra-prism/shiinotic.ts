@@ -16,7 +16,7 @@ export class Shiinotic extends PokemonCard {
   public evolvesFrom: string = 'Morelull';
 
   public powers = [{
-    name: 'Tasting',
+    name: 'Illuminate',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn (before your attack), you may search your deck for a [Y] Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.'

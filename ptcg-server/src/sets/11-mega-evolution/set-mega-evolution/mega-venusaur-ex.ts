@@ -59,7 +59,7 @@ export class MegaVenusaurEx extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public powers = [{
-    name: 'Solar Trans',
+    name: 'Solar Transfer',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'As many times as you like during your turn, you may move a Basic [G] Energy from one of your Pokémon to another one of your Pokémon.'

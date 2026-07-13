@@ -13,7 +13,7 @@ export class Maractus extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Explosive Needle',
+    name: 'Exploding Needles',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent\'s Pokémon, put 6 damage counters on the Attacking Pokémon.'
   }];

@@ -15,7 +15,7 @@ export class Lunatone extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Luna Shade',
+    name: 'Sol Shade',
     powerType: PowerType.POKEBODY,
     text: 'As long as you have Solrock in play, each player\'s [R] Pokémon (excluding Pokémon-ex) can\'t use any Poké-Powers.'
   }];

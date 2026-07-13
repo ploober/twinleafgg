@@ -19,7 +19,7 @@ export class Feraligatr extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Torrential Heart',
+    name: 'Rain Dance',
     useWhenInPlay: true,
     powerType: PowerType.POKEPOWER,
     text: 'As often as you like during your turn (before your attack), you may attach a [W] Energy card from your hand to 1 of your [W] Pokémon. This power can\'t be used if Feraligatr is affected by a Special Condition.'

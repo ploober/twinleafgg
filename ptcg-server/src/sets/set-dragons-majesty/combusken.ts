@@ -26,7 +26,7 @@ export class Combusken extends PokemonCard {
   ];
 
   public powers = [{
-    name: 'Heat Boost',
+    name: 'Natural Cure',
     useWhenInPlay: false,
     powerType: PowerType.ABILITY,
     text: 'Whenever you attach an Energy card from your hand to this Pokémon, remove all Special Conditions from it.'

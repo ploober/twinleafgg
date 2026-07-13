@@ -19,7 +19,7 @@ export class Veluza extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Filet Memento',
+    name: 'Fillet Memento',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent\'s Pokémon, move up to 2 [W] Energy cards from this Pokémon to 1 of your Benched Pokémon.'
   }];

@@ -15,7 +15,7 @@ export class Ludicolo extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Excited Healing',
+    name: 'Excited Heal',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, if you have any [G] Mega Evolution Pokémon ex in play, you may use this Ability. Heal 60 damage from 1 of your Pokémon.'

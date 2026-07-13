@@ -12,7 +12,7 @@ export class MistysPsyduck extends PokemonCard {
   public retreat: CardType[] = [C];
 
   public powers: Power[] = [{
-    name: 'Slapstick Jump',
+    name: 'Flustered Leap',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn, if this Pokémon is on your Bench, you may discard the bottom card ' +

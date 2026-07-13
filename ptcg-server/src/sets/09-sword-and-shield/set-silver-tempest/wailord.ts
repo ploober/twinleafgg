@@ -19,7 +19,7 @@ export class Wailord extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Jumbo Sized',
+    name: 'Jumbo-Sized',
     powerType: PowerType.ABILITY,
     text: 'This Pokemon takes 30 less damage from attacks (after applying Weakness and Resistance).'
   }];

@@ -485,7 +485,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(attacksOffered(at(3))).not.toContain('Crushing Arrow'); // passive off: [G] can't pay [G,C,C,C]
   });
 
-  it('Latios "Luster Assist" is a triggered ability — not offered ungated, fires on Mega Latias ex promote [TA-78 meg-101]', () => {
+  it('Latios "Lustrous Assist" is a triggered ability — not offered ungated, fires on Mega Latias ex promote [TA-78 meg-101]', () => {
     // "Once during your turn, when your Mega Latias ex moves from the Bench to the Active Spot, you may move
     // any number of Energy from your Benched Pokémon to that Active Pokémon." A TRIGGERED ability. Pre-fix it
     // carried `useWhenInPlay: true` (offered as an ungated `useAbility` with any active — por-012/RE-31 class)
@@ -505,6 +505,6 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       }), player({ active: inPlay('B-act', [RALTS]) })),
       [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'acte0' }]);
     expect(promote.state.players.A.active!.stack[0].iid).toBe('A-mlx'); // Mega Latias ex promoted
-    expect(types(promote)).toContain('confirm');                        // Luster Assist fired (was dead pre-fix)
+    expect(types(promote)).toContain('confirm');                        // Lustrous Assist fired (was dead pre-fix)
   });
 });

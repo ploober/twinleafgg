@@ -16,7 +16,7 @@ export class Regirock extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Metal Shield',
+    name: 'Rock Armor',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has any Energy attached, it takes 30 less damage from attacks (after applying Weakness and Resistance).'
   }];

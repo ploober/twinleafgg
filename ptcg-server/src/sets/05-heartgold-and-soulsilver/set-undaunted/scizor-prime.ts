@@ -21,7 +21,7 @@ export class Scizor extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Skyscraper',
+    name: 'Red Armor',
     powerType: PowerType.POKEBODY,
     text: 'Prevent all damage done to Scizor by attacks from your opponent\'s Pokémon that have any Special Energy cards attached to them.'
   }];

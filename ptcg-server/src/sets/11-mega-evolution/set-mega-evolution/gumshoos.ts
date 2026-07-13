@@ -16,7 +16,7 @@ export class Gumshoos extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Gather Evidence',
+    name: 'Evidence Gathering',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, you may use this Ability. Switch a card from your hand with the top card of your deck.'

@@ -15,7 +15,7 @@ export class UnwonE extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Engage',
+    name: '[Engage]',
     powerType: PowerType.POKEMON_POWER,
     text: 'When you play Unown E from your hand, your opponent may shuffle his or her hand into his or her deck and then draw 4 cards. Either way, you may shuffle your hand into your deck and draw 4 cards.'
   }];

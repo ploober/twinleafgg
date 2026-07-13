@@ -13,7 +13,7 @@ export class Archeops extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Primal Wings',
+    name: 'Ancient Wing',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn, if this Pokémon is in the Active Spot, you may choose 1 of your opponent\'s Evolved Pokemon and devolve it by putting the highest Stage Evolution card on it into your opponent\'s hand.'

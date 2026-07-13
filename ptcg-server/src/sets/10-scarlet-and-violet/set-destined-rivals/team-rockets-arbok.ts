@@ -16,7 +16,7 @@ export class TeamRocketsArbok extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Intimidating Glare',
+    name: 'Potent Glare',
     powerType: PowerType.ABILITY,
     text: 'If this Pokemon is your Active Pokemon, your opponent can\'t play any Pokemon cards with Abilities from their hand (excluding Rocket\'s Pokemon).'
   }];

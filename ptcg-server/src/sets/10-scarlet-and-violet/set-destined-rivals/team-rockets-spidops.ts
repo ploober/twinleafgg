@@ -18,7 +18,7 @@ export class TeamRocketsSpidops extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Charge Up',
+    name: 'Charging Up',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn, you may attach 1 Basic Energy from your discard pile to this Pokémon.'

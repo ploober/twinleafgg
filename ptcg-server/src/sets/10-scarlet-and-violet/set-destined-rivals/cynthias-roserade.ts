@@ -15,7 +15,7 @@ export class CynthiasRoserade extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Glorious Cheer',
+    name: 'Cheer On to Glory',
     powerType: PowerType.ABILITY,
     text: 'Attacks from your Cynthia\'s Pokémon deal 30 more damage to your opponent\'s Active Pokémon.'
   }];

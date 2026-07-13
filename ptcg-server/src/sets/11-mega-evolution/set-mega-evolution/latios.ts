@@ -13,7 +13,7 @@ export class Latios extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Luster Assist',
+    name: 'Lustrous Assist',
     // TRIGGERED ability — it auto-fires (via the reduceEffect check below) WHEN Mega Latias ex moves from
     // the Bench to the Active Spot; it is NOT player-activated. `useWhenInPlay: true` wrongly listed it as an
     // activatable `useAbility` in legal-action enumeration (offered ungated with any active — a no-op the

@@ -26,7 +26,7 @@ export class MimikyuV extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Dummmy Doll',
+    name: 'Dummy Doll',
     powerType: PowerType.ABILITY,
     text: 'When you play this Pokémon from your hand onto your Bench during your turn, you may prevent all damage done to this Mimikyu V by attacks from your opponent\'s Pokémon until the end of your opponent\'s next turn.'
   }];

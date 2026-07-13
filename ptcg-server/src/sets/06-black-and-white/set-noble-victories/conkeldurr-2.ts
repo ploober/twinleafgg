@@ -17,7 +17,7 @@ export class Conkeldurr2 extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public powers = [{
-    name: 'Top Down',
+    name: 'Craftsmanship',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn (before your attack), you may search your discard pile for a Stadium card, show it to your opponent, and put it on top of your deck.'

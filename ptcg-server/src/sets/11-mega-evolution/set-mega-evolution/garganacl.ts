@@ -15,7 +15,7 @@ export class Garganacl extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public powers = [{
-    name: 'Power Salt',
+    name: 'Powerful a-Salt',
     powerType: PowerType.ABILITY,
     text: 'Attacks used by your [F] Pokémon do 30 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).'
   }];

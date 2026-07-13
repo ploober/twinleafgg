@@ -18,7 +18,7 @@ export class Crustle extends PokemonCard {
 
   public powers = [
     {
-      name: 'Mysterious Stone House',
+      name: 'Mysterious Rock Inn',
       useWhenInPlay: false,
       powerType: PowerType.ABILITY,
       text: 'Prevent all damage done to this Pokémon by attacks from your opponent\'s Pokémon ex.'

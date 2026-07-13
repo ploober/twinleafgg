@@ -65,7 +65,7 @@ export class Samurott extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Strong Currents',
+    name: 'Torrential Whirlpool',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'Once during your turn, you may switch your Active Pokémon with 1 of your Benched Pokemon. If you do, your opponent switches their Active Pokemon with 1 of their Benched Pokemon.'

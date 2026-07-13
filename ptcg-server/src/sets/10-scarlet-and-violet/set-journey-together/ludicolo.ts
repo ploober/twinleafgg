@@ -13,7 +13,7 @@ export class Ludicolo extends PokemonCard {
 
   public powers: Power[] = [
     {
-      name: 'Vital Samba',
+      name: 'Vibrant Dance',
       powerType: PowerType.ABILITY,
       text: 'Your Pokémon in play get +40 HP. This Ability doesn\'t stack.'
     }

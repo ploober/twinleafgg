@@ -16,7 +16,7 @@ export class MrMimeex2 extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Magic Odds',
+    name: 'Magic Evens',
     powerType: PowerType.POKEBODY,
     text: 'If Mr. Mime ex would be damaged by an attack, prevent that attack’s damage done to Mr. Mime ex if that damage is 20, 40, 60, 80, 100, 120, 140, 160, or 180.'
   }];

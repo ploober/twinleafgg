@@ -22,7 +22,7 @@ export class Genesect extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public powers = [{
-    name: 'Ace Canceller',
+    name: 'ACE Nullifier',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has a Pokémon Tool attached, your opponent can\'t play any Ace Spec cards from their hand.'
   }];

@@ -17,7 +17,7 @@ export class Bronzong extends PokemonCard {
   public retreat = [C, C, C];
 
   public powers = [{
-    name: 'Pain Amplifier',
+    name: 'Cursed Alloy',
     powerType: PowerType.POKEBODY,
     text: 'As long as Bronzong is your Active Pokémon, put 1 damage counter on each of your opponent\'s Pokémon that has any Poké-Powers between turns.'
   }];

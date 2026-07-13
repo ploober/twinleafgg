@@ -14,7 +14,7 @@ export class Muk extends PokemonCard {
   public retreat = [C, C, C, C];
 
   public powers = [{
-    name: 'Stench',
+    name: 'Poison Sacs',
     powerType: PowerType.ABILITY,
     text: 'The Special Condition Poisoned is not removed when your opponent\'s Pokémon evolve or devolve.'
   }];

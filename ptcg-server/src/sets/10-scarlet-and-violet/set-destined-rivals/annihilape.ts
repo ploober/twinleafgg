@@ -12,7 +12,7 @@ export class Annihilape extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Vessel of Rage',
+    name: 'Lose Cool',
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has 2 or more damage counters on it, attacks used by this Pokémon do 120 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).'
   }];

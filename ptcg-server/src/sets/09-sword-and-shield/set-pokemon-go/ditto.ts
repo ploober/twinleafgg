@@ -92,7 +92,7 @@ export class Ditto extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public powers = [{
-    name: 'Sudden Transormation',
+    name: 'Sudden Transformation',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
     text: 'This Pokémon can use the attacks of any Basic Pokémon in your discard pile, except for Pokémon with a Rule Box (Pokémon V, Pokémon-GX, etc. have Rule Boxes). (You still need the necessary Energy to use each attack.)'

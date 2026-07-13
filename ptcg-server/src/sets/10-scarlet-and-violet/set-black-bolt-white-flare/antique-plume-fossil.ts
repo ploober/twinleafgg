@@ -27,7 +27,7 @@ export class AntiquePlumeFossil extends TrainerCard {
   public evolvesFromBase: string[] = [];
 
   public powers: Power[] = [{
-    name: 'Antique Plume Fossil',
+    name: 'Plume Protection',
     text: `Play this card as if it were a 60-HP [C] Basic Pokémon. This card can't be affected by any Special Conditions and can't retreat.
 
 At any time during your turn, you may discard this card from play.`,
@@ -58,7 +58,7 @@ At any time during your turn, you may discard this card from play.`,
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD, { name: player.name, card: this.name, effect: 'Antique Plume Fossil' });
+      store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD, { name: player.name, card: this.name, effect: 'Plume Protection' });
 
       const cardList = StateUtils.findCardList(state, this);
       cardList.moveCardTo(this, player.discard);

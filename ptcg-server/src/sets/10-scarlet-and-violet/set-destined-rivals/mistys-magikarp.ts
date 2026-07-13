@@ -14,7 +14,7 @@ export class MistysMagikarp extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Storehouse Hideaway',
+    name: 'So Submerged',
     powerType: PowerType.ABILITY,
     text: 'As long as this Pokémon is on your Bench, prevent all damage from and effects of attacks ' +
       'from your opponent\'s Pokémon done to this Pokémon.'

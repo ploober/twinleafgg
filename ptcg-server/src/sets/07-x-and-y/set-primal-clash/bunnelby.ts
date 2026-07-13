@@ -23,7 +23,7 @@ export class Bunnelby extends PokemonCard {
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Barrage',
+    name: 'Ω Barrage',
     powerType: PowerType.ANCIENT_TRAIT,
     barrage: true,
     text: 'This Pokémon may attack twice a turn. (If the first attack Knocks Out your opponent\'s Active Pokémon, you may attack again after your opponent chooses a new Active Pokémon.)'

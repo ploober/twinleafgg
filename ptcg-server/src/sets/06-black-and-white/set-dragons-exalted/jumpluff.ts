@@ -14,7 +14,7 @@ export class Jumpluff extends PokemonCard {
   public retreat = [];
 
   public powers = [{
-    name: 'Cowardice',
+    name: 'Leave It to the Wind',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn (before your attack), you may discard all cards attached to this Pokémon and return it to your hand. You can\'t use this Ability during your first turn or on the turn this Pokémon was put into play.'

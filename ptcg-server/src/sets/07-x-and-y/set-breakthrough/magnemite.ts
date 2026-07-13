@@ -14,7 +14,7 @@ export class Magnemite extends PokemonCard {
   public retreat = [C];
 
   public powers = [{
-    name: 'Conductive Body',
+    name: 'Sparkling Induction',
     powerType: PowerType.ABILITY,
     text: 'As long as this Pokémon is your Active Pokémon, its Retreat Cost is [C] less for each Magnemite on your Bench.'
   }];
