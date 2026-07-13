@@ -55,7 +55,7 @@ export class PokeTurn extends TrainerCard {
 
   public set: string = 'PL';
 
-  public name: string = 'Team Galactic\'s Invention G-105 Poke Turn';
+  public name: string = 'Team Galactic\'s Invention G-105 Poké Turn';
 
   public fullName: string = 'Poke Turn PL';
 

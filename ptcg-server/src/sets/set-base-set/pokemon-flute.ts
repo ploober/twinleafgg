@@ -13,7 +13,7 @@ export class PokemonFlute extends TrainerCard {
 
   public set: string = 'BS'; // Replace with the appropriate set abbreviation
 
-  public name: string = 'Pokemon Flute';
+  public name: string = 'Pokémon Flute';
 
   public fullName: string = 'Pokemon Flute BS'; // Replace with the appropriate set abbreviation
 

@@ -99,7 +99,7 @@ export class PokeBlower extends TrainerCard {
 
   public set: string = 'SF';
 
-  public name: string = 'Poke Blower +';
+  public name: string = 'Poké Blower +';
 
   public fullName: string = 'Poke Blower SF';
 

@@ -75,7 +75,7 @@ export class PokeDrawer extends TrainerCard {
 
   public set: string = 'SF';
 
-  public name: string = 'Poke Drawer +';
+  public name: string = 'Poké Drawer +';
 
   public fullName: string = 'Poke Drawer SF';
 

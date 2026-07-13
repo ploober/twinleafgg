@@ -128,7 +128,7 @@ export class PokemonBreeder extends TrainerCard {
 
   public setNumber: string = '76';
 
-  public name: string = 'Pokemon Breeder';
+  public name: string = 'Pokémon Breeder';
 
   public fullName: string = 'Pokémon Breeder BS';
 

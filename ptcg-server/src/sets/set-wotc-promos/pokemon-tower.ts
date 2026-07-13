@@ -13,7 +13,7 @@ export class PokemonTower extends TrainerCard {
   public set = 'PR';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '42';
-  public name = 'Pokemon Tower';
+  public name = 'Pokémon Tower';
   public fullName = 'Pokemon Tower PR';
   public text = 'If the effect of a Pokémon Power, attack, Energy card, or Trainer card would put a card in a discard pile into its owner\'s hand, that card stays in that discard pile instead.';
 

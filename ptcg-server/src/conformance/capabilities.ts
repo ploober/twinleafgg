@@ -4,6 +4,7 @@ import { loadAllSets } from '../sets/tests/test-helpers';
 import { SCHEMA_VERSION } from './neutral-types';
 import { EXCLUDED_RANDOM_CARDS } from './excluded-random-cards';
 import { toPrinting } from './printing';
+import { CONVENTIONS, Conventions } from './conventions';
 
 /**
  * The `GET /v1/capabilities` payload (OpenAPI `Capabilities`): engine identity + the sets it
@@ -18,6 +19,13 @@ export interface CapabilitiesResponse {
   schemaVersion: string;
   /** Implemented set code (lowercased, the `printing` set component) → implemented-card count. */
   sets: { [setCode: string]: number };
+  /**
+   * This engine's declared representational conventions — the choices it makes where the rulebook
+   * has no truth. The harness normalizes both engines with their own declarations before diffing
+   * (rather than hardcoding one engine's style), AND asserts this engine actually follows each of
+   * them across every card: a convention applied inconsistently is a defect, not a convention.
+   */
+  conventions: Conventions;
 }
 
 const ENGINE_NAME = 'twinleaf';
@@ -75,5 +83,6 @@ export function buildCapabilities(): CapabilitiesResponse {
     version: ENGINE_VERSION,
     schemaVersion: SCHEMA_VERSION,
     sets,
+    conventions: CONVENTIONS,
   };
 }

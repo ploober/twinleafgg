@@ -42,7 +42,7 @@ export class PokemonRescue extends TrainerCard {
 
   public set: string = 'PL';
 
-  public name: string = 'Pokemon Rescue';
+  public name: string = 'Pokémon Rescue';
 
   public fullName: string = 'Pokemon Rescue PL';
 
