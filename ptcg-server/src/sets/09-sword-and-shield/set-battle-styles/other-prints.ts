@@ -264,6 +264,11 @@ export class TimburrBST extends Timburr {
   public set: string = 'BST';
   public setNumber: string = '73';
   public fullName: string = 'Timburr BST';
+  // BST 73 prints TWO retreat symbols; BLW 58 prints one. Reprint-by-`extends` inherits the base's
+  // printed data, so this MUST be overridden or the card silently takes BLW's retreat. It did: the
+  // consensus codemod (1e1e708da) corrected BLW 58 to [C] and this card -- which was already right
+  // -- followed it down to 1 and became wrong, with nothing reporting the change.
+  public retreat = [C, C];
 }
 
 export class SpearowBST extends Spearow {
