@@ -3762,7 +3762,7 @@ export function CAN_USE_FROM_HAND_TO_BENCH_POWER(
     }
 
     const benchCount = player.bench.filter(b => b.cards.length > 0).length;
-    if (benchCount >= 5) {
+    if (benchCount >= player.bench.length) {
       return false;
     }
 
@@ -3804,16 +3804,17 @@ export function CAN_PLAY_POKEMON_CARD(
       return false;
     }
 
-    // Check if there's space on bench (max 5 bench Pokemon)
+    // Check if there's space on bench (capacity follows stadiums like Area Zero → 8)
     const benchCount = player.bench.filter((b) => b.cards.length > 0).length;
+    const benchCapacity = player.bench.length;
     const sandboxAllBasic = Boolean(
       state.gameSettings?.sandboxMode && state.gameSettings?.sandboxAllPokemonBasic,
     );
-    if (sandboxAllBasic && benchCount < 5) {
+    if (sandboxAllBasic && benchCount < benchCapacity) {
       return true;
     }
 
-    if (benchCount >= 5 && pokemonCard.stage === Stage.BASIC) {
+    if (benchCount >= benchCapacity && pokemonCard.stage === Stage.BASIC) {
       return false;
     }
 
