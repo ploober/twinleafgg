@@ -756,6 +756,13 @@
         "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
         "const checkHpEffect = new CheckHpEffect(opponent, cardList);"
       ]
+    },
+    {
+      "file": "set-team-up/articuno.ts",
+      "signatures": [
+        "const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);",
+        "{ allowCancel: false, min: numToMove, max: numToMove, blocked }"
+      ]
     }
   ]
 }

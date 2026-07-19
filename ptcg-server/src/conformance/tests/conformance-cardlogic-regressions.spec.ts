@@ -537,4 +537,34 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(moved.state.players.B.active!.damage).toBe(10);
     expect(moved.state.players.B.bench[0].damage).toBe(10);
   });
+
+  it('Articuno "Cold Cyclone" can move a Splash Energy — a Special Energy that PROVIDES [W] [F-026 teu-032]', () => {
+    // "Move 2 [W] Energy from this Pokemon to 1 of your Benched Pokemon." Splash Energy (bkp-113) has a
+    // static provides:[] and yields [W] only DYNAMICALLY (CheckProvidedEnergyEffect) while on a [W]
+    // Pokemon. Articuno is [W], so the attached Splash Energy IS a movable [W] Energy. Pre-fix the move
+    // filtered by the static provides (AttachEnergyPrompt validCardTypes), so the Splash Energy was
+    // omitted from the menu AND rejected by validate — the move used the dynamic provided type instead.
+    const splash = (iid: string): CardRef => ({ iid, printing: 'bkp-113' });
+    const boardOf = () => board(
+      player({
+        active: inPlay('A-act', ['teu-032'], [{ iid: 'ae0', printing: WATER }, { iid: 'ae1', printing: WATER }, splash('ae2')]),
+        bench: [inPlay('A-b0', ['bs-063'])],  // Squirtle: a [W] Pokemon, a legal Splash destination
+      }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const attachCards = (r: ReturnType<typeof step>): string[] =>
+      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'attachEnergy').map(a => (a as { card: string }).card);
+
+    const menu = step(boardOf(), [attack('A-act', 'Cold Cyclone')]);
+    expect(menu.status).toBe('awaitingAction');
+    expect(attachCards(menu)).toContain('ae2');   // the Splash Energy is offered as a movable [W] Energy
+
+    // And the full move (Splash + a basic Water, min=max=2) relocates the Splash onto the [W] bench:
+    const moved = step(boardOf(), [
+      attack('A-act', 'Cold Cyclone'),
+      { actor: 'A', type: 'attachEnergy', card: 'ae2', target: 'A-b0' },
+      { actor: 'A', type: 'attachEnergy', card: 'ae0', target: 'A-b0' },
+    ]);
+    expect(moved.state.players.A.bench[0].energy.map(e => e.printing)).toContain('bkp-113');
+  });
 });

@@ -4,6 +4,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { TrainerTargetEffect } from '../../../game/store/effects/play-card-effects';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Articuno extends PokemonCard {
@@ -53,16 +54,27 @@ export class Articuno extends PokemonCard {
         return state;
       }
 
-      // Count valid [W] Energy attached to Articuno
+      // A movable "[W] Energy" is any Energy that PROVIDES a valid [W]-ish type right now. Special Energy
+      // (e.g. Splash Energy bkp-113) has a static provides:[] and yields [W] only DYNAMICALLY while it is
+      // attached to a [W] Pokemon, so read the dynamic provided types via CheckProvidedEnergyEffect — a
+      // static `provides` read omits it (F-026). Express the restriction as `blocked` (index list) rather
+      // than `validCardTypes`, because the prompt's validate() AND the legalActions menu both filter
+      // validCardTypes against the static `provides` array, which would drop the Splash Energy again.
       const validTypes = [CardType.WATER, CardType.ANY, CardType.WLFM, CardType.GRW];
-      const attachedEnergies = player.active.cards.filter(card => {
-        // Only consider EnergyCard instances
-        if (card.superType !== SuperType.ENERGY) return false;
-        // Check if card is an EnergyCard and provides a valid type
-        const energyCard = card as any;
-        return Array.isArray(energyCard.provides) && energyCard.provides.some((t: CardType) => validTypes.includes(t));
+      const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);
+      store.reduceEffect(state, checkEnergy);
+      const providesValidType = new Set(
+        checkEnergy.energyMap
+          .filter(em => em.provides.some(t => validTypes.includes(t)))
+          .map(em => em.card)
+      );
+      const blocked: number[] = [];
+      player.active.cards.forEach((card, index) => {
+        if (card.superType === SuperType.ENERGY && !providesValidType.has(card)) {
+          blocked.push(index);
+        }
       });
-      const numToMove = Math.min(2, attachedEnergies.length);
+      const numToMove = Math.min(2, providesValidType.size);
       if (numToMove === 0) {
         return state;
       }
@@ -74,7 +86,7 @@ export class Articuno extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: numToMove, max: numToMove, validCardTypes: validTypes }
+        { allowCancel: false, min: numToMove, max: numToMove, blocked }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {
