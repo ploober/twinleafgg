@@ -321,7 +321,11 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
     const powersEffect = new CheckPokemonPowersEffect(player, pokemon);
     store.reduceEffect(state, powersEffect);
     for (const power of powersEffect.powers) {
-      if (power.powerType !== PowerType.ABILITY) { continue; }
+      // Player-activated in-play powers span two powerType eras: modern PowerType.ABILITY and the
+      // older PowerType.POKEPOWER (e.g. Dragonite DS "Delta Charge"). Both are activated by the player;
+      // only PowerType.POKEBODY is purely passive (never in the menu). The useWhenInPlay gate below plus
+      // the abilityProbeAccepts dry-run keep passive/unusable powers out either way (F-027).
+      if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
       if (power.useWhenInPlay !== true) { continue; } // only player-activated in-play abilities
       // Final gate: dry-run on a clone — card-private preconditions live inside reduceEffect (TA-14).
       if (!abilityProbeAccepts(state, player, power.name, pokemon)) { continue; }

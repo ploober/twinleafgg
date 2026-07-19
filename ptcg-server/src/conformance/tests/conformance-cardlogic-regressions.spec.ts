@@ -567,4 +567,26 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     ]);
     expect(moved.state.players.A.bench[0].energy.map(e => e.printing)).toContain('bkp-113');
   });
+
+  it('Dragonite DS "Delta Charge" (a Poke-POWER) is offered in the legalActions menu [F-027 ds-003]', () => {
+    // Delta Charge is an activated `useWhenInPlay` power, but a POKEPOWER (not an ABILITY). The
+    // conformance abilityMenu enumerated only PowerType.ABILITY, so it omitted every activated
+    // Poke-Power/Poke-Body-era power from the menu even though the engine resolves it when sent.
+    // With a Lightning in the discard and a benched target, the power's preconditions are met.
+    const start = board(
+      player({ active: inPlay('A-act', ['ds-003']), bench: [inPlay('A-b0', [RALTS])], discard: [{ iid: 'A-disc0', printing: 'sve-004' }] }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const abilities = (r: ReturnType<typeof step>): string[] =>
+      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'useAbility').map(a => (a as { ability: string }).ability);
+    expect(abilities(step(start, []))).toContain('Delta Charge');
+
+    // …and it still resolves when used (attach the Lightning from discard onto the bench):
+    const used = step(start, [
+      { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Delta Charge' },
+      { actor: 'A', type: 'attachEnergy', card: 'A-disc0', target: 'A-b0' },
+    ]);
+    expect(used.state.players.A.bench[0].energy.map(e => e.printing)).toContain('sve-004');
+    expect(used.state.players.A.discard.map(c => c.printing)).not.toContain('sve-004');
+  });
 });
