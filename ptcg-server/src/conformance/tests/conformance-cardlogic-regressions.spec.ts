@@ -507,4 +507,34 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(promote.state.players.A.active!.stack[0].iid).toBe('A-mlx'); // Mega Latias ex promoted
     expect(types(promote)).toContain('confirm');                        // Lustrous Assist fired (was dead pre-fix)
   });
+
+  it('Radiant Alakazam "Painful Spoons" moves the OPPONENT\'s counters, not the user\'s own [F-024 sit-059]', () => {
+    // "Once during your turn, you may move up to 2 damage counters from 1 of your opponent's Pokemon
+    // to another of their Pokemon." Pre-fix twinleaf built the MoveDamagePrompt's maxAllowedDamage
+    // from the ability-user's OWN side (player.forEachPokemon BOTTOM_PLAYER) while scoping the prompt
+    // to TOP_PLAYER, so the SOURCE menu offered the user's own (undamaged) Pokemon and the counter
+    // could never be moved. The source list must be the OPPONENT's Pokemon.
+    const start = board(
+      player({ active: inPlay('A-act', ['sit-059']), bench: [inPlay('A-bench', ['sit-060'])] }),
+      player({ active: inPlay('B-act', ['sit-060'], [], 20), bench: [inPlay('B-b0', ['sit-060'])] }),
+    );
+    const chooseTargets = (r: ReturnType<typeof step>): string[] =>
+      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose').map(a => (a as { target: string }).target);
+
+    const menu = step(start, [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Painful Spoons' }]);
+    const sources = chooseTargets(menu);
+    expect(sources).toContain('B-act');       // the opponent's DAMAGED Pokemon is the legal source
+    expect(sources).not.toContain('A-act');   // pre-fix bug: offered the user's own Radiant Alakazam
+    expect(sources).not.toContain('A-bench'); // and the user's own benched Drowzee
+
+    // The full move relocates one counter on the opponent's side (b-active 20->10, b-bench 0->10):
+    const moved = step(start, [
+      { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Painful Spoons' },
+      { actor: 'A', type: 'choose', target: 'B-act' },
+      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
+      { actor: 'A', type: 'confirm', value: false },   // endChoice: close the "up to 2" move
+    ]);
+    expect(moved.state.players.B.active!.damage).toBe(10);
+    expect(moved.state.players.B.bench[0].damage).toBe(10);
+  });
 });

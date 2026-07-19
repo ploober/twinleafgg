@@ -87,9 +87,12 @@ export class RadiantAlakazam extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // Painful Spoons moves counters among the OPPONENT'S Pokemon, so the movable sources/caps must
+      // come from the opponent (TOP_PLAYER) to match the MoveDamagePrompt's TOP_PLAYER scope below.
+      // (Building this from the ability-user's own side offered the wrong Pokemon as sources — F-024.)
       const maxAllowedDamage: DamageMap[] = [];
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-        const checkHpEffect = new CheckHpEffect(player, cardList);
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
+        const checkHpEffect = new CheckHpEffect(opponent, cardList);
         store.reduceEffect(state, checkHpEffect);
         maxAllowedDamage.push({ target, damage: checkHpEffect.hp });
       });
