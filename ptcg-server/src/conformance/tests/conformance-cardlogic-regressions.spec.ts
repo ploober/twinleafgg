@@ -589,4 +589,35 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(used.state.players.A.bench[0].energy.map(e => e.printing)).toContain('sve-004');
     expect(used.state.players.A.discard.map(c => c.printing)).not.toContain('sve-004');
   });
+
+  it('Medicham HL "Meditate" adds the DEFENDER\'s damage without crashing [crash hl-010]', () => {
+    // "Does 20 damage plus 10 more damage for each damage counter on the Defending Pokemon." The card
+    // read `effect.target.damage`, but AttackEffect never populates `.target` (only player/opponent/
+    // attack/damage/source), so it was always undefined -> TypeError on declareAttack. The defender is
+    // reached via effect.opponent.active. Defender has 30 damage (3 counters) -> 20 + 30 = 50 dealt.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['hl-010'], en(FIGHT, 2, 'a')) }),
+            player({ active: inPlay('B-act', [TANKY], [], 30) })),
+      [attack('A-act', 'Meditate')],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.B.active!.damage).toBe(80);   // 30 existing + 50 dealt
+  });
+
+  it('Croconaw SLG "Plunge" moves Energy to the benched Croconaw and switches it in (no crash) [crash slg-019]', () => {
+    // "if this Pokemon is on your Bench, you may move all Energy from your Active Pokemon to this
+    // Pokemon. If you do, switch it with your Active Pokemon." The card set source = player.active, so
+    // player.bench.indexOf(source) was -1 and the swap set player.active = player.bench[-1] = undefined,
+    // crashing the next checkState (forEachPokemon on an undefined active). Energy must move to the
+    // BENCHED Croconaw, then it switches to the Active.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS], en(WATER, 2, 'a')), bench: [inPlay('A-b0', ['slg-019'])] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Plunge' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.active!.stack.map(c => c.printing)).toContain('slg-019'); // Croconaw switched in
+    expect(r.state.players.A.active!.energy.length).toBe(2);                            // carried the Energy
+    expect(r.state.players.A.bench[0].energy.length).toBe(0);                           // old Active, drained
+  });
 });

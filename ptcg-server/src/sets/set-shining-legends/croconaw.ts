@@ -1,9 +1,8 @@
 import { PokemonCard } from '../../game/store/card/pokemon-card';
-import { Stage, CardType } from '../../game/store/card/card-types';
-import { EnergyMap, GameError, GameMessage, PowerType, State, StoreLike } from '../../game';
+import { Stage, CardType, SuperType } from '../../game/store/card/card-types';
+import { GameError, GameMessage, PowerType, State, StoreLike } from '../../game';
 
 import { Effect } from '../../game/store/effects/effect';
-import { CheckProvidedEnergyEffect } from '../../game/store/effects/check-effects';
 import { WAS_POWER_USED } from '../../game/store/prefabs/prefabs';
 
 export class Croconaw extends PokemonCard {
@@ -40,30 +39,27 @@ export class Croconaw extends PokemonCard {
 
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
-      const source = player.active;
 
-      if (player.active.cards[0] == this) {
+      // "if this Pokemon is on your Bench" — locate the bench slot holding this Croconaw. The old code
+      // used `source = player.active` as the move target and bench index, so bench.indexOf(source) was
+      // -1 and the swap set player.active = player.bench[-1] = undefined (crashing the next checkState).
+      const benchSlot = player.bench.find(b => b.cards.includes(this));
+      if (benchSlot === undefined) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      if (checkProvidedEnergy.energyMap.length === 0) {
+      const active = player.active;
+      const energyCards = active.cards.filter(c => c.superType === SuperType.ENERGY);
+      if (energyCards.length === 0) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      checkProvidedEnergy.energyMap.forEach((energyMap: EnergyMap) => {
-        const card = energyMap.card;
-        const index = player.active.cards.indexOf(card);
-        if (index !== -1) {
-          player.active.cards.splice(index, 1);
-        }
-      });
-      source.cards.push(...checkProvidedEnergy.energyMap.map(energyMap => energyMap.card));
-      const benchIndex = player.bench.indexOf(source);
+      // Move all Energy from the Active Pokemon to this (benched) Croconaw...
+      energyCards.forEach(card => active.moveCardTo(card, benchSlot));
+
+      // ...then switch this Croconaw with the Active Pokemon.
+      const benchIndex = player.bench.indexOf(benchSlot);
       [player.active, player.bench[benchIndex]] = [player.bench[benchIndex], player.active];
-
     }
     return state;
   }

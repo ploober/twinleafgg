@@ -763,6 +763,19 @@
         "const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);",
         "{ allowCancel: false, min: numToMove, max: numToMove, blocked }"
       ]
+    },
+    {
+      "file": "set-ex-hidden-legends/medicham.ts",
+      "signatures": [
+        "effect.damage += effect.opponent.active.damage;"
+      ]
+    },
+    {
+      "file": "set-shining-legends/croconaw.ts",
+      "signatures": [
+        "const benchSlot = player.bench.find(b => b.cards.includes(this));",
+        "energyCards.forEach(card => active.moveCardTo(card, benchSlot));"
+      ]
     }
   ]
 }

@@ -36,7 +36,9 @@ export class Medicham extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      effect.damage += effect.target.damage;
+      // +10 per damage counter on the Defending Pokemon = its total damage. Read the defender via
+      // effect.opponent.active; AttackEffect never populates `.target`, so effect.target was undefined.
+      effect.damage += effect.opponent.active.damage;
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
