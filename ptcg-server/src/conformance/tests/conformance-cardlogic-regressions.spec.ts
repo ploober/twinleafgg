@@ -604,6 +604,24 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.damage).toBe(80);   // 30 existing + 50 dealt
   });
 
+  it('Blend Energy WLFM provides only 1 Energy at a time — one Blend pays [F] but not the 2-cost [F][M] [drx-118 sfa-046]', () => {
+    // Blend Energy WLFM (drx-118): "provides [W], [L], [F], or [M] but only 1 Energy at a time." A single
+    // attached Blend is ONE Energy that counts as one of those four types: it pays a 1-Energy cost of any
+    // of them, but NOT a 2-Energy cost — even when both cost types are in its set. The card pushed
+    // provides:[W,L,F,M] (four units) into the energyMap instead of a single COLORLESS placeholder like
+    // every sibling blend/unit energy (Team Rocket's Energy, Unit Energy, Single/Rapid Strike, Dark Metal),
+    // so checkEnoughEnergy flattened one Blend into four Energy and let it pay Haxorus's [F][M] Dragon Pulse.
+    const boardOf = () => board(
+      player({ active: inPlay('A-act', ['sfa-046'], [{ iid: 'ab0', printing: 'drx-118' }]) }),  // Haxorus + 1 Blend WLFM
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const offered = attacksOffered(step(boardOf(), []));
+    expect(offered).toContain('Bring Down the Axe');   // [F]    — one Blend pays a single-Energy cost
+    expect(offered).not.toContain('Dragon Pulse');     // [F][M] — one Blend is only 1 Energy, not payable
+    // …and the engine also REJECTS the attack if declared directly (not merely omits it from the menu):
+    expect(step(boardOf(), [attack('A-act', 'Dragon Pulse')]).status).not.toBe('awaitingAction');
+  });
+
   it('Croconaw SLG "Plunge" moves Energy to the benched Croconaw and switches it in (no crash) [crash slg-019]', () => {
     // "if this Pokemon is on your Bench, you may move all Energy from your Active Pokemon to this
     // Pokemon. If you do, switch it with your Active Pokemon." The card set source = player.active, so

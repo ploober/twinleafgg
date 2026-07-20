@@ -95,6 +95,17 @@ describe('StateUtils', () => {
     expect(StateUtils.checkEnoughEnergy(energy, cost)).toBeTruthy();
   });
 
+  it('Should return false: a single Blend Energy WLFM provides only 1 Energy, so it cannot pay a 2-cost [F][M]', () => {
+    // "provides [W],[L],[F], or [M] but only 1 Energy at a time" — one Blend is ONE flexible unit, not one
+    // per type. It pays a single [F] cost, but [F][M] (2 Energy) needs a second source. The blend energy's
+    // EnergyMap carries a single COLORLESS placeholder; the flexible types live in blendedEnergies.
+    const blend = createBlendEnergy('Blend Energy WLFM', [CardType.COLORLESS],
+      [CardType.WATER, CardType.LIGHTNING, CardType.FIGHTING, CardType.METAL]);
+    expect(StateUtils.checkEnoughEnergy([blend], [CardType.FIGHTING])).toBeTruthy();
+    expect(StateUtils.checkEnoughEnergy([blend], [CardType.FIGHTING, CardType.METAL])).toBeFalsy();
+    expect(StateUtils.checkEnoughEnergy([blend], [CardType.FIGHTING, CardType.COLORLESS])).toBeFalsy();
+  });
+
   it('Should return true when provided with too much energy', () => {
     // given
     const cost: CardType[] = [CardType.FIGHTING, CardType.FIGHTING];

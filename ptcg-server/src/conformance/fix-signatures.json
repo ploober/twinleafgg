@@ -776,6 +776,18 @@
         "const benchSlot = player.bench.find(b => b.cards.includes(this));",
         "energyCards.forEach(card => active.moveCardTo(card, benchSlot));"
       ]
+    },
+    {
+      "file": "set-dragons-exalted/blend-energy-wlfm.ts",
+      "signatures": [
+        "provides: [...this.provides]"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/blend-energy-grpd.ts",
+      "signatures": [
+        "provides: [...this.provides]"
+      ]
     }
   ]
 }
