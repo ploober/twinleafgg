@@ -13,7 +13,7 @@ export class Grovyle extends PokemonCard {
   public cardType: CardType = CardType.GRASS;
   public hp: number = 80;
   public weakness = [{ type: CardType.FIRE }];
-  public retreat = [C, C];
+  public retreat = [CardType.COLORLESS, CardType.COLORLESS];
   public powers = [{
     name: 'Sunshine Grace',
     useWhenInPlay: true,
