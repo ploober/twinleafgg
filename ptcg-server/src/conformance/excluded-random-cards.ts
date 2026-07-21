@@ -23,7 +23,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Furfrou M3",
   "Giratina PLS",
   "Gladion CIN",
-  "Glimwood Tangle DAA",
   "Gothitelle DAA",
   "Gothorita DAA",
   "Gourgeist ex M4",

@@ -261,15 +261,14 @@ class Importer {
     player.prizesTakenThisTurn = ps.flags.prizesTakenThisTurn;
     player.prizesTakenLastTurn = ps.flags.prizesTakenLastTurn;
     // CF-17: cumulative prizes taken this game (prize-count-scaled cost/effect readers depend on it,
-    // e.g. Radiant Charizard "Excited Heart"). In any real game state this equals startingPrizes −
-    // remaining pile, which is exactly how the rotomancer adapter DERIVES it (it keeps no separate
-    // counter and cannot honor a value that contradicts the pile — their 2026-07-21 note). So default
-    // to the pile-derived value (Standard start = 6) when the board doesn't state it — matching
-    // rotomancer and making a pile-only board read correctly rather than the old wrong `0` — and honor
-    // an explicit flag when present (twinleaf keeps a real counter that can legitimately differ from
-    // 6−pile only under rare prize-manipulation). Boards MUST keep pile = 6 − prizesTaken or the two
-    // engines diverge by construction on such an effect.
-    player.prizesTaken = ps.flags.prizesTaken ?? Math.max(0, 6 - ps.prizes.length);
+    // e.g. Radiant Charizard "Excited Heart"). Default to twinleaf's NATIVE semantics — a real counter
+    // that is 0 on a fresh import — so the adapter stays faithful to its own engine (the native-vs-
+    // adapter equivalence bench asserts exactly this). Do NOT derive 6−pile here: a synthetic board can
+    // legitimately be dealt fewer than 6 prizes without any having been taken, and 6−pile would then
+    // over-count (it broke 14 equivalence specs). Rotomancer keeps no counter and DERIVES 6−pile, so a
+    // cross-engine scenario that needs a mid-game prize count must set flags.prizesTaken EXPLICITLY and
+    // keep pile = 6 − prizesTaken (the cf17-excited-heart scenarios do); both engines then agree.
+    player.prizesTaken = ps.flags.prizesTaken ?? 0;
     player.usedVSTAR = ps.flags.vstarUsed;
     // `cardsPlayedThisTurn` has no twinleaf per-turn counter yet — deferred (see projectFlags).
 
@@ -434,7 +433,10 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
     cardsPlayedThisTurn: 0, // deferred: no twinleaf per-turn counter yet
     prizesTakenThisTurn: player.prizesTakenThisTurn,
     prizesTakenLastTurn: player.prizesTakenLastTurn,
-    prizesTaken: player.prizesTaken, // CF-17: cumulative (has live readers, unlike the per-turn tallies)
+    // CF-17: cumulative prizes taken (has live readers, unlike the per-turn tallies). Optional field —
+    // OMIT the 0 default so it round-trips symmetrically with the ingest default (`?? 0`) and doesn't
+    // add a property the 26 pre-CF-17 flag fixtures never carried. Emitted only once a prize is taken.
+    ...(player.prizesTaken ? { prizesTaken: player.prizesTaken } : {}),
     vstarUsed: player.usedVSTAR,
   };
 }
@@ -491,6 +493,7 @@ function projectPlayerLastAttack(state: State): PlayerLastAttacks | undefined {
 }
 
 export function projectState(state: State, ctx: IidContext): NeutralState {
+  const lastAttack = projectPlayerLastAttack(state); // CF-15
   return {
     schemaVersion: SCHEMA_VERSION,
     turn: state.turn,
@@ -503,7 +506,9 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
       A: projectPlayer(ctx, state.players[0], state.turn),
       B: projectPlayer(ctx, state.players[1], state.turn),
     },
-    playerLastAttack: projectPlayerLastAttack(state), // CF-15 (omitted when neither side has a record)
+    // CF-15: OMIT the key entirely when neither side has a record — the field is optional, not nullable,
+    // so `playerLastAttack: undefined` would still add the property and fail an exact-shape assertion.
+    ...(lastAttack ? { playerLastAttack: lastAttack } : {}),
     activeEffects: [], // timed effects are deferred (design §6.3); emitted as [] per the contract default
   };
 }

@@ -1,7 +1,7 @@
 import { CardTag, CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { ADD_PARALYZED_TO_PLAYER_ACTIVE, COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
@@ -29,8 +29,10 @@ export class MistysStaryu extends PokemonCard {
   public fullName: string = 'Misty\'s Staryu DRI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Bubble Beam
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Bubble Beam — the coin flip is a during-attack effect (WAS_ATTACK_USED, not AFTER_ATTACK):
+    // an AFTER_ATTACK flip fires outside the driver's catchable window and 500s the conformance
+    // step with FlipStarvation (same class as TA-56 Marill "Hide"). WAS_ATTACK_USED externalizes it.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, result => {
         if (result) { ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, StateUtils.getOpponent(state, effect.player), this); }
       });

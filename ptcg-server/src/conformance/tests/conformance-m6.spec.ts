@@ -148,9 +148,12 @@ describe('Conformance M6 — capabilities', () => {
     expect((ralts!.attacks ?? []).length).toBeGreaterThan(0);
     expect(ralts!.rarity).toBeUndefined(); // twinleaf does not model rarity — field omitted
 
-    // an excluded inline-Math.random card is absent from its set listing
-    expect(buildCardsForSet('pal').cards
-      .some(c => c.printing === toPrinting(getCardByName('Iono PAL')))).toBe(false);
+    // CF-23: a nondeterministic (inline-Math.random) card is still ENUMERATED in its set listing,
+    // flagged `nondeterministic: true` — the catalog no longer blanket-excludes such cards.
+    const iono = buildCardsForSet('pal').cards
+      .find(c => c.printing === toPrinting(getCardByName('Iono PAL')));
+    expect(iono).toBeDefined();
+    expect(iono!.nondeterministic).toBe(true);
     // a set with no implemented cards → UnknownSetError (→ HTTP 404)
     expect(() => buildCardsForSet('zzz')).toThrowError(UnknownSetError);
   });

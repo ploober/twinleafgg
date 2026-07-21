@@ -12,6 +12,7 @@ import {
 //   TA-56  Marill "Hide" (asc-083)            — flip externalized, not a 500 fault
 //   TA-55  Reshiram ex "Blazing Burst" (wht-020) — main damage placed BEFORE the discard prompt
 //   TA-55  Wellspring Ogerpon "Torrential Pump" (twm-064) — 100 placed BEFORE the shuffle rider
+//   TA-108 Misty's Staryu "Bubble Beam" (dri-046) — AFTER_ATTACK flip → WAS_ATTACK_USED (crash fix)
 
 const WATER = 'Water Energy SVE';
 const FIRE = 'Fire Energy SVE';
@@ -20,6 +21,7 @@ const MARILL = 'Marill MC';                           // asc-083, "Hide" [C]
 const RESHIRAM = 'wht-020';                           // Reshiram ex, "Blazing Burst" [R,R,C]
                                                       // (canonical printing: its fullName suffix "SV11W" ≠ set code "WHT")
 const OGERPON = 'Wellspring Mask Ogerpon ex TWM';     // twm-064, "Torrential Pump" [W,C,C]
+const MISTYS_STARYU = 'Misty\'s Staryu DRI';          // dri-046, "Bubble Beam" [W]
 
 function markers(played = 1): PokemonMarkers {
   return { playedOnTurn: played, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
@@ -60,6 +62,20 @@ describe('Conformance — src/sets fix regression guards (merge-revert canaries)
       board(player({ active: pip('A-act', MARILL, [{ iid: 'e0', printing: WATER }]) }),
             player({ active: pip('B-act', RALTS) })),
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Hide' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.pending!.legalActions.some(a => a.type === 'flip')).toBe(true);
+  });
+
+  it('Misty\'s Staryu "Bubble Beam" externalizes its coin flip instead of faulting [TA-108 dri-046]', () => {
+    // Pre-fix the flip fired in AFTER_ATTACK — outside the driver's catchable window — and 500'd
+    // ("coin flip needed but the next action is not a flip"), same class as TA-56 Marill "Hide".
+    // WAS_ATTACK_USED externalizes it as a system flip pending, so the step must SUCCEED and pause
+    // awaiting a flip. Found by the 2026-07-21 differential fuzz (909-occ ADAPTER_ERROR at depth 1).
+    const res = step(
+      board(player({ active: pip('A-act', MISTYS_STARYU, [{ iid: 'e0', printing: WATER }]) }),
+            player({ active: pip('B-act', RALTS) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Bubble Beam' }],
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'flip')).toBe(true);

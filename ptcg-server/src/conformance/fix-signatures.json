@@ -60,6 +60,12 @@
       ]
     },
     {
+      "file": "set-destined-rivals/mistys-staryu.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 0, this)) {"
+      ]
+    },
+    {
       "file": "set-destined-rivals/mow-rotom.ts",
       "signatures": [
         "public weakness: Weakness[] = [{ type: R }];"
