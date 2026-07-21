@@ -356,9 +356,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeState = projectState(game.state, game.ctx);
-    fire();
+    let starved: FlipStarvation | undefined;
+    try {
+      fire();
+    } catch (err) {
+      if (!(err instanceof FlipStarvation)) { throw err; }
+      // A coin flip ran past the log mid-dispatch. If it fired in the attack effect (WAS_ATTACK_USED)
+      // Store.reduce restored its clone, so nothing committed and afterState == beforeState. If it
+      // fired in an after-attack effect reached through a prompt-resolution continuation (AFTER_ATTACK),
+      // Store.reducePrompt does NOT roll back, so the attack's damage stayed committed. Resync and still
+      // derive whatever landed so the paused response is consistent with its state; re-throw below so a
+      // catch site can pause with a system flip pending (drives AFTER_ATTACK flips without touching cards).
+      game.state = game.store.state;
+      starved = err;
+    }
     const afterState = projectState(game.state, game.ctx);
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry));
+    if (starved !== undefined) { throw starved; }
   };
 
   // A GameError from any dispatch (top-level action OR a prompt resolution) means the engine rejected
@@ -371,6 +385,20 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // Store.reduce restores a pre-dispatch CLONE on a throw, so store.state and the driver's
     // game.state alias diverge (game.state keeps any partial mutations). Resync before projecting.
     game.state = game.store.state;
+    if (err instanceof FlipStarvation) {
+      // A coin flip ran past the log — from the attack effect (WAS_ATTACK_USED), OR from an after-attack
+      // effect reached through a prompt-resolution continuation (AFTER_ATTACK), which is dispatched by
+      // Store.reducePrompt (no rollback) and so can't be caught at the top-level action site. Either way,
+      // pause with a system flip pending; the client appends the flip and the whole (stateless) log
+      // replays with it in position. This lets an AFTER_ATTACK coin flip be DRIVEN as-is — the card's
+      // effect timing is a real-gameplay choice, not something the harness should force us to rewrite.
+      // dispatchAndCollect already resynced + captured any committed events (e.g. the attack's damage).
+      const flipPending: PendingDecision = {
+        actor: 'system', descriptor: 'Coin flip',
+        legalActions: [{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }],
+      };
+      return { events, pending: toWirePending(flipPending), applied: cursor.i };
+    }
     const rejection = mapRejection(err);
     if (rejection === undefined) {
       throw err;
@@ -522,25 +550,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         turnEndedBy = null;
         continue;
       }
-      try {
-        dispatchAndCollect(() => dispatchAction(game, action));
-      } catch (err) {
-        if (err instanceof FlipStarvation) {
-          // An in-effect coin flip (e.g. a flip-until-tails attack) ran past the log. Store.reduce
-          // restored its pre-dispatch clone, so resync the driver's alias and pause with a system
-          // flip pending (TA-12). `applied` counts everything consumed, including flips the
-          // rolled-back attempt used — on resume the same dispatch replays and re-consumes them.
-          // Only THIS site may pause: a starvation inside a prompt-resolution callback has no
-          // rollback, so it keeps propagating as a loud adapter fault rather than a wrong pause.
-          game.state = game.store.state;
-          const flipPending: PendingDecision = {
-            actor: 'system', descriptor: 'Coin flip',
-            legalActions: [{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }],
-          };
-          return { events, pending: toWirePending(flipPending), applied: cursor.i };
-        }
-        throw err;
-      }
+      // An in-effect coin flip that runs past the log (a flip-until-tails attack, or an AFTER_ATTACK
+      // flip reached via the WaitPrompt continuation) throws FlipStarvation. It is no longer caught
+      // here: dispatchAndCollect resyncs + captures committed events and re-throws, and the outer
+      // catch turns ANY starvation — top-level dispatch OR prompt-resolution continuation — into a
+      // single system flip pause. See the outer catch and dispatchAndCollect above.
+      dispatchAndCollect(() => dispatchAction(game, action));
       // Only an attack auto-ends a turn; any other dispatched action clears the "just attacked" state,
       // so the absorption window is exactly attack → (effect prompts) → that attacker's endTurn.
       turnEndedBy = action.type === 'declareAttack' && (action.actor === 'A' || action.actor === 'B')

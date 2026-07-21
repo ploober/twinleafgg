@@ -21,12 +21,6 @@
       ]
     },
     {
-      "file": "set-ascended-heroes/marill.ts",
-      "signatures": [
-        "if (WAS_ATTACK_USED(effect, 0, this)) {"
-      ]
-    },
-    {
       "file": "set-ascended-heroes/regice-ex.ts",
       "signatures": [
         "{ allowCancel: false, min: 0, max: 2 }",
@@ -57,12 +51,6 @@
       "file": "set-destined-rivals/dwebble.ts",
       "signatures": [
         "{ min: 0, max: 1, allowCancel: true }"
-      ]
-    },
-    {
-      "file": "set-destined-rivals/mistys-staryu.ts",
-      "signatures": [
-        "if (WAS_ATTACK_USED(effect, 0, this)) {"
       ]
     },
     {
