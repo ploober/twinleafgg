@@ -260,9 +260,16 @@ class Importer {
     player.retreatedTurn = ps.flags.retreatedThisTurn ? turn : 0;
     player.prizesTakenThisTurn = ps.flags.prizesTakenThisTurn;
     player.prizesTakenLastTurn = ps.flags.prizesTakenLastTurn;
-    // CF-17: cumulative prizes taken this game. Unlike the two per-turn tallies, prize-count-scaled
-    // cost/effect readers (Radiant Charizard "Excited Heart") depend on this, so it is ingested.
-    player.prizesTaken = ps.flags.prizesTaken ?? 0;
+    // CF-17: cumulative prizes taken this game (prize-count-scaled cost/effect readers depend on it,
+    // e.g. Radiant Charizard "Excited Heart"). In any real game state this equals startingPrizes −
+    // remaining pile, which is exactly how the rotomancer adapter DERIVES it (it keeps no separate
+    // counter and cannot honor a value that contradicts the pile — their 2026-07-21 note). So default
+    // to the pile-derived value (Standard start = 6) when the board doesn't state it — matching
+    // rotomancer and making a pile-only board read correctly rather than the old wrong `0` — and honor
+    // an explicit flag when present (twinleaf keeps a real counter that can legitimately differ from
+    // 6−pile only under rare prize-manipulation). Boards MUST keep pile = 6 − prizesTaken or the two
+    // engines diverge by construction on such an effect.
+    player.prizesTaken = ps.flags.prizesTaken ?? Math.max(0, 6 - ps.prizes.length);
     player.usedVSTAR = ps.flags.vstarUsed;
     // `cardsPlayedThisTurn` has no twinleaf per-turn counter yet — deferred (see projectFlags).
 
