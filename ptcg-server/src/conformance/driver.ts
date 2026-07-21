@@ -254,7 +254,17 @@ function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, acti
     throw new Error('[conformance] shuffle prompt has no player');
   }
   const deck = player.deck.cards;
-  return action.order.map(iid => {
+  // CF-22: the pending template advertises `{type:'shuffle', deck}` (the multiset to reorder); the
+  // ANSWER is defined to carry `order` (the new deck order — §5). A client that echoes the offered
+  // template verbatim sends `deck` (or omits the order); since the shuffle order is externalized ONLY
+  // for cross-engine reproducibility, a caller that does not specify one accepts the deck's current
+  // order. Accept either field and fall back to the current order (identity) — never fault on
+  // `undefined.map`, which made every post-search-shuffle step 500 and left "assert after a shuffle"
+  // undrivable on both engines.
+  const orderIids: string[] = action.order
+    ?? (action as { deck?: string[] }).deck
+    ?? deck.map(c => game.ctx.cardToIid.get(c)).filter((iid): iid is string => iid !== undefined);
+  return orderIids.map(iid => {
     const card = game.ctx.iidToCard.get(iid);
     const index = card ? deck.indexOf(card) : -1;
     if (index === -1) {
@@ -420,7 +430,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           if (!prompt.validate(perm, game.state)) {
             const player = game.state.players.find(p => p.id === prompt.playerId);
             throw new Error(`[conformance] shuffle order invalid for prompt '${prompt.type}': `
-              + `order len=${(next as ShuffleSystemAction).order.length}, perm=[${perm.join(',')}], `
+              + `perm=[${perm.join(',')}] (len=${perm.length}), `
               + `deck len=${player ? player.deck.cards.length : '?'}, playerId=${prompt.playerId}`);
           }
           cursor.i++;

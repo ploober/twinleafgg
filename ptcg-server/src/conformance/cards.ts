@@ -1,4 +1,4 @@
-import { supportedCards } from './capabilities';
+import { catalogCards, isNondeterministic } from './capabilities';
 import { projectCard } from './card-projection';
 import { toPrinting } from './printing';
 import { NeutralCard, NeutralCardList } from './neutral-types';
@@ -24,7 +24,7 @@ function cardsBySet(): Map<string, NeutralCardList> {
     return bySetCache;
   }
   const groups = new Map<string, Map<string, NeutralCard>>();
-  for (const card of supportedCards()) {
+  for (const card of catalogCards()) {
     const code = card.set.toLowerCase();
     let byPrinting = groups.get(code);
     if (byPrinting === undefined) {
@@ -33,7 +33,14 @@ function cardsBySet(): Map<string, NeutralCardList> {
     }
     const printing = toPrinting(card);
     if (!byPrinting.has(printing)) {
-      byPrinting.set(printing, projectCard(card));
+      const projected = projectCard(card);
+      // CF-23: mark cards with an inline-random effect path (e.g. asr-146's Math.random prize shuffle).
+      // They stay in the catalog (instantiable, deterministically testable up to the random branch),
+      // but the marker tells the harness / a scenario author the random branch is single-engine only.
+      if (isNondeterministic(card)) {
+        projected.nondeterministic = true;
+      }
+      byPrinting.set(printing, projected);
     }
   }
   bySetCache = new Map<string, NeutralCardList>();

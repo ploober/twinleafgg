@@ -32,44 +32,66 @@ const ENGINE_NAME = 'twinleaf';
 const ENGINE_VERSION: string = (require('../../package.json') as { version: string }).version;
 
 /**
- * Every card this engine "supports" for conformance: the full registry MINUS the inline-`Math.random`
- * cards (and their subclass reprints). Shared by capabilities.ts and cards.ts so the `sets` counts
- * and the `/v1/cards` listings are guaranteed consistent (every counted card is enumerable and
- * vice-versa). Idempotent `loadAllSets()` is a no-op in production where start.js pre-loads them; a
- * load-failing set's cards simply never enter the registry, so they are naturally excluded.
+ * CF-23: every card this engine can INSTANTIATE via `/v1/step` — the full loaded registry. This is
+ * the catalog: `capabilities.sets` counts + the `/v1/cards/{code}` listings, guaranteed consistent
+ * (every counted card is enumerable and vice-versa). Idempotent `loadAllSets()` is a no-op in
+ * production where start.js pre-loads them; a load-failing set's cards never enter the registry, so
+ * they are naturally absent. Nondeterministic cards (inline `Math.random`, see `isNondeterministic`)
+ * are INCLUDED here — they are fully instantiable and a deterministic scenario over one (asserting
+ * before its random branch) is testable — but MARKED on their projected card so a caller can tell the
+ * random branch is not cross-engine reproducible. Previously they were dropped from the catalog
+ * entirely, which silently SKIPPED every valid scenario referencing them (CF-23; e.g. asr-146).
  */
-let supportedCardsCache: Card[] | undefined;
+let catalogCardsCache: Card[] | undefined;
 
-export function supportedCards(): Card[] {
+export function catalogCards(): Card[] {
   // The registry is static after loadAllSets(), so memoize: capabilities + every /v1/cards/{set}
-  // request would otherwise re-scan the whole registry (and re-run the O(cards) instanceof filter).
-  if (supportedCardsCache !== undefined) {
-    return supportedCardsCache;
+  // request would otherwise re-scan the whole registry.
+  if (catalogCardsCache !== undefined) {
+    return catalogCardsCache;
   }
   loadAllSets();
+  catalogCardsCache = CardManager.getInstance().getAllCards();
+  return catalogCardsCache;
+}
 
-  const excludedRandom = new Set(EXCLUDED_RANDOM_CARDS);
-  const allCards = CardManager.getInstance().getAllCards();
-  // EXCLUDED_RANDOM_CARDS is text-derived: it lists the fullNames found in files that literally call
-  // Math.random. Reprints defined as subclasses in `other-prints.ts` (e.g. `TeamRocketsMeowthASC
-  // extends TeamRocketsMeowth`) inherit the nondeterministic reduceEffect but carry a fullName the
-  // scanner never sees, so they escape the list. Close the gap by inheritance: any card that is an
-  // instanceof a directly-excluded card's class is nondeterministic too. Constructors collected are
-  // leaf card classes, so `instanceof` only ever matches that card and its reprints — never unrelated
-  // cards (which don't share a leaf class). Over-exclusion is limited to a hypothetical reprint that
-  // overrides the attack to be deterministic — conservative-safe (lost coverage, never wrong).
-  const excludedCtors = allCards.filter(c => excludedRandom.has(c.fullName)).map(c => c.constructor);
-  const isExcluded = (c: { fullName: string }): boolean =>
-    excludedRandom.has(c.fullName) || excludedCtors.some(ctor => c instanceof (ctor as new () => unknown));
-  supportedCardsCache = allCards.filter(c => !isExcluded(c));
-  return supportedCardsCache;
+const EXCLUDED_RANDOM_SET = new Set(EXCLUDED_RANDOM_CARDS);
+let nondeterministicCtorsCache: Function[] | undefined;
+
+/**
+ * CF-23: the leaf constructors of cards with an inline-random (`Math.random`) effect path. `EXCLUDED_
+ * RANDOM_CARDS` is text-derived: it lists the fullNames found in files that literally call Math.random.
+ * Reprints defined as subclasses in `other-prints.ts` (e.g. `TeamRocketsMeowthASC extends
+ * TeamRocketsMeowth`) inherit the nondeterministic reduceEffect but carry a fullName the scanner never
+ * sees, so they escape the list. Close the gap by inheritance: any card that is an instanceof a
+ * directly-listed card's leaf class is nondeterministic too. Constructors collected are leaf card
+ * classes, so `instanceof` only ever matches that card and its reprints — never unrelated cards.
+ */
+function nondeterministicCtors(): Function[] {
+  if (nondeterministicCtorsCache !== undefined) {
+    return nondeterministicCtorsCache;
+  }
+  nondeterministicCtorsCache = catalogCards()
+    .filter(c => EXCLUDED_RANDOM_SET.has(c.fullName))
+    .map(c => c.constructor);
+  return nondeterministicCtorsCache;
+}
+
+/**
+ * CF-23: does this card have an inline-random effect path (not externalized to the `system` seam)?
+ * Such a card is cataloged (instantiable) but its random branch is not cross-engine reproducible, so
+ * it is flagged `nondeterministic:true` on its projected printed data.
+ */
+export function isNondeterministic(card: { fullName: string }): boolean {
+  return EXCLUDED_RANDOM_SET.has(card.fullName)
+    || nondeterministicCtors().some(ctor => card instanceof (ctor as new () => unknown));
 }
 
 export function buildCapabilities(): CapabilitiesResponse {
   // Count DISTINCT printings per set so each count === the length of `GET /v1/cards/{code}` (which
   // also dedupes by printing) — a printing can back more than one registry Card object.
   const perSet: { [setCode: string]: Set<string> } = {};
-  for (const card of supportedCards()) {
+  for (const card of catalogCards()) {
     const code = card.set.toLowerCase();
     (perSet[code] ?? (perSet[code] = new Set<string>())).add(toPrinting(card));
   }

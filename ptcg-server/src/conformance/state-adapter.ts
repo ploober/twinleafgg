@@ -10,7 +10,8 @@ import { Store } from '../game/store/store';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
   SCHEMA_VERSION, NeutralState, NeutralPlayerId, PlayerState, PlayerFlags,
-  PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, ConditionToken, Phase, Outcome, StadiumRef
+  PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, ConditionToken, Phase, Outcome, StadiumRef,
+  PlayerLastAttacks
 } from './neutral-types';
 
 // M0 reuses the test harness's set-loading/registration machinery (the impl doc's
@@ -124,6 +125,14 @@ function collectPrintings(initial: NeutralState): string[] {
     ps.prizes.forEach(c => out.push(c.printing));
   }
   if (initial.stadium) { out.push(initial.stadium.printing); }
+  // CF-15: the last-attack source Pokemon must be loadable so its attack can be resolved on ingest,
+  // even though it may not sit in any zone (it attacked last turn and could have left play).
+  if (initial.playerLastAttack) {
+    for (const id of ['A', 'B'] as NeutralPlayerId[]) {
+      const la = initial.playerLastAttack[id];
+      if (la) { out.push(la.source); }
+    }
+  }
   return out;
 }
 
@@ -211,6 +220,26 @@ class Importer {
       this.buildPokemonSlot(player.bench[i], ps.bench[i]);
     }
 
+    // CF-16: ingest `markers.movedToActiveOnTurn`. The runtime gate MOVED_TO_ACTIVE_THIS_TURN reads
+    // `player.movedToActiveThisTurn` (a list of card ids, cleared at each turn start; prefabs.ts:213),
+    // so a marker equal to the CURRENT turn means "this Pokemon moved to the Active Spot this turn" —
+    // add its top card's id (and set the PokemonCard's cached flag, mirroring check-effect.ts:500-504).
+    // A marker < turn (moved on an earlier turn) or the -1 default did NOT move this turn → not added.
+    const ingestMovedToActive = (slot: PokemonCardList, pip: PokemonInPlay | null) => {
+      if (pip === null || pip.markers.movedToActiveOnTurn !== turn) { return; }
+      const top = slot.getPokemonCard();
+      if (top instanceof PokemonCard) {
+        if (!player.movedToActiveThisTurn.includes(top.id)) {
+          player.movedToActiveThisTurn.push(top.id);
+        }
+        top.movedToActiveThisTurn = true;
+      }
+    };
+    ingestMovedToActive(player.active, ps.active);
+    for (let i = 0; i < ps.bench.length && i < player.bench.length; i++) {
+      ingestMovedToActive(player.bench[i], ps.bench[i]);
+    }
+
     ps.hand.forEach(ref => player.hand.cards.push(this.materialize(ref)));
     ps.deck.forEach(ref => player.deck.cards.push(this.materialize(ref)));
     ps.discard.forEach(ref => player.discard.cards.push(this.materialize(ref)));
@@ -231,6 +260,9 @@ class Importer {
     player.retreatedTurn = ps.flags.retreatedThisTurn ? turn : 0;
     player.prizesTakenThisTurn = ps.flags.prizesTakenThisTurn;
     player.prizesTakenLastTurn = ps.flags.prizesTakenLastTurn;
+    // CF-17: cumulative prizes taken this game. Unlike the two per-turn tallies, prize-count-scaled
+    // cost/effect readers (Radiant Charizard "Excited Heart") depend on this, so it is ingested.
+    player.prizesTaken = ps.flags.prizesTaken ?? 0;
     player.usedVSTAR = ps.flags.vstarUsed;
     // `cardsPlayedThisTurn` has no twinleaf per-turn counter yet — deferred (see projectFlags).
 
@@ -269,6 +301,30 @@ function ensurePrintingsLoaded(printings: string[]): void {
   ensureCardsRegistered(fullNames);
 }
 
+/**
+ * CF-15: reconstruct `state.playerLastAttack` (keyed by twinleaf player.id) from the wire record.
+ * The source printing resolves to a fresh PokemonCard whose named attack carries the real
+ * cost/damage/effect (and the copycatAttack/gxAttack flags COPY_OPPONENTS_LAST_ATTACK checks). The
+ * card need not be in play — the copy path calls `sourceCard.reduceEffect` directly (prefabs.ts:638).
+ */
+function ingestPlayerLastAttack(state: State, initial: NeutralState): void {
+  if (!initial.playerLastAttack) { return; }
+  for (const id of ['A', 'B'] as NeutralPlayerId[]) {
+    const la = initial.playerLastAttack[id];
+    if (!la) { continue; }
+    const sourceCard = resolveCard(la.source);
+    if (!(sourceCard instanceof PokemonCard)) {
+      throw new Error(`[conformance] playerLastAttack.source "${la.source}" is not a Pokemon`);
+    }
+    const attack = sourceCard.attacks.find(a => a.name === la.name);
+    if (attack === undefined) {
+      throw new Error(`[conformance] playerLastAttack: "${la.source}" has no attack "${la.name}"`);
+    }
+    const playerId = state.players[actorIndex(id)].id;
+    state.playerLastAttack[playerId] = { attack, sourceCard, turn: la.turn };
+  }
+}
+
 export function importState(initial: NeutralState): ImportedGame {
   ensurePrintingsLoaded(collectPrintings(initial));
 
@@ -293,6 +349,8 @@ export function importState(initial: NeutralState): ImportedGame {
     const stadiumOwner = actorIndex(initial.stadium.owner);
     state.players[stadiumOwner].stadium.cards.push(importer.materialize(initial.stadium, stadiumOwner));
   }
+
+  ingestPlayerLastAttack(state, initial); // CF-15
 
   store.state = state;
   return { store, handler, state, ctx };
@@ -327,13 +385,18 @@ function cardRef(ctx: IidContext, card: Card): CardRef {
   return { iid, printing: toPrinting(card) };
 }
 
-function projectPip(ctx: IidContext, slot: PokemonCardList): PokemonInPlay {
+function projectPip(ctx: IidContext, slot: PokemonCardList, player: Player, turn: number): PokemonInPlay {
   const conditions = slot.specialConditions.map(conditionToToken);
+  // CF-16: project the real "moved to Active this turn" marker. The runtime tracks membership in
+  // `player.movedToActiveThisTurn` (cleared at turn start), so a member moved THIS turn → emit `turn`;
+  // otherwise the -1 default (moved on an earlier turn / since setup / never). Round-trips the ingest.
+  const top = slot.getPokemonCard();
+  const movedToActiveOnTurn = (top !== undefined && player.movedToActiveThisTurn.includes(top.id)) ? turn : -1;
   const markers: PokemonMarkers = {
     playedOnTurn: slot.pokemonPlayedTurn,
+    movedToActiveOnTurn,
     // The following are not tracked per-Pokemon-per-turn by twinleaf yet — deferred to a later
     // milestone (impl doc §4.7). M0 round-trips them at these documented defaults.
-    movedToActiveOnTurn: -1,
     damageTakenThisTurn: 0,
     abilitiesUsedThisTurn: [],
     cannotAttackNextTurn: slot.cannotAttackNextTurn,
@@ -364,6 +427,7 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
     cardsPlayedThisTurn: 0, // deferred: no twinleaf per-turn counter yet
     prizesTakenThisTurn: player.prizesTakenThisTurn,
     prizesTakenLastTurn: player.prizesTakenLastTurn,
+    prizesTaken: player.prizesTaken, // CF-17: cumulative (has live readers, unlike the per-turn tallies)
     vstarUsed: player.usedVSTAR,
   };
 }
@@ -376,10 +440,10 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number): PlayerSta
     prizes.push({ ...cardRef(ctx, card), faceUp: prize.faceUpPrize });
   }
   return {
-    active: player.active.getPokemonCard() ? projectPip(ctx, player.active) : null,
+    active: player.active.getPokemonCard() ? projectPip(ctx, player.active, player, turn) : null,
     bench: player.bench
       .filter(b => b.getPokemonCard() !== undefined)
-      .map(b => projectPip(ctx, b)),
+      .map(b => projectPip(ctx, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
     deck: player.deck.cards.map(c => cardRef(ctx, c)),
     // A Trainer mid-resolution is staged in player.supporter (play-trainer-effect.ts) until its
@@ -402,6 +466,23 @@ function projectStadium(ctx: IidContext, state: State): StadiumRef | null {
   return { ...cardRef(ctx, stadiumCard), owner: indexToPlayerId(ownerIndex) };
 }
 
+/**
+ * CF-15: project `state.playerLastAttack` (keyed by twinleaf player.id) back to the wire shape
+ * (keyed A/B, source printing + attack name + turn). Undefined when neither side has a record, so
+ * the optional field is omitted for the overwhelming majority of boards (no churn, round-trips ingest).
+ */
+function projectPlayerLastAttack(state: State): PlayerLastAttacks | undefined {
+  const out: PlayerLastAttacks = {};
+  for (const index of [0, 1]) {
+    const player = state.players[index];
+    const la = state.playerLastAttack[player.id];
+    if (la && la.attack && la.sourceCard) {
+      out[indexToPlayerId(index)] = { source: toPrinting(la.sourceCard), name: la.attack.name, turn: la.turn };
+    }
+  }
+  return (out.A || out.B) ? out : undefined;
+}
+
 export function projectState(state: State, ctx: IidContext): NeutralState {
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -415,6 +496,7 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
       A: projectPlayer(ctx, state.players[0], state.turn),
       B: projectPlayer(ctx, state.players[1], state.turn),
     },
+    playerLastAttack: projectPlayerLastAttack(state), // CF-15 (omitted when neither side has a record)
     activeEffects: [], // timed effects are deferred (design §6.3); emitted as [] per the contract default
   };
 }

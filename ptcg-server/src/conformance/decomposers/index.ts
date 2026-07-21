@@ -5,6 +5,7 @@ import { choosePokemonDecomposer } from './choose-pokemon';
 import { putDamageDecomposer } from './put-damage';
 import { attachEnergyDecomposer } from './attach-energy';
 import { moveDamageDecomposer } from './move-damage';
+import { removeDamageDecomposer } from './remove-damage';
 import { discardEnergyDecomposer } from './discard-energy';
 import { chooseEnergyDecomposer } from './choose-energy';
 import { chooseAttackDecomposer } from './choose-attack';
@@ -26,6 +27,7 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   putDamageDecomposer,
   attachEnergyDecomposer,
   moveDamageDecomposer,
+  removeDamageDecomposer,
   discardEnergyDecomposer,
   chooseEnergyDecomposer,
   chooseAttackDecomposer,

@@ -77,6 +77,11 @@ export interface NeutralCard {
   rarity?: string;      // OPTIONAL — twinleaf does not model it (always omitted)
   illustrator?: string; // OPTIONAL — twinleaf does not model it (always omitted)
   image?: string;       // OPTIONAL — twinleaf does not model it (always omitted)
+  /** CF-23: the card's effect has an inline-random path (e.g. a `Math.random` prize/deck shuffle)
+   *  not externalized to the `system` seam, so its random branch is not cross-engine reproducible.
+   *  Still cataloged (fully instantiable via /v1/step) so a deterministic scenario over it — one
+   *  asserting before the random branch — is testable. Omitted (⇔ false) for ordinary cards. */
+  nondeterministic?: boolean;
 }
 
 export interface NeutralCardList {
@@ -128,6 +133,12 @@ export interface PlayerFlags {
   cardsPlayedThisTurn: number;
   prizesTakenThisTurn: number;
   prizesTakenLastTurn: number;
+  /** CF-17: cumulative prizes taken THIS GAME (not reset at the turn boundary, unlike the two
+   *  per-turn tallies above). Prize-count-scaled cost/effect readers key on this (Radiant Charizard
+   *  "Excited Heart"). Unlike the per-turn tallies (CF-2, behavior-dead), this has live readers.
+   *  OPTIONAL on INPUT (defaults to 0 on ingest, matching the OpenAPI `Flags`, which requires no
+   *  field); the projection always emits it. */
+  prizesTaken?: number;
   /** Once-per-game VSTAR Power. */
   vstarUsed: boolean;
 }
@@ -152,6 +163,27 @@ export interface PlayerState {
 export type Phase = 'setup' | 'main' | 'checkup' | 'gameOver';
 export type Outcome = 'ongoing' | 'winA' | 'winB' | 'tie';
 
+/**
+ * CF-15: a player's most recent attack, for "copy your opponent's last attack" effects (Copycat,
+ * Watch and Learn). Not re-derivable from a quiescent board, so carried explicitly. Identified by
+ * the SOURCE Pokemon's `printing` + the attack `name` (the engine resolves the concrete attack —
+ * cost/damage/effect — from its own card DB), so it survives the source leaving play.
+ */
+export interface LastAttack {
+  /** Printing of the Pokemon that used the attack. */
+  source: string;
+  /** The attack's name. */
+  name: string;
+  /** The turn on which the attack was used (optional). */
+  turn?: number;
+}
+
+/** CF-15: each player's last recorded attack; a side is absent when that player has none. */
+export interface PlayerLastAttacks {
+  A?: LastAttack;
+  B?: LastAttack;
+}
+
 export interface StadiumRef extends CardRef {
   owner: NeutralPlayerId;
 }
@@ -171,6 +203,9 @@ export interface NeutralState {
   outcome: Outcome;
   stadium: StadiumRef | null;
   players: { A: PlayerState; B: PlayerState };
+  /** CF-15: each player's most recent attack (for copy-opponent's-last-attack effects). A game-level
+   *  fact, not re-derivable from the board; omitted when neither player has a recorded attack. */
+  playerLastAttack?: PlayerLastAttacks;
   /** Deferred: timed effects that can't be re-derived from the board (design §6.3). */
   activeEffects?: unknown[];
 }

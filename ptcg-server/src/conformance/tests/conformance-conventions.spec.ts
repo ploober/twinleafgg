@@ -1,5 +1,5 @@
 import { CONVENTIONS } from '../conventions';
-import { buildCapabilities, supportedCards } from '../capabilities';
+import { buildCapabilities, catalogCards } from '../capabilities';
 import { projectCard } from '../card-projection';
 
 /**
@@ -27,7 +27,7 @@ import { projectCard } from '../card-projection';
  * invariants, so a violation fails the suite without any external data.
  */
 describe('Conventions conformance — the engine follows what it declares', () => {
-  const cards = supportedCards().map(projectCard);
+  const cards = catalogCards().map(projectCard);
 
   it('declares conventions on /v1/capabilities', () => {
     expect(buildCapabilities().conventions).toEqual(CONVENTIONS);
