@@ -928,6 +928,12 @@
       "signatures": [
         "const source = StateUtils.getTarget(state, player, transfer.from);"
       ]
+    },
+    {
+      "file": "set-chilling-reign/agatha.ts",
+      "signatures": [
+        "maxAllowedDamage.push({ target, damage: player.active.damage });"
+      ]
     }
   ]
 }
