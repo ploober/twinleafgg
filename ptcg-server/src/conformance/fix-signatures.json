@@ -804,7 +804,8 @@
     {
       "file": "set-temporal-forces/delivery-box.ts",
       "signatures": [
-        "{ min: 0, max: 2, allowCancel: false }"
+        "{ min: 0, max: 2, allowCancel: false }",
+        "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
       ]
     }
   ]
