@@ -898,6 +898,36 @@
       "signatures": [
         "const shuffleCount = Math.min(2, player.hand.cards.length);"
       ]
+    },
+    {
+      "file": "set-emerging-powers/simipour.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/probopass.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-plasma-blast/azelf.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-forbidden-light/eneporter.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/ribombee.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
     }
   ]
 }

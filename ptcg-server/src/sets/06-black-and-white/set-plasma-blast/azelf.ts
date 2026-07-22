@@ -100,8 +100,8 @@ export class Azelf extends PokemonCard {
             continue;
           }
 
-          const source = StateUtils.getTarget(state, opponent, transfer.from);
-          const target = StateUtils.getTarget(state, opponent, transfer.to);
+          const source = StateUtils.getTarget(state, player, transfer.from);
+          const target = StateUtils.getTarget(state, player, transfer.to);
           source.moveCardTo(transfer.card, target);
         }
       });
