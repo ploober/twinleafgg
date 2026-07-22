@@ -782,6 +782,12 @@
       "signatures": [
         "provides: [...this.provides]"
       ]
+    },
+    {
+      "file": "set-ascended-heroes/croconaw.ts",
+      "signatures": [
+        "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
+      ]
     }
   ]
 }

@@ -20,6 +20,7 @@ const RESHIRAM = 'wht-020';                           // Reshiram ex, "Blazing B
                                                       // (canonical printing: its fullName suffix "SV11W" ≠ set code "WHT")
 const OGERPON = 'Wellspring Mask Ogerpon ex TWM';     // twm-064, "Torrential Pump" [W,C,C]
 const MISTYS_STARYU = 'Misty\'s Staryu DRI';          // dri-046, "Bubble Beam" [W]
+const CROCONAW = 'Croconaw MC';                       // asc-042, "Crunch" [W,W] — heads: discard 1 Energy from Defender
 
 function markers(played = 1): PokemonMarkers {
   return { playedOnTurn: played, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
@@ -123,5 +124,44 @@ describe('Conformance — driver: an after-attack coin flip is externalized, not
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'flip')).toBe(true);
+  });
+});
+
+describe('Conformance — src/sets card-bug regression guards', () => {
+  // TA-109  Croconaw "Crunch" (asc-042) — heads discards 1 Energy from the Defending Pokémon. The card
+  // must GUARD that prompt: if the Defender has no Energy, raising a min-1 DiscardEnergyPrompt is a card
+  // bug (the prompt is unanswerable — validate() rejects both an empty result and a cancel), which the
+  // conformance driver surfaces as a 500. Every sibling opponent-discard card (blaziken-gx, umbreon-gx)
+  // already guards `if energy===0 return`. Surfaced by the fuzz once the CF-24 driver fix let the flip be
+  // driven past. This guards the CARD, not the harness.
+
+  it('Croconaw "Crunch" heads vs an energyless Defender resolves without faulting [TA-109 asc-042]', () => {
+    const run = () => step(
+      board(player({ active: pip('A-act', CROCONAW, [{ iid: 'e0', printing: WATER }, { iid: 'e1', printing: WATER }]) }),
+            player({ active: pip('B-act', RALTS) })),   // RALTS holds zero Energy
+      [
+        { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Crunch' },
+        { actor: 'system', type: 'flip', face: 'heads' },
+      ],
+    );
+    expect(run).not.toThrow();                            // pre-fix: throws the 'Discard energy' validate fault
+    const res = run();
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(50);  // base 50 still applied
+    expect(res.state.players.B.active!.energy.length).toBe(0);
+  });
+
+  it('Croconaw "Crunch" heads still offers the discard when the Defender HAS Energy [TA-109 asc-042]', () => {
+    // Positive control: the guard must not suppress the real discard — the prompt is still raised.
+    const res = step(
+      board(player({ active: pip('A-act', CROCONAW, [{ iid: 'e0', printing: WATER }, { iid: 'e1', printing: WATER }]) }),
+            player({ active: pip('B-act', RALTS, [{ iid: 'be0', printing: WATER }]) })),
+      [
+        { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Crunch' },
+        { actor: 'system', type: 'flip', face: 'heads' },
+      ],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.pending!.legalActions.some(a => a.type === 'discard')).toBe(true);
   });
 });

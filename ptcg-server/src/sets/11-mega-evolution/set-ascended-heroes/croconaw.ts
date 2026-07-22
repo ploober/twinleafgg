@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, DiscardEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils } from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, DiscardEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
@@ -29,6 +29,12 @@ export class Croconaw extends PokemonCard {
     if (AFTER_ATTACK(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, (result) => {
         if (result) {
+          // Only prompt if the Defending Pokemon actually has Energy to discard — a min-1
+          // DiscardEnergyPrompt with no valid target is unanswerable (matches blaziken-gx/umbreon-gx).
+          const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
+          if (!hasEnergy) {
+            return;
+          }
           return store.prompt(state, new DiscardEnergyPrompt(
             effect.player.id,
             GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
