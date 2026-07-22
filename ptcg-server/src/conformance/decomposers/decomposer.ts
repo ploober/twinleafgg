@@ -45,6 +45,17 @@ export type WirePick =
  */
 export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
   readonly type: string;
+  /**
+   * When a decomposition is momentarily forced to exactly ONE candidate, may the driver resolve it
+   * ATOMICALLY — CF-14, no pending surfaced? True only when a single candidate means the WHOLE
+   * decision has exactly one resolution AND applying it raises no further client-driven decision.
+   * Absent (default false): a multi-pick aggregate (move-energy/move-damage/put-damage/choose-cards)
+   * can be momentarily forced to one candidate mid-decision without the overall decision being forced,
+   * so it must never implement this; and a single-select whose resolution CASCADES (copy-an-attack
+   * executes the attack) must not either. Consulted per-prompt so a decomposer can distinguish its own
+   * variants (choose-attack: disable is atomic, copy is not).
+   */
+  atomicResolvable?(prompt: P, state: State): boolean;
   next(prompt: P, picks: WirePick[], ctx: IidContext, state: State): PendingDecision | null;
   toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State, picks?: WirePick[]): WirePick;
   assemble(prompt: P, picks: WirePick[]): unknown;

@@ -495,7 +495,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       }
       // sub !== null — more picks are possible for this decision.
       const canStopNow = sub.legalActions.some(a => a.type === 'endChoice');
-      if (sub.legalActions.filter(a => a.type !== 'endChoice').length === 0) {
+      const forced = sub.legalActions.filter(a => a.type !== 'endChoice');
+      if (forced.length === 0) {
         // Zero real candidates (e.g. "put a Trainer from your discard into your hand" with an empty
         // discard): there is no decision content, so pausing would surface an unanswerable empty
         // pending (TA-6). Auto-complete if the decision permits stopping; otherwise it is an engine
@@ -504,6 +505,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           throw new Error(`[conformance] prompt '${prompt.type}' decomposed to zero options and cannot stop`);
         }
         accum.push({ kind: 'done' });
+        continue;
+      }
+      // CF-14: a decision with exactly ONE possible resolution has no decision content, so it is
+      // applied ATOMICALLY — no pending is surfaced. Rotomancer already auto-resolves the 1-candidate
+      // choose (its inverse 0-candidate gap was RE-27/RE-33); twinleaf's engine over-specifies by
+      // surfacing a 1-option pending (Murkrow "Torment" / Klefki "Memory Lock" choose-attack-to-disable
+      // when the defender has exactly one attack). This is the single-candidate analog of the CF-11
+      // <=1-card shuffle and the zero-candidate auto-complete just above: a lone forced pick that
+      // cannot stop short (no endChoice -> not a genuine "up to N" range) is not a choice. GATED on
+      // the decomposer's per-prompt `atomicResolvable`: true only when one candidate == one whole-
+      // decision resolution AND applying it raises no cascade. A multi-pick aggregate (move-energy/
+      // move-damage/put-damage/choose-cards) never implements it (a forced sub-pick is not a forced
+      // decision); a copy-an-attack does not either (executing the copy cascades). Feed the sole
+      // candidate back through the decomposer's own toPick (round-trips its `next` output) and loop;
+      // the next iteration completes the decision and dispatches it, so the effect lands atomically.
+      if (forced.length === 1 && !canStopNow && dec.atomicResolvable?.(prompt, game.state) === true) {
+        accum.push(dec.toPick(prompt, { actor: sub.actor, ...forced[0] } as NeutralAction, game.ctx, game.state, accum));
         continue;
       }
       const nextAction = cursor.i < actions.length ? actions[cursor.i] : undefined;

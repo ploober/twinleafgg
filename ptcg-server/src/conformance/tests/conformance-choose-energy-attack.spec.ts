@@ -10,6 +10,7 @@ import {
 const PSY = 'Psychic Energy SVE';
 const WATER = 'Water Energy SVE';
 const RALTS = 'Ralts SIT'; // "Memory Skip" [P] 10 dmg (disables an opponent attack); retreat [C]
+const BALTOY = 'Baltoy SIT'; // a two-attack basic (Find a Friend / Slap) — a defender with a real >=2-way disable choice
 
 function markers(played = 1): PokemonMarkers {
   return { playedOnTurn: played, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
@@ -86,32 +87,41 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
   });
 });
 
-describe('ChooseAttackPrompt decomposer — Memory Skip', () => {
+describe('ChooseAttackPrompt decomposer — Memory Skip (disable)', () => {
 
-  /** A's Ralts (with [P]) attacks; Memory Skip then picks one of B's attacks to disable. */
-  function memorySkipBoard(): NeutralState {
+  /** A's Ralts (with [P]) attacks; Memory Skip picks one of B's attacks to disable. B's defender
+   *  printing is parameterized so we can exercise both the 1-attack (forced) and >=2-attack (real
+   *  choice) cases. */
+  function memorySkipBoard(bPrinting: string): NeutralState {
     return board(
       player({ active: pip('A-act', RALTS, [{ iid: 'e0', printing: PSY }]) }),
-      player({ active: pip('B-act', RALTS) }),
+      player({ active: pip('B-act', bPrinting) }),
     );
   }
 
-  it('surfaces the attack choice as a pending when the log is dry', () => {
-    const res = step(memorySkipBoard(), [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' }]);
+  it('CF-14: a single-option disable auto-resolves atomically — no pending, effect applied', () => {
+    // B's Ralts has exactly ONE attack (Memory Skip), so "choose an attack to disable" has exactly one
+    // resolution — no decision content. It is applied ATOMICALLY (matching rotomancer): no Choose-attack
+    // pending is surfaced, the 10 damage lands, and the attack auto-ends A's turn. (Before CF-14 the
+    // driver surfaced a 1-option `choose` pending here — the bug this fix removes.)
+    const res = step(memorySkipBoard(RALTS), [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' }]);
+
+    expect(res.status).toBe('awaitingAction');
+    expect(res.pending?.descriptor ?? '').not.toContain('Choose attack');
+    expect(res.state.players.B.active!.damage).toBe(10); // Memory Skip's 10 damage
+    expect(res.state.activePlayer).toBe('B');            // the attack auto-ended A's turn
+  });
+
+  it('surfaces the disable choice as a pending when the defender has >=2 attacks (CF-14 boundary)', () => {
+    // Baltoy has two attacks, so disabling "one of them" is a genuine >=2-way decision — CF-14 does NOT
+    // fire, the pending IS surfaced, and it offers a `choose` per attack.
+    const res = step(memorySkipBoard(BALTOY), [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' }]);
 
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('A');
     expect(res.pending!.descriptor).toContain('Choose attack');
-    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'choose', target: 'B-act', name: 'Memory Skip' });
-  });
-
-  it('resolves the chosen attack; the attack deals its damage and auto-ends the turn', () => {
-    const res = step(memorySkipBoard(), [
-      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Memory Skip' },
-      { actor: 'A', type: 'choose', target: 'B-act', name: 'Memory Skip' },
-    ]);
-
-    expect(res.state.players.B.active!.damage).toBe(10); // Memory Skip's 10 damage
-    expect(res.state.activePlayer).toBe('B');            // the attack auto-ended A's turn
+    const chooseNames = res.pending!.legalActions.filter(a => a.type === 'choose').map(a => (a as { name?: string }).name);
+    expect(chooseNames).toContain('Find a Friend');
+    expect(chooseNames).toContain('Slap');
   });
 });

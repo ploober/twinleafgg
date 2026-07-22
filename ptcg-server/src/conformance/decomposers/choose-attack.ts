@@ -1,4 +1,5 @@
 import { ChooseAttackPrompt } from '../../game/store/prompts/choose-attack-prompt';
+import { GameMessage } from '../../game/game-message';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, buildPending } from './decomposer';
 
@@ -10,6 +11,14 @@ import { PromptDecomposer, realPicks, buildPending } from './decomposer';
  */
 export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
   type: 'Choose attack',
+
+  // CF-14: single-select, so a one-candidate prompt (defender with exactly one attack) is a whole
+  // decision with one resolution — BUT eligible for the driver's atomic auto-resolve ONLY for the
+  // DISABLE use (Murkrow "Torment"), whose callback merely marks the attack disabled. The COPY use
+  // (CHOOSE_ATTACK_TO_COPY, ~45 cards) EXECUTES the chosen attack (UseAttackEffect), which cascades
+  // into further client-driven prompts, so a 1-candidate copy must still surface — and copy is not a
+  // cross-engine divergence (only disable is; roto auto-resolves the 1-option disable).
+  atomicResolvable: (prompt) => prompt.message === GameMessage.CHOOSE_ATTACK_TO_DISABLE,
 
   next(prompt, picks, ctx, state) {
     if (realPicks(picks).length >= 1) {
