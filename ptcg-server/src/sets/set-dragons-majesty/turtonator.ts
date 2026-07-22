@@ -49,7 +49,7 @@ export class Turtonator extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-        { min: 1, max: totalFireEnergy, allowCancel: false }
+        { min: 0, max: totalFireEnergy, allowCancel: false }
       ), transfers => {
         if (transfers === null) {
           return state;

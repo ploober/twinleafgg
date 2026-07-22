@@ -47,6 +47,10 @@ export class Trubbish extends PokemonCard {
       const player = effect.player;
       const deckTop = new CardList();
 
+      if (player.discard.cards.length === 0) {
+        return state;
+      }
+
       state = store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,

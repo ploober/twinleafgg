@@ -39,6 +39,10 @@ export class Trapinch extends PokemonCard {
       const opponent = StateUtils.getOpponent(state, player);
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result) {
+          const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
+          if (hasEnergy === false) {
+            return;
+          }
           store.prompt(state, new ChooseCardsPrompt(
             player,
             GameMessage.CHOOSE_CARD_TO_DISCARD,

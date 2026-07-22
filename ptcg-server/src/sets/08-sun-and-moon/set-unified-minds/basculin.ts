@@ -4,7 +4,7 @@
 
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType, GameMessage, SlotType } from '../../../game';
+import { StoreLike, State, PlayerType, GameMessage, SlotType, StateUtils } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -53,6 +53,12 @@ export class Basculin extends PokemonCard {
       });
 
       const totalDamage = 20 * basculinCount;
+
+      const opponent = StateUtils.getOpponent(state, player);
+      const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      if (hasBench === false) {
+        return state;
+      }
 
       // Target opponent's bench
       store.prompt(state, new ChoosePokemonPrompt(

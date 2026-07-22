@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../game/store/card/card-types';
-import { StoreLike, State, Card, ChooseCardsPrompt, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../game';
+import { StoreLike, State, Card, ChooseCardsPrompt, ChoosePokemonPrompt, GameMessage, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType, StateUtils } from '../../game';
 import { Effect } from '../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../game/store/effects/play-card-effects';
 import { AttackEffect } from '../../game/store/effects/game-effects';
@@ -80,6 +80,12 @@ export class Oddish extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
+
+      const opponent = StateUtils.getOpponent(state, player);
+      const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      if (hasBench === false) {
+        return state;
+      }
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,

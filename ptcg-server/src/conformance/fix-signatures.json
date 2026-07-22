@@ -807,6 +807,97 @@
         "{ min: 0, max: 2, allowCancel: false }",
         "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
       ]
+    },
+    {
+      "file": "set-boundaries-crossed/trapinch.ts",
+      "signatures": [
+        "const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
+      ]
+    },
+    {
+      "file": "set-call-of-legends/relicanth.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/galarian-slowking-v.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-pokemon-go/lunatone.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/lugia-v.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-noble-victories/trubbish.ts",
+      "signatures": [
+        "if (player.discard.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/zeraora-v.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-jungle/oddish.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-jungle/pikachu.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-unified-minds/basculin.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/combee.ts",
+      "signatures": [
+        "const hasBench = player.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-dragons-majesty/turtonator.ts",
+      "signatures": [
+        "{ min: 0, max: totalFireEnergy, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-lost-thunder/blacephalon-gx.ts",
+      "signatures": [
+        "{ min: 0, max: totalFireEnergy, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/switching-cups.ts",
+      "signatures": [
+        "if (effect.player.hand.cards.length === 0) {",
+        "if (cards.length === 0 || player.deck.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-neo-genesis/mary.ts",
+      "signatures": [
+        "const shuffleCount = Math.min(2, player.hand.cards.length);"
+      ]
     }
   ]
 }

@@ -43,6 +43,10 @@ export class GalarianSlowkingV extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      if (player.hand.cards.length === 0) {
+        return state;
+      }
+
       state = store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,

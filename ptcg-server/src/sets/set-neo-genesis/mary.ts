@@ -31,12 +31,18 @@ export class Mary extends TrainerCard {
       const cardsToDraw = Math.min(2, player.deck.cards.length);
       DRAW_CARDS(store, state, player, cardsToDraw);
 
+      // Shuffle back 2, or as many as the post-draw hand holds (an empty deck can leave < 2).
+      const shuffleCount = Math.min(2, player.hand.cards.length);
+      if (shuffleCount === 0) {
+        return state;
+      }
+
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_SHUFFLE,
         player.hand,
         {},
-        { allowCancel: false, min: 2, max: 2 }
+        { allowCancel: false, min: shuffleCount, max: shuffleCount }
       ), selected => {
         selected.forEach(card => {
           player.hand.moveCardTo(card, player.deck);

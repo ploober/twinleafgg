@@ -8,7 +8,6 @@ import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { CardList } from '../../..';
-import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -16,9 +15,6 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
-
-  const deckTop = new CardList();
-  player.deck.moveTo(deckTop, 1);
 
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
@@ -31,8 +27,22 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     next();
   });
 
-  cards.forEach(c => c.cards.moveToTopOfDestination(player.deck));
-  DRAW_CARDS(store, state, player, 1);
+  // Nothing to switch, or no top card of the deck to switch with -> no-op (card conservation).
+  if (cards.length === 0 || player.deck.cards.length === 0) {
+    return;
+  }
+
+  // "Switch a card from your hand with the top card of your deck": the former top card of the deck
+  // goes to the hand and the chosen hand card becomes the new top of the deck (a conservation-safe
+  // swap). The old code stranded the top card in a local list and lost it (re-fuzz x71 conservation).
+  const deckTop = new CardList();
+  player.deck.moveTo(deckTop, 1);
+
+  const chosen = new CardList();
+  player.hand.moveCardTo(cards[0], chosen);
+  chosen.moveToTopOfDestination(player.deck);
+
+  deckTop.moveTo(player.hand);
 }
 
 export class SwitchingCups extends TrainerCard {
@@ -58,6 +68,11 @@ export class SwitchingCups extends TrainerCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+      // The Item is removed from hand before this effect runs; played as the last card in hand,
+      // there is no other card to switch with the top of the deck, so it resolves as a no-op.
+      if (effect.player.hand.cards.length === 0) {
+        return state;
+      }
       const generator = playCard(() => generator.next(), store, state, effect);
       return generator.next().value;
     }

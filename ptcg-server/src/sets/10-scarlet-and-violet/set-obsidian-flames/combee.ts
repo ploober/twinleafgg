@@ -39,6 +39,11 @@ export class Combee extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      const hasBench = player.bench.some(b => b.cards.length > 0);
+      if (hasBench === false) {
+        return state;
+      }
+
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,

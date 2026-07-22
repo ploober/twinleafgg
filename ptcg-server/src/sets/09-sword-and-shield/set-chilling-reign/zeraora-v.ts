@@ -4,7 +4,7 @@
 
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, ChoosePokemonPrompt, PlayerType, SlotType, GameMessage } from '../../../game';
+import { StoreLike, State, ChoosePokemonPrompt, PlayerType, SlotType, GameMessage, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
@@ -64,6 +64,11 @@ export class ZeraoraV extends PokemonCard {
 
       if (HAS_MARKER(this.RS_USED_LAST_TURN_MARKER, player, this) ||
         HAS_MARKER(this.CLEAR_RS_USED_LAST_TURN_MARKER, player, this)) {
+        const opponent = StateUtils.getOpponent(state, player);
+        const hasBench = opponent.bench.some(b => b.cards.length > 0);
+        if (hasBench === false) {
+          return state;
+        }
         return store.prompt(state, new ChoosePokemonPrompt(
           player.id,
           GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
