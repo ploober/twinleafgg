@@ -12,6 +12,14 @@ import { promptPlayer, resolveAnyPokemonTarget, playerIdToActor } from '../iid-t
 export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
   type: 'Discard energy',
 
+  // CF-14: a forced single discard (a min>=1 discard whose eligible pool is exactly one energy —
+  // e.g. Croconaw ASC "Crunch" discarding the defender's lone Energy) has one resolution and no
+  // decision content, so the driver applies it atomically instead of surfacing a 1-option pending
+  // (matching rotomancer). Always eligible: discarding an Energy is terminal — it raises no further
+  // client-driven decision — and the driver's `forced.length===1 && !canStopNow` guard already
+  // excludes a genuine "discard up to N" (which carries an END_CHOICE stop) and a >=2-candidate choice.
+  atomicResolvable: () => true,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

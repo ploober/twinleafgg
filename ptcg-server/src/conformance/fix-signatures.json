@@ -934,6 +934,12 @@
       "signatures": [
         "maxAllowedDamage.push({ target, damage: player.active.damage });"
       ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/deino.ts",
+      "signatures": [
+        "ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);"
+      ]
     }
   ]
 }
