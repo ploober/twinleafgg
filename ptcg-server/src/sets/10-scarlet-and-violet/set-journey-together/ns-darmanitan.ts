@@ -77,6 +77,12 @@ export class NsDarmanitan extends PokemonCard {
       discardEnergy.target = player.active;
       store.reduceEffect(state, discardEnergy);
 
+      const opponent = StateUtils.getOpponent(state, player);
+      const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      if (hasBench === false) {
+        return state;
+      }
+
       const max = Math.min(1);
 
       return store.prompt(state, new ChoosePokemonPrompt(

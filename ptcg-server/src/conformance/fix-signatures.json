@@ -788,6 +788,24 @@
       "signatures": [
         "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
       ]
+    },
+    {
+      "file": "set-journey-together/ns-darmanitan.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/klefki.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/delivery-box.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false }"
+      ]
     }
   ]
 }
