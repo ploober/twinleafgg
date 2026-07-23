@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, EnergyCard, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
+import { StoreLike, State, EnergyCard, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, PokemonCardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
@@ -43,19 +43,30 @@ export class Armarouge extends PokemonCard {
       // Compendium #2050 (SSP FAQ, TPCi 2024-11-07): the Fire-Energy discard is UNCONDITIONAL — you
       // discard all Fire Energy even when the opponent has no Benched Pokémon. Only the 180 bench
       // damage is contingent on a Bench target, and it never redirects to the Active.
-      const fireEnergy = player.active.cards.filter(card =>
-        card instanceof EnergyCard && card.name === 'Fire Energy'
-      );
-      const discardEnergy = new DiscardCardsEffect(effect, fireEnergy);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
+      //
+      // CF-10 (=> TA-39 Thunder Raid): the "180 to a Benched Pokémon" is a Step-D choice and resolves
+      // BEFORE the attack's other effects — so make the bench choice FIRST, then discard + place the
+      // damage. The final board is identical; this only corrects the decision ORDER (twinleaf
+      // previously discarded the Fire Energy before surfacing the choice).
+      const discardThenDamage = (target?: PokemonCardList): State => {
+        const fireEnergy = player.active.cards.filter(card =>
+          card instanceof EnergyCard && card.name === 'Fire Energy'
+        );
+        const discardEnergy = new DiscardCardsEffect(effect, fireEnergy);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+        if (target !== undefined) {
+          // Benched damage: no Weakness/Resistance.
+          const damageEffect = new PutDamageEffect(effect, 180);
+          damageEffect.target = target;
+          store.reduceEffect(state, damageEffect);
+        }
+        return state;
+      };
 
-      // "180 damage to 1 of your opponent's Benched Pokémon" targets the Bench only. With no Benched
-      // Pokémon there is no damage (#2050). (Previously an any-target prefab hit the lone Active for
-      // 180 → 360 via Weakness, an illegitimate KO.)
       const benched = opponent.bench.filter(b => b.cards.length > 0);
       if (benched.length === 0) {
-        return state;
+        return discardThenDamage();
       }
 
       return store.prompt(state, new ChoosePokemonPrompt(
@@ -65,11 +76,7 @@ export class Armarouge extends PokemonCard {
         [SlotType.BENCH],
         { allowCancel: false }
       ), selected => {
-        const target = selected[0];
-        // Benched damage: no Weakness/Resistance.
-        const damageEffect = new PutDamageEffect(effect, 180);
-        damageEffect.target = target;
-        store.reduceEffect(state, damageEffect);
+        return discardThenDamage(selected[0]);
       });
     }
 

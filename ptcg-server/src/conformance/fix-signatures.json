@@ -940,6 +940,18 @@
       "signatures": [
         "ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);"
       ]
+    },
+    {
+      "file": "set-journey-together/ns-darmanitan.ts",
+      "signatures": [
+        "const discardThenDamage = (target?: PokemonCardList): State => {"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/armarouge.ts",
+      "signatures": [
+        "const discardThenDamage = (target?: PokemonCardList): State => {"
+      ]
     }
   ]
 }

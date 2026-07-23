@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, EnergyType } from '../../../game/store/card/card-types';
-import { StoreLike, State, EnergyCard, StateUtils, Card, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
+import { StoreLike, State, EnergyCard, StateUtils, Card, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, PokemonCardList } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
@@ -68,36 +68,41 @@ export class NsDarmanitan extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
-
       const opponent = StateUtils.getOpponent(state, player);
+
+      // "Discard all Energy" is FORCED (no which/how-many choice); the 90 damage to a Benched
+      // Pokemon is the Step-D choice. CF-10 (=> TA-39 Thunder Raid): make the Step-D bench choice
+      // FIRST, then discard + place damage. The final board is identical either way — this only
+      // corrects the decision ORDER (twinleaf previously discarded before surfacing the choice).
+      const discardThenDamage = (target?: PokemonCardList): State => {
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+        state = store.reduceEffect(state, checkProvidedEnergy);
+        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+        if (target !== undefined) {
+          const damageEffect = new PutDamageEffect(effect, 90);
+          damageEffect.target = target;
+          store.reduceEffect(state, damageEffect);
+        }
+        return state;
+      };
+
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
       if (hasBench === false) {
-        return state;
+        return discardThenDamage();
       }
-
-      const max = Math.min(1);
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH],
-        { min: max, max, allowCancel: false }
+        { min: 1, max: 1, allowCancel: false }
       ), selected => {
         const targets = selected || [];
-        targets.forEach(target => {
-          const damageEffect = new PutDamageEffect(effect, 90);
-          damageEffect.target = target;
-          store.reduceEffect(state, damageEffect);
-        });
+        return discardThenDamage(targets[0]);
       });
     }
     return state;

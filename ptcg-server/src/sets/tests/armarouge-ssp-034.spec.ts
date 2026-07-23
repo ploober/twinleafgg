@@ -1,5 +1,6 @@
-import { setupGame, padDeck, loadAllSets } from './test-helpers';
+import { setupGame, padDeck, loadAllSets, choosePokemonCandidates } from './test-helpers';
 import { useAttack, getDamage, getEnergyCount } from './card-test-helpers';
+import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-prompt';
 
 // TA-93 — Armarouge ssp-034 "Crimson Blaster": "Discard all [R] Energy from this Pokémon, and this
 // attack does 180 damage to 1 of your opponent's BENCHED Pokémon." It targets a Benched Pokémon
@@ -58,5 +59,38 @@ describe('Armarouge SSP — Crimson Blaster (TA-93)', () => {
     expect(getDamage(game.state, 1, 0)).toBe(180);   // benched target hit
     expect(getDamage(game.state, 1, 'active')).toBe(0); // Active untouched
     expect(getEnergyCount(game.state, 0, 'active')).toBe(0); // all Fire discarded
+  });
+
+  // TA-114 / CF-10 — the Step-D bench choice resolves BEFORE the "Discard all [R] Energy" effect
+  // (rulebook p.19 Step D; the TA-39 Thunder Raid rule). twinleaf previously discarded first.
+  it('resolves the Step-D bench choice BEFORE discarding Fire Energy (CF-10)', () => {
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: {
+          card: 'Armarouge SSP',
+          energy: ['Fire Energy SVE', 'Fire Energy SVE', 'Fire Energy SVE'],
+        },
+        deck: padDeck(10),
+      },
+      player2: {
+        active: { card: 'Arceus V BRS' },
+        bench: [{ card: 'Arceus V BRS' }],
+        deck: padDeck(10),
+      }
+    });
+
+    let energyAtChoice = -1;
+    game.overridePrompt('Choose pokemon', (prompt, state) => {
+      energyAtChoice = getEnergyCount(state, 0, 'active');
+      const candidates = choosePokemonCandidates(state, prompt as ChoosePokemonPrompt);
+      return [candidates[0]];
+    });
+
+    useAttack(game.store, game.state, 0, 'Crimson Blaster');
+
+    expect(energyAtChoice).toBe(3);                          // Fire Energy still attached at the choice
+    expect(getDamage(game.state, 1, 0)).toBe(180);           // then the bench damage lands
+    expect(getEnergyCount(game.state, 0, 'active')).toBe(0); // and the discard resolves
   });
 });
