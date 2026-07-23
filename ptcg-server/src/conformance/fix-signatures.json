@@ -952,6 +952,12 @@
       "signatures": [
         "const discardThenDamage = (target?: PokemonCardList): State => {"
       ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-archer.ts",
+      "signatures": [
+        "if (!player.marker.hasMarker(this.ARCHER_MARKER)) {\n      return false;"
+      ]
     }
   ]
 }

@@ -42,6 +42,13 @@ Each player shuffles their hand into their deck. Then, you draw 5 cards, and you
     if (player.deck.cards.length === 0) {
       return false;
     }
+    // Gate the printed precondition ("only if any of your Team Rocket's Pokemon were Knocked Out
+    // during your opponent's last turn"), the same ARCHER_MARKER reduceEffect enforces below. Without
+    // it canPlay reported the card as playable and it was offered, only for the play to be rejected
+    // with CANNOT_PLAY_THIS_CARD (a legalActions/UI self-inconsistency).
+    if (!player.marker.hasMarker(this.ARCHER_MARKER)) {
+      return false;
+    }
     return true;
   }
 
