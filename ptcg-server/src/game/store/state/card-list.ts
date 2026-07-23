@@ -69,8 +69,14 @@ export class CardList {
   }
 
   public moveCardsTo(cards: Card[], destination: CardList): void {
-    for (let i = 0; i < cards.length; i++) {
-      let index = this.cards.indexOf(cards[i]);
+    // Defensive snapshot: callers frequently pass the live `this.cards` array itself (e.g.
+    // `hand.moveCardsTo(hand.cards, discard)` to discard the whole hand). Splicing out of
+    // `this.cards` while iterating that same array shrinks the loop bound as it goes, so only
+    // every other card is moved (a 6-card list moves 3 and keeps 3). Iterate over a copy when
+    // the input aliases our backing array — non-aliased callers are unaffected. (Amarys PRE.)
+    const toMove = cards === this.cards ? cards.slice() : cards;
+    for (let i = 0; i < toMove.length; i++) {
+      let index = this.cards.indexOf(toMove[i]);
       if (index !== -1) {
         const card = this.cards.splice(index, 1);
         // If this is a PokemonCardList with the energies property, remove the card from energies
@@ -97,7 +103,7 @@ export class CardList {
         }
       } else if ((this as any).tools && Array.isArray((this as any).tools)) {
         // If not found in cards, check tools (for robustness)
-        index = (this as any).tools.indexOf(cards[i]);
+        index = (this as any).tools.indexOf(toMove[i]);
         if (index !== -1) {
           const card = (this as any).tools.splice(index, 1);
           destination.cards.push(card[0]);
