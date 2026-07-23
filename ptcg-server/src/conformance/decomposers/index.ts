@@ -14,6 +14,7 @@ import { choosePrizeDecomposer } from './choose-prize';
 import { confirmDecomposer } from './confirm';
 import { confirmCardsDecomposer } from './confirm-cards';
 import { selectOptionDecomposer } from './select-option';
+import { selectDecomposer } from './select';
 import { orderCardsDecomposer } from './order-cards';
 import { ConfirmCardsPrompt } from '../../game/store/prompts/confirm-cards-prompt';
 
@@ -37,6 +38,7 @@ const DECOMPOSERS: PromptDecomposer<any>[] = [
   confirmDecomposer,
   confirmCardsDecomposer,
   selectOptionDecomposer,
+  selectDecomposer,
   orderCardsDecomposer,
 ];
 
