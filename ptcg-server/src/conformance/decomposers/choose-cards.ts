@@ -117,7 +117,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     return { kind: 'index', index };
   },
 
-  assemble(prompt, picks): number[] | null {
+  assemble(prompt, picks): number[] {
     const picked = realPicks(picks).map(p => (p as { index: number }).index);
     if (picked.length === 0) {
       // Auto-resolved forced discard (next() returned null with no picks): take all eligible (CF-8).
@@ -125,13 +125,9 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       if (forced !== null) {
         return forced;
       }
-      // A search whose filter matched no card (every candidate blocked/filtered out) is a WHIFF — e.g.
-      // Love Ball with no same-named Pokémon in the deck: min:1 but 0 eligible. An empty `[]` fails
-      // validate against a positive min; the correct resolution is CANCEL (null), which the prompt
-      // accepts iff allowCancel and which the card's `selected || []` callback already handles.
-      if (prompt.options.min > 0 && prompt.options.allowCancel) {
-        return null;
-      }
+      // An empty search that can't satisfy `min` (Love Ball with no same-named Pokémon in the deck) is a
+      // WHIFF: `[]` fails validate against a positive min, and the driver resolves that uniformly as CANCEL
+      // (null) for every ChooseXxx prompt — see driver.ts `sub === null`. No decomposer-specific handling.
     }
     return picked;
   },

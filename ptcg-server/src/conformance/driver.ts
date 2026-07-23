@@ -14,7 +14,7 @@ import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
-import { classify, decomposerFor, WirePick } from './decomposers';
+import { classify, decomposerFor, realPicks, WirePick } from './decomposers';
 import { topLevelMenu } from './legal-actions';
 import { mapRejection } from './rejection-codes';
 import {
@@ -485,9 +485,19 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       const sub = dec.next(prompt, accum, game.ctx, game.state);
       if (sub === null) {
         const wire = dec.assemble(prompt, accum);
-        const result = prompt.decode(wire, game.state);
+        let result = prompt.decode(wire, game.state);
         if (!prompt.validate(result, game.state)) {
-          throw new Error(`[conformance] decomposed result failed validate for prompt '${prompt.type}'`);
+          // A decomposition that assembled an unsatisfiable EMPTY result — a search/selection whose filter
+          // matched no card (Love Ball's 'Choose cards', Salvatore's evolve-target 'Choose pokemon') — is a
+          // WHIFF, not a fault: resolve as CANCEL (null) when NO real pick was made and the prompt permits
+          // cancel (`validate(null)` iff allowCancel; the card's own `selected || []` callback treats it as
+          // "found nothing"). A PARTIAL selection that fails validate is a genuinely malformed log → still
+          // faults. One driver-level rule covers every ChooseXxx decomposer (choose-cards, choose-pokemon, …).
+          if (realPicks(accum).length === 0 && prompt.validate(null, game.state)) {
+            result = null;
+          } else {
+            throw new Error(`[conformance] decomposed result failed validate for prompt '${prompt.type}'`);
+          }
         }
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
         accum = [];
