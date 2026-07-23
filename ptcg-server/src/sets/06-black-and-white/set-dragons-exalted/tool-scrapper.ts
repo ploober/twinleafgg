@@ -9,7 +9,8 @@ import {
   PokemonCardList,
   CardTarget,
   ChoosePokemonPrompt,
-  SlotType
+  SlotType,
+  Player
 } from '../../../game';
 
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
@@ -87,6 +88,21 @@ export class ToolScrapper extends TrainerCard {
   public text: string =
     'Choose up to 2 Pokemon Tool cards attached to Pokemon in play (yours or ' +
     'your opponent\'s) and discard them.';
+
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    // Mirrors `playCard`: a Trainer that can have no effect can't be played, so at least one Pokémon
+    // Tool must be attached to a Pokémon in play — yours or your opponent's. Without this gate canPlay
+    // defaulted to playable, so the card was offered in legalActions and then rejected on play.
+    const opponent = StateUtils.getOpponent(state, player);
+    let pokemonsWithTool = 0;
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+      if (cardList.tools.length > 0) { pokemonsWithTool += 1; }
+    });
+    opponent.forEachPokemon(PlayerType.TOP_PLAYER, cardList => {
+      if (cardList.tools.length > 0) { pokemonsWithTool += 1; }
+    });
+    return pokemonsWithTool > 0;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {

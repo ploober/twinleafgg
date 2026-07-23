@@ -964,6 +964,12 @@
       "signatures": [
         "if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {"
       ]
+    },
+    {
+      "file": "set-dragons-exalted/tool-scrapper.ts",
+      "signatures": [
+        "public canPlay(store: StoreLike, state: State, player: Player): boolean {\n    // Mirrors `playCard`: a Trainer that can have no effect can't be played"
+      ]
     }
   ]
 }
