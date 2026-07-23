@@ -24,6 +24,7 @@ import {
 //   TA-59  Ceruledge ex ssp-036      — "Raging Amethyst" discards ALL its Energy (once — no duplication)
 //   TA-66  Cinderace meg-028         — "Turbo Flare" places its base damage BEFORE the attach effect pauses
 //   TA-67  Decidueye sfa-005         — "Power Shot" FORCES the Grass discard when able (no decline); whiffs with none
+//   TA-113 Rotom ex pfl-029          — "Thunderbolt" discards all Energy; no 500 when its own KO runs checkState
 
 const WATER = 'sve-003', FIRE = 'sve-002', PSY = 'sve-005', METAL = 'sve-008', FIGHT = 'sve-006', GRASS = 'sve-009';
 const RALTS = 'Ralts SIT';                       // 70 HP neutral defender
@@ -637,5 +638,21 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.A.active!.stack.map(c => c.printing)).toContain('slg-019'); // Croconaw switched in
     expect(r.state.players.A.active!.energy.length).toBe(2);                            // carried the Energy
     expect(r.state.players.A.bench[0].energy.length).toBe(0);                           // old Active, drained
+  });
+
+  it('Rotom ex "Thunderbolt" discards all its Energy and does not crash on its own KO [TA-113 pfl-029]', () => {
+    // Multi Adapter reads effect.player on every CheckTableStateEffect, but the post-KO cleanup pass
+    // dispatches `new CheckTableStateEffect([5,5])` with no player, so the card dereferenced undefined
+    // (StateUtils.isPokemonInPlay → undefined.forEachPokemon) and 500'd whenever Thunderbolt's own KO
+    // ran that cleanup. Fixed by deriving the owner from state (the arceus-lv-x idiom). Roto resolves it.
+    const LIGHTNING = 'sve-004';
+    const r = step(
+      board(player({ active: inPlay('A-act', ['pfl-029'], [...en(LIGHTNING, 1, 'a'), ...en(WATER, 1, 'a2')]) }),
+            player({ active: inPlay('B-act', [RALTS]), bench: [inPlay('B-b0', [RALTS])] })),
+      [attack('A-act', 'Thunderbolt')],
+    );
+    expect(r.status).toBe('awaitingAction');                    // no engineFault 500
+    expect(r.state.players.A.active!.energy.length).toBe(0);    // "Discard all Energy from this Pokemon"
+    expect(r.state.players.B.active).toBeNull();                // 130 KOs the 70-HP Ralts (awaiting promote)
   });
 });

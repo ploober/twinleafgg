@@ -39,16 +39,27 @@ export class Rotomex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (effect instanceof CheckTableStateEffect && StateUtils.isPokemonInPlay(effect.player, this)) {
-      const player = effect.player;
+    if (effect instanceof CheckTableStateEffect) {
+      // CheckTableStateEffect.player is not populated on the post-KO cleanup pass
+      // (check-effect.ts dispatches `new CheckTableStateEffect([5, 5])` with no player),
+      // so derive the owner from state — dereferencing effect.player directly crashed
+      // (StateUtils.isPokemonInPlay -> undefined.forEachPokemon) whenever this attack's
+      // own KO triggered that cleanup. Match the sibling idiom (arceus-lv-x, dialga-g-lv-x).
+      const cardList = StateUtils.findCardList(state, this);
+      const player = StateUtils.findOwner(state, cardList);
+
+      // Multi Adapter only applies while this Rotom ex is itself in play.
+      if (player === undefined || !StateUtils.isPokemonInPlay(player, this)) {
+        return state;
+      }
 
       // Try to reduce PowerEffect, to check if something is blocking our ability
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
 
-      // Multi Adapter: Set maxTools to 2 for any Pokemon with "Rotom" in their name
-      effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+      // Multi Adapter: Set maxTools to 2 for any Pokemon with "Rotom" in their name [TA-113]
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         if (card && card.name.includes('Rotom')) {
           card.maxTools = 2;
         }
