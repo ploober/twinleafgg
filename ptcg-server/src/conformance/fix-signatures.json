@@ -958,6 +958,12 @@
       "signatures": [
         "if (!player.marker.hasMarker(this.ARCHER_MARKER)) {\n      return false;"
       ]
+    },
+    {
+      "file": "set-stellar-crown/antique-cover-fossil.ts",
+      "signatures": [
+        "if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {"
+      ]
     }
   ]
 }

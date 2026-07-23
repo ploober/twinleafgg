@@ -121,11 +121,10 @@ export class AntiqueCoverFossil extends TrainerCard {
       store.reduceEffect(state, playPokemonEffect);
     }
 
-    if (effect instanceof RetreatEffect && effect.player.active.cards.includes(this)) {
-      throw new GameError(GameMessage.CANNOT_RETREAT);
-    }
-
-    if (effect instanceof RetreatEffect && effect.player.active.cards.includes(this)) {
+    // "This card can't retreat" applies only while the fossil is the in-play Basic Pokémon. Gate on the
+    // ACTIVE Pokémon (as the sibling Antique fossils do), not mere presence in the stack — otherwise the
+    // lock leaks to any Pokémon evolved onto the fossil (which retreats per its own cost).
+    if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {
       throw new GameError(GameMessage.CANNOT_RETREAT);
     }
 
