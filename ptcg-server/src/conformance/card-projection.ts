@@ -12,7 +12,7 @@ import { Card } from '../game/store/card/card';
 import { PokemonCard } from '../game/store/card/pokemon-card';
 import { TrainerCard } from '../game/store/card/trainer-card';
 import { EnergyCard } from '../game/store/card/energy-card';
-import { CardType, SuperType, Stage } from '../game/store/card/card-types';
+import { CardType, SuperType, Stage, TrainerType, EnergyType } from '../game/store/card/card-types';
 import { PowerType, Attack, Power, Weakness, Resistance } from '../game/store/card/pokemon-types';
 import { NeutralCard, NeutralAttack, NeutralAbility, NeutralTypeValue } from './neutral-types';
 import { toPrinting } from './printing';
@@ -62,6 +62,24 @@ const POWER_TYPE_NAMES: { [k: number]: string } = {
   [PowerType.ABILITY]: 'Ability',
   [PowerType.POKEPOWER]: 'Poké-Power',
   [PowerType.POKEBODY]: 'Poké-Body',
+};
+
+/** Trainer sub-classification (OpenAPI `Card.category`) — aligned to `card-data/final`'s `category`
+ *  vocabulary so the harness can validate it as a direct field compare. An old-style "Technical
+ *  Machine" is a TrainerType.ITEM carrying the CardTag.TECHNICAL_MACHINE marker in `tags`, so it
+ *  projects as `Item` here (the harness reconciles the TM case via the tag). */
+const TRAINER_CATEGORY_NAMES: { [k: number]: string } = {
+  [TrainerType.ITEM]: 'Item',
+  [TrainerType.SUPPORTER]: 'Supporter',
+  [TrainerType.STADIUM]: 'Stadium',
+  [TrainerType.TOOL]: 'Tool',
+};
+
+/** Energy sub-classification (OpenAPI `Card.category`) — `card-data/final` spells these `Basic Energy`
+ *  / `Special Energy` (not the bare enum), so mirror that spelling. */
+const ENERGY_CATEGORY_NAMES: { [k: number]: string } = {
+  [EnergyType.BASIC]: 'Basic Energy',
+  [EnergyType.SPECIAL]: 'Special Energy',
 };
 
 /** Collapse runtime whitespace (twinleaf uses `'   '` placeholders for blank text); omit if empty. */
@@ -126,6 +144,11 @@ export function projectCard(card: Card): NeutralCard {
     number: card.setNumber,
   };
   if (card.regulationMark) { out.regulationMark = card.regulationMark; }
+  // Rule-box / mechanical-class markers live on the base Card (`tags`, populated with CardTag enum
+  // values by ~1780 set files — the modern field; the legacy `PokemonCard.cardTag` is used by ~18).
+  // Applies to every supertype (ex/V/Tera on Pokémon, ACE SPEC/Team Plasma on Trainers, Prism Star on
+  // Energy). Emitted verbatim (no silent cap); the harness scopes which markers it corroborates.
+  if (card.tags && card.tags.length) { out.tags = [...card.tags]; }
 
   if (card.superType === SuperType.POKEMON) {
     const p = card as PokemonCard;
@@ -146,6 +169,8 @@ export function projectCard(card: Card): NeutralCard {
     out.retreat = (p.retreat ?? []).length;
   } else if (card.superType === SuperType.TRAINER) {
     const t = card as TrainerCard;
+    const category = TRAINER_CATEGORY_NAMES[t.trainerType];
+    if (category) { out.category = category; }
     const text = norm(t.text);
     if (text) { out.text = text; }
     const abilities = projectAbilities(t.powers);
@@ -154,6 +179,8 @@ export function projectCard(card: Card): NeutralCard {
     if (attacks) { out.attacks = attacks; }
   } else if (card.superType === SuperType.ENERGY) {
     const e = card as EnergyCard;
+    const category = ENERGY_CATEGORY_NAMES[e.energyType];
+    if (category) { out.category = category; }
     const text = norm(e.text);
     if (text) { out.text = text; }
   }

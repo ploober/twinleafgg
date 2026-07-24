@@ -61,9 +61,11 @@ export interface NeutralCard {
   printing: string;
   name: string;
   supertype: string; // "Pokémon" | "Trainer" | "Energy"
+  category?: string; // Trainer: "Item"|"Supporter"|"Stadium"|"Tool"; Energy: "Basic Energy"|"Special Energy". Omitted for Pokémon.
   setCode: string;
   number: string;
   stage?: string;
+  tags?: string[];   // printed rule-box / mechanical-class markers ("ex","V","GX","Tera","ACE SPEC"…); omitted when none.
   hp?: number;
   types?: string[];
   evolvesFrom?: string;

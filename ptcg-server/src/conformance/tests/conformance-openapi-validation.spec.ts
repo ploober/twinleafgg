@@ -102,6 +102,27 @@ function relaxNullableRefs(schemas: Record<string, any>): void {
     }
   });
 
+  // Positive regression guard: the closed schema only rejects EXTRA fields, so it cannot catch the
+  // projection silently DROPPING category/tags (the subtype gap this endpoint had for a long time —
+  // both engines omitted subtype symmetrically, so a divergence was invisible). Assert they are emitted.
+  it('projects category for every Trainer/Energy (and tags for rule-box Pokémon)', () => {
+    const svi = buildCardsForSet('svi').cards;
+    const TRAINER_CATS = new Set(['Item', 'Supporter', 'Stadium', 'Tool', 'Technical Machine']);
+    const ENERGY_CATS = new Set(['Basic Energy', 'Special Energy']);
+    for (const c of svi) {
+      if (c.supertype === 'Trainer') {
+        expect(TRAINER_CATS.has(c.category as string)).toBe(true);
+      } else if (c.supertype === 'Energy') {
+        expect(ENERGY_CATS.has(c.category as string)).toBe(true);
+      } else {
+        expect(c.category).toBeUndefined(); // Pokémon carry stage, not category
+      }
+    }
+    // Arven is a Supporter; at least one printed `ex` Pokémon carries the `ex` rule-box tag (prize count).
+    expect(svi.find(c => c.name === 'Arven')?.category).toBe('Supporter');
+    expect(svi.some(c => (c.tags ?? []).includes('ex'))).toBe(true);
+  });
+
   it('a successful step state validates as GameState', () => {
     expect(check('GameState', step(BOARD, []).state)).toBe(true);
   });
