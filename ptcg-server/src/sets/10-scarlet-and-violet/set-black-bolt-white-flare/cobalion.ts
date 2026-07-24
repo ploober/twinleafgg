@@ -62,7 +62,9 @@ export class Cobalion extends PokemonCard {
       const player = effect.player;
       const active = player.active;
 
-      const toolCards = active.cards.filter(card => card instanceof TrainerCard && card.trainerType === TrainerType.TOOL);
+      // TA-125: attached Tools live in `cardList.tools`, NOT in `cards`. Reading `cards` here meant
+      // Metal Arms never saw an attached Tool and always dealt the base 80 instead of 80+40.
+      const toolCards = active.tools.filter(card => card instanceof TrainerCard && card.trainerType === TrainerType.TOOL);
 
       if (toolCards.length > 0) {
         effect.damage += 40;
