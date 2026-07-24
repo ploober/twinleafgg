@@ -1,5 +1,5 @@
 import { CardTag, CardType, PokemonCard, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
-import { DealDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -48,12 +48,17 @@ export class IronJugulis extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (effect instanceof PutDamageEffect || effect instanceof DealDamageEffect) {
+    // "If this Pokémon is damaged by an attack from your opponent's Pokémon (even if this Pokémon is
+    // Knocked Out), put 3 damage counters on the Attacking Pokémon." Trigger on AfterDamageEffect, which
+    // fires exactly once per attack. (Reacting to DealDamageEffect *and* PutDamageEffect double-fired: one
+    // attack flows through as a DealDamageEffect that then spawns a PutDamageEffect, so the ability applied
+    // 6 counters instead of 3 — invisible on idempotent siblings that apply Burn, but wrong here.)
+    if (effect instanceof AfterDamageEffect && effect.target.cards.includes(this)) {
       const player = effect.player;
+      const targetPlayer = StateUtils.findOwner(state, effect.target);
 
-      const cardList = StateUtils.findCardList(state, this);
-
-      if (effect.target !== cardList) {
+      // Only react to damage from the OPPONENT's attack (not self-inflicted), and only if damage landed.
+      if (effect.damage <= 0 || player === targetPlayer) {
         return state;
       }
 
@@ -61,8 +66,7 @@ export class IronJugulis extends PokemonCard {
         return state;
       }
 
-      const oppActive = effect.source;
-      oppActive.damage += 30;
+      effect.source.damage += 30;
     }
 
     return state;
