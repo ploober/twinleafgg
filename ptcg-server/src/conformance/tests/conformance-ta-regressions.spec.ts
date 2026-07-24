@@ -151,8 +151,13 @@ describe('Conformance — src/sets card-bug regression guards', () => {
     expect(res.state.players.B.active!.energy.length).toBe(0);
   });
 
-  it('Croconaw "Crunch" heads still offers the discard when the Defender HAS Energy [TA-109 asc-042]', () => {
-    // Positive control: the guard must not suppress the real discard — the prompt is still raised.
+  it('Croconaw "Crunch" heads actually DISCARDS the Defender\'s lone Energy [TA-121 asc-042]', () => {
+    // Positive control for the hasEnergy guard AND the discard-perspective fix (TA-121). With exactly one
+    // eligible Energy the forced 1-of-1 DiscardEnergyPrompt has no decision content, so CF-14 resolves it
+    // ATOMICALLY (no 1-option pending, matching rotomancer). Assert the Energy is really discarded to the
+    // Defender's pile — NOT that a 'discard' action is pending. Pre-TA-121 the card resolved the transfer
+    // target from the wrong perspective (`effect.opponent` not `effect.player`) so `moveCardTo` no-op'd and
+    // the Energy was never discarded; this assertion (and src/sets/croconaw-crunch-discard-asc-042) guards it.
     const res = step(
       board(player({ active: pip('A-act', CROCONAW, [{ iid: 'e0', printing: WATER }, { iid: 'e1', printing: WATER }]) }),
             player({ active: pip('B-act', RALTS, [{ iid: 'be0', printing: WATER }]) })),
@@ -162,6 +167,8 @@ describe('Conformance — src/sets card-bug regression guards', () => {
       ],
     );
     expect(res.status).toBe('awaitingAction');
-    expect(res.pending!.legalActions.some(a => a.type === 'discard')).toBe(true);
+    expect(res.state.players.B.active!.damage).toBe(50);        // base 50 applied
+    expect(res.state.players.B.active!.energy.length).toBe(0);  // the lone Energy was discarded
+    expect(res.state.players.B.discard.length).toBe(1);         // ...to the Defender's own discard pile
   });
 });

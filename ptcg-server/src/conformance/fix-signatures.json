@@ -805,7 +805,8 @@
     {
       "file": "set-ascended-heroes/croconaw.ts",
       "signatures": [
-        "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
+        "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);",
+        "const target = StateUtils.getTarget(state, effect.player, transfers[0].from);"
       ]
     },
     {

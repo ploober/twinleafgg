@@ -45,7 +45,11 @@ export class Croconaw extends PokemonCard {
           ), transfers => {
             transfers = transfers || [];
             if (transfers.length > 0) {
-              const target = StateUtils.getTarget(state, effect.opponent, transfers[0].from);
+              // The prompt is built with `effect.player.id`, so the result's `from` CardTarget is in the
+              // ATTACKER's perspective (TOP_PLAYER = the Defender). Resolve it against `effect.player`, as
+              // every sibling opponent-discard card does; resolving against `effect.opponent` flips it back
+              // to the attacker's own Active, so `moveCardTo` finds nothing and the Energy is never discarded.
+              const target = StateUtils.getTarget(state, effect.player, transfers[0].from);
               target.moveCardTo(transfers[0].card, effect.opponent.discard);
             }
           });
