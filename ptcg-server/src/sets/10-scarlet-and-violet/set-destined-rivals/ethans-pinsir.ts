@@ -13,13 +13,13 @@ export class EthansPinsir extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Vice Grip',
+    name: 'Vise Grip',
     cost: [G],
     damage: 20,
     text: ''
   },
   {
-    name: 'One-Point Return',
+    name: 'Rallying Horn',
     cost: [C, C, C],
     damage: 70,
     damageCalculation: '+',
@@ -34,7 +34,7 @@ export class EthansPinsir extends PokemonCard {
   public fullName: string = 'Ethan\'s Pinsir DRI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // One-Point Return
+    // Rallying Horn
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 

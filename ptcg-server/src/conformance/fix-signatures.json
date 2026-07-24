@@ -810,6 +810,13 @@
       ]
     },
     {
+      "file": "set-destined-rivals/ethans-pinsir.ts",
+      "signatures": [
+        "name: 'Vise Grip',",
+        "name: 'Rallying Horn',"
+      ]
+    },
+    {
       "file": "set-journey-together/ns-darmanitan.ts",
       "signatures": [
         "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
