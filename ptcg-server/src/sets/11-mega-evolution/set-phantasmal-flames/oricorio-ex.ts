@@ -10,6 +10,7 @@ import { WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Oricorioex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
+  public tags = [CardTag.POKEMON_ex];
   public cardType: CardType = R;
   public hp: number = 190;
   public weakness = [{ type: W }];

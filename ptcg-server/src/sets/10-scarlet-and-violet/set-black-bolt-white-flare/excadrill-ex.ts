@@ -10,7 +10,7 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Excadrillex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public cardTag = [CardTag.POKEMON_ex];
+  public tags = [CardTag.POKEMON_ex];
   public evolvesFrom = 'Drilbur';
   public cardType = F;
   public hp: number = 270;
