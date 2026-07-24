@@ -93,7 +93,7 @@ import {
 } from '../effects/game-effects';
 import { AfterAttackEffect, BeforeDoingDamageEffect, EndTurnEffect } from '../effects/game-phase-effects';
 import { ChooseAttackPrompt } from '../prompts/choose-attack-prompt';
-import { preventRetreatEffect, preventDamageEffect, preventEffectsOfAttacksEffect, preventAttackEffect, opponentPokemonCannotUseAttackEffect, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect, PreventDamageOptions, shouldPreventAttackEffects } from '../effects/effect-of-attack-effects';
+import { preventRetreatEffect, preventDamageEffect, preventEffectsOfAttacksEffect, preventAttackEffect, opponentPokemonCannotUseAttackEffect, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect, defendingPokemonTakesDamageOnEnergyAttachFromHandNextTurnEffect, PreventDamageOptions, shouldPreventAttackEffects } from '../effects/effect-of-attack-effects';
 import { GameStatsTracker } from '../game-stats-tracker';
 
 /**
@@ -3445,6 +3445,34 @@ export function REMOVE_MARKER_AT_END_OF_TURN(effect: Effect, marker: string, sou
     REMOVE_MARKER(marker, effect.player, source);
 }
 
+export interface PokemonKnockedOutLastTurnFilter {
+  /** Require KO from attack damage during the opponent's attack. */
+  byAttackDamage?: boolean;
+  /** Knocked-out Pokemon must have all of these tags. */
+  tags?: CardTag[];
+}
+
+export function WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN(
+  player: Player,
+  filter?: PokemonKnockedOutLastTurnFilter,
+): boolean {
+  if (filter?.byAttackDamage) {
+    if (!player.pokemonKnockedOutByAttackDuringOpponentsLastTurn) {
+      return false;
+    }
+  } else if (!player.pokemonKnockedOutDuringOpponentsLastTurn) {
+    return false;
+  }
+
+  if (filter?.tags?.length) {
+    return player.pokemonKnockedOutLastTurnEntries.some(entry =>
+      filter.tags!.every(tag => entry.includes(tag))
+    );
+  }
+
+  return true;
+}
+
 /**
  * Clear markers that track events from "your opponent's last turn" (e.g. a KO).
  * Skipped when the player has an additional turn pending (Dialga-GX Timeless, etc.)
@@ -4087,6 +4115,22 @@ export function DEFENDING_POKEMON_TAKES_MORE_DAMAGE_DURING_YOUR_NEXT_TURN(
 ): State {
   const bonusEffect = defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect(effect, source, damageBonus);
   return store.reduceEffect(state, bonusEffect);
+}
+
+/**
+ * During the opponent's next turn, whenever they attach an Energy card from their hand
+ * to the Defending Pokémon, place damage counters on that Pokémon.
+ * @param damage Total HP to place as damage counters via PutCountersEffect (e.g. 80 for 8 counters).
+ */
+export function DEFENDING_POKEMON_TAKES_DAMAGE_ON_ENERGY_ATTACH_FROM_HAND_NEXT_TURN(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  source: Card,
+  damage: number,
+): State {
+  const attachEffect = defendingPokemonTakesDamageOnEnergyAttachFromHandNextTurnEffect(effect, source, damage);
+  return store.reduceEffect(state, attachEffect);
 }
 
 /**
