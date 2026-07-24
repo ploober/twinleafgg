@@ -493,8 +493,17 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           // cancel (`validate(null)` iff allowCancel; the card's own `selected || []` callback treats it as
           // "found nothing"). A PARTIAL selection that fails validate is a genuinely malformed log → still
           // faults. One driver-level rule covers every ChooseXxx decomposer (choose-cards, choose-pokemon, …).
-          if (realPicks(accum).length === 0 && prompt.validate(null, game.state)) {
-            result = null;
+          if (realPicks(accum).length === 0) {
+            // No real pick was possible — a WHIFF. Resolve as CANCEL (null) when the prompt permits it;
+            // otherwise a FORCED prompt reached 0 eligible targets (Salvatore's `Choose pokemon` evolve-
+            // target when the searched Pokémon can't be placed on any in-play Pokémon). The ENGINE itself
+            // whiffs there — its callback tolerates the empty selection (Salvatore: `targets.length === 0
+            // -> shuffle+return`), so the game store never crashes. The adapter must not either: dispatch
+            // the empty (decoded) result and let the store's own reducer decide — a genuinely unanswerable
+            // prompt still faults loudly from the store, but a legitimate whiff resolves cleanly (CF-31,
+            // extends the CF-29 cancelable-whiff rule to the forced-0-eligible case). A PARTIAL selection
+            // that fails validate (realPicks > 0) is still a malformed log → faults below.
+            result = prompt.validate(null, game.state) ? null : result;
           } else {
             throw new Error(`[conformance] decomposed result failed validate for prompt '${prompt.type}'`);
           }
