@@ -80,8 +80,9 @@ export class Hydreigon extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Discard all Pokemon Tool cards from defending Pokemon
-      const toolCards = opponent.active.cards.filter(c =>
+      // Discard all Pokemon Tool cards from defending Pokemon.
+      // TA-125 family: attached Tools live in `.tools`, not `.cards` — this discarded nothing.
+      const toolCards = opponent.active.tools.filter(c =>
         c instanceof TrainerCard && c.trainerType === TrainerType.TOOL
       );
 

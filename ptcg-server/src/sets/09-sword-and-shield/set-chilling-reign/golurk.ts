@@ -41,7 +41,9 @@ export class Golurk extends PokemonCard {
 
       let pokemonToolCount = 0;
 
-      player.active.cards.forEach(card => {
+      // TA-125 family: attached Tools live in `.tools`, not `.cards` (AttachPokemonToolEffect
+      // splices the card out of `cards` before pushing to `tools`), so this bonus never applied.
+      player.active.tools.forEach(card => {
         if (card instanceof TrainerCard && card.trainerType === TrainerType.TOOL) {
           pokemonToolCount++;
         }

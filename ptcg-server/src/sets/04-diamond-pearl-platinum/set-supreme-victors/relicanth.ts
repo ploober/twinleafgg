@@ -48,7 +48,8 @@ export class Relicanth extends PokemonCard {
       }
 
       effect.opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
-        cardList.cards.forEach(card => {
+        // TA-125 family: attached Tools live in `.tools`, not `.cards` — the +30 per Tool never applied.
+        cardList.tools.forEach(card => {
           if (card instanceof TrainerCard && card.trainerType === TrainerType.TOOL) {
             attackDamage += 30;
           }

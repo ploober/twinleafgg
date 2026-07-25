@@ -48,7 +48,8 @@ export class Machamp2 extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      const hasTool = player.active.cards.some(c =>
+      // TA-125 family: attached Tools live in `.tools`, not `.cards` — this bonus never applied.
+      const hasTool = player.active.tools.some(c =>
         c instanceof TrainerCard && c.trainerType === TrainerType.TOOL
       );
       if (hasTool) {
