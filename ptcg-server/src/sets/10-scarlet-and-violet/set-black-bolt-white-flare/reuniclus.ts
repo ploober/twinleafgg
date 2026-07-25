@@ -5,15 +5,16 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { GameMessage } from '../../../game/game-message';
-import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, GameError, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
+import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useCellularAwakening(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-131: an empty deck makes the search a no-op, not an illegal attack (rulebook p.20, TA-19 family).
   if (player.deck.cards.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
 
   // Look through all known cards to find out if Pokemon can evolve
@@ -33,9 +34,11 @@ function* useCellularAwakening(next: Function, store: StoreLike, state: State,
     });
   });
 
-  // There is nothing that can evolve
+  // TA-125/TA-131 (rulebook p.20, TA-19 family): an attack may be USED even when its effect can do
+  // nothing. Nothing to evolve (e.g. an empty Bench) is a no-op, NOT a refusal — throwing here made
+  // the whole attack `invalidAction`, which the cross-engine differential caught against rotomancer.
   if (evolutionNames.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
 
   const blocked2: CardTarget[] = [];
