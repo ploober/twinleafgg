@@ -334,10 +334,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
   let accum: WirePick[] = [];
-  // The actor whose turn was auto-ended by their own declareAttack (or null). Used to absorb only
-  // that player's *own* redundant trailing endTurn — never the opponent's legitimate pass on the
-  // turn the attack handed them (which must advance the turn, matching the real rules).
-  let turnEndedBy: NeutralPlayerId | null = null;
+  // (Removed 2026-07-24, TA-129/CF-12: `turnEndedBy` tracked the actor whose turn was auto-ended by
+  // their own declareAttack, so the driver could absorb that player's redundant trailing `endTurn`.
+  // CF-12 deprecates that leniency — the action is not offered and must reject. See the dispatch loop.)
 
   // The system actor's inline coin source: consume the next `flip` action from the same cursor the
   // loop walks, so inline flips (CoinFlipEffect) and the loop stay aligned in log order.
@@ -581,22 +580,18 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         throw new Error(`[conformance] stray system action '${action.type}' with no pending system decision`);
       }
       cursor.i++;
-      if (action.type === 'endTurn' && turnEndedBy === action.actor) {
-        // The attacker's own redundant endTurn after their attack auto-ran the boundary: no-op it.
-        // The opponent's endTurn (a different actor) is a real pass and falls through to dispatch.
-        turnEndedBy = null;
-        continue;
-      }
+      // TA-129 (CF-12, 2026-07-24): this used to ABSORB the attacker's own trailing `endTurn` as a
+      // silent no-op. That was R1-style leniency and CF-12 deprecates it: once the attack auto-ran the
+      // turn boundary the attacker is no longer the active player, so their `endTurn` is an action
+      // nobody offered and must reject as `invalidAction`. Rotomancer already rejects it
+      // (`NOT_YOUR_TURN`); twinleaf silently accepted it, which is the divergence TA-129 records.
+      // Now falls through to dispatch so the ENGINE decides — the harness must not paper over it.
       // An in-effect coin flip that runs past the log (a flip-until-tails attack, or an AFTER_ATTACK
       // flip reached via the WaitPrompt continuation) throws FlipStarvation. It is no longer caught
       // here: dispatchAndCollect resyncs + captures committed events and re-throws, and the outer
       // catch turns ANY starvation — top-level dispatch OR prompt-resolution continuation — into a
       // single system flip pause. See the outer catch and dispatchAndCollect above.
       dispatchAndCollect(() => dispatchAction(game, action));
-      // Only an attack auto-ends a turn; any other dispatched action clears the "just attacked" state,
-      // so the absorption window is exactly attack → (effect prompts) → that attacker's endTurn.
-      turnEndedBy = action.type === 'declareAttack' && (action.actor === 'A' || action.actor === 'B')
-        ? action.actor : null;
       continue;
     }
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
