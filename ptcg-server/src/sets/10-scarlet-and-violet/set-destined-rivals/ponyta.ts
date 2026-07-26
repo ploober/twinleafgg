@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MULTIPLE_COIN_FLIPS_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Ponyta extends PokemonCard {
   public regulationMark = 'I';
@@ -33,15 +33,13 @@ export class Ponyta extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      let heads = 0;
-      COIN_FLIP_PROMPT(store, state, player, result => {
-        if (result) { heads++; }
+      // TA-134 sibling (same shape as Combusken dri-041): `effect.damage = heads * 10` used to run
+      // SYNCHRONOUSLY, before either flip callback had fired, so `heads` was still 0 and the attack
+      // did 0 damage on every outcome. The State each COIN_FLIP_PROMPT returned was discarded too.
+      // Assign inside the callback and return that State.
+      return MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 2, results => {
+        effect.damage = 10 * results.reduce((sum, r) => sum + (r ? 1 : 0), 0);
       });
-      COIN_FLIP_PROMPT(store, state, player, result => {
-        if (result) { heads++; }
-      });
-
-      effect.damage = heads * 10;
     }
 
     return state;
