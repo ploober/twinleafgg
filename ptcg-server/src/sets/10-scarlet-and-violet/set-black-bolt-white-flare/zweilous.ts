@@ -35,7 +35,10 @@ export class Zweilous extends PokemonCard {
   public fullName: string = 'Zweilous SV11W';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-134: this was index 1 ("Pitch-Black Fangs"). "Flip 2 coins" belongs to attack 0, "Double
+    // Hit" — the off-by-one silently gave Double Hit its flat base 40 on every flip outcome AND made
+    // the plain 100-damage Pitch-Black Fangs raise two coin flips it never asks for.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       return store.prompt(state, [
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP),

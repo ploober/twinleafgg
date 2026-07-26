@@ -104,17 +104,18 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
       { actor: 'A', type: 'evolve', card: 'A-kirlia', target: 'A-active' },
       { actor: 'A', type: 'attachEnergy', card: 'A-psy', target: 'A-active' },
       { actor: 'A', type: 'declareAttack', source: 'A-active', name: 'Slap' },
-      { actor: 'A', type: 'endTurn' },             // reconciled no-op (attack already ended the turn)
+      // TA-129 / CF-12 (2026-07-24): this trailing `endTurn` used to be ABSORBED as a silent no-op.
+      // The attack already crossed the turn boundary, so A is no longer the active player and this is
+      // an action nobody offered — CF-12 deprecates that R1 leniency and requires `invalidAction`.
+      { actor: 'A', type: 'endTurn' },
     ];
 
     const res = step(initial, actions);
 
     // ── response envelope ──
-    expect(res.status).toBe('awaitingAction');
-    expect(res.applied).toBe(4);
-    // The attack auto-ended A's turn, so the quiescent menu now belongs to B (M5).
-    expect(res.pending!.actor).toBe('B');
-    expect(res.pending!.descriptor).toBe('main');
+    expect(res.status).toBe('invalidAction');
+    expect(res.applied).toBe(3);           // the first three applied; the fourth is rejected
+    expect(res.pending).toBeNull();
 
     // ── projection ──
     expect(res.state.players.A.active!.stack).toEqual([

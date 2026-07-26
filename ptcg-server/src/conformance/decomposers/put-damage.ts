@@ -1,6 +1,6 @@
 import { PutDamagePrompt } from '../../game/store/prompts/put-damage-prompt';
 import { DamageMap } from '../../game/store/prompts/move-damage-prompt';
-import { CardTarget } from '../../game/store/actions/play-card-action';
+import { CardTarget, PlayerType } from '../../game/store/actions/play-card-action';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, targetKey } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
@@ -33,6 +33,18 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
     for (const entry of prompt.maxAllowedDamage) {
       const k = targetKey(entry.target);
       if (entry.damage <= 0 || blockedKeys.has(k)) {
+        continue;
+      }
+      // `maxAllowedDamage` is only a per-target CAP; it is not the legality list. The prompt's
+      // `slots`/`playerType` are, and `PutDamagePrompt.validate()` enforces both — so a menu built
+      // from the cap map alone offers moves the engine will then reject. On a BENCH-only effect
+      // (Dragapult ex asc-160 "Phantom Dive", whose prefab caps every opposing Pokemon at 9999) that
+      // meant offering the Active, and taking the harness's own offer surfaced as HTTP 500.
+      // Mirrors validate() exactly; do not narrow further, or an unrestricted prompt loses targets.
+      if (!prompt.slots.includes(entry.target.slot)) {
+        continue;
+      }
+      if (prompt.playerType !== PlayerType.ANY && entry.target.player !== prompt.playerType) {
         continue;
       }
       if ((placedByTarget.get(k) ?? 0) >= entry.damage) {
