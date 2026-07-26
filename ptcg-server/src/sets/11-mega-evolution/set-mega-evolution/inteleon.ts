@@ -62,7 +62,12 @@ export class Inteleon extends PokemonCard {
 
       // eliminating the pokemon that don't have the least hp from being chosen
       const blockedTo: CardTarget[] = [];
-      player.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
+      // TA-141: this iterated the player's OWN Pokemon but stamped `PlayerType.TOP_PLAYER`.
+      // `Player.forEachPokemon` writes that value verbatim into every emitted CardTarget, so the
+      // attacker's own Active was blocked as `{TOP_PLAYER, ACTIVE, 0}` — the OPPONENT's Active.
+      // Net effect: `blocked` came out as [1:1:0, 1:1:0] and the attacker itself stayed selectable,
+      // which the card explicitly forbids ("except for this Pokémon").
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
         const hpCheck = new CheckHpEffect(player, list);
         if (list === player.active) { blockedTo.push(target); }
         else if (hpCheck.hp !== leastHP) {
