@@ -3,7 +3,7 @@ import { StoreLike, State, StateUtils, CardTag, CardType, Stage, GameMessage, Co
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Cyclizarex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
@@ -62,8 +62,8 @@ export class Cyclizarex extends PokemonCard {
       });
     }
 
-    // Zircon Road
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Zircon Road — post-damage draw rider (family A): "You may draw 5" runs AFTER the 180 lands (TA-128).
+    if (AFTER_ATTACK(effect, 1, this)) {
       const player = effect.player;
 
       state = store.prompt(state, new ConfirmPrompt(

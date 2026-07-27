@@ -6,7 +6,7 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 import { Effect } from '../../../game/store/effects/effect';
 
 import { DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND } from '../../../game/store/prefabs/attack-effects';
-import { CONFIRMATION_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class CynthiasGarchompex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -40,7 +40,9 @@ export class CynthiasGarchompex extends PokemonCard {
   public fullName: string = 'Cynthia\'s Garchomp ex DRI';
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Post-damage draw rider (family A) — "You may draw …" must run AFTER the 100 lands (rulebook
+    // step F), so it is keyed on AFTER_ATTACK, not the before-damage WAS_ATTACK_USED (TA-128).
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
 
       if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {

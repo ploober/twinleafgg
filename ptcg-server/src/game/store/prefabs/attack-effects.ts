@@ -33,7 +33,7 @@ export function DISCARD_A_STADIUM_CARD_IN_PLAY(
 
 export function DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND(
   x: number,
-  effect: AttackEffect,
+  effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too
   state: State
 ) {
   const player = effect.player;

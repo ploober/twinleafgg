@@ -6,7 +6,7 @@ import { ConfirmPrompt, EnergyCard, GameError, GameMessage, MoveEnergyPrompt, Pl
 
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Blisseyex extends PokemonCard {
 
@@ -117,7 +117,8 @@ export class Blisseyex extends PokemonCard {
       effect.player.marker.removeMarker(this.BLISSFUL_SWAP_MARKER, this);
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Post-damage draw rider (family A) — "You may draw …" runs AFTER the 180 lands (TA-128).
+    if (AFTER_ATTACK(effect, 0, this)) {
 
       const player = effect.player;
 
