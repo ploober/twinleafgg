@@ -59,7 +59,7 @@ export class Espeonex extends PokemonCard {
       }
     }
 
-    // Amethyst
+    // Amazez
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
@@ -70,8 +70,11 @@ export class Espeonex extends PokemonCard {
         }
       });
 
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
+      // The devolved cards are shuffled into the OPPONENT's deck ("into your opponent's deck"), so it
+      // is the opponent's deck that must be shuffled — pre-fix this shuffled the attacker's own deck
+      // (TA-139 wrong-perspective).
+      return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+        opponent.deck.applyOrder(order);
       });
     }
 

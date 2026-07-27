@@ -61,18 +61,21 @@ export class HearthflameMaskOgerponex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // "If your opponent's Active Pokémon is an Evolution Pokémon, this attack does 140 more damage,
+      // AND discard all Energy from this Pokémon." Both riders share the SAME condition — a non-Basic
+      // (Evolution) opponent Active. Pre-fix the discard ran unconditionally (TA-137), contradicting
+      // the engine's own damage calc, which correctly withheld the +140 against a Basic.
       if (!opponent.active.isStage(Stage.BASIC)) {
         effect.damage += 140;
+
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+        state = store.reduceEffect(state, checkProvidedEnergy);
+
+        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
       }
-
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
-
     }
 
     if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {

@@ -69,7 +69,9 @@ function* useDarkAwakening(
       GameMessage.CHOOSE_POKEMON_TO_EVOLVE,
       PlayerType.BOTTOM_PLAYER,
       [SlotType.ACTIVE, SlotType.BENCH],
-      { min: 1, max: 2, allowCancel: false, blocked: blocked2 },
+      // "Choose UP TO 2 of your [D] Pokémon" — zero is a legal count, so min is 0 (TA-136): the
+      // player may decline (choosing none evolves nothing and, having searched nothing, does not shuffle).
+      { min: 0, max: 2, allowCancel: false, blocked: blocked2 },
     ),
     (selection) => {
       targets = selection || [];

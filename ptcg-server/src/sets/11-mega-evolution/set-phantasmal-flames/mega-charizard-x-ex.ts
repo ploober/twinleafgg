@@ -65,24 +65,22 @@ export class MegaCharizardXex extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],// Card source is target Pokemon
         { superType: SuperType.ENERGY },
-        { min: 1, max: totalEnergy, allowCancel: false, blockedFrom, blockedMap }
+        // "Discard ANY AMOUNT of [R] Energy" — zero is a legal amount, so min is 0 (TA-136): the
+        // player may decline, dealing 0 damage.
+        { min: 0, max: totalEnergy, allowCancel: false, blockedFrom, blockedMap }
       ), transfers => {
 
-        if (transfers === null) {
-          return;
+        if (transfers === null || transfers.length === 0) {
+          effect.damage = 0;
+          return state;
         }
 
         for (const transfer of transfers) {
-          let totalDiscarded = 0;
-
           const source = StateUtils.getTarget(state, player, transfer.from);
-          const target = player.discard;
-          source.moveCardTo(transfer.card, target);
-
-          totalDiscarded = transfers.length;
-
-          effect.damage = totalDiscarded * 90;
+          source.moveCardTo(transfer.card, player.discard);
         }
+
+        effect.damage = transfers.length * 90;
         return state;
       });
     }

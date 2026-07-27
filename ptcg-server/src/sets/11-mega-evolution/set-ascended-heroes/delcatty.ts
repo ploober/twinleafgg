@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import {
   StoreLike, State,
-  PlayerType
+  PlayerType, StateUtils
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -40,10 +40,13 @@ export class Delcatty extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+      const opponent = StateUtils.getOpponent(state, player);
 
+      // "40 damage for each Energy attached to all of your OPPONENT's Pokémon." Pre-fix this counted
+      // the attacker's own Energy (TA-139 wrong-perspective) — iterate the opponent's Pokémon.
       let energies = 0;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        const checkProvidedEnergyEffect = new CheckProvidedEnergyEffect(player, cardList);
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+        const checkProvidedEnergyEffect = new CheckProvidedEnergyEffect(opponent, cardList);
         store.reduceEffect(state, checkProvidedEnergyEffect);
         checkProvidedEnergyEffect.energyMap.forEach(energy => {
           energies += energy.provides.length;
