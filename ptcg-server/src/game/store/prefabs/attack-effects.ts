@@ -359,9 +359,11 @@ export function PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(
   x: number,
   store: StoreLike,
   state: State,
-  effect: AttackEffect,
+  effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too
   slotTypes: SlotType[] = [SlotType.ACTIVE, SlotType.BENCH]
 ) {
+  // The counter sub-effect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const player = effect.player;
   const opponent = effect.opponent;
 
@@ -387,7 +389,7 @@ export function PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(
     const results = targets || [];
     for (const result of results) {
       const target = StateUtils.getTarget(state, player, result.target);
-      const putCountersEffect = new PutCountersEffect(effect, result.damage);
+      const putCountersEffect = new PutCountersEffect(base, result.damage);
       putCountersEffect.target = target;
       store.reduceEffect(state, putCountersEffect);
     }

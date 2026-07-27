@@ -82,11 +82,16 @@ export class AfterAttackEffect implements Effect {
   public player: Player;
   public opponent: Player;
   public attack: Attack;
+  // The originating AttackEffect, carried so a post-damage rider migrated onto AFTER_ATTACK can
+  // construct damage/counter sub-effects (PutDamageEffect/PutCountersEffect etc.), which need the
+  // AttackEffect's source/target — the family-A migration (TA-128).
+  public attackEffect: AttackEffect;
 
-  constructor(player: Player, opponent: Player, attack: Attack) {
+  constructor(player: Player, opponent: Player, attack: Attack, attackEffect: AttackEffect) {
     this.player = player;
     this.opponent = opponent;
     this.attack = attack;
+    this.attackEffect = attackEffect;
   }
 }
 

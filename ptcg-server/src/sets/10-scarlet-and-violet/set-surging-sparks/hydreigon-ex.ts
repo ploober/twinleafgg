@@ -1,6 +1,6 @@
 import { PokemonCard, CardTag, Stage, CardType, SlotType, StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, DISCARD_TOP_X_OF_OPPONENTS_DECK, TERA_RULE, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, DISCARD_TOP_X_OF_OPPONENTS_DECK, TERA_RULE, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON } from '../../../game/store/prefabs/prefabs';
 
 export class Hydreigonex extends PokemonCard {
 
@@ -41,9 +41,9 @@ export class Hydreigonex extends PokemonCard {
       DISCARD_TOP_X_OF_OPPONENTS_DECK(store, state, effect.player, 3, this, this.attacks[0]);
     }
 
-    // Obsidian
-    // Ref: set-darkness-ablaze/salamence-vmax.ts (Sonic Double — min/max from legal targets), set-x-and-y/m-blastoise-ex.ts (bench-only)
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Obsidian — post-damage bench-spread rider (family A): the 130 to the Active lands first (rulebook
+    // step F), then the 130 to 2 Bench (TA-128). Ref: salamence-vmax "Sonic Double", m-blastoise-ex.
+    if (AFTER_ATTACK(effect, 1, this)) {
       const opponent = StateUtils.getOpponent(state, effect.player);
       const benchPokemon = opponent.bench.filter(b => b.cards.length > 0).length;
       const spreadCount = Math.min(2, benchPokemon);

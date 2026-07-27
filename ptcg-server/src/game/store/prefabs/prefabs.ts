@@ -646,7 +646,7 @@ function* copyOpponentsLastAttackGenerator(
     state = store.reduceEffect(state, dealDamage);
   }
 
-  const afterAttackEffect = new AfterAttackEffect(player, opponent, lastAttack);
+  const afterAttackEffect = new AfterAttackEffect(player, opponent, lastAttack, copiedAttackEffect);
   state = store.reduceEffect(state, afterAttackEffect);
 
   if (store.hasPrompts()) {
@@ -1222,7 +1222,7 @@ export function DEVOLVE_DEFENDING_AFTER_ATTACK(
 
 export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
   damage: number,
-  effect: AttackEffect,
+  effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too
   store: StoreLike,
   state: State,
   min: number,
@@ -1230,6 +1230,8 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
   applyWeaknessAndResistance: boolean = false,
   slots?: SlotType[],
 ) {
+  // The damage sub-effects need the originating AttackEffect (source/target); AFTER_ATTACK carries it.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
@@ -1249,16 +1251,16 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
     ),
     (selected) => {
       selected.forEach((target) => {
-        if (effect.target === effect.opponent.active) {
-          const damageEffect = new DealDamageEffect(effect, damage);
+        if (base.target === base.opponent.active) {
+          const damageEffect = new DealDamageEffect(base, damage);
           damageEffect.target = target;
           return store.reduceEffect(state, damageEffect);
         }
-        const damageEffect = new PutDamageEffect(effect, damage);
+        const damageEffect = new PutDamageEffect(base, damage);
         damageEffect.target = target;
 
         if (applyWeaknessAndResistance && damage > 0) {
-          const applyWeakness = new ApplyWeaknessEffect(effect, damage);
+          const applyWeakness = new ApplyWeaknessEffect(base, damage);
           applyWeakness.target = target; // Fix: should be the current target, not effect.target
           state = store.reduceEffect(state, applyWeakness);
           damageEffect.damage = applyWeakness.damage; // Fix: update the damage for this damageEffect, not effect.damage

@@ -18,8 +18,15 @@ const FIGHT = 'Fighting Energy SVE';
 const GRASS = 'Grass Energy SVE';
 const FIRE = 'Fire Energy SVE';
 const PSY = 'Psychic Energy SVE';
+const DARK = 'Darkness Energy SVE';
+const METAL = 'Metal Energy SVE';
 const COLOR = 'Water Energy SVE';   // pays a [C] cost
 const DEFENDER = 'meg-181';         // Mega Latias ex, 280 HP, NO weakness — a clean non-lethal survivor
+const BENCHMON = 'Ralts SIT';       // a small Basic to fill the opponent's Bench (rider target)
+
+const DRAGAPULT = 'Dragapult ex TWM';   // twm-130, "Phantom Dive" [R,P] 200 + 6 counters to bench
+const HYDREIGON = 'Hydreigon ex SSP';   // ssp-119, "Obsidian" [P,D,M,C] 130 + 130 to 2 bench
+const MILOTIC = "Cynthia's Milotic DRI"; // dri-053, "Aqua Split" [W,C] 60 + 30 to 2 bench
 
 const GARCHOMP = "Cynthia's Garchomp ex DRI";  // dri-104, "Corkscrew Dive" [F] 100, draw until 6
 const BLISSEY = 'Blissey ex TWM';              // twm-134, "Return" [C,C,C] 180, draw until 6
@@ -95,5 +102,48 @@ describe('WS1 batch 1c — draw riders fire AFTER damage lands', () => {
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);
     expect(res.state.players.B.active!.damage).toBe(180);
+  });
+});
+
+describe('WS1 batch 1a — bench-snipe / spread riders fire AFTER base damage lands', () => {
+
+  function threeBench(): PokemonInPlay[] {
+    return [pip('B-b0', BENCHMON), pip('B-b1', BENCHMON), pip('B-b2', BENCHMON)];
+  }
+
+  it('Phantom Dive: 200 lands on the Active, then 6 counters go on the Bench [twm-130 dragapult-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', DRAGAPULT, [{ iid: 'r', printing: FIRE }, { iid: 'p', printing: PSY }]) }),
+        player({ active: pip('B-act', DEFENDER), bench: threeBench() }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Phantom Dive' }],
+    );
+    expect(res.status).toBe('awaitingAction');        // paused for the counter placement
+    expect(res.state.players.B.active!.damage).toBe(200);
+  });
+
+  it('Obsidian: 130 lands on the Active, then the 130-to-2-Bench spread is offered [ssp-119 hydreigon-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', HYDREIGON, [{ iid: 'p', printing: PSY }, { iid: 'd', printing: DARK }, { iid: 'm', printing: METAL }, { iid: 'c', printing: COLOR }]) }),
+        player({ active: pip('B-act', DEFENDER), bench: threeBench() }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Obsidian' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(130);
+  });
+
+  it('Aqua Split: 60 lands on the Active, then the 30-to-2-Bench spread is offered [dri-053 cynthias-milotic]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', MILOTIC, [{ iid: 'w', printing: COLOR }, { iid: 'c', printing: COLOR }]) }),
+        player({ active: pip('B-act', DEFENDER), bench: threeBench() }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Aqua Split' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(60);
   });
 });
