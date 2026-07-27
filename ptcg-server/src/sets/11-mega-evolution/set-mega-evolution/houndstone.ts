@@ -2,7 +2,7 @@ import { CoinFlipPrompt, GameMessage, State, StateUtils, StoreLike } from '../..
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class Houndstone extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -35,7 +35,10 @@ export class Houndstone extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Horrifying Bite — post-damage rider (family A): the 30 lands first, then flip-until-tails and,
+    // for each heads, a random reveal-and-shuffle (TA-128). (The random card PICKS are self-resolved
+    // via Math.random — a separate CF-31 randomness-declaration concern, not addressed here.)
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

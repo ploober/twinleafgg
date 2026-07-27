@@ -249,3 +249,33 @@ describe('WS1 batch 1d — deck/hand attach riders fire AFTER base damage lands'
     expect(res.state.players.B.active!.damage).toBe(150);
   });
 });
+
+describe('WS1 batch 1e — opponent-hand disruption riders fire AFTER base damage lands', () => {
+
+  const SNORUNT = 'Snorunt TWM';   // twm-051, "Astonish" [W,C] 20, reveal+shuffle a random hand card
+  // Houndstone meg-066 "Horrifying Bite" [P] 30, flip-until-tails; fullName suffix "M1S" is not a set code.
+
+  it('Astonish: 20 lands, then the reveal-and-shuffle rider runs [twm-051 snorunt]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', SNORUNT, [{ iid: 'w0', printing: COLOR }, { iid: 'w1', printing: COLOR }]) }),
+        player({ active: pip('B-act', DEFENDER), hand: [{ iid: 'B-h0', printing: COLOR }, { iid: 'B-h1', printing: LIGHT }] }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Astonish' }],
+    );
+    expect(res.status).toBe('awaitingAction');       // paused at the opponent-deck shuffle
+    expect(res.state.players.B.active!.damage).toBe(20);
+  });
+
+  it('Horrifying Bite: 30 lands, then the flip-until-tails rider runs [meg-066 houndstone]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', 'meg-066', [{ iid: 'p', printing: PSY }]) }),
+        player({ active: pip('B-act', DEFENDER), hand: [{ iid: 'B-h0', printing: COLOR }] }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Horrifying Bite' }],
+    );
+    expect(res.status).toBe('awaitingAction');       // paused at the first coin flip
+    expect(res.state.players.B.active!.damage).toBe(30);
+  });
+});

@@ -4,7 +4,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
-import { MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class Snorunt extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -30,7 +30,10 @@ export class Snorunt extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Astonish — post-damage hand-disruption rider (family A): the 20 lands first, then the random
+    // reveal-and-shuffle (TA-128). (The random card PICK is self-resolved via Math.random — a separate
+    // CF-31 randomness-declaration concern, not addressed here.)
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
