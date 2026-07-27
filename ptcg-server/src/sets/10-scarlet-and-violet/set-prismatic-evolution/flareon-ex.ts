@@ -5,11 +5,12 @@ import { ChooseCardsPrompt, ChoosePokemonPrompt, ShuffleDeckPrompt } from '../..
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayerType } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
+import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useBurningCharge(next: Function, store: StoreLike, state: State,
-  effect: AttackEffect): IterableIterator<State> {
+  effect: AttackEffect | AfterAttackEffect): IterableIterator<State> {
 
   const player = effect.player;
 
@@ -86,8 +87,12 @@ export class Flareonex extends PokemonCard {
   public fullName: string = 'Flareon ex PRE';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Burning Charge
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Burning Charge — post-damage search/attach/shuffle rider (family A): the 130 lands first
+    // (rulebook step F), then the search-and-attach chain (TA-128). The trailing shuffle (CF-9) still
+    // fires because the deck is always searched. (NOTE: the generator's `hasBenched` early-return is a
+    // SEPARATE, pre-existing bug — "attach to 1 of your Pokémon" includes the Active — which is why a
+    // benchless repro showed "the rider never runs"; left for its own fix, out of family-A scope.)
+    if (AFTER_ATTACK(effect, 0, this)) {
       const generator = useBurningCharge(() => generator.next(), store, state, effect);
       return generator.next().value;
     }

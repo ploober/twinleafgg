@@ -3,7 +3,7 @@ import { KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/
 import { Effect } from '../../../game/store/effects/effect';
 
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
-import { TERA_RULE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, TERA_RULE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class AlolanExeggutorex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
@@ -34,8 +34,11 @@ export class AlolanExeggutorex extends PokemonCard {
   public fullName: string = 'Alolan Exeggutor ex SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Tropical Frenzy
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Tropical Frenzy — post-damage attach rider (family A): the 150 lands first (rulebook step F),
+    // then "attach any number of Basic Energy from your hand" (TA-128). (This attack is ALSO an RE-61
+    // site — roto under-decomposes the attach to a bare confirm — so the census scenario still diverges
+    // on roto's side after this fix; twinleaf's decomposition is correct per CF-16.)
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
 
       const hasEnergyInHand = player.hand.cards.some(c => {

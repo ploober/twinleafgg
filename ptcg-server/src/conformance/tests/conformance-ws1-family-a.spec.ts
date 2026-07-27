@@ -199,3 +199,53 @@ describe('WS1 batch 1b — self-energy-discard riders fire AFTER base damage lan
     expect(declined.state.players.B.active!.conditions).toEqual([]);     // not Paralyzed
   });
 });
+
+describe('WS1 batch 1d — deck/hand attach riders fire AFTER base damage lands', () => {
+
+  const FLAREON = 'Flareon ex PRE';        // pre-014, "Burning Charge" [R,C] 130, search+attach+shuffle
+  const EXEGGUTOR = 'Alolan Exeggutor ex SSP'; // ssp-133, "Tropical Frenzy" [G,W] 150, attach from hand
+
+  it('Burning Charge: 130 lands, then the deck search is offered [pre-014 flareon-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', FLAREON, [{ iid: 'r', printing: FIRE }, { iid: 'c', printing: COLOR }]),
+                 bench: [pip('A-b', BENCHMON)], deck: [{ iid: 'A-e', printing: GRASS }] }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Burning Charge' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(130);
+  });
+
+  it('Burning Charge: the trailing shuffle (CF-9) still fires even when 0 Energy is taken [pre-014 flareon-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', FLAREON, [{ iid: 'r', printing: FIRE }, { iid: 'c', printing: COLOR }]),
+                 bench: [pip('A-b', BENCHMON)], deck: [{ iid: 'A-e', printing: GRASS }] }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [
+        { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Burning Charge' },
+        { actor: 'A', type: 'confirm', value: false },   // take 0 from the deck (still searched → shuffle)
+      ],
+    );
+    // The deck was searched, so it is shuffled regardless of taking nothing (a 1-card deck auto-resolves
+    // and emits the event). Don't relocate the defect: damage landed AND the shuffle still fires.
+    expect(res.state.players.B.active!.damage).toBe(130);
+    expect(res.events.some(e => e.kind === 'shuffled' && (e as { player: string }).player === 'A')).toBe(true);
+  });
+
+  it('Tropical Frenzy: 150 lands, then "attach any number of Basic Energy" is offered [ssp-133 alolan-exeggutor-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', EXEGGUTOR, [{ iid: 'g', printing: GRASS }, { iid: 'w', printing: COLOR }]),
+                 hand: [{ iid: 'h0', printing: GRASS }, { iid: 'h1', printing: LIGHT }] }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Tropical Frenzy' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(150);
+  });
+});
