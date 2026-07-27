@@ -64,18 +64,24 @@ export class Espeonex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      let devolved = false;
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card) => {
         if (cardList.getPokemons().length > 1) {
           DEVOLVE_POKEMON(store, state, cardList, opponent.deck);
+          devolved = true;
         }
       });
 
       // The devolved cards are shuffled into the OPPONENT's deck ("into your opponent's deck"), so it
-      // is the opponent's deck that must be shuffled — pre-fix this shuffled the attacker's own deck
-      // (TA-139 wrong-perspective).
-      return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
-        opponent.deck.applyOrder(order);
-      });
+      // is the opponent's deck that is shuffled — pre-fix this shuffled the attacker's own deck
+      // (TA-139 wrong-perspective). And the shuffle is intrinsic to the devolve ("by shuffling … into
+      // … deck"): with no evolved opponent Pokémon nothing is put into the deck, so no shuffle occurs
+      // (roto agrees — pre-fix the wrong-deck bug masked this over-shuffle).
+      if (devolved) {
+        return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+          opponent.deck.applyOrder(order);
+        });
+      }
     }
 
     if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {

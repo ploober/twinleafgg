@@ -116,19 +116,33 @@ describe('WS2 point-fix repros', () => {
       expect(res.state.players.B.active!.damage).toBe(40);           // 40 x 1 (B's single Energy)
     });
 
-    it('Amazez shuffles the OPPONENT\'s deck, not the attacker\'s [pre-034 espeon-ex]', () => {
-      // Devolved cards go into the opponent's deck; the shuffle must be of THAT deck. Pre-fix the
-      // driver emitted `shuffled{player:'A'}` (the attacker's own deck).
+    const espeonCost = [{ iid: 'g', printing: GRASS }, { iid: 'p', printing: PSY }, { iid: 'd', printing: DARK }];
+
+    it('Amazez shuffles the OPPONENT\'s deck when it devolves one [pre-034 espeon-ex]', () => {
+      // B's Active is an evolution stack (Eevee -> Espeon ex); devolving it puts the top card into B's
+      // deck, which must then be shuffled. Pre-fix the driver shuffled A's own deck.
+      const bStack: PokemonInPlay = {
+        stack: [{ iid: 'B-eevee', printing: 'pre-074' }, { iid: 'B-espeon', printing: 'pre-034' }],
+        energy: [], tools: [], damage: 0, conditions: [], markers: markers(),
+      };
       const res = step(
-        board(
-          player({ active: pip('A-act', ESPEON, [{ iid: 'g', printing: GRASS }, { iid: 'p', printing: PSY }, { iid: 'd', printing: DARK }]) }),
-          player({ active: pip('B-act', RALTS) }),
-        ),
+        board(player({ active: pip('A-act', ESPEON, espeonCost) }), player({ active: bStack })),
         [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Amazez' }],
       );
-      const shuffles = res.events.filter(e => e.kind === 'shuffled');
-      expect(shuffles.length).toBeGreaterThan(0);
-      expect(shuffles.every(e => (e as { player: string }).player === 'B')).toBe(true);
+      // The devolve moved Espeon into B's deck (now >1 card), so the shuffle surfaces as a system
+      // pending over THAT deck. Pre-fix the pending was over A's deck (which never held 'B-espeon').
+      expect(res.pending!.descriptor).toContain('Shuffle');
+      const shuffle = res.pending!.legalActions.find(a => a.type === 'shuffle');
+      expect((shuffle as { deck?: string[] } | undefined)?.deck).toContain('B-espeon');
+    });
+
+    it('Amazez does NOT shuffle when nothing devolves ("by shuffling …" is intrinsic to the devolve) [pre-034 espeon-ex]', () => {
+      // B's Pokémon are all Basics — nothing to devolve, nothing put into the deck, so no shuffle.
+      const res = step(
+        board(player({ active: pip('A-act', ESPEON, espeonCost) }), player({ active: pip('B-act', RALTS) })),
+        [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Amazez' }],
+      );
+      expect(res.events.filter(e => e.kind === 'shuffled')).toEqual([]);
     });
   });
 
