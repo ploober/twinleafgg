@@ -4,6 +4,7 @@ import { EnergyCard } from '../card/energy-card';
 import { DiscardCardsEffect } from '../effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../effects/check-effects';
 import { AttackEffect } from '../effects/game-effects';
+import { AfterAttackEffect } from '../effects/game-phase-effects';
 import { PokemonCardList } from '../state/pokemon-card-list';
 
 /**
@@ -233,10 +234,12 @@ export function DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
 export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
   store: StoreLike,
   state: State,
-  effect: AttackEffect,
+  effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too
   amount: number,
   type: CardType = CardType.COLORLESS
 ): State {
+  // The DiscardCardsEffect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const player = effect.player;
   const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
   state = store.reduceEffect(state, checkProvidedEnergy);
@@ -251,7 +254,7 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     || em.provides.includes(CardType.ANY));
   if (eligible.length <= amount) {
     if (eligible.length > 0) {
-      const discardEnergy = new DiscardCardsEffect(effect, eligible.map(em => em.card));
+      const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));
       discardEnergy.target = player.active;
       state = store.reduceEffect(state, discardEnergy);
     }
@@ -271,7 +274,7 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     { allowCancel: false }
   ), energy => {
     const cards: Card[] = (energy || []).map(e => e.card);
-    const discardEnergy = new DiscardCardsEffect(effect, cards);
+    const discardEnergy = new DiscardCardsEffect(base, cards);
     discardEnergy.target = player.active;
     return store.reduceEffect(state, discardEnergy);
   });

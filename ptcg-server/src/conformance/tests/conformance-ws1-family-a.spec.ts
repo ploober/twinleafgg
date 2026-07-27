@@ -20,7 +20,9 @@ const FIRE = 'Fire Energy SVE';
 const PSY = 'Psychic Energy SVE';
 const DARK = 'Darkness Energy SVE';
 const METAL = 'Metal Energy SVE';
+const LIGHT = 'Lightning Energy SVE';
 const COLOR = 'Water Energy SVE';   // pays a [C] cost
+const BIGDEF = 'pfl-013';           // Mega Charizard X ex, 360 HP, Pokémon ex — survives 330 and satisfies Slaking's "opponent has ex/V" gate
 const DEFENDER = 'meg-181';         // Mega Latias ex, 280 HP, NO weakness — a clean non-lethal survivor
 const BENCHMON = 'Ralts SIT';       // a small Basic to fill the opponent's Bench (rider target)
 
@@ -145,5 +147,55 @@ describe('WS1 batch 1a — bench-snipe / spread riders fire AFTER base damage la
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.state.players.B.active!.damage).toBe(60);
+  });
+});
+
+describe('WS1 batch 1b — self-energy-discard riders fire AFTER base damage lands', () => {
+
+  it('Ryuno Glide: 330 lands, then "discard 2 Energy" is offered [asc-152 mega-dragonite-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', 'asc-152', [{ iid: 'w', printing: COLOR }, { iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }]) }),
+        player({ active: pip('B-act', BIGDEF) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Ryuno Glide' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(330);
+  });
+
+  it('Great Swing: 280 lands, then "discard an Energy" is offered [ssp-147 slaking-ex]', () => {
+    const res = step(
+      board(
+        player({ active: pip('A-act', 'Slaking ex SSP', [{ iid: 'c0', printing: COLOR }, { iid: 'c1', printing: COLOR }]) }),
+        player({ active: pip('B-act', BIGDEF) }),   // an ex, so Slaking's "Born to Slack" allows the attack
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }],
+    );
+    expect(res.status).toBe('awaitingAction');
+    expect(res.state.players.B.active!.damage).toBe(280);
+  });
+
+  it('Disaster Shock: 190 lands, then the "may discard+Paralyze" is offered; decline keeps the 190 [asc-061 mega-eelektross-ex]', () => {
+    const attacker = () => player({ active: pip('A-act', 'asc-061', [{ iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }, { iid: 'l2', printing: LIGHT }]) });
+    const offered = step(
+      board(attacker(), player({ active: pip('B-act', BIGDEF) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Disaster Shock' }],
+    );
+    expect(offered.status).toBe('awaitingAction');
+    expect(offered.state.players.B.active!.damage).toBe(190);
+    expect(offered.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);
+
+    // Decline path (CF-33-adjacent landmine): the 190 stays, no Energy discarded, no Paralyze.
+    const declined = step(
+      board(attacker(), player({ active: pip('B-act', BIGDEF) })),
+      [
+        { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Disaster Shock' },
+        { actor: 'A', type: 'confirm', value: false },
+      ],
+    );
+    expect(declined.state.players.B.active!.damage).toBe(190);
+    expect(declined.state.players.A.active!.energy.length).toBe(3);      // nothing discarded
+    expect(declined.state.players.B.active!.conditions).toEqual([]);     // not Paralyzed
   });
 });
