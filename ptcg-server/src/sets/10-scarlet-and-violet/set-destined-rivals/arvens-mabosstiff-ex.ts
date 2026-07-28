@@ -42,11 +42,13 @@ export class ArvensMabosstiffex extends PokemonCard {
       }
     }
 
-    // Boss's Headbutt
+    // Boss Headbutt — the pushed lock string MUST match this.attacks[1].name ('Boss Headbutt'),
+    // which is what game-effect.ts checks via cannotUseAttacksNextTurn.includes(attack.name).
+    // The card text reads "Boss's Headbutt" but the attack is named 'Boss Headbutt' (TA-143).
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      if (!player.active.cannotUseAttacksNextTurnPending.includes('Boss\'s Headbutt')) {
-        player.active.cannotUseAttacksNextTurnPending.push('Boss\'s Headbutt');
+      if (!player.active.cannotUseAttacksNextTurnPending.includes('Boss Headbutt')) {
+        player.active.cannotUseAttacksNextTurnPending.push('Boss Headbutt');
       }
     }
 

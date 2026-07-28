@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, PlayerType, StateUtils } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 
 export class Bouffalant extends PokemonCard {
@@ -31,6 +31,11 @@ export class Bouffalant extends PokemonCard {
   public fullName: string = 'Bouffalant SCR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+
+    // Boundless Power — "During your next turn, this Pokémon can't attack." (TA-143)
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      effect.player.active.cannotAttackNextTurnPending = true;
+    }
 
     if (effect instanceof PutDamageEffect) {
       const cardList = StateUtils.findCardList(state, this);
