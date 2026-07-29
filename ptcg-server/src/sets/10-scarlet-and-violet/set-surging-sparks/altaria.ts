@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { StoreLike, State, AttachEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils, ShuffleDeckPrompt, GameError, CoinFlipPrompt, PokemonCardList } from '../../../game';
+import { StoreLike, State, AttachEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils, ShuffleDeckPrompt, CoinFlipPrompt, PokemonCardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
@@ -41,10 +41,8 @@ export class Altaria extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-      }
-      //attach lightning energy prompt
+      // TA-131: declarable with an empty deck (rulebook p.20). The search whiffs (AttachEnergyPrompt
+      // over an empty deck auto-resolves to zero transfers) and the trailing shuffle still fires.
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,

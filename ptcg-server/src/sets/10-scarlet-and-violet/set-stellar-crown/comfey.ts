@@ -4,7 +4,6 @@ import {
   CardType,
   StoreLike,
   State,
-  GameError,
   GameMessage,
   StateUtils,
   CoinFlipPrompt,
@@ -48,14 +47,8 @@ export class Comfey extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
-      if (opponent.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
+      // TA-131: declarable even if a deck can't supply the full draw (rulebook p.20). "Each player
+      // draws 3" — moveTo caps at the deck size, so an empty deck simply draws zero.
       player.deck.moveTo(player.hand, 3);
       opponent.deck.moveTo(opponent.hand, 3);
     }

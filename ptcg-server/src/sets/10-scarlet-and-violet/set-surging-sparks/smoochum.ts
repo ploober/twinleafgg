@@ -4,8 +4,8 @@ import { State } from '../../../game/store/state/state';
 
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
-import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
-import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AttachEnergyPrompt, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Smoochum extends PokemonCard {
 
@@ -47,10 +47,9 @@ export class Smoochum extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
+      // TA-131: an attack is declarable even when its effect can't be carried out (rulebook p.20).
+      // An empty deck is not a refusal — the search whiffs and the trailing shuffle (CF-9/TA-126)
+      // still fires. The AttachEnergyPrompt over an empty deck auto-resolves to zero transfers.
       state = store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
@@ -61,17 +60,13 @@ export class Smoochum extends PokemonCard {
         { allowCancel: false, min: 0, max: 2 },
       ), transfers => {
         transfers = transfers || [];
-        // cancelled by user
-        if (transfers.length === 0) {
-          SHUFFLE_DECK(store, state, player);
-          return state;
-        }
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
           player.deck.moveCardTo(transfer.card, target);
         }
       });
 
+      // Single trailing shuffle for every branch (attach, decline, or empty-deck whiff) — CF-9/TA-126.
       return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
         player.deck.applyOrder(order);
         return state;

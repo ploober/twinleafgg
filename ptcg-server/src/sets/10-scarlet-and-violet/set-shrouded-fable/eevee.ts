@@ -7,10 +7,8 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 function* useColorfulCatch(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
-  if (player.deck.cards.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-  }
-
+  // TA-131: declarable with an empty deck (rulebook p.20). The search whiffs (max resolves to 0)
+  // and the trailing shuffle still fires (CF-9/TA-126).
   const maxEnergies = 3;
 
   const uniqueBasicEnergies = Math.min(maxEnergies, player.deck.cards
@@ -29,13 +27,14 @@ function* useColorfulCatch(next: Function, store: StoreLike, state: State, effec
   ), selected => {
     cards = selected || [];
 
-    if (selected.length > 1) {
-      if (selected[0].name === selected[1].name) {
+    if (cards.length > 1) {
+      if (cards[0].name === cards[1].name) {
         throw new GameError(GameMessage.CAN_ONLY_SELECT_TWO_DIFFERENT_ENERGY_TYPES);
       }
     }
 
     player.deck.moveCardsTo(cards, player.hand);
+    next();
   });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

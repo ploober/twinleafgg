@@ -74,9 +74,8 @@ export class Tatsugiriex extends PokemonCard {
 
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-      }
+      // TA-131: declarable with an empty deck (rulebook p.20). The top-of-deck search whiffs (0 cards
+      // moved) and the trailing shuffle still fires (CF-9/TA-126).
       // Check if bench has open slots
       const openSlots = player.bench.filter(b => b.cards.length === 0);
 

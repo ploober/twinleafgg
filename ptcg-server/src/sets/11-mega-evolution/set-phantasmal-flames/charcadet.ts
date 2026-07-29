@@ -4,7 +4,7 @@ import { State } from '../../../game/store/state/state';
 
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
-import { ChooseCardsPrompt, GameError, GameMessage } from '../../../game';
+import { ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt } from '../../../game';
 import { MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Charcadet extends PokemonCard {
@@ -38,11 +38,9 @@ export class Charcadet extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
-      }
-
-      return store.prompt(state, new ChooseCardsPrompt(
+      // TA-131: declarable with an empty deck (rulebook p.20). The search whiffs and the trailing
+      // shuffle ("Then, shuffle your deck") still fires (CF-9/TA-126).
+      state = store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
@@ -53,6 +51,10 @@ export class Charcadet extends PokemonCard {
         if (cards.length > 0) {
           MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
         }
+      });
+
+      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+        player.deck.applyOrder(order);
       });
     }
 

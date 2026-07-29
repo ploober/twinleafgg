@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, GameMessage, StateUtils, GameError, CardList, SuperType, ChooseAttackPrompt, Attack, GameLog, ShowCardsPrompt } from '../../../game';
+import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, GameMessage, StateUtils, CardList, SuperType, ChooseAttackPrompt, Attack, GameLog, ShowCardsPrompt } from '../../../game';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
@@ -8,8 +8,8 @@ function* useHaughtyOrders(next: Function, store: StoreLike, state: State, effec
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
-  if (opponent.deck.cards.length === 0) { throw new GameError(GameMessage.CANNOT_USE_ATTACK); }
-
+  // TA-131: declarable even if the opponent's deck is empty (rulebook p.20). The reveal whiffs (0
+  // cards shown, no attack to copy) and the opponent's deck is still shuffled (CF-9/TA-126).
   const opponentTop10 = new CardList();
   opponent.deck.moveTo(opponentTop10, Math.min(10, opponent.deck.cards.length));
   const toppedPokemon = opponentTop10.cards.filter(card => card.superType === SuperType.POKEMON) as PokemonCard[];

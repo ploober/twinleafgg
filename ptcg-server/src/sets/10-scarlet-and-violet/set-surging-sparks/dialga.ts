@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, ShuffleDeckPrompt, ChooseCardsPrompt, GameError, Card, CardList, OrderCardsPrompt } from '../../../game';
+import { StoreLike, State, GameMessage, ShuffleDeckPrompt, ChooseCardsPrompt, Card, CardList, OrderCardsPrompt } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -11,10 +11,8 @@ function* useTimeControl(next: Function, store: StoreLike, state: State,
   const player = effect.player;
   let cards: Card[] = [];
 
-  if (player.deck.cards.length === 0) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-  }
-
+  // TA-131: declarable with an empty deck (rulebook p.20). "Search your deck for 2 cards" whiffs when
+  // fewer than 2 are available; the trailing shuffle still fires (CF-9/TA-126).
   const deckTop = new CardList();
 
   yield store.prompt(state, new ChooseCardsPrompt(

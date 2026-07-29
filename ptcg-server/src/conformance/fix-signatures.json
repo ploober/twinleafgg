@@ -1035,6 +1035,54 @@
       "signatures": [
         "The rider runs on a benchless board too (TA-123"
       ]
+    },
+    {
+      "file": "set-surging-sparks/smoochum.ts",
+      "signatures": [
+        "Single trailing shuffle for every branch"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/charcadet.ts",
+      "signatures": [
+        "Then, shuffle your deck\") still fires"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/comfey.ts",
+      "signatures": [
+        "moveTo caps at the deck size"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/eevee.ts",
+      "signatures": [
+        "The search whiffs (max resolves to 0)"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/dialga.ts",
+      "signatures": [
+        "fewer than 2 are available"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/tatsugiri-ex.ts",
+      "signatures": [
+        "The top-of-deck search whiffs"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-persian-ex.ts",
+      "signatures": [
+        "declarable even if the opponent's deck is empty"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/altaria.ts",
+      "signatures": [
+        "The search whiffs (AttachEnergyPrompt"
+      ]
     }
   ]
 }
