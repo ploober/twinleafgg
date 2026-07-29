@@ -726,7 +726,9 @@
     {
       "file": "set-twilight-masquerade/greninja-ex.ts",
       "signatures": [
-        "const shuffle = (s: State): State =>"
+        "const shuffle = (s: State): State =>",
+        "{ min: 0, max: 1, allowCancel: false }",
+        "TA-145 / CF-32 may-gate: there is ONE decision here, not two"
       ]
     },
     {

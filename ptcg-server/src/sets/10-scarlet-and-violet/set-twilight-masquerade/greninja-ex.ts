@@ -10,7 +10,6 @@ import {
   SlotType,
   ShuffleDeckPrompt,
   StateUtils,
-  ConfirmPrompt,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
@@ -61,44 +60,44 @@ export class Greninjaex extends PokemonCard {
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       // TA-97: the search is "you may" (optional) — never block the attack; the 170 always lands
-      // (was: throw CANNOT_USE_POWER, #1106/#1458). The "you may" choice is part of resolving the
-      // attack and is OFFERED even with an empty deck (the cross-engine re-fuzz showed rotomancer
-      // correctly presents the confirm before the KO check); only the search body no-ops when the
-      // deck is empty, so we still prompt but guard the ChooseCards with deck.cards.length > 0.
-      state = store.prompt(
-        state,
-        new ConfirmPrompt(effect.player.id, GameMessage.SEARCH_DECK_FOR_CARD),
-        (wantToUse) => {
-          if (!wantToUse) {
-            return;
-          }
-          // Opted in: "Then, shuffle your deck" ALWAYS happens once you choose to search — even on an
-          // empty deck (nothing to find, but the shuffle still occurs). rotomancer emits the shuffled
-          // event here and the cross-engine re-fuzz flagged twinleaf for omitting it; only the
-          // search-for-a-card (ChooseCards) is skipped when the deck is empty.
-          const shuffle = (s: State): State =>
-            store.prompt(s, new ShuffleDeckPrompt(player.id), (order) => {
-              player.deck.applyOrder(order);
-            });
-          if (player.deck.cards.length === 0) {
+      // (was: throw CANNOT_USE_POWER, #1106/#1458).
+      //
+      // TA-145 / CF-32 may-gate: there is ONE decision here, not two. The compendium is explicit that
+      // *"since the contents of the deck are unknown you can also voluntarily fail to find one or
+      // more"*, so the count already spans zero — which means declining IS taking zero at the card
+      // pick set (min 0 + the CF-4 stop), and a separate preceding ConfirmPrompt is a node carrying no
+      // independent decision. The old shape was worse than redundant: having answered "yes" you were
+      // then forced to find (min 1), so a player who wanted to look without disturbing their hand
+      // could not decline. rotomancer emits the single-decision form, and Command the Grass `blk-003`
+      // already does on this side via SEARCH_DECK_FOR_CARDS_TO_HAND with min 0 — this card was the
+      // last hand-rolled holdout. (The prefab is deliberately NOT reused here: it bails out on an
+      // empty deck, which would drop the trailing shuffle below.)
+      //
+      // TA-126 / CF-9 preserved: "Then, shuffle your deck" ALWAYS fires — after a take, after a
+      // zero-take, and on an empty deck (nothing to find, but the shuffle still occurs; rotomancer
+      // emits the `shuffled` event there and the cross-engine re-fuzz flagged us for omitting it).
+      const shuffle = (s: State): State =>
+        store.prompt(s, new ShuffleDeckPrompt(player.id), (order) => {
+          player.deck.applyOrder(order);
+        });
+      if (player.deck.cards.length === 0) {
+        state = shuffle(state);
+      } else {
+        state = store.prompt(
+          state,
+          new ChooseCardsPrompt(
+            player,
+            GameMessage.CHOOSE_CARD_TO_HAND,
+            player.deck,
+            {},
+            { min: 0, max: 1, allowCancel: false },
+          ),
+          (cards) => {
+            player.deck.moveCardsTo(cards ?? [], player.hand);
             return shuffle(state);
-          }
-          return store.prompt(
-            state,
-            new ChooseCardsPrompt(
-              player,
-              GameMessage.CHOOSE_CARD_TO_HAND,
-              player.deck,
-              {},
-              { min: 1, max: 1, allowCancel: false },
-            ),
-            (cards) => {
-              player.deck.moveCardsTo(cards, player.hand);
-              return shuffle(state);
-            },
-          );
-        },
-      );
+          },
+        );
+      }
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
