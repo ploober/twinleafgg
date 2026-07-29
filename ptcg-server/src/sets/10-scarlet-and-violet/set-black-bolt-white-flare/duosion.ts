@@ -6,9 +6,24 @@ import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefa
 function* useCellularEvolution(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
-  if (player.deck.cards.length === 0) {
-    return state;
-  }
+  // TA-126/CF-9: the empty-deck check MOVED below the "can anything evolve?" check, because the two
+  // degenerate paths owe opposite things and the original order conflated them:
+  //
+  //   * nothing in play can evolve  ⇒ the search has no valid criterion, so NO search happens and NO
+  //     shuffle is owed (#1108/RE-32; over-shuffling here is the RE-38/TA-97 defect).
+  //   * a valid recipient exists but the deck is empty ⇒ the search DID happen, over zero cards, and
+  //     the trailing shuffle IS owed (#2171: *"you must search and shuffle your deck"*).
+  //
+  // Checking the deck first returned without shuffling in BOTH cases, which is what lost the shuffle
+  // in the blk-038 repro. Note this card already got the ≥1-recipient paths right (the zero-take and
+  // cancel branches below shuffle, citing #1108/#576/#126) — so it was inconsistent with itself, and
+  // that inconsistency is exactly the "1 shuffle vs roto's 2" the differential reported.
+  //
+  // Honest caveat: on THIS card the no-recipient branch is unreachable — Duosion is the attacker, so
+  // it is always in play, and Reuniclus evolves from Duosion, so `evolutionNames` always contains at
+  // least that. The reorder is therefore structural/defensive here and NO guard can exercise it. The
+  // boundary itself is live elsewhere and is currently VIOLATED in the other direction by TA-97
+  // (Turbo Flare `meg-028` over-shuffles on an empty Bench) — that open finding is what will test it.
 
   // Look through all known cards to find out if Pokemon can evolve
   const cm = CardManager.getInstance();
@@ -27,9 +42,15 @@ function* useCellularEvolution(next: Function, store: StoreLike, state: State, e
     });
   });
 
-  // There is nothing that can evolve
+  // There is nothing that can evolve — no search, and so no shuffle (see the note above).
   if (evolutionNames.length === 0) {
     return state;
+  }
+
+  // A recipient exists, so the search runs. An empty deck means it ran over zero cards and found
+  // nothing; the shuffle is still owed.
+  if (player.deck.cards.length === 0) {
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // Blocking pokemon cards, that cannot be valid evolutions
@@ -87,6 +108,9 @@ function* useCellularEvolution(next: Function, store: StoreLike, state: State, e
   }
   const pokemonCard = targets[0].getPokemonCard();
   if (pokemonCard === undefined) {
+    // Defensive branch (should be unreachable — blocked2 already excludes every non-recipient), but a
+    // search demonstrably happened by this point, so it owes the shuffle like the branches above.
+    SHUFFLE_DECK(store, state, player);
     return state; // invalid target?
   }
 

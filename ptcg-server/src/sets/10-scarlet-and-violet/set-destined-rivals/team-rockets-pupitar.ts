@@ -9,9 +9,22 @@ import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 function* useExplosiveAwakening(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-126/CF-9: an empty deck still owes the trailing shuffle. This comment used to assert the
+  // opposite ("no search/shuffle happens on an empty deck") — which contradicted #2302 four lines
+  // below in this same file. You searched a deck of zero cards and found nothing; compendium #2171 is
+  // dispositive: *"you must search and shuffle your deck."* The evolve destination is this Pokémon
+  // itself, so the search instruction is always executable — this is not the RE-38/TA-97 over-shuffle
+  // case (a search whose payload has nowhere to go, where #1108/RE-32 say no search occurs).
+  //
+  // Damage is applied here for the same reason the ≥1-card path applies it below: the shuffle
+  // externalizes a prompt that pauses the attack, and base damage left to the framework would land
+  // AFTER that pause and read as deferred (TA-79/TA-66/TA-69). Adding the shuffle without this would
+  // have traded a missing-shuffle defect for a damage-deferral one.
   if (player.deck.cards.length === 0) {
-    // No search/shuffle happens on an empty deck — the framework deals the base 30 as usual.
-    return state;
+    const emptyDeckDamage = new DealDamageEffect(effect, effect.damage);
+    state = store.reduceEffect(state, emptyDeckDamage);
+    effect.damage = 0;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // Rulebook step F / compendium #543/#649: place the 30 on the Defending Pokémon BEFORE the deck

@@ -21,11 +21,14 @@ function* useCallForBackup(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  if (cards.length === 0) {
-    return state;
-  }
-
-  cards.forEach((card, index) => {
+  // TA-126/CF-9: taking nothing does NOT excuse the shuffle. The printed text is unconditional
+  // ("Then, shuffle your deck") and compendium #2171 is dispositive: *"you can voluntarily fail the
+  // deck search, but you must search AND shuffle your deck."* Returning early here dropped the
+  // externalized shuffle entirely — a search that took zero cards logged no `shuffled` at all, so a
+  // stacked deck stayed stacked. Reachable two ways: a voluntary zero-take, and a deck holding no
+  // eligible card (the sfa-011 repro's deck is 3× Basic Energy, so the Pokémon filter matches
+  // nothing and CF-14 collapses the pick to zero).
+  cards.forEach(card => {
     player.deck.moveCardTo(card, player.hand);
   });
 

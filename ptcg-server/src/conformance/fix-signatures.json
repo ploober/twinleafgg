@@ -117,7 +117,9 @@
       "file": "set-destined-rivals/team-rockets-pupitar.ts",
       "signatures": [
         "{ min: 0, max: 1, allowCancel: true }",
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "an empty deck still owes the trailing shuffle",
+        "emptyDeckDamage"
       ]
     },
     {
@@ -588,7 +590,9 @@
     {
       "file": "set-black-bolt-white-flare/duosion.ts",
       "signatures": [
-        "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);"
+        "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);",
+        "the empty-deck check MOVED below",
+        "A recipient exists, so the search runs"
       ]
     },
     {
@@ -1362,6 +1366,24 @@
       "file": "set-pcg-p-promotional-cards/rotas-weavile.ts",
       "signatures": [
         "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/seadra.ts",
+      "signatures": [
+        "taking nothing does NOT excuse the shuffle"
+      ]
+    },
+    {
+      "file": "set-perfect-order/salazzle-ex.ts",
+      "signatures": [
+        "an empty deck is still a deck you searched"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/whimsicott-ex.ts",
+      "signatures": [
+        "the trailing shuffle survives an empty deck"
       ]
     }
   ]

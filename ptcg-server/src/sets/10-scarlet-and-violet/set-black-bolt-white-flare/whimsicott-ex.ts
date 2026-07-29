@@ -13,8 +13,15 @@ function* useEnergyGift(next: Function, store: StoreLike, state: State,
 
   const player = effect.player;
 
+  // TA-126/CF-9: the trailing shuffle survives an empty deck. Energy Gift attaches "to your Pokémon",
+  // and you always have an Active, so the search instruction is always executable — you simply looked
+  // at zero cards and found nothing, which compendium #2171 handles like a voluntary fail: *"you must
+  // search and shuffle your deck."* Distinct from the RE-38/TA-97 over-shuffle case (an attach with no
+  // legal destination, where #1108/RE-32 say no search happens at all).
   if (player.deck.cards.length === 0) {
-    return state;
+    return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+      player.deck.applyOrder(order);
+    });
   }
 
   yield store.prompt(state, new AttachEnergyPrompt(

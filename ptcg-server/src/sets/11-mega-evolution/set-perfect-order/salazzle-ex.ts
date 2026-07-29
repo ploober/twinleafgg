@@ -38,8 +38,20 @@ export class Salazzleex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-126/CF-9: an empty deck is still a deck you searched — you looked at zero cards and found
+      // nothing, which compendium #2171 treats exactly like a voluntary fail: *"you must search and
+      // shuffle your deck."* Nasty Plot searches for "up to 2 cards" with no restriction on kind and
+      // no destination requirement, so the search instruction is always executable and the trailing
+      // shuffle is always owed. Bailing here emitted no `shuffled` at all.
+      //
+      // This is NOT the RE-38/TA-97 over-shuffle case: that one is a search whose payload has nowhere
+      // to GO (an attach with an empty Bench), where per #1108/RE-32 no search happens and no shuffle
+      // is owed. The discriminator is whether the search instruction can run at all, not whether it
+      // finds anything.
       if (player.deck.cards.length === 0) {
-        return state;
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
       }
 
       const maxCards = Math.min(2, player.deck.cards.length);
