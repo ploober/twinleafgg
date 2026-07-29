@@ -10,11 +10,12 @@ import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../ii
 
 /**
  * MoveEnergyPrompt: relocate an attached Energy from one Pokemon to another. Each transfer is a single
- * `{from, to, index}`; the contract's existing `attachEnergy{card, target}` expresses it whole — the
- * energy iid names the SOURCE Pokemon and (via its position on that Pokemon) the `index`, and the
- * target iid names the DESTINATION `to`. (Reusing an existing Action rather than inventing `moveEnergy`
- * mirrors MoveDamage reusing `choose`/`placeCounter`.) One `attachEnergy` = one complete transfer, so
- * unlike MoveDamage this is one pick per transfer, not two.
+ * `{from, to, index}`, surfaced per CF-34 as `moveEnergy{card, source, target}` — one template per
+ * legal (card, destination) pair. `card` names the Energy, `source` the Pokemon it currently sits on
+ * (explicit though derivable: self-describing wire + stale-source = desync detector), `target` the
+ * destination. One `moveEnergy` = one complete transfer, so unlike MoveDamage this is one pick per
+ * transfer, not two. (History: this decomposer previously reused `attachEnergy{card, target}`; CF-34
+ * convicted that as an operation misstatement — a relocation is not an attach, the TA-142 mirror.)
  *
  * Enumeration mirrors the simple-bot `MoveEnergyPromptResolver`: `slots`+`playerType` define BOTH the
  * source and destination Pokemon set. Sources drop `blockedFrom`, per-source `blockedMap` indices, and
@@ -71,8 +72,9 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
             continue; // a card must move to a DIFFERENT Pokemon
           }
           legalActions.push({
-            type: 'attachEnergy',
+            type: 'moveEnergy',
             card: energyIid,
+            source: pokemonTargetToIid(state, player, ctx, source),
             target: pokemonTargetToIid(state, player, ctx, dest),
           });
         }
@@ -92,8 +94,8 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     if (action.type === 'endChoice') {
       return { kind: 'done' };
     }
-    if (action.type !== 'attachEnergy') {
-      throw new Error(`[conformance] MoveEnergy expected 'attachEnergy', got '${action.type}'`);
+    if (action.type !== 'moveEnergy') {
+      throw new Error(`[conformance] MoveEnergy expected 'moveEnergy', got '${action.type}'`);
     }
     const energy = ctx.iidToCard.get(action.card as string);
     if (energy === undefined) {
@@ -105,6 +107,12 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     }
     const player = promptPlayer(state, prompt.playerId);
     const from = resolveAnyPokemonTarget(state, player, energy);
+    // CF-34: `source` is explicit on the wire; a mismatch with where the card actually sits is a
+    // malformed action (or a caller desync) — reject strictly rather than silently trusting either.
+    const claimedSource = action.source as string | undefined;
+    if (claimedSource !== undefined && claimedSource !== pokemonTargetToIid(state, player, ctx, from)) {
+      throw new Error(`[conformance] moveEnergy.source '${claimedSource}' does not match the Pokemon '${action.card}' is attached to`);
+    }
     const list = StateUtils.getTarget(state, player, from);
     const index = list.cards.indexOf(energy);
     if (index === -1) {

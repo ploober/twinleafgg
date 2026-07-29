@@ -8,8 +8,8 @@ import {
 // MoveEnergyPrompt ('Move energy') decomposer. Before it was registered, the driver classified this
 // prompt as 'unsupported' and any card raising it (Energy Switch, Multi Switch, Pow Hand Extension, …)
 // faulted `[conformance] prompt 'Move energy' has no decomposer (out of scope)` — silently defeating
-// every energy-movement repro. One transfer decomposes to one `attachEnergy{card,target}` (the energy
-// iid names the source Pokemon + index, the target iid names the destination). These specs drive
+// every energy-movement repro. One transfer decomposes to one `moveEnergy{card, source, target}`
+// (CF-34: a relocation is not an attach; `source` = the Pokemon the energy sits on). These specs drive
 // Energy Switch (move a basic Energy from 1 of your Pokemon to another) end-to-end through step().
 
 const WATER = 'Water Energy SVE';
@@ -62,7 +62,7 @@ describe('MoveEnergyPrompt decomposer — Energy Switch', () => {
     expect(classify({ type: 'Move energy' } as Prompt<unknown>)).toBe('decomposable');
   });
 
-  it('surfaces the move as a pending with an attachEnergy legalAction when the log is dry', () => {
+  it('surfaces the move as a pending with a moveEnergy legalAction when the log is dry (CF-34)', () => {
     const res = step(energySwitchBoard(), [{ actor: 'A', type: 'playItem', card: 'es' }]);
 
     expect(res.status).toBe('awaitingAction');
@@ -70,15 +70,17 @@ describe('MoveEnergyPrompt decomposer — Energy Switch', () => {
     expect(res.pending!.descriptor).toContain('Move energy');
     // the source energy e0 may move to the bench Ralts (A-b0), not back onto its own active
     expect(res.pending!.legalActions.some(a =>
-      a.type === 'attachEnergy' && a.card === 'e0' && a.target === 'A-b0')).toBe(true);
+      a.type === 'moveEnergy' && a.card === 'e0' && (a as { source?: string }).source === 'A-act' && a.target === 'A-b0')).toBe(true);
     expect(res.pending!.legalActions.some(a =>
-      a.type === 'attachEnergy' && a.target === 'A-act')).toBe(false);
+      a.type === 'moveEnergy' && a.target === 'A-act')).toBe(false);
+    // CF-34: the relocation must NOT be misverbed as an attach
+    expect(res.pending!.legalActions.some(a => a.type === 'attachEnergy')).toBe(false);
   });
 
   it('moves the basic energy from source to destination and completes', () => {
     const res = step(energySwitchBoard(), [
       { actor: 'A', type: 'playItem', card: 'es' },
-      { actor: 'A', type: 'attachEnergy', card: 'e0', target: 'A-b0' },
+      { actor: 'A', type: 'moveEnergy', card: 'e0', source: 'A-act', target: 'A-b0' },
     ]);
 
     expect(res.status).toBe('awaitingAction');

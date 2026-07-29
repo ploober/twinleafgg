@@ -7,10 +7,21 @@ import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, playerIdToActor } from '../iid-targets';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot, playerIdToActor } from '../iid-targets';
 import { toPrinting } from '../printing';
 
-/** AttachEnergyPrompt: one pick = {to, index} (energy index in cardList × target); raw = {to,index}[]. */
+/**
+ * AttachEnergyPrompt: one pick = {to, index} (energy index in cardList × target); raw = {to,index}[].
+ *
+ * VERB (CF-34): keyed on the ACTUAL source zone per candidate card, not the prompt type — card
+ * implementations reach this prompt for genuine zone attaches (hand/deck/discard sources, CF-5
+ * `attachEnergy`) AND for in-play relocations (`player.active`/`opponent.active` sources — Volt
+ * Cyclone, Jamming Wing, Void Gale, …), which CF-34 pins as `moveEnergy{card, source, target}`.
+ * A candidate currently attached to an in-play Pokemon surfaces `moveEnergy`; a zone-resident (or
+ * temp-list-homeless, e.g. Heavy Baton — whose cards `fixupProjection` re-homes to the deck on the
+ * wire) candidate surfaces `attachEnergy`, keeping the verb consistent with the projected state.
+ * (The TA-142 lesson: keying a verb on the prompt/message instead of the actual zone misstates it.)
+ */
 export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   type: 'Attach energy',
 
@@ -64,6 +75,11 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       if (energyIid === undefined) {
         continue;
       }
+      // CF-34: a candidate that currently sits ON an in-play Pokemon is being RELOCATED, not attached.
+      const sourceSlot = findPokemonSlot(state, card);
+      const sourceIid = sourceSlot !== undefined
+        ? pokemonTargetToIid(state, player, ctx, resolveAnyPokemonTarget(state, player, card))
+        : undefined;
       for (const t of targets) {
         const tk = targetKey(t);
         if (prompt.options.sameTarget && firstTargetKey !== undefined && tk !== firstTargetKey) {
@@ -72,7 +88,10 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
         if (prompt.options.differentTargets && usedTargetKeys.has(tk)) {
           continue;
         }
-        legalActions.push({ type: 'attachEnergy', card: energyIid, target: pokemonTargetToIid(state, player, ctx, t) });
+        const targetIid = pokemonTargetToIid(state, player, ctx, t);
+        legalActions.push(sourceIid !== undefined
+          ? { type: 'moveEnergy', card: energyIid, source: sourceIid, target: targetIid }
+          : { type: 'attachEnergy', card: energyIid, target: targetIid });
       }
     }
 
@@ -89,24 +108,40 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
     if (action.type === 'endChoice') {
       return { kind: 'done' };
     }
-    if (action.type !== 'attachEnergy') {
-      throw new Error(`[conformance] AttachEnergy expected 'attachEnergy', got '${action.type}'`);
+    if (action.type !== 'attachEnergy' && action.type !== 'moveEnergy') {
+      throw new Error(`[conformance] AttachEnergy expected 'attachEnergy'/'moveEnergy', got '${action.type}'`);
     }
     const cardIid = action.card as string;
     const targetIid = action.target as string;
     const energy = ctx.iidToCard.get(cardIid);
     if (energy === undefined) {
-      throw new Error(`[conformance] attachEnergy.card iid '${cardIid}' unknown`);
+      throw new Error(`[conformance] ${action.type}.card iid '${cardIid}' unknown`);
     }
     const index = prompt.cardList.cards.indexOf(energy);
     if (index === -1) {
-      throw new Error(`[conformance] attachEnergy.card '${cardIid}' is not in the prompt's energy source`);
+      throw new Error(`[conformance] ${action.type}.card '${cardIid}' is not in the prompt's energy source`);
+    }
+    const player = promptPlayer(state, prompt.playerId);
+    // CF-34 strictness (CF-12): the verb must match the card's ACTUAL zone — exactly what next()
+    // offered. A board-resident card answers `moveEnergy` (with a source that matches reality); a
+    // zone/temp-resident card answers `attachEnergy`.
+    const sourceSlot = findPokemonSlot(state, energy);
+    if (action.type === 'moveEnergy') {
+      if (sourceSlot === undefined) {
+        throw new Error(`[conformance] moveEnergy.card '${cardIid}' is not attached to an in-play Pokemon — this pick is an attach ('attachEnergy')`);
+      }
+      const actualSource = pokemonTargetToIid(state, player, ctx, resolveAnyPokemonTarget(state, player, energy));
+      const claimedSource = action.source as string | undefined;
+      if (claimedSource !== undefined && claimedSource !== actualSource) {
+        throw new Error(`[conformance] moveEnergy.source '${claimedSource}' does not match the Pokemon '${cardIid}' is attached to`);
+      }
+    } else if (sourceSlot !== undefined) {
+      throw new Error(`[conformance] attachEnergy.card '${cardIid}' is attached to an in-play Pokemon — this pick is a relocation ('moveEnergy', CF-34)`);
     }
     const targetCard = ctx.iidToCard.get(targetIid);
     if (targetCard === undefined) {
-      throw new Error(`[conformance] attachEnergy.target iid '${targetIid}' unknown`);
+      throw new Error(`[conformance] ${action.type}.target iid '${targetIid}' unknown`);
     }
-    const player = promptPlayer(state, prompt.playerId);
     return { kind: 'assign', to: resolveAnyPokemonTarget(state, player, targetCard), index };
   },
 

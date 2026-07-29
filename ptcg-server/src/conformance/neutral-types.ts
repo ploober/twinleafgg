@@ -339,6 +339,23 @@ export interface DiscardPickAction {
   owner?: NeutralPlayerId;
 }
 
+/**
+ * One in-effect Energy RELOCATION pick (CF-34): moves an attached Energy from one in-play Pokemon
+ * to another. Distinct from `attachEnergy` (zone → Pokemon, CF-5) — a relocation is not an attach
+ * (attach-triggered effects do not fire on moves). `source` is explicit even though it is derivable
+ * from `card`: the wire stays self-describing, and a stale `source` is a desync detector.
+ */
+export interface MoveEnergyPickAction {
+  actor: NeutralPlayerId;
+  type: 'moveEnergy';
+  /** iid of the energy card being moved. */
+  card: string;
+  /** iid of the Pokemon-in-play the energy is currently attached to (its stack's bottom iid). */
+  source: string;
+  /** iid of the destination Pokemon-in-play. */
+  target: string;
+}
+
 /** One prize pile chosen to take after a knockout (ChoosePrizePrompt → contract `takePrize`). */
 export interface TakePrizeAction {
   actor: NeutralPlayerId;
@@ -410,6 +427,7 @@ export type NeutralAction =
   | PlaceCounterAction
   | PromoteBenchAction
   | DiscardPickAction
+  | MoveEnergyPickAction
   | TakePrizeAction
   | ConfirmAction
   | SelectOptionAction
@@ -462,6 +480,8 @@ export type LegalAction =
   | { type: 'placeCounter'; target: string }
   | { type: 'promoteBench'; target: string }
   | { type: 'discard'; target: string; owner?: NeutralPlayerId }
+  // CF-34: in-play → in-play Energy relocation; one template per legal (card, destination) pair.
+  | { type: 'moveEnergy'; card: string; source: string; target: string }
   | { type: 'takePrize'; index: number }
   | { type: 'confirm'; value: boolean }
   | { type: 'selectOption'; option: number }

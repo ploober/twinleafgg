@@ -553,18 +553,21 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       }),
       player({ active: inPlay('B-act', [TANKY]) }),
     );
-    const attachCards = (r: ReturnType<typeof step>): string[] =>
-      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'attachEnergy').map(a => (a as { card: string }).card);
+    // CF-34: an in-play-source relocation surfaces `moveEnergy{card, source, target}`, not attachEnergy.
+    const moveCards = (r: ReturnType<typeof step>): string[] =>
+      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'moveEnergy').map(a => (a as { card: string }).card);
 
     const menu = step(boardOf(), [attack('A-act', 'Cold Cyclone')]);
     expect(menu.status).toBe('awaitingAction');
-    expect(attachCards(menu)).toContain('ae2');   // the Splash Energy is offered as a movable [W] Energy
+    expect(moveCards(menu)).toContain('ae2');   // the Splash Energy is offered as a movable [W] Energy
+    expect((menu.pending?.legalActions ?? []).every(a =>
+      (a as { type: string }).type !== 'moveEnergy' || (a as { source?: string }).source === 'A-act')).toBe(true);
 
     // And the full move (Splash + a basic Water, min=max=2) relocates the Splash onto the [W] bench:
     const moved = step(boardOf(), [
       attack('A-act', 'Cold Cyclone'),
-      { actor: 'A', type: 'attachEnergy', card: 'ae2', target: 'A-b0' },
-      { actor: 'A', type: 'attachEnergy', card: 'ae0', target: 'A-b0' },
+      { actor: 'A', type: 'moveEnergy', card: 'ae2', source: 'A-act', target: 'A-b0' },
+      { actor: 'A', type: 'moveEnergy', card: 'ae0', source: 'A-act', target: 'A-b0' },
     ]);
     expect(moved.state.players.A.bench[0].energy.map(e => e.printing)).toContain('bkp-113');
   });
