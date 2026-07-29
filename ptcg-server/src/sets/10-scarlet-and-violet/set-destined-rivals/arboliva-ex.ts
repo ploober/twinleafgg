@@ -78,6 +78,19 @@ export class Arbolivaex extends PokemonCard {
           const results = targets || [];
           for (const result of results) {
             const target = StateUtils.getTarget(state, player, result.target);
+            // TA-148 (FILED, NOT FIXED — see docs/twinleaf-findings): the card does 20 damage ONCE PER
+            // CHOICE — *"Choose 1 of your opponent's Pokémon 6 times… For each time you chose a Pokémon,
+            // do 20 damage to it"* — but `PutDamagePrompt`'s result type is `DamageMap[]`, a per-target
+            // TOTAL, so six picks on the same Pokemon arrive here as a single `{target, damage: 120}` and
+            // are applied as ONE 120-damage hit. Rotomancer applies six 20s.
+            //
+            // The naive fix (loop `result.damage / 20` times applying 20 each) is NOT landed because it is
+            // unverified and carries a concrete regression risk: six discrete hits let any PER-HIT modifier
+            // apply six times, most importantly Weakness (+30 six times, not once). This attack's text says
+            // the damage ignores Weakness/Resistance, but that has not been confirmed for this code path,
+            // and twinleaf's `damaged` wire event is derived by DIFFING damage per step (`events.ts`), so
+            // it reports one net delta either way and cannot discriminate the two. Needs a board with a
+            // per-hit modifier (and a Weakness board) to test before touching. Tracked on `dri-023`.
             DAMAGE_OPPONENT_POKEMON(store, state, effect, result.damage, [
               target,
             ]);

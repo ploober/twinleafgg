@@ -27,6 +27,27 @@ import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../ii
 export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
   type: 'Move energy',
 
+  /**
+   * CF-14 (TA-124): a SINGLE-transfer relocation (`max === 1`) forced to exactly one legal
+   * (card, destination) pair has no decision content, so the driver applies it atomically instead of
+   * surfacing a 1-option `moveEnergy` pending. Because one pick here IS one complete transfer (see the
+   * note above), `max === 1` means the whole decision is forced — the same gate choose-pokemon and
+   * choose-cards use, not a mid-aggregate sub-pick collapse. A multi-transfer prompt (`max > 1`) is
+   * still excluded: it can be momentarily narrowed to one option without the overall decision being
+   * forced. The driver's `!canStopNow` gate additionally keeps an optional "you may move 1" (min:0)
+   * surfacing its decline.
+   *
+   * Measured divergence: `dri-070` "Jamming Wing" with B holding exactly one Benched Pokemon, so the
+   * moved Energy has exactly one destination — rotomancer applies it and hands the turn to B, twinleaf
+   * pended the single `moveEnergy` pick.
+   *
+   * NOT ENABLED — deferred 2026-07-29. Enabling it broke both committed Energy Switch specs, one of
+   * which pins the opposite ON PURPOSE: *"surfaces the move as a pending with a moveEnergy legalAction
+   * when the log is dry (CF-34)"*. That is a deliberate CF-34 pin about what the harness reports when
+   * the action log runs out mid-decision, so collapsing a forced single transfer is a re-pin of CF-34,
+   * not a bug fix. Needs an explicit contract decision. Tracked on `dri-070`.
+   */
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

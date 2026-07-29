@@ -658,4 +658,32 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.A.active!.energy.length).toBe(0);    // "Discard all Energy from this Pokemon"
     expect(r.state.players.B.active).toBeNull();                // 130 KOs the 70-HP Ralts (awaiting promote)
   });
+
+  it('Team Rocket\'s Zapdos "Jamming Wing" moves the Energy to the OPPONENT\'s Bench [TA-147 dri-070]', () => {
+    // "You may move an Energy from your opponent's Active Pokemon to 1 of THEIR Benched Pokemon."
+    // Pre-fix the card resolved the destination with `StateUtils.getTarget(state, opponent, transfer.to)`,
+    // but that helper treats its `player` argument as the FRAME and flips to `getOpponent(frame)` when
+    // `target.player === TOP_PLAYER`. This prompt is built with `player.id` + `PlayerType.TOP_PLAYER`, so
+    // `transfer.to` ALREADY means "the opponent's side as seen by the attacker"; passing `opponent`
+    // flipped it a second time and landed the Energy on A's OWN Bench — the attacker stole it. Same class
+    // as TA-121 (Croconaw "Crunch" wrong-perspective discard).
+    //
+    // A is given a Bench on purpose: it is the wrong destination, so an empty A-bench could not tell a
+    // correct move from a silently dropped one. This drives the `moveEnergy` pick explicitly rather than
+    // relying on the CF-14 single-pick collapse (deferred — see the attach-energy decomposer), so the
+    // guard holds whichever way that contract question lands.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-070'], en(WATER, 2, 'a')), bench: [inPlay('A-b0', [RALTS])] }),
+            player({ active: inPlay('B-act', [RALTS], en(PSY, 1, 'b')), bench: [inPlay('B-b0', [RALTS])] })),
+      [
+        attack('A-act', 'Jamming Wing'),
+        { actor: 'A' as const, type: 'confirm' as const, value: true },
+        { actor: 'A' as const, type: 'moveEnergy' as const, card: 'be0', source: 'B-act', target: 'B-b0' },
+      ],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.B.bench[0].energy.map(e => e.printing)).toEqual([PSY]);  // landed on THEIR bench
+    expect(r.state.players.B.active!.energy.length).toBe(0);                        // left their Active
+    expect(r.state.players.A.bench[0].energy.length).toBe(0);                       // NOT stolen by A
+  });
 });

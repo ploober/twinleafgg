@@ -32,6 +32,39 @@ function verbFor(prompt: PutDamagePrompt): 'placeCounter' | 'choose' {
 export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
   type: 'Put damage',
 
+  /**
+   * CF-14 (TA-124) — the multi-pick extension, ANALYSED AND DEFERRED (see the verdict at the end; this
+   * decomposer does NOT opt in). The case for opting in ran as follows:
+   *
+   *  1. **Only fixed-count placements can reach the collapse.** The driver gates on `!canStopNow`, and an
+   *     "up to N counters" placement always advertises `END_CHOICE` from the first pending (the CF-4
+   *     rule below, keyed on `allowPlacePartialDamage`). So an optional/partial placement never
+   *     collapses — only a placement that MUST place its full `prompt.damage`.
+   *  2. **A forced step in a fixed-count placement is genuinely forced.** The candidate set is recomputed
+   *     from the same board each step; only the per-target placed counts change. So if exactly one target
+   *     is eligible and the placement cannot stop short, every remaining unit must go on that target —
+   *     one whole-decision resolution, no decision content. Should a per-target cap bind part-way,
+   *     `next` returns null (line below) and the decision assembles cleanly, so the driver's
+   *     "zero options and cannot stop" fault is not reachable from here.
+   *
+   * This is the narrow, justified exception to the general rule that a multi-pick aggregate must not
+   * implement `atomicResolvable` — that rule exists because a momentarily-forced SUB-pick is not a forced
+   * decision, which is true precisely when the aggregate could have stopped or varied. Neither holds here.
+   *
+   * Measured divergence: `dri-023` "Oil Salvo" with B holding only its Active — rotomancer places all
+   * 6 units of 20, KOs it, and moves to prize selection; twinleaf pends a 1-option `choose` per unit.
+   *
+   * NOT ENABLED — deferred 2026-07-29, and the reason is measured, not theoretical. Turning it on does
+   * converge `dri-023`, but it also broke three committed specs that deliberately pin the opposite:
+   * the two `slots`-restriction guards (which build a prompt with exactly ONE eligible target precisely
+   * so they can inspect the offered menu — the Phantom Dive `asc-160` HTTP-500 regression) and the
+   * damageMultiple cap guard (a MULTI-target board where the cap binds part-way and leaves one target,
+   * i.e. exactly the "momentarily-forced sub-pick" the interface contract warns about — my claim that
+   * such a step is "genuinely forced" does not survive it, because the aggregate as a whole was never
+   * forced). Enabling this is therefore a re-pin of what a put-damage aggregate reports, not a bug fix,
+   * and it needs an explicit contract decision plus re-recorded guards. Tracked on `dri-023`.
+   */
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

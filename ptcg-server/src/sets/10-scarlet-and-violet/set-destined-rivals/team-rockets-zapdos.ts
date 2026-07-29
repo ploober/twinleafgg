@@ -45,16 +45,23 @@ export class TeamRocketsZapdos extends PokemonCard {
       // Rulebook step F / compendium #543/#649: apply damage before the move-Energy rider.
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
+      // TA-149 / CF-33: these two eligibility guards used to sit INSIDE the confirm callback, so the
+      // "you may" gate was offered first and only then discovered it could achieve nothing. CF-33 (pinned
+      // 2026-07-29): a `may` whose effect can achieve NOTHING presents NO decision — both branches leave
+      // an identical board, so by CF-14 it has exactly one resolution and collapses. Rotomancer suppresses
+      // the gate on these boards; twinleaf offered a phantom `confirm{true,false}`.
+      //
+      // Both conditions read zones OPEN to the acting player (the opponent's Active's attached Energy and
+      // their Bench are public), so suppressing on them does not leak hidden information — CF-33's
+      // Boundary 1, adopted from rotomancer. A `may` gated on a hidden zone must still be offered.
+      const opponentHasBench = opponent.bench.some(b => b.cards.length > 0);
+      const opponentActiveHasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
+      if (!opponentHasBench || !opponentActiveHasEnergy) {
+        return state;
+      }
+
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (result) {
-
-          if (!opponent.bench.some(b => b.cards.length > 0)) {
-            return state;
-          }
-
-          if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
-            return state;
-          }
 
           return store.prompt(state, new AttachEnergyPrompt(
             player.id,
@@ -67,7 +74,19 @@ export class TeamRocketsZapdos extends PokemonCard {
           ), transfers => {
             transfers = transfers || [];
             for (const transfer of transfers) {
-              const target = StateUtils.getTarget(state, opponent, transfer.to);
+              // TA-147 (wrong perspective): resolve the destination in the PROMPT's frame — `player` —
+              // not `opponent`. `StateUtils.getTarget(state, frame, target)` flips to
+              // `getOpponent(frame)` when `target.player === TOP_PLAYER`, and this prompt was built with
+              // `player.id` + `PlayerType.TOP_PLAYER`, so every `transfer.to` carries TOP_PLAYER meaning
+              // "the opponent's side, as seen by the attacker". Passing `opponent` as the frame flipped
+              // that a second time and landed the Energy on the ATTACKER's Bench — i.e. the attacker
+              // STOLE the Energy, where the card says *"...to 1 of THEIR Benched Pokémon."*
+              //
+              // This was masked until 2026-07-29: the harness never got past the 1-option `moveEnergy`
+              // pending (TA-124/CF-14), so the differential compared boards before the move applied.
+              // Collapsing the phantom node exposed it. Same class as TA-121 (Croconaw "Crunch"
+              // wrong-perspective discard).
+              const target = StateUtils.getTarget(state, player, transfer.to);
               opponent.active.moveCardTo(transfer.card, target);
             }
           });

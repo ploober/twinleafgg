@@ -46,6 +46,29 @@ function forcedDiscardIndices(prompt: ChooseCardsPrompt): number[] | null {
 export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
   type: 'Choose cards',
 
+  /**
+   * CF-14 (TA-124): a single SECRET pick (`isSecret`, `max === 1`) forced to exactly one candidate is
+   * resolved atomically instead of surfacing a 1-option `pick` pending.
+   *
+   * Scoped to SECRET deliberately, and the scope is MEASURED, not assumed. A secret pick is
+   * externalized as the `system` actor's `pick` purely to make the randomness reproducible across
+   * engines (the coin-flip analog); over exactly ONE candidate there is no entropy to reproduce, so the
+   * node carries nothing — the same reasoning as CF-11's ≤1-card shuffle collapse cited above. Measured
+   * divergence: `pre-064` (opponent's hand holds exactly one card) — rotomancer resolves and moves on
+   * to prize selection, twinleaf pended `pick{actor=system, target=B.hand:sve-003}`.
+   *
+   * I first wrote this as a bare `max === 1`, mirroring choose-pokemon. That was WRONG and a bisect
+   * caught it: it regressed `fz-ta27-sonar-mandatory-pick` and `xfz-jtg-060` from conform to FAIL. The
+   * decisive evidence is what rotomancer does on `jtg-060` — it *surfaces* the 1-option non-secret
+   * `choose{target=B.hand:sve-003}` itself. So for a player-facing card pick both engines externalize
+   * the lone candidate and already AGREE; collapsing it would have moved twinleaf away from rotomancer
+   * while claiming to converge on it. A player choosing a card is also not the same non-decision as a
+   * forced target: the engine's callback can distinguish "chose the only card" from "declined", which
+   * is why the CF-8 path above is narrowly scoped to non-cancelable discards rather than to any
+   * single-candidate pick.
+   */
+  atomicResolvable: (prompt) => prompt.options.isSecret === true && prompt.options.max === 1,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

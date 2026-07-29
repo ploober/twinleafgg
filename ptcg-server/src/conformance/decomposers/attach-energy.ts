@@ -25,6 +25,32 @@ import { toPrinting } from '../printing';
 export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   type: 'Attach energy',
 
+  /**
+   * CF-14 (TA-124): a SINGLE attach/relocation (`max === 1`) forced to exactly one (card, destination)
+   * pair has no decision content, so the driver applies it atomically rather than surfacing a 1-option
+   * pending. One pick here is one complete attach or relocation, so `max === 1` means the whole decision
+   * is forced — the same gate choose-pokemon / choose-cards / move-energy use, not a mid-aggregate
+   * sub-pick collapse. A multi-attach prompt (`max > 1`) stays excluded: it can be momentarily narrowed
+   * to one option without the overall decision being forced. The driver's `!canStopNow` gate keeps an
+   * optional "you may attach 1" (min:0) surfacing its decline.
+   *
+   * Measured divergence: `dri-070` Team Rocket's Zapdos "Jamming Wing" (*"You may move an Energy from
+   * your opponent's Active Pokémon to 1 of their Benched Pokémon"*) with B holding exactly one Benched
+   * Pokemon and one Energy on its Active — a single legal `moveEnergy`. Rotomancer applied it and handed
+   * the turn to B; twinleaf pended the lone pick. Note the card expresses a MOVE via
+   * `AttachEnergyPrompt` (hence the CF-34 `moveEnergy` verb this decomposer derives from the source
+   * zone), which is why the sibling move-energy decomposer's gate does not reach it.
+   *
+   * NOT ENABLED — deferred 2026-07-29, for the same reason as the sibling move-energy gate (a CF-34
+   * re-pin, not a bug fix) plus a harder failure of its own: with the collapse on, the F-027 Dragonite
+   * `ds-003` guard FAULTED outright (`attachEnergy.card is not in A's hand`) because the recorded
+   * `attachEnergy` action became surplus once the prompt self-resolved, and was then re-read as a
+   * top-level main-phase attach. That is the generic hazard of any new collapse — it invalidates logs
+   * recorded against the surfaced form — and it means enabling this requires re-recording those logs.
+   * Tracked on `dri-070`. NOTE: turning it on is what EXPOSED the TA-147 wrong-perspective bug in
+   * `team-rockets-zapdos.ts`, which is real and stays fixed; see its own driven guard.
+   */
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

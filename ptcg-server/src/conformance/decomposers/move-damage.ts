@@ -5,6 +5,7 @@ import {
   PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
+import { StateUtils } from '../../game';
 
 const COUNTER = 10;
 
@@ -49,19 +50,39 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
     const legalActions: LegalAction[] = [];
 
     if (atSourceStep) {
-      // Offer SOURCES: maxAllowedDamage entries with movable damage remaining (cap − 10 × prior moves).
-      const blockedFromKeys = new Set(prompt.options.blockedFrom.map(targetKey));
+      // TA-124: offer as SOURCES the Pokemon that actually HAVE a counter to move.
+      //
+      // This used to enumerate `prompt.maxAllowedDamage` and treat `entry.damage` as the movable budget.
+      // That misreads the field. `maxAllowedDamage` is a per-target **DESTINATION cap** — how much damage
+      // a target may end up carrying — not a source list. The authoritative witness is the MOVE_DAMAGE
+      // prefab (`prefabs.ts`), which pushes `damage: 9999` for EVERY in-play Pokemon (an unlimited cap)
+      // and expresses source eligibility separately, by pushing undamaged targets into
+      // `options.blockedFrom`. The card-side convention agrees: of 51 users, the overwhelming majority
+      // push `card.hp`, `card.hp + N`, or a flat `9999`/`180`/`120` — capacities, not counter counts. The
+      // sibling `put-damage` decomposer already documents the same rule ("`maxAllowedDamage` is only a
+      // per-target CAP; it is not the legality list"), and `conformance-putdamage-slots.spec.ts` records
+      // the same misread being fixed there.
+      //
+      // The old reading only looked correct for prompts the prefab built, because `blockedFrom` happened
+      // to carry the real filter. A HAND-BUILT prompt that passes no `blockedFrom` — Alakazam `twm-082`
+      // "Strange Hacking" passes only `{allowCancel: true}` — offered every opposing Pokemon as a source,
+      // since each one's cap (its HP) is a large positive number. On a board with ZERO damage counters
+      // that produced a phantom pending (`choose{target=B.active}` + a decline) where rotomancer
+      // correctly presents no decision at all: nothing can be moved, so per CF-33 there is nothing to
+      // decide. Reading real damage collapses it via the driver's existing zero-candidate auto-complete.
       const movedFrom = new Map<string, number>();
       transfers.forEach(t => {
         const k = targetKey(t.from);
         movedFrom.set(k, (movedFrom.get(k) ?? 0) + COUNTER);
       });
-      for (const entry of prompt.maxAllowedDamage) {
-        const k = targetKey(entry.target);
-        if (blockedFromKeys.has(k) || entry.damage <= 0) { continue; }
-        if ((movedFrom.get(k) ?? 0) >= entry.damage) { continue; }
+      const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
+      for (const source of sources) {
+        const k = targetKey(source);
+        const cardList = StateUtils.getTarget(state, player, source);
+        const movable = (cardList?.damage ?? 0) - (movedFrom.get(k) ?? 0);
+        if (movable < COUNTER) { continue; }
         if (prompt.options.singleSourceTarget && firstFrom !== undefined && k !== firstFrom) { continue; }
-        legalActions.push({ type: 'choose', target: pokemonTargetToIid(state, player, ctx, entry.target) });
+        legalActions.push({ type: 'choose', target: pokemonTargetToIid(state, player, ctx, source) });
       }
       if (transfers.length >= min) {
         legalActions.push(END_CHOICE);
