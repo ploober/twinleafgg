@@ -52,7 +52,7 @@ export class Sinistchaex extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false }
+        { operation: 'placeCounters', allowCancel: false }
       ), targets => {
         const damageEffect = new PutCountersEffect(effect, 20 * grassInDiscard);
         damageEffect.target = targets[0];

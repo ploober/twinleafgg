@@ -28,7 +28,7 @@ function* useLightningStormStar(next: Function, store: StoreLike, state: State, 
     [SlotType.ACTIVE, SlotType.BENCH],
     damage,
     maxAllowedDamage,
-    { allowCancel: false, damageMultiple: 60 }
+    { allowCancel: false, damageMultiple: 60, operation: 'dealDamage' }
   ), targets => {
     const results = targets || [];
     for (const result of results) {

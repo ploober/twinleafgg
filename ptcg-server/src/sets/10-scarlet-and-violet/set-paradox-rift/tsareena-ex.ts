@@ -62,7 +62,7 @@ export class Tsareenaex extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false }
+        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
       ), targets => {
         if (!targets || targets.length === 0) {
           return;

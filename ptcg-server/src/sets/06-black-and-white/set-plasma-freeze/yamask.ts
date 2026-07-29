@@ -67,7 +67,7 @@ export class Yamask extends PokemonCard {
           GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
           PlayerType.TOP_PLAYER,
           [SlotType.ACTIVE, SlotType.BENCH],
-          { allowCancel: false }
+          { operation: 'placeCounters', allowCancel: false }
         ), targetTargets => {
           if (!targetTargets || targetTargets.length === 0) {
             return;

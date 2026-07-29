@@ -72,7 +72,7 @@ export class Arbolivaex extends PokemonCard {
           [SlotType.ACTIVE, SlotType.BENCH],
           damage,
           maxAllowedDamage,
-          { allowCancel: false, damageMultiple: 20 },
+          { allowCancel: false, damageMultiple: 20, operation: 'dealDamage' },
         ),
         (targets) => {
           const results = targets || [];

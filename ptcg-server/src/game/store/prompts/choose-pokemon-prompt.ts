@@ -1,4 +1,4 @@
-import { Prompt } from './prompt';
+import { Prompt, TargetOperation } from './prompt';
 import { PlayerType, SlotType, CardTarget } from '../actions/play-card-action';
 import { PokemonCardList } from '../state/pokemon-card-list';
 import { State } from '../state/state';
@@ -13,6 +13,13 @@ export interface ChoosePokemonOptions {
   max: number;
   allowCancel: boolean;
   blocked: CardTarget[];
+  /**
+   * What the picked Pokémon is about to have done to it, when that is one of the operations a reader
+   * has to be able to name (see `TargetOperation`). Undeclared by default: this prompt is a bare
+   * target selection, so a card only sets it when the pick is really the front half of a typed
+   * operation — `'placeCounters'` for "put N damage counters on 1 of your opponent's Pokémon".
+   */
+  operation?: TargetOperation;
 }
 
 export class ChoosePokemonPrompt extends Prompt<PokemonCardList[]> {

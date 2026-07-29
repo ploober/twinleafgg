@@ -83,7 +83,7 @@ export class DarkIvysaur extends PokemonCard {
         [SlotType.ACTIVE, SlotType.BENCH],
         damage,
         maxAllowedDamage,
-        { allowCancel: false, damageMultiple: 10 }
+        { allowCancel: false, damageMultiple: 10, operation: 'dealDamage' }
       ), targets => {
         const results = targets || [];
         for (const result of results) {

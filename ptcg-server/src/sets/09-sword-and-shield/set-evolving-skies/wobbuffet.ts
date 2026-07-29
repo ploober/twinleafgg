@@ -61,7 +61,7 @@ export class Wobbuffet extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false }
+        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
       ), selected => {
         if (!selected || selected.length === 0) return;
         const benchedCardList = selected[0];

@@ -65,7 +65,7 @@ export class HoopaV extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false }
+        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
       ), selected => {
         if (selected && selected.length > 0) {
           const countersEffect = new PutCountersEffect(effect, 30);

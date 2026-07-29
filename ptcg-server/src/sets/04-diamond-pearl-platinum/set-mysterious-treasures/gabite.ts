@@ -48,7 +48,7 @@ export class Gabite extends PokemonCard {
             GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
             PlayerType.TOP_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
-            { allowCancel: false }
+            { operation: 'placeCounters', allowCancel: false }
           ), targets => {
             if (!targets || targets.length === 0) {
               return;

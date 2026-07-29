@@ -109,7 +109,7 @@ export class Reuniclus extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH],
-        { min: targetsToChoose, max: targetsToChoose, allowCancel: false }
+        { operation: 'placeCounters', min: targetsToChoose, max: targetsToChoose, allowCancel: false }
       ), targets => {
         if (!targets || targets.length === 0) {
           return state;

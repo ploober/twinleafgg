@@ -47,7 +47,7 @@ export class Vespiquenex extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false }
+        { operation: 'placeCounters', allowCancel: false }
       ), targets => {
         if (!targets || targets.length === 0) {
           return;

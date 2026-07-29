@@ -49,7 +49,7 @@ export class Mismagius extends PokemonCard {
             GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
             PlayerType.TOP_PLAYER,
             [SlotType.BENCH],
-            { min: 1, max: 1, allowCancel: false }
+            { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
           ), (selected: PokemonCardList[] | null) => {
             if (selected && selected.length > 0) {
               const putCountersEffect = new PutCountersEffect(effect, 60);

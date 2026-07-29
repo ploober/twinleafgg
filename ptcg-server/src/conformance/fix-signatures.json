@@ -1083,6 +1083,282 @@
       "signatures": [
         "The search whiffs (AttachEnergyPrompt"
       ]
+    },
+    {
+      "file": "set-ex-dragon-frontiers/lickitung.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-ex-unseen-forces/smoochum.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-legends-awakened/azelf-lv-x.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-mysterious-treasures/gabite.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-stormfront/gengar.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-triumphant/gastly.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-triumphant/haunter.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/drifblim.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/drifloon-2.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-plasma-freeze/yamask.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fates-collide/alakazam-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fates-collide/bronzong-break.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-flashfire/dusknoir.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-phantom-forces/gengar-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/duskull.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/mimikyu.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/trevenant.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-crimson-invasion/gastly.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-guardians-rising/gothita.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-lost-thunder/giratina.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-team-up/hoopa-gx.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-unbroken-bonds/misdreavus.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-unified-minds/alolan-raichu.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-unified-minds/yveltal.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-astral-radiance/drifblim.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/galarian-rapidash-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/shadow-rider-calyrex-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-crown-zenith/zeraora-vstar.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/medicham-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/wobbuffet.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fusion-strike/hoopa-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fusion-strike/starmie.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-lost-origin/cresselia.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-lost-origin/spectrier.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/reuniclus.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/arboliva-ex.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/ninetales.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/vespiquen-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/tsareena-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/yamask.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/sinistcha-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mismagius.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/spectrier.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-delta-reign/sableye.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-best-of-game/dark-ivysaur.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-pcg-p-promotional-cards/rotas-weavile.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
     }
   ]
 }

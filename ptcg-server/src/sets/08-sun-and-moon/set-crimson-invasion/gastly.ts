@@ -43,7 +43,7 @@ export class Gastly extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false }
+        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
       ), selected => {
         const targets = selected || [];
         targets.forEach(target => {

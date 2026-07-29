@@ -61,7 +61,7 @@ export class Cresselia extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
-        { min: 1, max: 1, allowCancel: false },
+        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false },
       ), selected => {
         const selectedTargets = selected || [];
         selectedTargets.forEach(target => {

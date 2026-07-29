@@ -1,5 +1,5 @@
 import { GameMessage } from '../../game-message';
-import { Prompt } from './prompt';
+import { Prompt, TargetOperation } from './prompt';
 import { PlayerType, SlotType, CardTarget } from '../actions/play-card-action';
 import { State } from '../state/state';
 import { StateUtils } from '../state-utils';
@@ -11,7 +11,20 @@ export interface PutDamageOptions {
   allowCancel: boolean;
   blocked: CardTarget[];
   allowPlacePartialDamage?: boolean | undefined;
+  /**
+   * HP applied by a single pick. Defaults to 10 — one damage counter — because that is what this
+   * prompt is for: distributing N damage counters over targets. The "Choose 1 of your opponent's
+   * Pokémon K times … do X damage to it" family reuses the prompt with `damageMultiple: X`, where a
+   * pick is one of the K choices rather than one counter.
+   */
   damageMultiple?: number;
+  /**
+   * What each pick does to its target. Defaults to `'placeCounters'` — the prompt's own reason for
+   * existing. The repeated-choice damage family above sets `'dealDamage'`: those cards choose a
+   * Pokémon and deal damage to it, which is not counter placement (it runs through the damage
+   * pipeline, and the printed text says "do X damage to it", not "put X damage counters on it").
+   */
+  operation?: TargetOperation;
 }
 
 export class PutDamagePrompt extends Prompt<DamageMap[]> {
@@ -37,6 +50,7 @@ export class PutDamagePrompt extends Prompt<DamageMap[]> {
       blocked: [],
       allowPlacePartialDamage: false,
       damageMultiple: 10,
+      operation: 'placeCounters' as TargetOperation,
     }, options);
   }
 

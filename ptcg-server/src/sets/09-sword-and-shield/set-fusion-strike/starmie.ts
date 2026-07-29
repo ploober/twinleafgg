@@ -80,7 +80,7 @@ export class Starmie extends PokemonCard {
             [SlotType.ACTIVE, SlotType.BENCH],
             damage,
             maxAllowedDamage,
-            { allowCancel: false, damageMultiple: 30 }
+            { allowCancel: false, damageMultiple: 30, operation: 'dealDamage' }
           ), targets => {
             const results = targets || [];
             for (const result of results) {

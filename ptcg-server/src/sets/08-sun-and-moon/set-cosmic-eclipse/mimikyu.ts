@@ -80,7 +80,7 @@ export class Mimikyu extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: count, max: count, allowCancel: false }
+        { operation: 'placeCounters', min: count, max: count, allowCancel: false }
       ), targets => {
         if (!targets || targets.length === 0) {
           return;
