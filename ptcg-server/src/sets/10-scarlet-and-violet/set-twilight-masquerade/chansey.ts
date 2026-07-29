@@ -2,7 +2,7 @@ import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { AttachEnergyPrompt, GameError, GameMessage, PlayerType, PokemonCard, SlotType, StateUtils } from '../../../game';
+import { AttachEnergyPrompt, GameMessage, PlayerType, PokemonCard, SlotType, StateUtils } from '../../../game';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Chansey extends PokemonCard {
@@ -37,11 +37,14 @@ export class Chansey extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-131: an attack is declarable even when its effect can't be carried out
+      // (rulebook p.20). With no Basic Energy in hand there is nothing to attach, so
+      // the effect simply whiffs — do NOT refuse the attack.
       const hasEnergyInHand = player.hand.cards.some(c => {
         return c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC;
       });
       if (!hasEnergyInHand) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       return store.prompt(state, new AttachEnergyPrompt(

@@ -1009,6 +1009,12 @@
       "signatures": [
         "cannotUseAttacksNextTurnPending.push('Boss Headbutt')"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/chansey.ts",
+      "signatures": [
+        "// TA-131: an attack is declarable even when its effect can't be carried out"
+      ]
     }
   ]
 }
