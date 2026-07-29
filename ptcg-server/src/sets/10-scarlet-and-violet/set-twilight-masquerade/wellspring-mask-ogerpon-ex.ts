@@ -85,7 +85,7 @@ export class WellspringMaskOgerponex extends PokemonCard {
 
           state = store.prompt(state, new ChooseEnergyPrompt(
             player.id,
-            GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+            GameMessage.CHOOSE_ENERGIES_TO_DECK,
             checkProvidedEnergy.energyMap,
             [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
             { allowCancel: false }

@@ -406,7 +406,8 @@
       "file": "set-twilight-masquerade/wellspring-mask-ogerpon-ex.ts",
       "signatures": [
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);",
+        "GameMessage.CHOOSE_ENERGIES_TO_DECK,"
       ]
     },
     {
@@ -448,7 +449,8 @@
     {
       "file": "set-destined-rivals/dipplin.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "GameMessage.CHOOSE_ENERGIES_TO_HAND,"
       ]
     },
     {
@@ -1014,6 +1016,12 @@
       "file": "set-twilight-masquerade/chansey.ts",
       "signatures": [
         "// TA-131: an attack is declarable even when its effect can't be carried out"
+      ]
+    },
+    {
+      "file": "set-journey-together/banette.ts",
+      "signatures": [
+        "GameMessage.CHOOSE_CARD_TO_SHUFFLE,"
       ]
     }
   ]

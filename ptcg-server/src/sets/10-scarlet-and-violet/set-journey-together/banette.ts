@@ -50,7 +50,7 @@ export class Banette extends PokemonCard {
 
       state = store.prompt(state, new ChooseCardsPrompt(
         opponent,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
+        GameMessage.CHOOSE_CARD_TO_SHUFFLE,
         opponent.hand,
         {},
         { allowCancel: false, min: cardsToShuffle, max: cardsToShuffle }
