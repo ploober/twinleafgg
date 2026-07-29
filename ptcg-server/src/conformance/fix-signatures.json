@@ -1329,7 +1329,9 @@
     {
       "file": "set-twilight-masquerade/sinistcha-ex.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "const toDeck = player.discard.cards.filter(isBasicGrass);",
+        "TA-144, the one that actually cost the game"
       ]
     },
     {
