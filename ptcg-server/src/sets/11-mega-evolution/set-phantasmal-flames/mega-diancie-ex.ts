@@ -42,7 +42,7 @@ export class MegaDiancieex extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE],
         { superType: SuperType.ENERGY },
-        { min: 1, max: 2, allowCancel: false }
+        { min: 0, max: 2, allowCancel: false }
       ), transfers => {
 
         if (transfers === null) {

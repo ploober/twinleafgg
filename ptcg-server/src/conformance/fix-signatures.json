@@ -1023,6 +1023,18 @@
       "signatures": [
         "GameMessage.CHOOSE_CARD_TO_SHUFFLE,"
       ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-diancie-ex.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-prismatic-evolution/flareon-ex.ts",
+      "signatures": [
+        "The rider runs on a benchless board too (TA-123"
+      ]
     }
   ]
 }

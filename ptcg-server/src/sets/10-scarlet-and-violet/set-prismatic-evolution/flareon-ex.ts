@@ -18,11 +18,9 @@ function* useBurningCharge(next: Function, store: StoreLike, state: State,
     return state;
   }
 
-  const hasBenched = player.bench.some(b => b.cards.length > 0);
-  if (!hasBenched) {
-    return state;
-  }
-
+  // TA-123: "attach them to 1 of your Pokémon" includes the ACTIVE, so the rider must run even with
+  // an empty bench — the attach-target prompt below already offers SlotType.ACTIVE. (Previously an
+  // `!hasBenched` early-return dropped the whole search/attach/shuffle rider on a benchless board.)
   let cards: Card[] = [];
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
@@ -89,9 +87,8 @@ export class Flareonex extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Burning Charge — post-damage search/attach/shuffle rider (family A): the 130 lands first
     // (rulebook step F), then the search-and-attach chain (TA-128). The trailing shuffle (CF-9) still
-    // fires because the deck is always searched. (NOTE: the generator's `hasBenched` early-return is a
-    // SEPARATE, pre-existing bug — "attach to 1 of your Pokémon" includes the Active — which is why a
-    // benchless repro showed "the rider never runs"; left for its own fix, out of family-A scope.)
+    // fires because the deck is always searched. The rider runs on a benchless board too (TA-123 —
+    // "attach to 1 of your Pokémon" includes the Active).
     if (AFTER_ATTACK(effect, 0, this)) {
       const generator = useBurningCharge(() => generator.next(), store, state, effect);
       return generator.next().value;
