@@ -13,6 +13,19 @@ import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../ii
 export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
   type: 'Choose pokemon',
 
+  /**
+   * CF-14: a SINGLE-pick target selection (`max === 1`) forced to exactly one candidate has no decision
+   * content — the driver resolves it atomically (no 1-option `choose` pending), matching rotomancer.
+   * e.g. Potion's CHOOSE_POKEMON_TO_HEAL when only the Active is damaged, or a bench-snipe rider when
+   * the target player has exactly one eligible Pokémon. Gated on `max === 1` so a genuine MULTI-pick
+   * aggregate is never collapsed on a momentarily-forced sub-pick (the register's rule), and the driver
+   * additionally only collapses when the pick cannot stop short (no `endChoice`), so an optional
+   * "you may" heal (min:0) still surfaces its decline. The post-KO promote (`promoteBench`) is excluded
+   * — it has its own flow and its collapse is handled by the KO/prize machinery.
+   */
+  atomicResolvable: (prompt) =>
+    prompt.options.max === 1 && prompt.message !== GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;
