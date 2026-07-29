@@ -2,7 +2,7 @@ import { Card } from '../game/store/card/card';
 import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
-import { State } from '../game/store/state/state';
+import { State, GameWinner } from '../game/store/state/state';
 import { Prompt } from '../game/store/prompts/prompt';
 import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
@@ -574,6 +574,30 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
 
     // no open prompt
+    // CF-35 (TA-146): once the match is over, nothing further can be APPLIED. Stop here with `applied`
+    // frozen at the terminal transition and leave any surplus actions unconsumed — that is precisely what
+    // makes a surplus log detectable as `applied < actions.length`, which is the whole reason `applied` is
+    // reported separately from `actions.length`. Without this, twinleaf walked `applied` up to the full log
+    // length, so the harness reported a divergence point offset by the surplus and a scenario could look
+    // like it exercised a tail of actions that never ran (the repro-empty-actions failure mode).
+    //
+    // It also makes the post-terminal answer UNIFORM. Previously the reply depended on which action
+    // happened to follow: `endTurn`/`declareAttack`/`attachEnergy` returned `gameOver` (but over-counted),
+    // while `retreat`/`confirm` reached the engine, raised, and came back as `invalidAction` with a
+    // fabricated `reasonCode` — a status specified for an action ILLEGAL AT A LIVE DECISION NODE, of which
+    // there is none once the match has ended. Three answers for one situation; CF-19 makes the
+    // inconsistency itself the defect.
+    //
+    // Deliberately placed AFTER the open-prompt handling rather than at the top of the loop: prompts still
+    // in flight when the outcome turns terminal (a KO cascade's promote, a last-prize take) must still be
+    // drained so the projected state is settled. This gates action CONSUMPTION only.
+    // Terminality is `state.winner` (a `GameWinner` enum, NONE = -1). There is no `state.outcome` on the
+    // internal state — `outcome` is a WIRE field the projector derives from `winner`; reading it here
+    // silently yields `undefined`, which compares unequal to every string and fires the guard on the first
+    // iteration (applied always 0). Checked against the enum, not the projection.
+    if (game.state.winner !== GameWinner.NONE) {
+      return { events, pending: null, applied: cursor.i };
+    }
     if (cursor.i < actions.length) {
       const action = actions[cursor.i];
       if (action.type === 'flip' || action.type === 'shuffle' || action.type === 'pick') {
