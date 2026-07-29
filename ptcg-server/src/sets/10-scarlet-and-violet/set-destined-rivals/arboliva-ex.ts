@@ -78,19 +78,25 @@ export class Arbolivaex extends PokemonCard {
           const results = targets || [];
           for (const result of results) {
             const target = StateUtils.getTarget(state, player, result.target);
-            // TA-148 (FILED, NOT FIXED — see docs/twinleaf-findings): the card does 20 damage ONCE PER
-            // CHOICE — *"Choose 1 of your opponent's Pokémon 6 times… For each time you chose a Pokémon,
-            // do 20 damage to it"* — but `PutDamagePrompt`'s result type is `DamageMap[]`, a per-target
-            // TOTAL, so six picks on the same Pokemon arrive here as a single `{target, damage: 120}` and
-            // are applied as ONE 120-damage hit. Rotomancer applies six 20s.
+            // Applying ONE summed hit per target is CORRECT, and there is a ruling that says so directly.
+            // Compendium **#2161** (Destined Rivals FAQ, TPCi Rules Team 2025-05-29), on this exact attack:
+            // *"Oil Salvo is a single attack. The attack's damage is calculated AFTER you finish making all
+            // choices, so all damage modifiers are applied to the TOTAL damage for each Pokémon."* Its
+            // worked example is dispositive — choose three Pokémon twice each ⇒ 40 per Pokémon (20×2), then
+            // Granite Cave's −30 applied ONCE to that total ⇒ 10 damage each.
             //
-            // The naive fix (loop `result.damage / 20` times applying 20 each) is NOT landed because it is
-            // unverified and carries a concrete regression risk: six discrete hits let any PER-HIT modifier
-            // apply six times, most importantly Weakness (+30 six times, not once). This attack's text says
-            // the damage ignores Weakness/Resistance, but that has not been confirmed for this code path,
-            // and twinleaf's `damaged` wire event is derived by DIFFING damage per step (`events.ts`), so
-            // it reports one net delta either way and cannot discriminate the two. Needs a board with a
-            // per-hit modifier (and a Weakness board) to test before touching. Tracked on `dri-023`.
+            // So `PutDamagePrompt`'s `DamageMap[]` (a per-target total) is exactly the right shape here, and
+            // TA-148 — which I filed claiming this should be six discrete 20s — is **RETRACTED 2026-07-29**.
+            // Landing that "fix" would have been a rules VIOLATION: six separate 20s each reduced by 30
+            // under Granite Cave give 0, where the ruling requires 10. The revert was right for the reason
+            // the ruling confirms (per-hit modifiers must not apply per hit); it is now grounded rather
+            // than merely cautious. Do not "fix" this again without re-reading #2161.
+            //
+            // Rotomancer's six `damaged hp=20` events are the side now in question — see `dri-023`. Note
+            // #2161 constrains damage CALCULATION, not logging, so per-choice logging could still be
+            // faithful; the discriminating test is a Granite Cave `dri-166` board (10 = correct, 0 = six
+            // reductions). Related: **#2160** (same FAQ) — *"All damage is done before KO's happen"*, so a
+            // chosen Active that would be KO'd still shields the Bench for the rest of the attack.
             DAMAGE_OPPONENT_POKEMON(store, state, effect, result.damage, [
               target,
             ]);
