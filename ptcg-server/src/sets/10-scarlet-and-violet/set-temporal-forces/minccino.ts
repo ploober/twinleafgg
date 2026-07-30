@@ -31,6 +31,11 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
+  // TA-155 / compendium #6242: for ATTACK effects, "up to X" means any number between 0 and X —
+  // the player may discard nothing. min:1+allowCancel expressed the 0 option only through the UI's
+  // cancel, which the wire cannot see (the declared range IS the wire contract, and a 1..1 range
+  // auto-resolves as decisionless per CF-14). min:0 declares the real range. Note the ruling's
+  // asymmetry: Trainer/Ability "up to X" is 1..X, so min:1 stays correct on those (Blowtorch, Ruffian).
   const max = Math.min(2, pokemonsWithTool);
   let targets: PokemonCardList[] = [];
   yield store.prompt(state, new ChoosePokemonPrompt(
@@ -38,7 +43,7 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
     GameMessage.CHOOSE_POKEMON_TO_DISCARD_CARDS,
     PlayerType.TOP_PLAYER,
     [SlotType.ACTIVE, SlotType.BENCH],
-    { min: 1, max: max, allowCancel: true, blocked }
+    { min: 0, max: max, allowCancel: true, blocked }
   ), results => {
     targets = results || [];
     next();

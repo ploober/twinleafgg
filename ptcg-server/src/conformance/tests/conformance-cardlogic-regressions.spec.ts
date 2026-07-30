@@ -686,6 +686,42 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offered({ oppSpecial: true })).toBe(true);
   });
 
+  it('Minccino "Cleaning Up" lets the player discard ZERO Tools [TA-155 tef-136, #6242]', () => {
+    // Compendium #6242 (Ascended Heroes rulebook): "For effects of attacks, if a card uses the phrase
+    // 'up to X' you can choose any number between 0 and the maximum." The card declared min:1 and hid
+    // the 0 option behind the UI-only cancel, so on a board with exactly one Tool-bearer the range
+    // collapsed to 1..1 and CF-14 auto-resolved it — the wire discarded the opponent's Tool with no
+    // decision ever surfaced (rotomancer surfaces pick-or-decline; it is right). Found by the RE-74
+    // sibling sweep, the first walk into an attack-side Tool discard (the Tool axis had zero corpus
+    // coverage until gen_branch_seeds). NOTE the ruling's asymmetry: Trainer/Ability "up to X" is
+    // 1..max, so min:1 remains CORRECT on Blowtorch/Ruffian — do not "fix" those to match.
+    const bd = () => {
+      const A = player({ active: inPlay('A-act', ['tef-136'], en(WATER, 2, 'a')) });
+      const B = player({ active: inPlay('B-act', ['meg-181']), bench: [inPlay('B-b0', ['asc-004'])] });
+      B.bench[0].tools = [{ iid: 'b-tool', printing: 'asc-181' }];
+      return board(A, B);
+    };
+    const declare = attack('A-act', 'Cleaning Up');
+
+    // (a) the decision SURFACES: a pick plus the advertised decline — nothing auto-resolves.
+    const r1 = step(bd(), [declare]);
+    expect(r1.status).toBe('awaitingAction');
+    expect(types(r1)).toContain('choose');                        // pre-fix: no pending at all
+    expect(types(r1)).toContain('confirm');                       // the 0-option (CF-12 stop)
+    expect(r1.state.players.B.bench[0].tools.length).toBe(1);     // pre-fix: already discarded here
+
+    // (b) declining discards nothing and the attack still completes (turn passes to B).
+    const r2 = step(bd(), [declare, { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(r2.state.players.B.bench[0].tools.length).toBe(1);
+    expect(r2.state.players.B.discard.length).toBe(0);
+    expect(r2.state.activePlayer).toBe('B');
+
+    // (c) taking the pick discards the bench Tool — the fix must not have broken the 1-option itself.
+    const r3 = step(bd(), [declare, { actor: 'A' as const, type: 'choose' as const, target: 'B-b0' }]);
+    expect(r3.state.players.B.bench[0].tools.length).toBe(0);
+    expect(r3.state.players.B.discard.map(c => c.printing)).toContain('asc-181');
+  });
+
   it('Core Memory grants "Geobuster" ONLY to Mega Zygarde ex [TA-152 por-070]', () => {
     // "The Mega Zygarde ex this card is attached to can use the attack on this card." The Tool carries no
     // ATTACH restriction, so it may sit on anything — it simply grants nothing to an ineligible holder.
