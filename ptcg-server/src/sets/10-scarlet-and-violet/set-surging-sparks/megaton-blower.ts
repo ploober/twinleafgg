@@ -26,7 +26,22 @@ export class MegatonBlower extends TrainerCard {
   public text: string =
     'Discard all Pokémon Tools and Special Energy from all of your opponent\'s Pokémon, and discard a Stadium in play.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    // TA-154 / compendium #2064 (this exact card): "You can't play the card for no effect, but if
+    // there is at least one of those types of cards in play you do as much as you can." Playable iff
+    // ANY of its three targets exists: a Stadium in play (either owner's), or a Tool / Special Energy
+    // on any of the OPPONENT'S Pokémon — our own board deliberately doesn't count (the discard halves
+    // read the opponent only). Was `return true`, offering a no-effect play that rotomancer correctly
+    // refuses; #2064 adjudicates that against the offering engine.
+    if (StateUtils.getStadiumCard(state) !== undefined) {
+      return true;
+    }
+    const opponent = StateUtils.getOpponent(state, player);
+    const hasTarget = (list: PokemonCardList): boolean =>
+      list.tools.length > 0 ||
+      list.cards.some(card =>
+        card.superType === SuperType.ENERGY && (card as EnergyCard).energyType === EnergyType.SPECIAL);
+    return hasTarget(opponent.active) || opponent.bench.some(b => hasTarget(b));
   }
 
 

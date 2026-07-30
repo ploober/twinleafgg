@@ -307,8 +307,30 @@ function locateCard(state: State, card: Card): { owner: Player; zone: string } |
  */
 function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt): NeutralEvent | null {
   const cards = prompt.cards;
+  // Owner fallback for a show we cannot locate by card: the prompt's playerId is the AUDIENCE, so the
+  // shower is the other player ("your opponent reveals their hand" prompts the attacker).
+  const audience = playerIdToActor(game.state, prompt.playerId);
+  const fallbackOwner = audience === 'A' ? 'B' : 'A';
+
   if (cards.length === 0) {
-    return null;
+    // TA-153: an EMPTY show is still a reveal. "Your opponent reveals their hand" EXECUTES over an
+    // empty hand — the attacker learns it is empty, which is real information (it is why the attack
+    // then does 0 damage). Same discriminator as CF-9/TA-126 (the instruction executes even over zero
+    // objects), and the cross-engine shape rotomancer emits (`cards: []`; the harness eventKey omits
+    // an empty cards list, so both spellings key identically). Suppressing the event is what kept
+    // xfz-wht-005 diverging the day the CF-18 gate first fired (RE-73 fold).
+    //
+    // `from` cannot be located from a card (there is none). Attribute by which of the shower's
+    // ordered public-ish zones is empty — today's only empty-show families are whole-zone reveals
+    // ("reveals their hand") and empty-window deck reveals (RE-68 family), and an ambiguous board
+    // (both empty) reads 'hand' first, matching the dominant family. 'unknown' when neither is empty
+    // (an empty show of a non-empty zone would be a card bug worth seeing on the wire, not hiding).
+    const shower = game.state.players.find(p => playerIdToActor(game.state, p.id) === fallbackOwner);
+    const from = shower === undefined ? 'unknown'
+      : shower.hand.cards.length === 0 ? 'hand'
+        : shower.deck.cards.length === 0 ? 'deck'
+          : 'unknown';
+    return { kind: 'reveal', owner: fallbackOwner, cards: [], from, to: 'all' };
   }
   const iids: string[] = [];
   for (const c of cards) {
@@ -321,11 +343,8 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt): NeutralE
     return null;
   }
   const loc = locateCard(game.state, cards[0]);
-  // Owner = the located zone's owner; fall back to the non-audience player (the prompt's playerId is
-  // the audience — a "shown by the opponent" reveal owns to that opponent).
-  const owner = loc !== null
-    ? playerIdToActor(game.state, loc.owner.id)
-    : (playerIdToActor(game.state, prompt.playerId) === 'A' ? 'B' : 'A');
+  // Owner = the located zone's owner; fall back to the non-audience player (see above).
+  const owner = loc !== null ? playerIdToActor(game.state, loc.owner.id) : fallbackOwner;
   const from = loc !== null ? loc.zone : 'unknown';
   return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
 }

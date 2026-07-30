@@ -659,6 +659,33 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active).toBeNull();                // 130 KOs the 70-HP Ralts (awaiting promote)
   });
 
+  it('Megaton Blower is NOT playable for no effect [TA-154 ssp-182, #2064]', () => {
+    // Compendium #2064: "You can't play the card for no effect, but if there is at least one of those
+    // types of cards in play you do as much as you can." The card: "Discard all Pokémon Tools and
+    // Special Energy from all of YOUR OPPONENT'S Pokémon, and discard a Stadium in play." canPlay
+    // returned true unconditionally, so twinleaf offered it on a board where it does nothing —
+    // rotomancer gates it (they found the same rule via their own #2064 pass; their no-effect prover
+    // missed only the Stadium zone, ours missed everything). A Tool on OUR OWN Pokémon must NOT
+    // enable it: the discard halves read the opponent's board only, the Stadium half reads the slot.
+    const SPECIAL_E = 'jtg-159';
+    const offered = (opts: { stadium?: boolean; oppTool?: boolean; oppSpecial?: boolean; ownTool?: boolean }) => {
+      const A = player({ active: inPlay('A-act', ['dri-023'], en(GRASS, 1, 'a')), hand: [{ iid: 'mb0', printing: 'ssp-182' }] });
+      const B = player({ active: inPlay('B-act', ['meg-181']) });
+      if (opts.oppTool) { B.active!.tools = [{ iid: 'b-tool', printing: 'asc-181' }]; }
+      if (opts.oppSpecial) { B.active!.energy = [{ iid: 'b-se', printing: SPECIAL_E }]; }
+      if (opts.ownTool) { A.active!.tools = [{ iid: 'a-tool', printing: 'asc-181' }]; }
+      const st = board(A, B);
+      if (opts.stadium) { st.stadium = { iid: 'stad', printing: 'dri-166', owner: 'A' }; }
+      const r = step(st, []);
+      return (r.pending?.legalActions ?? []).some(a => (a as { card?: string }).card === 'mb0');
+    };
+    expect(offered({})).toBe(false);                   // pre-fix: true — playable for no effect
+    expect(offered({ ownTool: true })).toBe(false);    // own-side Tool is NOT a target
+    expect(offered({ stadium: true })).toBe(true);
+    expect(offered({ oppTool: true })).toBe(true);
+    expect(offered({ oppSpecial: true })).toBe(true);
+  });
+
   it('Core Memory grants "Geobuster" ONLY to Mega Zygarde ex [TA-152 por-070]', () => {
     // "The Mega Zygarde ex this card is attached to can use the attack on this card." The Tool carries no
     // ATTACH restriction, so it may sit on anything — it simply grants nothing to an ineligible holder.

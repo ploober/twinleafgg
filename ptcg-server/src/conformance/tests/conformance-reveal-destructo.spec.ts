@@ -94,3 +94,50 @@ describe('Conformance — CF-18 reveal: Iron Thorns "Destructo-Press" (first cro
     expect(kinds).toContain('ko');
   });
 });
+
+describe('Conformance — CF-18 reveal: an EMPTY hand reveal is still a reveal [TA-153]', () => {
+  // Whimsicott ex wht-005 "Wondrous Cotton": "Your opponent reveals their hand." With an EMPTY hand
+  // the instruction still EXECUTES — the attacker learns the hand is empty, which is real information
+  // and is exactly why the attack then does 0 damage. That is the CF-9/TA-126 discriminator (the
+  // instruction executes even over zero objects) applied to the reveal event, and rotomancer emits
+  // `reveal{owner, cards: [], from: "hand", to: "all"}` here. buildRevealEvent's early return
+  // suppressed the whole event, so the first-ever firing of the CF-18 gate (the day roto folded
+  // handRevealed into reveal, RE-73) flagged xfz-wht-005: roto 2 reveals, twinleaf 1.
+  const WHIMSICOTT = 'wht-005';
+  const GRASS = 'sve-001';
+
+  function wondrousCotton(opponentHand: CardRef[]): ReturnType<typeof step> {
+    const A = player({
+      active: poke('A-act', WHIMSICOTT, en(GRASS, 1, 'A')),
+      deck: [{ iid: 'A-d', printing: WATER }],
+      prizes: Array.from({ length: 6 }, (_, i) => ({ iid: `A-pz${i}`, printing: WATER, faceUp: false })),
+    });
+    const B = player({
+      active: poke('B-act', TANKY),
+      hand: opponentHand,
+      deck: [{ iid: 'B-d', printing: WATER }],
+      prizes: Array.from({ length: 6 }, (_, i) => ({ iid: `B-pz${i}`, printing: WATER, faceUp: false })),
+    });
+    const st: NeutralState = { schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A', phase: 'main', outcome: 'ongoing', stadium: null, players: { A, B } };
+    return step(st, [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Wondrous Cotton' }]);
+  }
+
+  it('empty opponent hand: emits reveal{owner B, cards [], from hand, to all}', () => {
+    const r = wondrousCotton([]);
+    const reveals = r.events.filter(e => e.kind === 'reveal');
+    expect(reveals.length).toBe(1);                    // pre-fix: 0 — the event was suppressed
+    const rev = reveals[0] as { owner: string; cards: string[]; from: string; to: string };
+    expect(rev.owner).toBe('B');
+    expect(rev.cards).toEqual([]);
+    expect(rev.from).toBe('hand');
+    expect(rev.to).toBe('all');
+  });
+
+  it('populated opponent hand: unchanged — one reveal carrying the iids', () => {
+    const r = wondrousCotton([{ iid: 'B-h0', printing: WATER }]);
+    const reveals = r.events.filter(e => e.kind === 'reveal');
+    expect(reveals.length).toBe(1);
+    expect((reveals[0] as { cards: string[] }).cards).toEqual(['B-h0']);
+    expect((reveals[0] as { from: string }).from).toBe('hand');
+  });
+});

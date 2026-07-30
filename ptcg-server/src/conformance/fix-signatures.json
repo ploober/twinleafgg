@@ -1403,6 +1403,13 @@
         "effect.attacks.filter(attack => attack !== this.attacks[0])",
         "TA-152"
       ]
+    },
+    {
+      "file": "set-surging-sparks/megaton-blower.ts",
+      "signatures": [
+        "TA-154",
+        "StateUtils.getStadiumCard(state) !== undefined"
+      ]
     }
   ]
 }
