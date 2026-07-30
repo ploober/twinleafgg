@@ -66,15 +66,19 @@ export class AmuletofHope extends TrainerCard {
           return state;
         }
 
-        store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, card: 'Amulet of Hope' });
+        store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Amulet of Hope' });
 
         let cards: Card[] = [];
+        // TA-157 / compendium #2061 (this exact card): "You must take at least 1 card with Amulet of
+        // Hope when it applies." The untyped-search exception (#6242 / roto #968) floors an
+        // any-card deck search at 1 — min:0 let the player whiff a mandatory search. The empty-deck
+        // guard above keeps the 1-floor satisfiable.
         store.prompt(state, new ChooseCardsPrompt(
           player,
           GameMessage.CHOOSE_CARD_TO_HAND,
           player.deck,
           {},
-          { min: 0, max: 3, allowCancel: false }
+          { min: 1, max: 3, allowCancel: false }
         ), selected => {
           cards = selected || [];
           player.deck.moveCardsTo(cards, player.hand);

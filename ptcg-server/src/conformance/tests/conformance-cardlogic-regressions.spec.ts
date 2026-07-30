@@ -686,6 +686,46 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offered({ oppSpecial: true })).toBe(true);
   });
 
+  it('Amulet of Hope floors its untyped search at ONE card [TA-157 ssp-162, #2061] and its trigger no longer 500s the driver [TA-158]', () => {
+    // Compendium #2061 (this exact card): "You must take at least 1 card with Amulet of Hope when it
+    // applies" — the untyped-search exception (#6242; roto's #968/#2301), which roto's third note
+    // applied to THEIR engine and we then found mirrored here: min:0 let the owner whiff a mandatory
+    // search. Two defects, one board:
+    //   TA-157 — min:0 → min:1 (the decline must NOT be offered at 0 picks; a stop appears after 1).
+    //   TA-158 — the card's LOG_PLAYER_USES_ABILITY call passed `card:` where the template wants
+    //   `ability:`, and the event-mapper's deliberate strictness turned the malformed log into a live
+    //   500 at exactly this trigger (6 cards repo-wide shipped the same malformed call — all fixed).
+    // Board: B's Rotom ex Thunderbolt (130) KOs A's 60-HP Oddish wearing the Amulet.
+    const bd = () => {
+      const A = player({ active: inPlay('A-act', ['asc-001']), bench: [inPlay('A-b0', ['asc-004'])],
+        deck: fillerDeck('A', 6) });
+      A.active!.tools = [{ iid: 'amulet', printing: 'ssp-162' }];
+      const B = player({ active: inPlay('B-act', ['pfl-029'], [...en('sve-004', 1, 'bl'), ...en(WATER, 1, 'bw')]) });
+      const st = board(A, B);
+      st.activePlayer = 'B';
+      return st;
+    };
+    const atk = { actor: 'B' as const, type: 'declareAttack' as const, source: 'B-act', name: 'Thunderbolt' };
+    const prize = { actor: 'B' as const, type: 'takePrize' as const, index: 0 };
+    const promote = { actor: 'A' as const, type: 'promoteBench' as const, target: 'A-b0' };
+
+    // (a) TA-158: reaching the trigger does not fault, and the search pending surfaces for A.
+    const r1 = step(bd(), [atk, prize, promote]);
+    expect(r1.status).toBe('awaitingAction');            // pre-fix: engineFault (missing "ability")
+    expect(r1.pending?.actor).toBe('A');                 // the Amulet owner's search, not B's
+    // (b) TA-157: no decline at 0 picks — the search is mandatory.
+    expect(types(r1)).not.toContain('confirm');          // pre-fix: confirm offered immediately
+    const picks = (r1.pending?.legalActions ?? []).filter(a => (a as { type: string }).type !== 'confirm');
+    expect(picks.length).toBeGreaterThan(0);
+    // (c) after ONE pick the stop appears (1..3 is the real range) and taking it lands the card in
+    // A's hand — the whole flow, not merely the menu, carries the floor.
+    const r2 = step(bd(), [atk, prize, promote, picks[0] as never]);
+    expect(types(r2)).toContain('confirm');
+    const r3 = step(bd(), [atk, prize, promote, picks[0] as never,
+      { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(r3.state.players.A.hand.length).toBe(1);      // took exactly the 1 picked card
+  });
+
   it('Minccino "Cleaning Up" lets the player discard ZERO Tools [TA-155 tef-136, #6242]', () => {
     // Compendium #6242 (Ascended Heroes rulebook): "For effects of attacks, if a card uses the phrase
     // 'up to X' you can choose any number between 0 and the maximum." The card declared min:1 and hid

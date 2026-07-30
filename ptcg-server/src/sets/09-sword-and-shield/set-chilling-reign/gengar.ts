@@ -55,7 +55,7 @@ export class Gengar extends PokemonCard {
         return state;
       }
 
-      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, card: this.name });
+      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: this.name });
 
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (!result) { return state; }

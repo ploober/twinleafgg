@@ -66,7 +66,7 @@ export class Togekiss extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (wantToUse) {
-          store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, card: 'Togekiss' });
+          store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Togekiss' });
 
           while (player.hand.cards.length < 8 && player.deck.cards.length > 0) {
             player.deck.moveTo(player.hand, 1);

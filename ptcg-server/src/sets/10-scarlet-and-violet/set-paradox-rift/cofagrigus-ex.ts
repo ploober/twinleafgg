@@ -60,7 +60,7 @@ export class Cofagrigusex extends PokemonCard {
         return state;
       }
 
-      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, card: 'Cofagrigus ex' });
+      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Cofagrigus ex' });
 
       let cards: Card[] = [];
       store.prompt(state, new ChooseCardsPrompt(
