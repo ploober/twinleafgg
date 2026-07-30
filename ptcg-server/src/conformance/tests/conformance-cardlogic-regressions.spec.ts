@@ -696,6 +696,50 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.damage).toBe(90);
   });
 
+  it('Oil Salvo: a lethally-damaged Shaymin still shields the Bench [#2160 dri-010/dri-023]', () => {
+    // Compendium #2160 (Destined Rivals FAQ, TPCi Rules Team 2025-05-29): "If I use Arboliva ex's 'Oil
+    // Salvo' attack and choose my opponent's active Shaymin with the 'Flower Curtain' Ability first with
+    // enough damage to KO it, can I then choose benched non-Rule Box Pokemon and do damage to them? — No,
+    // you cannot. All damage is done before KO's happen, so the Shaymin is still there to protect Benched
+    // Pokemon that don't have a Rule Box."
+    //
+    // 4 picks at the Active = 80 = exactly lethal on Shaymin's 80 HP, then 2 picks at the Bench = 40, which
+    // Steven's Baltoy (60 HP) survives so the number is readable. The two halves below share an IDENTICAL
+    // action list and differ ONLY in B's Active card — that A/B is what makes the 0 attributable to Flower
+    // Curtain rather than to the Bench picks being dropped, mis-targeted or capped. Guards the ordering a
+    // change to Oil Salvo's damage application could silently break (cf. TA-148, retracted).
+    const GRASS_E = 'sve-009';
+    const salvo = (bActive: string) => step(
+      board(player({ active: inPlay('A-act', ['dri-023'], en(GRASS_E, 1, 'a')) }),
+            player({ active: inPlay('B-act', [bActive]), bench: [inPlay('B-b0', ['dri-083'])] })),
+      [attack('A-act', 'Oil Salvo'),
+       ...Array.from({ length: 4 }, () => ({ actor: 'A' as const, type: 'choose' as const, target: 'B-act' })),
+       ...Array.from({ length: 2 }, () => ({ actor: 'A' as const, type: 'choose' as const, target: 'B-b0' }))],
+    );
+    // Shaymin dri-010 (Flower Curtain) took lethal damage first — the Bench is still protected.
+    expect(salvo('dri-010').state.players.B.bench[0].damage).toBe(0);
+    // CONTROL: same actions, no Flower Curtain in play — the Bench takes its 40.
+    expect(salvo('dri-083').state.players.B.bench[0].damage).toBe(40);
+  });
+
+  it('Oil Salvo applies NO damage until every choice is made [#2161 dri-023]', () => {
+    // #2161: "The attack's damage is calculated AFTER you finish making all choices." So mid-selection the
+    // board must be untouched — nothing is applied per pick. Asserted at 1 of 6 picks: still 0 damage, and
+    // the decision is still open. (Rotomancer applies 20 immediately after the first pick and logs a
+    // `damaged` event there — filed as RE-72.) This also underpins #2160: if damage landed incrementally a
+    // target could be KO'd mid-selection, which is exactly what that ruling forbids.
+    const GRASS_E = 'sve-009';
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-023'], en(GRASS_E, 1, 'a')) }),
+            player({ active: inPlay('B-act', ['dri-010']), bench: [inPlay('B-b0', ['dri-083'])] })),
+      [attack('A-act', 'Oil Salvo'), { actor: 'A' as const, type: 'choose' as const, target: 'B-act' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.B.active!.damage).toBe(0);   // not 20 — nothing applied yet
+    expect(r.state.players.B.bench[0].damage).toBe(0);
+    expect(types(r)).toContain('choose');               // the pick set is still open
+  });
+
   it('Team Rocket\'s Zapdos "Jamming Wing" moves the Energy to the OPPONENT\'s Bench [TA-147 dri-070]', () => {
     // "You may move an Energy from your opponent's Active Pokemon to 1 of THEIR Benched Pokemon."
     // Pre-fix the card resolved the destination with `StateUtils.getTarget(state, opponent, transfer.to)`,
