@@ -136,8 +136,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     // ── events ──
     expect(res.events).toEqual([
       { kind: 'evolved', actor: 'A', card: 'Kirlia', pokemon: 'Ralts' },
-      { kind: 'attachedEnergy', actor: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
-      { kind: 'usedAttack', actor: 'A', attack: 'Slap' },
+      { kind: 'energyAttached', actor: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
+      { kind: 'attackUsed', actor: 'A', attack: 'Slap' },
       { kind: 'damaged', player: 'B', target: RALTS, hp: 30 }, // significant: B's active (Ralts) took 30
       { kind: 'turnEnded', player: 'A' },
       { kind: 'turnStarted', player: 'B' },
@@ -198,7 +198,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.state.players.B.hand.length).toBe(1);
 
     expect(res.events).toEqual([
-      { kind: 'attachedEnergy', actor: 'A', card: 'Psychic Energy', pokemon: 'Ralts' },
+      { kind: 'energyAttached', actor: 'A', card: 'Psychic Energy', pokemon: 'Ralts' },
       { kind: 'retreated', actor: 'A', from: 'Ralts', to: 'Ralts' },
       { kind: 'turnEnded', player: 'A' },
       { kind: 'turnStarted', player: 'B' },

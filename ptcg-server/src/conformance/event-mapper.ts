@@ -40,17 +40,17 @@ export function mapLog(log: StateLog): NeutralEvent | undefined {
     case GameLog.LOG_PLAYER_EVOLVES_POKEMON:
       return { kind: 'evolved', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
     case GameLog.LOG_PLAYER_ATTACHES_CARD:
-      return { kind: 'attachedEnergy', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
+      return { kind: 'energyAttached', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
     case GameLog.LOG_PLAYER_PLAYS_TOOL:
-      return { kind: 'attachedTool', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
+      return { kind: 'toolAttached', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
     case GameLog.LOG_PLAYER_USES_ATTACK:
-      return { kind: 'usedAttack', actor: actor(log), attack: str(log, 'attack') };
+      return { kind: 'attackUsed', actor: actor(log), attack: str(log, 'attack') };
     case GameLog.LOG_PLAYER_RETREATS:
       return { kind: 'retreated', actor: actor(log), from: str(log, 'active'), to: str(log, 'benched') };
     case GameLog.LOG_PLAYER_NO_CARDS_IN_DECK:
       return { kind: 'deckedOut', actor: actor(log) };
     case GameLog.LOG_PLAYER_USES_ABILITY:
-      return { kind: 'usedAbility', actor: actor(log), ability: str(log, 'ability') };
+      return { kind: 'abilityUsed', actor: actor(log), ability: str(log, 'ability') };
     default:
       return undefined; // draw/damage/ko/turn/shuffle/gameOver are significant — see events.ts
   }

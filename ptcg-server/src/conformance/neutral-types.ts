@@ -458,12 +458,12 @@ export type NeutralEvent =
   // ── Informational trace — never compared ──
   | { kind: 'benchedBasic'; actor: NeutralPlayerId; card: string }
   | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'attachedEnergy'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'attachedTool'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'usedAttack'; actor: NeutralPlayerId; attack: string }
+  | { kind: 'energyAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'toolAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'attackUsed'; actor: NeutralPlayerId; attack: string }
   | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
   | { kind: 'deckedOut'; actor: NeutralPlayerId }
-  | { kind: 'usedAbility'; actor: NeutralPlayerId; ability: string };
+  | { kind: 'abilityUsed'; actor: NeutralPlayerId; ability: string };
 
 // ── Response envelope (design §4.1) ───────────────────────────────────────
 
