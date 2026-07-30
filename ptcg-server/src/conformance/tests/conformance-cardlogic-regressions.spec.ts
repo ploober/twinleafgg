@@ -676,6 +676,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(oil('dri-104').state.players.B.active!.damage).toBe(120);  // WEAK Grass x2  — was 240
     expect(oil('dri-145').state.players.B.active!.damage).toBe(120);  // RESIST Grass -30 — was 90
     expect(oil('dri-065').state.players.B.active!.damage).toBe(120);  // neutral control — unchanged
+    // The ORIGINAL bug report's own defender (twinleaf:1424941194147790922), added here because it
+    // cannot be guarded cross-engine: Gholdengo ex `par-139` is not in the rotomancer pool, so the
+    // repro scenario SKIPped on every run and never actually asserted anything. Same Grass -30 as
+    // dri-145; the report measured 90.
+    expect(oil('par-139').state.players.B.active!.damage).toBe(120); // RESIST Grass -30 — was 90
   });
 
   it('Arboliva ex "Oil Salvo" applies Granite Cave ONCE to the per-target total [TA-150/#2161 dri-023]', () => {
