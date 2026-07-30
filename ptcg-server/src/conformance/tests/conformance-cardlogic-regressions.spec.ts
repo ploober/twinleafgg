@@ -659,6 +659,68 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active).toBeNull();                // 130 KOs the 70-HP Ralts (awaiting promote)
   });
 
+  it('Core Memory grants "Geobuster" ONLY to Mega Zygarde ex [TA-152 por-070]', () => {
+    // "The Mega Zygarde ex this card is attached to can use the attack on this card." The Tool carries no
+    // ATTACH restriction, so it may sit on anything — it simply grants nothing to an ineligible holder.
+    // The bug was an offer-then-throw: CheckPokemonAttacksEffect pushed Geobuster whenever the Tool was
+    // attached, without checking the holder, and CheckAttackCostEffect then THREW CANNOT_USE_ATTACK for a
+    // non-Zygarde holder. Since costing runs while building the menu, computing legalActions blew up and
+    // the whole position became unprojectable (`invalidAction` on a legal board). That violates the
+    // invariant the fuzzer checks by name — an engine must never reject a move it just offered.
+    //
+    // Controlled across 7 Tools: Core Memory was the ONLY one that broke the board, so this is about the
+    // attack-granting path and not about Tools in general. Rotomancer offers Melmetal's own two attacks
+    // and nothing else — it is right.
+    const withCoreMemory = () => {
+      const A = player({ active: inPlay('A-act', ['scr-104'], en(METAL, 3, 'a')) });
+      A.active!.tools = [{ iid: 'a-tool', printing: 'por-070' }];
+      return step(board(A, player({ active: inPlay('B-act', ['meg-181']) })), []);
+    };
+    const r = withCoreMemory();
+    expect(r.status).toBe('awaitingAction');           // pre-fix: 'invalidAction' — board unprojectable
+    expect(attacksOffered(r)).toEqual(['Reforged Axe', 'Wrack Down']);  // pre-fix: threw before returning
+    expect(attacksOffered(r)).not.toContain('Geobuster');
+  });
+
+  it('Melmetal "Reforged Axe" discards ITS OWN Tool, not the opponent\'s [TA-151 scr-104]', () => {
+    // "Before doing damage, discard all Pokémon Tools from THIS POKÉMON. If you can't discard any, this
+    // attack does nothing." The implementation read `opponent.active` / `opponent.discard`, so the gate
+    // was decided by whether the DEFENDER wore a Tool — the wrong-perspective family (TA-121 Croconaw,
+    // TA-147 Team Rocket's Zapdos). With a Tool on the attacker: pre-fix 0 damage and the Tool still
+    // attached; correct is 250 and the Tool in the ATTACKER's discard.
+    //
+    // Invisible to the fuzzer until now for a measured reason: not one of the 7066 seed boards in the
+    // corpus had a Tool attached to anything, so the gate could only ever be evaluated on its dead side
+    // (docs/branch-scan-20260729.md). Found by the first tools/gen_branch_seeds.py second board.
+    const axe = (attackerTool: string | null, defenderTool: string | null) => {
+      // meg-181 Mega Latias ex: 280 HP, no weakness — 250 must LAND rather than KO, or the
+      // post-attack board reads `active: null` and the damage assertion cannot be made at all.
+      const A = player({ active: inPlay('A-act', ['scr-104'], en(METAL, 3, 'a')) });
+      const B = player({ active: inPlay('B-act', ['meg-181']) });
+      if (attackerTool) { A.active!.tools = [{ iid: 'a-tool', printing: attackerTool }]; }
+      if (defenderTool) { B.active!.tools = [{ iid: 'b-tool', printing: defenderTool }]; }
+      return step(board(A, B), [attack('A-act', 'Reforged Axe')]);
+    };
+    const TOOL = 'asc-181'; // Air Balloon — retreat-cost only, so it cannot perturb the damage number
+
+    // (a) Tool on the ATTACKER: the gate is satisfied — 250, and the Tool goes to the ATTACKER's discard.
+    const own = axe(TOOL, null);
+    expect(own.state.players.B.active!.damage).toBe(250);        // pre-fix: 0
+    expect(own.state.players.A.active!.tools.length).toBe(0);    // pre-fix: 1 (never discarded)
+    expect(own.state.players.A.discard.length).toBe(1);          // pre-fix: 0 — wrong player's pile
+    expect(own.state.players.B.discard.length).toBe(0);
+
+    // (b) Tool on the DEFENDER only: nothing to discard from THIS Pokémon, so the attack does nothing —
+    // and the defender's Tool must survive. Pre-fix this row was inverted (it dealt the 250).
+    const opp = axe(null, TOOL);
+    expect(opp.state.players.B.active!.damage).toBe(0);
+    expect(opp.state.players.B.active!.tools.length).toBe(1);
+
+    // (c) control: no Tool anywhere — the gate genuinely fails, 0 damage. Read the same before and
+    // after the fix, so a passing row (a) cannot be explained by the attack simply always firing.
+    expect(axe(null, null).state.players.B.active!.damage).toBe(0);
+  });
+
   it('Arboliva ex "Oil Salvo" ignores Weakness and Resistance [TA-150 dri-023]', () => {
     // "…do 20 damage to it. This damage isn't affected by Weakness or Resistance." Six picks = 120.
     // Pre-fix the flags were never set, and DAMAGE_OPPONENT_POKEMON routes an ACTIVE target through

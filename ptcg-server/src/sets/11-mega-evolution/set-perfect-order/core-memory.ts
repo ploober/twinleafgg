@@ -79,9 +79,28 @@ export class CoreMemory extends TrainerCard {
         }
       }*/
     }
-    if (effect instanceof CheckPokemonAttacksEffect && effect.player.active.getPokemonCard()?.tools.includes(this) &&
-      !effect.attacks.includes(this.attacks[0])) {
-      effect.attacks.push(this.attacks[0]);
+    // TA-152: VETO the granted attack for an ineligible holder, and do it here rather than by throwing.
+    //
+    // Two things were wrong. (1) Granting is not this card's job at all: the engine's
+    // `CheckPokemonAttacksEffect` CONSTRUCTOR already seeds the list from `player.active.tools[0].attacks`
+    // with no eligibility check, so Geobuster is offered the moment this Tool is attached to anything.
+    // (2) The old condition read `getPokemonCard()?.tools`, but an attached Tool lives on the *CardList*
+    // (`player.active.tools`) and never on the PokemonCard — so it was always false and the whole branch
+    // was dead code that never granted anything.
+    //
+    // The visible failure was worse than a phantom menu entry. `CheckAttackCostEffect` above THROWS
+    // CANNOT_USE_ATTACK for a non-Zygarde holder, and cost-checking runs while the legal-action menu is
+    // built (`src/conformance/legal-actions.ts` → `enoughEnergyFor`), so the throw escaped and the whole
+    // position came back `invalidAction` — an unprojectable board from a perfectly legal one, since Core
+    // Memory carries no attach restriction and may sit on any Pokémon, simply granting nothing. It also
+    // broke the invariant the fuzzer checks by name: never reject a move you just offered.
+    //
+    // Filtering keeps the menu honest and leaves the throw below as unreachable defence for a direct
+    // declare. Controlled across 7 Tools — this was the only offender; 3 more cards share the shape
+    // (`g-scope`, `g-booster`, `technical-machine-evolution`) but are outside the rotomancer pool.
+    if (effect instanceof CheckPokemonAttacksEffect &&
+      effect.player.active.getPokemonCard()?.name !== 'Mega Zygarde ex') {
+      effect.attacks = effect.attacks.filter(attack => attack !== this.attacks[0]);
     }
 
     if (effect instanceof AttackEffect && effect.attack === this.attacks[0]) {
