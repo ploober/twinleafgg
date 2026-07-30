@@ -1305,7 +1305,9 @@
     {
       "file": "set-destined-rivals/arboliva-ex.ts",
       "signatures": [
-        "operation: 'dealDamage'"
+        "operation: 'dealDamage'",
+        "effect.ignoreWeakness = true",
+        "#2161"
       ]
     },
     {

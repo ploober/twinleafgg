@@ -659,6 +659,43 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active).toBeNull();                // 130 KOs the 70-HP Ralts (awaiting promote)
   });
 
+  it('Arboliva ex "Oil Salvo" ignores Weakness and Resistance [TA-150 dri-023]', () => {
+    // "…do 20 damage to it. This damage isn't affected by Weakness or Resistance." Six picks = 120.
+    // Pre-fix the flags were never set, and DAMAGE_OPPONENT_POKEMON routes an ACTIVE target through
+    // DealDamageEffect (the W/R-applying path; Bench targets go to PutDamageEffect and were always
+    // right). Measured pre-fix: Grass-WEAK took 240, Grass-RESISTANT took 90. The neutral row is the
+    // control that isolates it — it read 120 both before and after, so a passing weak/resist row cannot
+    // be explained by the attack simply doing less damage. Rotomancer was correct on all three.
+    const GRASS_E = 'sve-009';
+    const oil = (defender: string) => step(
+      board(player({ active: inPlay('A-act', ['dri-023'], en(GRASS_E, 1, 'a')) }),
+            player({ active: inPlay('B-act', [defender]) })),
+      [attack('A-act', 'Oil Salvo'), ...Array.from({ length: 6 }, () => (
+        { actor: 'A' as const, type: 'choose' as const, target: 'B-act' }))],
+    );
+    expect(oil('dri-104').state.players.B.active!.damage).toBe(120);  // WEAK Grass x2  — was 240
+    expect(oil('dri-145').state.players.B.active!.damage).toBe(120);  // RESIST Grass -30 — was 90
+    expect(oil('dri-065').state.players.B.active!.damage).toBe(120);  // neutral control — unchanged
+  });
+
+  it('Arboliva ex "Oil Salvo" applies Granite Cave ONCE to the per-target total [TA-150/#2161 dri-023]', () => {
+    // Compendium #2161 (Destined Rivals FAQ, TPCi Rules Team 2025-05-29) on this exact attack: "Oil Salvo
+    // is a single attack. The attack's damage is calculated AFTER you finish making all choices, so all
+    // damage modifiers are applied to the TOTAL damage for each Pokémon." So six picks on a Steven's
+    // Pokémon under Granite Cave dri-166 = 120 total, minus 30 ONCE = 90 — NOT six 20s each reduced by 30
+    // (which would clamp to 0). This is the guard that would have caught the "apply six discrete hits"
+    // change I nearly landed as TA-148 (retracted; see arboliva-ex.ts).
+    const GRASS_E = 'sve-009';
+    const b = board(player({ active: inPlay('A-act', ['dri-023'], en(GRASS_E, 1, 'a')) }),
+                    player({ active: inPlay('B-act', ['dri-145']) }));  // Steven's Metagross ex, 340 HP
+    const r = step(
+      { ...b, stadium: { iid: 'stad', printing: 'dri-166', owner: 'A' } },
+      [attack('A-act', 'Oil Salvo'), ...Array.from({ length: 6 }, () => (
+        { actor: 'A' as const, type: 'choose' as const, target: 'B-act' }))],
+    );
+    expect(r.state.players.B.active!.damage).toBe(90);
+  });
+
   it('Team Rocket\'s Zapdos "Jamming Wing" moves the Energy to the OPPONENT\'s Bench [TA-147 dri-070]', () => {
     // "You may move an Energy from your opponent's Active Pokemon to 1 of THEIR Benched Pokemon."
     // Pre-fix the card resolved the destination with `StateUtils.getTarget(state, opponent, transfer.to)`,

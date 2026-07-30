@@ -48,10 +48,26 @@ export class Arbolivaex extends PokemonCard {
   public fullName: string = 'Arboliva ex DRI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Oil Machine Gun
+    // Oil Salvo (attack index 0 — the "Oil Machine Gun" label this comment used to carry was wrong)
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = effect.opponent;
+
+      // TA-150: *"This damage isn't affected by Weakness or Resistance."* This was NOT implemented, and
+      // the damage reached the Active through `DAMAGE_OPPONENT_POKEMON`, which routes an Active target to
+      // `DealDamageEffect` — the W/R-applying path (Bench targets go to `PutDamageEffect` and were always
+      // correct, which is why only Active hits were wrong). Measured against a 6-pick, 120-damage Oil
+      // Salvo with no stadium: a Grass-WEAK defender (Cynthia's Garchomp ex `dri-104`, ×2) took **240**
+      // and a Grass-RESISTANT one (Steven's Metagross ex `dri-145`, −30) took **90**, where both should
+      // take 120 — a neutral defender (Cetitan ex `dri-065`) correctly took 120 and isolates it.
+      // Rotomancer was right on all three. Doubling damage on a weak defender is game-deciding.
+      //
+      // The documented idiom (`src/sets/AGENTS-patterns.md`): set both flags on the AttackEffect. The
+      // `DealDamageEffect` reducer reads them off `effect.attackEffect`
+      // (`effect-reducers/attack-effect.ts`), so setting them here reaches every hit this attack deals,
+      // including the ones applied later inside the prompt callback (`effect` is captured by closure).
+      effect.ignoreWeakness = true;
+      effect.ignoreResistance = true;
 
       const maxAllowedDamage: DamageMap[] = [];
       opponent.forEachPokemon(
