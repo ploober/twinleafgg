@@ -1472,6 +1472,13 @@
         "TA-168",
         "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this"
       ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-171",
+        "player.switchPokemon(cardList, store, state);"
+      ]
     }
   ]
 }
