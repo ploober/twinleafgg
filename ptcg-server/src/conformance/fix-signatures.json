@@ -1479,6 +1479,20 @@
         "TA-171",
         "player.switchPokemon(cardList, store, state);"
       ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-172",
+        "if (player.active === activeBefore) {"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-173",
+        "return player.bench.some(b => b.cards.length > 0);"
+      ]
     }
   ]
 }
