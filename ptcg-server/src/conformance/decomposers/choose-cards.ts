@@ -107,7 +107,17 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
         if (secret) {
           legalActions.push({ type: 'pick', target: iid });
         } else if (isDiscardPick(prompt)) {
-          legalActions.push({ type: 'discard', owner: playerIdToActor(state, prompt.player.id), target: iid } as LegalAction);
+          // CF-8: `owner` is WHOSE CARD is being discarded, not who is being asked — `actor` already
+          // carries the chooser. Deriving it from `prompt.player` conflates the two and is only ever
+          // right when a player discards their own cards, which is the common case and is why it
+          // survived. Turtonator por-017's "Shell Spikes" is the discriminator: its controller
+          // chooses (compendium #2310, "YOU will get to discard your choice") an Energy attached to
+          // the OPPONENT's Attacking Pokémon, so actor and owner are opposite sides. This is the
+          // RE-52 owner-from-iid class, in the same shape, on our side. Fall back to the prompt's
+          // player only if the card is not in the import-origin map.
+          const cardOwnerIdx = ctx.cardOwner.get(card);
+          const ownerId = cardOwnerIdx !== undefined ? state.players[cardOwnerIdx].id : prompt.player.id;
+          legalActions.push({ type: 'discard', owner: playerIdToActor(state, ownerId), target: iid } as LegalAction);
         } else {
           legalActions.push({ type: 'choose', target: iid });
         }
