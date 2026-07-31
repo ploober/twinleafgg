@@ -1,5 +1,5 @@
 {
-  "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly \u2014 the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` \u2014 it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
+  "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly — the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` — it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
   "fixes": [
     {
       "file": "set-black-bolt-white-flare/excadrill-ex.ts",
@@ -89,7 +89,7 @@
       "file": "set-destined-rivals/teal-mask-ogerpon.ts",
       "signatures": [
         "if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre\\'s Hammer')) {",
-        "text: 'During your next turn, this Pok\u00e9mon can\\'t use Ogre\\'s Hammer.'"
+        "text: 'During your next turn, this Pokémon can\\'t use Ogre\\'s Hammer.'"
       ]
     },
     {
@@ -206,7 +206,7 @@
     {
       "file": "set-phantasmal-flames/paldean-tauros.ts",
       "signatures": [
-        "text: 'This attack does 40 damage for each of your Pok\u00e9mon that has \"Tauros\" in its name that has any damage counters on it.',",
+        "text: 'This attack does 40 damage for each of your Pokémon that has \"Tauros\" in its name that has any damage counters on it.',",
         "if (card && card.name.includes('Tauros') && cardList.damage > 0) {"
       ]
     },
@@ -214,7 +214,7 @@
       "file": "set-prismatic-evolution/tyranitar-ex.ts",
       "signatures": [
         "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
-        "text: 'This attack does 50 damage for each Energy attached to this Pok\u00e9mon.'",
+        "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ]
     },
@@ -635,7 +635,7 @@
       "file": "set-mega-evolution/marshadow.ts",
       "signatures": [
         "&& state.phase === GamePhase.ATTACK) {",
-        "const koOwner = effect.player;                            // opponent \u2014 loses the KO'd Pok\u00e9mon"
+        "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
       ]
     },
     {
@@ -1077,7 +1077,7 @@
     {
       "file": "set-surging-sparks/tatsugiri-ex.ts",
       "signatures": [
-        "The top-of-deck search whiffs"
+        "TA-131: declarable with an empty deck (rulebook p.20)"
       ]
     },
     {
@@ -1379,6 +1379,20 @@
       ]
     },
     {
+      "file": "set-surging-sparks/tatsugiri-ex.ts",
+      "signatures": [
+        "TA-166",
+        "if (putBack === 0) {"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-persian-ex.ts",
+      "signatures": [
+        "TA-166",
+        "if (putBack > 0) {"
+      ]
+    },
+    {
       "file": "set-perfect-order/salazzle-ex.ts",
       "signatures": [
         "an empty deck is still a deck you searched"
@@ -1422,6 +1436,27 @@
       "signatures": [
         "{ min: 1, max: 3, allowCancel: false }",
         "ability: 'Amulet of Hope'"
+      ]
+    },
+    {
+      "file": "set-perfect-order/salazzle-ex.ts",
+      "signatures": [
+        "TA-163",
+        "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/stoutland.ts",
+      "signatures": [
+        "TA-164",
+        "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mystery-garden.ts",
+      "signatures": [
+        "TA-161",
+        "if (psychicPokemon < player.hand.cards.length || player.deck.cards.length === 0) {"
       ]
     },
     {

@@ -62,7 +62,14 @@ export class Salazzleex extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
         {},
-        { min: 0, max: maxCards, allowCancel: false }
+        // TA-163 / compendium #2315, this exact attack: "If I use 'Nasty Plot' and don't find a card
+        // that I want in my deck, can I choose to take zero cards? — No, you have to take at least
+        // one card if there are any cards in your deck." An UNTYPED search ("up to 2 cards", kind
+        // unspecified) floors at 1 — #2301's exception clause — and being inside an ATTACK does not
+        // buy back the zero: the attack licence covers "up to X", the untyped carve-out is the
+        // exception to it, so the carve-out is checked first. `Math.min(1, …)` keeps it satisfiable
+        // if the deck somehow holds nothing.
+        { min: Math.min(1, maxCards), max: maxCards, allowCancel: false }
       ), selected => {
         cards = selected || [];
         player.deck.moveCardsTo(cards, player.hand);

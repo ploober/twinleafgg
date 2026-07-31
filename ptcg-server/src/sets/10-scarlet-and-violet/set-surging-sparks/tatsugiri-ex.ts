@@ -74,8 +74,14 @@ export class Tatsugiriex extends PokemonCard {
 
       const player = effect.player;
 
-      // TA-131: declarable with an empty deck (rulebook p.20). The top-of-deck search whiffs (0 cards
-      // moved) and the trailing shuffle still fires (CF-9/TA-126).
+      // TA-131: declarable with an empty deck (rulebook p.20) — the top-of-deck look simply whiffs.
+      // TA-166 / CF-9 put-back boundary: the trailing shuffle does NOT fire when nothing goes back
+      // into the deck. #2377 (April 2026 rulebook update, with #1022 and #1968 reversed the same
+      // day): "you do not shuffle since you are not putting any cards back into the deck." CF-9's
+      // unconditional shuffle is about a deck SEARCH (#2171) and does not reach a put-back — we had
+      // generalised across that boundary and asked rotomancer to match us, which was wrong in both
+      // directions. Note this covers TWO ways of reaching "nothing to put back": an empty deck, and
+      // the player benching every Pokemon they looked at (#2377's own board).
       // Check if bench has open slots
       const openSlots = player.bench.filter(b => b.cards.length === 0);
 
@@ -104,7 +110,11 @@ export class Tatsugiriex extends PokemonCard {
           deckTop.moveCardTo(card, openSlots[index]);
           openSlots[index].pokemonPlayedTurn = state.turn;
         });
+        const putBack = deckTop.cards.length;
         deckTop.moveTo(player.deck);
+        if (putBack === 0) {
+          return state;   // nothing returned to the deck → no shuffle (TA-166, #2377)
+        }
 
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);

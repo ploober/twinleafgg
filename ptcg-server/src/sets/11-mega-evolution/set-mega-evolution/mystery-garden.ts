@@ -11,6 +11,23 @@ function* useStadium(next: Function, store: StoreLike, state: State, effect: Use
     throw new GameError(GameMessage.CANNOT_USE_STADIUM);
   }
 
+  let psychicPokemon = 0;
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+    if (card instanceof PokemonCard && card.cardType === CardType.PSYCHIC) {
+      psychicPokemon++;
+    }
+  });
+
+  // TA-161 / compendium #2232 (this card): "Can I use Mystery Garden if I won't be able to draw
+  // cards? — No, you can't just discard an Energy card for no draw." Judge the draw against the hand
+  // the EFFECT will see, not the one the player is holding: the discard is a cost, not the effect
+  // (#1004), so one card is already gone by the time the draw target is compared. Hence
+  // `>= hand.length` and not `> hand.length` — with 1 Psychic in play and the Energy as the only
+  // card in hand, this reads inert before the payment and draws 1 after it.
+  if (psychicPokemon < player.hand.cards.length || player.deck.cards.length === 0) {
+    throw new GameError(GameMessage.CANNOT_USE_STADIUM);
+  }
+
   let cards: Card[] = [];
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
@@ -28,13 +45,6 @@ function* useStadium(next: Function, store: StoreLike, state: State, effect: Use
   }
 
   player.hand.moveCardsTo(cards, player.discard);
-
-  let psychicPokemon = 0;
-  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-    if (card instanceof PokemonCard && card.cardType === CardType.PSYCHIC) {
-      psychicPokemon++;
-    }
-  });
 
   const cardsToDraw = psychicPokemon - player.hand.cards.length;
   if (cardsToDraw > 0) {

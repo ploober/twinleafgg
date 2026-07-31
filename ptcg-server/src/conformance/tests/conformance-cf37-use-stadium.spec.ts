@@ -193,6 +193,51 @@ describe('Conformance — CF-37 useStadium (activated Stadium effects)', () => {
     expect(types(step(spent.state, []))).not.toContain('useStadium');
   });
 
+  it('Mystery Garden is refused when the draw would be zero — cost judged FIRST [TA-161 meg-122, #2232]', () => {
+    // "…may discard 1 Energy from their hand. If they do, draw until they have as many cards in hand
+    // as they have Psychic Pokémon in play." Compendium #2232, this card: "Can I use Mystery Garden
+    // if I won't be able to draw cards? — No, you can't just discard an Energy card for no draw."
+    // The subtlety that makes this more than a null check: the discard is a COST, not the effect
+    // (#1004), so achievability is judged against the hand the effect will see — one card smaller.
+    // With 1 Psychic in play and the Energy as the only card in hand, the draw reads 0 before the
+    // payment and 1 after it, so a pre-cost test would wrongly refuse a legal use. Found mirroring
+    // rotomancer's own #2232 fix, which their side made after reading CF-37's condition (d).
+    const PSY = 'ssp-087';   // Dedenne — a Psychic Basic
+    const mk = (active: string, bench: string[], hand: string[]) => board(
+      player({
+        active: inPlay('A-act', active),
+        bench: bench.map((p, i) => inPlay(`A-b${i}`, p)),
+        hand: cards('ah', hand),
+        deck: Array.from({ length: 6 }, (_, i) => ({ iid: `ad${i}`, printing: WATER })),
+      }),
+      player({ active: inPlay('B-act', 'ssp-087') }),
+      'meg-122',
+    );
+    const offered = (st: NeutralState) => types(step(st, [])).includes('useStadium');
+
+    expect(offered(mk('asc-004', [], ['sve-005']))).toBe(false);          // 0 Psychic → draws nothing
+    expect(offered(mk(PSY, [], ['sve-005', 'asc-004', 'asc-004']))).toBe(false); // hand too big
+    // Empty deck → nothing to draw. Built through `mk` and then emptied, because `board()`
+    // back-fills a 1-card deck for any side that would otherwise have none.
+    const emptyDeck = mk(PSY, [PSY], ['sve-005']);
+    emptyDeck.players.A.deck = [];
+    expect(offered(emptyDeck)).toBe(false);
+    expect(offered(mk(PSY, [PSY], ['asc-004']))).toBe(false);             // no Energy to pay the cost
+
+    // …and the two live boards stay live, including the post-cost one.
+    expect(offered(mk(PSY, [], ['sve-005']))).toBe(true);
+    expect(offered(mk(PSY, [PSY], ['sve-005']))).toBe(true);
+
+    // Driving the post-cost board really does draw: 1 Psychic, hand emptied by the cost → draw 1.
+    const r = step(mk(PSY, [], ['sve-005']), [
+      { actor: 'A', type: 'useStadium' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'ah0' },
+    ]);
+    expect(r.state.players.A.discard.map(c => c.printing)).toEqual(['sve-005']);
+    expect(r.state.players.A.hand.length).toBe(1);
+    expect(r.state.players.A.deck.length).toBe(5);
+  });
+
   it('the NON-owner gets their own use on their own turn ("each player\'s turn")', () => {
     const b = board(
       player({ active: inPlay('A-act', 'asc-004'), hand: cards('ah', [WATER, 'asc-004']), deck: cards('ad', [WATER, WATER]) }),

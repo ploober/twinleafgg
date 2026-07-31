@@ -40,14 +40,15 @@ export class Stoutland extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (player.discard.cards.length === 0) {
-        return state;
-      }
-
+      // TA-165: the flips are UNCONDITIONAL — "Flip 3 coins. Put a number of cards up to the number
+      // of heads from your discard pile into your hand." An empty discard bounds what you may TAKE,
+      // it does not cancel the flipping. The old early-return skipped the coin flips entirely, which
+      // is observable on the wire (three `flip` system decisions and their events simply vanished)
+      // and diverged from rotomancer, which flips. The guard belongs after the flips.
       MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 3, results => {
         const headsCount = results.filter(r => r).length;
 
-        if (headsCount === 0) {
+        if (headsCount === 0 || player.discard.cards.length === 0) {
           return;
         }
 
@@ -57,7 +58,11 @@ export class Stoutland extends PokemonCard {
           GameMessage.CHOOSE_CARD_TO_HAND,
           player.discard,
           {},
-          { min: 0, max: maxCards, allowCancel: false }
+          // TA-164 / compendium #2199, this exact attack: "…can I choose to take 0 cards? — No, you
+          // must take at least one if you are able to." A COMPUTED ceiling ("up to the number of
+          // heads") carries the same floor as a fixed one; the ceiling expression is not what
+          // decides it. `Math.min(1, …)` keeps it satisfiable when the discard is empty.
+          { min: Math.min(1, maxCards), max: maxCards, allowCancel: false }
         ), selected => {
           if (selected && selected.length > 0) {
             player.discard.moveCardsTo(selected, player.hand);

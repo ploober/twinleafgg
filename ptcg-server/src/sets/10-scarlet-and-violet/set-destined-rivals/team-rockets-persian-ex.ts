@@ -8,8 +8,13 @@ function* useHaughtyOrders(next: Function, store: StoreLike, state: State, effec
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
-  // TA-131: declarable even if the opponent's deck is empty (rulebook p.20). The reveal whiffs (0
-  // cards shown, no attack to copy) and the opponent's deck is still shuffled (CF-9/TA-126).
+  // TA-131: declarable even if the opponent's deck is empty (rulebook p.20) — the reveal whiffs.
+  // TA-166 / CF-9 put-back boundary: with an empty deck nothing is revealed and nothing goes back,
+  // so there is NO shuffle. #2377 (April 2026 rulebook update; #1022 and #1968 reversed the same
+  // day): "you do not shuffle since you are not putting any cards back into the deck." CF-9's
+  // unconditional shuffle governs a deck SEARCH (#2171) and does not reach a put-back. NOTE the
+  // distinction that keeps this correct: zero CANDIDATES is not zero CARDS — revealing ten cards
+  // none of which has a copyable attack still puts ten back, so that board DOES shuffle.
   const opponentTop10 = new CardList();
   opponent.deck.moveTo(opponentTop10, Math.min(10, opponent.deck.cards.length));
   const toppedPokemon = opponentTop10.cards.filter(card => card.superType === SuperType.POKEMON) as PokemonCard[];
@@ -19,8 +24,11 @@ function* useHaughtyOrders(next: Function, store: StoreLike, state: State, effec
     new ShowCardsPrompt(player.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, { allowCancel: false }),
     new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, { allowCancel: false }),
   ], results => {
+    const putBack = opponentTop10.cards.length;
     opponentTop10.moveTo(opponent.deck);
-    SHUFFLE_DECK(store, state, opponent);
+    if (putBack > 0) {
+      SHUFFLE_DECK(store, state, opponent);
+    }
   });
 
   // if there's no pokemon in the top ten cards, move on
