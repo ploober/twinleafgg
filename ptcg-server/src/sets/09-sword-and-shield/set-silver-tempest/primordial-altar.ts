@@ -51,16 +51,16 @@ export class PrimordialAltar extends TrainerCard {
       deckTop.cards, // Fix error by changing toArray() to cards
       { allowCancel: true },
     ), yes => {
-
-      if (yes !== null) {
-
-        if (yes) {
-          // Add card to hand
-          deckTop.moveTo(player.discard);
-        } else {
-          // Discard card
-          deckTop.moveToTopOfDestination(player.deck);
-        }
+      // TA-160: ConfirmCardsPrompt is `Prompt<true>` — its result is `true` (confirmed) or `null`
+      // (declined), NEVER `false`. So the old `if (yes !== null)` guard swallowed every decline and
+      // the inner `else` was dead code: the revealed card, already moved out of the deck into the
+      // temp `deckTop` list before prompting, was left there and VANISHED from the game (a
+      // card-conservation break, not merely a wrong zone). Branch on truthiness so the decline path
+      // is the put-back.
+      if (yes) {
+        deckTop.moveTo(player.discard);              // "They may discard that card." — they did
+      } else {
+        deckTop.moveToTopOfDestination(player.deck); // declined: it goes back on top, face-down
       }
     });
   }

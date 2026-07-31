@@ -8,7 +8,7 @@ import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
 import {
   AttackAction, PassTurnAction, RetreatAction as RetreatGameAction,
-  UseAbilityAction as UseAbilityGameAction
+  UseAbilityAction as UseAbilityGameAction, UseStadiumAction as UseStadiumGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
@@ -152,6 +152,15 @@ function dispatchPlayTrainer(game: ImportedGame, action: { actor: NeutralPlayerI
   game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
 }
 
+/**
+ * Activate the in-play Stadium (CF-37). No card/source to resolve — the engine's UseStadiumAction
+ * carries only the actor, because there is exactly one shared Stadium slot.
+ */
+function dispatchUseStadium(game: ImportedGame, action: { actor: NeutralPlayerId }): void {
+  const player = game.state.players[actorIndex(action.actor)];
+  game.store.dispatch(new UseStadiumGameAction(player.id));
+}
+
 function dispatchUseAbility(game: ImportedGame, action: UseAbilityAction): void {
   const player = game.state.players[actorIndex(action.actor)];
   const sourceCard = lookupCard(game, action.source, 'useAbility.source');
@@ -174,6 +183,7 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
     case 'playStadium':
       dispatchPlayTrainer(game, action as { actor: NeutralPlayerId; type: string; card: string }); break;
     case 'useAbility': dispatchUseAbility(game, action as UseAbilityAction); break;
+    case 'useStadium': dispatchUseStadium(game, action as { actor: NeutralPlayerId }); break;
     default:
       // A pending-only action type (takePrize, promoteBench, choose, …) arriving with no
       // matching pending open is an ILLEGAL move by the client, not an engine fault — reject

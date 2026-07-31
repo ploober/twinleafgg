@@ -4,7 +4,10 @@ import { TrainerCard } from '../game/store/card/trainer-card';
 import { EnergyCard } from '../game/store/card/energy-card';
 import { GameError } from '../game/game-error';
 import { Store } from '../game/store/store';
-import { UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction } from '../game/store/actions/game-actions';
+import {
+  UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction,
+  UseStadiumAction as UseStadiumGameAction
+} from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { CardTarget, PlayerType, SlotType } from '../game/store/actions/play-card-action';
 import { deepClone } from '../utils/utils';
@@ -335,6 +338,81 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
   return out;
 }
 
+/**
+ * Every card in every zone, by zone, as a comparable string — enough to tell whether an effect MOVED
+ * or CHANGED anything observable. Card ids (not iids) are fine here: both sides of the comparison are
+ * the same game, so a difference in the per-zone id lists means cards actually moved.
+ */
+function zoneFingerprint(state: State): string {
+  const ids = (list: { cards: Card[] }) => list.cards.map(c => c.id).join(',');
+  return state.players.map(p => [
+    ids(p.hand), ids(p.deck), ids(p.discard), ids(p.lostzone), ids(p.stadium), ids(p.supporter),
+    p.prizes.map(ids).join('|'),
+    [p.active, ...p.bench].map(s =>
+      `${ids(s)}/${s.tools.map(t => t.id).join(',')}/${s.damage}/${s.specialConditions.join(',')}`
+    ).join('|'),
+  ].join(';')).join('#');
+}
+
+/**
+ * Dry-run the Stadium activation on a CLONED store — the Stadium analog of `abilityProbeAccepts`,
+ * and the detector for "does this Stadium even HAVE an activated effect".
+ *
+ * A GameError means don't offer, as with the ability/attack probes. That alone covers most of the
+ * ground, because twinleaf's convention is that a Stadium which cannot be activated THROWS
+ * CANNOT_USE_STADIUM — both the purely passive kind (Beach Court `svi-167`) and an activated one
+ * whose effect is inert on this board (Levincia with no Basic [L] in the discard; Surfing Beach with
+ * no benched [W]), which is CF-33's zero-achievable rule arriving through the engine's own gate.
+ *
+ * But the convention is not universal: 4 of the 26 in-pool Stadium printings are passive and simply
+ * DON'T answer UseStadiumEffect (Neutralization Zone, Forest of Vitality, Risky Ruins, Festival
+ * Grounds), so the dispatch "succeeds" having done nothing but burn the once-per-turn flag. Offering
+ * that is a phantom action — nothing to decide, nothing changed — so a silent no-op is also a
+ * not-offered. This is deliberately fixed in the ADAPTER rather than by bolting a throw onto ~100
+ * passive Stadium cards: the engine under test is not wrong here (its real client never shows the
+ * button), the wire projection is what needs the gate.
+ *
+ * "It did something" = a decision opened, OR it narrated beyond the one use-Stadium log line, OR a
+ * card moved / a Pokemon's damage or conditions changed.
+ */
+function stadiumProbeAccepts(state: State, player: Player): boolean {
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[state.players.indexOf(player)];
+  const before = zoneFingerprint(probe.state);
+  const logsBefore = probe.state.logs.length;
+  try {
+    probe.dispatch(new UseStadiumGameAction(cloned.id));
+    for (let guard = 0; guard < 32; guard++) {
+      const pending = probe.state.prompts.find(p => p.result === undefined);
+      if (pending === undefined) { break; }
+      if (pending.type !== 'WaitPrompt') { return true; }   // a genuine decision opened
+      probe.dispatch(new ResolvePromptAction(pending.id, true));
+    }
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+  // Ran to completion with nothing left to decide: offer only if it actually did something. The
+  // single LOG_PLAYER_USES_STADIUM line the game reducer always writes doesn't count.
+  return probe.state.logs.length > logsBefore + 1 || zoneFingerprint(probe.state) !== before;
+}
+
+/**
+ * The in-play Stadium's activated effect (CF-37) — one menu entry, no card/source, because there is
+ * exactly one shared Stadium slot. Gated by mirroring the reducer's own checks (a Stadium in play and
+ * this player's use unspent) plus the probe above. The per-turn flag is reset when a player PLAYS a
+ * new Stadium (`play-trainer-effect.ts`), so "use → replace → use again" is offered — the cap rides
+ * on the physical card, per compendium #926/#975.
+ */
+function stadiumMenu(state: State, player: Player): LegalAction[] {
+  if (StateUtils.getStadiumCard(state) === undefined) { return []; }
+  if (player.stadiumUsedTurn === state.turn) { return []; }
+  if (!stadiumProbeAccepts(state, player)) { return []; }
+  return [{ type: 'useStadium' }];
+}
+
 // ── Assembly ─────────────────────────────────────────────────────────────────
 
 /**
@@ -359,6 +437,7 @@ export function topLevelMenu(game: ImportedGame): PendingDecision | null {
     ...attackMenu(game.store, state, player, game.ctx),
     ...retreatMenu(game.store, state, player),
     ...abilityMenu(game.store, state, player, game.ctx),
+    ...stadiumMenu(state, player),
     { type: 'endTurn' },
   ];
 

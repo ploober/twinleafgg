@@ -131,6 +131,13 @@ export interface PlayerFlags {
   supporterPlayedThisTurn: boolean;
   energyAttachedThisTurn: boolean;
   stadiumPlayedThisTurn: boolean;
+  /** CF-37: this player has already ACTIVATED the in-play Stadium's once-per-turn effect this turn —
+   *  distinct from `stadiumPlayedThisTurn` (placing one from hand). Live reader: the `useStadium`
+   *  legality gate. OPTIONAL and emitted only when true, so the ~350 pre-CF-37 flag fixtures stay
+   *  valid and the round-trip is symmetric with the `?? false` ingest (the CF-17 `prizesTaken`
+   *  precedent). Without it a mid-turn state cannot say "the use is spent" and a re-import silently
+   *  hands the player a second use. Reset when the player PLAYS a new Stadium (#926/#975). */
+  stadiumUsedThisTurn?: boolean;
   retreatedThisTurn: boolean;
   cardsPlayedThisTurn: number;
   prizesTakenThisTurn: number;
@@ -292,6 +299,17 @@ export interface PlayStadiumAction {
   card: string;
 }
 
+/**
+ * Activate the in-play Stadium's once-per-turn effect (CF-37). No `card`/`source`: there is exactly
+ * one Stadium slot, shared by both players, so the card is not the actor's to choose — and CF-32's
+ * rule (the verb names the OPERATION) rules out overloading `useAbility`, which would need a
+ * Pokemon-shaped `source` a Stadium does not have.
+ */
+export interface UseStadiumAction {
+  actor: NeutralPlayerId;
+  type: 'useStadium';
+}
+
 export interface UseAbilityAction {
   actor: NeutralPlayerId;
   type: 'useAbility';
@@ -423,6 +441,7 @@ export type NeutralAction =
   | PlaySupporterAction
   | PlayStadiumAction
   | UseAbilityAction
+  | UseStadiumAction
   | ChooseAction
   | PlaceCounterAction
   | PromoteBenchAction
@@ -463,7 +482,10 @@ export type NeutralEvent =
   | { kind: 'attackUsed'; actor: NeutralPlayerId; attack: string }
   | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
   | { kind: 'deckedOut'; actor: NeutralPlayerId }
-  | { kind: 'abilityUsed'; actor: NeutralPlayerId; ability: string };
+  | { kind: 'abilityUsed'; actor: NeutralPlayerId; ability: string }
+  // CF-37: the Stadium activation fired. `stadium` is the card's NAME (the log carries a display
+  // name, like every other informational event here), not an iid.
+  | { kind: 'stadiumUsed'; actor: NeutralPlayerId; stadium: string };
 
 // ── Response envelope (design §4.1) ───────────────────────────────────────
 
@@ -507,6 +529,7 @@ export type LegalAction =
   | { type: 'retreat'; to: number }
   | { type: 'declareAttack'; source: string; name: string }
   | { type: 'useAbility'; source: string; ability: string }
+  | { type: 'useStadium' }
   | { type: 'endTurn' };
 
 /** The pending shape decomposers/menus build internally — `legalActions` carry no `actor`. */

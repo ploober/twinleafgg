@@ -51,6 +51,11 @@ export function mapLog(log: StateLog): NeutralEvent | undefined {
       return { kind: 'deckedOut', actor: actor(log) };
     case GameLog.LOG_PLAYER_USES_ABILITY:
       return { kind: 'abilityUsed', actor: actor(log), ability: str(log, 'ability') };
+    // CF-37. The activated-Stadium analog of `abilityUsed` — an activated effect fired, so the trace
+    // names it. (LOG_PLAYER_PLAYS_STADIUM stays unmapped: PLACING a Stadium is fully visible in the
+    // projection, whereas the USE is only visible through the flag + the menu.)
+    case GameLog.LOG_PLAYER_USES_STADIUM:
+      return { kind: 'stadiumUsed', actor: actor(log), stadium: str(log, 'stadium') };
     default:
       return undefined; // draw/damage/ko/turn/shuffle/gameOver are significant — see events.ts
   }

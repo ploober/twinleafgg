@@ -257,6 +257,7 @@ class Importer {
     player.energyPlayedTurn = ps.flags.energyAttachedThisTurn ? turn : 0;
     player.supporterTurn = ps.flags.supporterPlayedThisTurn ? 1 : 0;   // counter, not a turn number
     player.stadiumPlayedTurn = ps.flags.stadiumPlayedThisTurn ? turn : 0;
+    player.stadiumUsedTurn = ps.flags.stadiumUsedThisTurn ? turn : 0;   // CF-37
     player.retreatedTurn = ps.flags.retreatedThisTurn ? turn : 0;
     player.prizesTakenThisTurn = ps.flags.prizesTakenThisTurn;
     player.prizesTakenLastTurn = ps.flags.prizesTakenLastTurn;
@@ -429,6 +430,9 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
     supporterPlayedThisTurn: player.supporterTurn > 0,
     energyAttachedThisTurn: player.energyPlayedTurn === turn,
     stadiumPlayedThisTurn: player.stadiumPlayedTurn === turn,
+    // CF-37: emitted only when spent (optional field — same omit-the-default treatment as
+    // `prizesTaken`, so the pre-CF-37 fixtures round-trip unchanged).
+    ...(player.stadiumUsedTurn === turn ? { stadiumUsedThisTurn: true } : {}),
     retreatedThisTurn: player.retreatedTurn === turn,
     cardsPlayedThisTurn: 0, // deferred: no twinleaf per-turn counter yet
     prizesTakenThisTurn: player.prizesTakenThisTurn,
