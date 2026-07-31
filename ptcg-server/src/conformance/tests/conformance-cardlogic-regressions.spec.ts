@@ -688,7 +688,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
 
   it('Amulet of Hope floors its untyped search at ONE card [TA-157 ssp-162, #2061] and its trigger no longer 500s the driver [TA-158]', () => {
     // Compendium #2061 (this exact card): "You must take at least 1 card with Amulet of Hope when it
-    // applies" — the untyped-search exception (#6242; roto's #968/#2301), which roto's third note
+    // applies" — the untyped-search exception (#2301's final clause; roto's #968), which roto's third note
     // applied to THEIR engine and we then found mirrored here: min:0 let the owner whiff a mandatory
     // search. Two defects, one board:
     //   TA-157 — min:0 → min:1 (the decline must NOT be offered at 0 picks; a stop appears after 1).
@@ -726,8 +726,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r3.state.players.A.hand.length).toBe(1);      // took exactly the 1 picked card
   });
 
-  it('Minccino "Cleaning Up" lets the player discard ZERO Tools [TA-155 tef-136, #6242]', () => {
-    // Compendium #6242 (Ascended Heroes rulebook): "For effects of attacks, if a card uses the phrase
+  it('Minccino "Cleaning Up" lets the player discard ZERO Tools [TA-155 tef-136, #2301]', () => {
+    // Compendium #2301 (Ascended Heroes rulebook): "For effects of attacks, if a card uses the phrase
     // 'up to X' you can choose any number between 0 and the maximum." The card declared min:1 and hid
     // the 0 option behind the UI-only cancel, so on a board with exactly one Tool-bearer the range
     // collapsed to 1..1 and CF-14 auto-resolved it — the wire discarded the opponent's Tool with no

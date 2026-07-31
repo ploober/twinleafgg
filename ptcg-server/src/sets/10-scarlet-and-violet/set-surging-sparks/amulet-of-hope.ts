@@ -70,7 +70,7 @@ export class AmuletofHope extends TrainerCard {
 
         let cards: Card[] = [];
         // TA-157 / compendium #2061 (this exact card): "You must take at least 1 card with Amulet of
-        // Hope when it applies." The untyped-search exception (#6242 / roto #968) floors an
+        // Hope when it applies." The untyped-search exception (#2301 / roto #968) floors an
         // any-card deck search at 1 — min:0 let the player whiff a mandatory search. The empty-deck
         // guard above keeps the 1-floor satisfiable.
         store.prompt(state, new ChooseCardsPrompt(

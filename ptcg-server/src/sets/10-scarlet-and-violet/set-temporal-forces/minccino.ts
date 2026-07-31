@@ -31,7 +31,7 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  // TA-155 / compendium #6242: for ATTACK effects, "up to X" means any number between 0 and X —
+  // TA-155 / compendium #2301: for ATTACK effects, "up to X" means any number between 0 and X —
   // the player may discard nothing. min:1+allowCancel expressed the 0 option only through the UI's
   // cancel, which the wire cannot see (the declared range IS the wire contract, and a 1..1 range
   // auto-resolves as decisionless per CF-14). min:0 declares the real range. Note the ruling's
