@@ -1,5 +1,7 @@
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { GameMessage } from '../../game/game-message';
+import { State } from '../../game/store/state/state';
+import { SuperType } from '../../game/store/card/card-types';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
@@ -20,6 +22,47 @@ function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
  * decision (2+ candidates for a single pick still surface — those already match rotomancer). Secret
  * (randomized) picks are excluded: they are the system actor's, not a forced player choice.
  */
+/**
+ * TA-176: is this pick a forced ENERGY discard off an IN-PLAY POKÉMON — the shape CF-8 is named for,
+ * and the shape `discard-energy.ts` already collapses unconditionally (`atomicResolvable: () => true`,
+ * with no actor scoping whatsoever)? Turtonator por-017's "Shell Spikes" builds exactly that decision
+ * out of a `ChooseCardsPrompt` instead of a `DiscardEnergyPrompt`, so the SAME decision got two answers
+ * purely by which prompt class the card happened to reach for — a routing accident, not a semantic one.
+ *
+ * The source list is matched by IDENTITY against the players' active/bench slots rather than inferred
+ * from `prompt.filter`, so a hand/deck/discard-sourced pick can never satisfy it however it is filtered.
+ * That zone restriction is MEASURED, not defensive: on the Salazzle scr-024 "Sudden Scorching" control
+ * (a forced lone-card discard from the non-active player's HAND — same forced/non-cancelable/single-
+ * candidate shape, differing only in source zone) ROTOMANCER ITSELF SURFACES the 1-option `discard`.
+ * Collapsing by zone-blind rule would move twinleaf away from rotomancer while claiming to converge on
+ * it, which is precisely how the earlier bare `max === 1` attempt failed. See
+ * `scenarios/cf39-scr-024-sudden-scorching-forced-lone-hand-discard-control.json`.
+ *
+ * BOTH spellings of "that Pokémon's attached cards" are accepted: cards hand the prompt either the
+ * PokemonCardList itself (Turtonator por-017 passes `effect.source`) or its `energies` sublist (~8 sites
+ * pass `target.energies`). `energies` is a stable CardList property — an INDEX into `cards`, not a copy
+ * (see pokemon-card-list.ts) — so identity holds for it too. Matching only one spelling would have split
+ * an identical decision by which expression the card author happened to write, which is the same class of
+ * routing accident this function exists to remove.
+ */
+function isInPlayEnergyDiscard(prompt: ChooseCardsPrompt, state: State, eligible: number[]): boolean {
+  let inPlay = false;
+  for (const player of state.players) {
+    for (const slot of [player.active, ...player.bench]) {
+      if (slot === undefined) {
+        continue;
+      }
+      if (slot === (prompt.cards as unknown) || slot.energies === (prompt.cards as unknown)) {
+        inPlay = true;
+      }
+    }
+  }
+  if (!inPlay) {
+    return false;
+  }
+  return eligible.every(i => prompt.cards.cards[i].superType === SuperType.ENERGY);
+}
+
 function forcedDiscardIndices(prompt: ChooseCardsPrompt): number[] | null {
   if (!isDiscardPick(prompt) || prompt.options.allowCancel !== false || prompt.options.isSecret === true) {
     return null;
@@ -78,15 +121,29 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     if (rp.length >= max) {
       return null;
     }
-    // CF-8/CF-17: the forced-atomic collapse is scoped to the ACTIVE player. A forced, non-varying discard
-    // the active player makes (own or opponent-targeting) is a turn-flow non-decision — auto-resolve
-    // atomically (assemble fills in the forced indices), no 1-option `discard` pending. A forced discard
-    // handed to the NON-active player — "your opponent discards a card from their hand" (Salazzle scr-024),
-    // a control-handoff where the opponent must act — surfaces uniformly (CF-17). This is a
-    // decision-granularity convention (no rulebook truth; the game state is identical either way).
+    // CF-8: a forced, non-varying discard is a non-decision — auto-resolve atomically (assemble fills in
+    // the forced indices), no 1-option `discard` pending. It collapses in two cases:
+    //
+    //   (i)  the ACTIVE player makes it (own or opponent-targeting) — a turn-flow non-decision; or
+    //   (ii) it is an Energy discard off an IN-PLAY POKÉMON, whoever chooses (TA-176).
+    //
+    // (ii) is new and was ADDITIVE: it widens the collapse without narrowing case (i). The old rule was
+    // (i) ALONE, under the since-RETIRED CF-39, which scoped the collapse to the active player on the
+    // ground that "the control handoff to the opponent is observable". That was circular — the only thing
+    // observable is the pending whose existence is in question — and CF-14's actual basis, that a decision
+    // with one resolution carries no information, is actor-independent. RE-80 was filed against rotomancer
+    // on the strength of CF-39 and has been RETRACTED; twinleaf was the defect (TA-176).
+    //
+    // What survives of the actor idea is case (i) only, and it survives as measured behavior rather than
+    // as principle: a forced discard handed to the NON-active player from their HAND ("your opponent
+    // discards a card from their hand", Salazzle scr-024) is surfaced BY BOTH ENGINES, so the boundary
+    // between (i) and the hand case is drawn where the evidence puts it. The discriminator is the decision
+    // KIND and its source ZONE, never the candidate count — see `isInPlayEnergyDiscard` above and the
+    // `atomicResolvable` note below for the two ways a count-only rule has already gone wrong here.
     const activePlayer = state.players[state.activePlayer];
     const ownerIsActive = activePlayer !== undefined && prompt.player.id === activePlayer.id;
-    if (rp.length === 0 && ownerIsActive && forcedDiscardIndices(prompt) !== null) {
+    const forcedIndices = rp.length === 0 ? forcedDiscardIndices(prompt) : null;
+    if (forcedIndices !== null && (ownerIsActive || isInPlayEnergyDiscard(prompt, state, forcedIndices))) {
       return null;
     }
 
