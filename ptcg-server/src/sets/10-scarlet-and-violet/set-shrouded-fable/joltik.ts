@@ -3,6 +3,7 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {
+  APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS,
   COIN_FLIP_PROMPT,
   PREVENT_DAMAGE,
   PREVENT_EFFECTS_OF_ATTACKS,
@@ -32,6 +33,8 @@ export class Joltik extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // Re-applied after 2026-08-01 upstream merge: deal base damage before the coin-flip rider (rulebook step F / #543/#649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       COIN_FLIP_PROMPT(store, state, effect.player, result => {
         if (result) {
           PREVENT_DAMAGE(store, state, effect, this);

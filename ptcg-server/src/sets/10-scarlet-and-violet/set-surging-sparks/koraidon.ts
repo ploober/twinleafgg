@@ -1,6 +1,6 @@
 import { CardTag, CardType, PokemonCard, Stage, State, StoreLike } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
-import { WAS_ATTACK_USED, BOOST_IF_OTHER_ANCIENT_ATTACKED_LAST_TURN } from "../../../game/store/prefabs/prefabs";
+import { WAS_ATTACK_USED } from "../../../game/store/prefabs/prefabs";
 
 export class Koraidon extends PokemonCard {
   public tags = [CardTag.ANCIENT];
@@ -34,7 +34,20 @@ export class Koraidon extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Unrelenting Onslaught
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      BOOST_IF_OTHER_ANCIENT_ATTACKED_LAST_TURN(state, effect, this, 150);
+      // Re-applied after 2026-08-01 upstream merge: restored the explicit turn-timing guard.
+      // The BOOST_IF_OTHER_ANCIENT_ATTACKED_LAST_TURN prefab relies on a never-cleared flag and
+      // wrongly fires after an attackless intervening own-turn. "1 of your OTHER Ancient Pokémon
+      // used an attack during your last turn": the previous attack must be from the player's
+      // immediately preceding turn, by an Ancient Pokémon that is not this one.
+      const player = effect.player;
+      const playerLastAttackInfo = state.playerLastAttack?.[player.id];
+      const originalCard = playerLastAttackInfo ? playerLastAttackInfo.sourceCard : null;
+
+      if (originalCard && originalCard !== this
+        && originalCard.tags.includes(CardTag.ANCIENT)
+        && playerLastAttackInfo?.turn === state.turn - 2) {
+        effect.damage += 150;
+      }
     }
     return state;
   }

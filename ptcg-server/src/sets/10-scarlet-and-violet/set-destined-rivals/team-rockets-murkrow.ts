@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag, SuperType, TrainerType } from '../../../game/
 import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, ShowCardsPrompt, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsMurkrow extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -59,8 +59,15 @@ export class TeamRocketsMurkrow extends PokemonCard {
       ), selected => {
         const cards = selected || [];
 
+        // Re-applied after 2026-08-01 upstream merge (CF-13 / compendium #2171): a deck search
+        // obligates the trailing "Then, shuffle your deck" even on a zero-take, so the shuffle
+        // is unconditional.
+        const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
+
         if (cards.length === 0) {
-          return state;
+          return shuffle();
         }
 
         player.deck.moveCardsTo(cards, player.hand);
@@ -69,15 +76,14 @@ export class TeamRocketsMurkrow extends PokemonCard {
           opponent.id,
           GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
           cards
-        ), () => {
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-            player.deck.applyOrder(order);
-          });
-        });
+        ), () => shuffle());
       });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
+      // Re-applied after 2026-08-01 upstream merge (TA-83): deal Torment's base damage before the
+      // "choose an attack to disable" rider pending (rulebook step F / #543/#649).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       return OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK(store, state, effect, this);
     }
 

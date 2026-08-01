@@ -4,7 +4,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { Card, ChooseEnergyPrompt, ChoosePokemonPrompt, ConfirmPrompt, GameMessage, PlayerType, PokemonCard, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
 
-import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { DealDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { WAS_ATTACK_USED, BLOCK_RETREAT, TERA_RULE } from '../../../game/store/prefabs/prefabs';
 
@@ -45,6 +45,16 @@ export class WellspringMaskOgerponex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      // TA-55 (compendium #649 / printed order): deal the base 100 to the Active FIRST, before the
+      // optional "shuffle 3 Energy → +120 to a Benched Pokémon" rider pauses the game (Confirm /
+      // energy pick / bench target). Otherwise those prompts surface with the Active still at 0.
+      // Re-applied after the 2026-08-01 upstream merge, whose version applied the 100 only via
+      // effect.damage at attack-end (after the rider). Same pattern as Iron Hands "Volt Wave".
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
       if (!hasBench) {
@@ -59,13 +69,12 @@ export class WellspringMaskOgerponex extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (!wantToUse) {
-          effect.damage = 100;
           return state;
         }
 
         state = store.prompt(state, new ChooseEnergyPrompt(
           player.id,
-          GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+          GameMessage.CHOOSE_ENERGIES_TO_DECK,
           checkProvidedEnergy.energyMap,
           [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
           { allowCancel: false }

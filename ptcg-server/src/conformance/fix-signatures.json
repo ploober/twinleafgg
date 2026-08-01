@@ -1,1581 +1,1579 @@
 {
- "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, extended 2026-08-01 to the src/game ENGINE tier (entries prefixed `game/` resolve as paths relative to src/; a reverted prefab or reducer breaks a whole card family at once, so the engine tier matters more per entry than the card tier), then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly — the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` — it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
- "fixes": [
-  {
-   "file": "set-black-bolt-white-flare/excadrill-ex.ts",
-   "signatures": [
-    "public tags = [CardTag.POKEMON_ex];"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/oricorio-ex.ts",
-   "signatures": [
-    "public tags = [CardTag.POKEMON_ex];"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/iron-jugulis.ts",
-   "signatures": [
-    "if (effect instanceof AfterDamageEffect && effect.target.cards.includes(this)) {",
-    "if (effect.damage <= 0 || player === targetPlayer) {"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/iron-thorns.ts",
-   "signatures": [
-    "const top5 = player.deck.cards.slice(0, 5);"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/larrys-dunsparce.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 0, this)) {"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/larrys-staraptor.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "dealDamage.attackEffect.ignoreWeakness = true;"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/regice-ex.ts",
-   "signatures": [
-    "{ allowCancel: false, min: 0, max: 2 }",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/registeel-ex.ts",
-   "signatures": [
-    "{ allowCancel: false, min: 0, max: 2 }"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/reshiram-ex.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, damageEffect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/blaziken.ts",
-   "signatures": [
-    "name: 'Inferno Kick Flurry',",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/dwebble.ts",
-   "signatures": [
-    "{ min: 0, max: 1, allowCancel: true }"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/mow-rotom.ts",
-   "signatures": [
-    "public weakness: Weakness[] = [{ type: R }];"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/regirock-ex.ts",
-   "signatures": [
-    "{ superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },",
-    "{ allowCancel: false, min: 0, max: 2 }"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/teal-mask-ogerpon.ts",
-   "signatures": [
-    "if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre\\'s Hammer')) {",
-    "text: 'During your next turn, this Pokémon can\\'t use Ogre\\'s Hammer.'"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-mareep.ts",
-   "signatures": [
-    "SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);",
-    "MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-moltres-ex.ts",
-   "signatures": [
-    "&& effect.target.marker.hasMarker(this.FLAME_SCREEN_MARKER, this)) {",
-    "effect.damage = Math.max(0, effect.damage - 50);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-murkrow.ts",
-   "signatures": [
-    "const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-pupitar.ts",
-   "signatures": [
-    "{ min: 0, max: 1, allowCancel: true }",
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "an empty deck still owes the trailing shuffle",
-    "emptyDeckDamage"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/zeraora.ts",
-   "signatures": [
-    "return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);",
-    "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {"
-   ]
-  },
-  {
-   "file": "set-journey-together/hops-sandaconda.ts",
-   "signatures": [
-    "public weakness = [{ type: G }];"
-   ]
-  },
-  {
-   "file": "set-journey-together/ns-klang.ts",
-   "signatures": [
-    "public resistance = [{ type: G, value: -30 }];",
-    "if (WAS_ATTACK_USED(effect, 0, this)) {"
-   ]
-  },
-  {
-   "file": "set-journey-together/ns-klink.ts",
-   "signatures": [
-    "public resistance = [{ type: G, value: -30 }];"
-   ]
-  },
-  {
-   "file": "set-journey-together/ns-klinklang.ts",
-   "signatures": [
-    "public resistance = [{ type: G, value: -30 }];"
-   ]
-  },
-  {
-   "file": "set-journey-together/petilil.ts",
-   "signatures": [
-    "public weakness = [{ type: R }];"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/cinderace.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, damageEffect);",
-    "effect.damage = 0;"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/kyogre.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, damageEffect);",
-    "and wrongly deals 20 instead of 0. [TA-22]"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/mega-absol-ex.ts",
-   "signatures": [
-    "const dealDamage = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, dealDamage);"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/steelix.ts",
-   "signatures": [
-    "public resistance = [{ type: G, value: -30 }];",
-    "public weakness = [{ type: R }];"
-   ]
-  },
-  {
-   "file": "set-perfect-order/landorus.ts",
-   "signatures": [
-    "const dealDamage = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, dealDamage);"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/haunter.ts",
-   "signatures": [
-    "name: 'Spooky Shot',"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/paldean-tauros.ts",
-   "signatures": [
-    "text: 'This attack does 40 damage for each of your Pokémon that has \"Tauros\" in its name that has any damage counters on it.',",
-    "if (card && card.name.includes('Tauros') && cardList.damage > 0) {"
-   ]
-  },
-  {
-   "file": "set-prismatic-evolution/tyranitar-ex.ts",
-   "signatures": [
-    "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
-    "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/decidueye.ts",
-   "signatures": [
-    "const hasBasicGrass = player.hand.cards.some(",
-    "{ allowCancel: false, min: 1, max: 1 }"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/duskull.ts",
-   "signatures": [
-    "const hasDuskullInDiscard = player.discard.cards.some(c => {",
-    "if (!hasDuskullInDiscard || max === 0) {"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/iron-moth.ts",
-   "signatures": [
-    "const healEffect = new HealEffect(player, player.active, dealt);"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/revavroom-ex.ts",
-   "signatures": [
-    "player.active.moveTo(player.discard);",
-    "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect as AttackEffect, this);"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/sneasel.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 1, this)) {"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/yveltal.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, damageEffect);"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/lapras-ex.ts",
-   "signatures": [
-    "const energyInTemp = temp.cards.filter(card => card instanceof EnergyCard);",
-    "const target = StateUtils.getTarget(state, player, transfer.to);"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/salandit.ts",
-   "signatures": [
-    "const dealDamage = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, dealDamage);"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/slowpoke.ts",
-   "signatures": [
-    "const hasPokemonInDiscard = player.discard.cards.some(c => c.superType === SuperType.POKEMON);"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/toedscool.ts",
-   "signatures": [
-    "public weakness = [{ type: R }];"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/ceruledge-ex.ts",
-   "signatures": [
-    "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/dedenne.ts",
-   "signatures": [
-    "const hasTrainerInDiscard = player.discard.cards.some(c => c.superType === SuperType.TRAINER);",
-    "{ min: 1, max: 1, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/gholdengo.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "player.active.moveTo(player.deck);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/koraidon.ts",
-   "signatures": [
-    "&& playerLastAttackInfo?.turn === state.turn - 2) {",
-    "if (originalCard && originalCard !== this"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/pikachu-ex.ts",
-   "signatures": [
-    "const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);",
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/slakoth.ts",
-   "signatures": [
-    "private readonly CANT_RETREAT_PENDING_MARKER = 'CANT_RETREAT_PENDING_MARKER';",
-    "private readonly CANT_RETREAT_ACTIVE_MARKER = 'CANT_RETREAT_ACTIVE_MARKER';"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/turtonator.ts",
-   "signatures": [
-    "cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/terapagos.ts",
-   "signatures": [
-    "this is a no-op, NOT a rejection. [TA-52]"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/vivillion.ts",
-   "signatures": [
-    "public name: string = 'Vivillon';"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/dunsparce.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 1, this)) {",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/grubbin.ts",
-   "signatures": [
-    "public weakness = [{ type: R }];"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/iron-hands.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "state = store.reduceEffect(state, damageEffect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/minccino.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 1, this)) {",
-    "const generator = useCleaningUp(() => generator.next(), store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/miraidon.ts",
-   "signatures": [
-    "player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {",
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/zeraora.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "effect.damage = 0;"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/aggron.ts",
-   "signatures": [
-    "effect.damage = pokemonWithDamage * 50;",
-    "let pokemonWithDamage = 0;"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/hisuian-growlithe.ts",
-   "signatures": [
-    "if (stadiumCard) {",
-    "const dealDamage = new DealDamageEffect(effect, 10);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/walking-wake.ts",
-   "signatures": [
-    "if (cardList !== player.active) { return; }"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/wellspring-mask-ogerpon-ex.ts",
-   "signatures": [
-    "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);",
-    "GameMessage.CHOOSE_ENERGIES_TO_DECK,"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/gothorita.ts",
-   "signatures": [
-    "if (opponent.deck.cards.length === 0) { return state;"
-   ]
-  },
-  {
-   "file": "set-perfect-order/decidueye-ex.ts",
-   "signatures": [
-    "// PASSIVE, always-on cost reduction (compendium #2311"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/latios.ts",
-   "signatures": [
-    "activePokemon.name === 'Mega Latias ex'"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/camerupt.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/tapu-koko.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/servine.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/dipplin.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
-    "GameMessage.CHOOSE_ENERGIES_TO_HAND,"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/ethans-cyndaquil.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/cynthias-feebas.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-zapdos.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
-    "getTarget(state, player, transfer.to)",
-    "const opponentActiveHasEnergy"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/marnies-scraggy.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-journey-together/shelmet.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-journey-together/magmar.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-journey-together/larvitar.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-journey-together/salamence-ex.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/mega-camerupt-ex.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-perfect-order/luxray.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-perfect-order/dedenne.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-perfect-order/probopass.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/litten.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/metagross.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/salazzle.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/joltik.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/charcadet-2.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/flittle.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/duraludon.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/monferno.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/frogadier.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/scream-tail-ex.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/duosion.ts",
-   "signatures": [
-    "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);",
-    "the empty-deck check MOVED below",
-    "A recipient exists, so the search runs"
-   ]
-  },
-  {
-   "file": "set-perfect-order/clefairy.ts",
-   "signatures": [
-    "(TA-80)\n        return state;"
-   ]
-  },
-  {
-   "file": "set-journey-together/ns-purrloin.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 0, this)) {",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/greninja-ex.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 0, this)) {",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/luxray-ex.ts",
-   "signatures": [
-    "if (WAS_ATTACK_USED(effect, 0, this)) {",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-prismatic-evolution/glaceon-ex.ts",
-   "signatures": [
-    "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
-    "if (eligible === 0) {"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/marshadow.ts",
-   "signatures": [
-    "&& state.phase === GamePhase.ATTACK) {",
-    "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/chikorita.ts",
-   "signatures": [
-    "opponent.active.attacksDamageReductionNextTurn = 20;"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/servine.ts",
-   "signatures": [
-    "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-hypno.ts",
-   "signatures": [
-    "effect.damage = 0;"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/cinderace-ex.ts",
-   "signatures": [
-    "the Active is always a legal target"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/armarouge.ts",
-   "signatures": [
-    "the Fire-Energy discard is UNCONDITIONAL",
-    "if (benched.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/electivire-ex.ts",
-   "signatures": [
-    "const count = Math.min(2, opponent.getPokemonInPlay().length);"
-   ]
-  },
-  {
-   "file": "set-journey-together/hops-rookidee.ts",
-   "signatures": [
-    "effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/tapu-koko.ts",
-   "signatures": [
-    "const cards = player.hand.cards.slice();"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/mega-sharpedo-ex.ts",
-   "signatures": [
-    "MOVE_CARDS(store, state, player.deck, player.hand, { count: 2 });"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/iron-moth.ts",
-   "signatures": [
-    "const applyWeakness = new ApplyWeaknessEffect(effect, effect.damage);"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/monferno.ts",
-   "signatures": [
-    "the discard was wrongly wired to index 0."
-   ]
-  },
-  {
-   "file": "set-temporal-forces/mr-mime.ts",
-   "signatures": [
-    "only Asleep/Paralyzed do, which the engine already enforces"
-   ]
-  },
-  {
-   "file": "set-journey-together/lillies-comfey.ts",
-   "signatures": [
-    "PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/vibrava.ts",
-   "signatures": [
-    "store.reduceEffect(state, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect(effect, this, 50));"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/luxray-ex.ts",
-   "signatures": [
-    "min:1, not min:0"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/greninja-ex.ts",
-   "signatures": [
-    "const shuffle = (s: State): State =>",
-    "{ min: 0, max: 1, allowCancel: false }",
-    "TA-145 / CF-32 may-gate: there is ONE decision here, not two"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/cinderace.ts",
-   "signatures": [
-    "const hasBench = player.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/vivillion.ts",
-   "signatures": [
-    "Evo-Powder is legal to use whenever its cost is met"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/reuniclus.ts",
-   "signatures": [
-    "the look/bench prefab already no-ops safely"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/slither-wing.ts",
-   "signatures": [
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/raging-bolt-ex.ts",
-   "signatures": [
-    "is declarable even with an empty deck"
-   ]
-  },
-  {
-   "file": "set-journey-together/larvitar.ts",
-   "signatures": [
-    "{ min: 1, max: 1, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-silver-tempest/radiant-alakazam.ts",
-   "signatures": [
-    "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
-    "const checkHpEffect = new CheckHpEffect(opponent, cardList);"
-   ]
-  },
-  {
-   "file": "set-team-up/articuno.ts",
-   "signatures": [
-    "const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);",
-    "{ allowCancel: false, min: numToMove, max: numToMove, blocked }"
-   ]
-  },
-  {
-   "file": "set-ex-hidden-legends/medicham.ts",
-   "signatures": [
-    "effect.damage += effect.opponent.active.damage;"
-   ]
-  },
-  {
-   "file": "set-shining-legends/croconaw.ts",
-   "signatures": [
-    "const benchSlot = player.bench.find(b => b.cards.includes(this));",
-    "energyCards.forEach(card => active.moveCardTo(card, benchSlot));"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/blend-energy-wlfm.ts",
-   "signatures": [
-    "provides: [...this.provides]"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/blend-energy-grpd.ts",
-   "signatures": [
-    "provides: [...this.provides]"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/croconaw.ts",
-   "signatures": [
-    "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);",
-    "const target = StateUtils.getTarget(state, effect.player, transfers[0].from);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/ethans-pinsir.ts",
-   "signatures": [
-    "name: 'Vise Grip',",
-    "name: 'Rallying Horn',"
-   ]
-  },
-  {
-   "file": "set-journey-together/ns-darmanitan.ts",
-   "signatures": [
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/klefki.ts",
-   "signatures": [
-    "if (player.hand.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/delivery-box.ts",
-   "signatures": [
-    "{ min: 0, max: 2, allowCancel: false }",
-    "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
-   ]
-  },
-  {
-   "file": "set-boundaries-crossed/trapinch.ts",
-   "signatures": [
-    "const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
-   ]
-  },
-  {
-   "file": "set-call-of-legends/relicanth.ts",
-   "signatures": [
-    "if (player.hand.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-chilling-reign/galarian-slowking-v.ts",
-   "signatures": [
-    "if (player.hand.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-pokemon-go/lunatone.ts",
-   "signatures": [
-    "if (player.hand.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-silver-tempest/lugia-v.ts",
-   "signatures": [
-    "if (player.hand.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-noble-victories/trubbish.ts",
-   "signatures": [
-    "if (player.discard.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-chilling-reign/zeraora-v.ts",
-   "signatures": [
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-jungle/oddish.ts",
-   "signatures": [
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-jungle/pikachu.ts",
-   "signatures": [
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-unified-minds/basculin.ts",
-   "signatures": [
-    "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-obsidian-flames/combee.ts",
-   "signatures": [
-    "const hasBench = player.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-dragons-majesty/turtonator.ts",
-   "signatures": [
-    "{ min: 0, max: totalFireEnergy, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-lost-thunder/blacephalon-gx.ts",
-   "signatures": [
-    "{ min: 0, max: totalFireEnergy, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-evolving-skies/switching-cups.ts",
-   "signatures": [
-    "if (effect.player.hand.cards.length === 0) {",
-    "if (cards.length === 0 || player.deck.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-neo-genesis/mary.ts",
-   "signatures": [
-    "const shuffleCount = Math.min(2, player.hand.cards.length);"
-   ]
-  },
-  {
-   "file": "set-emerging-powers/simipour.ts",
-   "signatures": [
-    "const source = StateUtils.getTarget(state, player, transfer.from);"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/probopass.ts",
-   "signatures": [
-    "const source = StateUtils.getTarget(state, player, transfer.from);"
-   ]
-  },
-  {
-   "file": "set-plasma-blast/azelf.ts",
-   "signatures": [
-    "const source = StateUtils.getTarget(state, player, transfer.from);"
-   ]
-  },
-  {
-   "file": "set-forbidden-light/eneporter.ts",
-   "signatures": [
-    "const source = StateUtils.getTarget(state, player, transfer.from);"
-   ]
-  },
-  {
-   "file": "set-evolving-skies/ribombee.ts",
-   "signatures": [
-    "const source = StateUtils.getTarget(state, player, transfer.from);"
-   ]
-  },
-  {
-   "file": "set-chilling-reign/agatha.ts",
-   "signatures": [
-    "maxAllowedDamage.push({ target, damage: player.active.damage });"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/deino.ts",
-   "signatures": [
-    "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
-   ],
-   "note": "TA-167/SD-6 superseded the original wrong-perspective fix: the attack-route prefab targets the opponent's Active by construction (AddSpecialConditionsEffect derives target from the AttackEffect), so it preserves the earlier fix's intent AND carries the attack identity that prevention guards need."
-  },
-  {
-   "file": "set-journey-together/ns-darmanitan.ts",
-   "signatures": [
-    "const discardThenDamage = (target?: PokemonCardList): State => {"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/armarouge.ts",
-   "signatures": [
-    "const discardThenDamage = (target?: PokemonCardList): State => {"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-archer.ts",
-   "signatures": [
-    "if (!player.marker.hasMarker(this.ARCHER_MARKER)) {\n      return false;"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/antique-cover-fossil.ts",
-   "signatures": [
-    "if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/tool-scrapper.ts",
-   "signatures": [
-    "public canPlay(store: StoreLike, state: State, player: Player): boolean {\n    // Mirrors `playCard`: a Trainer that can have no effect can't be played"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/bouffalant.ts",
-   "signatures": [
-    "effect.player.active.cannotAttackNextTurnPending = true;"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/arvens-mabosstiff-ex.ts",
-   "signatures": [
-    "cannotUseAttacksNextTurnPending.push('Boss Headbutt')"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/chansey.ts",
-   "signatures": [
-    "// TA-131: an attack is declarable even when its effect can't be carried out"
-   ]
-  },
-  {
-   "file": "set-journey-together/banette.ts",
-   "signatures": [
-    "GameMessage.CHOOSE_CARD_TO_SHUFFLE,"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/mega-diancie-ex.ts",
-   "signatures": [
-    "{ min: 0, max: 2, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-prismatic-evolution/flareon-ex.ts",
-   "signatures": [
-    "The rider runs on a benchless board too (TA-123"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/smoochum.ts",
-   "signatures": [
-    "Single trailing shuffle for every branch"
-   ]
-  },
-  {
-   "file": "set-phantasmal-flames/charcadet.ts",
-   "signatures": [
-    "Then, shuffle your deck\") still fires"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/comfey.ts",
-   "signatures": [
-    "moveTo caps at the deck size"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/eevee.ts",
-   "signatures": [
-    "The search whiffs (max resolves to 0)"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/dialga.ts",
-   "signatures": [
-    "fewer than 2 are available"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/tatsugiri-ex.ts",
-   "signatures": [
-    "TA-131: declarable with an empty deck (rulebook p.20)"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-persian-ex.ts",
-   "signatures": [
-    "declarable even if the opponent's deck is empty"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/altaria.ts",
-   "signatures": [
-    "The search whiffs (AttachEnergyPrompt"
-   ]
-  },
-  {
-   "file": "set-ex-dragon-frontiers/lickitung.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-ex-unseen-forces/smoochum.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-legends-awakened/azelf-lv-x.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-mysterious-treasures/gabite.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-stormfront/gengar.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-triumphant/gastly.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-triumphant/haunter.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/drifblim.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-dragons-exalted/drifloon-2.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-plasma-freeze/yamask.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-fates-collide/alakazam-ex.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-fates-collide/bronzong-break.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-flashfire/dusknoir.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-phantom-forces/gengar-ex.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-cosmic-eclipse/duskull.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-cosmic-eclipse/mimikyu.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-cosmic-eclipse/trevenant.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-crimson-invasion/gastly.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-guardians-rising/gothita.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-lost-thunder/giratina.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-team-up/hoopa-gx.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-unbroken-bonds/misdreavus.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-unified-minds/alolan-raichu.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-unified-minds/yveltal.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-astral-radiance/drifblim.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-chilling-reign/galarian-rapidash-v.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-chilling-reign/shadow-rider-calyrex-v.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-crown-zenith/zeraora-vstar.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-evolving-skies/medicham-v.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-evolving-skies/wobbuffet.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-fusion-strike/hoopa-v.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-fusion-strike/starmie.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-lost-origin/cresselia.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-lost-origin/spectrier.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-silver-tempest/reuniclus.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/arboliva-ex.ts",
-   "signatures": [
-    "operation: 'dealDamage'",
-    "effect.ignoreWeakness = true",
-    "#2161"
-   ]
-  },
-  {
-   "file": "set-obsidian-flames/ninetales.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-obsidian-flames/vespiquen-ex.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-paradox-rift/tsareena-ex.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-paradox-rift/yamask.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-twilight-masquerade/sinistcha-ex.ts",
-   "signatures": [
-    "operation: 'placeCounters'",
-    "const toDeck = player.discard.cards.filter(isBasicGrass);",
-    "TA-144, the one that actually cost the game"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/mismagius.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-ascended-heroes/spectrier.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-delta-reign/sableye.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-best-of-game/dark-ivysaur.ts",
-   "signatures": [
-    "operation: 'dealDamage'"
-   ]
-  },
-  {
-   "file": "set-pcg-p-promotional-cards/rotas-weavile.ts",
-   "signatures": [
-    "operation: 'placeCounters'"
-   ]
-  },
-  {
-   "file": "set-shrouded-fable/seadra.ts",
-   "signatures": [
-    "taking nothing does NOT excuse the shuffle"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/tatsugiri-ex.ts",
-   "signatures": [
-    "TA-166",
-    "if (putBack === 0) {"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/team-rockets-persian-ex.ts",
-   "signatures": [
-    "TA-166",
-    "if (putBack > 0) {"
-   ]
-  },
-  {
-   "file": "set-perfect-order/salazzle-ex.ts",
-   "signatures": [
-    "an empty deck is still a deck you searched"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/whimsicott-ex.ts",
-   "signatures": [
-    "the trailing shuffle survives an empty deck"
-   ]
-  },
-  {
-   "file": "set-stellar-crown/melmetal.ts",
-   "signatures": [
-    "player.active.tools.slice()",
-    "TA-151"
-   ]
-  },
-  {
-   "file": "set-perfect-order/core-memory.ts",
-   "signatures": [
-    "effect.attacks.filter(attack => attack !== this.attacks[0])",
-    "TA-152"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/megaton-blower.ts",
-   "signatures": [
-    "TA-154",
-    "StateUtils.getStadiumCard(state) !== undefined"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/minccino.ts",
-   "signatures": [
-    "{ min: 0, max: max, allowCancel: true, blocked }"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/amulet-of-hope.ts",
-   "signatures": [
-    "{ min: 1, max: 3, allowCancel: false }",
-    "ability: 'Amulet of Hope'"
-   ]
-  },
-  {
-   "file": "set-perfect-order/salazzle-ex.ts",
-   "signatures": [
-    "TA-163",
-    "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-black-bolt-white-flare/stoutland.ts",
-   "signatures": [
-    "TA-164",
-    "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
-   ]
-  },
-  {
-   "file": "set-mega-evolution/mystery-garden.ts",
-   "signatures": [
-    "TA-161",
-    "if (psychicPokemon < player.hand.cards.length || player.deck.cards.length === 0) {"
-   ]
-  },
-  {
-   "file": "set-silver-tempest/primordial-altar.ts",
-   "signatures": [
-    "TA-160",
-    "deckTop.moveToTopOfDestination(player.deck); // declined"
-   ]
-  },
-  {
-   "file": "set-perfect-order/turtonator.ts",
-   "signatures": [
-    "TA-168",
-    "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/surfer.ts",
-   "signatures": [
-    "TA-171",
-    "player.switchPokemon(cardList, store, state);"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/surfer.ts",
-   "signatures": [
-    "TA-172",
-    "if (player.active === activeBefore) {"
-   ]
-  },
-  {
-   "file": "set-surging-sparks/surfer.ts",
-   "signatures": [
-    "TA-173",
-    "return player.bench.some(b => b.cards.length > 0);"
-   ]
-  },
-  {
-   "file": "set-destined-rivals/cetitan-ex.ts",
-   "signatures": [
-    "effect.target = undefined;"
-   ]
-  },
-  {
-   "file": "set-temporal-forces/prime-catcher.ts",
-   "signatures": [
-    "const targetCard = new TrainerTargetEffect(player, effect.trainerCard, targets[0]);",
-    "if (!targetCard.target) {"
-   ]
-  },
-  {
-   "file": "game/store/prefabs/prefabs.ts",
-   "signatures": [
-    "const effMin = Math.min(min, eligible);",
-    "const effMax = Math.min(max, eligible);"
-   ]
-  },
-  {
-   "file": "game/store/prefabs/attack-effects.ts",
-   "signatures": [
-    "base, [SpecialCondition.ASLEEP]",
-    "base, [SpecialCondition.POISONED]"
-   ]
-  },
-  {
-   "file": "game/store/prefabs/costs.ts",
-   "signatures": [
-    "const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));"
-   ]
-  },
-  {
-   "file": "game/store/effect-reducers/game-effect.ts",
-   "signatures": [
-    "const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);"
-   ]
-  },
-  {
-   "file": "game/store/effect-reducers/attack-effect.ts",
-   "signatures": [
-    "if (attacker && attacker.attacksDamageReductionNextTurn > 0 && effect.damage > 0) {",
-    "effect.damage = Math.max(0, effect.damage - attacker.attacksDamageReductionNextTurn);"
-   ]
-  },
-  {
-   "file": "game/store/effect-reducers/check-effect.ts",
-   "signatures": [
-    "const prizesAlreadyTaken = state.players.some(p => p.prizes.every(pr => pr.cards.length === 0));"
-   ]
-  },
-  {
-   "file": "game/store/effect-reducers/game-phase-effect.ts",
-   "signatures": [
-    "player.pokemonKnockedOutByAttackDuringOpponentsLastTurn = false;"
-   ]
-  },
-  {
-   "file": "game/store/state/pokemon-card-list.ts",
-   "signatures": [
-    "this.energies.cards = attached.filter(c => this.cards.includes(c));"
-   ]
-  },
-  {
-   "file": "game/store/state/card-list.ts",
-   "signatures": [
-    "const toMove = cards === this.cards ? cards.slice() : cards;"
-   ]
-  },
-  {
-   "file": "game/store/store.ts",
-   "signatures": [
-    "const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {"
-   ]
-  },
-  {
-   "file": "game/store/reducers/player-turn-reducer.ts",
-   "signatures": [
-    "state.playerLastAttack[player.id] = { attack, sourceCard: pokemonCard, turn: state.turn };"
-   ]
-  }
- ]
+  "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, extended 2026-08-01 to the src/game ENGINE tier (entries prefixed `game/` resolve as paths relative to src/; a reverted prefab or reducer breaks a whole card family at once, so the engine tier matters more per entry than the card tier), then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly — the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` — it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
+  "fixes": [
+    {
+      "file": "set-black-bolt-white-flare/excadrill-ex.ts",
+      "signatures": [
+        "public tags = [CardTag.POKEMON_ex];"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/oricorio-ex.ts",
+      "signatures": [
+        "public tags = [CardTag.POKEMON_ex];"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/iron-jugulis.ts",
+      "signatures": [
+        "if (effect instanceof AfterDamageEffect && effect.target.cards.includes(this)) {",
+        "if (effect.damage <= 0 || player === targetPlayer) {"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/iron-thorns.ts",
+      "signatures": [
+        "const top5 = player.deck.cards.slice(0, 5);"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-dunsparce.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 0, this)) {"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-staraptor.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "dealDamage.attackEffect.ignoreWeakness = true;"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/regice-ex.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 0, max: 2 }",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/registeel-ex.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 0, max: 2 }"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/reshiram-ex.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/blaziken.ts",
+      "signatures": [
+        "name: 'Inferno Kick Flurry',",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/dwebble.ts",
+      "signatures": [
+        "{ min: 0, max: 1, allowCancel: true }"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/mow-rotom.ts",
+      "signatures": [
+        "public weakness: Weakness[] = [{ type: R }];"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/regirock-ex.ts",
+      "signatures": [
+        "{ superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },",
+        "{ allowCancel: false, min: 0, max: 2 }"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/teal-mask-ogerpon.ts",
+      "signatures": [
+        "if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre\\'s Hammer')) {",
+        "text: 'During your next turn, this Pokémon can\\'t use Ogre\\'s Hammer.'"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-mareep.ts",
+      "signatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);",
+        "MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-moltres-ex.ts",
+      "signatures": [
+        "effect.player.active.damageReductionNextTurn = 50;"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-murkrow.ts",
+      "signatures": [
+        "const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-pupitar.ts",
+      "signatures": [
+        "{ min: 0, max: 1, allowCancel: true }",
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "an empty deck still owes the trailing shuffle",
+        "emptyDeckDamage"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/zeraora.ts",
+      "signatures": [
+        "return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);",
+        "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {"
+      ]
+    },
+    {
+      "file": "set-journey-together/hops-sandaconda.ts",
+      "signatures": [
+        "public weakness = [{ type: G }];"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-klang.ts",
+      "signatures": [
+        "public resistance = [{ type: G, value: -30 }];",
+        "if (WAS_ATTACK_USED(effect, 0, this)) {"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-klink.ts",
+      "signatures": [
+        "public resistance = [{ type: G, value: -30 }];"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-klinklang.ts",
+      "signatures": [
+        "public resistance = [{ type: G, value: -30 }];"
+      ]
+    },
+    {
+      "file": "set-journey-together/petilil.ts",
+      "signatures": [
+        "public weakness = [{ type: R }];"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/cinderace.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);",
+        "effect.damage = 0;"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/kyogre.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);",
+        "and wrongly deals 20 instead of 0. [TA-22]"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-absol-ex.ts",
+      "signatures": [
+        "const dealDamage = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, dealDamage);"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/steelix.ts",
+      "signatures": [
+        "public resistance = [{ type: G, value: -30 }];",
+        "public weakness = [{ type: R }];"
+      ]
+    },
+    {
+      "file": "set-perfect-order/landorus.ts",
+      "signatures": [
+        "const dealDamage = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, dealDamage);"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/haunter.ts",
+      "signatures": [
+        "name: 'Spooky Shot',"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/paldean-tauros.ts",
+      "signatures": [
+        "text: 'This attack does 40 damage for each of your Pokémon that has \"Tauros\" in its name that has any damage counters on it.',",
+        "if (card && card.name.includes('Tauros') && cardList.damage > 0) {"
+      ]
+    },
+    {
+      "file": "set-prismatic-evolution/tyranitar-ex.ts",
+      "signatures": [
+        "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
+        "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/decidueye.ts",
+      "signatures": [
+        "const hasBasicGrass = player.hand.cards.some(",
+        "{ allowCancel: false, min: 1, max: 1 }"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/duskull.ts",
+      "signatures": [
+        "const hasDuskullInDiscard = player.discard.cards.some(c => {",
+        "if (!hasDuskullInDiscard || max === 0) {"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/iron-moth.ts",
+      "signatures": [
+        "const healEffect = new HealEffect(player, player.active, dealt);"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/revavroom-ex.ts",
+      "signatures": [
+        "player.active.moveTo(player.discard);",
+        "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect as AttackEffect, this);"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/sneasel.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 1, this)) {"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/yveltal.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/lapras-ex.ts",
+      "signatures": [
+        "const energyInTemp = temp.cards.filter(card => card instanceof EnergyCard);",
+        "const target = StateUtils.getTarget(state, player, transfer.to);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/salandit.ts",
+      "signatures": [
+        "const dealDamage = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, dealDamage);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/slowpoke.ts",
+      "signatures": [
+        "const hasPokemonInDiscard = player.discard.cards.some(c => c.superType === SuperType.POKEMON);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/toedscool.ts",
+      "signatures": [
+        "public weakness = [{ type: R }];"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/ceruledge-ex.ts",
+      "signatures": [
+        "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/dedenne.ts",
+      "signatures": [
+        "const hasTrainerInDiscard = player.discard.cards.some(c => c.superType === SuperType.TRAINER);",
+        "{ min: 1, max: 1, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/gholdengo.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "player.active.moveTo(player.deck);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/koraidon.ts",
+      "signatures": [
+        "&& playerLastAttackInfo?.turn === state.turn - 2) {",
+        "if (originalCard && originalCard !== this"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/pikachu-ex.ts",
+      "signatures": [
+        "const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);",
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/slakoth.ts",
+      "signatures": [
+        "BLOCK_SELF_RETREAT(store, state, effect, this);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/turtonator.ts",
+      "signatures": [
+        "cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/terapagos.ts",
+      "signatures": [
+        "this is a no-op, NOT a rejection. [TA-52]"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/vivillion.ts",
+      "signatures": [
+        "public name: string = 'Vivillon';"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/dunsparce.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 1, this)) {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/grubbin.ts",
+      "signatures": [
+        "public weakness = [{ type: R }];"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/iron-hands.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "state = store.reduceEffect(state, damageEffect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/minccino.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 1, this)) {",
+        "const generator = useCleaningUp(() => generator.next(), store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/miraidon.ts",
+      "signatures": [
+        "player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {",
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/zeraora.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "effect.damage = 0;"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/aggron.ts",
+      "signatures": [
+        "effect.damage = pokemonWithDamage * 50;",
+        "let pokemonWithDamage = 0;"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/hisuian-growlithe.ts",
+      "signatures": [
+        "if (stadiumCard) {",
+        "const dealDamage = new DealDamageEffect(effect, 10);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/walking-wake.ts",
+      "signatures": [
+        "if (cardList !== player.active) { return; }"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/wellspring-mask-ogerpon-ex.ts",
+      "signatures": [
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);",
+        "GameMessage.CHOOSE_ENERGIES_TO_DECK,"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/gothorita.ts",
+      "signatures": [
+        "if (opponent.deck.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-perfect-order/decidueye-ex.ts",
+      "signatures": [
+        "// PASSIVE, always-on cost reduction (compendium #2311"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/latios.ts",
+      "signatures": [
+        "activePokemon.name === 'Mega Latias ex'"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/camerupt.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/tapu-koko.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/servine.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/dipplin.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "GameMessage.CHOOSE_ENERGIES_TO_HAND,"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/ethans-cyndaquil.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/cynthias-feebas.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-zapdos.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "getTarget(state, player, transfer.to)",
+        "const opponentActiveHasEnergy"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/marnies-scraggy.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-journey-together/shelmet.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-journey-together/magmar.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-journey-together/larvitar.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-journey-together/salamence-ex.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-camerupt-ex.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-perfect-order/luxray.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-perfect-order/dedenne.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-perfect-order/probopass.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/litten.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/metagross.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/salazzle.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/joltik.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/charcadet-2.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/flittle.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/duraludon.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/monferno.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/frogadier.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/scream-tail-ex.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/duosion.ts",
+      "signatures": [
+        "(TA-82) [conformance]\n    SHUFFLE_DECK(store, state, player);",
+        "the empty-deck check MOVED below",
+        "A recipient exists, so the search runs"
+      ]
+    },
+    {
+      "file": "set-perfect-order/clefairy.ts",
+      "signatures": [
+        "(TA-80)\n        return state;"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-purrloin.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 0, this)) {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/greninja-ex.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 0, this)) {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/luxray-ex.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 0, this)) {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-prismatic-evolution/glaceon-ex.ts",
+      "signatures": [
+        "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
+        "if (eligible === 0) {"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/marshadow.ts",
+      "signatures": [
+        "&& state.phase === GamePhase.ATTACK) {",
+        "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/chikorita.ts",
+      "signatures": [
+        "return DEFENDING_POKEMON_DOES_LESS_DAMAGE(store, state, effect, this, 20);"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/servine.ts",
+      "signatures": [
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-hypno.ts",
+      "signatures": [
+        "effect.damage = 0;"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/cinderace-ex.ts",
+      "signatures": [
+        "the Active is always a legal target"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/armarouge.ts",
+      "signatures": [
+        "the Fire-Energy discard is UNCONDITIONAL",
+        "if (benched.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/electivire-ex.ts",
+      "signatures": [
+        "const count = Math.min(2, opponent.getPokemonInPlay().length);"
+      ]
+    },
+    {
+      "file": "set-journey-together/hops-rookidee.ts",
+      "signatures": [
+        "return DEFENDING_POKEMON_DOES_LESS_DAMAGE(store, state, effect, this, 20);"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/tapu-koko.ts",
+      "signatures": [
+        "const cards = player.hand.cards.slice();"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-sharpedo-ex.ts",
+      "signatures": [
+        "MOVE_CARDS(store, state, player.deck, player.hand, { count: 2 });"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/iron-moth.ts",
+      "signatures": [
+        "const applyWeakness = new ApplyWeaknessEffect(effect, effect.damage);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/monferno.ts",
+      "signatures": [
+        "the discard was wrongly wired to index 0."
+      ]
+    },
+    {
+      "file": "set-temporal-forces/mr-mime.ts",
+      "signatures": [
+        "only Asleep/Paralyzed do, which the engine already enforces"
+      ]
+    },
+    {
+      "file": "set-journey-together/lillies-comfey.ts",
+      "signatures": [
+        "PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/vibrava.ts",
+      "signatures": [
+        "DEFENDING_POKEMON_TAKES_MORE_DAMAGE_DURING_YOUR_NEXT_TURN(store, state, effect, this, 50);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/luxray-ex.ts",
+      "signatures": [
+        "min:1, not min:0"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/greninja-ex.ts",
+      "signatures": [
+        "const shuffle = (s: State): State =>",
+        "{ min: 0, max: 1, allowCancel: false }",
+        "TA-145 / CF-32 may-gate: there is ONE decision here, not two"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/cinderace.ts",
+      "signatures": [
+        "const hasBench = player.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/vivillion.ts",
+      "signatures": [
+        "Evo-Powder is legal to use whenever its cost is met"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/reuniclus.ts",
+      "signatures": [
+        "the look/bench prefab already no-ops safely"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/slither-wing.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/raging-bolt-ex.ts",
+      "signatures": [
+        "is declarable even with an empty deck"
+      ]
+    },
+    {
+      "file": "set-journey-together/larvitar.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/radiant-alakazam.ts",
+      "signatures": [
+        "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
+        "const checkHpEffect = new CheckHpEffect(opponent, cardList);"
+      ]
+    },
+    {
+      "file": "set-team-up/articuno.ts",
+      "signatures": [
+        "const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);",
+        "{ allowCancel: false, min: numToMove, max: numToMove, blocked }"
+      ]
+    },
+    {
+      "file": "set-ex-hidden-legends/medicham.ts",
+      "signatures": [
+        "effect.damage += effect.opponent.active.damage;"
+      ]
+    },
+    {
+      "file": "set-shining-legends/croconaw.ts",
+      "signatures": [
+        "const benchSlot = player.bench.find(b => b.cards.includes(this));",
+        "energyCards.forEach(card => active.moveCardTo(card, benchSlot));"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/blend-energy-wlfm.ts",
+      "signatures": [
+        "provides: [...this.provides]"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/blend-energy-grpd.ts",
+      "signatures": [
+        "provides: [...this.provides]"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/croconaw.ts",
+      "signatures": [
+        "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);",
+        "const target = StateUtils.getTarget(state, effect.player, transfers[0].from);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/ethans-pinsir.ts",
+      "signatures": [
+        "name: 'Vise Grip',",
+        "name: 'Rallying Horn',"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-darmanitan.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/klefki.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/delivery-box.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false }",
+        "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
+      ]
+    },
+    {
+      "file": "set-boundaries-crossed/trapinch.ts",
+      "signatures": [
+        "DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-call-of-legends/relicanth.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/galarian-slowking-v.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-pokemon-go/lunatone.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/lugia-v.ts",
+      "signatures": [
+        "if (player.hand.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-noble-victories/trubbish.ts",
+      "signatures": [
+        "if (player.discard.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/zeraora-v.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-jungle/oddish.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-jungle/pikachu.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-unified-minds/basculin.ts",
+      "signatures": [
+        "const hasBench = opponent.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/combee.ts",
+      "signatures": [
+        "const hasBench = player.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-dragons-majesty/turtonator.ts",
+      "signatures": [
+        "{ min: 0, max: totalFireEnergy, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-lost-thunder/blacephalon-gx.ts",
+      "signatures": [
+        "{ min: 0, max: totalFireEnergy, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/switching-cups.ts",
+      "signatures": [
+        "if (effect.player.hand.cards.length === 0) {",
+        "if (cards.length === 0 || player.deck.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-neo-genesis/mary.ts",
+      "signatures": [
+        "const shuffleCount = Math.min(2, player.hand.cards.length);"
+      ]
+    },
+    {
+      "file": "set-emerging-powers/simipour.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/probopass.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-plasma-blast/azelf.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-forbidden-light/eneporter.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/ribombee.ts",
+      "signatures": [
+        "const source = StateUtils.getTarget(state, player, transfer.from);"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/agatha.ts",
+      "signatures": [
+        "maxAllowedDamage.push({ target, damage: player.active.damage });"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/deino.ts",
+      "signatures": [
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
+      ],
+      "note": "TA-167/SD-6 superseded the original wrong-perspective fix: the attack-route prefab targets the opponent's Active by construction (AddSpecialConditionsEffect derives target from the AttackEffect), so it preserves the earlier fix's intent AND carries the attack identity that prevention guards need."
+    },
+    {
+      "file": "set-journey-together/ns-darmanitan.ts",
+      "signatures": [
+        "const discardThenDamage = (target?: PokemonCardList): State => {"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/armarouge.ts",
+      "signatures": [
+        "const discardThenDamage = (target?: PokemonCardList): State => {"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-archer.ts",
+      "signatures": [
+        "if (!player.marker.hasMarker(this.ARCHER_MARKER)) {\n      return false;"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/antique-cover-fossil.ts",
+      "signatures": [
+        "if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/tool-scrapper.ts",
+      "signatures": [
+        "public canPlay(store: StoreLike, state: State, player: Player): boolean {\n    // Mirrors `playCard`: a Trainer that can have no effect can't be played"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/bouffalant.ts",
+      "signatures": [
+        "effect.player.active.cannotAttackNextTurnPending = true;"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/arvens-mabosstiff-ex.ts",
+      "signatures": [
+        "cannotUseAttacksNextTurnPending.push('Boss Headbutt')"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/chansey.ts",
+      "signatures": [
+        "// TA-131: an attack is declarable even when its effect can't be carried out"
+      ]
+    },
+    {
+      "file": "set-journey-together/banette.ts",
+      "signatures": [
+        "GameMessage.CHOOSE_CARD_TO_SHUFFLE,"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-diancie-ex.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-prismatic-evolution/flareon-ex.ts",
+      "signatures": [
+        "The rider runs on a benchless board too (TA-123"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/smoochum.ts",
+      "signatures": [
+        "Single trailing shuffle for every branch"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/charcadet.ts",
+      "signatures": [
+        "Then, shuffle your deck\") still fires"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/comfey.ts",
+      "signatures": [
+        "moveTo caps at the deck size"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/eevee.ts",
+      "signatures": [
+        "The search whiffs (max resolves to 0)"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/dialga.ts",
+      "signatures": [
+        "fewer than 2 are available"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/tatsugiri-ex.ts",
+      "signatures": [
+        "TA-131: declarable with an empty deck (rulebook p.20)"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-persian-ex.ts",
+      "signatures": [
+        "declarable even if the opponent's deck is empty"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/altaria.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 0, max: 2 },"
+      ]
+    },
+    {
+      "file": "set-ex-dragon-frontiers/lickitung.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-ex-unseen-forces/smoochum.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-legends-awakened/azelf-lv-x.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-mysterious-treasures/gabite.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-stormfront/gengar.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-triumphant/gastly.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-triumphant/haunter.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/drifblim.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-dragons-exalted/drifloon-2.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-plasma-freeze/yamask.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fates-collide/alakazam-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fates-collide/bronzong-break.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-flashfire/dusknoir.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-phantom-forces/gengar-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/duskull.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/mimikyu.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-cosmic-eclipse/trevenant.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-crimson-invasion/gastly.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-guardians-rising/gothita.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-lost-thunder/giratina.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-team-up/hoopa-gx.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-unbroken-bonds/misdreavus.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-unified-minds/alolan-raichu.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-unified-minds/yveltal.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-astral-radiance/drifblim.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/galarian-rapidash-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-chilling-reign/shadow-rider-calyrex-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-crown-zenith/zeraora-vstar.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/medicham-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-evolving-skies/wobbuffet.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fusion-strike/hoopa-v.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-fusion-strike/starmie.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-lost-origin/cresselia.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-lost-origin/spectrier.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/reuniclus.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/arboliva-ex.ts",
+      "signatures": [
+        "operation: 'dealDamage'",
+        "effect.ignoreWeakness = true",
+        "#2161"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/ninetales.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/vespiquen-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/tsareena-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/yamask.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/sinistcha-ex.ts",
+      "signatures": [
+        "operation: 'placeCounters'",
+        "const toDeck = player.discard.cards.filter(isBasicGrass);",
+        "TA-144, the one that actually cost the game"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mismagius.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/spectrier.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-delta-reign/sableye.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-best-of-game/dark-ivysaur.ts",
+      "signatures": [
+        "operation: 'dealDamage'"
+      ]
+    },
+    {
+      "file": "set-pcg-p-promotional-cards/rotas-weavile.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/seadra.ts",
+      "signatures": [
+        "taking nothing does NOT excuse the shuffle"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/tatsugiri-ex.ts",
+      "signatures": [
+        "TA-166",
+        "if (putBack === 0) {"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-persian-ex.ts",
+      "signatures": [
+        "TA-166",
+        "if (putBack > 0) {"
+      ]
+    },
+    {
+      "file": "set-perfect-order/salazzle-ex.ts",
+      "signatures": [
+        "an empty deck is still a deck you searched"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/whimsicott-ex.ts",
+      "signatures": [
+        "the trailing shuffle survives an empty deck"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/melmetal.ts",
+      "signatures": [
+        "player.active.tools.slice()",
+        "TA-151"
+      ]
+    },
+    {
+      "file": "set-perfect-order/core-memory.ts",
+      "signatures": [
+        "effect.attacks.filter(attack => attack !== this.attacks[0])",
+        "TA-152"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/megaton-blower.ts",
+      "signatures": [
+        "TA-154",
+        "StateUtils.getStadiumCard(state) !== undefined"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/minccino.ts",
+      "signatures": [
+        "{ min: 0, max: max, allowCancel: true, blocked }"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/amulet-of-hope.ts",
+      "signatures": [
+        "{ min: 1, max: 3, allowCancel: false }",
+        "ability: 'Amulet of Hope'"
+      ]
+    },
+    {
+      "file": "set-perfect-order/salazzle-ex.ts",
+      "signatures": [
+        "TA-163",
+        "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/stoutland.ts",
+      "signatures": [
+        "TA-164",
+        "{ min: Math.min(1, maxCards), max: maxCards, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mystery-garden.ts",
+      "signatures": [
+        "TA-161",
+        "if (psychicPokemon < player.hand.cards.length || player.deck.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-silver-tempest/primordial-altar.ts",
+      "signatures": [
+        "TA-160",
+        "deckTop.moveToTopOfDestination(player.deck); // declined"
+      ]
+    },
+    {
+      "file": "set-perfect-order/turtonator.ts",
+      "signatures": [
+        "TA-168",
+        "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-171",
+        "player.switchPokemon(cardList, store, state);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-172",
+        "if (player.active === activeBefore) {"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/surfer.ts",
+      "signatures": [
+        "TA-173",
+        "return player.bench.some(b => b.cards.length > 0);"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/cetitan-ex.ts",
+      "signatures": [
+        "effect.target = undefined;"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/prime-catcher.ts",
+      "signatures": [
+        "const targetCard = new TrainerTargetEffect(player, effect.trainerCard, targets[0]);",
+        "if (!targetCard.target) {"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "const effMin = Math.min(min, eligible);",
+        "const effMax = Math.min(max, eligible);"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "base, [SpecialCondition.ASLEEP]",
+        "base, [SpecialCondition.POISONED]"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/costs.ts",
+      "signatures": [
+        "const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/attack-effect.ts",
+      "signatures": [
+        "if (attacker && attacker.attacksDamageReductionNextTurn > 0 && effect.damage > 0) {",
+        "effect.damage = Math.max(0, effect.damage - attacker.attacksDamageReductionNextTurn);"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "const prizesAlreadyTaken = state.players.some(p => p.prizes.every(pr => pr.cards.length === 0));"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-phase-effect.ts",
+      "signatures": [
+        "player.pokemonKnockedOutByAttackDuringOpponentsLastTurn = false;"
+      ]
+    },
+    {
+      "file": "game/store/state/pokemon-card-list.ts",
+      "signatures": [
+        "this.energies.cards = attached.filter(c => this.cards.includes(c));"
+      ]
+    },
+    {
+      "file": "game/store/state/card-list.ts",
+      "signatures": [
+        "const toMove = cards === this.cards ? cards.slice() : cards;"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {"
+      ]
+    },
+    {
+      "file": "game/store/reducers/player-turn-reducer.ts",
+      "signatures": [
+        "state.playerLastAttack[player.id] = { attack, sourceCard: pokemonCard, turn: state.turn };"
+      ]
+    }
+  ]
 }
