@@ -2,7 +2,6 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, PowerType, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, StateUtils, GamePhase } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { AFTER_ATTACK, IS_POKEBODY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -62,7 +61,7 @@ export class Feraligatr extends PokemonCard {
         const cardList = result[0];
         opponent.switchPokemon(cardList);
 
-        const afterDamage = new DealDamageEffect(effect as AttackEffect, 20);
+        const afterDamage = new DealDamageEffect(effect.attackEffect, 20);
         afterDamage.target = opponent.active;
         store.reduceEffect(state, afterDamage);
       });

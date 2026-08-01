@@ -134,8 +134,13 @@ function trainerPlayable(store: StoreLike, state: State, player: Player, card: T
       if (state.turn === 1 && !card.firstTurn) { return false; }
       return player.supporterTurn === 0;
     case TrainerType.ITEM:
-      if (player.marker.hasMarker('OPPONENT_CANNOT_PLAY_ITEM_CARDS_MARKER')) { return false; }
-      if (player.marker.hasMarker(player.ATTACK_EFFECT_ITEM_LOCK)) { return false; }
+      // Remapped during the upstream merge: the removed OPPONENT_CANNOT_PLAY_ITEM_CARDS_MARKER and
+      // player.ATTACK_EFFECT_ITEM_LOCK markers are now the single `cannotPlayItemCards` play-lock field
+      // that PlayLockEffect sets (effect-of-attack-effects.ts → Player.applyPlayLocks). CAN_PLAY_CARD at
+      // line 130 already returns false under item-lock, but this ITEM branch deliberately over-reports
+      // past a false CAN_PLAY_CARD, so we must still detect the real lock here to avoid offering a
+      // locked Item (the same intent the two marker checks had).
+      if (player.cannotPlayItemCards) { return false; }
       return true;
     default:
       return false; // Tool/Stadium were already adjudicated by CAN_PLAY_CARD above

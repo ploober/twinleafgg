@@ -401,7 +401,11 @@ export function PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(
 export function SHUFFLE_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_DECK(
   store: StoreLike,
   state: State,
-  effect: AfterAttackEffect) {
+  // Accept either post-attack effect: the body only reads effect.player. Upstream callers pass
+  // AttackEffect (via WAS_ATTACK_USED, relying on structural compat with AfterAttackEffect); our
+  // TA-128 added a required `attackEffect` field to AfterAttackEffect that broke that compat, so we
+  // widen the param explicitly rather than force those upstream cards to change.
+  effect: AttackEffect | AfterAttackEffect) {
   const player = effect.player;
 
   // Get all Pokemon cards (including evolutions)

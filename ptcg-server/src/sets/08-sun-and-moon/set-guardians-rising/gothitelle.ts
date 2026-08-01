@@ -7,7 +7,6 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { EnergyCard, StoreLike, State, StateUtils, GameMessage, PlayerType, SlotType, ChoosePokemonPrompt } from '../../../game';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -70,7 +69,7 @@ export class Gothitelle extends PokemonCard {
         const cardList = result[0];
         opponent.switchPokemon(cardList);
 
-        const afterDamage = new DealDamageEffect(effect as AttackEffect, 30);
+        const afterDamage = new DealDamageEffect(effect.attackEffect, 30);
         afterDamage.target = opponent.active;
         store.reduceEffect(state, afterDamage);
       });

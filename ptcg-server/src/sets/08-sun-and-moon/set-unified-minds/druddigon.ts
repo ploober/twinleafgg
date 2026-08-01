@@ -7,7 +7,6 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameMessage, PlayerType, SlotType } from '../../../game';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT } from '../../../game/store/prefabs/prefabs';
@@ -70,7 +69,7 @@ export class Druddigon extends PokemonCard {
         const cardList = result[0];
         opponent.switchPokemon(cardList);
 
-        const damageEffect = new DealDamageEffect(effect as AttackEffect, 30);
+        const damageEffect = new DealDamageEffect(effect.attackEffect, 30);
         damageEffect.target = opponent.active;
         store.reduceEffect(state, damageEffect);
       });

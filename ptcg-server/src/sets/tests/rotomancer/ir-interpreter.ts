@@ -8,9 +8,8 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PutDamageEffect, PutCountersEffect, AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED, BLOCK_RETREAT, BLOCK_RETREAT_IF_MARKER, NEXT_TURN_ATTACK_BONUS, NEXT_TURN_ATTACK_BASE_DAMAGE } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, BLOCK_RETREAT, OPPONENT_CANNOT_PLAY_ITEM_CARDS, NEXT_TURN_ATTACK_BONUS, NEXT_TURN_ATTACK_BASE_DAMAGE } from '../../../game/store/prefabs/prefabs';
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
-import { MarkerConstants } from '../../../game/store/markers/marker-constants';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { CardList } from '../../../game/store/state/card-list';
@@ -546,11 +545,12 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
       // single-turn differential — but the lock spec probes them on the following turn.
       const ovr = op.override;
       if (ovr?.kind === 'retreatShutoff' && ovr.target?.role === 'defending') {
-        // "The Defending Pokémon can't retreat during the opponent's next turn." Reproduce it with
-        // the exact native prefab: BLOCK_RETREAT installs DEFENDING_POKEMON_CANNOT_RETREAT_MARKER on
-        // the defender keyed to this card; InterpretedCard.reduceEffect enforces it with
-        // BLOCK_RETREAT_IF_MARKER, just like every native retreat-lock card. `self` is this
-        // interpreted card (the attacker's own active in a mirror), so the marker source matches.
+        // "The Defending Pokémon can't retreat during the opponent's next turn." Reproduce it with the
+        // exact native prefab: BLOCK_RETREAT reduces a PreventRetreatEffect that sets the defender's
+        // `cannotRetreatNextTurn` field (remapped from the removed DEFENDING_POKEMON_CANNOT_RETREAT_MARKER
+        // during the upstream merge), just like every native retreat-lock card. The engine enforces the
+        // field centrally, so no per-card enforcement is needed in reduceEffect. `self` is this
+        // interpreted card (the attacker's own active in a mirror), so the effect source matches.
         const self = effect.player.active.getPokemonCard();
         if (self) { state = BLOCK_RETREAT(store, state, effect, self); }
       } else if (ovr?.kind === 'attackShutoff' && ovr.target?.role === 'self'
@@ -563,12 +563,14 @@ function executeOp(store: StoreLike, state: State, effect: AttackEffect, op: IrO
         const pending = effect.player.active.cannotUseAttacksNextTurnPending;
         if (!pending.includes(ovr.attackName)) { pending.push(ovr.attackName); }
       } else if (ovr?.kind === 'itemPlayRestriction' && ovr.target?.side === 'opponent' && op.scope === 'opponentNextTurn') {
-        // "During your opponent's next turn, they can't play Item cards." Install the engine's central
-        // ATTACK_EFFECT_ITEM_LOCK on the opponent; playTrainerReducer throws BLOCKED_BY_EFFECT on a
-        // PlayItemEffect while it's present, and it's cleared at the opponent's turn end. Mechanism-
-        // independent: native item-lock cards produce the same observable, so the block probe compares it.
+        // "During your opponent's next turn, they can't play Item cards." Remapped during the upstream
+        // merge from the removed ATTACK_EFFECT_ITEM_LOCK marker to the new PlayLockEffect: reduce the
+        // exact native prefab OPPONENT_CANNOT_PLAY_ITEM_CARDS, which sets the opponent's
+        // `cannotPlayItemCards` play-lock field. CAN_PLAY_TRAINER_CARD then refuses a PlayItemEffect while
+        // the field is set, and Player.tickPlayLocksAtEndOfTurn clears it at the opponent's turn end —
+        // the same observable native item-lock cards produce, so the block probe compares it.
         const self = effect.player.active.getPokemonCard();
-        if (self) { effect.opponent.marker.addMarker(effect.opponent.ATTACK_EFFECT_ITEM_LOCK, self); }
+        if (self) { state = OPPONENT_CANNOT_PLAY_ITEM_CARDS(store, state, effect, self); }
       }
       return cont(state);
     }
@@ -633,10 +635,11 @@ export class InterpretedCard extends PokemonCard {
   public nextTurnBuffs: Array<(effect: Effect) => void> = [];
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Enforce any next-turn retreat lock this card installed (mirrors native retreat-lock cards,
-    // which call this same prefab in their reduceEffect). Throws BLOCKED_BY_EFFECT on a blocked
-    // RetreatEffect; inert for every other effect.
-    BLOCK_RETREAT_IF_MARKER(effect, MarkerConstants.DEFENDING_POKEMON_CANNOT_RETREAT_MARKER, this);
+    // Retreat-lock enforcement was remapped during the upstream merge. Retreat-lock is no longer a
+    // per-card marker enforced here but the `cannotRetreatNextTurn` field that BLOCK_RETREAT (the
+    // rule.override install above) sets via PreventRetreatEffect. The engine now enforces it centrally
+    // (retreat-effect.ts assertCanRetreat) and the conformance retreatMenu gates the menu on that same
+    // field, so no per-card BLOCK_RETREAT_IF_MARKER call is needed — the lock still blocks retreat.
     // Run the next-turn-buff prefabs AFTER the attack body (so a base-damage override overwrites the
     // body's base) and on non-attack effects (so the EndTurn marker lifecycle runs). Inert when empty.
     const applyBuffs = (s: State): State => { for (const buff of this.nextTurnBuffs) { buff(effect); } return s; };
