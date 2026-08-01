@@ -1493,6 +1493,19 @@
         "TA-173",
         "return player.bench.some(b => b.cards.length > 0);"
       ]
+    },
+    {
+      "file": "set-destined-rivals/cetitan-ex.ts",
+      "signatures": [
+        "effect.target = undefined;"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/prime-catcher.ts",
+      "signatures": [
+        "const targetCard = new TrainerTargetEffect(player, effect.trainerCard, targets[0]);",
+        "if (!targetCard.target) {"
+      ]
     }
   ]
 }
