@@ -1,6 +1,7 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard, Stage, CardType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_POISON_TO_PLAYER_ACTIVE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Skorupi extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -26,7 +27,7 @@ export class Skorupi extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Poison Jab - poison opponent's Active Pokemon
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
     }
 
     return state;

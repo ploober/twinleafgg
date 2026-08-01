@@ -1,6 +1,7 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
 import { CardTag, CardType, PokemonCard, Stage, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_POISON_TO_PLAYER_ACTIVE, THIS_ATTACK_DOES_X_MORE_DAMAGE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { THIS_ATTACK_DOES_X_MORE_DAMAGE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class BruteBonnet extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -36,9 +37,7 @@ export class BruteBonnet extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

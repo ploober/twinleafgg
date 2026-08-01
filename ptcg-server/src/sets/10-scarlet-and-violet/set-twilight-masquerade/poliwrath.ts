@@ -1,4 +1,5 @@
-import { ADD_SLEEP_TO_PLAYER_ACTIVE, AFTER_ATTACK, CONFIRMATION_PROMPT, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP } from '../../../game/store/prefabs/attack-effects';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { GameMessage } from '../../../game/game-message';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
@@ -42,7 +43,7 @@ export class Poliwrath extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (AFTER_ATTACK(effect, 0, this)) {
-      ADD_SLEEP_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP(store, state, effect);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

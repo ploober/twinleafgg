@@ -1,8 +1,9 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_POISON_TO_PLAYER_ACTIVE, AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsNidokingex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -38,7 +39,7 @@ export class TeamRocketsNidokingex extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Dirty Horns
     if (AFTER_ATTACK(effect, 0, this)) {
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, effect.opponent, this, 80);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect, 80);
     }
 
     return state;

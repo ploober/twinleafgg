@@ -1,8 +1,9 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { CoinFlipPrompt, GameMessage, State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_PARALYZED_TO_PLAYER_ACTIVE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Butterfree extends PokemonCard {
 
@@ -57,7 +58,7 @@ export class Butterfree extends PokemonCard {
         effect.damage = 60 * heads;
 
         if (heads >= 2) {
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       });
       return state;

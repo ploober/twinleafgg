@@ -1,6 +1,7 @@
-import { CardType, PokemonCard, Stage, State, StateUtils, StoreLike } from '../../../game';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
+import { CardType, PokemonCard, Stage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_CONFUSION_TO_PLAYER_ACTIVE, ADD_POISON_TO_PLAYER_ACTIVE, AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
 
 export class Accelgor extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -28,9 +29,8 @@ export class Accelgor extends PokemonCard {
 
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, opponent, this);
-      ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);
       SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
     }
 

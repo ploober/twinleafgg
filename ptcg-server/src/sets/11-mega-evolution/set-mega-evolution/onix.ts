@@ -1,8 +1,9 @@
-import { State, StateUtils, StoreLike } from '../../../game';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
+import { State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class Onix extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -35,11 +36,10 @@ export class Onix extends PokemonCard {
 
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
 
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result) {
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       });
     }

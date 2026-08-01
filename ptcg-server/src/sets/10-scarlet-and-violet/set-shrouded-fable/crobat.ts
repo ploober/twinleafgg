@@ -1,7 +1,8 @@
-import { BoardEffect, CardType, GameError, GameMessage, PlayerType, PokemonCard, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
+import { BoardEffect, CardType, GameError, GameMessage, PlayerType, PokemonCard, PowerType, Stage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect, TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { ADD_MARKER, ADD_POISON_TO_PLAYER_ACTIVE, HAS_MARKER, REMOVE_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ADD_MARKER, HAS_MARKER, REMOVE_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Crobat extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -88,9 +89,7 @@ export class Crobat extends PokemonCard {
     REMOVE_MARKER_AT_END_OF_TURN(effect, this.PLAY_JANINES_SECRET_ART_MARKER, this);
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, opponent, this, 20);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect, 20);
     }
     return state;
   }

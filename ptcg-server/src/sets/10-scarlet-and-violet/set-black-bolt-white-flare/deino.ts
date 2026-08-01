@@ -1,8 +1,9 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage } from '../../../game/store/card/card-types';
-import { State, StoreLike, StateUtils } from '../../../game';
+import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class Deino extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -38,13 +39,14 @@ export class Deino extends PokemonCard {
 
     if (AFTER_ATTACK(effect, 0, this)) {
       // Body Slam paralyzes the OPPONENT's Active on heads ("your opponent's Active Pokemon is now
-      // Paralyzed"). ADD_PARALYZED_TO_PLAYER_ACTIVE targets the PASSED player's own active, so pass the
-      // opponent — not effect.player (the attacker), which paralyzed the wrong board (matching the
-      // universal convention: 248/250 callers pass the opponent).
-      const opponent = StateUtils.getOpponent(state, effect.player);
+      // Paralyzed"). This previously used ADD_PARALYZED_TO_PLAYER_ACTIVE, which targets the PASSED
+      // player's own active and so had to be handed the opponent explicitly. The attack-route prefab
+      // derives the target from the AttackEffect, so the perspective is right by construction — and,
+      // per TA-167/SD-6, the condition now carries the attack identity that "prevent all effects of
+      // attacks" guards need in order to see it at all.
       return COIN_FLIP_PROMPT(store, state, effect.player, result => {
         if (result) {
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       });
     }

@@ -975,8 +975,9 @@
     {
       "file": "set-black-bolt-white-flare/deino.ts",
       "signatures": [
-        "ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);"
-      ]
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
+      ],
+      "note": "TA-167/SD-6 superseded the original wrong-perspective fix: the attack-route prefab targets the opponent's Active by construction (AddSpecialConditionsEffect derives target from the AttackEffect), so it preserves the earlier fix's intent AND carries the attack identity that prevention guards need."
     },
     {
       "file": "set-journey-together/ns-darmanitan.ts",

@@ -1,8 +1,8 @@
-import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt, StateUtils, ChoosePokemonPrompt, PlayerType, SlotType } from '../../../game';
+import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt, ChoosePokemonPrompt, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
-import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED, ADD_BURN_TO_PLAYER_ACTIVE } from '../../../game/store/prefabs/prefabs';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Salazzleex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -81,12 +81,12 @@ export class Salazzleex extends PokemonCard {
 
     // Fatal Nail - Poison + Burn
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // Poison and burn opponent's active
+      // TA-167 / SD-6: both conditions come from the SAME attack, so both must travel the attack
+      // route. ADD_BURN_TO_PLAYER_ACTIVE builds an AddSpecialConditionsPowerEffect, which carries no
+      // attack identity — so "prevent all effects of attacks" guards (Mist Energy) could not see the
+      // Burn and prevented only the Poison. One attack, one target, one instant, two outcomes.
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
-      ADD_BURN_TO_PLAYER_ACTIVE(store, state, opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(store, state, effect);
     }
 
     // Fatal Nail - Switch (after attack)

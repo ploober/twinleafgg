@@ -1,8 +1,9 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage, CoinFlipPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, ADD_PARALYZED_TO_PLAYER_ACTIVE, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Dedenne extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -93,7 +94,6 @@ export class Dedenne extends PokemonCard {
     // Thunder Shock - coin flip for paralysis
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
 
       // Rulebook step F / compendium #543/#649: apply damage before the coin-flip rider.
       // Uses CoinFlipPrompt (not the inline CoinFlipEffect) so the flip pauses without the
@@ -102,7 +102,7 @@ export class Dedenne extends PokemonCard {
 
       return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (result: boolean) => {
         if (result === true) {
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       });
     }

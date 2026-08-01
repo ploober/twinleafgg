@@ -1,7 +1,8 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, PowerType, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { ADD_CONFUSION_TO_PLAYER_ACTIVE, AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsGolbat extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -64,7 +65,7 @@ export class TeamRocketsGolbat extends PokemonCard {
 
     // Confuse Ray
     if (AFTER_ATTACK(effect, 0, this)) {
-      ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, StateUtils.getOpponent(state, effect.player), this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);
     }
     return state;
   }

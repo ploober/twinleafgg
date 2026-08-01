@@ -1,6 +1,7 @@
-import { CardTag, CardType, GameMessage, PokemonCard, SlotType, Stage, State, StateUtils, StoreLike } from '../../../game';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
+import { CardTag, CardType, GameMessage, PokemonCard, SlotType, Stage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, CONFIRMATION_PROMPT, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class MegaEelektrossex extends PokemonCard {
@@ -46,12 +47,11 @@ export class MegaEelektrossex extends PokemonCard {
     if (AFTER_ATTACK(effect, 1, this)) {
       // Disaster Shock: 190 damage, optionally discard 2 [L] Energy to Paralyze
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
 
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (result) {
           DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2, L);
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       }, GameMessage.WANT_TO_USE_EFFECT_OF_ATTACK);
     }

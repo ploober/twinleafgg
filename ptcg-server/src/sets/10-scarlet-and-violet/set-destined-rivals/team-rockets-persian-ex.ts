@@ -1,8 +1,9 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, GameMessage, StateUtils, CardList, SuperType, ChooseAttackPrompt, Attack, GameLog, ShowCardsPrompt } from '../../../game';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import { ADD_CONFUSION_TO_PLAYER_ACTIVE, AFTER_ATTACK, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useHaughtyOrders(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
@@ -124,7 +125,7 @@ export class TeamRocketsPersianex extends PokemonCard {
 
     // Cruel Slash
     if (AFTER_ATTACK(effect, 1, this)) {
-      ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);
     }
 
     return state;

@@ -1,3 +1,4 @@
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
@@ -6,7 +7,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { GameMessage, StateUtils, SuperType } from '../../../game';
-import { COIN_FLIP_PROMPT, ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Beautifly extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -45,7 +46,7 @@ export class Beautifly extends PokemonCard {
     if (AFTER_ATTACK(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, (result) => {
         if (result) {
-          ADD_PARALYZED_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
         }
       });
     }

@@ -613,10 +613,13 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON
 export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP(
   store: StoreLike,
   state: State,
-  effect: AttackEffect
+  effect: AttackEffect | AfterAttackEffect   // usable from the AFTER_ATTACK (post-damage) phase too
 ) {
+  // TA-167 / SD-6: the condition must carry the ATTACK identity, or no "prevent all effects of
+  // attacks" guard can see it. AFTER_ATTACK carries the originating AttackEffect.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const specialConditionEffect = new AddSpecialConditionsEffect(
-    effect, [SpecialCondition.ASLEEP]
+    base, [SpecialCondition.ASLEEP]
   );
   store.reduceEffect(state, specialConditionEffect);
 
@@ -625,10 +628,13 @@ export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP(
 export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(
   store: StoreLike,
   state: State,
-  effect: AttackEffect
+  effect: AttackEffect | AfterAttackEffect   // usable from the AFTER_ATTACK (post-damage) phase too
 ) {
+  // TA-167 / SD-6: the condition must carry the ATTACK identity, or no "prevent all effects of
+  // attacks" guard can see it. AFTER_ATTACK carries the originating AttackEffect.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const specialConditionEffect = new AddSpecialConditionsEffect(
-    effect, [SpecialCondition.BURNED]
+    base, [SpecialCondition.BURNED]
   );
   store.reduceEffect(state, specialConditionEffect);
 
@@ -637,10 +643,13 @@ export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(
 export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(
   store: StoreLike,
   state: State,
-  effect: AttackEffect
+  effect: AttackEffect | AfterAttackEffect   // usable from the AFTER_ATTACK (post-damage) phase too
 ) {
+  // TA-167 / SD-6: the condition must carry the ATTACK identity, or no "prevent all effects of
+  // attacks" guard can see it. AFTER_ATTACK carries the originating AttackEffect.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const specialConditionEffect = new AddSpecialConditionsEffect(
-    effect, [SpecialCondition.CONFUSED]
+    base, [SpecialCondition.CONFUSED]
   );
   store.reduceEffect(state, specialConditionEffect);
 
@@ -649,10 +658,13 @@ export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(
 export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(
   store: StoreLike,
   state: State,
-  effect: AttackEffect
+  effect: AttackEffect | AfterAttackEffect   // usable from the AFTER_ATTACK (post-damage) phase too
 ) {
+  // TA-167 / SD-6: the condition must carry the ATTACK identity, or no "prevent all effects of
+  // attacks" guard can see it. AFTER_ATTACK carries the originating AttackEffect.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const specialConditionEffect = new AddSpecialConditionsEffect(
-    effect, [SpecialCondition.PARALYZED]
+    base, [SpecialCondition.PARALYZED]
   );
   store.reduceEffect(state, specialConditionEffect);
 
@@ -661,11 +673,16 @@ export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(
 export function YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(
   store: StoreLike,
   state: State,
-  effect: AttackEffect
+  effect: AttackEffect | AfterAttackEffect,
+  poisonDamage?: number   // usable from the AFTER_ATTACK (post-damage) phase too
 ) {
+  // TA-167 / SD-6: the condition must carry the ATTACK identity, or no "prevent all effects of
+  // attacks" guard can see it. AFTER_ATTACK carries the originating AttackEffect.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const specialConditionEffect = new AddSpecialConditionsEffect(
-    effect, [SpecialCondition.POISONED]
+    base, [SpecialCondition.POISONED]
   );
+  if (poisonDamage !== undefined) { specialConditionEffect.poisonDamage = poisonDamage; }
   store.reduceEffect(state, specialConditionEffect);
 
 }

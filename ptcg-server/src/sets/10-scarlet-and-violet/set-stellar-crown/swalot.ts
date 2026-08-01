@@ -1,4 +1,5 @@
-import { ADD_POISON_TO_PLAYER_ACTIVE, AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
@@ -55,7 +56,7 @@ export class Swalot extends PokemonCard {
     }
 
     if (AFTER_ATTACK(effect, 1, this)) {
-      ADD_POISON_TO_PLAYER_ACTIVE(store, state, effect.opponent, this);
+      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
     }
 
     return state;
