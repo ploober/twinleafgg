@@ -102,7 +102,8 @@
   {
    "file": "set-destined-rivals/team-rockets-moltres-ex.ts",
    "signatures": [
-    "effect.player.active.damageReductionNextTurn = 50;"
+    "effect.player.active.damageReductionNextTurn = 50;",
+    "name: 'Evil Incineration',"
    ]
   },
   {
