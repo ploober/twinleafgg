@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Re-apply src/sets fixes that an origin/main merge (or any commit) silently reverted.
+Re-apply src/sets AND src/game fixes that an origin/main merge (or any commit) silently reverted.
 
 Companion to the DETECTION guard (`conformance-fix-signatures.spec.ts` + `fix-signatures.json`).
 The guard fails the suite loudly and names each card whose fixed line vanished; this tool does the
@@ -8,7 +8,8 @@ REMEDIATION automatically, turning "an upstream merge reverted N card fixes → 
 (which cost hours across the 2026-07-06 and 07-07 merges) into one command.
 
 How it works — for every entry in fix-signatures.json:
-  1. Resolve the file by its reorg-independent `set-<name>/<base>.ts` suffix (same as the guard).
+  1. Resolve the file the same way the guard does: `game/`-prefixed entries by exact src-relative
+     path (engine files), everything else by reorg-independent `set-<name>/<base>.ts` suffix.
   2. Check whether all of the fix's signature lines are present (whitespace-normalized, same as guard).
   3. If any signature is MISSING (= reverted), walk the file's git history newest-first and find the
      most recent commit whose version of the file still carried ALL signatures — that is the last
@@ -102,23 +103,42 @@ def diff_summary(root, current_text, good_blob, gitpath, show_full):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Re-apply merge-reverted src/sets fixes from fix-signatures.json")
+    ap = argparse.ArgumentParser(description="Re-apply merge-reverted src/sets and src/game fixes from fix-signatures.json")
     ap.add_argument("--apply", action="store_true", help="write the restored files (default: dry run)")
     ap.add_argument("--show-diff", action="store_true", help="show full unified diff per reverted file")
     args = ap.parse_args()
 
     root = git_root()
-    sets_dir = os.path.join(root, "ptcg-server", "src", "sets")
+    src_dir = os.path.join(root, "ptcg-server", "src")
+    sets_dir = os.path.join(src_dir, "sets")
+    game_dir = os.path.join(src_dir, "game")
     manifest_path = os.path.join(root, "ptcg-server", "src", "conformance", "fix-signatures.json")
     manifest = json.load(open(manifest_path))["fixes"]
     index = index_by_suffix(sets_dir)
+    game_index = index_by_suffix(game_dir)
+
+    def resolve(entry):
+        """Mirror the guard's resolution exactly (see conformance-fix-signatures.spec.ts).
+
+        A `game/`-prefixed entry is an ENGINE file: resolve by exact src-relative path, falling back to a
+        last-two-components suffix search so an upstream move relocates rather than un-guards it. Anything
+        else keeps the card `set-<name>/<base>.ts` suffix lookup. Without this the guard would name an
+        engine revert and then point at a tool that could not resolve it -- the error message told you to
+        run something that would have reported the entry as unresolvable.
+        """
+        if entry.startswith("game/"):
+            direct = os.path.join(src_dir, entry)
+            if os.path.exists(direct):
+                return [direct]
+            return game_index.get("/".join(entry.split("/")[-2:]), [])
+        return index.get(entry, [])
 
     reverted, unresolved, restored, failed = [], [], [], []
 
     for fix in manifest:
         suffix = fix["file"]
         norm_sigs = [norm(s) for s in fix["signatures"]]
-        paths = index.get(suffix, [])
+        paths = resolve(suffix)
         if len(paths) != 1:
             unresolved.append((suffix, f"expected exactly one file, found {len(paths)}"))
             continue
@@ -131,7 +151,8 @@ def main():
         good = newest_good_version(root, gitpath, norm_sigs)
         reverted.append((suffix, abspath, gitpath, missing, good, cur))
 
-    print(f"Scanned {len(manifest)} fix entries under {os.path.relpath(sets_dir, root)}")
+    n_game = sum(1 for f in manifest if f["file"].startswith("game/"))
+    print(f"Scanned {len(manifest)} fix entries under {os.path.relpath(src_dir, root)} ({n_game} engine, {len(manifest) - n_game} card)")
     if unresolved:
         print(f"\n⚠ {len(unresolved)} entr(y/ies) could not be resolved (fix the manifest):")
         for suffix, why in unresolved:
