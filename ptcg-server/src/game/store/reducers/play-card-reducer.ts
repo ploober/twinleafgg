@@ -104,6 +104,32 @@ export function playCardReducer(store: StoreLike, state: State, action: Action):
       }
 
       if (handCard instanceof TrainerCard) {
+        // TA-177: a Trainer's own no-effect gate has to be enforced HERE, on the play path, or it is
+        // not a rule at all — it is a hint. `canPlay` is implemented by ~200 cards, and until now its
+        // only two consumers were `Store.calculatePlayability` (which fills `playableCardIds`, a UI
+        // hint list) and the conformance harness's legal-action enumeration. Both merely decide what to
+        // OFFER. Nothing consulted it when a play action was actually dispatched, so any client that
+        // sent the action anyway got the play — the card left the hand, the Supporter slot was spent,
+        // and the card did nothing.
+        //
+        // Surfer `ssp-187` is the measured case: *"Switch your Active Pokémon with 1 of your Benched
+        // Pokémon. If you do, draw cards until you have 5 cards in your hand."* Its `canPlay` correctly
+        // requires a non-empty Bench (TA-173) and both engines correctly omit it from the menu — yet
+        // driving the play still burned the card and the Supporter slot on a guaranteed no-op, while
+        // rotomancer answers `invalidAction`.
+        //
+        // Grounding is card-specific, not just the general principle. Compendium **#2067** (Surging
+        // Sparks FAQ): *"If I have no Pokemon on my bench can I play Surfer? — No way, dude! You must
+        // be able to switch a Pokemon from the Bench in order to play Surfer."* The general rule is
+        // **#925**: *"you cannot play a card if it is obvious that you cannot do what the card is
+        // supposed to do at that moment"*, with **#1004** distinguishing a cost from the effect.
+        //
+        // Scoped deliberately to an EXPLICIT `false`. `canPlay` is declared `boolean | undefined`, and
+        // `undefined` means "this card has no opinion" — treating that as a refusal would turn every
+        // card that returns nothing on some branch into an unplayable card.
+        if (handCard.canPlay && handCard.canPlay(store, state, player) === false) {
+          throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+        }
         const target = findPokemonTarget(state, player, action.target);
         let effect: Effect;
         switch (handCard.trainerType) {
