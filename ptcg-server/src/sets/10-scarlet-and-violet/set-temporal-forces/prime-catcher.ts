@@ -4,7 +4,7 @@ import { PlayerType, SlotType } from '../../../game/store/actions/play-card-acti
 import { CardTag, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import { TrainerEffect, TrainerTargetEffect } from '../../../game/store/effects/play-card-effects';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
@@ -30,8 +30,20 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       if (!targets || targets.length === 0) {
         return;
       }
+
+      // TA-175: announce the target so protection Abilities can refuse it (e.g. Cetitan ex's
+      // "Snow Camouflage", #2154). A refused switch-in means the "If you do" consequent below
+      // does not happen at all — #1979: "if you don't place any damage counters, you don't
+      // shuffle the Energy into your deck."
+      const targetCard = new TrainerTargetEffect(player, effect.trainerCard, targets[0]);
+      targetCard.target = targets[0];
+      store.reduceEffect(state, targetCard);
+      if (!targetCard.target) {
+        return state;
+      }
+
       opponent.active.clearEffects();
-      opponent.switchPokemon(targets[0]);
+      opponent.switchPokemon(targetCard.target);
       next();
 
       const hasBench = player.bench.some(b => b.cards.length > 0);

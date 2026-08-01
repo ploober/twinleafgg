@@ -48,7 +48,11 @@ export class Cetitanex extends PokemonCard {
       });
       if (!isCetitanOnOpponentsSide) { return state; }
 
-      effect.preventDefault = true;
+      // TA-174: refuse the effect by clearing the target — that is the protocol every
+      // TrainerTargetEffect dispatcher reads (`if (targetCard.target)`). Setting
+      // `preventDefault` here did nothing: the store's central preventDefault check only
+      // stops REDUCERS, and the switch is performed by the dispatching card's own callback.
+      effect.target = undefined;
     }
 
     // Crushing Press
