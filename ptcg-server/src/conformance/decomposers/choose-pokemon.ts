@@ -56,8 +56,42 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
    * "you may" heal (min:0) still surfaces its decline. The post-KO promote (`promoteBench`) is excluded
    * — it has its own flow and its collapse is handled by the KO/prize machinery.
    */
-  atomicResolvable: (prompt) =>
-    prompt.options.max === 1 && prompt.message !== GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
+  /**
+   * B.17 (TA-178): the `max === 1` gate above is a test of whether the CURRENT sub-pick is forced, and
+   * that is the right test for the case it was written for. It is not the only way a decision can have
+   * one resolution. A MULTI-pick whose candidate pool is no larger than its required count is forced for
+   * its ENTIRE duration, not momentarily: every valid selection is "all the candidates", in some order
+   * that the decision itself does not distinguish.
+   *
+   * Mega Eelektross ex `asc-061` "Split Bomb" — *"does 60 damage to each of 2 of your opponent's
+   * Pokémon"* — built as `min:2, max:2`. Played into an opponent reduced to ONE Pokémon, it asks for two
+   * targets where only one exists, and twinleaf surfaced a 1-option `choose` while rotomancer applied
+   * the 60 and moved on. Adjudicated in the register as ours: the card grants a choice of *which two*,
+   * and where there are not two to choose between, the card grants nothing to choose.
+   *
+   * This is the same whole-decision test `choose-cards` already uses for CF-8 (`min >= |eligible|`), so
+   * the two prompt classes now agree on when a forced discard/target collapses instead of differing by
+   * which prompt a card happened to reach for — the TA-176 lesson applied one class over.
+   *
+   * `min >= 1` is required: a `min:0` "you may" must still surface its decline, and the driver's own
+   * `!canStopNow` guard already refuses anything carrying an `endChoice`.
+   */
+  atomicResolvable: (prompt, state) => {
+    if (prompt.message === GameMessage.CHOOSE_NEW_ACTIVE_POKEMON) {
+      return false;
+    }
+    if (prompt.options.max === 1) {
+      return true;
+    }
+    const { min } = prompt.options;
+    if (min < 1) {
+      return false;
+    }
+    const player = promptPlayer(state, prompt.playerId);
+    const candidates = enumerateTargets(
+      state, player, prompt.playerType, prompt.slots, prompt.options.blocked);
+    return candidates.length <= min;
+  },
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {

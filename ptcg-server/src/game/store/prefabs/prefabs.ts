@@ -1235,10 +1235,26 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
+  const wanted = slots ?? [SlotType.BENCH];
   const targets = opponent.bench.filter((b) => b.cards.length > 0);
-  if (targets.length === 0 && !slots?.includes(SlotType.ACTIVE)) {
+
+  // B.17 / TA-178: `min` must be CLAMPED to how many targets actually exist. Passing the printed count
+  // straight through raises a prompt the player cannot satisfy — Mega Eelektross ex `asc-061` "Split
+  // Bomb" (*"60 damage to each of 2 of your opponent's Pokémon"*, min:2) played into an opponent reduced
+  // to a lone Active offers one target and then rejects the only selection there is, so the attack
+  // cannot resolve at all. The old guard missed it because it only caught the bench-empty case and only
+  // when ACTIVE was not among the slots; the failure needs merely FEWER targets than asked for, which is
+  // the ordinary late-game board. 13 of the 28 call sites pass min > 1 and every one of them could reach
+  // it. Doing as much as can be done is the rulebook's default for a partially-satisfiable instruction,
+  // and it is what rotomancer does here (it applies the 60 and moves on).
+  const eligible =
+    (wanted.includes(SlotType.ACTIVE) && opponent.active.cards.length > 0 ? 1 : 0) +
+    (wanted.includes(SlotType.BENCH) ? targets.length : 0);
+  if (eligible === 0) {
     return state;
   }
+  const effMin = Math.min(min, eligible);
+  const effMax = Math.min(max, eligible);
 
   return store.prompt(
     state,
@@ -1246,8 +1262,8 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
       player.id,
       GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
       PlayerType.TOP_PLAYER,
-      slots ?? [SlotType.BENCH],
-      { min: min, max: max, allowCancel: false },
+      wanted,
+      { min: effMin, max: effMax, allowCancel: false },
     ),
     (selected) => {
       selected.forEach((target) => {
