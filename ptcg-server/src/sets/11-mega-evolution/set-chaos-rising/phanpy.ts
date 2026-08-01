@@ -9,7 +9,7 @@ export class Phanpy extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Mud Slap',
+    name: 'Mud-Slap',
     cost: [F],
     damage: 10,
     text: ''

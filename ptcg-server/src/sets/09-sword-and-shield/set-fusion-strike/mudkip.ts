@@ -9,7 +9,7 @@ export class Mudkip extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Mud Slap',
+    name: 'Mud-Slap',
     cost: [C, C],
     damage: 20,
     text: ''

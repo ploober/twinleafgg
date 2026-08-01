@@ -13,7 +13,7 @@ export class Gastly extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Pitch Dark',
+    name: 'Pitch-Dark',
     cost: [],
     damage: 0,
     text: 'You opponent can\'t play any Trainer cards from his or her hand during your opponent\'s next turn.',
