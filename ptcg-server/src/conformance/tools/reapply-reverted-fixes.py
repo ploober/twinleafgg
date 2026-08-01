@@ -71,8 +71,13 @@ def index_by_suffix(sets_dir):
     return idx
 
 
-def newest_good_version(root, gitpath, norm_sigs, cap=400):
-    """Newest commit whose blob at `gitpath` contains ALL signatures. Returns (sha, subject, blob) or None."""
+def newest_good_version(root, gitpath, norm_sigs, norm_absent=(), cap=400):
+    """Newest commit whose blob at `gitpath` satisfies the entry: contains ALL present-signatures AND
+    contains NONE of the absent-signatures. Returns (sha, subject, blob) or None.
+
+    The absent side matters for deletion-type fixes (a Basic whose `evolvesFrom` pointed at itself, say):
+    a "good" version is one where the offending line is GONE, so a restore source that still carries it
+    is not a restore source at all."""
     rc, out = git(root, "rev-list", f"--max-count={cap}", "HEAD", "--", gitpath)
     if rc != 0:
         return None
@@ -81,7 +86,7 @@ def newest_good_version(root, gitpath, norm_sigs, cap=400):
         if rc2 != 0:
             continue  # path didn't exist at this commit (pre-rename)
         body = norm(blob)
-        if all(s in body for s in norm_sigs):
+        if all(s in body for s in norm_sigs) and not any(s in body for s in norm_absent):
             _, subj = git(root, "log", "-1", "--format=%h %s", sha)
             return sha, subj.strip(), blob
     return None
@@ -137,18 +142,24 @@ def main():
 
     for fix in manifest:
         suffix = fix["file"]
-        norm_sigs = [norm(s) for s in fix["signatures"]]
+        sigs = fix.get("signatures", [])
+        absent = fix.get("absentSignatures", [])
+        norm_sigs = [norm(s) for s in sigs]
+        norm_absent = [norm(s) for s in absent]
         paths = resolve(suffix)
         if len(paths) != 1:
             unresolved.append((suffix, f"expected exactly one file, found {len(paths)}"))
             continue
         abspath = paths[0]
         cur = open(abspath).read()
-        missing = [s for s, ns in zip(fix["signatures"], norm_sigs) if ns not in norm(cur)]
+        body = norm(cur)
+        missing = [s for s, ns in zip(sigs, norm_sigs) if ns not in body]
+        # A deletion-type fix is "reverted" when the line it deleted has come BACK.
+        missing += [f"(regained) {s}" for s, ns in zip(absent, norm_absent) if ns in body]
         if not missing:
             continue  # fix present — nothing to do
         gitpath = os.path.relpath(abspath, root)
-        good = newest_good_version(root, gitpath, norm_sigs)
+        good = newest_good_version(root, gitpath, norm_sigs, norm_absent)
         reverted.append((suffix, abspath, gitpath, missing, good, cur))
 
     n_game = sum(1 for f in manifest if f["file"].startswith("game/"))
@@ -178,7 +189,7 @@ def main():
         if args.apply:
             open(abspath, "w").write(blob)
             after = norm(open(abspath).read())
-            if all(s in after for s in [norm(m) for m in missing]):
+            if all(s in after for s in norm_sigs) and not any(s in after for s in norm_absent):
                 print("      ✓ restored + signatures verified")
                 restored.append(suffix)
             else:
