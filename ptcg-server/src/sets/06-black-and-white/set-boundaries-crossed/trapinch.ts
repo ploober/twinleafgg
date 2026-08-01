@@ -1,8 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, StateUtils, ChooseCardsPrompt } from '../../../game';
+import { Stage, CardType } from '../../../game/store/card/card-types';
+import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 
 export class Trapinch extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -19,7 +20,7 @@ export class Trapinch extends PokemonCard {
     text: 'Flip a coin. If heads, discard an Energy attached to the Defending Pokémon.'
   },
   {
-    name: 'Bite',
+    name: 'Hyper Beam',
     cost: [F, C],
     damage: 20,
     text: ''
@@ -36,25 +37,9 @@ export class Trapinch extends PokemonCard {
     // Smithereen Smash
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result) {
-          const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
-          if (hasEnergy === false) {
-            return;
-          }
-          store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_DISCARD,
-            opponent.active,
-            { superType: SuperType.ENERGY },
-            { min: 1, max: 1, allowCancel: false }
-          ), selected => {
-            const card = selected[0];
-
-            opponent.active.moveCardTo(card, opponent.discard);
-            return state;
-          });
+          DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
         }
       });
     }
