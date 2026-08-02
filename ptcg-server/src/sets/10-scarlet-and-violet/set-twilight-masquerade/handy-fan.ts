@@ -40,25 +40,46 @@ export class HandyFan extends TrainerCard {
       if (state.phase === GamePhase.ATTACK) {
         const player = effect.player;
         const opponent = StateUtils.getOpponent(state, player);
-        const hasBench = opponent.bench.some(b => b.cards.length > 0);
+
+        // TA-187: "move an Energy from the attacking Pokémon to 1 of **your opponent's** Benched
+        // Pokémon". "Your" is the TOOL'S OWNER, so "your opponent" is the ATTACKER — the Energy
+        // moves off the attacking Pokémon and onto the ATTACKER's own Bench. `effect.player` is the
+        // attacking player, so `opponent` here is the Tool's owner, and this guard was checking the
+        // TOOL OWNER's bench for a destination. On any board where the Tool's owner had an empty
+        // Bench the reaction bailed out entirely — even though the attacker had Benched Pokémon
+        // perfectly able to receive the Energy. That is the whole defect: the destination
+        // resolution below was already correct (`getTarget` flips on `TOP_PLAYER`), only the
+        // achievability test looked at the wrong side of the board.
+        const hasBench = player.bench.some(b => b.cards.length > 0);
 
         if (hasBench === false) {
+          return state;
+        }
+
+        // Nothing to move if the attacking Pokémon carries no Energy (cf. turtonator.ts).
+        const attackingPokemon = effect.source || player.active;
+        if (attackingPokemon.energies.cards.length === 0) {
           return state;
         }
 
         return store.prompt(state, new AttachEnergyPrompt(
           opponent.id,
           GameMessage.ATTACH_ENERGY_TO_BENCH,
-          player.active,
+          attackingPokemon,
           PlayerType.TOP_PLAYER,
           [SlotType.BENCH],
           { superType: SuperType.ENERGY },
-          { allowCancel: false, min: 0, max: 1 }
+          // TA-187: was `min: 0`, which offered a decline. The text is "move an Energy" with no
+          // "may" and no "up to", so the move is MANDATORY once the trigger fires — §B.18/#2301.
+          // Rotomancer offers no `confirm{false}` here either.
+          { allowCancel: false, min: 1, max: 1 }
         ), transfers => {
           transfers = transfers || [];
           for (const transfer of transfers) {
+            // `opponent` is the Tool's owner and `transfer.to.player` is TOP_PLAYER, so getTarget
+            // flips to the ATTACKER's bench — the correct destination.
             const target = StateUtils.getTarget(state, opponent, transfer.to);
-            player.active.moveCardTo(transfer.card, target);
+            attackingPokemon.moveCardTo(transfer.card, target);
           }
         });
       }

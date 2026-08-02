@@ -3,7 +3,7 @@ import { CardTag, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State, GamePhase } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
+import { AfterDamageEffect, PutCountersEffect } from '../../../game/store/effects/attack-effects';
 import { StateUtils } from '../../../game/store/state-utils';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
 
@@ -39,13 +39,27 @@ export class DeluxeBomb extends TrainerCard {
       }
 
       if (state.phase === GamePhase.ATTACK) {
-        effect.source.damage += 120;
+        // TA-187, half 1: this was `effect.source.damage += 120` — a raw mutation of the attacker's
+        // damage total. The damage DID land (the knock-out still happened), but no `damaged` event was
+        // ever emitted and nothing downstream could see or prevent the placement, so on the wire the
+        // reaction was invisible. `PutCountersEffect` is the established idiom for this shape
+        // (cf. `set-chaos-rising/chesnaught.ts`): 12 damage counters = 120, placed as COUNTERS so
+        // Weakness/Resistance correctly do not apply.
+        const damageBefore = effect.source.damage;
 
-        effect.target.cards.forEach(card => {
-          if (card === this) {
-            effect.target.moveCardTo(card, targetPlayer.discard);
-          }
-        });
+        const putCounters = new PutCountersEffect(effect.attackEffect, 120);
+        putCounters.target = effect.source;
+        store.reduceEffect(state, putCounters);
+
+        // "If you placed any damage counters in this way, discard this card." The discard is
+        // CONDITIONAL on the placement actually happening, so a prevented placement must leave the
+        // Tool attached — which is why this reads the attacker's damage rather than assuming.
+        if (effect.source.damage > damageBefore) {
+          // TA-187, half 2: this iterated `effect.target.cards` — the Pokémon stack — looking for
+          // `this`, so the test never matched and the Tool was NEVER discarded. A Tool lives in
+          // `.tools`, not in `.cards`.
+          effect.target.moveCardTo(this, targetPlayer.discard);
+        }
       }
     }
 

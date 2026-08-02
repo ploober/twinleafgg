@@ -138,6 +138,13 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     GameLog.LOG_PLAYER_DEALS_DAMAGE,
     GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE,
     GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE,
+    // TA-187 / CF-40: placed damage COUNTERS are a third damage source, and a Pokemon can be
+    // Knocked Out by them (Deluxe Bomb `scr-134` puts 12 counters on the attacker). Without this
+    // the reconstruction pool came up short and the KO'd Pokemon got a `ko` with no preceding
+    // `damaged` — the engine placed and logged the counters correctly, the PROJECTION could not
+    // see the log kind. Safe for survivors too: counters landing on a survivor raise `dealt` and
+    // `survivorDamage` by the same amount, leaving `pool` unchanged.
+    GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS,
   ]);
   // A Pokemon whose basic iid reappears in a player's hand or deck was BOUNCED by an effect
   // ("Put this Pokemon and all attached cards into your hand" — Tuck Tail), not Knocked Out:
