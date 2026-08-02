@@ -219,7 +219,10 @@ def main():
         return 0
 
     manifest = json.load(open(fc.MANIFEST, encoding='utf8'))
-    have = {(f['file'], tuple(f['signatures'])) for f in manifest['fixes']}
+    # A handful of entries are `absentSignatures` waivers (a file whose fix is a DELETION, so there
+    # is no added line to anchor on). They carry no `signatures` key, and assuming one crashed this
+    # tool's own --apply path.
+    have = {(f['file'], tuple(f.get('signatures', ()))) for f in manifest['fixes']}
     added = 0
     for e in registered:
         if (e['file'], tuple(e['signatures'])) in have:
