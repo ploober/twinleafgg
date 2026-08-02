@@ -17,21 +17,35 @@ export class NsPlan extends TrainerCard {
   public fullName: string = 'N\'s Plot SV11B';
   public text: string = 'Move up to 2 Energy from your Benched Pokémon to your Active Pokémon.';
 
+  /**
+   * TA-182 / §B.18. "Move up to 2 Energy from your **Benched** Pokémon to your Active Pokémon."
+   *
+   * This counted Energy on ALL of the player's Pokémon — the Active included — so a board whose
+   * Active carried Energy but whose Bench carried none answered "playable", the Supporter was burned
+   * and nothing moved. The Energy has to come off the BENCH, so only the Bench can satisfy it.
+   *
+   * #2301 floors a Trainer's "up to X" at 1 (not 0, which is the *attack* rule), and #925 makes an
+   * unreachable floor unplayable rather than a legal no-op.
+   */
+  private hasBenchedEnergy(player: Player): boolean {
+    let benchedEnergy = false;
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+      if (target.slot === SlotType.BENCH && cardList.cards.some(c => c.superType === SuperType.ENERGY)) {
+        benchedEnergy = true;
+      }
+    });
+    return benchedEnergy;
+  }
+
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
       return false;
     }
-    let hasEnergy = false;
-    let pokemonCount = 0;
-    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-      pokemonCount += 1;
-      const energyAttached = cardList.cards.some(c => c.superType === SuperType.ENERGY);
-      hasEnergy = hasEnergy || energyAttached;
-    });
-    if (!hasEnergy || pokemonCount <= 1) {
+    // An Active is also required as the destination; a player mid-promote has none.
+    if (player.active.cards.length === 0) {
       return false;
     }
-    return true;
+    return this.hasBenchedEnergy(player);
   }
 
 
@@ -44,18 +58,10 @@ export class NsPlan extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      // Player has no Basic Energy in the discard pile
-      let hasEnergy = false;
-      let pokemonCount = 0;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        pokemonCount += 1;
-        const basicEnergyAttached = cardList.cards.some(c => {
-          return c.superType === SuperType.ENERGY;
-        });
-        hasEnergy = hasEnergy || basicEnergyAttached;
-      });
-
-      if (!hasEnergy || pokemonCount <= 1) {
+      // Same test as `canPlay`, via the same helper, so the menu and the dispatcher cannot disagree
+      // — that split is exactly the TA-181 shape. (The old comment here said "no Basic Energy in the
+      // discard pile", which describes a different card entirely.)
+      if (player.active.cards.length === 0 || !this.hasBenchedEnergy(player)) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 

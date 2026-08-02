@@ -48,7 +48,17 @@ export class Levincia extends TrainerCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.discard,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Lightning Energy' },
-        { allowCancel: false, min: 0, max: 2 }
+        // TA-159 / §B.18: the floor is 1, not 0. #2301 — "For other effects (such as the effects of
+        // Trainer cards and Abilities), you can choose any number between 1 and the maximum." A
+        // Stadium is a Trainer. The printed "may" is the ACTIVATION gate (`useStadium` is itself the
+        // "may"), not a licence to take zero after activating — rotomancer reached the identical
+        // reading independently on Thwackey `svp-115`/`twm-015`, the same once-per-turn "may" shape.
+        // #968's untyped-search exception does not reach this: fail-to-find is a HIDDEN-zone doctrine
+        // ("the contents of the deck are unknown"), and this is a TYPED retrieval from the discard
+        // pile, where contents and quantity are both public. The "no Basic [L] in the discard" case
+        // is already handled above by the CANNOT_USE_POWER guard, so a floor of 1 is always
+        // satisfiable by the time we get here.
+        { allowCancel: false, min: 1, max: 2 }
       ), selected => {
         selected = selected || [];
         player.discard.moveCardsTo(selected, player.hand);

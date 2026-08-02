@@ -3890,17 +3890,30 @@ export function CAN_PLAY_TRAINER_CARD(
       }
     }
 
-    // If canPlay is not implemented or returns undefined
-    // For Tool and Stadium cards, if we've passed all basic checks, return true
-    // (Stadium checks already done: stadiumPlayedTurn, same-name stadium in play)
-    if (trainerCard.trainerType === TrainerType.TOOL) {
-      return true; // Tool cards can be played if Pokemon can accept them
+    // If canPlay is not implemented or returns undefined, every generically-checkable restriction
+    // has already been applied above — phase, turn ownership, the Supporter-per-turn and
+    // Stadium-per-turn limits, the cannotPlay* locks, the Item/Tool ability blocks, and (for Tools)
+    // whether any Pokemon can actually accept one. Reaching here means nothing generic forbids the
+    // play, so the answer is yes for all four trainer types.
+    //
+    // TA-186: Item and SUPPORTER used to fall through to `return false` here, under a comment
+    // reading "err on the side of caution". That is not the cautious direction — this function
+    // feeds `player.playableCardIds`, which is what a real client GLOWS from
+    // (`ptcg-play`'s `hand.component.isCardPlayable`). Returning false meant twelve in-pool
+    // trainers were legal to play, accepted by `playCardAction`, and yet never lit up in the hand:
+    // the menu and the dispatcher disagreed, which is the MENU==DISPATCH violation TA-177 and
+    // TA-71 are both about. A player simply could not tell the card was playable.
+    //
+    // Upstream had already carved out TOOL (`640f97cd2`) and STADIUM for exactly this reason; this
+    // finishes the job rather than introducing a new convention. TrainerType has only these four
+    // members, so the fallthrough below is now unreachable and kept only as a total-switch guard.
+    switch (trainerCard.trainerType) {
+      case TrainerType.TOOL:      // a Pokemon able to accept it was confirmed above
+      case TrainerType.STADIUM:   // stadiumPlayedTurn / same-name-in-play checked above
+      case TrainerType.ITEM:
+      case TrainerType.SUPPORTER:
+        return true;
     }
-    if (trainerCard.trainerType === TrainerType.STADIUM) {
-      return true; // Stadiums are playable unless already played one this turn (checked above)
-    }
-    // For other trainer types, err on the side of caution
-    // We can't validate card-specific requirements without canPlay
     return false;
   } catch (error) {
     return false;

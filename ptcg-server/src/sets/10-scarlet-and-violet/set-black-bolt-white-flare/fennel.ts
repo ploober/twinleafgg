@@ -20,7 +20,19 @@ export class Fennel extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
-    return true;
+    // TA-185 / §B.18: "Heal 40 damage from each of your Pokémon" achieves nothing when nothing is
+    // damaged, and compendium **#925** makes that unplayable rather than a legal no-op: "you cannot
+    // play a card if it is obvious that you cannot do what the card is supposed to do at that
+    // moment." Fennel is very nearly that ruling's own worked example — it asks about "Life Herb on
+    // a Pokémon without any damage". Without this the card was offered, burned the turn's Supporter,
+    // and did nothing.
+    let anyDamaged = false;
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+      if (cardList.damage > 0) {
+        anyDamaged = true;
+      }
+    });
+    return anyDamaged;
   }
 
 

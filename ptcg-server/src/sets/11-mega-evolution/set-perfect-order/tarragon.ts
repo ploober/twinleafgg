@@ -80,7 +80,20 @@ export class Tarragon extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
-    return true;
+    // §B.18: "Put **up to 4** …" is a TRAINER effect, and compendium **#2301** floors a Trainer's
+    // "up to X" at **1**, not 0 (only *attack* effects may take zero). With no [F] Pokémon and no
+    // Basic [F] Energy in the discard that floor is unreachable, so **#925** makes the card
+    // unplayable rather than a legal no-op that burns the turn's Supporter.
+    //
+    // The #968 untyped-search exception does not reach this: fail-to-find is a HIDDEN-zone doctrine
+    // ("the contents of the deck are unknown"), and this is a TYPED retrieval from the discard pile,
+    // where contents and quantity are both public.
+    //
+    // The predicate deliberately mirrors `playCard`'s own classification below — same energy test,
+    // same Pokémon test — so `canPlay` and `reduceEffect` cannot disagree the way TA-181 does.
+    return player.discard.cards.some(c =>
+      (c.superType === SuperType.ENERGY && (c as any).energyType === EnergyType.BASIC && c.name === 'Fighting Energy')
+      || (c instanceof PokemonCard && c.cardType === CardType.FIGHTING));
   }
 
 
