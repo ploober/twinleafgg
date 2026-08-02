@@ -40,7 +40,8 @@ for (const f of files) {
   try {
     const menu: any = topLevelMenu(g);
     for (const a of (menu && menu.legalActions) || []) {
-      if (a.type && String(a.type).startsWith('play') && a.card) offered.add(a.card);
+      // ANY menu entry naming this hand card counts — tools surface as attachTool, not play*.
+      if (a.card) offered.add(a.card);
     }
   } catch { continue; }
   const subject = (seed.initialState.players.A.hand[0] || {}).iid;
