@@ -75,7 +75,7 @@ export class Talonflameex extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+      if (IS_ABILITY_BLOCKED(store, state, player, this, this.powers[0])) {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
       }
 

@@ -27,10 +27,25 @@ export class TeamRocketsWatchtower extends TrainerCard {
       if (StateUtils.getStadiumCard(state) !== this) {
         return false;
       }
+      // TA-180: when the card is not on a PokemonCardList we fall back to its PRINTED type instead of
+      // reporting "not locked". A Pokemon being played from hand onto the Bench is still on the hand's
+      // CardList at probe time — `Store.reduceEffect` runs `propagateEffect` (every card's own
+      // reduceEffect, including an arrival Ability's) BEFORE `playPokemonReducer` moves the card — so
+      // requiring a PokemonCardList here silently exempted every ARRIVAL Ability from the lock.
+      // Compendium #2334: "Yes, Meowth ex will have no Ability when it comes into play."
+      //
+      // This restores what the card did before the ability-lock refactor (1da46991e), whose PowerEffect
+      // branch blocked on `pokemonCard.cardType === CardType.COLORLESS` alone and never consulted
+      // location. A genuinely in-hand or in-discard Ability stays exempt via the
+      // `allowUseFromHand`/`allowUseFromDiscard` options below rather than by location — which is the
+      // distinction that matches the card text ("Pokemon in play ... have no Abilities"), because an
+      // arriving Pokemon is coming into play while a `useFromHand` Ability is not. Callers must pass
+      // their power to `IS_ABILITY_BLOCKED` for that exemption to be visible to the probe.
+      const lockedByPrintedType = () => card.cardType === CardType.COLORLESS;
       try {
         const cardList = StateUtils.findCardList(state, card);
         if (!(cardList instanceof PokemonCardList)) {
-          return false;
+          return lockedByPrintedType();
         }
         const owner = StateUtils.findOwner(state, cardList);
         if (IS_STADIUM_EFFECT_BLOCKED(store, state, owner, cardList, this)) {
@@ -40,7 +55,7 @@ export class TeamRocketsWatchtower extends TrainerCard {
         store.reduceEffect(state, checkType);
         return checkType.cardTypes.includes(CardType.COLORLESS);
       } catch {
-        return card.cardType === CardType.COLORLESS;
+        return lockedByPrintedType();
       }
     }, {
       allowUseFromHand: true,
