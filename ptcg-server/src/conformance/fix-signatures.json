@@ -4886,6 +4886,41 @@
         "{ allowCancel: false, min: 1, max: 1 }"
       ],
       "note": "TA-187 — Tool damage-reaction; see fix-ledger 2026-08-02"
+    },
+    {
+      "file": "set-black-bolt-white-flare/fennel.ts",
+      "signatures": [
+        "let anyDamaged = false;"
+      ],
+      "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+    },
+    {
+      "file": "set-black-bolt-white-flare/ns-plan.ts",
+      "signatures": [
+        "private hasBenchedEnergy(player: Player): boolean {"
+      ],
+      "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+    },
+    {
+      "file": "set-journey-together/levincia.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 2 }"
+      ],
+      "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+    },
+    {
+      "file": "set-perfect-order/tarragon.ts",
+      "signatures": [
+        "return player.discard.cards.some(c =>"
+      ],
+      "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "case TrainerType.ITEM:"
+      ],
+      "note": "TA-186 — CAN_PLAY_TRAINER_CARD must return true for Item/Supporter; the pre-existing prefabs.ts entry covers unrelated lines and would survive a revert of this one"
     }
   ]
 }
