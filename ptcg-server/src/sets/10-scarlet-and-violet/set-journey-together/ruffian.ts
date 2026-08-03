@@ -13,21 +13,45 @@ export class Ruffian extends TrainerCard {
 
   public text: string = 'Discard a Pokémon Tool and a Special Energy from 1 of your opponent\'s Pokémon.';
 
+  /**
+   * TA-181. "Discard a Pokémon **Tool** and a **Special** Energy from 1 of your opponent's Pokémon."
+   *
+   * A Pokémon is a legal target only if it carries something this card can actually discard — a Tool,
+   * or a SPECIAL Energy. Basic Energy is untouchable by Ruffian, so a board whose only attachment is
+   * a Basic Energy offers the card nothing to do, and #925 makes it unplayable ("you cannot play a
+   * card if it is obvious that you cannot do what the card is supposed to do at that moment").
+   *
+   * This used to test `cardList.energies.cards.length > 0 || cardList.tools.length > 0` — **any**
+   * Energy, Basic included — while `reduceEffect` below required a Special Energy or a Tool and threw
+   * `CANNOT_PLAY_THIS_CARD` otherwise. The menu offered a play the engine then refused: the
+   * MENU==DISPATCH violation of TA-177 / TA-71. `reduceEffect` was the correct one of the pair, so
+   * the predicate is moved here and both now call it.
+   */
+  private hasDiscardableTarget(store: StoreLike, state: State, player: Player): boolean {
+    const opponent = StateUtils.getOpponent(state, player);
+    let hasTarget = false;
+    opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+      if (Ruffian.isLegalTarget(cardList)) {
+        hasTarget = true;
+      }
+    });
+    return hasTarget;
+  }
+
+  /** A target must carry a Tool or a SPECIAL Energy — Basic Energy is not discardable by Ruffian. */
+  private static isLegalTarget(cardList: { energies: { cards: { superType: SuperType; energyType?: EnergyType }[] }; tools: unknown[] }): boolean {
+    const hasSpecialEnergy = cardList.energies.cards.some(
+      c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.SPECIAL);
+    const hasTool = cardList.tools.some(
+      c => c instanceof TrainerCard && c.trainerType === TrainerType.TOOL);
+    return hasSpecialEnergy || hasTool;
+  }
+
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
       return false;
     }
-    const opponent = StateUtils.getOpponent(state, player);
-    let hasTarget = false;
-    opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
-      if (cardList.energies.cards.length > 0 || cardList.tools.length > 0) {
-        hasTarget = true;
-      }
-    });
-    if (!hasTarget) {
-      return false;
-    }
-    return true;
+    return this.hasDiscardableTarget(store, state, player);
   }
 
 
@@ -40,12 +64,13 @@ export class Ruffian extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
+      // TA-181: the same `isLegalTarget` test `canPlay` uses, so the menu and the dispatcher cannot
+      // disagree. `blocked` still has to be built per-target for the prompt, but the go/no-go answer
+      // comes from one place.
       let energyOrToolcard = false;
       const blocked: CardTarget[] = [];
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
-        if (cardList.energies.cards.some(c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.SPECIAL)) {
-          energyOrToolcard = true;
-        } else if (cardList.tools.some(c => c instanceof TrainerCard && c.trainerType === TrainerType.TOOL)) {
+        if (Ruffian.isLegalTarget(cardList)) {
           energyOrToolcard = true;
         } else {
           blocked.push(target);

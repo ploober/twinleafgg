@@ -4921,6 +4921,13 @@
         "case TrainerType.ITEM:"
       ],
       "note": "TA-186 — CAN_PLAY_TRAINER_CARD must return true for Item/Supporter; the pre-existing prefabs.ts entry covers unrelated lines and would survive a revert of this one"
+    },
+    {
+      "file": "set-journey-together/iris-fighting-spirit.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1 }"
+      ],
+      "note": "TA-184 — the discard is a mandatory cost, not a declinable \"up to\""
     }
   ]
 }
