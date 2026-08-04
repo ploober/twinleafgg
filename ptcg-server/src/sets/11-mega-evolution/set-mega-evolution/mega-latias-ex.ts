@@ -45,7 +45,16 @@ export class MegaLatiasex extends PokemonCard {
     if (effect instanceof AfterAttackEffect && this.strafeUsed) {
       this.strafeUsed = false;
       const player = effect.player;
-      if (player.bench.length > 0) {
+      // TA-200: `player.bench` is a fixed SLOT array (empty slots are still entries), so
+      // `player.bench.length > 0` is ALWAYS true and this guard never fired -- Strafe pended a
+      // WANT_TO_SWITCH_POKEMON confirm even with a completely empty Bench, where answering either
+      // way does nothing. Measured live: twinleaf pended the confirm, rotomancer advanced the turn.
+      // The occupancy test is `.some(b => b.cards.length > 0)`, which is what the rest of the
+      // codebase uses. Compendium #622 ("if there are no Benched Pokemon you just do as much as you
+      // can") and #428 (Morpeko V "stays in the Active Spot") confirm the switch simply does not
+      // happen, and #389 confirms the damage still does -- so the RULES outcome already matched;
+      // what diverged was surfacing a decision node with no decision behind it (CF-14).
+      if (player.bench.some(b => b.cards.length > 0)) {
         store.prompt(state, new ConfirmPrompt(
           player.id,
           GameMessage.WANT_TO_SWITCH_POKEMON

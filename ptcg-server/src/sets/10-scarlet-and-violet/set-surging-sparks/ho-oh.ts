@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType } from '../../../game';
+import { StoreLike, State } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -33,7 +33,8 @@ export class HoOh extends PokemonCard {
       cost: [CardType.FIRE, CardType.FIRE, CardType.COLORLESS],
       damage: 100,
       damageCalculation: '+',
-      text: 'If you have a Tera Pokémon in play, this attack does 100 more damage.'
+      // SD-11 round 2 / TA-199: "in play" should be "on your Bench" (unanimous; rotomancer matches).
+      text: 'If you have any Tera Pokémon on your Bench, this attack does 100 more damage.'
     }
   ];
 
@@ -52,14 +53,23 @@ export class HoOh extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      let hasTeraPokemonInPlay = false;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        if (card.tags.includes(CardTag.POKEMON_TERA)) {
-          hasTeraPokemonInPlay = true;
+      // TA-199: the condition is "on your Bench", not "in play". forEachPokemon(BOTTOM_PLAYER) also
+      // visits the ACTIVE slot, so this was the wider reading.
+      //
+      // The widening is VACUOUS here, and deliberately not filed as a behavioural defect: the only
+      // in-play slot that is not the Bench is the Active, and while Shining Blaze is resolving the
+      // Active is necessarily Ho-Oh itself (WAS_ATTACK_USED pins `this`), which carries no Tera tag.
+      // So no board can distinguish the two readings. Narrowed anyway so the code states the rule it
+      // is implementing -- but no measurement changes, and none was claimed.
+      let hasTeraOnBench = false;
+      player.bench.forEach(benchSlot => {
+        const card = benchSlot.getPokemonCard();
+        if (card && card.tags.includes(CardTag.POKEMON_TERA)) {
+          hasTeraOnBench = true;
         }
       });
 
-      if (hasTeraPokemonInPlay) {
+      if (hasTeraOnBench) {
         effect.damage += 100;
       }
     }

@@ -18,7 +18,9 @@ export class Seviper extends PokemonCard {
   public powers = [{
     name: 'Excited Power',
     powerType: PowerType.ABILITY,
-    text: 'If you have a [D] Pokemon ex in play, this Pokemon\'s attacks do 120 more damage to your opponent\'s Active Pokemon.'
+    // SD-11 round 2 / TA-197: this text had dropped "Mega Evolution" from the condition (and the
+    // W/R-ordering parenthetical). Restored from the UNANIMOUS authoritative record; rotomancer matches.
+    text: 'If you have any Darkness Mega Evolution Pokémon ex in play, attacks used by this Pokémon do 120 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).'
   }];
 
   public attacks = [{
@@ -45,18 +47,25 @@ export class Seviper extends PokemonCard {
         return state;
       }
 
-      // Check if player has a [D] Pokemon ex in play
-      let hasDarkPokemonEx = false;
+      // TA-197: the condition is "any Darkness MEGA EVOLUTION Pokémon ex in play" -- the
+      // "Mega Evolution" qualifier was absent from both our printed text and this test, so ANY
+      // Darkness Pokémon ex granted the +120. Measured live: with Okidogi ex sfa-036 (a Darkness
+      // Pokémon ex that is NOT a Mega Evolution) on the Bench, Pitch-Black Fangs did 240 on twinleaf
+      // against rotomancer's correct 120. The control (Mega Absol ex meg-086 benched) converged at
+      // 240 on both engines before and after this fix, which is what shows the CONDITION narrowed
+      // rather than the ability being disabled.
+      let hasDarkMegaPokemonEx = false;
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         if (card && card instanceof PokemonCard &&
           card.cardType === CardType.DARK &&
-          card.tags.includes(CardTag.POKEMON_ex)) {
-          hasDarkPokemonEx = true;
+          card.tags.includes(CardTag.POKEMON_ex) &&
+          card.tags.includes(CardTag.POKEMON_SV_MEGA)) {
+          hasDarkMegaPokemonEx = true;
         }
       });
 
       // Add 120 more damage if condition is met
-      if (hasDarkPokemonEx && effect.damage > 0) {
+      if (hasDarkMegaPokemonEx && effect.damage > 0) {
         effect.damage += 120;
       }
     }

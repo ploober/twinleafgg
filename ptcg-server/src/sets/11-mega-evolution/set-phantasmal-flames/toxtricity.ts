@@ -19,7 +19,9 @@ export class Toxtricity extends PokemonCard {
     name: 'Sinister Surge',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
-    text: 'Once during your turn, you may search your deck for a Basic [D] Energy card and attach it to 1 of your [D] Pokémon. Then, shuffle your deck. If you attached Energy to a Pokémon in this way, put 2 damage counters on that Pokémon.'
+    // SD-11 round 2 / TA-198: this text had dropped "Benched" from the attach target. Restored from
+    // the UNANIMOUS authoritative record; rotomancer matches.
+    text: 'Once during your turn, you may use this Ability. Search your deck for a Basic Darkness Energy card and attach it to 1 of your Benched Darkness Pokémon. Then, shuffle your deck. If you attached Energy to a Pokémon in this way, place 2 damage counters on that Pokémon.'
   }];
 
   public attacks = [{
@@ -63,7 +65,13 @@ export class Toxtricity extends PokemonCard {
         GameMessage.ATTACH_ENERGY_TO_BENCH,
         player.deck,
         PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH, SlotType.ACTIVE],
+        // TA-198: the target is "1 of your BENCHED Darkness Pokémon", so SlotType.ACTIVE does not
+        // belong here -- with it, the Active was offered as a legal attach target. Measured live on
+        // a board whose Active was Okidogi ex sfa-036 (Darkness) and whose only Bench slot was
+        // Toxtricity itself: twinleaf offered TWO attach targets (a1 and ab1) where rotomancer
+        // correctly offered ONE (ab1). Note the prompt message directly above is already
+        // ATTACH_ENERGY_TO_BENCH -- the slot list was contradicting the card's own prompt.
+        [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Darkness Energy' },
         { allowCancel: true, min: 0, max: 1, blockedTo: blocked2 }
       ), transfers => {
