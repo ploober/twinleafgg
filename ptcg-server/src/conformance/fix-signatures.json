@@ -4928,6 +4928,21 @@
         "{ allowCancel: false, min: 1, max: 1 }"
       ],
       "note": "TA-184 — the discard is a mandatory cost, not a declinable \"up to\""
+    },
+    {
+      "file": "set-journey-together/ruffian.ts",
+      "signatures": [
+        "private static isLegalTarget(cardList:"
+      ],
+      "note": "TA-181 — canPlay and reduceEffect share one target predicate"
+    },
+    {
+      "file": "set-temporal-forces/heavy-baton.ts",
+      "signatures": [
+        "const hasBench = player.bench.some(b => b.cards.length > 0);",
+        "{ allowCancel: false, min: 1, max: 3, sameTarget: true }"
+      ],
+      "note": "TA-170 face C: #2301 floors a Tool's 'up to 3' at 1; the bench guard (#925) is what makes that floor satisfiable. Both lines are load-bearing -- reverting either alone regresses."
     }
   ]
 }

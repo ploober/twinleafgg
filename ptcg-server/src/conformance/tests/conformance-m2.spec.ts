@@ -368,21 +368,53 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect(kinds).not.toContain('discard');
   });
 
-  it('SURFACES a NON-active player forced single-card discard [CF-8 scope — Salazzle scr-024]', () => {
-    // "Your opponent discards a card from their hand" (Salazzle): a control-handoff to the non-active
-    // player. Even forced (one card), rotomancer SURFACES it as B's decision — so we must NOT collapse it.
+  it('COLLAPSES a NON-active player forced single-card discard too [CF-14 / TA-190]', () => {
+    // "Your opponent discards a card from their hand" (Salazzle scr-024), forced to one card.
+    //
+    // ⚠️ THIS SPEC ASSERTED THE OPPOSITE UNTIL 2026-08-04, and the reason it was wrong is worth keeping.
+    // It read: "a control-handoff to the non-active player. Even forced, rotomancer SURFACES it as B's
+    // decision — so we must NOT collapse it." That is an argument from AGREEMENT, not correctness, and it
+    // duly inverted: rotomancer shipped their collapse change and now resolves this atomically. Re-worded
+    // CF-14 (B.25) keys the collapse on the decision KIND — internal to an effect's resolution, one
+    // effective outcome — and says it is "never keyed on ... who holds the pick". The holder scoping this
+    // spec pinned was one of the two defects fixed as TA-190; the other was a source-zone key.
+    //
+    // Measured live on both engines before changing it (see the Klefki/Salazzle table in TA-190), not
+    // inferred from the suite going green.
     const game = importState(board(
       player({ active: ralts('A-act') }),
       player({ active: ralts('B-act'), hand: [{ iid: 'bh0', printing: PSY }] }), // B non-active, one-card hand
     ));
     const b = game.state.players[1]; // B (the opponent, non-active)
+    let discarded: string[] | null = null;
     game.store.prompt(game.state, new ChooseCardsPrompt(
       b, GameMessage.CHOOSE_CARD_TO_DISCARD, b.hand, {}, { min: 1, max: 1, allowCancel: false }
-    ), () => { /* the opponent chooses */ });
+    ), cards => { discarded = cards.map((c: Card) => c.fullName); });
+
+    const res = replay(game, []);   // no action submitted — a forced pick must not need one
+    expect(discarded).not.toBeNull();
+    const kinds = (res.pending?.legalActions ?? []).map(a => a.type);
+    expect(kinds).not.toContain('discard');
+  });
+
+  it('still SURFACES a NON-active player discard with a genuine choice [CF-14 negative control]', () => {
+    // The load-bearing partner to the spec above: identical actor, zone and verb, TWO candidates instead
+    // of one, so `min < |eligible|` and the pick is a real decision. This is what stops the TA-190
+    // widening from becoming "any opponent-facing discard collapses" — the failure mode a candidate-count
+    // or zone-blind rule would have. Both engines surface this one; verified live, not just here.
+    const game = importState(board(
+      player({ active: ralts('A-act') }),
+      player({ active: ralts('B-act'), hand: [{ iid: 'bh0', printing: PSY }, { iid: 'bh1', printing: WATER }] }),
+    ));
+    const b = game.state.players[1];
+    game.store.prompt(game.state, new ChooseCardsPrompt(
+      b, GameMessage.CHOOSE_CARD_TO_DISCARD, b.hand, {}, { min: 1, max: 1, allowCancel: false }
+    ), () => { /* the opponent genuinely chooses */ });
 
     const res = replay(game, []);
     expect(res.pending).not.toBeNull();
-    expect(res.pending!.actor).toBe('B');                      // surfaced as B's decision (matches roto)
+    expect(res.pending!.actor).toBe('B');
+    expect(res.pending!.legalActions.length).toBe(2);
     expect(res.pending!.legalActions[0].type).toBe('discard');
   });
 });
