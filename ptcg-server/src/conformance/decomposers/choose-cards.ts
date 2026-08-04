@@ -1,8 +1,102 @@
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { GameMessage } from '../../game/game-message';
+import { Card } from '../../game/store/card/card';
+import { PokemonCard } from '../../game/store/card/pokemon-card';
+import { TrainerCard } from '../../game/store/card/trainer-card';
+import { EnergyCard } from '../../game/store/card/energy-card';
+import { SuperType, Stage, TrainerType, EnergyType } from '../../game/store/card/card-types';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
+
+/**
+ * TA-204 / SD-14: would adding `candidate` to the already-picked set violate a constraint that
+ * `ChooseCardsPrompt.validate()` enforces? If so the candidate must not be OFFERED — the menu has to
+ * mirror validate(), or we advertise a pick that makes the assembled result fail validation, which the
+ * driver reports as `engineFault` → HTTP 500.
+ *
+ * Every constraint below is MONOTONE in the picked set: adding a card only ever increases a category
+ * count or introduces a type/superType. So "the extended set is already invalid" is exactly the right
+ * test — no lookahead is needed, and a candidate rejected here can never become legal later.
+ *
+ * Deliberately NOT implemented by calling `prompt.validate()`: that also enforces `min`, so a partial
+ * selection below `min` would be rejected wholesale and every candidate would be filtered out.
+ *
+ * `getCardType` is the prompt's own public static, called rather than reimplemented, so the type
+ * classification cannot drift from the rule it is mirroring.
+ */
+function violatesConstraints(prompt: ChooseCardsPrompt, pickedCards: Card[], candidate: Card): boolean {
+  const o = prompt.options;
+  const result = [...pickedCards, candidate];
+
+  if (!o.allowDifferentSuperTypes) {
+    if (new Set(result.map(r => r.superType)).size > 1) {
+      return true;
+    }
+  }
+
+  if (o.differentTypes) {
+    const seen = new Set<number>();
+    for (const card of result) {
+      const t = ChooseCardsPrompt.getCardType(card);
+      if (seen.has(t)) {
+        return true;
+      }
+      seen.add(t);
+    }
+  }
+
+  // countMap keys mirror validate() exactly: superType, superType-trainerType, superType-energyType,
+  // superType-stage.
+  const countMap: { [key: string]: number } = {};
+  for (const card of result) {
+    countMap[card.superType.toString()] = (countMap[card.superType.toString()] || 0) + 1;
+    if (card.superType === SuperType.TRAINER) {
+      const k = `${card.superType}-${(card as TrainerCard).trainerType}`;
+      countMap[k] = (countMap[k] || 0) + 1;
+    }
+    if (card.superType === SuperType.ENERGY) {
+      const k = `${card.superType}-${(card as EnergyCard).energyType}`;
+      countMap[k] = (countMap[k] || 0) + 1;
+    }
+    if (card.superType === SuperType.POKEMON) {
+      const k = `${card.superType}-${(card as PokemonCard).stage}`;
+      countMap[k] = (countMap[k] || 0) + 1;
+    }
+  }
+
+  const {
+    maxPokemons, maxBasicEnergies, maxTrainers, maxItems, maxTools, maxStadiums, maxSupporters,
+    maxSpecialEnergies, maxEnergies, maxBasics, maxEvolutions, maxStage1, maxStage2,
+  } = o;
+
+  // The "old pattern": with maxBasics/maxEvolutions set but no per-stage caps, the selection must be
+  // EITHER basics OR evolutions, never a mix.
+  if ((maxBasics !== undefined || maxEvolutions !== undefined) && maxStage1 === undefined && maxStage2 === undefined) {
+    const basics = countMap[`${SuperType.POKEMON}-${Stage.BASIC}`] || 0;
+    const evolutions = (countMap[`${SuperType.POKEMON}`] || 0) - basics;
+    if (basics > 0 && evolutions > 0) {
+      return true;
+    }
+  }
+
+  const evolutionCount = (countMap[`${SuperType.POKEMON}`] || 0) - (countMap[`${SuperType.POKEMON}-${Stage.BASIC}`] || 0);
+  return (
+    (maxPokemons !== undefined && maxPokemons < (countMap[`${SuperType.POKEMON}`] || 0))
+    || (maxBasicEnergies !== undefined && maxBasicEnergies < (countMap[`${SuperType.ENERGY}-${EnergyType.BASIC}`] || 0))
+    || (maxEnergies !== undefined && maxEnergies < (countMap[`${SuperType.ENERGY}`] || 0))
+    || (maxTrainers !== undefined && maxTrainers < (countMap[`${SuperType.TRAINER}`] || 0))
+    || (maxItems !== undefined && maxItems < (countMap[`${SuperType.TRAINER}-${TrainerType.ITEM}`] || 0))
+    || (maxStadiums !== undefined && maxStadiums < (countMap[`${SuperType.TRAINER}-${TrainerType.STADIUM}`] || 0))
+    || (maxSupporters !== undefined && maxSupporters < (countMap[`${SuperType.TRAINER}-${TrainerType.SUPPORTER}`] || 0))
+    || (maxSpecialEnergies !== undefined && maxSpecialEnergies < (countMap[`${SuperType.ENERGY}-${EnergyType.SPECIAL}`] || 0))
+    || (maxTools !== undefined && maxTools < (countMap[`${SuperType.TRAINER}-${TrainerType.TOOL}`] || 0))
+    || (maxBasics !== undefined && maxBasics < (countMap[`${SuperType.POKEMON}-${Stage.BASIC}`] || 0))
+    || (maxEvolutions !== undefined && maxEvolutions < evolutionCount)
+    || (maxStage1 !== undefined && maxStage1 < (countMap[`${SuperType.POKEMON}-${Stage.STAGE_1}`] || 0))
+    || (maxStage2 !== undefined && maxStage2 < (countMap[`${SuperType.POKEMON}-${Stage.STAGE_2}`] || 0))
+  );
+}
 
 /** A card-pick whose purpose is discarding surfaces as `discard {owner, target}` (the wire's
  * specific type — matches the retreat-cost / energy-discard convention and rotomancer). */
@@ -178,6 +272,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
 
     const secret = prompt.options.isSecret === true;
     const picked = new Set(rp.map(p => (p as { index: number }).index));
+    const pickedCards = rp.map(p => prompt.cards.cards[(p as { index: number }).index]);
     const blocked = new Set(prompt.options.blocked);
     const legalActions: LegalAction[] = [];
     for (let i = 0; i < prompt.cards.cards.length; i++) {
@@ -186,6 +281,10 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       }
       const card = prompt.cards.cards[i];
       if (!matchesFilter(card, prompt.filter)) {
+        continue;
+      }
+      // TA-204: mirror validate()'s content constraints, not just its count/blocked/filter ones.
+      if (violatesConstraints(prompt, pickedCards, card)) {
         continue;
       }
       const iid = ctx.cardToIid.get(card);
