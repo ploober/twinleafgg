@@ -28,7 +28,8 @@ export class Dusclops extends PokemonCard {
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     knocksOutSelf: true,
-    text: 'Once during your turn, you may put 5 damage counters on 1 of your opponent\'s Pokémon. If you placed any damage counters in this way, this Pokémon is Knocked Out.'
+    // TA-194 data: same KO-gate wording defect as its evolution Dusknoir sfa-070 -- see that card.
+    text: 'Once during your turn, you may put 5 damage counters on 1 of your opponent\'s Pokémon. If you use this Ability, this Pokémon is Knocked Out.'
   }];
 
   public attacks = [

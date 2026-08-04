@@ -4965,6 +4965,27 @@
         "  public hp: number = 70;"
       ],
       "note": "TA-192 — SlakothEVS false-reprint containment: evs-129 is hp 70, not the SSP base's value"
+    },
+    {
+      "file": "set-temporal-forces/iron-jugulis.ts",
+      "signatures": [
+        "if (targetPlayer.active !== effect.target) {"
+      ],
+      "note": "TA-193 — the ability is gated on 'is in the Active Spot'; without this a BENCHED Jugulis punished the attacker"
+    },
+    {
+      "file": "set-destined-rivals/cynthias-roserade.ts",
+      "signatures": [
+        "(before applying Weakness and Resistance).'"
+      ],
+      "note": "TA-194 data — the W/R-ordering clause was dropped from the printed text"
+    },
+    {
+      "file": "set-shrouded-fable/dusknoir.ts",
+      "signatures": [
+        "If you use this Ability, this Pokémon is Knocked Out.'"
+      ],
+      "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters'"
     }
   ]
 }

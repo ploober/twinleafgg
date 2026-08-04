@@ -16,7 +16,11 @@ export class Pikachuex extends PokemonCard {
   public powers = [{
     name: 'Resolute Heart',
     powerType: PowerType.ABILITY,
-    text: 'If this Pokémon has full HP and would be Knocked Out by an attack, it isn\'t Knocked Out and its remaining HP becomes 10 instead.'
+    // TA-194 data: was "...would be Knocked Out by an attack" -- it dropped "by DAMAGE FROM", which is
+    // the clause that makes an effect-KO (no damage) bypass this Ability. Restored from the unanimous
+    // authoritative record. Behaviour already CORRECT and unchanged: measured against Haxorus blk-070
+    // "Axe Blast" (KOs a Basic by EFFECT, zero damage) -- BOTH engines KO Pikachu ex, neither saves it.
+    text: 'If this Pokémon has full HP and would be Knocked Out by damage from an attack, it is not Knocked Out, and its remaining HP becomes 10.'
   }];
 
   public attacks = [

@@ -17,7 +17,11 @@ export class CynthiasRoserade extends PokemonCard {
   public powers = [{
     name: 'Cheer On to Glory',
     powerType: PowerType.ABILITY,
-    text: 'Attacks from your Cynthia\'s Pokémon deal 30 more damage to your opponent\'s Active Pokémon.'
+    // TA-194 data: was "Attacks from your Cynthia's Pokemon deal 30 more damage..." -- it DROPPED the
+    // "(before applying Weakness and Resistance)" clause. Restored from the unanimous authoritative
+    // record. Behaviour was already CORRECT and is unchanged: measured (80+30)x2=220 into Grass-weak
+    // Regirock ex asc-107 on BOTH engines, i.e. the +30 already lands before Weakness.
+    text: 'Attacks used by your Cynthia\'s Pokémon do 30 more damage to your opponent\'s Active Pokémon (before applying Weakness and Resistance).'
   }];
 
   public attacks = [

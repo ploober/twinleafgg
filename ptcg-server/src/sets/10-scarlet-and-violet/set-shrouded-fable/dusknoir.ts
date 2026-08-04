@@ -19,7 +19,12 @@ export class Dusknoir extends PokemonCard {
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     knocksOutSelf: true,
-    text: 'Once during your turn, you may put 13 damage counters on 1 of your opponent\'s Pokémon. If you placed any damage counters in this way, this Pokémon is Knocked Out.'
+    // TA-194 data: the KO gate read "If you PLACED any damage counters in this way"; the printed card
+    // says "If you USE this Ability". Restored from the unanimous authoritative record. Behaviour
+    // already CORRECT and unchanged: measured under Battle Cage pfl-085 (which prevents counters on
+    // BENCHED Pokemon from Abilities) targeting a benched Pokemon -- no counters land, and BOTH engines
+    // still Knock Out Dusknoir, i.e. the engine already gates on USE, not on placement.
+    text: 'Once during your turn, you may put 13 damage counters on 1 of your opponent\'s Pokémon. If you use this Ability, this Pokémon is Knocked Out.'
   }];
 
   public attacks = [{
