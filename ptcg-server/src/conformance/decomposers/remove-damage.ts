@@ -6,6 +6,7 @@ import {
   PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
+import { StateUtils } from '../../game';
 
 const COUNTER = 10;
 
@@ -52,19 +53,36 @@ export const removeDamageDecomposer: PromptDecomposer<RemoveDamagePrompt> = {
     const legalActions: LegalAction[] = [];
 
     if (atSourceStep) {
-      // Offer SOURCES: maxAllowedDamage entries with movable damage remaining (cap − 10 × prior moves
-      // FROM that source), minus the blockedFrom set.
-      const blockedFromKeys = new Set(prompt.options.blockedFrom.map(targetKey));
+      // TA-203: offer as SOURCES the Pokemon that actually HAVE a counter to move — the same rule
+      // `move-damage` adopted in TA-124, which this decomposer was written to mirror but predates.
+      //
+      // This used to enumerate `prompt.maxAllowedDamage` and treat `entry.damage` as the movable budget.
+      // `maxAllowedDamage` is a per-target **DESTINATION cap** — how much damage a target may end up
+      // carrying — not a source list, and `RemoveDamagePrompt.validate()` never reads it at all. The
+      // card-side convention is unambiguous across the 25 MoveDamagePrompt users: `card.hp`,
+      // `card.hp + 40`, `card.hp + 70`, a flat `9999`/`180`. Capacities, not counter counts.
+      //
+      // Munkidori `twm-095` is the measured case and the only RemoveDamagePrompt user in the tree. It
+      // pushes `checkHpEffect.hp` for EVERY one of its own Pokemon, so under the old reading the
+      // `entry.damage <= 0` guard excluded nothing and every friendly Pokemon was offered as a source —
+      // including UNDAMAGED ones. Driving that: A(30)/B(0) with an undamaged Munkidori benched offered
+      // `choose a2`, and taking it moved nothing (A 30→30, B 0→0) while still satisfying the ability's
+      // mandatory `min: 1` transfer AND burning its once-per-turn marker (the card adds the marker
+      // inside the transfer loop, before its own `damageToMove > 0` check). A no-op that costs a turn.
+      //
+      // Reading real damage from state also feeds the driver's zero-candidate auto-complete, so a board
+      // where nothing can be moved presents no decision at all rather than a phantom pending (CF-33).
       const movedFrom = new Map<string, number>();
       transfers.forEach(t => {
         const k = targetKey(t.from);
         movedFrom.set(k, (movedFrom.get(k) ?? 0) + COUNTER);
       });
-      for (const entry of prompt.maxAllowedDamage) {
-        const k = targetKey(entry.target);
-        if (blockedFromKeys.has(k) || entry.damage <= 0) { continue; }
-        if ((movedFrom.get(k) ?? 0) >= entry.damage) { continue; }
-        legalActions.push({ type: 'choose', target: pokemonTargetToIid(state, player, ctx, entry.target) });
+      const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
+      for (const source of sources) {
+        const cardList = StateUtils.getTarget(state, player, source);
+        const movable = (cardList?.damage ?? 0) - (movedFrom.get(targetKey(source)) ?? 0);
+        if (movable < COUNTER) { continue; }
+        legalActions.push({ type: 'choose', target: pokemonTargetToIid(state, player, ctx, source) });
       }
       if (transfers.length >= min) {
         legalActions.push(END_CHOICE);
