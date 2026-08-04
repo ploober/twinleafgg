@@ -4943,6 +4943,14 @@
         "{ allowCancel: false, min: 1, max: 3, sameTarget: true }"
       ],
       "note": "TA-170 face C: #2301 floors a Tool's 'up to 3' at 1; the bench guard (#925) is what makes that floor satisfiable. Both lines are load-bearing -- reverting either alone regresses."
+    },
+    {
+      "file": "set-surging-sparks/vibrava.ts",
+      "signatures": [
+        "name: 'Cutting Wind',",
+        "text: 'During your next turn, the Defending Pokémon takes 50 more damage from attacks (after applying Weakness and Resistance).'"
+      ],
+      "note": "TA-92 data: unanimous 5-source text + attack name; reverting either restores a wrong printed card"
     }
   ]
 }
