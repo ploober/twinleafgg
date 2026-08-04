@@ -63,6 +63,16 @@ export class HeavyBaton extends TrainerCard {
         return state;
       }
 
+      // TA-170 face C. The destination is "your Benched Pokemon", so with an EMPTY Bench there is no
+      // legal destination and the effect can achieve nothing — #925 ("you cannot ... do what the card
+      // is supposed to do at that moment"). This guard is also what makes the `min: 1` below safe:
+      // a floor of 1 with no reachable destination is the TA-178 unanswerable-prompt shape, so the
+      // two changes are a pair and must not be split.
+      const hasBench = player.bench.some(b => b.cards.length > 0);
+      if (!hasBench) {
+        return state;
+      }
+
       // Add marker, do not invoke this effect for other wishful batons
       active.marker.addMarker(this.HEAVY_BATON_MARKER, this);
 
@@ -77,7 +87,16 @@ export class HeavyBaton extends TrainerCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: true, min: 0, max: 3, sameTarget: true }
+        // TA-170 face C. This was `{ allowCancel: true, min: 0 }`, which offered a decline at ZERO on
+        // "move **up to 3** Basic Energy cards". Heavy Baton is a Pokemon **Tool**, i.e. a Trainer card,
+        // and #2301 splits the floor by effect type: *"For effects of attacks ... you can choose any
+        // number between 0 and the maximum. For other effects (such as the effects of **Trainer cards**
+        // and Abilities), you can choose any number between **1** and the maximum."* The attack rule
+        // does not reach this — the Baton's effect is the Tool's, not the attacker's. Note the ruling's
+        // final clause licenses 0 only for the phrases "any amount"/"any number"; this card says
+        // "up to 3", so the floor is 1. Confirmed live 2026-08-03: rotomancer offers no decline here.
+        // `allowCancel` goes with it — cancelling is the decline by another name.
+        { allowCancel: false, min: 1, max: 3, sameTarget: true }
       ), transfers => {
         transfers = transfers || [];
         active.marker.removeMarker(this.HEAVY_BATON_MARKER);
