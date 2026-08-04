@@ -7,7 +7,11 @@ import { BLOCK_SELF_RETREAT, HEAL_X_DAMAGE_FROM_THIS_POKEMON, WAS_ATTACK_USED } 
 export class Slakoth extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = C;
-  public hp: number = 90;
+  // TA-192 data correction (2026-08-04): was 90; the authoritative record is UNANIMOUS at 60
+  // (limitless, pio⊕scrydex, pkmncards, tcgdex — 4 witnesses incl. the independent one). Rotomancer
+  // agrees at 60. Wrong HP changes KO math, so this was a mechanical defect, not cosmetic.
+  // ⚠️ SlakothEVS subclasses this card and is a FALSE REPRINT — see the override there.
+  public hp: number = 60;
   public weakness = [{ type: F }];
   public retreat = [C, C];
 

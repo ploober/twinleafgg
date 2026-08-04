@@ -46,6 +46,12 @@ export class SlakothEVS extends Slakoth {
   public set: string = 'EVS';
   public setNumber: string = '129';
   public fullName: string = 'Slakoth (EVS 129)';
+  // ⚠️ TA-192: this is a FALSE-REPRINT subclass — evs-129 is a DIFFERENT card from Slakoth SSP
+  // (unanimous authoritative: hp 70, attack "Smack 'n' Slack"; the SSP base is hp 60 / "Take It Easy").
+  // The hp is pinned here so the SSP hp correction (90→60) does not ripple into this printing; the
+  // attack is still inherited and WRONG, deferred per the fix-scope rule (EVS is outside rotomancer's
+  // pool). The real fix is to stop subclassing and implement evs-129 as its own card.
+  public hp: number = 70;
 }
 
 export class LeafeonV2 extends LeafeonV {

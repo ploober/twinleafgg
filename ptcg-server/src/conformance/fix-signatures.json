@@ -4951,6 +4951,20 @@
         "text: 'During your next turn, the Defending Pokémon takes 50 more damage from attacks (after applying Weakness and Resistance).'"
       ],
       "note": "TA-92 data: unanimous 5-source text + attack name; reverting either restores a wrong printed card"
+    },
+    {
+      "file": "set-surging-sparks/slakoth.ts",
+      "signatures": [
+        "public hp: number = 60;"
+      ],
+      "note": "TA-192 — hp was 90; unanimous 4-witness authoritative + roto say 60 (KO math)"
+    },
+    {
+      "file": "set-evolving-skies/other-prints.ts",
+      "signatures": [
+        "  public hp: number = 70;"
+      ],
+      "note": "TA-192 — SlakothEVS false-reprint containment: evs-129 is hp 70, not the SSP base's value"
     }
   ]
 }
