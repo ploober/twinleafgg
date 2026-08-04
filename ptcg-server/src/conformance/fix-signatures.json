@@ -5032,6 +5032,13 @@
     "if (player.bench.some(b => b.cards.length > 0)) {"
    ],
    "note": "TA-200 — player.bench is a fixed SLOT array so `.length > 0` is always true; the empty-Bench guard never fired and Strafe pended a vacuous WANT_TO_SWITCH_POKEMON confirm"
+  },
+  {
+   "file": "set-temporal-forces/iron-jugulis.ts",
+   "signatures": [
+    "const punish = new PutDamageEffect(effect.attackEffect, 30);"
+   ],
+   "note": "TA-195 — the punish must go through PutDamageEffect so it is LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`"
   }
  ]
 }

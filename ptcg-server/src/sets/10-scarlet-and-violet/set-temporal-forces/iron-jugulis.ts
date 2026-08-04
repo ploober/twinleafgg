@@ -1,5 +1,5 @@
 import { CardTag, CardType, PokemonCard, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
+import { AfterDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -83,7 +83,28 @@ export class IronJugulis extends PokemonCard {
         return state;
       }
 
-      effect.source.damage += 30;
+      // TA-195: route the punish through PutDamageEffect instead of `effect.source.damage += 30`.
+      //
+      // The direct mutation placed the counters but wrote NO log line, and the conformance
+      // projection derives `damaged` by conservation: `pool = dealt - survivorDamage`, where `dealt`
+      // sums the damage LOGS. A silent placement raises `survivorDamage` without raising `dealt`, so
+      // the pool for a Pokemon KO'd in the same step collapsed to 0 and its `damaged` was never
+      // reconstructed. Measured on the KO cell: rotomancer emitted damaged x3, twinleaf x2 —
+      // and the missing one was Iron Jugulis' OWN lethal hit, not the punish.
+      //
+      // Going through the effect is also correct independently of events: a placement dispatched
+      // this way is visible to damage-modifying and prevention effects, which a raw field write
+      // silently bypasses. No recursion risk — the new effect targets the ATTACKER, and this
+      // ability only reacts when `effect.target.cards.includes(this)`.
+      // Chosen over RetaliateDamageEffect, which reads like the perfect fit ("places revenge-trap
+      // damage counters on the Attacking Pokémon") but is an EffectOfAttackEffect — it is
+      // deliberately blockable by "prevent all effects of attacks" (Mist Energy). This punish comes
+      // from an ABILITY, not an attack, so that blocking would be wrong. It also has zero users
+      // across all of src/sets, so it is untrodden. PutDamageEffect is the ordinary counter-placement
+      // path, applies no Weakness/Resistance, and logs.
+      const punish = new PutDamageEffect(effect.attackEffect, 30);
+      punish.target = effect.source;
+      store.reduceEffect(state, punish);
     }
 
     return state;

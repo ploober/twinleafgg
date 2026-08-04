@@ -20,6 +20,33 @@ function isMovePick(prompt: ChooseEnergyPrompt): boolean {
 }
 
 /**
+ * CF-14 / TA-201: the energy-prompt mirror of the TA-190 forced-pick collapse.
+ *
+ * A pick collapses when the decision is internal to an effect's resolution and has exactly one
+ * effective outcome. For a ChooseEnergyPrompt the completion test is `checkExactEnergy(picked, cost)`,
+ * so if the FULL offered set pays the cost exactly then **no proper subset can** — exact payment is
+ * exact — and the player has no decision at all. Wellspring Mask Ogerpon ex `twm-064` is the measured
+ * case: "shuffle 3 Energy attached to this Pokémon into your deck" with exactly 3 attached.
+ *
+ * `allowCancel === false` is REQUIRED and is not a formality. It defaults to TRUE on this prompt, and
+ * `validate(null)` returns it — so on a cancelable prompt declining is a legal outcome and the pick is
+ * a real decision even when only one set can pay. On `twm-064` the decline lives in a separate
+ * preceding `ConfirmPrompt(WANT_TO_USE_ABILITY)`, which is exactly why this prompt is forced.
+ *
+ * Keyed on forcedness alone — never on the destination zone, never on candidate count, never on who
+ * holds the pick. Those were the three terms the re-worded CF-14 forbids and that TA-190 had to strip
+ * out of `choose-cards`; this rule is written to that shape from the start rather than rediscovering it.
+ *
+ * Note `getCostThatCanBePaid()` already reduces `prompt.cost` to the payable part when
+ * `allowCancel === false`, so comparing against the full offered set is the right test.
+ */
+function forcedFullPick(prompt: ChooseEnergyPrompt): boolean {
+  return prompt.options.allowCancel === false
+    && prompt.energy.length > 0
+    && StateUtils.checkExactEnergy(prompt.energy, prompt.cost);
+}
+
+/**
  * ChooseEnergyPrompt ('Choose energy'): pick which attached energies pay a cost (retreat, or an
  * energy-cost payment). Each chosen energy is discarded to pay, so it surfaces on the wire as a
  * contract `discard{owner,target}` (design Q2) — unless the message marks a relocation to hand/deck,
@@ -36,6 +63,11 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
     const selected = picked.map(i => prompt.energy[i]);
     // Complete as soon as the chosen energies pay the cost exactly (validate would otherwise reject).
     if (StateUtils.checkExactEnergy(selected, prompt.cost)) {
+      return null;
+    }
+
+    // CF-14 / TA-201: forced full pick — auto-resolve atomically, no pending (assemble fills the indices).
+    if (picked.length === 0 && forcedFullPick(prompt)) {
       return null;
     }
 
@@ -72,7 +104,12 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
     return { kind: 'index', index };
   },
 
-  assemble(_prompt, picks): number[] {
-    return realPicks(picks).map(p => (p as { index: number }).index);
+  assemble(prompt, picks): number[] {
+    const picked = realPicks(picks).map(p => (p as { index: number }).index);
+    // Auto-resolved forced full pick (next() returned null with no picks): take every offered energy.
+    if (picked.length === 0 && forcedFullPick(prompt)) {
+      return prompt.energy.map((_, i) => i);
+    }
+    return picked;
   },
 };
