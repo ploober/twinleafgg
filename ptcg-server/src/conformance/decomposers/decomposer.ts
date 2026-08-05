@@ -56,6 +56,28 @@ export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
    * variants (choose-attack: disable is atomic, copy is not).
    */
   atomicResolvable?(prompt: P, state: State): boolean;
+  /**
+   * TA-202: the STEP-level sibling of `atomicResolvable`, for multi-pick aggregates.
+   *
+   * `atomicResolvable` asks "is this WHOLE prompt forced?", which a multi-pick aggregate can never
+   * answer yes to — one transfer being forced says nothing about whether the player wants a second.
+   * That is why its docstring excludes move-energy/move-damage/put-damage/choose-cards, and the
+   * exclusion is correct. But it left no way to express the narrower and equally real case: a single
+   * STEP inside the aggregate having exactly one outcome, while the aggregate itself stays open.
+   *
+   * Receives `picks` (which `atomicResolvable` does not) precisely because forcedness here is a
+   * property of the position in the sequence, not of the prompt. Returning true means "auto-apply the
+   * sole candidate and CONTINUE the prompt", never "the decision is over".
+   *
+   * The driver's existing `!canStopNow` gate does the load-bearing safety work and is not duplicated
+   * here: whenever stopping is permitted, the pick is a genuine decision (pick vs stop) even with one
+   * candidate, so no collapse happens regardless of what this returns. A decomposer implementing this
+   * is therefore asserting only that a forced step raises no client-driven decision of its own.
+   *
+   * Absent (the default) means today's behaviour exactly, so decomposers that do not implement it are
+   * unaffected by construction rather than by testing.
+   */
+  atomicStep?(prompt: P, picks: WirePick[], state: State): boolean;
   next(prompt: P, picks: WirePick[], ctx: IidContext, state: State): PendingDecision | null;
   toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State, picks?: WirePick[]): WirePick;
   assemble(prompt: P, picks: WirePick[]): unknown;

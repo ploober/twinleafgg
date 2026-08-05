@@ -35,6 +35,27 @@ function pairTransfers(rp: WirePick[]): DamageTransfer[] {
 export const removeDamageDecomposer: PromptDecomposer<RemoveDamagePrompt> = {
   type: 'Remove damage',
 
+  /**
+   * TA-202: every step of this prompt is safe to collapse when forced, so this is unconditional — the
+   * conditions that make collapsing WRONG are already enforced by the driver's `!canStopNow` gate, and
+   * restating them here would be duplicated logic that can drift.
+   *
+   * Walking the two step kinds against that gate:
+   *
+   *  - SOURCE step, before `min` is met — `next` appends no `END_CHOICE` (`transfers.length >= min` is
+   *    false), so stopping is not permitted and a lone eligible source is genuinely forced: the player
+   *    must move a counter and there is one Pokemon to move it from.
+   *  - SOURCE step, once `min` is met — `END_CHOICE` IS appended, `canStopNow` is true, and the driver
+   *    skips the collapse. Correct: "move another, or stop" is a real decision even with one candidate.
+   *    This is the boundary that makes an unconditional `true` safe.
+   *  - DESTINATION step — never offers `END_CHOICE` (a half-finished transfer cannot be abandoned), so
+   *    a single legal destination is always forced. The source is already committed.
+   *
+   * Applying a transfer raises no client-driven decision of its own, so there is no cascade to worry
+   * about — the reason `choose-attack` can only implement the sibling hook for its `disable` variant.
+   */
+  atomicStep: () => true,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

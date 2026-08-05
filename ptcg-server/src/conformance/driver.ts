@@ -627,7 +627,21 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // decision); a copy-an-attack does not either (executing the copy cascades). Feed the sole
       // candidate back through the decomposer's own toPick (round-trips its `next` output) and loop;
       // the next iteration completes the decision and dispatches it, so the effect lands atomically.
-      if (forced.length === 1 && !canStopNow && dec.atomicResolvable?.(prompt, game.state) === true) {
+      //
+      // TA-202 adds `atomicStep`, the STEP-level sibling, for the case `atomicResolvable` structurally
+      // cannot express: a multi-pick aggregate whose CURRENT step has one outcome while the aggregate
+      // itself stays open. Munkidori twm-095 "Adrena-Brain" with one damaged Pokemon and one opposing
+      // Pokemon is the measured case — both the source and the destination pick are forced, and we
+      // surfaced two pendings with no decision in them while rotomancer had already applied the
+      // transfer. The two hooks share this site and the same `!canStopNow` guard, which is what keeps
+      // "pick vs stop" a real decision; they differ only in whether the collapse ENDS the decision
+      // (atomicResolvable: the next iteration dispatches) or merely advances it (atomicStep: `next`
+      // is re-entered and offers the following step).
+      const collapses = forced.length === 1 && !canStopNow && (
+        dec.atomicResolvable?.(prompt, game.state) === true
+        || dec.atomicStep?.(prompt, accum, game.state) === true
+      );
+      if (collapses) {
         accum.push(dec.toPick(prompt, { actor: sub.actor, ...forced[0] } as NeutralAction, game.ctx, game.state, accum));
         continue;
       }
