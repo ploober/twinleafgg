@@ -87,16 +87,15 @@ export function RESOLVE_COIN_FLIP_EFFECT(store: StoreLike, state: State, effect:
   const result = typeof flipHandler?.flipCoin === 'function' ? !!flipHandler.flipCoin() : Math.random() < 0.5;
   effect.result = result;
   const player = effect.player;
-  const stateForCallback = state;
 
   emitCoinFlipAnimation(store, player, result);
+  store.log(
+    state,
+    result ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS,
+    { name: player.name },
+  );
 
   return store.prompt(state, new WaitPrompt(player.id, COIN_FLIP_ANIMATION_WAIT_MS, 'Coin flip animation'), () => {
-    store.log(
-      stateForCallback,
-      result ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS,
-      { name: player.name },
-    );
     effect.callback?.(result);
   });
 }
@@ -166,19 +165,19 @@ function resolveAttackCoinFlipWithReflipOption(
   const result = Math.random() < 0.5;
   effect.result = result;
   const player = effect.player;
-  const stateForCallback = state;
 
   emitCoinFlipAnimation(store, player, result);
 
+  store.log(
+    state,
+    result ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS,
+    { name: player.name },
+  );
+
   return store.prompt(state, new WaitPrompt(player.id, COIN_FLIP_ANIMATION_WAIT_MS, 'Coin flip animation'), () => {
-    store.log(
-      stateForCallback,
-      result ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS,
-      { name: player.name },
-    );
     offerAttackCoinReflip(
       store,
-      stateForCallback,
+      state,
       player,
       config,
       () => effect.callback?.(result),
@@ -186,7 +185,7 @@ function resolveAttackCoinFlipWithReflipOption(
         const reflip = new CoinFlipEffect(player, effect.callback);
         reflip.skipReflipStadium = true;
         reflip.skipReflipTool = true;
-        store.reduceEffect(stateForCallback, reflip);
+        store.reduceEffect(state, reflip);
       },
     );
   });

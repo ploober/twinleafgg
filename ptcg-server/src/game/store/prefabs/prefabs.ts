@@ -93,7 +93,7 @@ import {
 } from '../effects/game-effects';
 import { AfterAttackEffect, BeforeDoingDamageEffect, EndTurnEffect } from '../effects/game-phase-effects';
 import { ChooseAttackPrompt } from '../prompts/choose-attack-prompt';
-import { preventRetreatEffect, selfPreventRetreatEffect, preventDamageEffect, preventEffectsOfAttacksEffect, preventAttackEffect, coinFlipCancelAttackEffect, opponentPokemonCannotUseAttackEffect, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect, defendingPokemonTakesDamageOnEnergyAttachFromHandNextTurnEffect, defendingPokemonWeaknessIsNowEffect, reduceDamageEffect, playLockEffect, PlayLockOptions, PreventDamageOptions, shouldPreventAttackEffects, knockOutIfDamagedDuringAttackerNextTurnEffect, KnockOutIfDamagedOptions, surviveOnTenHpDuringOpponentsNextTurnEffect, retaliateOnDamageDuringOpponentsNextTurnEffect, extraPrizesIfKnockedOutDuringAttackerNextTurnEffect, denyPrizesIfKnockedOutDuringOpponentsNextTurnEffect, discardAttackerEnergyIfKnockedOutDuringOpponentsNextTurnEffect, nextTurnAttackDamageBonusEffect, nextTurnAttackBaseDamageEffect, increaseDefendingPokemonAttackCostNextTurnEffect, increaseDefendingPokemonRetreatCostNextTurnEffect, preventAttackUntilLeavesActiveEffect } from '../effects/effect-of-attack-effects';
+import { preventRetreatEffect, selfPreventRetreatEffect, preventDamageEffect, preventEffectsOfAttacksEffect, preventAttackEffect, coinFlipCancelAttackEffect, opponentPokemonCannotUseAttackEffect, defendingPokemonTakesMoreDamageDuringAttackerNextTurnEffect, defendingPokemonTakesDamageOnEnergyAttachFromHandNextTurnEffect, defendingPokemonWeaknessIsNowEffect, reduceDamageEffect, reduceDamageAfterWeaknessEffect, playLockEffect, PlayLockOptions, PreventDamageOptions, shouldPreventAttackEffects, knockOutIfDamagedDuringAttackerNextTurnEffect, KnockOutIfDamagedOptions, surviveOnTenHpDuringOpponentsNextTurnEffect, retaliateOnDamageDuringOpponentsNextTurnEffect, extraPrizesIfKnockedOutDuringAttackerNextTurnEffect, denyPrizesIfKnockedOutDuringOpponentsNextTurnEffect, discardAttackerEnergyIfKnockedOutDuringOpponentsNextTurnEffect, nextTurnAttackDamageBonusEffect, armNextTurnAttackDamageBonus, nextTurnAttackBaseDamageEffect, increaseDefendingPokemonAttackCostNextTurnEffect, increaseDefendingPokemonRetreatCostNextTurnEffect, preventAttackUntilLeavesActiveEffect, increaseDefendingPokemonAttackCostWhileActiveEffect, preventRetreatWhileActiveEffect, preventHealOnDefendingDuringOpponentsNextTurnEffect } from '../effects/effect-of-attack-effects';
 import { SurviveOnTenHpOptions, RetaliateOnDamageOptions } from '../state/pokemon-card-list';
 import { GameStatsTracker } from '../game-stats-tracker';
 
@@ -357,6 +357,26 @@ export function NEXT_TURN_ATTACK_BONUS(effect: Effect, options: NextTurnAttackBo
     options.bonusDamage,
     options.source instanceof PokemonCard ? options.source.fullName : undefined,
   );
+}
+
+export function NEXT_TURN_ATTACK_BONUS_ALL_ATTACKS(
+  effect: Effect,
+  options: { source: Card; bonusDamage: number },
+): void {
+  nextTurnAttackDamageBonusEffect(
+    effect,
+    '*',
+    options.bonusDamage,
+    options.source instanceof PokemonCard ? options.source.fullName : undefined,
+  );
+}
+
+export function ARM_NEXT_TURN_ATTACK_BONUS_ALL_ATTACKS(
+  source: PokemonCardList,
+  sourceCard: PokemonCard,
+  bonusDamage: number,
+): void {
+  armNextTurnAttackDamageBonus(source, '*', bonusDamage, sourceCard.fullName);
 }
 
 export interface NextTurnAttackBaseDamageOptions {
@@ -1830,6 +1850,33 @@ export function COUNT_MATCHING_CARDS_IN_ZONE(
 }
 
 /**
+ * Checks whether the player has at least one card in their discard pile matching the given filter and/or predicate.
+ *
+ * The `filter` is a partial card match (e.g. `{ superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' }`
+ * for a basic Fire Energy, or `{ superType: SuperType.POKEMON }` for any Pokémon, or `{ superType: SuperType.TRAINER }` for any Trainer).
+ * A custom `predicate` can be supplied for more complex matching that the partial filter can't express.
+ *
+ * @param player The player whose discard pile to check.
+ * @param filter A partial card filter to match against.
+ * @param predicate An optional custom predicate for additional matching logic.
+ * @returns `true` if at least one matching card exists in the discard pile, `false` otherwise.
+ */
+export function HAS_CARD_IN_DISCARD(
+  player: Player,
+  filter: Partial<Card> = {},
+  predicate: (card: Card) => boolean = () => true,
+): boolean {
+  return player.discard.cards.some(card => {
+    for (const key in filter) {
+      if ((card as any)[key] !== (filter as any)[key]) {
+        return false;
+      }
+    }
+    return predicate(card);
+  });
+}
+
+/**
  * Checks whether a Pokémon has any Energy card attached.
  */
 export function THIS_POKEMON_HAS_ANY_ENERGY_ATTACHED(target: PokemonCardList): boolean {
@@ -3191,13 +3238,6 @@ export function FLIP_UNTIL_TAILS_AND_COUNT_HEADS(
   return store.reduceEffect(state, sequenceEffect);
 }
 
-export function SIMULATE_COIN_FLIP(store: StoreLike, state: State, player: Player): boolean {
-  const result = Math.random() < 0.5;
-  const gameMessage = result ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS;
-  store.log(state, gameMessage, { name: player.name });
-  return result;
-}
-
 export function GET_FIRST_PLAYER_BENCH_SLOT(player: Player): PokemonCardList {
   const slots = GET_PLAYER_BENCH_SLOTS(player);
   BLOCK_IF_NO_SLOTS(slots);
@@ -4168,6 +4208,19 @@ export function BLOCK_RETREAT(
 }
 
 /**
+ * During the opponent's next turn, the Defending Pokémon can't be healed.
+ */
+export function BLOCK_HEALING_ON_DEFENDING_POKEMON_DURING_OPPONENTS_NEXT_TURN(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  source: Card,
+): State {
+  const healBlockEffect = preventHealOnDefendingDuringOpponentsNextTurnEffect(effect, source);
+  return store.reduceEffect(state, healBlockEffect);
+}
+
+/**
  * Creates and reduces a self-prevent-retreat effect for the given source card.
  * This is used for effects like "This Pokemon can't retreat during your next turn."
  * Unlike BLOCK_RETREAT which targets the opponent, this targets the attacking Pokemon itself.
@@ -4277,6 +4330,37 @@ export function DEFENDING_POKEMON_DOES_LESS_DAMAGE(
   return store.reduceEffect(state, reduceEffect);
 }
 
+export function DEFENDING_POKEMON_DOES_LESS_DAMAGE_AFTER_WEAKNESS_AND_RESISTANCE(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  source: Card,
+  reduction: number,
+): State {
+  const reduceEffect = reduceDamageAfterWeaknessEffect(effect, source, reduction);
+  return store.reduceEffect(state, reduceEffect);
+}
+
+export function THIS_POKEMON_TAKES_LESS_DAMAGE_FROM_ATTACKS_DURING_OPPONENTS_NEXT_TURN(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  reduction: number,
+): State {
+  effect.player.active.damageReductionNextTurn = Math.max(0, reduction);
+  return state;
+}
+
+export function THIS_POKEMON_TAKES_LESS_DAMAGE_FROM_ATTACKS_DURING_OPPONENTS_NEXT_TURN_BEFORE_WEAKNESS_AND_RESISTANCE(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  reduction: number,
+): State {
+  effect.player.active.damageReductionBeforeWeaknessNextTurn = Math.max(0, reduction);
+  return state;
+}
+
 /**
  * During your opponent's next turn, they can't play certain card types from hand.
  * Locks live on the Player (not a Pokemon). Cleared after that player's EndTurn(s).
@@ -4338,6 +4422,16 @@ export function DEFENDING_POKEMON_ATTACKS_COST_MORE(
   return store.reduceEffect(state, costEffect);
 }
 
+export function DEFENDING_POKEMON_ATTACKS_COST_MORE_UNTIL_LEAVES_ACTIVE(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  amount: number = 2,
+): State {
+  const costEffect = increaseDefendingPokemonAttackCostWhileActiveEffect(effect, amount);
+  return store.reduceEffect(state, costEffect);
+}
+
 export function DEFENDING_POKEMON_RETREAT_COSTS_MORE(
   store: StoreLike,
   state: State,
@@ -4347,6 +4441,14 @@ export function DEFENDING_POKEMON_RETREAT_COSTS_MORE(
   const costEffect = increaseDefendingPokemonRetreatCostNextTurnEffect(effect);
   costEffect.opponent.active.retreatCostIncreaseNextTurnPending = amount;
   return store.reduceEffect(state, costEffect);
+}
+
+export function OPPONENT_CANNOT_RETREAT_UNTIL_LEAVES_ACTIVE(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+): State {
+  return store.reduceEffect(state, preventRetreatWhileActiveEffect(effect));
 }
 
 export function OPPONENT_CANNOT_PLAY_ITEM_CARDS(

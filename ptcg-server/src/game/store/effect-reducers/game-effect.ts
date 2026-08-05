@@ -287,6 +287,10 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
   if (attackEffect.damage > 0) {
     const dealDamage = new DealDamageEffect(attackEffect, attackEffect.damage);
     state = store.reduceEffect(state, dealDamage);
+
+    if (store.hasPrompts()) {
+      yield store.waitPrompt(state, () => next());
+    }
   }
 
   const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);
@@ -666,6 +670,10 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
   // }
 
   if (effect instanceof HealEffect) {
+    if (effect.preventDefault || effect.target.cannotBeHealedNextTurn) {
+      effect.preventDefault = true;
+      return state;
+    }
     effect.target.damage = Math.max(0, effect.target.damage - effect.damage);
     return state;
   }

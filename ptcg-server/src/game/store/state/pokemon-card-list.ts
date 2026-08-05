@@ -85,10 +85,12 @@ export class PokemonCardList extends CardList {
   public attacksDamageReductionNextTurn: number = 0;
   /** Optional source filter for {@link damageReductionNextTurn} (e.g. Evolution-only). */
   public damageReductionNextTurnFilter: PreventDamageFilter | null = null;
+  public damageReductionBeforeWeaknessNextTurn: number = 0;
   public preventDamageNextTurn: PreventDamageFilter | null = null;
   public preventDamageNextTurnPending: PreventDamageFilter | null = null;
   public preventEffectsOfAttacksNextTurn: PreventDamageFilter | null = null;
   public preventEffectsOfAttacksNextTurnPending: PreventDamageFilter | null = null;
+  public cannotBeHealedNextTurn: boolean = false;
   public defendingPokemonExtraDamageNextTurn: number = 0;
   public defendingPokemonExtraDamageAttackerId: number | undefined = undefined;
   public defendingPokemonExtraDamagePending: boolean = false;
@@ -96,9 +98,13 @@ export class PokemonCardList extends CardList {
   public attackCostIncreaseNextTurn = 0;
   public attackCostIncreaseNextTurnPending = 0;
   public attackCostIncreaseNextTurnAttackerId: number | undefined;
+  public attackCostIncreaseWhileActive: number = 0;
+  public attackCostIncreaseWhileActiveSourceCard: PokemonCard | undefined;
   public retreatCostIncreaseNextTurn = 0;
   public retreatCostIncreaseNextTurnPending = 0;
   public retreatCostIncreaseNextTurnAttackerId: number | undefined;
+  public cannotRetreatWhileActive: boolean = false;
+  public cannotRetreatWhileActiveSourceCard: PokemonCard | undefined;
   public nextTurnAttackDamageBonus: NextTurnAttackDamageBonus | null = null;
   public nextTurnAttackDamageBonusPending: NextTurnAttackDamageBonus | null = null;
   public nextTurnAttackBaseDamage: NextTurnAttackBaseDamage | null = null;
@@ -162,6 +168,12 @@ export class PokemonCardList extends CardList {
    * Set on the Defending Pokémon for the opponent's next turn.
    */
   public attackDamageReductionNextTurn: number = 0;
+  /**
+   * Snarl style: this Pokémon's attacks do this many less damage
+   * after Weakness and Resistance. `0` = inactive.
+   * Set on the Defending Pokémon for the opponent's next turn.
+   */
+  public attackDamageReductionAfterWeaknessNextTurn: number = 0;
   public cannotRetreatNextTurn: boolean = false;
   public cannotRetreatNextTurnPending: boolean = false;
   public pendingEnergyAttachDamageCounters: PendingEnergyAttachDamageCounters | null = null;
@@ -271,6 +283,7 @@ export class PokemonCardList extends CardList {
     this.cannotUseAttacksNextTurnPending = [];
     this.coinFlipCancelAttackNextTurn = 0;
     this.attackDamageReductionNextTurn = 0;
+    this.attackDamageReductionAfterWeaknessNextTurn = 0;
     this.cannotRetreatNextTurn = false;
     this.cannotRetreatNextTurnPending = false;
     this.pendingEnergyAttachDamageCounters = null;
@@ -280,10 +293,12 @@ export class PokemonCardList extends CardList {
     this.damageReductionNextTurn = 0;
     this.attacksDamageReductionNextTurn = 0;
     this.damageReductionNextTurnFilter = null;
+    this.damageReductionBeforeWeaknessNextTurn = 0;
     this.preventDamageNextTurn = null;
     this.preventDamageNextTurnPending = null;
     this.preventEffectsOfAttacksNextTurn = null;
     this.preventEffectsOfAttacksNextTurnPending = null;
+    this.cannotBeHealedNextTurn = false;
     this.defendingPokemonExtraDamageNextTurn = 0;
     this.defendingPokemonExtraDamageAttackerId = undefined;
     this.defendingPokemonExtraDamagePending = false;
@@ -291,9 +306,13 @@ export class PokemonCardList extends CardList {
     this.attackCostIncreaseNextTurn = 0;
     this.attackCostIncreaseNextTurnPending = 0;
     this.attackCostIncreaseNextTurnAttackerId = undefined;
+    this.attackCostIncreaseWhileActive = 0;
+    this.attackCostIncreaseWhileActiveSourceCard = undefined;
     this.retreatCostIncreaseNextTurn = 0;
     this.retreatCostIncreaseNextTurnPending = 0;
     this.retreatCostIncreaseNextTurnAttackerId = undefined;
+    this.cannotRetreatWhileActive = false;
+    this.cannotRetreatWhileActiveSourceCard = undefined;
     this.nextTurnAttackDamageBonus = null;
     this.nextTurnAttackDamageBonusPending = null;
     this.nextTurnAttackBaseDamage = null;
@@ -353,10 +372,13 @@ export class PokemonCardList extends CardList {
     this.damageReductionNextTurn = 0;
     this.attacksDamageReductionNextTurn = 0;
     this.damageReductionNextTurnFilter = null;
+    this.damageReductionBeforeWeaknessNextTurn = 0;
+    this.attackDamageReductionAfterWeaknessNextTurn = 0;
     this.preventDamageNextTurn = null;
     this.preventDamageNextTurnPending = null;
     this.preventEffectsOfAttacksNextTurn = null;
     this.preventEffectsOfAttacksNextTurnPending = null;
+    this.cannotBeHealedNextTurn = false;
     this.defendingPokemonExtraDamageNextTurn = 0;
     this.defendingPokemonExtraDamageAttackerId = undefined;
     this.defendingPokemonExtraDamagePending = false;

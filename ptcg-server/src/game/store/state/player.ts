@@ -48,6 +48,14 @@ export class Player {
 
   rocketSupporter: boolean = false;
 
+  playedJanine: boolean = false;
+
+  playedKogasTrap: boolean = false;
+
+  playedCanari: boolean = false;
+
+  playedPiers: boolean = false;
+
   retreatedTurn: number = 0;
 
   energyPlayedTurn: number = 0;

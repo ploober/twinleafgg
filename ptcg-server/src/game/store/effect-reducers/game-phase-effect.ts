@@ -243,6 +243,7 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
     opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
       cardList.damageReductionNextTurn = 0;
       cardList.damageReductionNextTurnFilter = null;
+      cardList.damageReductionBeforeWeaknessNextTurn = 0;
       cardList.preventDamageNextTurn = null;
       cardList.preventDamageNextTurnPending = null;
       cardList.preventEffectsOfAttacksNextTurn = null;
@@ -323,14 +324,14 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
         if (cardList.attackCostIncreaseNextTurnAttackerId === player.id
           && !cardList.attackCostIncreaseNextTurnPending
           && cardList.attackCostIncreaseNextTurn > 0
-          ) {
+        ) {
           cardList.attackCostIncreaseNextTurn = 0;
           cardList.attackCostIncreaseNextTurnAttackerId = undefined;
         }
         if (cardList.retreatCostIncreaseNextTurnAttackerId === player.id
           && !cardList.retreatCostIncreaseNextTurnPending
           && cardList.retreatCostIncreaseNextTurn > 0
-          ) {
+        ) {
           cardList.retreatCostIncreaseNextTurn = 0;
           cardList.retreatCostIncreaseNextTurnAttackerId = undefined;
         }
@@ -419,6 +420,10 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
         cardList.attackDamageReductionNextTurn = 0;
       }
 
+      if (cardList.attackDamageReductionAfterWeaknessNextTurn > 0) {
+        cardList.attackDamageReductionAfterWeaknessNextTurn = 0;
+      }
+
       if (cardList.cannotRetreatNextTurn) {
         cardList.cannotRetreatNextTurn = false;
       }
@@ -431,6 +436,9 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
       }
       if (cardList.blockedAttackNameNextTurn !== undefined) {
         cardList.blockedAttackNameNextTurn = undefined;
+      }
+      if (cardList.cannotBeHealedNextTurn) {
+        cardList.cannotBeHealedNextTurn = false;
       }
     });
 

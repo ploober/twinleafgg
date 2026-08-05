@@ -4,6 +4,7 @@ import { Abra } from './abra';
 import { AcerolasMischief } from './acerolas-mischief';
 import { Alakazam } from './alakazam';
 import { Bayleef } from './bayleef';
+import { Bewear } from './bewear';
 import { Bulbasaur } from './bulbasaur';
 import { Celebi } from './celebi';
 import { Chikorita } from './chikorita';
@@ -66,12 +67,15 @@ import { Solrock } from './solrock';
 import { Steelix } from './steelix';
 import { StrangeTimepiece } from './strange-timepiece';
 import { SurfingBeach } from './surfing-beach';
+import { Tinkatink } from './tinkatink';
+import { Tinkaton } from './tinkaton';
+import { Tinkatuff } from './tinkatuff';
 import { WallysCompassion } from './wallys-compassion';
 import { Xerneas } from './xerneas';
 import { Yungoos } from './yungoos';
 import { Yveltal } from './yveltal';
 import { IronDefender } from './iron-defender';
-import { RepelMEG, BossOrdersMEG, EnergySwitchPKMEG, RareCandyMEG, SwitchMEG, UltraBallMEG, Bulbasaur2MEG, Ivysaur2MEG, Ninjask2MEG, Snover2MEG, Clawitizer2MEG, Inteleon2MEG, Houndstone2MEG, Garganacl2MEG, Steelix2MEG, Gumshoos2MEG, MegaVenusaurEx2MEG, MegaCameruptEx2MEG, MegaAbomasnowEx2MEG, MegaManectricEx2MEG, MegaGardevoirex2MEG, MegaLucarioex2MEG, MegaAbsolex2MEG, MegaMawileEx2MEG, MegaLatiasex2MEG, MegaKangaskhanex2MEG, AirBalloonMEG, BuddyBuddyPoffinMEG, FightingGong2MEG, LilliesDetermination2MEG, MegaSignal2MEG, MysteryGarden2MEG, NightlyStretcherMEG, PowerProtein2MEG, RareCandy2MEG, WallysCompassion2MEG, MegaVenusaurEx3MEG, MegaGardevoirex3MEG, MegaLucarioex3MEG, MegaAbsolex3MEG, MegaLatiasex3MEG, MegaKangaskhanex3MEG, LilliesDetermination3MEG, WallysCompassion3MEG, MegaGardevoirex4MEG, MegaLucarioex4MEG } from './other-prints';
+import { RepelMEG, BossOrdersMEG, EnergySwitchPKMEG, RareCandyMEG, SwitchMEG, UltraBallMEG, Bulbasaur2MEG, Ivysaur2MEG, Ninjask2MEG, Snover2MEG, Clawitizer2MEG, Inteleon2MEG, Houndstone2MEG, Garganacl2MEG, Steelix2MEG, Gumshoos2MEG, MegaVenusaurEx2MEG, MegaCameruptEx2MEG, MegaAbomasnowEx2MEG, MegaManectricEx2MEG, MegaGardevoirex2MEG, MegaLucarioex2MEG, MegaAbsolex2MEG, MegaMawileEx2MEG, MegaLatiasex2MEG, MegaKangaskhanex2MEG, AirBalloonMEG, BuddyBuddyPoffinMEG, FightingGong2MEG, LilliesDetermination2MEG, MegaSignal2MEG, MysteryGarden2MEG, NightlyStretcherMEG, PowerProtein2MEG, RareCandy2MEG, WallysCompassion2MEG, MegaVenusaurEx3MEG, MegaGardevoirex3MEG, MegaLucarioex3MEG, MegaAbsolex3MEG, MegaLatiasex3MEG, MegaKangaskhanex3MEG, LilliesDetermination3MEG, WallysCompassion3MEG, MegaGardevoirex4MEG, MegaLucarioex4MEG, AcerolasMischiefFA, AcerolasMischiefSIR } from './other-prints';
 import { Tangela } from './tangela';
 import { Tangrowth } from './tangrowth';
 
@@ -80,6 +84,7 @@ export const setMegaEvolution: Card[] = [
   new AcerolasMischief(),
   new Alakazam(),
   new Bayleef(),
+  new Bewear(),
   new Bulbasaur(),
   new Celebi(),
   new Chikorita(),
@@ -146,6 +151,9 @@ export const setMegaEvolution: Card[] = [
   new SurfingBeach(),
   new Tangela(),
   new Tangrowth(),
+  new Tinkatink(),
+  new Tinkaton(),
+  new Tinkatuff(),
   new WallysCompassion(),
   new Xerneas(),
   new Yungoos(),
@@ -185,6 +193,7 @@ export const setMegaEvolution: Card[] = [
   new MegaMawileEx2MEG(),
   new MegaLatiasex2MEG(),
   new MegaKangaskhanex2MEG(),
+  new AcerolasMischiefFA(),
   new AirBalloonMEG(),
   new BuddyBuddyPoffinMEG(),
   new FightingGong2MEG(),
@@ -201,6 +210,7 @@ export const setMegaEvolution: Card[] = [
   new MegaAbsolex3MEG(),
   new MegaLatiasex3MEG(),
   new MegaKangaskhanex3MEG(),
+  new AcerolasMischiefSIR(),
   new LilliesDetermination3MEG(),
   new WallysCompassion3MEG(),
   new MegaGardevoirex4MEG(),

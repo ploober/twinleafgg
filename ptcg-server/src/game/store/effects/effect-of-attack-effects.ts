@@ -301,6 +301,21 @@ export class PreventAttackEffect extends EffectOfAttackEffect {
 }
 
 /**
+ * During the opponent's next turn, the Defending Pokémon can't be healed.
+ */
+export class PreventHealOnDefendingDuringOpponentsNextTurnEffect extends EffectOfAttackEffect {
+  readonly type: string = 'PREVENT_HEAL_ON_DEFENDING_DURING_OPPONENTS_NEXT_TURN_EFFECT';
+
+  constructor(base: AttackEffect) {
+    super(base);
+  }
+
+  applyEffect(): void {
+    this.opponent.active.cannotBeHealedNextTurn = true;
+  }
+}
+
+/**
  * During the opponent's next turn, if the Defending Pokémon tries to attack,
  * they flip coin(s). If any is tails, that attack does nothing (Smokescreen / Sand-Attack).
  */
@@ -365,6 +380,23 @@ export class ReduceDamageEffect extends EffectOfAttackEffect {
   }
 }
 
+/**
+ * During the opponent's next turn, the Defending Pokémon's attacks do
+ * `reduction` less damage after Weakness and Resistance.
+ * Effect lives on the Defending Pokémon — switching/benching clears it.
+ */
+export class ReduceDamageAfterWeaknessEffect extends EffectOfAttackEffect {
+  readonly type: string = 'REDUCE_DAMAGE_AFTER_WEAKNESS_EFFECT';
+
+  constructor(base: AttackEffect, public reduction: number) {
+    super(base);
+  }
+
+  applyEffect(): void {
+    this.opponent.active.attackDamageReductionAfterWeaknessNextTurn = Math.max(0, this.reduction);
+  }
+}
+
 export class NextTurnAttackDamageBonusEffect extends EffectOfAttackEffect {
   constructor(
     base: AttackEffect,
@@ -378,7 +410,7 @@ export class NextTurnAttackDamageBonusEffect extends EffectOfAttackEffect {
   applyEffect(): void {
     const sourceCard = this.source.getPokemonCard();
     if (!sourceCard
-      || this.attack.name !== this.attackName
+      || (this.attackName !== '*' && this.attack.name !== this.attackName)
       || (this.sourceCardName !== undefined && sourceCard.fullName !== this.sourceCardName)) {
       return;
     }
@@ -449,6 +481,19 @@ export function nextTurnAttackDamageBonusEffect(
 
 }
 
+export function armNextTurnAttackDamageBonus(
+  source: PokemonCardList,
+  attackName: string,
+  bonusDamage: number,
+  sourceCardName: string,
+): void {
+  source.nextTurnAttackDamageBonusPending = {
+    attackName,
+    bonusDamage,
+    sourceCardName,
+  };
+}
+
 export function nextTurnAttackBaseDamageEffect(
   effect: Effect,
   setupAttackName: string,
@@ -508,6 +553,15 @@ export function preventAttackEffect(attackEffect: AttackEffect, source: Card): P
   return effect;
 }
 
+export function preventHealOnDefendingDuringOpponentsNextTurnEffect(
+  attackEffect: AttackEffect,
+  source: Card,
+): PreventHealOnDefendingDuringOpponentsNextTurnEffect {
+  const effect = new PreventHealOnDefendingDuringOpponentsNextTurnEffect(attackEffect);
+  effect.markerSource = source;
+  return effect;
+}
+
 export function coinFlipCancelAttackEffect(
   attackEffect: AttackEffect,
   source: Card,
@@ -534,6 +588,16 @@ export function reduceDamageEffect(
   reduction: number,
 ): ReduceDamageEffect {
   const effect = new ReduceDamageEffect(attackEffect, reduction);
+  effect.markerSource = source;
+  return effect;
+}
+
+export function reduceDamageAfterWeaknessEffect(
+  attackEffect: AttackEffect,
+  source: Card,
+  reduction: number,
+): ReduceDamageAfterWeaknessEffect {
+  const effect = new ReduceDamageAfterWeaknessEffect(attackEffect, reduction);
   effect.markerSource = source;
   return effect;
 }
@@ -609,6 +673,32 @@ export class IncreaseDefendingPokemonRetreatCostNextTurnEffect extends EffectOfA
   }
 }
 
+export class IncreaseDefendingPokemonAttackCostWhileActiveEffect extends EffectOfAttackEffect {
+  readonly type = 'INCREASE_DEFENDING_POKEMON_ATTACK_COST_WHILE_ACTIVE_EFFECT';
+
+  constructor(base: AttackEffect, public readonly amount: number) {
+    super(base);
+  }
+
+  applyEffect(): void {
+    this.opponent.active.attackCostIncreaseWhileActive = Math.max(this.opponent.active.attackCostIncreaseWhileActive, this.amount);
+    this.opponent.active.attackCostIncreaseWhileActiveSourceCard = this.source.getPokemonCard();
+  }
+}
+
+export class PreventRetreatWhileActiveEffect extends EffectOfAttackEffect {
+  readonly type = 'PREVENT_RETREAT_WHILE_ACTIVE_EFFECT';
+
+  constructor(base: AttackEffect) {
+    super(base);
+  }
+
+  applyEffect(): void {
+    this.opponent.active.cannotRetreatWhileActive = true;
+    this.opponent.active.cannotRetreatWhileActiveSourceCard = this.source.getPokemonCard();
+  }
+}
+
 export function increaseDefendingPokemonAttackCostNextTurnEffect(
   attackEffect: AttackEffect,
 ): IncreaseDefendingPokemonAttackCostNextTurnEffect {
@@ -619,6 +709,19 @@ export function increaseDefendingPokemonRetreatCostNextTurnEffect(
   attackEffect: AttackEffect,
 ): IncreaseDefendingPokemonRetreatCostNextTurnEffect {
   return new IncreaseDefendingPokemonRetreatCostNextTurnEffect(attackEffect);
+}
+
+export function increaseDefendingPokemonAttackCostWhileActiveEffect(
+  attackEffect: AttackEffect,
+  amount: number = 1,
+): IncreaseDefendingPokemonAttackCostWhileActiveEffect {
+  return new IncreaseDefendingPokemonAttackCostWhileActiveEffect(attackEffect, amount);
+}
+
+export function preventRetreatWhileActiveEffect(
+  attackEffect: AttackEffect,
+): PreventRetreatWhileActiveEffect {
+  return new PreventRetreatWhileActiveEffect(attackEffect);
 }
 
 /**

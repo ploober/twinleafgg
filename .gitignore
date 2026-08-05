@@ -37,6 +37,7 @@ Thumbs.db
 
 # Claude Code artifacts
 .claude/
+.cursorignore
 
 *.md
 # but track design docs that live with the Rotomancer cross-engine test harness
