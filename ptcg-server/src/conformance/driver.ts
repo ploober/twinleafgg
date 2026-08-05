@@ -237,6 +237,66 @@ function toWirePending(p: PendingDecision): WirePending {
   };
 }
 
+/**
+ * TA-205 / SD-14: the IDENTITY fields of a pick — the ones that name *which* candidate was chosen.
+ *
+ * Membership in the offered menu is decided on these alone, deliberately not on whole-object equality.
+ * Two field classes are excluded and each exclusion is load-bearing:
+ *
+ *  - `owner` / `name` on `choose`/`discard` are ADVISORY annotations, not identity. `owner` in
+ *    particular is known-unreliable in different sub-cases on BOTH engines (the CF-26 proposal is to
+ *    normalize it out of the compared vocabulary entirely), so matching on it would reject valid logs
+ *    over a field we do not even trust.
+ *  - `source` on `moveEnergy` is DERIVABLE — `attach-energy`'s own `toPick` accepts the action with it
+ *    absent and only cross-checks it when present ("claimedSource !== undefined && ..."). Requiring it
+ *    here would reject exactly the looser form that decomposer documents as legal.
+ *
+ * `shuffle` is absent by design: a deck order is a permutation the system supplies, not a menu pick,
+ * and its legality is adjudicated by the prompt.
+ */
+const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
+  choose: ['target'],
+  placeCounter: ['target'],
+  promoteBench: ['target'],
+  discard: ['target'],
+  pick: ['target'],
+  moveEnergy: ['card', 'target'],
+  attachEnergy: ['card', 'target'],
+  takePrize: ['index'],
+  confirm: ['value'],
+  selectOption: ['option'],
+  flip: ['face'],
+};
+
+/**
+ * Does the pending actually OFFER this action? (TA-205)
+ *
+ * The driver previously checked only that the action's TYPE appeared among the offered picks, so an
+ * action naming a candidate that was never offered — right verb, wrong target — was accepted into the
+ * accumulator. Its illegality then surfaced only when the assembled result failed the prompt's
+ * `validate()`, which the caller reports as `engineFault`: an HTTP 500 for what is an INVALID ACTION.
+ * Rotomancer refuses it at an explicit gate (`sim:refuseGate`, "no option matches target iid …") and
+ * returns `invalidAction`; the contract has a status for this and we were returning the wrong one.
+ *
+ * Unknown verbs return true — this gate narrows an existing acceptance path and must never be the
+ * thing that rejects a pick type it has no identity rule for. Adding a verb to the table is what
+ * extends coverage; the default stays permissive so a gap here is a missed catch, never a false reject.
+ */
+function offersAction(legalActions: LegalAction[], action: NeutralAction): boolean {
+  const fields = PICK_IDENTITY_FIELDS[action.type];
+  if (fields === undefined) {
+    return true;
+  }
+  const submitted = action as unknown as { [k: string]: unknown };
+  return legalActions.some(la => {
+    if (la.type !== action.type) {
+      return false;
+    }
+    const offered = la as unknown as { [k: string]: unknown };
+    return fields.every(f => offered[f] === undefined || offered[f] === submitted[f]);
+  });
+}
+
 /** A system pending (shuffle / coin flip) surfaced when its action isn't yet in the log. */
 function systemPending(game: ImportedGame, prompt: Prompt<any>): PendingDecision {
   const legalActions: LegalAction[] = [];
@@ -597,7 +657,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         cursor.i++;
         throw new GameError(GameMessage.ILLEGAL_ACTION);
       }
-      accum.push(dec.toPick(prompt, nextAction, game.ctx, game.state, accum));
+      // TA-205: the verb is offered, but is THIS candidate? An action naming a target the menu never
+      // offered is an invalid action, not an engine fault — without the gate below it is accepted here
+      // and only caught downstream by validate(), which the caller reports as a 500.
+      //
+      // ORDER MATTERS. `toPick` runs FIRST and is allowed to throw: several decomposers already reject
+      // structurally-incoherent picks with a descriptive Error (`select-option` on a disabled or
+      // out-of-range index, `choose-energy` on an iid the prompt never held), and that is the harness's
+      // "this log is malformed" channel — distinct from "this action is illegal at a live decision
+      // node", which is what `invalidAction` means. Gating before `toPick` collapsed the two and
+      // silently downgraded those diagnostics. `toPick` is a pure action→WirePick mapping with no side
+      // effects, so running it before the membership test costs nothing.
+      const pick = dec.toPick(prompt, nextAction, game.ctx, game.state, accum);
+      if (!offersAction(sub.legalActions, nextAction)) {
+        cursor.i++;
+        throw new GameError(GameMessage.ILLEGAL_ACTION);
+      }
+      accum.push(pick);
       cursor.i++;
       continue;
     }
