@@ -164,6 +164,77 @@ describe('Card structural invariants — every evolution resolves; no card is mi
     expect(bad).toEqual([]);
   });
 
+  // ── data conditions the ENGINE's evolution check silently depends on ──────────────────────────
+  //
+  // `playPokemonReducer`'s `isValidEvolution` has four clauses. Clause 1 is self-guarding
+  // (`pokemonCard.stage < stage && pokemonCard.name === evolvesFrom`). Clauses 2, 3 and 4 —
+  // `evolvesTo` / `evolvesToStage` / `evolvesFromBase` — carry NO stage check at all.
+  //
+  // The `isEvolved &&` that was presumably meant to be their backstop is INERT:
+  // `const isEvolved = stage === Stage.STAGE_1 || Stage.STAGE_2` parses as
+  // `(stage === Stage.STAGE_1) || Stage.STAGE_2`, and `Stage.STAGE_2` is 4 — truthy. So it is `true`
+  // for STAGE_1 and the number `4` for all eleven other stages, never false. (That typo is
+  // LOAD-BEARING and must not be "fixed": correcting it makes every clause false for stages above
+  // STAGE_2, which removes evolution for LV_X, VMAX, VSTAR, MEGA and BREAK. Driven and reverted
+  // 2026-08-05; see TA-206.)
+  //
+  // A Basic reaches those clauses: the Basic early-return in playPokemonReducer fires only when the
+  // target slot is EMPTY, so a Basic played onto an OCCUPIED slot falls through to them.
+  //
+  // Which means the three conditions below are the only thing preventing a Basic from being played
+  // onto an occupied Pokémon as a pseudo-evolution — skipping its entire line, the same class of
+  // rules violation as the mis-staged-Basic case above. They hold today by card data, not by any
+  // guard, so they are asserted here. This is a read-only assertion over the registry; it changes no
+  // engine behaviour.
+
+  it('no card declares evolvesToStage containing BASIC (clause 3 would admit a Basic)', () => {
+    const bad = pokemon
+      .filter(c => Array.isArray(c.evolvesToStage) && c.evolvesToStage.includes(Stage.BASIC))
+      .map(c => `${c.fullName} declares evolvesToStage containing BASIC → any Basic could be played onto it`);
+    expect(bad).toEqual([]);
+  });
+
+  /**
+   * BABY POKÉMON. A first draft of the next spec asserted that no `evolvesTo` name may resolve to a
+   * Basic — and it failed, correctly, on `Cleffa N1 → Clefairy` and `Pichu N1 → Pikachu`. That is the
+   * WOTC-era baby mechanic: the baby is a Basic in play and its ordinary Basic is played on top of it.
+   * Driven 2026-08-05 — Basic Pikachu `ju-060` onto Pichu `n1-012` succeeds, stack `[n1-012, ju-060]`.
+   *
+   * So a Basic in `evolvesTo` is LEGITIMATE for these, and the invariant is not "never" but "only
+   * these". Listing them keeps the guard live for a new card that names a Basic by mistake.
+   *
+   * This is also a third thing the inert `isEvolved` is load-bearing for: correcting it would make
+   * clause 2 false for an incoming BASIC and break baby evolution too.
+   */
+  const BABY_EVOLVES_TO_BASIC = new Set(['Pichu', 'Cleffa']);
+
+  it('only baby Pokémon name a BASIC in evolvesTo (clause 2 admits a Basic by design there)', () => {
+    // Clause 2 matches the INCOMING card by name, so if any printing of that name is a Basic, that
+    // Basic can be played onto the declaring card — intended for babies, a stage-skip for anything else.
+    const bad: string[] = [];
+    for (const c of pokemon) {
+      if (BABY_EVOLVES_TO_BASIC.has(c.name)) {
+        continue;
+      }
+      for (const target of c.evolvesTo ?? []) {
+        const basics = (byName.get(target) ?? [])
+          .filter(p => p.superType === SuperType.POKEMON && (p as PokemonCard).stage === Stage.BASIC);
+        if (basics.length > 0) {
+          bad.push(`${c.fullName} evolvesTo '${target}', which has a BASIC printing (${basics[0].fullName})`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it('no evolvesFromBase array contains an empty string (clause 4 would admit a Basic)', () => {
+    // A Basic's `evolvesFrom` is '', so an array containing '' matches every Basic.
+    const bad = pokemon
+      .filter(c => Array.isArray(c.evolvesFromBase) && c.evolvesFromBase.some(n => !n))
+      .map(c => `${c.fullName} has an empty entry in evolvesFromBase → matches every Basic's evolvesFrom`);
+    expect(bad).toEqual([]);
+  });
+
   it('no evolution SKIPS a stage (a chain can reach a Basic and still be illegal)', () => {
     // VMAX/VSTAR evolve from a V and MEGA from a Pokémon-EX — all Basics, so those are legal.
     const LEGAL_PARENT: { [k: number]: Set<Stage> } = {
