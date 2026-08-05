@@ -1,7 +1,8 @@
 import { CardManager } from '../../game/cards/card-manager';
 import { loadAllSets } from '../../sets/tests/test-helpers';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
-import { Stage } from '../../game/store/card/card-types';
+import { Card } from '../../game/store/card/card';
+import { Stage, SuperType } from '../../game/store/card/card-types';
 
 /**
  * Structural invariants over the WHOLE card registry — a pure intra-engine guard, no reference data.
@@ -84,6 +85,91 @@ describe('Card structural invariants — every evolution resolves; no card is mi
     const bad = pokemon
       .filter(c => c.stage === Stage.BASIC && !!c.evolvesFrom)
       .map(c => `${c.fullName} is Basic but evolvesFrom '${c.evolvesFrom}' → mis-staged, benchable ILLEGALLY`);
+    expect(bad).toEqual([]);
+  });
+
+  // ── whole-CHAIN invariants ────────────────────────────────────────────────────────────────────
+  //
+  // Everything above checks ONE LINK. A card whose `evolvesFrom` resolves perfectly is still dead if
+  // its parent's own link is broken, and every per-link assertion stays green throughout — the chain
+  // is unplayable and nothing says so. Added 2026-08-05 after the upstream merge landed exactly that
+  // shape (Stage 2s with no Stage 1), and verified to add no new findings on the current registry:
+  // of 4627 evolved Pokémon, the only unreachable chains are the already-waived ones, and there are
+  // zero stage skips. These guard the NEXT such merge, not this one.
+
+  const byName = new Map<string, Card[]>();
+  for (const c of all) {
+    (byName.get(c.name) ?? byName.set(c.name, []).get(c.name)!).push(c);
+  }
+
+  /** A chain terminates legally at a Basic, at a Restored, or at a TRAINER (fossils). */
+  const isRoot = (c: Card): boolean =>
+    c.superType !== SuperType.POKEMON
+    || (c as PokemonCard).stage === Stage.BASIC
+    || (c as PokemonCard).stage === Stage.RESTORED;
+
+  /** BFS over same-named parents: ANY path to a legal root makes the chain playable. */
+  const reachesRoot = (start: PokemonCard): boolean => {
+    const seen = new Set<Card>();
+    let frontier: Card[] = [start];
+    for (let depth = 0; depth < 12 && frontier.length > 0; depth++) {
+      const next: Card[] = [];
+      for (const card of frontier) {
+        if (card !== start && isRoot(card)) {
+          return true;
+        }
+        if (seen.has(card)) {
+          continue;   // also the cycle guard: a loop exhausts the frontier and reports unreachable
+        }
+        seen.add(card);
+        const from = (card as PokemonCard).evolvesFrom;
+        if (!from) {
+          continue;
+        }
+        for (const parent of byName.get(from) ?? []) {
+          // LV.X evolves from its SAME-NAMED base; never step to another LV.X of that name.
+          if (parent === card) { continue; }
+          if ((card as PokemonCard).stage === Stage.LV_X && (parent as PokemonCard).stage === Stage.LV_X) { continue; }
+          next.push(parent);
+        }
+      }
+      frontier = next;
+    }
+    return false;
+  };
+
+  it('every evolution chain reaches a Basic (a resolvable link can still sit on a broken parent)', () => {
+    const bad = pokemon
+      .filter(c => EVOLVED.has(c.stage) && !!c.evolvesFrom && !MISSING_PREVOLUTION.has(c.name))
+      .filter(c => !reachesRoot(c))
+      .map(c => `${c.fullName} (${Stage[c.stage]}) ← '${c.evolvesFrom}' — chain never reaches a Basic → UNPLAYABLE`);
+    expect(bad).toEqual([]);
+  });
+
+  it('no evolution SKIPS a stage (a chain can reach a Basic and still be illegal)', () => {
+    // VMAX/VSTAR evolve from a V and MEGA from a Pokémon-EX — all Basics, so those are legal.
+    const LEGAL_PARENT: { [k: number]: Set<Stage> } = {
+      [Stage.STAGE_1]: new Set([Stage.BASIC, Stage.RESTORED]),
+      [Stage.STAGE_2]: new Set([Stage.STAGE_1]),
+      [Stage.VMAX]: new Set([Stage.BASIC]),
+      [Stage.VSTAR]: new Set([Stage.BASIC]),
+      [Stage.MEGA]: new Set([Stage.BASIC]),
+    };
+    const bad: string[] = [];
+    for (const c of pokemon) {
+      const legal = LEGAL_PARENT[c.stage];
+      if (!legal || !c.evolvesFrom) {
+        continue;
+      }
+      const parents = (byName.get(c.evolvesFrom) ?? []).filter(p => p.superType === SuperType.POKEMON) as PokemonCard[];
+      if (parents.length === 0) {
+        continue;   // unresolvable, or a fossil whose parent is a Trainer — both covered above
+      }
+      if (!parents.some(p => legal.has(p.stage))) {
+        const got = [...new Set(parents.map(p => Stage[p.stage]))].join('/');
+        bad.push(`${c.fullName} (${Stage[c.stage]}) ← '${c.evolvesFrom}' is ${got} → STAGE SKIPPED`);
+      }
+    }
     expect(bad).toEqual([]);
   });
 });
