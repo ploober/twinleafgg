@@ -10,9 +10,22 @@ import { Stage, SuperType } from '../../game/store/card/card-types';
  * Same idea as the conventions spec, aimed at FUNCTIONAL data. Twinleaf resolves evolution by
  * matching `evolvesFrom` against a card's `name`, which makes two silent failure modes possible:
  *
- *   1. UNPLAYABLE — an evolved Pokémon with no `evolvesFrom`, or one naming a card that does not
+ *   1. UNEVOLVABLE — an evolved Pokémon with no `evolvesFrom`, or one naming a card that does not
  *      exist ('Shelder' when the card is 'Shellder'; 'Flabebe' when every Flabébé is accented), or
- *      one evolving from itself. Nothing can ever evolve into it, so the card is dead.
+ *      one evolving from itself. Nothing can ever evolve into it.
+ *
+ *      NOT the same as "dead", and this spec used to say dead — corrected 2026-08-05 after driving
+ *      it. A broken chain closes the EVOLUTION path only; direct-placement effects bypass evolution
+ *      entirely and put such a card straight into play. Verified live: with Dark Blastoise (Stage 2,
+ *      `evolvesFrom 'Dark Wartortle'`, which does not exist) in the discard, **Archie's Ace in the
+ *      Hole** `prc-124` offered it and put it on the Bench. Its filter is
+ *      `{superType: POKEMON, cardType: WATER}` with no stage term, and it ends in a raw
+ *      `discard.moveCardsTo(cards, slot)` — no evolution check anywhere on that path.
+ *
+ *      Other stage-agnostic placements exist and would reach the same cards: **Cradily** and
+ *      **Orbeetle** search the deck for a *Stage 2* explicitly; **Bombirdier**, **Reuniclus** and
+ *      **Mega Delphox ex** place any Pokémon; **Kingdra ex** and **Vaporeon VMAX** mirror Archie's
+ *      for Water. So a broken chain degrades a card to "needs an enabler", not "cannot be played".
  *   2. ILLEGAL — a Stage 2 tagged `Basic`. `benchBasic` is gated on `stage === Stage.BASIC`
  *      (play-pokemon-effect.ts), so such a card can be dropped straight onto the bench, SKIPPING its
  *      entire evolution line. That is a rules violation, not merely a dead card.
@@ -47,6 +60,11 @@ const EVOLVED = new Set([Stage.STAGE_1, Stage.STAGE_2, Stage.VMAX, Stage.VSTAR, 
  *   affected (base + `other-prints` reprints), and keying this set on `name` rather than `fullName`
  *   covers all four. Out of rotomancer's pool (Team Rocket, 1999), so the fix is deferred under the
  *   twinleaf fix-scope rule — and adding the missing cards is out of scope regardless.
+ *
+ * These cards are UNEVOLVABLE, not unplayable: a direct-placement effect still puts them into play
+ * (see the header — driven on Dark Blastoise via Archie's Ace in the Hole). Both Dark Blastoise and
+ * Team Aqua's Walrein are Water, so the Archie's / Kingdra ex / Vaporeon VMAX path reaches them
+ * directly; Dark Alakazam is Psychic and needs a stage-agnostic searcher instead.
  */
 const MISSING_PREVOLUTION = new Set([
   "Team Aqua's Walrein",
@@ -63,21 +81,21 @@ describe('Card structural invariants — every evolution resolves; no card is mi
   it('every evolved Pokémon declares an evolvesFrom (else nothing can evolve into it)', () => {
     const bad = pokemon
       .filter(c => EVOLVED.has(c.stage) && !c.evolvesFrom)
-      .map(c => `${c.fullName} (${c.stage}) has no evolvesFrom → UNPLAYABLE`);
+      .map(c => `${c.fullName} (${c.stage}) has no evolvesFrom → UNEVOLVABLE`);
     expect(bad).toEqual([]);
   });
 
   it('every evolvesFrom resolves to a card that exists in the registry', () => {
     const bad = pokemon
       .filter(c => c.evolvesFrom && !names.has(c.evolvesFrom) && !MISSING_PREVOLUTION.has(c.name))
-      .map(c => `${c.fullName} evolvesFrom '${c.evolvesFrom}' — NO SUCH CARD → UNPLAYABLE`);
+      .map(c => `${c.fullName} evolvesFrom '${c.evolvesFrom}' — NO SUCH CARD → UNEVOLVABLE`);
     expect(bad).toEqual([]);
   });
 
   it('no Pokémon evolves from itself (LV.X excepted — it legitimately evolves from its base)', () => {
     const bad = pokemon
       .filter(c => c.evolvesFrom && c.evolvesFrom === c.name && c.stage !== Stage.LV_X)
-      .map(c => `${c.fullName} evolves from itself → UNPLAYABLE`);
+      .map(c => `${c.fullName} evolves from itself → UNEVOLVABLE`);
     expect(bad).toEqual([]);
   });
 
@@ -90,9 +108,9 @@ describe('Card structural invariants — every evolution resolves; no card is mi
 
   // ── whole-CHAIN invariants ────────────────────────────────────────────────────────────────────
   //
-  // Everything above checks ONE LINK. A card whose `evolvesFrom` resolves perfectly is still dead if
-  // its parent's own link is broken, and every per-link assertion stays green throughout — the chain
-  // is unplayable and nothing says so. Added 2026-08-05 after the upstream merge landed exactly that
+  // Everything above checks ONE LINK. A card whose `evolvesFrom` resolves perfectly is still cut off
+  // if its parent's own link is broken, and every per-link assertion stays green throughout — the
+  // chain is unevolvable and nothing says so. Added 2026-08-05 after the upstream merge landed that
   // shape (Stage 2s with no Stage 1), and verified to add no new findings on the current registry:
   // of 4627 evolved Pokémon, the only unreachable chains are the already-waived ones, and there are
   // zero stage skips. These guard the NEXT such merge, not this one.
@@ -142,7 +160,7 @@ describe('Card structural invariants — every evolution resolves; no card is mi
     const bad = pokemon
       .filter(c => EVOLVED.has(c.stage) && !!c.evolvesFrom && !MISSING_PREVOLUTION.has(c.name))
       .filter(c => !reachesRoot(c))
-      .map(c => `${c.fullName} (${Stage[c.stage]}) ← '${c.evolvesFrom}' — chain never reaches a Basic → UNPLAYABLE`);
+      .map(c => `${c.fullName} (${Stage[c.stage]}) ← '${c.evolvesFrom}' — chain never reaches a Basic → UNEVOLVABLE`);
     expect(bad).toEqual([]);
   });
 
