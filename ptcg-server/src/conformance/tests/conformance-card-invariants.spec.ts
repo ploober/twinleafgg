@@ -35,11 +35,23 @@ import { Stage } from '../../game/store/card/card-types';
 const EVOLVED = new Set([Stage.STAGE_1, Stage.STAGE_2, Stage.VMAX, Stage.VSTAR, Stage.MEGA, Stage.BREAK]);
 
 /**
- * Known-unfixable: "Team Aqua's Walrein" evolves from "Team Aqua's Sealeo", which twinleaf does not
- * implement. Not a data defect — a missing card. Deliberately NOT fixed by inventing a card; listed
- * here so the invariant stays green while the gap stays visible.
+ * Known-unfixable: the card evolves from a prevolution twinleaf does not implement. Not a data defect
+ * — a missing card. Deliberately NOT fixed by inventing a card; listed here so the invariant stays
+ * green while the gap stays visible.
+ *
+ * - "Team Aqua's Walrein" → "Team Aqua's Sealeo".
+ * - "Dark Alakazam" → "Dark Kadabra", "Dark Blastoise" → "Dark Wartortle". Both arrived in the
+ *   2026-08-05 upstream merge, which added the Team Rocket Stage 2s WITHOUT their Stage 1s; the two
+ *   names appear nowhere in `src/sets` except as these `evolvesFrom` strings. Four printings are
+ *   affected (base + `other-prints` reprints), and keying this set on `name` rather than `fullName`
+ *   covers all four. Out of rotomancer's pool (Team Rocket, 1999), so the fix is deferred under the
+ *   twinleaf fix-scope rule — and adding the missing cards is out of scope regardless.
  */
-const MISSING_PREVOLUTION = new Set(["Team Aqua's Walrein"]);
+const MISSING_PREVOLUTION = new Set([
+  "Team Aqua's Walrein",
+  'Dark Alakazam',
+  'Dark Blastoise',
+]);
 
 describe('Card structural invariants — every evolution resolves; no card is mis-staged', () => {
   loadAllSets();
