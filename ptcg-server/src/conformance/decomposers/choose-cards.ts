@@ -131,11 +131,27 @@ function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
  *                            (4-of-4 collapses on BOTH engines; 4-of-5 surfaces on BOTH)
  *   CHOOSE_CARD_TO_HAND    — Sudowoodo ssp-087 "Electromagnetic Sonar", plus its own negative control
  *   CHOOSE_CARD_TO_SHUFFLE — Banette jtg-060 "Cursed Words" (see the divergence note below)
+ *   CHOOSE_CARD_TO_DECK    — Gumshoos meg-110 "Evidence Gathering" (B.30, added 2026-08-06)
  *
- * The other 40 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. Several
- * are very likely collapsible on the same reasoning (CHOOSE_CARD_TO_ATTACH, CHOOSE_CARD_TO_DECK), but
- * each needs the same cells driven before it is added, because "obviously the same shape" is how the
- * zone rule this change removes got written in the first place.
+ * The other 39 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. One more
+ * is very likely collapsible on the same reasoning (CHOOSE_CARD_TO_ATTACH), but it needs the same cells
+ * driven before it is added, because "obviously the same shape" is how the zone rule this change removes
+ * got written in the first place.
+ *
+ * CHOOSE_CARD_TO_DECK was the candidate this note named, and the cells it demanded were driven (B.30):
+ *   meg-110 "Evidence Gathering", hand = 1 card  -> roto COLLAPSES and applies the swap, twinleaf surfaced
+ *   meg-110 "Evidence Gathering", hand = 3 cards -> BOTH surface three picks   <-- the negative control
+ * The counts are identical on both engines in the forced cell (a swap is 1-out/1-in), so it is only
+ * visible by comparing card IDENTITIES — worth recording, because a size-only diff reads as convergence.
+ *
+ * The ORDER worry that keeps CHOOSE_CARDS_ORDER and CHOOSE_CARDS_TO_PUT_ON_TOP_OF_THE_DECK out does not
+ * bite here, and that was CHECKED rather than assumed. Collapse needs `min >= |eligible|`, so it can only
+ * touch a multi-card pick when `min >= 2`. Across the WHOLE card corpus (92 files raise this message)
+ * exactly two sites have `min >= 2` — `erikas-maids.ts` and `furret.ts`, both far out-of-pool — and both
+ * move the cards with `moveCardsTo` into the deck and then raise a `ShuffleDeckPrompt` + `applyOrder`
+ * before anything else can observe the deck. That is the same reason CHOOSE_CARD_TO_SHUFFLE is listed
+ * above. In the in-pool sets the multi-card boundary is vacuous by construction: all 12 in-pool sites are
+ * `min: 0` (which never satisfies `min >= |eligible| > 0`) or `min: 1`.
  *
  * ⚠️ CHOOSE_CARD_TO_SHUFFLE KNOWINGLY DIVERGES FROM ROTOMANCER AT THE MULTI-CARD BOUNDARY, and it is
  * listed here on CORRECTNESS rather than agreement. Measured on Banette jtg-060 "Cursed Words" ("your
@@ -154,6 +170,7 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
   GameMessage.CHOOSE_CARD_TO_DISCARD,
   GameMessage.CHOOSE_CARD_TO_HAND,
   GameMessage.CHOOSE_CARD_TO_SHUFFLE,
+  GameMessage.CHOOSE_CARD_TO_DECK,
 ]);
 
 /**

@@ -55,12 +55,25 @@ export class Gumshoos extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-221 / B.30 rule 3: `allowCancel: true` was wrong and it had a wire-visible consequence. The
+      // printed "may" is on USING the Ability ("Once during your turn, you may use this Ability."); the
+      // sentence that follows it -- "Switch a card from your hand with the top card of your deck." -- is
+      // an unconditional imperative, so once the Ability is used the switch is mandatory and there is
+      // nothing left to cancel. #116 refuses a mid-resolution back-out on an Ability directly ("once you
+      // begin ... you must complete the full action").
+      //
+      // The consequence is CF-14, not just tidiness: `forcedPickIndices` requires `allowCancel === false`,
+      // so with `true` the forced single-candidate pick could never collapse. Measured on a one-card hand:
+      // twinleaf surfaced a 1-option `choose`, rotomancer collapsed it AND applied the swap (the hand card
+      // went to the top of the deck and the old top came to hand -- identical COUNTS on both engines, so
+      // this cell is only visible if you compare card IDENTITIES, not sizes). Negative control on a
+      // three-card hand: BOTH engines surface three `choose` picks.
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DECK,
         player.hand,
         {},
-        { min: 1, max: 1, allowCancel: true }
+        { min: 1, max: 1, allowCancel: false }
       ), selected => {
         const cards = selected || [];
         if (cards.length > 0) {

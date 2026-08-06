@@ -23,7 +23,12 @@ export class Volcarona extends PokemonCard {
     name: 'Torrid Scales',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
-    text: 'Once during your turn, you may discard a Basic [R] Energy card from your hand in order to leave your opponent\'s Active Pokémon Burned.'
+    // TA-222: the text here read "Once during your turn, you may discard a Basic [R] Energy card from
+    // your hand in order to leave your opponent's Active Pokémon Burned." All FIVE vendored sources and
+    // rotomancer print the wording below instead. Not cosmetic: the old wording put the discard INSIDE
+    // the "you may", i.e. an optional discard, while the printed card makes it a cost gate -- which is
+    // the same mistake the `allowCancel: true` below encoded, made once and written down twice.
+    text: 'You must discard a Basic [R] Energy card from your hand in order to use this Ability. Once during your turn, you may make your opponent\'s Active Pokémon Burned.'
   }];
 
   public attacks = [{
@@ -74,7 +79,13 @@ export class Volcarona extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         { superType: SuperType.ENERGY, name: 'Fire Energy' },
-        { allowCancel: true, min: 1, max: 1 }
+        // TA-221 / B.30 rule 3: same defect as `meg-110` Gumshoos, and found by PREDICTION from the
+        // census of the cost idiom rather than by the fuzzer -- its seed board had an empty hand, so the
+        // cell was never reached. `allowCancel: true` blocks `forcedPickIndices`, so the forced
+        // single-candidate cost pick could never collapse. Measured on a hand of exactly one Basic Fire:
+        // twinleaf surfaced a 1-option `discard`, rotomancer collapsed it and applied it (hand 1->0,
+        // discard 0->1). Negative control on two Basic Fire: BOTH engines surface two picks.
+        { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
         if (cards.length === 0) {

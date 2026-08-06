@@ -111,6 +111,21 @@ export class NsZoroarkex extends PokemonCard {
       if (player.hand.cards.length === 0) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
+      // TA-220 / B.30 rule 2: compendium #2115 names THIS card. "Can I use N's Zoroark ex's 'Trade'
+      // Ability if there are no cards in my deck, just to discard a card?" -- "No, you can't use Trade if
+      // there aren't any cards left in your deck. Discarding a card from your hand is a cost to use the
+      // Ability, and drawing cards is the effect." The hand check above is the cost's payability; this is
+      // the EFFECT's possibility, and #2115 says both are preconditions on the offer.
+      //
+      // #2114 records that this wording deliberately differs from Zoroark-GX's "Trade" ("Discard a card
+      // from your hand. Then, draw 2 cards."), which #280 says DOES work on an empty deck because there
+      // the discard is the first step of the effect. Same ability name, opposite answers -- so this guard
+      // must never be copied onto a card by ability name alone.
+      //
+      // Measured: hand of 3, deck of 0 -- twinleaf OFFERED Trade, rotomancer withheld it.
+      if (player.deck.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
       if (player.marker.hasMarker(this.TRADE_MARKER, this)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }

@@ -3158,13 +3158,6 @@
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
     {
-      "file": "set-black-bolt-white-flare/volcarona.ts",
-      "signatures": [
-        "name: 'Torrid Scales',"
-      ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
-    },
-    {
       "file": "set-black-bolt-white-flare/zweilous.ts",
       "signatures": [
         "// TA-134: this was index 1 (\"Pitch-Black Fangs\"). \"Flip 2 coins\" belongs to attack 0, \"Double // Hit\" — the off-by-one silently gave Double Hit its flat base 40 on every flip outcome AND made // the plain 100-damage Pitch-Black Fangs raise two coin flips it never asks for."
@@ -4271,13 +4264,6 @@
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
     {
-      "file": "set-mega-evolution/gumshoos.ts",
-      "signatures": [
-        "name: 'Evidence Gathering',"
-      ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
-    },
-    {
       "file": "set-mega-evolution/hariyama.ts",
       "signatures": [
         "name: 'Heave-Ho Catcher',"
@@ -5223,6 +5209,42 @@
         "      // TA-214 (offer half), CLOSED 2026-08-06: an empty-discard throw used to live here, keeping"
       ],
       "note": "TA-214 offer half - the empty-discard throw was REMOVED. Overvolt Discharge's mandated self-KO fires whatever the discard holds, so it is never used for no effect (#13). #2301's floor bounds what a player may CHOOSE and has no choice to bite on over an empty pool (#1011/#423: even a MANDATORY count degrades to as-many-as-you-can). Re-adding an emptiness guard reverts it, and would also have to explain why twm-095 Munkidori and this card should resolve the same way."
+    },
+    {
+      "file": "set-journey-together/ionos-kilowattrel.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1 }",
+        "// TA-220 / B.30 rule 2:"
+      ],
+      "absentSignatures": [
+        "if (lightningEnergy.length === 1) {"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-zoroark-ex.ts",
+      "signatures": [
+        "// TA-220 / B.30 rule 2: compendium #2115 names THIS card."
+      ]
+    },
+    {
+      "file": "set-mega-evolution/gumshoos.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false }",
+        "// TA-221 / B.30 rule 3:"
+      ],
+      "absentSignatures": [
+        "{ min: 1, max: 1, allowCancel: true }"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/volcarona.ts",
+      "signatures": [
+        "You must discard a Basic [R] Energy card from your hand in order to use this Ability.",
+        "// TA-221 / B.30 rule 3: same defect as `meg-110` Gumshoos"
+      ],
+      "absentSignatures": [
+        "{ allowCancel: true, min: 1, max: 1 }"
+      ]
     }
   ]
 }
