@@ -47,6 +47,23 @@ export class ErikasVileplumeex extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-213 / B.27: with nothing in play damaged there is no damage to heal, so the prescribed
+      // action cannot be carried out and the Ability may not be used. Ruling #1043 (Hyper Potion)
+      // states the floor for heal effects directly -- "You have to heal at least 10 damage to play
+      // the card" -- and #49/#75/#2109 generalise it: where it is public knowledge that the effect
+      // has no legal target, you cannot use the Ability. Without this the only throw in this branch
+      // is POWER_ALREADY_USED, and legal-actions.ts probes by a throw-only dry run, so an Ability
+      // that merely does nothing was accepted and offered.
+      let damagedPokemon = 0;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+        if (cardList.damage > 0) {
+          damagedPokemon++;
+        }
+      });
+      if (damagedPokemon === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       // Heal 30 damage from each of your Pokemon
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
         if (cardList.damage > 0) {

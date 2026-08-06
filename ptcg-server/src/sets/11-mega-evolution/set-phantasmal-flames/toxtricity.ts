@@ -53,6 +53,23 @@ export class Toxtricity extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-213 / B.27: the Energy is attached to "1 of your BENCHED Darkness Pokemon", so with no
+      // benched Darkness Pokemon there is no legal destination and the Ability may not be used
+      // (#49/#75/#2109). Note this is NOT the #127 fruitless-search case that made blk-067 a
+      // rotomancer defect: there the deck search itself was performable and merely found nothing,
+      // whereas here the search would SUCCEED and the ATTACHMENT is what is impossible. #1661 has
+      // the Rules Team skipping a deck search outright "since you know there won't be any effect".
+      //
+      // `player.bench` is a fixed-length slot array, so its .length is always the bench size and
+      // never a measure of occupancy (TA-200/SD-12) -- occupancy has to come from getPokemonCard().
+      const hasBenchedDarkness = player.bench.some(b => {
+        const benched = b.getPokemonCard();
+        return benched !== undefined && benched.cardType === CardType.DARK;
+      });
+      if (!hasBenchedDarkness) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       const blocked2: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
         if (card.cardType !== CardType.DARK) {

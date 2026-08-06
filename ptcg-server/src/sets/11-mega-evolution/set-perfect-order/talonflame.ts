@@ -45,6 +45,20 @@ export class Talonflame extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-213 / B.27: the only thing this Ability can do is discard a card from the opponent's
+      // hand, so with that hand EMPTY no branch of it can accomplish anything and it may not be
+      // used. Ruling #2306 (Grand Wing, Perfect Order FAQ 2026-03-26) is directly on point and is
+      // about an Ability: "If my opponent has zero cards in their hand, can I use Vivillon's Grand
+      // Wing Ability even though it won't do anything? -- No."
+      //
+      // The intervening coin flip does not rescue it. #1661 (Moonlit Miracle) lets a flip-first
+      // ATTACK be used regardless -- but that is the attack/ability asymmetry (an attack may always
+      // be used once its cost is paid), and even there the Rules Team stops before the effect
+      // "since you know there won't be any effect". For an Ability, #2306 governs.
+      if (opponent.hand.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       ABILITY_USED(player, this);
       player.marker.addMarkerToState(this.SKY_HUNT_MARKER);
 

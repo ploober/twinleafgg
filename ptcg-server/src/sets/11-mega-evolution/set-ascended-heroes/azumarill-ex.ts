@@ -39,6 +39,23 @@ export class Azumarillex extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-213 / B.27: the Energy must come from 1 of your OTHER Pokemon, so with no other Pokemon
+      // in play holding an Energy there is no legal source and the Ability may not be used
+      // (#49/#75/#2109 -- public knowledge that the effect has no legal target). The existing
+      // INVALID_TARGET throw below cannot cover this: it sits INSIDE the MoveEnergyPrompt callback,
+      // which the throw-only dry run in legal-actions.ts never reaches, so it guards the resolution
+      // and not the offer.
+      const self = StateUtils.findCardList(state, this);
+      let otherSources = 0;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+        if (cardList !== self && cardList.cards.some(c => c.superType === SuperType.ENERGY)) {
+          otherSources++;
+        }
+      });
+      if (otherSources === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       return store.prompt(state, new MoveEnergyPrompt(
         player.id,
         GameMessage.MOVE_ENERGY_CARDS,

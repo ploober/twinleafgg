@@ -13,13 +13,27 @@ function* moveEnergy(next: Function, store: StoreLike, state: State, effect: Pow
   const player = effect.player;
 
   let pokemonWithEnergy = 0;
+  let pokemonInPlay = 0;
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+    pokemonInPlay++;
     if (cardList.cards.some(c => c.superType === SuperType.ENERGY)) {
       pokemonWithEnergy++;
     }
   });
 
-  if (!pokemonWithEnergy) {
+  // TA-213 / B.27: the existing guard checks only that SOME Pokemon holds an Energy, i.e. that a
+  // SOURCE exists. The Ability moves an Energy "to another one of your Pokemon", so it also needs a
+  // DESTINATION -- with a single Pokemon in play there is nowhere to move it to and the Ability may
+  // not be used (#49/#75/#2109). Measured live: one Pokemon with a Grass Energy attached, twinleaf
+  // offered Solar Transfer and rotomancer withheld it; adding a second Pokemon to the Bench made
+  // both offer it.
+  //
+  // Deliberately NOT touching the energy test in the same edit: the prompt below filters to a Basic
+  // Grass Energy by name while this guard accepts ANY Energy, so a board holding only (say) a Water
+  // Energy still passes the guard and then offers an empty prompt. That is a real-looking second
+  // defect, but it is unproven -- no repro discriminates it yet -- so it stays unfixed rather than
+  // fixed on inspection.
+  if (!pokemonWithEnergy || pokemonInPlay < 2) {
     throw new GameError(GameMessage.CANNOT_USE_POWER);
   }
 
