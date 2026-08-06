@@ -51,7 +51,11 @@ export class Dusknoir extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
-        { min: 1, max: 1, allowCancel: false },
+        // TA-196/CF-32: Cursed Blast PLACES counters (PlaceDamageCountersEffect below), so the wire
+        // verb is `placeCounter`, not the generic `choose`. The message cannot carry this --
+        // CHOOSE_POKEMON_TO_DAMAGE is used for both "put N counters on it" and "do N damage to it" --
+        // so only this card can declare it.
+        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
       ), selected => {
         const targets = selected || [];
 
