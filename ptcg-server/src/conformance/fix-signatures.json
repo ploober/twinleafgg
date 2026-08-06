@@ -5152,6 +5152,13 @@
         "      if (opponent.hand.cards.length === 0) {"
       ],
       "note": "TA-213/B.27 — an activated Ability whose prescribed action has NO legal operand on the board was still offered, because legal-actions.ts probes by throw-only dry run and these cards did not throw. Rulings #49/#75/#2109 (public knowledge that the effect has no legal target), #1043 (a heal needs at least 10 damage to heal), #2306 (an Ability that \"won't do anything\" may not be used). Removing the guard reverts it. Here: the opponent's hand is empty, so no branch can do anything (#2306 is directly on point and is about an Ability)."
+    },
+    {
+      "file": "set-surging-sparks/magneton.ts",
+      "signatures": [
+        "        // TA-214: the self-KO used to sit BELOW an `if (transfers.length === 0) { return state; }`"
+      ],
+      "note": "TA-214 (resolution half) — the self-KO sat below a transfers-length early return, so attaching zero Energy from a STOCKED discard skipped it and the once-per-turn Ability was offered again. The card conditions the KO on USING the Ability. Restoring the early return reverts it. The OFFER half (empty discard) is deliberately unfixed — see B.29."
     }
   ]
 }

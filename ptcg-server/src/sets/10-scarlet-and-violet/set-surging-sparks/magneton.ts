@@ -66,10 +66,20 @@ export class Magneton extends PokemonCard {
         { allowCancel: false, min: 0, max: 3, blockedTo: blocked2 },
       ), transfers => {
         transfers = transfers || [];
-        // cancelled by user
-        if (transfers.length === 0) {
-          return state;
-        }
+        // TA-214: the self-KO used to sit BELOW an `if (transfers.length === 0) { return state; }`
+        // early return, so attaching zero Energy from a STOCKED discard skipped it -- driven live,
+        // Magneton survived at 0 damage and the Ability was offered again the same turn. The card
+        // conditions the KO on *using* the Ability ("If you use this Ability, this Pokémon is
+        // Knocked Out"), not on attaching, so the early return is simply wrong and the loop below
+        // is already a no-op for zero transfers.
+        //
+        // Deliberately NOT touched here, both still open:
+        //   - whether the Ability may be used at all on an EMPTY discard is the contested half of
+        //     TA-214 (B.29). It rests on #160/#184 by analogy, and #2301's 1..max floor for an
+        //     Ability's "up to 3" cuts the other way, so it stays unfixed and unfixed on purpose.
+        //     rotomancer offers it there and preserved that structurally in their RE-96 fix.
+        //   - `min: 0` on the prompt below, same reason: changing it interacts with the above.
+        //   - the KO is applied as a raw `cardList.damage += 999`, an SD-13 site.
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
           player.discard.moveCardTo(transfer.card, target);
