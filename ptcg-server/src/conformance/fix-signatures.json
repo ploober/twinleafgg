@@ -1,5 +1,5 @@
 {
- "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, extended 2026-08-01 to the src/game ENGINE tier (entries prefixed `game/` resolve as paths relative to src/; a reverted prefab or reducer breaks a whole card family at once, so the engine tier matters more per entry than the card tier), then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly — the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` — it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
+ "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, extended 2026-08-01 to the src/game ENGINE tier (entries prefixed `game/` resolve as paths relative to src/; a reverted prefab or reducer breaks a whole card family at once, so the engine tier matters more per entry than the card tier), then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly \u2014 the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` \u2014 it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
  "fixes": [
   {
    "file": "set-black-bolt-white-flare/excadrill-ex.ts",
@@ -89,7 +89,7 @@
    "file": "set-destined-rivals/teal-mask-ogerpon.ts",
    "signatures": [
     "if (!player.active.cannotUseAttacksNextTurnPending.includes('Ogre\\'s Hammer')) {",
-    "text: 'During your next turn, this Pokémon can\\'t use Ogre\\'s Hammer.'"
+    "text: 'During your next turn, this Pok\u00e9mon can\\'t use Ogre\\'s Hammer.'"
    ]
   },
   {
@@ -206,7 +206,7 @@
   {
    "file": "set-phantasmal-flames/paldean-tauros.ts",
    "signatures": [
-    "text: 'This attack does 40 damage for each of your Pokémon that has \"Tauros\" in its name that has any damage counters on it.',",
+    "text: 'This attack does 40 damage for each of your Pok\u00e9mon that has \"Tauros\" in its name that has any damage counters on it.',",
     "if (card && card.name.includes('Tauros') && cardList.damage > 0) {"
    ]
   },
@@ -214,7 +214,7 @@
    "file": "set-prismatic-evolution/tyranitar-ex.ts",
    "signatures": [
     "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
-    "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
+    "text: 'This attack does 50 damage for each Energy attached to this Pok\u00e9mon.'",
     "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
    ]
   },
@@ -634,7 +634,7 @@
    "file": "set-mega-evolution/marshadow.ts",
    "signatures": [
     "&& state.phase === GamePhase.ATTACK) {",
-    "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
+    "const koOwner = effect.player;                            // opponent \u2014 loses the KO'd Pok\u00e9mon"
    ]
   },
   {
@@ -1585,14 +1585,14 @@
   {
    "file": "set-ex-crystal-guardians/lombre.ts",
    "signatures": [
-    "cost: [C, C], damage: 20, text: 'Before doing damage, discard all Trainer cards attached to the Defending Pokémon.'"
+    "cost: [C, C], damage: 20, text: 'Before doing damage, discard all Trainer cards attached to the Defending Pok\u00e9mon.'"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-ex-crystal-guardians/treecko2.ts",
    "signatures": [
-    "cost: [P], damage: 10, text: 'Flip a coin. If heads, the Defending Pokémon is now Confused.'"
+    "cost: [P], damage: 10, text: 'Flip a coin. If heads, the Defending Pok\u00e9mon is now Confused.'"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -1795,7 +1795,7 @@
   {
    "file": "set-ex-team-rocket-returns/skiploom.ts",
    "signatures": [
-    "cost: [C], damage: 10, text: 'Flip a coin. If heads, choose 1 Special Condition. The Defending Pokémon is now affected by that Special Condition.'"
+    "cost: [C], damage: 10, text: 'Flip a coin. If heads, choose 1 Special Condition. The Defending Pok\u00e9mon is now affected by that Special Condition.'"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -1823,7 +1823,7 @@
   {
    "file": "set-diamond-and-pearl/pokedex-handy.ts",
    "signatures": [
-    "public name: string = 'Pokédex HANDY910is';"
+    "public name: string = 'Pok\u00e9dex HANDY910is';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -1858,21 +1858,21 @@
   {
    "file": "set-mysterious-treasures/nidorina.ts",
    "signatures": [
-    "public evolvesFrom = 'Nidoran ♀';"
+    "public evolvesFrom = 'Nidoran \u2640';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-platinum/poke-turn.ts",
    "signatures": [
-    "public name: string = 'Team Galactic\\'s Invention G-105 Poké Turn';"
+    "public name: string = 'Team Galactic\\'s Invention G-105 Pok\u00e9 Turn';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-platinum/pokemon-rescue.ts",
    "signatures": [
-    "public name: string = 'Pokémon Rescue';"
+    "public name: string = 'Pok\u00e9mon Rescue';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -1900,21 +1900,21 @@
   {
    "file": "set-stormfront/poke-blower.ts",
    "signatures": [
-    "public name: string = 'Poké Blower +';"
+    "public name: string = 'Pok\u00e9 Blower +';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-stormfront/poke-drawer.ts",
    "signatures": [
-    "public name: string = 'Poké Drawer +';"
+    "public name: string = 'Pok\u00e9 Drawer +';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-supreme-victors/relicanth.ts",
    "signatures": [
-    "// TA-125 family: attached Tools live in `.tools`, not `.cards` — the +30 per Tool never applied. cardList.tools.forEach(card => {"
+    "// TA-125 family: attached Tools live in `.tools`, not `.cards` \u2014 the +30 per Tool never applied. cardList.tools.forEach(card => {"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -2208,7 +2208,7 @@
   {
    "file": "set-dark-explorers/ivysaur.ts",
    "signatures": [
-    "cost: [G, C], damage: 20, text: 'The Defending Pokémon is now Asleep.',"
+    "cost: [G, C], damage: 20, text: 'The Defending Pok\u00e9mon is now Asleep.',"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -2425,14 +2425,14 @@
   {
    "file": "set-plasma-blast/machamp-2.ts",
    "signatures": [
-    "// TA-125 family: attached Tools live in `.tools`, not `.cards` — this bonus never applied. const hasTool = player.active.tools.some(c =>"
+    "// TA-125 family: attached Tools live in `.tools`, not `.cards` \u2014 this bonus never applied. const hasTool = player.active.tools.some(c =>"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-plasma-freeze/hydreigon.ts",
    "signatures": [
-    "// Discard all Pokemon Tool cards from defending Pokemon. // TA-125 family: attached Tools live in `.tools`, not `.cards` — this discarded nothing. const toolCards = opponent.active.tools.filter(c =>"
+    "// Discard all Pokemon Tool cards from defending Pokemon. // TA-125 family: attached Tools live in `.tools`, not `.cards` \u2014 this discarded nothing. const toolCards = opponent.active.tools.filter(c =>"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -2502,14 +2502,14 @@
   {
    "file": "set-flashfire/floette.ts",
    "signatures": [
-    "public evolvesFrom: string = 'Flabébé';"
+    "public evolvesFrom: string = 'Flab\u00e9b\u00e9';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-primal-clash/bunnelby.ts",
    "signatures": [
-    "name: 'Ω Barrage',"
+    "name: '\u03a9 Barrage',"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3167,7 +3167,7 @@
   {
    "file": "set-black-bolt-white-flare/zweilous.ts",
    "signatures": [
-    "// TA-134: this was index 1 (\"Pitch-Black Fangs\"). \"Flip 2 coins\" belongs to attack 0, \"Double // Hit\" — the off-by-one silently gave Double Hit its flat base 40 on every flip outcome AND made // the plain 100-damage Pitch-Black Fangs raise two coin flips it never asks for."
+    "// TA-134: this was index 1 (\"Pitch-Black Fangs\"). \"Flip 2 coins\" belongs to attack 0, \"Double // Hit\" \u2014 the off-by-one silently gave Double Hit its flat base 40 on every flip outcome AND made // the plain 100-damage Pitch-Black Fangs raise two coin flips it never asks for."
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3363,7 +3363,7 @@
   {
    "file": "set-destined-rivals/stevens-skarmory.ts",
    "signatures": [
-    "// Printed damage is empty: all damage is dealt by the effect (50 to each of 2 chosen Pokémon // via DAMAGE_OPPONENT_POKEMON below). A non-zero field here would add a phantom 50 to the // Active on top of the effect's damage. Keep it 0."
+    "// Printed damage is empty: all damage is dealt by the effect (50 to each of 2 chosen Pok\u00e9mon // via DAMAGE_OPPONENT_POKEMON below). A non-zero field here would add a phantom 50 to the // Active on top of the effect's damage. Keep it 0."
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3461,7 +3461,7 @@
   {
    "file": "set-destined-rivals/team-rockets-nidorina.ts",
    "signatures": [
-    "// \"Choose UP TO 2 of your [D] Pokémon\" — zero is a legal count, so min is 0 (TA-136): the // player may decline (choosing none evolves nothing and, having searched nothing, does not shuffle). { min: 0, max: 2, allowCancel: false, blocked: blocked2 },"
+    "// \"Choose UP TO 2 of your [D] Pok\u00e9mon\" \u2014 zero is a legal count, so min is 0 (TA-136): the // player may decline (choosing none evolves nothing and, having searched nothing, does not shuffle). { min: 0, max: 2, allowCancel: false, blocked: blocked2 },"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3755,7 +3755,7 @@
   {
    "file": "set-pokemon-151/charmeleon.ts",
    "signatures": [
-    "cost: [CardType.FIRE, CardType.FIRE, CardType.FIRE], damage: 90, text: 'Discard an Energy from this Pokémon.',"
+    "cost: [CardType.FIRE, CardType.FIRE, CardType.FIRE], damage: 90, text: 'Discard an Energy from this Pok\u00e9mon.',"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3776,7 +3776,7 @@
   {
    "file": "set-pokemon-151/nidorino.ts",
    "signatures": [
-    "public evolvesFrom = 'Nidoran ♂';"
+    "public evolvesFrom = 'Nidoran \u2642';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4049,7 +4049,7 @@
   {
    "file": "set-twilight-masquerade/hearthflame-mask-ogerpon-ex.ts",
    "signatures": [
-    "// \"If your opponent's Active Pokémon is an Evolution Pokémon, this attack does 140 more damage, // AND discard all Energy from this Pokémon.\" Both riders share the SAME condition — a non-Basic // (Evolution) opponent Active. Pre-fix the discard ran unconditionally (TA-137), contradicting"
+    "// \"If your opponent's Active Pok\u00e9mon is an Evolution Pok\u00e9mon, this attack does 140 more damage, // AND discard all Energy from this Pok\u00e9mon.\" Both riders share the SAME condition \u2014 a non-Basic // (Evolution) opponent Active. Pre-fix the discard ran unconditionally (TA-137), contradicting"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4455,7 +4455,7 @@
   {
    "file": "set-phantasmal-flames/mega-charizard-x-ex.ts",
    "signatures": [
-    "// \"Discard ANY AMOUNT of [R] Energy\" — zero is a legal amount, so min is 0 (TA-136): the // player may decline, dealing 0 damage. { min: 0, max: totalEnergy, allowCancel: false, blockedFrom, blockedMap }"
+    "// \"Discard ANY AMOUNT of [R] Energy\" \u2014 zero is a legal amount, so min is 0 (TA-136): the // player may decline, dealing 0 damage. { min: 0, max: totalEnergy, allowCancel: false, blockedFrom, blockedMap }"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4511,7 +4511,7 @@
   {
    "file": "sets/check-card-data-3way.ts",
    "signatures": [
-    "// @ts-nocheck // Three-way card-data comparison: for every printed field, compare THREE sources and, when they // disagree, name the outlier — using the independent reference as a tiebreaker."
+    "// @ts-nocheck // Three-way card-data comparison: for every printed field, compare THREE sources and, when they // disagree, name the outlier \u2014 using the independent reference as a tiebreaker."
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4560,21 +4560,21 @@
   {
    "file": "set-base-set/pokedex.ts",
    "signatures": [
-    "public name: string = 'Pokédex';"
+    "public name: string = 'Pok\u00e9dex';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-base-set/pokemon-breeder.ts",
    "signatures": [
-    "public name: string = 'Pokémon Breeder';"
+    "public name: string = 'Pok\u00e9mon Breeder';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
   {
    "file": "set-base-set/pokemon-flute.ts",
    "signatures": [
-    "public name: string = 'Pokémon Flute';"
+    "public name: string = 'Pok\u00e9mon Flute';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4707,7 +4707,7 @@
   {
    "file": "set-wotc-promos/pokemon-tower.ts",
    "signatures": [
-    "public name = 'Pokémon Tower';"
+    "public name = 'Pok\u00e9mon Tower';"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -4877,7 +4877,7 @@
     "const putCounters = new PutCountersEffect(effect.attackEffect, 120);",
     "effect.target.moveCardTo(this, targetPlayer.discard);"
    ],
-   "note": "TA-187 — Tool damage-reaction; see fix-ledger 2026-08-02"
+   "note": "TA-187 \u2014 Tool damage-reaction; see fix-ledger 2026-08-02"
   },
   {
    "file": "set-twilight-masquerade/handy-fan.ts",
@@ -4885,56 +4885,56 @@
     "const hasBench = player.bench.some(b => b.cards.length > 0);",
     "{ allowCancel: false, min: 1, max: 1 }"
    ],
-   "note": "TA-187 — Tool damage-reaction; see fix-ledger 2026-08-02"
+   "note": "TA-187 \u2014 Tool damage-reaction; see fix-ledger 2026-08-02"
   },
   {
    "file": "set-black-bolt-white-flare/fennel.ts",
    "signatures": [
     "let anyDamaged = false;"
    ],
-   "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+   "note": "B.18 achievability / floor \u2014 see fix-ledger 2026-08-02"
   },
   {
    "file": "set-black-bolt-white-flare/ns-plan.ts",
    "signatures": [
     "private hasBenchedEnergy(player: Player): boolean {"
    ],
-   "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+   "note": "B.18 achievability / floor \u2014 see fix-ledger 2026-08-02"
   },
   {
    "file": "set-journey-together/levincia.ts",
    "signatures": [
     "{ allowCancel: false, min: 1, max: 2 }"
    ],
-   "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+   "note": "B.18 achievability / floor \u2014 see fix-ledger 2026-08-02"
   },
   {
    "file": "set-perfect-order/tarragon.ts",
    "signatures": [
     "return player.discard.cards.some(c =>"
    ],
-   "note": "B.18 achievability / floor — see fix-ledger 2026-08-02"
+   "note": "B.18 achievability / floor \u2014 see fix-ledger 2026-08-02"
   },
   {
    "file": "game/store/prefabs/prefabs.ts",
    "signatures": [
     "case TrainerType.ITEM:"
    ],
-   "note": "TA-186 — CAN_PLAY_TRAINER_CARD must return true for Item/Supporter; the pre-existing prefabs.ts entry covers unrelated lines and would survive a revert of this one"
+   "note": "TA-186 \u2014 CAN_PLAY_TRAINER_CARD must return true for Item/Supporter; the pre-existing prefabs.ts entry covers unrelated lines and would survive a revert of this one"
   },
   {
    "file": "set-journey-together/iris-fighting-spirit.ts",
    "signatures": [
     "{ allowCancel: false, min: 1, max: 1 }"
    ],
-   "note": "TA-184 — the discard is a mandatory cost, not a declinable \"up to\""
+   "note": "TA-184 \u2014 the discard is a mandatory cost, not a declinable \"up to\""
   },
   {
    "file": "set-journey-together/ruffian.ts",
    "signatures": [
     "private static isLegalTarget(cardList:"
    ],
-   "note": "TA-181 — canPlay and reduceEffect share one target predicate"
+   "note": "TA-181 \u2014 canPlay and reduceEffect share one target predicate"
   },
   {
    "file": "set-temporal-forces/heavy-baton.ts",
@@ -4948,7 +4948,7 @@
    "file": "set-surging-sparks/vibrava.ts",
    "signatures": [
     "name: 'Cutting Wind',",
-    "text: 'During your next turn, the Defending Pokémon takes 50 more damage from attacks (after applying Weakness and Resistance).'"
+    "text: 'During your next turn, the Defending Pok\u00e9mon takes 50 more damage from attacks (after applying Weakness and Resistance).'"
    ],
    "note": "TA-92 data: unanimous 5-source text + attack name; reverting either restores a wrong printed card"
   },
@@ -4957,88 +4957,102 @@
    "signatures": [
     "public hp: number = 60;"
    ],
-   "note": "TA-192 — hp was 90; unanimous 4-witness authoritative + roto say 60 (KO math)"
+   "note": "TA-192 \u2014 hp was 90; unanimous 4-witness authoritative + roto say 60 (KO math)"
   },
   {
    "file": "set-evolving-skies/other-prints.ts",
    "signatures": [
     "  public hp: number = 70;"
    ],
-   "note": "TA-192 — SlakothEVS false-reprint containment: evs-129 is hp 70, not the SSP base's value"
+   "note": "TA-192 \u2014 SlakothEVS false-reprint containment: evs-129 is hp 70, not the SSP base's value"
   },
   {
    "file": "set-temporal-forces/iron-jugulis.ts",
    "signatures": [
     "if (targetPlayer.active !== effect.target) {"
    ],
-   "note": "TA-193 — the ability is gated on 'is in the Active Spot'; without this a BENCHED Jugulis punished the attacker"
+   "note": "TA-193 \u2014 the ability is gated on 'is in the Active Spot'; without this a BENCHED Jugulis punished the attacker"
   },
   {
    "file": "set-destined-rivals/cynthias-roserade.ts",
    "signatures": [
     "(before applying Weakness and Resistance).'"
    ],
-   "note": "TA-194 data — the W/R-ordering clause was dropped from the printed text"
+   "note": "TA-194 data \u2014 the W/R-ordering clause was dropped from the printed text"
   },
   {
    "file": "set-shrouded-fable/dusknoir.ts",
    "signatures": [
-    "If you use this Ability, this Pokémon is Knocked Out.'"
+    "If you use this Ability, this Pok\u00e9mon is Knocked Out.'"
    ],
-   "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters'"
+   "note": "TA-194 data \u2014 KO gate is 'if you USE this Ability', not 'if you placed counters'"
   },
   {
    "file": "set-phantasmal-flames/seviper.ts",
    "signatures": [
     "card.tags.includes(CardTag.POKEMON_SV_MEGA)) {",
-    "If you have any Darkness Mega Evolution Pokémon ex in play"
+    "If you have any Darkness Mega Evolution Pok\u00e9mon ex in play"
    ],
-   "note": "TA-197 — the boost is gated on a Darkness MEGA EVOLUTION Pokémon ex; without the tag test ANY Darkness Pokémon ex granted +120 (measured 240 vs roto's 120)"
+   "note": "TA-197 \u2014 the boost is gated on a Darkness MEGA EVOLUTION Pok\u00e9mon ex; without the tag test ANY Darkness Pok\u00e9mon ex granted +120 (measured 240 vs roto's 120)"
   },
   {
    "file": "set-phantasmal-flames/toxtricity.ts",
    "signatures": [
     "[SlotType.BENCH],",
-    "1 of your Benched Darkness Pokémon"
+    "1 of your Benched Darkness Pok\u00e9mon"
    ],
-   "note": "TA-198 — attach target is BENCHED only; SlotType.ACTIVE in the slot list offered the Active as a target (2 legal actions vs roto's 1)"
+   "note": "TA-198 \u2014 attach target is BENCHED only; SlotType.ACTIVE in the slot list offered the Active as a target (2 legal actions vs roto's 1)"
   },
   {
    "file": "set-phantasmal-flames/sableye.ts",
    "signatures": [
     "let hasStage2DarkOnBench = false;",
-    "any Stage 2 Darkness Pokémon on your Bench"
+    "any Stage 2 Darkness Pok\u00e9mon on your Bench"
    ],
-   "note": "TA-199 — 'on your Bench' not 'in play'; vacuous in effect (the Active is always Sableye, a Basic) but the code now states the printed rule"
+   "note": "TA-199 \u2014 'on your Bench' not 'in play'; vacuous in effect (the Active is always Sableye, a Basic) but the code now states the printed rule"
   },
   {
    "file": "set-surging-sparks/ho-oh.ts",
    "signatures": [
     "let hasTeraOnBench = false;",
-    "any Tera Pokémon on your Bench"
+    "any Tera Pok\u00e9mon on your Bench"
    ],
-   "note": "TA-199 — 'on your Bench' not 'in play'; vacuous in effect (the Active is always Ho-Oh, untagged) but the code now states the printed rule"
+   "note": "TA-199 \u2014 'on your Bench' not 'in play'; vacuous in effect (the Active is always Ho-Oh, untagged) but the code now states the printed rule"
   },
   {
    "file": "set-shrouded-fable/dusclops.ts",
    "signatures": [
-    "If you use this Ability, this Pokémon is Knocked Out.'"
+    "If you use this Ability, this Pok\u00e9mon is Knocked Out.'"
    ],
-   "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters' (sibling of dusknoir.ts; missed on first registration)"
+   "note": "TA-194 data \u2014 KO gate is 'if you USE this Ability', not 'if you placed counters' (sibling of dusknoir.ts; missed on first registration)"
   },
   {
    "file": "set-mega-evolution/mega-latias-ex.ts",
    "signatures": [
     "if (player.bench.some(b => b.cards.length > 0)) {"
    ],
-   "note": "TA-200 — player.bench is a fixed SLOT array so `.length > 0` is always true; the empty-Bench guard never fired and Strafe pended a vacuous WANT_TO_SWITCH_POKEMON confirm"
+   "note": "TA-200 \u2014 player.bench is a fixed SLOT array so `.length > 0` is always true; the empty-Bench guard never fired and Strafe pended a vacuous WANT_TO_SWITCH_POKEMON confirm"
   },
   {
    "file": "set-temporal-forces/iron-jugulis.ts",
    "signatures": [
     "const punish = new PutDamageEffect(effect.attackEffect, 30);"
    ],
-   "note": "TA-195 — the punish must go through PutDamageEffect so it is LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`"
+   "note": "TA-195 \u2014 the punish must go through PutDamageEffect so it is LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`"
+  },
+  {
+   "file": "set-surging-sparks/jasmines-gaze.ts",
+   "signatures": [
+    "const targetPlayer: Player = StateUtils.findOwner(state, effect.target);",
+    "if (hasMarker && targetPlayer === player) { effect.damage -= 30; }"
+   ]
+  },
+  {
+   "file": "set-mega-evolution/iron-defender.ts",
+   "signatures": [
+    "const targetPlayer: Player = StateUtils.findOwner(state, effect.target);",
+    "if (hasMarker && targetPlayer === player && checkPokemonTypeEffect.cardTypes.includes(CardType.METAL)) {"
+   ]
   }
  ]
 }

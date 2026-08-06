@@ -36,10 +36,16 @@ export class IronDefender extends TrainerCard {
       const player: Player = StateUtils.findOwner(state, StateUtils.findCardList(state, this));
       const hasMarker: boolean = player.marker.hasMarker(this.IRON_DEFENDER_MARKER, this);
 
+      // The reduction protects "all of YOUR [M] Pokémon", so the damaged Pokémon must belong to the
+      // marker's owner. Without this the -30 also applied to damage that owner DEALT, because a
+      // PutDamageEffect is raised for every hit on the board and the type gate below matches any
+      // Metal Pokémon on either side.
+      const targetPlayer: Player = StateUtils.findOwner(state, effect.target);
+
       const checkPokemonTypeEffect = new CheckPokemonTypeEffect(effect.target);
       store.reduceEffect(state, checkPokemonTypeEffect);
 
-      if (hasMarker && checkPokemonTypeEffect.cardTypes.includes(CardType.METAL)) {
+      if (hasMarker && targetPlayer === player && checkPokemonTypeEffect.cardTypes.includes(CardType.METAL)) {
         effect.damage -= 30;
       }
       return state;

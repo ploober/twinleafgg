@@ -40,7 +40,13 @@ export class JasminesGaze extends TrainerCard {
     if (effect instanceof PutDamageEffect) {
       const player: Player = StateUtils.findOwner(state, StateUtils.findCardList(state, this));
       const hasMarker: boolean = player.marker.hasMarker(this.JASMINES_GAZE_MARKER, this);
-      if (hasMarker) { effect.damage -= 30; }
+
+      // The reduction protects "all of YOUR Pokémon", so the damaged Pokémon must belong to the
+      // marker's owner. Without this the -30 also applied to damage that owner DEALT, because a
+      // PutDamageEffect is raised for every hit on the board, not only for hits taken.
+      const targetPlayer: Player = StateUtils.findOwner(state, effect.target);
+
+      if (hasMarker && targetPlayer === player) { effect.damage -= 30; }
       return state;
     }
 
