@@ -51,7 +51,17 @@ export class Barbaracle extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
-      if (player.hand.cards.length === 0) {
+      // TA-218 / B.29 rule 1: the Energy comes from HAND and must be a Basic [F], so a non-empty
+      // hand holding no Basic Fighting Energy is still an empty operand set -- the attach cannot be
+      // performed and the Ability must not be offered (#49/#75/#2109). Measured live on a hand of
+      // one Basic Water Energy: twinleaf offered Stone Arms, rotomancer withheld it.
+      //
+      // The predicate mirrors the AttachEnergyPrompt filter below exactly, so the guard and the
+      // prompt cannot disagree about what counts as a legal source.
+      const hasBasicFighting = player.hand.cards.some((c: any) =>
+        c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC
+        && c.name === 'Fighting Energy');
+      if (!hasBasicFighting) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 

@@ -34,7 +34,7 @@ export class Dusclops extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Will-o-Wisp',
+      name: 'Will-O-Wisp',
       cost: [CardType.PSYCHIC, CardType.PSYCHIC],
       damage: 50,
       text: ''

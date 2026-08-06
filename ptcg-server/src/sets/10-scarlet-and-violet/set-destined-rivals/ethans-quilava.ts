@@ -62,6 +62,15 @@ export class EthansQuilava extends PokemonCard {
         { name: 'Ethan\'s Adventure' },
         { min: 0, max: 1 }
       ), cards => {
+        // TA-218 / TA-212's class: the once-per-turn must be consumed by USING the Ability, not by
+        // finding something. #127 (Floral Path to the Sky) is explicit -- "since you SEARCHED your
+        // deck the ability is used up for the turn" -- so a fruitless search still spends it. These
+        // two lines used to sit BELOW the early return, so on a deck with no Ethan's Adventure the
+        // marker was never added and twinleaf re-offered the Ability; driven live it accepted a
+        // second use (applied=8) where rotomancer refused it.
+        ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);
+        ABILITY_USED(player, this);
+
         if (!cards || cards.length === 0) {
           SHUFFLE_DECK(store, state, player);
           return state;
@@ -69,8 +78,6 @@ export class EthansQuilava extends PokemonCard {
 
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
         MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this, sourceEffect: this.powers[0] });
-        ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);
-        ABILITY_USED(player, this);
         SHUFFLE_DECK(store, state, player);
       });
     }

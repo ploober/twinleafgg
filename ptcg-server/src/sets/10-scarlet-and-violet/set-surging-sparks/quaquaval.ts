@@ -67,7 +67,16 @@ export class Quaquaval extends PokemonCard {
         player.marker.addMarker(this.UP_TEMPO_MARKER, this);
         player.hand.moveCardsTo(cards, player.deck);
 
-        while (player.hand.cards.length < 5) {
+        // TA-217: this loop had no deck term. Once the deck runs dry `moveTo` moves nothing, the
+        // hand never reaches 5 and the loop spins forever -- a genuine infinite loop, not merely a
+        // wrong result: the single /v1/step call never returns and wedges the whole server process,
+        // so every later request on that instance times out too.
+        //
+        // "Draw cards until you have 5 cards in your hand" is a draw-as-much-as-you-can effect
+        // (#1120 states it for Potion's healing, and TA-210 already settled the same shape for
+        // meg-104's "draw 2" on a 1-card deck), so stopping on an empty deck is the printed
+        // behaviour and not a safety hack.
+        while (player.hand.cards.length < 5 && player.deck.cards.length > 0) {
           player.deck.moveTo(player.hand, 1);
         }
       });

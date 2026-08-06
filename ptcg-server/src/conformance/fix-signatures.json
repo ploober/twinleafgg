@@ -5166,6 +5166,56 @@
         "      // TA-216 / B.29 rule 1: an EMPTY deck cannot be searched, so the action cannot be performed"
       ],
       "note": "TA-216 - Metallic Signal was offered on an EMPTY deck, where the search cannot be performed (#13). Deliberately === 0 and NOT a match check: a fruitless search of a stocked deck is a legal use (#127) and gating on a match would leak deck contents through legalActions. This cell is the correction of the withdrawn RE-95, which convicted the wrong engine."
+    },
+    {
+      "file": "set-surging-sparks/quaquaval.ts",
+      "signatures": [
+        "        while (player.hand.cards.length < 5 && player.deck.cards.length > 0) {"
+      ],
+      "note": "TA-217 - the draw loop had no deck term, so an empty deck made it spin forever: the /v1/step call never returned and wedged the whole server process. Removing the deck term reverts it."
+    },
+    {
+      "file": "set-destined-rivals/ethans-quilava.ts",
+      "signatures": [
+        "        ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);",
+        "        ABILITY_USED(player, this);"
+      ],
+      "note": "TA-218 - the once-per-turn marker sat BELOW the fruitless-search early return, so a search that found nothing did not consume the Ability and twinleaf accepted a second use. #127: since you SEARCHED your deck the ability is used up. Moving them back below reverts it."
+    },
+    {
+      "file": "set-destined-rivals/cynthias-gabite.ts",
+      "signatures": [
+        "      BLOCK_IF_DECK_EMPTY(player);"
+      ],
+      "note": "TA-218 - Champion's Call was offered with an EMPTY deck (B.29 rule 1 / #13). Same cell as TA-216."
+    },
+    {
+      "file": "set-journey-together/mamoswine-ex.ts",
+      "signatures": [
+        "      BLOCK_IF_DECK_EMPTY(player);"
+      ],
+      "note": "TA-218 - Mammoth Hauler was offered with an EMPTY deck (B.29 rule 1 / #13). Same cell as TA-216."
+    },
+    {
+      "file": "set-perfect-order/barbaracle.ts",
+      "signatures": [
+        "      const hasBasicFighting = player.hand.cards.some((c: any) =>"
+      ],
+      "note": "TA-218 - Stone Arms was offered with a hand holding no Basic Fighting Energy: a non-empty hand is still an empty OPERAND set. The predicate mirrors the AttachEnergyPrompt filter exactly."
+    },
+    {
+      "file": "set-shrouded-fable/dusclops.ts",
+      "signatures": [
+        "      name: 'Will-O-Wisp',"
+      ],
+      "note": "TA-219 - attack name was 'Will-o-Wisp'; all five vendored sources spell it 'Will-O-Wisp'. The mismatch made rotomancer silently no-op the fuzzer's declareAttack, which then read as a large state divergence (the cross-engine attack-name blind spot, TA-138's class)."
+    },
+    {
+      "file": "set-chaos-rising/ninetales.ts",
+      "signatures": [
+        "      name: 'Will-O-Wisp',"
+      ],
+      "note": "TA-219 - same orthography fix, found by sweeping for the sibling spelling."
     }
   ]
 }

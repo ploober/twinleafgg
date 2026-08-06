@@ -30,7 +30,7 @@ export class Ninetales extends PokemonCard {
       text: "Move all damage counters from 1 of your Benched Pokémon to your opponent's Active Pokémon. ",
     },
     {
-      name: 'Will-o-Wisp',
+      name: 'Will-O-Wisp',
       cost: [R, R],
       damage: 70,
       text: '',

@@ -5,7 +5,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, WAS_POWER_USED, BLOCK_IF_DECK_EMPTY } from '../../../game/store/prefabs/prefabs';
 
 export class Mamoswineex extends PokemonCard {
 
@@ -62,6 +62,12 @@ export class Mamoswineex extends PokemonCard {
       if (player.marker.hasMarker(this.MAMMOTH_RIDE_MARKER, this)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
+
+      // TA-218 / B.29 rule 1: an EMPTY deck cannot be searched (#13), so the Ability must not be
+      // offered. Same cell as TA-216 and TA-210. Deliberately deck-EMPTY and not a match test: a
+      // fruitless search of a stocked deck is a legal use (#127) and gating on a match would leak
+      // deck contents through the legal-action set (#1114).
+      BLOCK_IF_DECK_EMPTY(player);
 
       return store.prompt(state, new ChooseCardsPrompt(
         player,
