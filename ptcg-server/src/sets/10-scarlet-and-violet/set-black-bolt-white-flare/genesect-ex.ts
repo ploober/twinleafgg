@@ -48,6 +48,20 @@ export class Genesectex extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-216 / B.29 rule 1: an EMPTY deck cannot be searched, so the action cannot be performed
+      // and the Ability may not be used (#13). Deliberately `=== 0` and NOT a check for a matching
+      // card: a search of a stocked deck that finds nothing is a legal use (#127, Floral Path), and
+      // gating on a match would additionally leak deck contents through the legal-action set.
+      //
+      // This is the cell that RE-95 got backwards. That finding claimed rotomancer wrongly withheld
+      // a fruitless search; rotomancer could not reproduce it and guessed our board's deck was empty
+      // at the decision point. It was -- the scenario's endTurn actions drew all 4 cards -- so the
+      // cell was measuring the empty-deck arm and convicting the wrong engine. Measured on a
+      // genuinely non-empty deck holding no [M] Evolution, BOTH engines offer it.
+      if (player.deck.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       const blocked: number[] = [];
       player.deck.cards.forEach((card, index) => {
         if (!(card instanceof PokemonCard && card.cardType === CardType.METAL && card.evolvesFrom !== '' && card.stage !== Stage.LV_X)) {

@@ -5159,6 +5159,13 @@
         "        // TA-214: the self-KO used to sit BELOW an `if (transfers.length === 0) { return state; }`"
       ],
       "note": "TA-214 (resolution half) — the self-KO sat below a transfers-length early return, so attaching zero Energy from a STOCKED discard skipped it and the once-per-turn Ability was offered again. The card conditions the KO on USING the Ability. Restoring the early return reverts it. The OFFER half (empty discard) is deliberately unfixed — see B.29."
+    },
+    {
+      "file": "set-black-bolt-white-flare/genesect-ex.ts",
+      "signatures": [
+        "      // TA-216 / B.29 rule 1: an EMPTY deck cannot be searched, so the action cannot be performed"
+      ],
+      "note": "TA-216 - Metallic Signal was offered on an EMPTY deck, where the search cannot be performed (#13). Deliberately === 0 and NOT a match check: a fruitless search of a stocked deck is a legal use (#127) and gating on a match would leak deck contents through legalActions. This cell is the correction of the withdrawn RE-95, which convicted the wrong engine."
     }
   ]
 }
