@@ -5245,6 +5245,36 @@
       "absentSignatures": [
         "{ allowCancel: true, min: 1, max: 1 }"
       ]
+    },
+    {
+      "file": "set-mega-evolution/lunatone.ts",
+      "signatures": [
+        "// TA-221 / B.30 rules 1+3:"
+      ],
+      "absentSignatures": [
+        "{ allowCancel: true, min: 1, max: 1 }"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/drakloak.ts",
+      "signatures": [
+        "// TA-221 / B.30 rule 3: the printed \"may\" governs LOOKING"
+      ],
+      "absentSignatures": [
+        "{ min: 1, max: 1, allowCancel: true }"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/eelektrik.ts",
+      "signatures": [
+        "you may attach a Basic [L] Energy card from your discard pile"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/salvatore.ts",
+      "signatures": [
+        "Search your deck for a card that has no Abilities and evolves from 1 of your Pok"
+      ]
     }
   ]
 }

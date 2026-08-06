@@ -134,7 +134,11 @@ export class Salvatore extends TrainerCard {
   public setNumber: string = '160';
   public name: string = 'Salvatore';
   public fullName: string = 'Salvatore TEF';
-  public text: string = 'Search your deck for a Pokémon, except any Pokémon with an Ability, that evolves from 1 of your Pokémon in play and put it on that Pokémon to evolve it. Then, shuffle your deck. (You can use this card on a Pokémon that was put into play when setting up to play or on the turn it was put into play.)';
+  // TA-223: the old text was a PARAPHRASE, not the printed wording. All FIVE vendored sources and
+  // rotomancer carry the text below verbatim. Two substantive differences, not just phrasing:
+  // the printed card searches for "a **card** that has no Abilities" (not "a Pokémon, except any
+  // Pokémon with an Ability"), and the last sentence is NOT parenthetical on the card.
+  public text: string = 'Search your deck for a card that has no Abilities and evolves from 1 of your Pokémon, and put it onto that Pokémon to evolve it. Then, shuffle your deck. You can use this card on a Pokémon you put down when you were setting up to play or on a Pokémon that was put into play this turn.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {

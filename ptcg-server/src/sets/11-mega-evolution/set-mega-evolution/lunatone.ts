@@ -71,7 +71,19 @@ export class Lunatone extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },
-        { allowCancel: true, min: 1, max: 1 }
+        // TA-221 / B.30 rules 1+3: *"…you may discard a Basic [F] Energy card from your hand **in order
+        // to use** this Ability"* is the cost idiom, so the discard is a COST and is not declinable once
+        // the Ability is declared (#1654, #2115, #116) -- the third in-pool card carrying that idiom with
+        // the wrong flag, after `jtg-055` (TA-220) and `blk-016` (TA-221).
+        //
+        // `allowCancel: true` also blocked the CF-14 collapse, which is what shows on the wire. Measured
+        // with Solrock benched and exactly ONE Basic Fighting in hand: twinleaf surfaced a 1-option
+        // `discard`, rotomancer collapsed it and resolved the whole Ability (hand -> discard, then drew
+        // 3). Negative control on two Basic Fighting: BOTH engines surface two picks.
+        //
+        // The deck-empty guard above is already correct and is the rule-2 half (#2115) -- unlike
+        // `jtg-055`/`jtg-098`, this card shipped with it.
+        { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
         if (cards.length === 0) {

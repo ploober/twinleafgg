@@ -21,7 +21,12 @@ export class Eelektrik extends PokemonCard {
     name: 'Dynamotor',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
-    text: 'Once during your turn, you may attach a [L] Energy card from your discard pile to 1 of your Benched Pokémon.'
+    // TA-223: the printed text is "a **Basic** [L] Energy card" -- 4 of 5 vendored sources and
+    // rotomancer carry "Basic" (limitless is the lone holdout and also renders a legacy
+    // "(before your attack)" here, so it is the outlier twice over). TEXT-ONLY: the guard and the
+    // AttachEnergyPrompt filter below already test `energyType === BASIC`, so no behaviour changes --
+    // the opposite of `blk-016` (TA-222), where the wrong text and the wrong code agreed.
+    text: 'Once during your turn, you may attach a Basic [L] Energy card from your discard pile to 1 of your Benched Pokémon.'
   }];
 
   public attacks = [{

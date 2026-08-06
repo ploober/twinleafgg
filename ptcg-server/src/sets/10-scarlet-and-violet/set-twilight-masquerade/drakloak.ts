@@ -82,7 +82,16 @@ export class Drakloak extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         deckTop,
         {},
-        { min: 1, max: 1, allowCancel: true }
+        // TA-221 / B.30 rule 3: the printed "may" governs LOOKING -- "Once during your turn, you may
+        // look at the top 2 cards of your deck and put 1 of them into your hand. Put the other card on
+        // the bottom of your deck." Both puts are unconditional imperatives once you have looked, so
+        // there is nothing to cancel, and #116 refuses a mid-resolution back-out on an Ability.
+        //
+        // `allowCancel: true` was not cosmetic: `forcedPickIndices` requires `false`, so the forced case
+        // could never collapse. Measured on a ONE-card deck (the look yields a single card): twinleaf
+        // surfaced a 1-option `choose`, rotomancer collapsed it and put the card in hand. Negative
+        // control on a two-card deck: BOTH engines surface two `choose` picks.
+        { min: 1, max: 1, allowCancel: false }
       ), selected => {
         player.marker.addMarker(this.TELLING_SPIRIT_MARKER, this);
 
