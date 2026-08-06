@@ -72,10 +72,16 @@ export class Quaquaval extends PokemonCard {
         // wrong result: the single /v1/step call never returns and wedges the whole server process,
         // so every later request on that instance times out too.
         //
-        // "Draw cards until you have 5 cards in your hand" is a draw-as-much-as-you-can effect
-        // (#1120 states it for Potion's healing, and TA-210 already settled the same shape for
-        // meg-104's "draw 2" on a 1-card deck), so stopping on an empty deck is the printed
-        // behaviour and not a safety hack.
+        // Stopping on an empty deck is the PRINTED behaviour, not a safety hack, and the rulebook
+        // states both halves directly (Web Rulebook, July 2026):
+        //   "If a card tells you to draw or look at more cards from your deck than you have left,
+        //    draw or look at the cards you have and continue play as normal."
+        //   "You lose if you cannot draw a card at the beginning of your turn, BUT NOT if you
+        //    cannot draw one because a card told you to do so."
+        // So the shortfall is not a loss here: the deck-out loss belongs to the turn-start draw.
+        // Verified on the TA-217 board -- both engines stay `ongoing` after this Ability with an
+        // empty deck, and both reach `winB` the moment A's next turn begins. Compendium #481
+        // (Heart Wink) says the same at card level; TA-210 settled the same shape for meg-104.
         while (player.hand.cards.length < 5 && player.deck.cards.length > 0) {
           player.deck.moveTo(player.hand, 1);
         }
