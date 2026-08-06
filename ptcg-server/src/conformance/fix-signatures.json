@@ -5216,6 +5216,13 @@
         "      name: 'Will-O-Wisp',"
       ],
       "note": "TA-219 - same orthography fix, found by sweeping for the sibling spelling."
+    },
+    {
+      "file": "set-surging-sparks/magneton.ts",
+      "signatures": [
+        "      // TA-214 (offer half), CLOSED 2026-08-06: an empty-discard throw used to live here, keeping"
+      ],
+      "note": "TA-214 offer half - the empty-discard throw was REMOVED. Overvolt Discharge's mandated self-KO fires whatever the discard holds, so it is never used for no effect (#13). #2301's floor bounds what a player may CHOOSE and has no choice to bite on over an empty pool (#1011/#423: even a MANDATORY count degrades to as-many-as-you-can). Re-adding an emptiness guard reverts it, and would also have to explain why twm-095 Munkidori and this card should resolve the same way."
     }
   ]
 }
