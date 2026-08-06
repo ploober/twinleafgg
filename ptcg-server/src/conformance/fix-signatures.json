@@ -5067,6 +5067,56 @@
     "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
    ],
    "note": "TA-196/CF-32 — Cursed Blast PLACES damage counters, so the wire verb must be `placeCounter`, not the generic `choose`. The prompt MESSAGE cannot carry this (CHOOSE_POKEMON_TO_DAMAGE serves both \"put N counters on it\" and \"do N damage to it\"), so only the card can declare the operation; `options.operation` has ZERO readers in game/ and is wire-only."
+  },
+  {
+   "file": "set-phantasmal-flames/rotom-ex.ts",
+   "signatures": [
+    "// TA-209: NOT player-activated. 'Multi Adapter' is a PASSIVE ability"
+   ],
+   "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it."
+  },
+  {
+   "file": "set-perfect-order/aurorus.ts",
+   "signatures": [
+    "// TA-209: NOT player-activated. 'Tundra Wall' is a PASSIVE ability"
+   ],
+   "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it."
+  },
+  {
+   "file": "set-perfect-order/tyrantrum.ts",
+   "signatures": [
+    "// TA-209: NOT player-activated. 'Tyrannically Gutsy' is a PASSIVE ability"
+   ],
+   "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it."
+  },
+  {
+   "file": "set-perfect-order/gengar.ts",
+   "signatures": [
+    "// TA-209: NOT player-activated. 'Infinite Shadow' is a PASSIVE ability"
+   ],
+   "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it."
+  },
+  {
+   "file": "set-journey-together/volcanion-ex.ts",
+   "signatures": [
+    "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {"
+   ],
+   "note": "TA-210/B.27 — an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu."
+  },
+  {
+   "file": "set-mega-evolution/mega-kangaskhan-ex.ts",
+   "signatures": [
+    "if (player.deck.cards.length === 0) {",
+    "        throw new GameError(GameMessage.CANNOT_USE_POWER);"
+   ],
+   "note": "TA-210/B.27 — 'draw 2' with an EMPTY deck cannot be performed (#13). Deliberately `=== 0`, not `< 2`: with 1 card you draw as much as you can."
+  },
+  {
+   "file": "set-temporal-forces/pidove.ts",
+   "signatures": [
+    "      // masked the gate. Now: THROW (an empty deck cannot be searched, compendium #13), and let the HP"
+   ],
+   "note": "TA-210/B.27 — the empty-deck bail-out `return state` sat ABOVE the HP gate and masked the card's printed precondition from the dry-run probe. Now throws. Stays `=== 0`: a non-empty deck with no Unfezant must remain usable (#127)."
   }
  ]
 }

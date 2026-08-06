@@ -59,6 +59,14 @@ export class Volcanionex extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-210 / B.27: an already-Burned Active cannot be made Burned, so the action cannot be
+      // performed at all and compendium #13 forbids using an Ability for no effect. Throwing (rather
+      // than returning) is what keeps it OUT of the menu: legal-actions.ts probes by dry-run and
+      // offers anything that does not raise a GameError.
+      if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       const specialCondition = new AddSpecialConditionsPowerEffect(
         opponent,
         this,

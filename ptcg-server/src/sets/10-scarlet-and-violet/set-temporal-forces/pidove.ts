@@ -57,8 +57,15 @@ export class Pidove extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-210 / B.27: this bail-out used to sit ABOVE the HP gate below and `return state`, so with an
+      // empty deck the reducer finished without raising -- and legal-actions.ts, which probes by dry-run
+      // and offers anything that does not throw, put the Ability in the menu even though the card's own
+      // printed precondition ("if this Pokémon's remaining HP is 30 or less") was unmet. The early return
+      // masked the gate. Now: THROW (an empty deck cannot be searched, compendium #13), and let the HP
+      // gate below run on every path. Note a NON-empty deck holding no Unfezant must still be usable --
+      // searching and failing to find is a legal use (#127) -- so this stays `=== 0`.
       if (player.deck.cards.length === 0) {
-        return state;
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {

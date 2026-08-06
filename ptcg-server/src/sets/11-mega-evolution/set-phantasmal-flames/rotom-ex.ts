@@ -18,7 +18,10 @@ export class Rotomex extends PokemonCard {
 
   public powers = [{
     name: 'Multi Adapter',
-    useWhenInPlay: true,
+    // TA-209: NOT player-activated. 'Multi Adapter' is a PASSIVE ability -- a continuous effect applied through CheckTableStateEffect below,
+    // with no WAS_POWER_USED branch anywhere in this card. `useWhenInPlay: true` put it in the
+    // menu as a `useAbility` the engine accepted and that did nothing; rotomancer never offered
+    // it. Same fix as TA-77 (por-012) and TA-78 (meg-101).
     powerType: PowerType.ABILITY,
     text: 'Each of your Pokémon that has "Rotom" in its name may have up to 2 Pokémon Tool cards attached. If this Ability goes away, discard Pokémon Tools from those Pokémon until only 1 remains on each.'
   }];

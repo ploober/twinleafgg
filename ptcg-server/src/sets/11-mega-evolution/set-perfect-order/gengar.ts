@@ -16,7 +16,10 @@ export class Gengar extends PokemonCard {
 
   public powers = [{
     name: 'Infinite Shadow',
-    useWhenInPlay: true,
+    // TA-209: NOT player-activated. 'Infinite Shadow' is a PASSIVE ability -- a continuous replacement effect applied through KnockOutEffect below,
+    // with no WAS_POWER_USED branch anywhere in this card. `useWhenInPlay: true` put it in the
+    // menu as a `useAbility` the engine accepted and that did nothing; rotomancer never offered
+    // it. Same fix as TA-77 (por-012) and TA-78 (meg-101).
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon is Knocked Out by damage from an attack from your opponent\'s Pokémon, put it into your hand instead of the discard pile. (Discard all attached cards.)'
   }];

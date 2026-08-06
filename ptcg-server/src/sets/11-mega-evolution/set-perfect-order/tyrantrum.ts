@@ -15,7 +15,10 @@ export class Tyrantrum extends PokemonCard {
 
   public powers = [{
     name: 'Tyrannically Gutsy',
-    useWhenInPlay: true,
+    // TA-209: NOT player-activated. 'Tyrannically Gutsy' is a PASSIVE ability -- a continuous HP modifier applied through CheckHpEffect below,
+    // with no WAS_POWER_USED branch anywhere in this card. `useWhenInPlay: true` put it in the
+    // menu as a `useAbility` the engine accepted and that did nothing; rotomancer never offered
+    // it. Same fix as TA-77 (por-012) and TA-78 (meg-101).
     powerType: PowerType.ABILITY,
     text: 'If this Pokémon has any Special Energy attached, it gets +150 HP.'
   }];

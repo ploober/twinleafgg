@@ -14,7 +14,10 @@ export class Aurorus extends PokemonCard {
 
   public powers = [{
     name: 'Tundra Wall',
-    useWhenInPlay: true,
+    // TA-209: NOT player-activated. 'Tundra Wall' is a PASSIVE ability -- a continuous damage reduction applied through PutDamageEffect below,
+    // with no WAS_POWER_USED branch anywhere in this card. `useWhenInPlay: true` put it in the
+    // menu as a `useAbility` the engine accepted and that did nothing; rotomancer never offered
+    // it. Same fix as TA-77 (por-012) and TA-78 (meg-101).
     powerType: PowerType.ABILITY,
     text: 'All of your Pokémon that have any [W] Energy attached take 50 less damage from attacks from your opponent\'s Pokémon (after applying Weakness and Resistance). The effect of Tundra Wall doesn\'t stack.'
   }];

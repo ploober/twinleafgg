@@ -55,6 +55,13 @@ export class MegaKangaskhanex extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-210 / B.27: with an EMPTY deck no card can be drawn, so the action cannot be performed
+      // (compendium #13). A deck of 1 is fine -- you draw as much as you can -- so this is `=== 0`,
+      // not `< 2`. Throwing is what keeps it out of the menu; legal-actions.ts probes by dry-run.
+      if (player.deck.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       DRAW_CARDS(store, state, player, 2);
       ABILITY_USED(player, this);
       player.usedRunErrand = true;
