@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, ShuffleDeckPrompt, GameError, GameMessage } from '../../../game';
+import { StoreLike, State, StateUtils, ShuffleDeckPrompt, ChoosePokemonPrompt, PlayerType, SlotType, GameError, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -44,11 +44,34 @@ export class Illumise extends PokemonCard {
       else {
         const player = effect.player;
         const opponent = StateUtils.getOpponent(state, player);
-        opponent.active.moveTo(opponent.deck);
-        opponent.active.clearEffects();
 
-        return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
-          opponent.deck.applyOrder(order);
+        // "Shuffle 1 of your opponent's BENCHED Pokemon and all attached cards into their deck."
+        // This moved `opponent.active` — the wrong Pokemon entirely, and with no choice offered
+        // (TA-229). With one Benched Pokemon the two are easy to confuse in a projection; they are
+        // not the same card, and the Active leaving play also forces a promote the attack never
+        // calls for.
+        const benched = opponent.bench.filter(b => b.cards.length > 0);
+        if (benched.length === 0) {
+          return state; // nothing to shuffle; the attack simply does nothing further
+        }
+
+        return store.prompt(state, new ChoosePokemonPrompt(
+          player.id,                 // the ATTACKING player chooses ("shuffle 1 of your opponent's…")
+          GameMessage.CHOOSE_POKEMON_TO_SHUFFLE,
+          PlayerType.TOP_PLAYER,
+          [SlotType.BENCH],
+          { min: 1, max: 1, allowCancel: false },
+        ), selected => {
+          const targets = selected || [];
+          targets.forEach(target => {
+            target.clearEffects();
+            target.damage = 0;
+            target.moveTo(opponent.deck);   // moves the whole stack + attached cards
+          });
+
+          return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+            opponent.deck.applyOrder(order);
+          });
         });
       }
 

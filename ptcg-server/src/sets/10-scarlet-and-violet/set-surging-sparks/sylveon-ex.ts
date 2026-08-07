@@ -3,7 +3,6 @@ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { ChoosePokemonPrompt, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED, DEFENDING_POKEMON_DOES_LESS_DAMAGE } from '../../../game/store/prefabs/prefabs';
 
 export class Sylveonex extends PokemonCard {
@@ -14,9 +13,6 @@ export class Sylveonex extends PokemonCard {
   public hp: number = 270;
   public weakness = [{ type: M }];
   public retreat = [C, C];
-
-  public readonly ANGELITE_MARKER = 'ANGELITE_MARKER';
-  public readonly CLEAR_ANGELITE_MARKER = 'CLEAR_ANGELITE_MARKER';
 
   public attacks = [{
     name: 'Magical Charm',
@@ -39,15 +35,6 @@ export class Sylveonex extends PokemonCard {
   public fullName: string = 'Sylveon ex SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof EndTurnEffect && effect.player.marker.hasMarker(this.CLEAR_ANGELITE_MARKER, this)) {
-      effect.player.marker.removeMarker(this.ANGELITE_MARKER, this);
-      effect.player.marker.removeMarker(this.CLEAR_ANGELITE_MARKER, this);
-    }
-
-    if (effect instanceof EndTurnEffect && effect.player.marker.hasMarker(this.ANGELITE_MARKER, this)) {
-      effect.player.marker.addMarker(this.CLEAR_ANGELITE_MARKER, this);
-    }
-
     // Magical Charm
     if (WAS_ATTACK_USED(effect, 0, this)) {
       return DEFENDING_POKEMON_DOES_LESS_DAMAGE(store, state, effect, this, 100);
@@ -63,10 +50,22 @@ export class Sylveonex extends PokemonCard {
         return state;
       }
 
-      if (effect.player.marker.hasMarker(this.ANGELITE_MARKER, this)) {
+      // "If 1 of your Pokémon used Angelite during your last turn, this attack can't be used."
+      //
+      // Read `state.playerLastAttack` — the engine's own record of who attacked with what, and when —
+      // rather than a private per-card marker (CF-49 / TA-227). The marker was wrong twice over:
+      //   * it is scoped to THIS card instance, so a SECOND Sylveon ex having used Angelite last turn
+      //     did not block this one, though the text says "1 of your POKEMON";
+      //   * it has no wire representation, so the lockout vanished on a state round-trip — the engine
+      //     projected `playerLastAttack` faithfully and then ignored it on ingest, handing the player
+      //     back a spent attack.
+      // `playerLastAttack` holds only the MOST RECENT attack, so comparing its turn to this player's
+      // previous turn is what makes "during your LAST turn" exact: an Angelite from three turns ago,
+      // or a different attack used since, correctly does not block.
+      const last = state.playerLastAttack?.[player.id];
+      if (last && last.attack.name === 'Angelite' && last.turn === state.turn - 2) {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
       }
-      effect.player.marker.addMarker(this.ANGELITE_MARKER, this);
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
@@ -76,7 +75,6 @@ export class Sylveonex extends PokemonCard {
         { min: 1, max: 2, allowCancel: false },
       ), selected => {
         const targets = selected || [];
-        player.marker.addMarker(this.ANGELITE_MARKER, this);
 
         targets.forEach(target => {
           target.clearEffects();
