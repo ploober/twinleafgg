@@ -157,11 +157,25 @@ function enoughEnergyFor(store: StoreLike, state: State, player: Player, source:
   return StateUtils.checkEnoughEnergy(provided.energyMap, cost.cost as CardType[]);
 }
 
-/** The per-attack locks `useAttack` enforces on the attacking Pokemon (first-turn + cannot-attack). */
+/**
+ * The per-attack locks `useAttack` enforces on the attacking Pokemon.
+ *
+ * The FIRST-TURN ban is deliberately NOT checked here (TA-226). It is not a static property of the
+ * attack: an Ability can grant the exemption at declare time. `blk-044` Meloetta ex's "Debut
+ * Performance" ("If you go first, this Pokémon can use attacks during your first turn") sets
+ * `canUseOnFirstTurn` from its `reduceEffect` on the UseAttackEffect, so the flag is false when the
+ * menu is built and true by the time the attack resolves. Every other first-turn attacker in the pool
+ * sets the flag STATICALLY on its attack definition, which is why the static test held until an
+ * Ability-granted one appeared.
+ *
+ * The consequence of testing it here was an attack twinleaf REFUSES TO OFFER and then happily
+ * ACCEPTS when sent — the mirror of the TA-225 offer-then-reject family, and just as much a
+ * self-contradiction. `attackProbeAccepts` below is authoritative instead: it dispatches the same
+ * `AttackGameAction` the driver does, so the ban is enforced by the code that actually owns it
+ * (`useAttack` throws `GameError(CANNOT_ATTACK_ON_FIRST_TURN)`, which the probe reads as "don't
+ * offer"). Costs one extra clone per attack on turn 1 only.
+ */
 function attackUnlocked(state: State, source: PokemonCardList, attack: Attack): boolean {
-  if (state.turn === 1 && attack.canUseOnFirstTurn !== true && state.rules.attackFirstTurn === false) {
-    return false;
-  }
   if (source.cannotAttackNextTurn) { return false; }
   if (source.cannotUseAttacksNextTurn.includes(attack.name)) { return false; }
   return true;
