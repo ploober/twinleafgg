@@ -3336,7 +3336,8 @@
     {
       "file": "set-destined-rivals/primeape.ts",
       "signatures": [
-        "const afterDamage = new DealDamageEffect(effect.attackEffect, 30);"
+        "const afterDamage = new DealDamageEffect(effect.attackEffect, 30);",
+        "// TA-243 / SD-16: `usedDragOff` was set on WAS_ATTACK_USED and never cleared ANYWHERE"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },

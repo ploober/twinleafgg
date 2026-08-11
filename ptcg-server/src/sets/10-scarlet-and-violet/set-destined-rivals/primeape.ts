@@ -36,7 +36,19 @@ export class Primeape extends PokemonCard {
     }
 
     if (effect instanceof AfterAttackEffect && this.usedDragOff) {
+      // TA-243 / SD-16: `usedDragOff` was set on WAS_ATTACK_USED and never cleared ANYWHERE, so once
+      // this Primeape had attacked, its handler re-fired on every later AfterAttackEffect in the game
+      // — including the OPPONENT'S. `effect.player` binds to whoever just attacked, so the opponent
+      // then got Drag Off for free against us: their attack ended by dragging one of OUR benched
+      // Pokemon into the Active Spot and dealing it 30. The flag is a within-attack handoff from
+      // WAS_ATTACK_USED to this handler, so clear it unconditionally on entry, and only proceed when
+      // THIS card is the one that attacked. Same fix as TA-232 (Team Rocket's Crobat ex); the safe
+      // idiom is `mega-latias-ex.ts`.
+      this.usedDragOff = false;
       const player = effect.player;
+      if (player.active.getPokemonCard() !== this) {
+        return state;
+      }
       const opponent = StateUtils.getOpponent(state, player);
 
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
