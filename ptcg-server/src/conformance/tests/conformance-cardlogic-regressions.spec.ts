@@ -957,4 +957,136 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.energy.length).toBe(0);                        // left their Active
     expect(r.state.players.A.bench[0].energy.length).toBe(0);                       // NOT stolen by A
   });
+
+  // ── 2026-08-11 batch: these four had ONLY anti-revert signatures until now ────────────────────
+  // A signature guards the TEXT of a fix. It does not notice a second prize-award path reappearing
+  // somewhere else, a flip polarity flipping back, or a flag losing its reset. TA-240 in particular
+  // ENDS GAMES, and was verified only by an ad-hoc live probe on the day. These are those probes.
+
+  it('a direct-effect KO awards its prizes ONCE — Mega ex = 3, not 6 [TA-240 dri-018 / meg-181]', () => {
+    // Hydrapple "Hydra Breath": discard 6 Basic [G] from hand to Knock Out the opponent's Active.
+    // The KO is dispatched by a card effect, so it goes through KnockOutOpponentEffect — which used
+    // to award via TAKE_X_PRIZES *and* via the CF-7 `pendingDirectKoPrizes` accumulator. Mega Latias
+    // ex is worth 3 (1 + POKEMON_ex + POKEMON_SV_MEGA); pre-fix twinleaf offered SIX takePrize picks,
+    // emptied the pile and returned gameOver/winA off a single KO.
+    const hand = Array.from({ length: 6 }, (_, i) => ({ iid: `A-h${i}`, printing: GRASS }));
+    const start = () => board(
+      player({ active: inPlay('A-act', ['dri-016', 'dri-017', 'dri-018'], en(GRASS, 1, 'a')), hand }),
+      player({ active: inPlay('B-act', ['meg-181']), bench: [inPlay('B-b0', [RALTS])] }),
+    );
+    const tp = { actor: 'A' as const, type: 'takePrize' as const, index: 0 };
+
+    // Exactly three are accepted, and the game is still going.
+    const three = step(start(), [attack('A-act', 'Hydra Breath'), tp, tp, tp]);
+    expect(three.state.players.A.prizes.length).toBe(3);
+    expect(three.state.outcome).toBe('ongoing');
+    // ...and the prize decision is CLOSED — a 4th pick is not on offer.
+    expect(types(three)).not.toContain('takePrize');
+
+    // The regression itself: a 4th takePrize must be refused, not paid.
+    const four = step(start(), [attack('A-act', 'Hydra Breath'), tp, tp, tp, tp]);
+    expect(four.state.players.A.prizes.length).toBe(3);   // pre-fix: 2, then 1, then 0 + winA
+    expect(four.state.outcome).toBe('ongoing');
+  });
+
+  it('a direct-effect KO of a NON-ex awards exactly 1 [TA-240 control]', () => {
+    // The control that distinguishes "stopped double-paying" from "stopped paying the right amount":
+    // the same code path on a 1-prize Pokémon must still award its one prize.
+    const hand = Array.from({ length: 6 }, (_, i) => ({ iid: `A-h${i}`, printing: GRASS }));
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-016', 'dri-017', 'dri-018'], en(GRASS, 1, 'a')), hand }),
+            player({ active: inPlay('B-act', [RALTS]), bench: [inPlay('B-b0', [RALTS])] })),
+      [attack('A-act', 'Hydra Breath'), { actor: 'A' as const, type: 'takePrize' as const, index: 0 }],
+    );
+    expect(r.state.players.A.prizes.length).toBe(5);     // 6 - 1
+    expect(types(r)).not.toContain('takePrize');          // and no second pick
+  });
+
+  it('Iono\'s Electrode "Thump-Thump Boom" KOs on HEADS, not tails [TA-241 jtg-048]', () => {
+    // "…Flip a coin. If heads, your opponent's Active Pokémon is Knocked Out." The callback branched
+    // on `!result`, so the KO fired on TAILS and was withheld on heads — exactly inverted.
+    // Electrode also does 100 to itself and has 100 HP, so it self-KOs on BOTH faces; only the
+    // opponent's Active discriminates.
+    const start = () => board(
+      player({ active: inPlay('A-act', ['jtg-047', 'jtg-048'], en('sve-004', 2, 'a')), bench: [inPlay('A-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    );
+    const flip = (face: 'heads' | 'tails') =>
+      ({ actor: 'system' as const, type: 'flip' as const, face });
+
+    const heads = step(start(), [attack('A-act', 'Thump-Thump Boom'), flip('heads')]);
+    expect(heads.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(true);
+
+    const tails = step(start(), [attack('A-act', 'Thump-Thump Boom'), flip('tails')]);
+    expect(tails.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(false);
+  });
+
+  it('heads means heads — the flip-mapping control that convicted the CARD, not the driver [TA-241 control]', () => {
+    // A mirror-image divergence could equally have been an inverted `system:flip:face` -> boolean
+    // mapping in the driver, and "fixing" the card would then have doubled the error. Tandemaus
+    // "Play Rough" (10+, "Flip a coin. If heads, this attack does 10 more damage") pins the mapping
+    // independently of jtg-048. If this ever reds, TA-241's fix is pointing the wrong way.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['ssp-157'], en(WATER, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const h = step(b(), [attack('A-act', 'Play Rough'), { actor: 'system' as const, type: 'flip' as const, face: 'heads' as const }]);
+    const t = step(b(), [attack('A-act', 'Play Rough'), { actor: 'system' as const, type: 'flip' as const, face: 'tails' as const }]);
+    expect(h.state.players.B.active!.damage).toBe(20);
+    expect(t.state.players.B.active!.damage).toBe(10);
+  });
+
+  it('an inert "move counters to their OTHER Pokémon" offers NO decision [TA-242 twm-082]', () => {
+    // Alakazam "Strange Hacking": "…You may move any number of damage counters from your opponent's
+    // Pokémon to their other Pokémon in any way you like." With the opponent down to a single
+    // Pokémon there is no destination, so B.29 rule 1 says there is nothing to decide (`meg-003`
+    // "Solar Transfer — no second Pokémon as destination" is the adjudicated precedent). Twinleaf
+    // offered `choose{B.active}` + a decline, and taking the offer reached a destination step with
+    // zero candidates: both branches landed on the identical board.
+    const inert = step(
+      board(player({ active: inPlay('A-act', ['meg-054', 'twm-081', 'twm-082'], en(PSY, 1, 'a')) }),
+            player({ active: inPlay('B-act', [RALTS], [], 20) })),
+      [attack('A-act', 'Strange Hacking')],
+    );
+    expect(types(inert)).not.toContain('choose');
+    expect(inert.state.players.B.active!.damage).toBe(20);   // untouched, and no phantom pause
+
+    // CONTROL — give the opponent a second Pokémon and the choice is real again. Without this an
+    // over-broad filter (suppressing the decision whenever it is optional) would pass the cell above.
+    const genuine = step(
+      board(player({ active: inPlay('A-act', ['meg-054', 'twm-081', 'twm-082'], en(PSY, 1, 'a')) }),
+            player({ active: inPlay('B-act', [RALTS], [], 20), bench: [inPlay('B-b0', [RALTS])] })),
+      [attack('A-act', 'Strange Hacking')],
+    );
+    expect(types(genuine)).toContain('choose');
+  });
+
+  it('Primeape\'s Drag Off does NOT fire on the opponent\'s attack [TA-243 dri-091, SD-16]', () => {
+    // `usedDragOff` was set on WAS_ATTACK_USED and never cleared anywhere, so once Primeape had
+    // attacked the handler re-fired on every later AfterAttackEffect — including B's. Since
+    // `effect.player` binds to whoever attacked, B got Drag Off for free: one of A's benched Pokémon
+    // dragged into the Active Spot and dealt 30.
+    //
+    // Three things must hold at once or this board proves nothing (two earlier repro cells came back
+    // green for exactly this reason): A must still have a BENCH (the operand the phantom rider
+    // consumes), B must be ABLE to attack on its own turn — so the Pokémon Drag Off drags in carries
+    // its own Energy — and the path must run PAST B's attack, because the defect is on the second one.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-090', 'dri-091'], en(FIGHT, 1, 'a')),
+                     bench: [inPlay('A-b0', [RALTS]), inPlay('A-b1', [RALTS])] }),
+            player({ active: inPlay('B-act', [RALTS]),
+                     bench: [inPlay('B-b0', ['dri-090'], en(FIGHT, 1, 'b'))] })),
+      [
+        attack('A-act', 'Drag Off'),                                    // A's legitimate use
+        { actor: 'B' as const, type: 'declareAttack' as const, source: 'B-b0', name: 'Wild Kick' },
+        { actor: 'system' as const, type: 'flip' as const, face: 'heads' as const },
+      ],
+    );
+    // A's Primeape is STILL the Active — pre-fix B dragged it to the bench and promoted A-b0.
+    expect(r.state.players.A.active!.stack.map(c => c.printing)).toEqual(['dri-090', 'dri-091']);
+    // ...and no switch decision was handed to B at the end of B's own attack.
+    expect(r.pending?.actor === 'B' && types(r).includes('promoteBench')).toBe(false);
+    // The legitimate half still works: A's Drag Off pulled B's benched Mankey in and dealt it 30.
+    expect(r.state.players.B.active!.stack.map(c => c.printing)).toEqual(['dri-090']);
+  });
 });
