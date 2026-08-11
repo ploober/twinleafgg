@@ -35,7 +35,11 @@ export class Numel extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (effect instanceof AfterDamageEffect && effect.target.cards.includes(this)) {
+    // TA-238 / SD-18: the guard must be TOP-OF-STACK, not stack membership. `cards.includes(this)`
+    // is true for evolution MATERIAL too, so this passive kept firing from UNDER Mega Camerupt —
+    // an evolved-away Pokémon has no Abilities, and the attacker was Burned by a card not in play
+    // as a Pokémon. `getPokemonCard()` is the current top; only then is Incandescent Body live.
+    if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this) {
       const player = effect.player;
       const targetPlayer = StateUtils.findOwner(state, effect.target);
 

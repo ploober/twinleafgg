@@ -42,6 +42,17 @@ export class Maushold extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-237: SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH opens with BLOCK_IF_DECK_EMPTY /
+      // BLOCK_IF_NO_SLOTS — the right gates for an ABILITY (#13), but this is an ATTACK, and an
+      // attack is gated by its COST, not its effect's feasibility (#622/#389 "do as much as you
+      // can"; #2301 splits "up to X" 0..max on attacks). The throw made the attack-probe reject the
+      // whole declaration, so twinleaf never offered the attack on an empty deck. Guard the call
+      // instead: the attack declares fine and simply does nothing it cannot do.
+      const hasBenchSpace = player.bench.some(b => b.cards.length === 0);
+      if (player.deck.cards.length === 0 || !hasBenchSpace) {
+        return state;
+      }
+
       const blocked: number[] = [];
       player.deck.cards.forEach((card, index) => {
         if (card instanceof PokemonCard && (card.name === 'Maushold' || card.name === 'Maushold ex')) {

@@ -51,6 +51,14 @@ export class Gothitelle extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
+      // TA-235 / B.29 rule 1 (arithmetic): with the opponent's hand AND deck both empty, both
+      // halves of the effect ("shuffle their hand into their deck and draw 3") are inert, and both
+      // counts are public. Checked BEFORE the marker is added so a blocked use cannot consume the
+      // once-per-turn.
+      if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       player.marker.addMarker(this.DISTORTED_FUTURE_MARKER, this);
       ABILITY_USED(player, this);
 

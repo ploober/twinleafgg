@@ -46,7 +46,12 @@ export class Heatran extends PokemonCard {
 
       let totalDiscarded = 0;
 
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+      // TA-234: "Discard all [M] Energy" — the discard set was the WHOLE energyMap, untyped, so a
+      // board with 1 Metal + 3 other Energy discarded all four and dealt 200 instead of 50. Filter
+      // to entries that provide [M] (or ANY, per the blend/unit convention).
+      const cards: Card[] = checkProvidedEnergy.energyMap
+        .filter(e => e.provides.includes(CardType.METAL) || e.provides.includes(CardType.ANY))
+        .map(e => e.card);
       const discardEnergy = new DiscardCardsEffect(effect, cards);
       discardEnergy.target = player.active;
 

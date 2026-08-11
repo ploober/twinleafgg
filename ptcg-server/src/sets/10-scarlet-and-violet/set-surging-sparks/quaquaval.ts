@@ -49,6 +49,15 @@ export class Quaquaval extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-235 / B.29 rule 1 (arithmetic, #2306/#1043): with `deck = 0` and `hand <= 5`, the
+      // bottomed card is the ONLY card in the deck and "draw until 5" draws it straight back — the
+      // hand end-state is provably identical, from public counts alone. An Ability that certainly
+      // does nothing cannot be used. (Deck > 0 stays legal: the draw pulls unknown cards. Distinct
+      // from TA-217, which was this card HANGING while executing the same configuration.)
+      if (player.deck.cards.length === 0 && player.hand.cards.length <= 5) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       state = store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,

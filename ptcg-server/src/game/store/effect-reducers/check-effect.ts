@@ -4,7 +4,7 @@ import { PlayerType, SlotType } from '../actions/play-card-action';
 import { EnergyCard } from '../card/energy-card';
 import { CardType } from '../card/card-types';
 import { PokemonCard } from '../card/pokemon-card';
-import { CheckHpEffect, CheckAttackCostEffect, CheckProvidedEnergyEffect, CheckTableStateEffect } from '../effects/check-effects';
+import { CheckHpEffect, CheckAttackCostEffect, CheckProvidedEnergyEffect, CheckRetreatCostEffect, CheckTableStateEffect } from '../effects/check-effects';
 import { Effect } from '../effects/effect';
 import { KnockOutEffect, MovedToActiveEffect } from '../effects/game-effects';
 import { TAKE_SPECIFIC_PRIZES, MOVE_CARDS } from '../prefabs/prefabs';
@@ -548,6 +548,24 @@ export function checkStateReducer(store: StoreLike, state: State, effect: Effect
     } else {
       active.attackCostIncreaseWhileActive = 0;
       active.attackCostIncreaseWhileActiveSourceCard = undefined;
+    }
+
+    // TA-236: the NEXT-TURN variant (DEFENDING_POKEMON_ATTACKS_COST_MORE — Drum Beating) had
+    // pending/promote/expire plumbing but NO consumer: nothing ever read the promoted value into a
+    // cost, so the defender attacked at printed price. The while-active variant above was the only
+    // branch. (Rillaboom carried card-local consumers, cross-wired attack<->retreat; removed there.)
+    for (let i = 0; i < active.attackCostIncreaseNextTurn; i++) {
+      effect.cost.push(CardType.COLORLESS);
+    }
+    return state;
+  }
+
+  if (effect instanceof CheckRetreatCostEffect) {
+    // TA-236: retreat half of the same rider ("its Retreat Cost is [C] more") — same missing
+    // consumer as the attack half above.
+    const active = effect.player.active;
+    for (let i = 0; i < active.retreatCostIncreaseNextTurn; i++) {
+      effect.cost.push(CardType.COLORLESS);
     }
     return state;
   }

@@ -1,6 +1,5 @@
 import { CardType, PokemonCard, Stage, State, StoreLike } from "../../../game";
 import { DealDamageEffect } from "../../../game/store/effects/attack-effects";
-import { CheckRetreatCostEffect, CheckAttackCostEffect } from "../../../game/store/effects/check-effects";
 import { Effect } from "../../../game/store/effects/effect";
 import { WAS_ATTACK_USED, DEFENDING_POKEMON_ATTACKS_COST_MORE, DEFENDING_POKEMON_RETREAT_COSTS_MORE } from "../../../game/store/prefabs/prefabs";
 
@@ -48,33 +47,11 @@ export class Rillaboom extends PokemonCard {
       return store.reduceEffect(state, dealDamage);
     }
 
-    if (effect instanceof CheckRetreatCostEffect && effect.player.active.attackCostIncreaseNextTurn > 0) {
-      const player = effect.player;
-      const pokemonCard = player.active.getPokemonCard();
-
-      if (pokemonCard) {
-        const index = effect.cost.indexOf(CardType.COLORLESS);
-        if (index > -1) {
-          effect.cost.splice(index, 0, CardType.COLORLESS);
-        } else {
-          effect.cost.push(CardType.COLORLESS);
-        }
-      }
-    }
-
-    if (effect instanceof CheckAttackCostEffect && effect.player.active.retreatCostIncreaseNextTurn > 0) {
-      const player = effect.player;
-      const pokemonCard = player.active.getPokemonCard();
-
-      if (pokemonCard) {
-        const index = effect.cost.indexOf(CardType.COLORLESS);
-        if (index > -1) {
-          effect.cost.splice(index, 0, CardType.COLORLESS);
-        } else {
-          effect.cost.push(CardType.COLORLESS);
-        }
-      }
-    }
+    // TA-236: two card-local cost consumers used to sit here, CROSS-WIRED — the retreat block read
+    // `attackCostIncreaseNextTurn` and the attack block read `retreatCostIncreaseNextTurn`. Both
+    // consumers now live engine-side in `check-effect.ts` reading the correct fields (any card
+    // using the DEFENDING_POKEMON_*_COST_MORE prefabs gets them), and the arming window in
+    // `game-phase-effect.ts` was inverted — see TA-236 in the conformance findings register.
 
     return state;
   }

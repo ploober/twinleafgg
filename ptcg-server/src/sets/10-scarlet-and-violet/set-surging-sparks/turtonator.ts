@@ -45,8 +45,11 @@ export class Turtonator extends PokemonCard {
       const opponent = StateUtils.getOpponent(state, player);
       const opponentActive = opponent.active;
       const activeCard = opponentActive.getPokemonCard();
-      // Only target Pokémon ex
-      if (!activeCard || !activeCard.cardTag.includes(CardTag.POKEMON_ex)) {
+      // Only target Pokémon ex.
+      // TA-233: this read `activeCard.cardTag`, the DEPRECATED tag field ("Use Card.tags instead",
+      // pokemon-card.ts) which defaults to [] — so the gate was false for every modern card and the
+      // attack's printed effect could never happen on any board.
+      if (!activeCard || !activeCard.tags.includes(CardTag.POKEMON_ex)) {
         return state;
       }
       // Check for any energy attached

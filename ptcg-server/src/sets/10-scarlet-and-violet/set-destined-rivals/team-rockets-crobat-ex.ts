@@ -71,7 +71,19 @@ export class TeamRocketsCrobatex extends PokemonCard {
     }
 
     if (effect instanceof AfterAttackEffect && this.usedAssassinsReturn) {
+      // TA-232: clear the flag UNCONDITIONALLY, before prompting — the safe idiom Mega Latias's
+      // Strafe already uses. It was cleared only inside `if (result)`, so a DECLINE left it set for
+      // the rest of the game and the next AfterAttackEffect — including the OPPONENT'S attack —
+      // re-surfaced the confirm bound to `effect.player` (whoever attacked next) and bounced THEIR
+      // Active with its cards discarded. Two players' effects crossed wires.
+      this.usedAssassinsReturn = false;
+
       const player = effect.player;
+      // Belt and braces: even with the flag discipline fixed, this rider belongs to the Pokémon
+      // that used Assassin's Return — never execute it for a player whose Active is not this card.
+      if (player.active.getPokemonCard() !== this) {
+        return state;
+      }
 
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (result) {
@@ -87,7 +99,6 @@ export class TeamRocketsCrobatex extends PokemonCard {
           if (pokemons.length > 0) {
             MOVE_CARDS(store, state, player.active, player.hand, { cards: pokemons });
           }
-          this.usedAssassinsReturn = false;
         }
       });
     }

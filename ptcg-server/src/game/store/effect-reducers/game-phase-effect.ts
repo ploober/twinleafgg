@@ -292,13 +292,18 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
     // that opponent finishes their next turn, before the attacker's following turn.
     [player, opponent].forEach(p => {
       p.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+        // TA-236: these two riders read "during your OPPONENT'S next turn" — the window is the turn
+        // that begins when the ATTACKER's turn ends. The previous gate (`!== player.id`) was copied
+        // from the extra-damage arming above, whose text is "during YOUR next turn" — the OPPOSITE
+        // window — so the increase became active only after the defender's turn had already passed,
+        // and no attack was ever priced with it. Promote when the attacker's own turn ends.
         if (cardList.attackCostIncreaseNextTurnPending
-          && cardList.attackCostIncreaseNextTurnAttackerId !== player.id) {
+          && cardList.attackCostIncreaseNextTurnAttackerId === player.id) {
           cardList.attackCostIncreaseNextTurn = cardList.attackCostIncreaseNextTurnPending;
           cardList.attackCostIncreaseNextTurnPending = 0;
         }
         if (cardList.retreatCostIncreaseNextTurnPending
-          && cardList.retreatCostIncreaseNextTurnAttackerId !== player.id) {
+          && cardList.retreatCostIncreaseNextTurnAttackerId === player.id) {
           cardList.retreatCostIncreaseNextTurn = cardList.retreatCostIncreaseNextTurnPending;
           cardList.retreatCostIncreaseNextTurnPending = 0;
         }
@@ -321,14 +326,20 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
 
     [player, opponent].forEach(p => {
       p.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-        if (cardList.attackCostIncreaseNextTurnAttackerId === player.id
+        // TA-236 (same window fix): the rider expires when the DEFENDER's turn ends — the turn it
+        // was live for. The old gate (`=== player.id`) expired it at the attacker's next end-of-turn
+        // instead, one full turn late (and, combined with the inverted promote above, meant the
+        // rider's whole lifetime sat in the wrong turn).
+        if (cardList.attackCostIncreaseNextTurnAttackerId !== undefined
+          && cardList.attackCostIncreaseNextTurnAttackerId !== player.id
           && !cardList.attackCostIncreaseNextTurnPending
           && cardList.attackCostIncreaseNextTurn > 0
         ) {
           cardList.attackCostIncreaseNextTurn = 0;
           cardList.attackCostIncreaseNextTurnAttackerId = undefined;
         }
-        if (cardList.retreatCostIncreaseNextTurnAttackerId === player.id
+        if (cardList.retreatCostIncreaseNextTurnAttackerId !== undefined
+          && cardList.retreatCostIncreaseNextTurnAttackerId !== player.id
           && !cardList.retreatCostIncreaseNextTurnPending
           && cardList.retreatCostIncreaseNextTurn > 0
         ) {

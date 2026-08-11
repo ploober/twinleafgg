@@ -44,11 +44,6 @@ export class Sylveonex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
 
       // "If 1 of your Pokémon used Angelite during your last turn, this attack can't be used."
       //
@@ -65,6 +60,17 @@ export class Sylveonex extends PokemonCard {
       const last = state.playerLastAttack?.[player.id];
       if (last && last.attack.name === 'Angelite' && last.turn === state.turn - 2) {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+      }
+
+      // TA-231: this Bench check used to sit ABOVE the lockout and `return state` — so on the one
+      // board shape where the attack is most obviously spent (the previous Angelite shuffled the
+      // opponent's whole Bench away), the lockout was unreachable and the attack was offered and
+      // executed again. "Can't be used" gates DECLARATION; "choose 2 Benched" is what the attack
+      // DOES — a use-restriction cannot be conditioned on the effect having work to do. The
+      // ordering is the fix; an empty Bench still resolves as "do as much as you can" (#622).
+      const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      if (hasBench === false) {
+        return state;
       }
 
       return store.prompt(state, new ChoosePokemonPrompt(

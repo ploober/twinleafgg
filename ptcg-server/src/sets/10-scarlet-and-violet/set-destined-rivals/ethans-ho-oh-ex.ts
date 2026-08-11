@@ -72,6 +72,18 @@ export class EthansHoOhex extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-235 / B.29 rule 1: "to 1 of your Benched ETHAN'S Pokémon" — the TARGET operand. With no
+      // Ethan's Pokémon on the Bench the required operand set is empty and publicly so
+      // (#49/#75/#2109), and the Ability cannot be used. The energy check above gates the SOURCE
+      // operand; both must be non-empty before this is offerable.
+      const hasEthansBenched = player.bench.some(b => {
+        const pc = b.getPokemonCard();
+        return pc !== undefined && pc.tags.includes(CardTag.ETHANS);
+      });
+      if (!hasEthansBenched) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       const cardList = StateUtils.findCardList(state, this);
       if (cardList === undefined) {
         return state;

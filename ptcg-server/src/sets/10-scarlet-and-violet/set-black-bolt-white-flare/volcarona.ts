@@ -1,5 +1,5 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { BoardEffect, CardType, Stage, SuperType } from '../../../game/store/card/card-types';
+import { BoardEffect, CardType, SpecialCondition, Stage, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
@@ -72,6 +72,13 @@ export class Volcarona extends PokemonCard {
 
       if (player.marker.hasMarker(this.HEAT_WAVE_SCALES_MARKER, this)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
+      }
+
+      // TA-235 / B.27: "Burning an already-Burned Pokémon is an action that cannot be performed at
+      // all (#13)" — the adjudicated jtg-031 Scalding Steam line, same Ability shape. The cost
+      // (discard a Basic [R] from hand) being payable does not license a use with no effect.
+      if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
       state = store.prompt(state, new ChooseCardsPrompt(

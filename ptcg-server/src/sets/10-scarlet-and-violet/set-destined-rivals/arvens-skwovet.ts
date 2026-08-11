@@ -1,5 +1,8 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
+import { State, StateUtils, StoreLike } from '../../../game';
+import { Effect } from '../../../game/store/effects/effect';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class ArvensSkwovet extends PokemonCard {
   public regulationMark = 'I';
@@ -25,17 +28,24 @@ export class ArvensSkwovet extends PokemonCard {
   public name: string = 'Arven\'s Skwovet';
   public fullName: string = 'Arven\'s Skwovet DRI';
 
-  // public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-  //   if (WAS_ATTACK_USED(effect, 0, this)){
+  public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // TA-230: this whole method was commented out, so the attack dealt its 10 damage and the Tool
+    // stayed attached. The disabled draft called `REMOVE_TOOL`, which is itself commented out in
+    // prefabs.ts — so the card was switched off to follow a prefab that had been switched off, and
+    // nothing pointed at the live idiom five sibling cards already use.
+    //
+    // Ref: set-lost-thunder/pikipek.ts (Peck Off) — same clause, same shape, and verified discarding
+    // correctly on this engine. Also set-team-up/farfetchd.ts (Tool Buster).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      const player = effect.player;
+      const opponent = StateUtils.getOpponent(state, player);
+      const activePokemon = opponent.active;
 
-  //     const activePokemon = effect.opponent.active;
-  //     for (const tool of activePokemon.tools) {
-  //       REMOVE_TOOL(store, state, activePokemon, tool, SlotType.DISCARD);
-  //     }
+      if (activePokemon.tools.length > 0) {
+        activePokemon.moveCardsTo([...activePokemon.tools], opponent.discard);
+      }
+    }
 
-  //     effect.damage = 10;
-  //   }
-
-  //   return state;
-  // }
+    return state;
+  }
 }

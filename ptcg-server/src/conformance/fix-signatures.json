@@ -5285,6 +5285,95 @@
     "last.attack.name === 'Angelite'"
    ],
    "note": "TA-227/CF-49 2026-08-07: the Angelite once-per-two-turns lockout now reads state.playerLastAttack instead of a private per-card marker, so it survives a state round-trip and covers '1 of your Pokemon' rather than this instance only."
+  },
+  {
+   "file": "set-destined-rivals/arvens-skwovet.ts",
+   "signatures": [
+    "activePokemon.moveCardsTo([...activePokemon.tools], opponent.discard);",
+    "if (WAS_ATTACK_USED(effect, 0, this)) {"
+   ],
+   "note": "TA-230 2026-08-08: the whole reduceEffect was COMMENTED OUT, so Gnaw Through dealt its damage and left the opponent's Tool attached. A revert would restore the comment, which these signatures catch."
+  },
+  {
+   "file": "set-surging-sparks/sylveon-ex.ts",
+   "signatures": [
+    "// TA-231: this Bench check used to sit ABOVE the lockout and `return state` — so on the one"
+   ]
+  },
+  {
+   "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
+   "signatures": [
+    "// TA-232: clear the flag UNCONDITIONALLY, before prompting — the safe idiom Mega Latias's",
+    "if (player.active.getPokemonCard() !== this) {"
+   ]
+  },
+  {
+   "file": "set-surging-sparks/turtonator.ts",
+   "signatures": [
+    "if (!activeCard || !activeCard.tags.includes(CardTag.POKEMON_ex)) {"
+   ]
+  },
+  {
+   "file": "set-twilight-masquerade/heatran.ts",
+   "signatures": [
+    ".filter(e => e.provides.includes(CardType.METAL) || e.provides.includes(CardType.ANY))"
+   ]
+  },
+  {
+   "file": "set-destined-rivals/ethans-ho-oh-ex.ts",
+   "signatures": [
+    "const hasEthansBenched = player.bench.some(b => {"
+   ]
+  },
+  {
+   "file": "set-black-bolt-white-flare/volcarona.ts",
+   "signatures": [
+    "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {"
+   ]
+  },
+  {
+   "file": "set-surging-sparks/quaquaval.ts",
+   "signatures": [
+    "if (player.deck.cards.length === 0 && player.hand.cards.length <= 5) {"
+   ]
+  },
+  {
+   "file": "set-black-bolt-white-flare/gothitelle.ts",
+   "signatures": [
+    "if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {"
+   ]
+  },
+  {
+   "file": "set-surging-sparks/maushold.ts",
+   "signatures": [
+    "const hasBenchSpace = player.bench.some(b => b.cards.length === 0);"
+   ]
+  },
+  {
+   "file": "set-twilight-masquerade/rillaboom.ts",
+   "signatures": [
+    "// TA-236: two card-local cost consumers used to sit here, CROSS-WIRED — the retreat block read"
+   ]
+  },
+  {
+   "file": "set-ascended-heroes/numel.ts",
+   "signatures": [
+    "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this) {"
+   ]
+  },
+  {
+   "file": "game/store/effect-reducers/check-effect.ts",
+   "signatures": [
+    "for (let i = 0; i < active.attackCostIncreaseNextTurn; i++) {",
+    "for (let i = 0; i < active.retreatCostIncreaseNextTurn; i++) {"
+   ]
+  },
+  {
+   "file": "game/store/effect-reducers/game-phase-effect.ts",
+   "signatures": [
+    "&& cardList.attackCostIncreaseNextTurnAttackerId === player.id) {",
+    "&& cardList.retreatCostIncreaseNextTurnAttackerId === player.id) {"
+   ]
   }
  ]
 }
