@@ -47,7 +47,11 @@ export class IonosElectrode extends PokemonCard {
       return store.prompt(state, new CoinFlipPrompt(
         effect.player.id, GameMessage.FLIP_COIN
       ), (result) => {
-        if (!result) {
+        // TA-241: printed text is "Flip a coin. If HEADS, your opponent's Active Pokémon is
+        // Knocked Out." This read `!result` — the KO fired on TAILS and was withheld on heads,
+        // exactly inverted. (`result === true` is heads: ssp-157 Play Rough's "+10 if heads"
+        // pays out at 20 on heads on both engines, so the driver's face mapping is not at fault.)
+        if (result) {
           KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
         }
       });

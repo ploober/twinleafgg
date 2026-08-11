@@ -9,7 +9,7 @@ import { Effect } from "../effects/effect";
 import { shouldPreventAttackEffects, shouldPreventAttackDamage, shouldApplyDamageReduction, getActiveSurviveOnTenHpOptions, shouldKnockOutIfDamaged, getActiveRetaliateOnDamage, retaliateDamageEffect, RetaliateDamageEffect, EffectOfAttackEffect } from "../effects/effect-of-attack-effects";
 import { AttackEffect, KnockOutAttackEffect, HealEffect } from "../effects/game-effects";
 import { GameStatsTracker } from "../game-stats-tracker";
-import { TAKE_X_PRIZES, MOVE_CARDS } from "../prefabs/prefabs";
+import { MOVE_CARDS } from "../prefabs/prefabs";
 import { CoinFlipPrompt } from "../prompts/coin-flip-prompt";
 import { StateUtils } from "../state-utils";
 import { State, GamePhase } from "../state/state";
@@ -293,7 +293,10 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     if (!knockOutEffect.preventDefault) {
       effect.knockedOut = true;
       effect.prizeCount = knockOutEffect.prizeCount;
-      return TAKE_X_PRIZES(store, state, effect.player, knockOutEffect.prizeCount);
+      // TA-240: do NOT award here. The KnockOutEffect above already recorded the owed prizes on
+      // `state.pendingDirectKoPrizes` (every direct, non-checkState KO does), and the next
+      // checkState sweep awards them prize-first per CF-7 / #2026. Awarding again here paid the
+      // count TWICE — a Mega ex KO handed out 6 prizes and won the game outright.
     }
 
     return state;
@@ -317,7 +320,7 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     if (!knockOutEffect.preventDefault) {
       effect.knockedOut = true;
       effect.prizeCount = knockOutEffect.prizeCount;
-      return TAKE_X_PRIZES(store, state, effect.opponent, knockOutEffect.prizeCount);
+      // TA-240, mirror of KnockOutOpponentEffect above: the accumulator awards these once.
     }
 
     return state;
