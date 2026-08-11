@@ -225,6 +225,17 @@ describe('CF-32 — PutDamagePrompt distinguishes counter placement from dealing
   });
 
   it('a target already at its cap drops out in units of damageMultiple', () => {
+    // TA-239 re-recorded this guard. It used to assert the MENU after one pick — a 1-option menu, on a
+    // fixed-count placement that cannot stop. `put-damage` now collapses exactly that step, so the
+    // menu no longer exists to inspect and asserting it would be asserting the thing CF-14 forbids.
+    //
+    // This board is precisely the case the 2026-07-29 deferral raised against `atomicResolvable`, and
+    // it remains a correct objection TO THAT HOOK: the placement began with two live targets, so the
+    // aggregate as a whole was never forced. `atomicStep` claims only that the POSITION after the cap
+    // binds is forced, which is exactly true — 100 damage still owed, one eligible target, no stop.
+    //
+    // The cap rule is therefore asserted where it is now observable: in the RESOLVED placement.
+    let captured: DamageMap[] | undefined;
     const game = importState(board());
     const p = game.state.players[0];
     game.store.prompt(game.state, new PutDamagePrompt(
@@ -235,10 +246,18 @@ describe('CF-32 — PutDamagePrompt distinguishes counter placement from dealing
         { target: { player: PlayerType.TOP_PLAYER, slot: SlotType.BENCH, index: 0 }, damage: 9999 },
       ],
       { allowCancel: false, damageMultiple: 20, operation: 'dealDamage' },
-    ), () => { /* result unused */ });
+    ), (result: DamageMap[]) => { captured = result; });
 
     const pick = { actor: 'A', type: 'choose', target: 'B-act' } as unknown as NeutralAction;
-    // One 20-HP pick fills the Active's cap exactly; it must not be offered a second time.
-    expect(menu(game, [pick]).map(a => 'target' in a ? a.target : null)).toEqual(['B-b0']);
+    replay(game, [pick]);
+
+    // One 20-damage pick fills the Active's cap exactly, so it takes no more; the remaining 100 is
+    // forced onto the bench. A cap that stopped being honoured would show up here as an Active over
+    // 20 — which the old menu assertion could only have caught one pick at a time.
+    expect(captured).toBeDefined();
+    const damageAt = (slot: SlotType): number =>
+      (captured ?? []).filter(d => d.target.slot === slot).reduce((n, d) => n + d.damage, 0);
+    expect(damageAt(SlotType.ACTIVE)).toBe(20);
+    expect(damageAt(SlotType.BENCH)).toBe(100);
   });
 });

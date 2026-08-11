@@ -86,6 +86,22 @@ function openPrompt(game: ImportedGame, slots: SlotType[]): void {
   ), () => { /* result unused: this spec asserts the MENU */ });
 }
 
+/** As `openPrompt`, but captures the RESOLVED placement — where the counters actually landed. */
+function openPromptCapturing(game: ImportedGame, slots: SlotType[]): { get(): DamageMap[] | undefined } {
+  let captured: DamageMap[] | undefined;
+  const p = game.state.players[0];
+  game.store.prompt(game.state, new PutDamagePrompt(
+    p.id, GameMessage.CHOOSE_POKEMON_TO_DAMAGE, PlayerType.TOP_PLAYER, slots, 60, bothTargets(),
+    { allowCancel: false }
+  ), (result: DamageMap[]) => { captured = result; });
+  return { get: () => captured };
+}
+
+/** Total damage the resolved placement put on `slot`. */
+function placedOn(captured: DamageMap[] | undefined, slot: SlotType): number {
+  return (captured ?? []).filter(d => d.target.slot === slot).reduce((n, d) => n + d.damage, 0);
+}
+
 function twoSidedBoard(): NeutralState {
   return board(
     player({ active: ralts('A-act') }),
@@ -95,23 +111,41 @@ function twoSidedBoard(): NeutralState {
 
 describe('Conformance — PutDamagePrompt honours its `slots` restriction in the offered menu', () => {
 
-  it('BENCH-only prompt does not offer the Active (regression: Phantom Dive asc-160 → HTTP 500)', () => {
+  /**
+   * TA-239 re-recorded the two restricted cases. A `slots` restriction on this board leaves exactly
+   * ONE eligible target, and `put-damage` now applies a forced step atomically (CF-14), so there is
+   * no menu left to inspect — the boards were built one-eligible-target *precisely* to inspect it.
+   *
+   * They now assert the RESOLVED placement instead, which is what the register requires of a
+   * forced-prompt guard (assert the state effect, not the pending — the rule that exists because a
+   * pending-shaped assertion once masked TA-121). The assertion is not weaker: if `slots` were
+   * ignored again the prompt would have TWO eligible targets, nothing would be forced, the placement
+   * would not resolve on its own, and `captured` would still be undefined — so the guard fails. It is
+   * in fact stronger against the original bug, which was that taking the wrongly-offered Active made
+   * `validate()` reject and surfaced as HTTP 500: that now cannot happen silently, because the
+   * counters' final resting place is asserted directly.
+   */
+  it('BENCH-only prompt puts every counter on the Bench (regression: Phantom Dive asc-160 → HTTP 500)', () => {
     const game = importState(twoSidedBoard());
-    openPrompt(game, [SlotType.BENCH]);
+    const cap = openPromptCapturing(game, [SlotType.BENCH]);
 
-    const targets = counterTargets(game);
-    expect(targets).toContain('B-b0');
-    // The defect: 'B-act' was offered, and taking it made validate() reject → 500 on the wire.
-    expect(targets).not.toContain('B-act');
+    replay(game, []);   // the whole placement is forced onto the single eligible target
+
+    expect(cap.get()).toBeDefined();
+    expect(placedOn(cap.get(), SlotType.BENCH)).toBe(60);
+    // The defect: 'B-act' was offered although the prompt is BENCH-only.
+    expect(placedOn(cap.get(), SlotType.ACTIVE)).toBe(0);
   });
 
-  it('ACTIVE-only prompt does not offer the Bench (the mirror case)', () => {
+  it('ACTIVE-only prompt puts every counter on the Active (the mirror case)', () => {
     const game = importState(twoSidedBoard());
-    openPrompt(game, [SlotType.ACTIVE]);
+    const cap = openPromptCapturing(game, [SlotType.ACTIVE]);
 
-    const targets = counterTargets(game);
-    expect(targets).toContain('B-act');
-    expect(targets).not.toContain('B-b0');
+    replay(game, []);
+
+    expect(cap.get()).toBeDefined();
+    expect(placedOn(cap.get(), SlotType.ACTIVE)).toBe(60);
+    expect(placedOn(cap.get(), SlotType.BENCH)).toBe(0);
   });
 
   it('unrestricted prompt still offers both — the fix must not over-filter', () => {

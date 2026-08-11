@@ -273,7 +273,50 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
   // ── MoveDamagePrompt ───────────────────────────────────────────────────────
 
-  it('MoveDamage: surfaces from→to pairs and resolves to a DamageTransfer', () => {
+  /**
+   * TA-239 re-recorded this pair. The original single case drove a board with exactly one damaged
+   * source and exactly one destination — every step forced — and asserted the 1-option menus. That
+   * board no longer surfaces anything: `move-damage` now implements `atomicStep`, so a forced step
+   * is applied without a pending (CF-14). Asserting a 1-option menu was asserting the very thing
+   * CF-14 says must not exist.
+   *
+   * So the granularity claim ("a relocation decomposes into SOURCE then DESTINATION, R2") is now
+   * made on a board where those picks are GENUINE, and the forced board gets its own case asserting
+   * the collapse and — the part that matters — the resulting TRANSFER. Together they are a matched
+   * pair: same prompt, one board where the decision exists and one where it does not.
+   */
+  it('MoveDamage: surfaces from→to pairs and resolves to a DamageTransfer (GENUINE choice)', () => {
+    // Two damaged sources and two possible destinations, so neither pick is forced and the pair
+    // structure is actually observable.
+    const game = importState(board(
+      player({ active: ralts('A-act') }),
+      player({ active: ralts('B-act', [], 30), bench: [ralts('B-b0', [], 20), ralts('B-b1')] }),
+    ));
+    const p = game.state.players[0];
+    const max: DamageMap[] = [{ target: { player: PlayerType.TOP_PLAYER, slot: SlotType.ACTIVE, index: 0 }, damage: 30 }];
+    let captured: DamageTransfer[] | undefined;
+    game.store.prompt(game.state, new MoveDamagePrompt(
+      p.id, GameMessage.CHOOSE_POKEMON, PlayerType.TOP_PLAYER, [SlotType.ACTIVE, SlotType.BENCH], max, { min: 1, max: 1 }
+    ), (result: DamageTransfer[]) => { captured = result; });
+
+    // relocating a counter has no single Action (R2): pick the SOURCE (choose), then the
+    // DESTINATION (placeCounter). Both damaged Pokemon are offered as sources.
+    const sources = (firstDecision(game).filter(a => a.type === 'choose') as any[]).map(a => a.target);
+    expect(sources.sort()).toEqual(['B-act', 'B-b0']);
+
+    const dests = (replay(game, [{ actor: 'A', type: 'choose', target: 'B-act' }])
+      .pending!.legalActions.filter(a => a.type === 'placeCounter') as any[]).map(a => a.target);
+    expect(dests.sort()).toEqual(['B-b0', 'B-b1']);   // anything but the committed source
+
+    replay(game, [
+      { actor: 'A', type: 'choose', target: 'B-act' },
+      { actor: 'A', type: 'placeCounter', target: 'B-b1' },
+    ]);
+    expect(captured!.length).toBe(1);
+  });
+
+  it('MoveDamage: a fully FORCED relocation is applied atomically, no pending (TA-239 / CF-14)', () => {
+    // One damaged source, one legal destination, min:1 — the player has nothing to decide.
     const game = importState(board(
       player({ active: ralts('A-act') }),
       player({ active: ralts('B-act', [], 30), bench: [ralts('B-b0')] }),
@@ -285,20 +328,18 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       p.id, GameMessage.CHOOSE_POKEMON, PlayerType.TOP_PLAYER, [SlotType.ACTIVE, SlotType.BENCH], max, { min: 1, max: 1 }
     ), (result: DamageTransfer[]) => { captured = result; });
 
-    // relocating a counter has no single Action (R2): pick the SOURCE (choose), then the
-    // DESTINATION (placeCounter). Only B-active has damage; it can't move onto itself.
-    const sources = firstDecision(game).filter(a => a.type === 'choose') as any[];
-    expect(sources).toEqual([{ actor: 'A', type: 'choose', target: 'B-act' }]);
-
-    const dests = replay(game, [{ actor: 'A', type: 'choose', target: 'B-act' }])
-      .pending!.legalActions.filter(a => a.type === 'placeCounter') as any[];
-    expect(dests).toEqual([{ actor: 'A', type: 'placeCounter', target: 'B-b0' }]);
-
-    replay(game, [
-      { actor: 'A', type: 'choose', target: 'B-act' },
-      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
-    ]);
+    const res = replay(game, []);
+    // No relocation decision is externalized — play has already moved on to the main menu, rather
+    // than pausing on a source pick and a destination pick that each had one candidate.
+    expect(res.pending!.descriptor).toBe('main');
+    expect(res.pending!.legalActions.some(a => a.type === 'choose' || a.type === 'placeCounter')).toBe(false);
+    // ...and the EFFECT still lands, with the right from→to. Asserting the resolved transfer rather
+    // than merely the absent menu is the CF-14 guard rule: an absent pending is also exactly what a
+    // silently-DROPPED decision looks like, and only the effect tells the two apart.
     expect(captured!.length).toBe(1);
+    expect(captured![0].from.slot).toBe(SlotType.ACTIVE);
+    expect(captured![0].to.slot).toBe(SlotType.BENCH);
+    expect(captured![0].to.index).toBe(0);
   });
 
   // ── System-prompt seam (M2/M3) ─────────────────────────────────────────────

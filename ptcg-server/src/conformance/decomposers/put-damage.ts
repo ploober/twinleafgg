@@ -54,16 +54,38 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
    * Measured divergence: `dri-023` "Oil Salvo" with B holding only its Active — rotomancer places all
    * 6 units of 20, KOs it, and moves to prize selection; twinleaf pends a 1-option `choose` per unit.
    *
-   * NOT ENABLED — deferred 2026-07-29, and the reason is measured, not theoretical. Turning it on does
-   * converge `dri-023`, but it also broke three committed specs that deliberately pin the opposite:
-   * the two `slots`-restriction guards (which build a prompt with exactly ONE eligible target precisely
-   * so they can inspect the offered menu — the Phantom Dive `asc-160` HTTP-500 regression) and the
-   * damageMultiple cap guard (a MULTI-target board where the cap binds part-way and leaves one target,
-   * i.e. exactly the "momentarily-forced sub-pick" the interface contract warns about — my claim that
-   * such a step is "genuinely forced" does not survive it, because the aggregate as a whole was never
-   * forced). Enabling this is therefore a re-pin of what a put-damage aggregate reports, not a bug fix,
-   * and it needs an explicit contract decision plus re-recorded guards. Tracked on `dri-023`.
+   * ── ENABLED 2026-08-11 (TA-239), via `atomicStep` rather than `atomicResolvable` ──────────────
+   *
+   * It was deferred on 2026-07-29 for two measured reasons, and the STEP-level hook answers both.
+   *
+   * The first was conceptual and it was right: opting into `atomicResolvable` would have been wrong.
+   * That hook asserts the WHOLE decision has one resolution, and the damageMultiple-cap board falsifies
+   * it — a placement that began with several targets was never a forced decision, however forced its
+   * tail becomes. `atomicStep` (TA-202) makes exactly the weaker claim that is actually true here:
+   * forcedness is a property of the POSITION, not of the prompt. Once a cap has bound and one eligible
+   * target remains, and the placement may not stop short, every remaining unit MUST go on that target.
+   * That step has no decision content even though the aggregate once did.
+   *
+   * The gate that carries the safety is the driver's `!canStopNow`, not anything restated here:
+   *   - "up to N" placements set `allowPlacePartialDamage`, so `END_CHOICE` is appended from the FIRST
+   *     pending (CF-4) — `canStopNow` is true forever and no step of an optional placement collapses.
+   *   - A fixed-count placement never appends `END_CHOICE`; the full `prompt.damage` must be placed, so
+   *     a lone eligible target is genuinely forced.
+   *   - If a cap binds and no target remains, `next` returns null (below) and the decision assembles —
+   *     the driver's "zero options and cannot stop" fault is unreachable from here.
+   * Placing a counter raises no client-driven decision of its own, so there is no cascade.
+   *
+   * The second reason was that three committed specs pinned the surfaced form: the two `slots`
+   * guards in `conformance-putdamage-slots.spec.ts` build a prompt with exactly ONE eligible target
+   * *precisely so they can inspect the menu*, and the damageMultiple cap guard does likewise. Those
+   * were re-recorded with this change, and re-recorded the way the register requires — a forced-prompt
+   * guard asserts the STATE EFFECT, not the pending (the rule that exists because a pending-shaped
+   * assertion once masked TA-121). Each kept its discriminating power: the `slots` guards now assert
+   * that the counters LAND on the eligible target and none land on the excluded one, which fails just
+   * as loudly if `slots` is ignored again, and additionally would have caught the original HTTP-500.
    */
+
+  atomicStep: () => true,
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {

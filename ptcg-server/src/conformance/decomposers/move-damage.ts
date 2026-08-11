@@ -32,6 +32,30 @@ function pairTransfers(rp: WirePick[]): Array<{ from: CardTarget; to: CardTarget
 export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
   type: 'Move damage',
 
+  /**
+   * TA-239: unconditional, and it is a direct READ-ACROSS from `remove-damage`, whose identical
+   * `atomicStep: () => true` has been live since TA-202. The two decomposers have the same step
+   * structure — alternating SOURCE / DESTINATION picks paired into transfers — and the safety
+   * argument turns entirely on that structure plus the driver's `!canStopNow` gate:
+   *
+   *  - SOURCE step, before `min` transfers exist — `END_CHOICE` is not appended (`transfers.length
+   *    >= min` is false), so stopping is not permitted and a lone eligible source is genuinely
+   *    forced: a counter must move and there is one Pokemon it can move from.
+   *  - SOURCE step, once `min` is met — `END_CHOICE` IS appended, so `canStopNow` is true and the
+   *    driver never reaches the collapse. "Move another, or stop" stays a real decision even with a
+   *    single candidate. This boundary is what makes the unconditional `true` safe.
+   *  - DESTINATION step — never appends `END_CHOICE` (a half-finished transfer cannot be
+   *    abandoned), so a single legal destination is always forced; the source is already committed.
+   *
+   * Moving a counter raises no client-driven decision of its own, so there is no cascade — the
+   * property `choose-attack`'s copy variant lacks, which is why it may not implement either hook.
+   *
+   * Measured divergence this closes: `twm-082` Alakazam "Strange Hacking" on a board with one
+   * damaged Pokemon and one legal destination — twinleaf surfaced a 1-option `Move damage` pending
+   * per pick while rotomancer had already applied the transfer and handed the turn over.
+   */
+  atomicStep: () => true,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;
@@ -75,6 +99,23 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
         const k = targetKey(t.from);
         movedFrom.set(k, (movedFrom.get(k) ?? 0) + COUNTER);
       });
+      // TA-242: a source is only offerable if SOME destination exists for it. `enumerateTargets`
+      // answers "who may give up a counter", and the TA-124 fix above made that answer honest about
+      // damage — but a counter needs somewhere to GO, and nothing checked that. Alakazam `twm-082`
+      // "Strange Hacking" (*"…move any number of damage counters from your opponent's Pokémon **to
+      // their other Pokémon**"*) against an opponent whose only Pokemon is a damaged Active offered
+      // `choose{B.active}` + a decline: taking the offer reached a destination step with ZERO
+      // candidates, `next` returned null, and the transfer silently did not happen. Both branches of
+      // that pending land on the identical board — a decision with no content, which is what B.29
+      // rule 1 forbids (a required operand set empty and public; `meg-003` "Solar Transfer — no
+      // second Pokémon as destination" is the adjudicated precedent, and it went against twinleaf).
+      // Rotomancer presents no decision here, correctly.
+      const hasDestination = (source: CardTarget): boolean => {
+        const sourceKey = targetKey(source);
+        return enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedTo)
+          .some(t => targetKey(t) !== sourceKey
+            && !(prompt.options.singleDestinationTarget && firstTo !== undefined && targetKey(t) !== firstTo));
+      };
       const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
       for (const source of sources) {
         const k = targetKey(source);
@@ -82,6 +123,7 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
         const movable = (cardList?.damage ?? 0) - (movedFrom.get(k) ?? 0);
         if (movable < COUNTER) { continue; }
         if (prompt.options.singleSourceTarget && firstFrom !== undefined && k !== firstFrom) { continue; }
+        if (!hasDestination(source)) { continue; }
         legalActions.push({ type: 'choose', target: pokemonTargetToIid(state, player, ctx, source) });
       }
       if (transfers.length >= min) {

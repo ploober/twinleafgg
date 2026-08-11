@@ -41,15 +41,34 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
    * `AttachEnergyPrompt` (hence the CF-34 `moveEnergy` verb this decomposer derives from the source
    * zone), which is why the sibling move-energy decomposer's gate does not reach it.
    *
-   * NOT ENABLED — deferred 2026-07-29, for the same reason as the sibling move-energy gate (a CF-34
-   * re-pin, not a bug fix) plus a harder failure of its own: with the collapse on, the F-027 Dragonite
-   * `ds-003` guard FAULTED outright (`attachEnergy.card is not in A's hand`) because the recorded
-   * `attachEnergy` action became surplus once the prompt self-resolved, and was then re-read as a
-   * top-level main-phase attach. That is the generic hazard of any new collapse — it invalidates logs
-   * recorded against the surfaced form — and it means enabling this requires re-recording those logs.
-   * Tracked on `dri-070`. NOTE: turning it on is what EXPOSED the TA-147 wrong-perspective bug in
+   * ── ENABLED 2026-08-11 (TA-239) ───────────────────────────────────────────────────────────────
+   *
+   * Deferred 2026-07-29 for two reasons; both are now discharged rather than argued away.
+   *
+   * The CF-34 "re-pin, not a bug fix" objection is answered by the measurement that prompted TA-239:
+   * this is not a free choice of convention. Rotomancer applies the forced relocation and moves on,
+   * and CF-14 already adjudicated which side is right — *a decision with exactly one possible
+   * resolution has no decision content*. Leaving it surfaced is not a neutral alternative pin, it is
+   * the non-conforming side of a settled question, and it was a standing noise source in every run.
+   *
+   * The harder objection was concrete: the F-027 Dragonite `ds-003` guard FAULTED outright
+   * (`attachEnergy.card is not in A's hand`) because the recorded `attachEnergy` became surplus once
+   * the prompt self-resolved, and was then re-read as a top-level main-phase attach. That is the
+   * generic hazard of ANY new collapse — it invalidates logs recorded against the surfaced form — and
+   * the answer is to re-record those logs, deliberately, checking that the same board still reaches
+   * the same place. Done with this change; the affected guards keep their original state assertions,
+   * which is what makes the re-record verifiable rather than a blind re-bless.
+   *
+   * The gate stays `max === 1`: one pick is one complete attach or relocation, so a single (card,
+   * destination) candidate means the WHOLE decision is forced. A multi-attach prompt (`max > 1`) is
+   * still excluded — it can be momentarily narrowed to one option without being forced — and an
+   * optional "you may attach 1" (`min:0`) still surfaces its decline via the driver's `!canStopNow`
+   * gate, because `next` advertises `END_CHOICE` whenever `max > min`.
+   *
+   * NOTE: turning it on is what EXPOSED the TA-147 wrong-perspective bug in
    * `team-rockets-zapdos.ts`, which is real and stays fixed; see its own driven guard.
    */
+  atomicResolvable: prompt => prompt.options.max === 1,
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {

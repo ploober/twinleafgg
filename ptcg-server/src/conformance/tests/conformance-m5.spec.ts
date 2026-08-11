@@ -173,15 +173,19 @@ describe('Conformance M5 — legalActions (the main-phase menu)', () => {
         bench: [pip('B-b0', RALTS)],
       }),
     );
-    // Use Painful Spoons: move both counters from B's active to B's bench (each transfer is a SOURCE
-    // `choose` + a DESTINATION `placeCounter`, R2). Moving the full 2 (= max) auto-completes the
-    // decision, so no separate stop action is needed.
+    // Use Painful Spoons: move both counters from B's active to B's bench. TA-239 re-recorded this
+    // log. B's active is the only damaged Pokemon and its bench holds the only other target, so with
+    // `min:1` the FIRST transfer is forced end-to-end and `move-damage`'s `atomicStep` applies it
+    // without surfacing anything (CF-14). What remains is the genuine "move a second, or stop?"
+    // decision, and `singleDestinationTarget` then forces that transfer's destination too — so one
+    // `choose` drives the rest. The old 5-action log was recorded against the surfaced form; replayed
+    // now its trailing picks were surplus and landed on the main menu.
+    //
+    // The state assertions below are UNCHANGED from that recording, which is the point: the same
+    // board reaches the same place. Only the number of externalized decisions moved.
     const res = step(initial, [
       { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Painful Spoons' },
       { actor: 'A', type: 'choose', target: 'B-act' },
-      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
-      { actor: 'A', type: 'choose', target: 'B-act' },
-      { actor: 'A', type: 'placeCounter', target: 'B-b0' },
     ]);
     expect(res.state.players.B.active!.damage).toBe(0);
     expect(res.state.players.B.bench[0].damage).toBe(20);
