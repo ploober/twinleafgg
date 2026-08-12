@@ -76,9 +76,32 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
    * `min >= 1` is required: a `min:0` "you may" must still surface its decline, and the driver's own
    * `!canStopNow` guard already refuses anything carrying an `endChoice`.
    */
+  /**
+   * TA-244: `CHOOSE_NEW_ACTIVE_POKEMON` carries TWO different flows, and this gate used to exclude
+   * both by name. The exclusion was written for — and remains correct for — the post-KO REPLACEMENT:
+   * both engines surface that decision even at one candidate (measured in TA-240's cells, twinleaf
+   * `CHOOSE_NEW_ACTIVE_POKEMON` vs rotomancer `promoteBench`, both pending), so collapsing it would
+   * manufacture a NEW divergence rather than close one.
+   *
+   * But twinleaf also builds the attack-rider SELF-SWITCH on this message — Mega Latias ex `meg-181`
+   * *Strafe*, *"You may switch this Pokémon with 1 of your Benched Pokémon"* — and there, answered
+   * `confirm:true` with one Benched Pokémon, the switch is forced and rotomancer applies it and moves
+   * on. That was the single largest residual noise class after the 2026-08-11 batch (all 8 newly
+   * reporting seeds in the post-fix re-fuzz).
+   *
+   * The two flows are told apart by the BOARD, not the message, and the discriminator was measured on
+   * both before it was written: at a post-KO replacement the prompting player's Active slot is EMPTY
+   * (the KO'd Pokémon is already gone); at a self-switch it is still OCCUPIED by the Pokémon being
+   * switched out. Reading the state is also the only option that stays correct if another card
+   * reaches for this message — a message-name allowlist would need editing for each one.
+   */
   atomicResolvable: (prompt, state) => {
     if (prompt.message === GameMessage.CHOOSE_NEW_ACTIVE_POKEMON) {
-      return false;
+      const promptingPlayer = promptPlayer(state, prompt.playerId);
+      if (promptingPlayer.active.getPokemonCard() === undefined) {
+        return false; // post-KO replacement — stays surfaced, both engines pend it
+      }
+      // otherwise: a self-switch with the Active still in place; fall through to the ordinary gates
     }
     if (prompt.options.max === 1) {
       return true;
