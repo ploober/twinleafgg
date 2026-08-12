@@ -2,7 +2,7 @@ import { State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, WAS_ATTACK_USED, ATTACK_SEARCH_WHIFFS } from '../../../game/store/prefabs/prefabs';
+import { SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, WAS_ATTACK_USED, ATTACK_SEARCH_WHIFFS, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class Numel extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -36,7 +36,7 @@ export class Numel extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // SD-20: an empty deck WHIFFS the search; the attack still happens (#361 Call for Family,
       // #2018 Breezy Gift). The shared prefab's BLOCK_IF_DECK_EMPTY is the Trainer answer.
-      if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }
+      if (ATTACK_SEARCH_WHIFFS(effect.player)) { return SHUFFLE_DECK(store, state, effect.player); }
       SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, effect.player, { stage: Stage.BASIC }, { min: 0, max: 2 });
     }
 

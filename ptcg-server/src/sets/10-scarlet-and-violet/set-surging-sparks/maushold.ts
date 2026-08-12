@@ -6,6 +6,7 @@ import {
   MULTIPLE_COIN_FLIPS_PROMPT,
   SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH,
   WAS_ATTACK_USED,
+  SHUFFLE_DECK,
 } from '../../../game/store/prefabs/prefabs';
 
 export class Maushold extends PokemonCard {
@@ -48,9 +49,14 @@ export class Maushold extends PokemonCard {
       // can"; #2301 splits "up to X" 0..max on attacks). The throw made the attack-probe reject the
       // whole declaration, so twinleaf never offered the attack on an empty deck. Guard the call
       // instead: the attack declares fine and simply does nothing it cannot do.
+      // TA-249: ...but the SHUFFLE is still owed. "Then, shuffle your deck." is a separate printed
+      // instruction, not a rider on having found something — and this engine already proves it reads
+      // it that way: on a STOCKED deck holding no Maushold the search finds nothing and it shuffles
+      // anyway. Returning here made "found nothing" shuffle and "could not look" not shuffle, which
+      // is the same outcome reached two ways. Rotomancer emits `shuffled` on both.
       const hasBenchSpace = player.bench.some(b => b.cards.length === 0);
       if (player.deck.cards.length === 0 || !hasBenchSpace) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       const blocked: number[] = [];

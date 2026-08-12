@@ -3,7 +3,7 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND, ATTACK_SEARCH_WHIFFS } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND, ATTACK_SEARCH_WHIFFS, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class Purrloin extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -41,7 +41,7 @@ export class Purrloin extends PokemonCard {
       // subject of #840 — so `min` does NOT discriminate attack from Trainer and a prefab-level fix
       // keyed on it would make those Trainers playable on an empty deck. SD-20.
       if (ATTACK_SEARCH_WHIFFS(effect.player)) {
-        return state;
+        return SHUFFLE_DECK(store, state, effect.player);
       }
       SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(store, state, effect.player, { cardType: CardType.DARK }, { min: 0, max: 3 });
     }

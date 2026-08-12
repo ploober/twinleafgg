@@ -1186,6 +1186,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       // NOT a failure: both decks are empty, so the turn ends into a deck-out. `invalidAction` is
       // the pre-fix status and the only one this asserts against.
       expect(`${printing}:${r.status === 'invalidAction'}`).toBe(`${printing}:false`);
+      // ...and the SHUFFLE is still owed. "Then, shuffle your deck." is a separate printed
+      // instruction on all of these, not a rider on having found something — and this engine already
+      // reads it that way on a stocked deck that finds nothing. The first version of the fix returned
+      // early and skipped it, which converged the STATUS and left 12 events-clause divergences behind:
+      // status equality is not resolution.
+      expect(`${printing}:${r.events.some(e => /shuffle/i.test(e.kind))}`).toBe(`${printing}:true`);
       // ...and the menu offered it in the first place, so the two halves cannot disagree.
       const menu = step(
         boardKeepingEmptyDeck(
