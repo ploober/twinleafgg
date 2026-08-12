@@ -5388,6 +5388,12 @@
       "signatures": [
         "// TA-245: printed cost is [D][C], not [D][D]."
       ]
+    },
+    {
+      "file": "set-perfect-order/grow-grass-energy.ts",
+      "signatures": [
+        "public name = 'Growing Grass Energy';"
+      ]
     }
   ]
 }

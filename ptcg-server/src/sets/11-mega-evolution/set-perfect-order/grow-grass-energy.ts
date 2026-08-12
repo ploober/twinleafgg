@@ -10,7 +10,13 @@ export class GrowGrassEnergy extends EnergyCard {
   public energyType = EnergyType.SPECIAL;
   public regulationMark = 'J';
   public set: string = 'POR';
-  public name = 'Growing [G] Energy';
+  // TA-246: canonical (and rotomancer) print this as "Growing Grass Energy" — the energy TYPE is
+  // spelled out in the card's NAME. The `[G]` glyph form is not a twinleaf naming convention: only
+  // two cards do it, both special Energy, and twinleaf spells the type out everywhere else. The
+  // bracket form IS correct for Unown's letter (canonical itself writes `Unown [G]`), so the rule is
+  // about the energy type, not about brackets. `fullName` is the immutable identity key and is left
+  // untouched.
+  public name = 'Growing Grass Energy';
   public fullName = 'Grow [G] Energy M3';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '86';
