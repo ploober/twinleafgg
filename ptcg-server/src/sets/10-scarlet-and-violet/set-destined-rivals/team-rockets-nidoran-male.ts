@@ -16,8 +16,13 @@ export class TeamRocketsNidoranMale extends PokemonCard {
     text: ''
   },
   {
+    // TA-245: printed cost is [D][C], not [D][D]. All five canonical sources agree
+    // (limitless, pkmncards, pokemontcg-io, scrydex, tcgdex) and so does rotomancer's
+    // card data; twinleaf was the lone dissenter. The wrong cost manufactured RE-103,
+    // a filed "rotomancer accepts a typed cost paid by any Energy" finding — their
+    // engine was correctly letting a Water pay the Colorless.
     name: 'Hammer In',
-    cost: [D, D],
+    cost: [D, C],
     damage: 30,
     text: ''
   }];

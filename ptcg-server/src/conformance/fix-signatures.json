@@ -5382,6 +5382,12 @@
       "signatures": [
         "// TA-241: printed text is \"Flip a coin. If HEADS,"
       ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-nidoran-male.ts",
+      "signatures": [
+        "// TA-245: printed cost is [D][C], not [D][D]."
+      ]
     }
   ]
 }
