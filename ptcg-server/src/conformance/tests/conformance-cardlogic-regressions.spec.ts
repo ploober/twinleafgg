@@ -53,6 +53,19 @@ function fillerDeck(tag: string, n: number): CardRef[] {
 function player(over: Partial<PlayerState> = {}): PlayerState {
   return { active: null, bench: [], hand: [], deck: [], discard: [], lostZone: [], prizes: [], flags: flags(), ...over };
 }
+/** Like `board()` but leaves an EMPTY deck empty.
+ *
+ * `board()` backfills `deck: []` with one filler card, so it cannot express an empty deck at all —
+ * the G-8 blind spot (0 of 9,058 corpus sides ever starts with an empty deck) reproduced inside the
+ * test helper. A cell written with `board(...)` and `deck: []` silently tests a ONE-card deck and
+ * passes for the wrong reason. Use this whenever emptiness is the thing under test. */
+function boardKeepingEmptyDeck(A: PlayerState, B: PlayerState): NeutralState {
+  const pz = (ps: PlayerState, tag: string): PlayerState => ({
+    ...ps,
+    prizes: ps.prizes.length ? ps.prizes : Array.from({ length: 6 }, (_, i) => ({ iid: `${tag}-pz${i}`, printing: WATER, faceUp: false })),
+  });
+  return { schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A', phase: 'main', outcome: 'ongoing', stadium: null, players: { A: pz(A, 'A'), B: pz(B, 'B') } };
+}
 function board(A: PlayerState, B: PlayerState): NeutralState {
   const wd = (ps: PlayerState, tag: string): PlayerState => ({
     ...ps,
@@ -1088,5 +1101,61 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.pending?.actor === 'B' && types(r).includes('promoteBench')).toBe(false);
     // The legitimate half still works: A's Drag Off pulled B's benched Mankey in and dealt it 30.
     expect(r.state.players.B.active!.stack.map(c => c.printing)).toEqual(['dri-090']);
+  });
+
+  it('Destructo-Press deals 0 on an EMPTY deck, and still scales when stocked [TA-247 tef-062]', () => {
+    // "Reveal the top 5 cards of your deck. This attack does 70 damage for each Future card you find
+    // there." `damage: 70` with `damageCalculation: 'x'` is a MULTIPLICAND, not a base — so the
+    // empty-deck early return (added so a reveal is not prompted with nothing to reveal) left the
+    // full 70 standing, and an empty deck dealt 70 where 0 is correct.
+    //
+    // TWO traps this cell had to survive, both of which made it pass for the wrong reason first:
+    //   1. plain `board()` BACKFILLS an empty deck with one filler card, so `deck: []` silently
+    //      tested a one-card deck. Hence `boardKeepingEmptyDeck`. (The G-8 blind spot — 0 of 9,058
+    //      corpus sides ever starts with an empty deck — reproduced inside the test helper.)
+    //   2. on a STOCKED deck the damage is DEFERRED behind the reveal's shuffle prompt, so reading
+    //      `.damage` straight after `declareAttack` reads 0 on every board — including a board that
+    //      is about to deal 210. The stocked cells must drive the shuffle before asserting.
+    const LIGHT = 'sve-004';
+    // NOT `TANKY`: Wellspring Mask Ogerpon ex is Lightning-WEAK and Iron Thorns is a Lightning
+    // attacker, so every number here would be silently doubled and 210 would KO it outright.
+    // `meg-181` is 280 HP with no weakness, so the assertions read the raw damage.
+    const WALL280 = 'meg-181';
+    const futureDeck = (n: number): CardRef[] => [
+      ...Array.from({ length: n }, (_, i) => ({ iid: `A-fut${i}`, printing: 'tef-062' })),
+      ...fillerDeck('A', 12 - n),
+    ];
+    // The revealed Future cards are DISCARDED, so the deck being shuffled is whatever is not Future.
+    const shuffleAll = (deck: CardRef[]) =>
+      ({ actor: 'system' as const, type: 'shuffle' as const,
+         order: deck.filter(c => c.printing !== 'tef-062').map(c => c.iid) });
+
+    const empty = step(
+      boardKeepingEmptyDeck(
+        player({ active: inPlay('A-act', ['tef-062'], en(LIGHT, 2, 'a')), deck: [] }),
+        player({ active: inPlay('B-act', [WALL280]) })),
+      [attack('A-act', 'Destructo-Press')],
+    );
+    expect(empty.state.players.B.active!.damage).toBe(0);
+
+    // CONTROL 1 — a STOCKED deck holding no Future card must ALSO deal 0. This is the cell that
+    // fails if the fix is written as "empty deck => 0" rather than fixing the multiplier itself.
+    const none = futureDeck(0);
+    const noFuture = step(
+      board(player({ active: inPlay('A-act', ['tef-062'], en(LIGHT, 2, 'a')), deck: none }),
+            player({ active: inPlay('B-act', [WALL280]) })),
+      [attack('A-act', 'Destructo-Press'), shuffleAll(none)],
+    );
+    expect(noFuture.state.players.B.active!.damage).toBe(0);
+
+    // CONTROL 2 — the POSITIVE control, and the one that matters most: 3 Future cards on top must
+    // deal 210. Without it a "fix" that zeroed the attack outright would pass both cells above.
+    const three = futureDeck(3);
+    const threeFuture = step(
+      board(player({ active: inPlay('A-act', ['tef-062'], en(LIGHT, 2, 'a')), deck: three }),
+            player({ active: inPlay('B-act', [WALL280]) })),
+      [attack('A-act', 'Destructo-Press'), shuffleAll(three)],
+    );
+    expect(threeFuture.state.players.B.active!.damage).toBe(210);
   });
 });

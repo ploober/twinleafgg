@@ -56,13 +56,19 @@ export class IronThorns extends PokemonCard {
       // cards move — the reveal then carries `from:"deck"` and the full top-5 in top-first order,
       // converging with rotomancer's CF-18 `reveal{owner, cards, from:"deck", to:"all"}`.
       const top5 = player.deck.cards.slice(0, 5);
+      const futureCards = top5.filter(c =>
+        c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
+
+      // TA-247: assign the damage BEFORE the empty-deck bail-out, not after. `damage: 70` with
+      // `damageCalculation: 'x'` declares a MULTIPLICAND, not a base — so returning early left the
+      // full 70 in place and an empty deck dealt 70 instead of 0, with nothing revealed and no
+      // Future card found. The stocked-deck path was correct throughout, which is why no board in
+      // the corpus could see it: 0 of 9,058 sides ever starts with an empty deck (G-8).
+      effect.damage = 70 * futureCards.length;
+
       if (top5.length === 0) {
         return state;
       }
-
-      const futureCards = top5.filter(c =>
-        c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
-      effect.damage = 70 * futureCards.length;
 
       return store.prompt(state, new ShowCardsPrompt(
         opponent.id,
