@@ -9,7 +9,7 @@ import {
   UseStadiumAction as UseStadiumGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { CardTarget, PlayerType, SlotType } from '../game/store/actions/play-card-action';
+import { CardTarget, PlayerType, SlotType, PlayCardAction } from '../game/store/actions/play-card-action';
 import { deepClone } from '../utils/utils';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
@@ -100,6 +100,10 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
       // accepts them, so mirroring it would make legalActions under-report most trainer plays
       // (a §10.3 contract gap). Enumerate by the engine's real play-time gates instead.
       if (!trainerPlayable(store, state, player, card)) { continue; }
+      // Final gate: dry-run on a clone, the Trainer analog of `attackProbeAccepts` / TA-14's ability
+      // probe. Cards whose play gate lives as a `throw` inside their own reduceEffect are invisible to
+      // every static check above. TA-248.
+      if (!trainerProbeAccepts(state, player, card)) { continue; }
       switch (card.trainerType) {
         case TrainerType.TOOL:
           for (const s of own) {
@@ -202,6 +206,40 @@ function attackProbeAccepts(state: State, player: Player, attackName: string): b
   const cloned = probe.state.players[state.players.indexOf(player)];
   try {
     probe.dispatch(new AttackGameAction(cloned.id, attackName));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+}
+
+/**
+ * Dry-run one Trainer play on a CLONED store — the Trainer analog of {@link attackProbeAccepts} and
+ * of TA-14's ability probe. Mirrors exactly what `dispatchPlayTrainer` sends (a `PlayCardAction` at
+ * the card's hand index), so a `GameError` here means the real play would `invalidAction`, and the
+ * menu must not offer it. Any other throw (an effect reaching a prompt with no provider on the clone)
+ * gets the benefit of the doubt and the play is offered, as with the other two probes.
+ *
+ * TA-248. `trainerPlayable` deliberately over-reports past a false CAN_PLAY_CARD, on the recorded
+ * reasoning that "over-reporting is self-correcting: the fuzzer's never-reject-your-own-legalAction
+ * invariant flags any enumerated play the reducer refuses". It does — that alarm is how this was
+ * found — but the alarm is not the fix, and until now nothing closed the loop. A whole family of
+ * Trainers gate their play by throwing inside `reduceEffect`, and none of the static checks can see
+ * it: `Cheren` (asc-258, and its EPO original) throws `CANNOT_PLAY_THIS_CARD` when the deck is empty,
+ * which is *correct* — compendium #924, "you cannot play a Trainer when it is known that it will have
+ * no effect", of any draw Trainer with no cards in deck (also #1124 Juniper/Sycamore, #1497 Roxie,
+ * #973 Cynthia & Caitlin). Rotomancer withholds it. We offered it and then refused it.
+ */
+function trainerProbeAccepts(state: State, player: Player, card: TrainerCard): boolean {
+  const handIndex = player.hand.cards.indexOf(card);
+  if (handIndex === -1) { return true; }
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[state.players.indexOf(player)];
+  const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+  try {
+    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
     return true;
   } catch (err) {
     return !(err instanceof GameError);

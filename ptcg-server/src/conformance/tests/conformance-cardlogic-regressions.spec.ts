@@ -1158,4 +1158,87 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     );
     expect(threeFuture.state.players.B.active!.damage).toBe(210);
   });
+
+  it('an empty deck WHIFFS a searching attack instead of refusing it [TA-249 / SD-20]', () => {
+    // Compendium #361, by name, on the very attack three of these cards print: "Can I use Eevee's
+    // 'Call for Family' to search through my deck if I already have four Eevee in play or in the
+    // discard pile? — You CAN USE THE ATTACK, but you cannot search your deck." Attack legal, search
+    // whiffs. Also #2018 Breezy Gift ("no cards left in my deck? Sure") and #578/#622 (an attack does
+    // as much as it can). The three shared deck-search prefabs open with BLOCK_IF_DECK_EMPTY, which
+    // is the TRAINER answer (#840/#924, where the whole play would be the search), and an attack
+    // calling one inherited it: 7 of the 8 in-pool cards in this class diverged from rotomancer,
+    // 6 withheld from the menu and Purrloin offered-then-rejected.
+    const searchers: Array<[string, string, string]> = [
+      ['asc-049', 'Call for Family', 'sve-004'],   // N's Vanillite  — put onto bench
+      ['blk-029', 'Call for Family', 'sve-004'],   // Emolga         — put onto bench
+      ['meg-021', 'Call for Family', 'sve-002'],   // Numel          — put onto bench (cost is [R])
+      ['por-010', 'Find a Friend', 'sve-001'],     // Rowlet         — put into hand
+      ['wht-055', 'Invite Evil', 'sve-007'],       // Purrloin       — put into hand, the offer-then-reject one
+    ];
+    for (const [printing, name, energy] of searchers) {
+      const r = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], en(energy, 3, 'a')), deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', name)],
+      );
+      // The attack RESOLVED — it was not refused. `gameOver` is the expected terminal here and is
+      // NOT a failure: both decks are empty, so the turn ends into a deck-out. `invalidAction` is
+      // the pre-fix status and the only one this asserts against.
+      expect(`${printing}:${r.status === 'invalidAction'}`).toBe(`${printing}:false`);
+      // ...and the menu offered it in the first place, so the two halves cannot disagree.
+      const menu = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], en(energy, 3, 'a')), deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [],
+      );
+      expect(`${printing}:${(menu.pending?.legalActions ?? [])
+        .some(a => a.type === 'declareAttack' && a.name === name)}`).toBe(`${printing}:true`);
+    }
+
+    // CONTROL — with a STOCKED deck holding a findable [D] Basic, the search must still RUN and open
+    // its choose-cards decision. Without this cell a "fix" that skipped the search unconditionally
+    // would pass every assertion above. The deck must contain a legal target: with only filler in it
+    // the `min: 0` search self-resolves straight to the shuffle, which is indistinguishable from
+    // having been skipped — the first version of this control asserted on exactly that and was green
+    // for the wrong reason.
+    const withDeck = step(
+      board(player({ active: inPlay('A-act', ['wht-055'], en('sve-007', 3, 'a')),
+                     deck: [{ iid: 'A-zorua', printing: 'wht-061' }, ...fillerDeck('A', 5)] }),
+            player({ active: inPlay('B-act', ['meg-181']) })),
+      [attack('A-act', 'Invite Evil')],
+    );
+    expect(withDeck.pending?.descriptor ?? '').toContain('hoose');
+  });
+
+  it('a draw Supporter is not OFFERED when the deck is empty [TA-248 asc-258]', () => {
+    // #924: "Can you play Professor Juniper or Fiery Torch, or any draw Trainer, with no cards in
+    // your deck? — No, you cannot play a Trainer when it is known that it will have no effect."
+    // Cheren's own reduceEffect already threw CANNOT_PLAY_THIS_CARD, correctly; the legalAction
+    // enumerator did not consult it and offered the play anyway, so twinleaf offered a Supporter and
+    // then refused it. Rotomancer withholds. `trainerPlayable`'s deliberate over-report is now
+    // closed by `trainerProbeAccepts`, the Trainer analog of the attack and ability dry-run probes.
+    const CHEREN = 'asc-258';
+    const emptyDeck = boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', ['meg-181']), hand: [{ iid: 'A-h0', printing: CHEREN }], deck: [] }),
+      player({ active: inPlay('B-act', ['meg-181']) }));
+    const menu = step(emptyDeck, []);
+    expect((menu.pending?.legalActions ?? [])
+      .some(a => a.type === 'playSupporter' && a.card === 'A-h0')).toBe(false);
+    // And the two halves agree: what is not offered is also not accepted.
+    expect(step(emptyDeck, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-h0' }])
+      .status).toBe('invalidAction');
+
+    // CONTROL — one card in the deck is enough to make it a real effect, so it must be offered AND
+    // accepted. Without this cell a probe that refused every Supporter would pass the two above.
+    const oneCard = board(
+      player({ active: inPlay('A-act', ['meg-181']), hand: [{ iid: 'A-h0', printing: CHEREN }],
+               deck: fillerDeck('A', 1) }),
+      player({ active: inPlay('B-act', ['meg-181']) }));
+    expect((step(oneCard, []).pending?.legalActions ?? [])
+      .some(a => a.type === 'playSupporter' && a.card === 'A-h0')).toBe(true);
+    expect(step(oneCard, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-h0' }])
+      .status).not.toBe('invalidAction');
+  });
 });

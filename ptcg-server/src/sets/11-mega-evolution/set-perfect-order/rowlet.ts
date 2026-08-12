@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND, ATTACK_SEARCH_WHIFFS } from '../../../game/store/prefabs/prefabs';
 
 export class Rowlet extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -33,6 +33,9 @@ export class Rowlet extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // SD-20: an empty deck WHIFFS the search; the attack still happens (#361 Call for Family,
+      // #2018 Breezy Gift). The shared prefab's BLOCK_IF_DECK_EMPTY is the Trainer answer.
+      if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }
       SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(store, state, effect.player, {}, { min: 0, max: 1 });
     }
     return state;

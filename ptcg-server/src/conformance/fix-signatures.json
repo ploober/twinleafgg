@@ -1511,7 +1511,8 @@
    "file": "game/store/prefabs/prefabs.ts",
    "signatures": [
     "const effMin = Math.min(min, eligible);",
-    "const effMax = Math.min(max, eligible);"
+    "const effMax = Math.min(max, eligible);",
+    "export function ATTACK_SEARCH_WHIFFS(player: Player): boolean {"
    ]
   },
   {
@@ -4326,7 +4327,8 @@
   {
    "file": "set-mega-evolution/xerneas.ts",
    "signatures": [
-    "name: 'Geo Gate',"
+    "name: 'Geo Gate',",
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -5400,6 +5402,42 @@
    "signatures": [
     "effect.damage = 70 * futureCards.length;",
     "if (top5.length === 0) {"
+   ]
+  },
+  {
+   "file": "set-black-bolt-white-flare/purrloin.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) {"
+   ]
+  },
+  {
+   "file": "set-ascended-heroes/ns-vanillite.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
+   ]
+  },
+  {
+   "file": "set-black-bolt-white-flare/emolga.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
+   ]
+  },
+  {
+   "file": "set-mega-evolution/numel.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
+   ]
+  },
+  {
+   "file": "set-perfect-order/rowlet.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
+   ]
+  },
+  {
+   "file": "set-surging-sparks/tapu-koko.ts",
+   "signatures": [
+    "if (ATTACK_SEARCH_WHIFFS(effect.player)) { return state; }"
    ]
   }
  ]

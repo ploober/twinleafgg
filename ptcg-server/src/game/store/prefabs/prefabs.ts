@@ -3256,6 +3256,32 @@ export function BLOCK_IF_DECK_EMPTY(player: Player) {
   if (player.deck.cards.length === 0) throw new GameError(GameMessage.NO_CARDS_IN_DECK);
 }
 
+/**
+ * SD-20 / TA-249. The empty-deck test for an ATTACK that searches the deck: the search WHIFFS, the
+ * attack still happens. `BLOCK_IF_DECK_EMPTY` is the Trainer test and throws, which is right for a
+ * Trainer and wrong here — the three search prefabs that open with it are shared by both, so an
+ * attack calling one inherits the Trainer answer and either gets withheld from the menu (the probe
+ * catches the throw) or is offered and then rejected (it doesn't).
+ *
+ * The line is drawn by the compendium, not by us:
+ *   #361 Call for Family — "You can use the attack, but you cannot search your deck since it is
+ *        public knowledge that you won't find [one]." Attack legal, search whiffs. By name: this is
+ *        the attack on three of the cards this guards.
+ *   #2018 Breezy Gift    — "Can I use [it] if I have no cards left in my deck? Sure."
+ *   #578 Roost / #622 Surprise Punch — an attack does as much as it can.
+ * versus, for a Trainer whose whole play IS the search or draw:
+ *   #840 Professor Elm's Training Method — "you cannot search through an empty deck" (so: no play)
+ *   #924 — "you cannot play a Trainer when it is known that it will have no effect"
+ *
+ * Opt-in per call site rather than a change inside the prefabs, because the prefabs take a `player`
+ * and cannot see whether their caller is an attack, and 46 of the 58 callers of the put-into-hand
+ * prefab alone pass `min: 0` — including the Trainers whose refusal is correct, Professor Elm's
+ * Training Method being the literal subject of #840. `min` does not discriminate the two.
+ */
+export function ATTACK_SEARCH_WHIFFS(player: Player): boolean {
+  return player.deck.cards.length === 0;
+}
+
 export function BLOCK_IF_DISCARD_EMPTY(player: Player) {
   if (player.discard.cards.length === 0) throw new GameError(GameMessage.NO_CARDS_IN_DISCARD);
 }
