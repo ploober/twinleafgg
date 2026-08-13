@@ -1188,6 +1188,43 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     }
   });
 
+  it('a missing DESTINATION outranks B.33: no Bench means no search and no shuffle [TA-250 amendment]', () => {
+    // The re-fuzz caught this and the census did not, because every census board had an empty Bench
+    // only incidentally. B.33 decides the empty-DECK case; RE-38/RE-32 decides the no-DESTINATION
+    // case, and it runs FIRST. Applying B.33 to a "for each of your Benched Pokemon" attack with no
+    // Bench does not close the divergence, it flips it — twinleaf started emitting a shuffle that
+    // rotomancer correctly withholds.
+    //
+    // Both cells are asserted per card, because only the PAIR pins the ordering: the bench-occupied
+    // cell alone passes for a fix that always shuffles, and the bench-empty cell alone passes for a
+    // fix that never does.
+    const benchGated: Array<[string, string, string]> = [
+      ['blk-039', 'Cellular Ascension', 'sve-005'],  // "For each of your Benched Pokemon, search..."
+      ['meg-028', 'Turbo Flare', 'sve-002'],         // "...attach them to your Benched Pokemon"
+      ['ssp-007', 'Evo-Powder', 'sve-001'],          // "For each of your Benched Pokemon, search..."
+    ];
+    for (const [printing, name, energy] of benchGated) {
+      const bare = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], en(energy, 4, 'a')), deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', name)],
+      );
+      expect(`${printing}/noBench:${bare.events.some(e => /shuffle/i.test(e.kind))}`)
+        .toBe(`${printing}/noBench:false`);
+
+      const benched = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], en(energy, 4, 'a')),
+                   bench: [inPlay('A-b1', ['asc-004'])], deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', name)],
+      );
+      expect(`${printing}/bench:${benched.events.some(e => /shuffle/i.test(e.kind))}`)
+        .toBe(`${printing}/bench:true`);
+    }
+  });
+
   it('a DEPENDENT-object shuffle is suppressed when its object is empty [TA-251 / B.33]', () => {
     // The mirror of TA-250, and the cell that stops a fix keyed on "empty deck" instead of on the
     // object. Larimar Rain reads "Look at the top 20 cards of your deck ... Shuffle THE OTHER CARDS

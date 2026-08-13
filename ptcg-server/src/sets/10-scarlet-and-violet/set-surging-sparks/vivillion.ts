@@ -12,6 +12,15 @@ function* useEvolutionPowder(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-250 amendment / RE-32 precedence: the DESTINATION test comes FIRST. This attack's effect is
+  // "for each of your BENCHED Pokemon" — with no Bench there is no destination, so no search happens
+  // and no shuffle is owed (RE-38/RE-32, and rotomancer suppresses it here too). B.33's object test
+  // only applies once the effect actually reaches the deck. Getting the order wrong flipped the
+  // divergence to the other side instead of closing it, which is what the re-fuzz caught.
+  if (!player.bench.some(b => b.cards.length > 0)) {
+    return state;
+  }
+
   // TA-97: Evo-Powder is legal to use whenever its cost is met — with an empty deck there is nothing
   // to search, so it simply does nothing. Do NOT block the attack (was: throw CANNOT_PLAY_THIS_CARD).
   // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a

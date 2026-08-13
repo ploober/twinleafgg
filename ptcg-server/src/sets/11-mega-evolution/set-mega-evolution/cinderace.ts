@@ -55,12 +55,17 @@ export class Cinderace extends PokemonCard {
       // happens and neither does its shuffle; that stays. An empty DECK is not: *"Then, shuffle your
       // deck"* names an object that still exists, so the shuffle is owed (and this very method
       // already shuffles on the cancelled-transfer path, three lines below).
+      // ORDER IS LOAD-BEARING: the DESTINATION test runs first. With no Bench there is no legal
+      // attach target, so no search happens and no shuffle is owed (RE-38/RE-32, and rotomancer
+      // agrees). Only once a destination exists does B.33 decide the empty-deck case. The first
+      // version of this fix had the two the other way round and moved the divergence rather than
+      // closing it.
       const hasBench = player.bench.some(b => b.cards.length > 0);
-      if (player.deck.cards.length === 0) {
-        return SHUFFLE_DECK(store, state, player);
-      }
       if (!hasBench) {
         return state;
+      }
+      if (player.deck.cards.length === 0) {
+        return SHUFFLE_DECK(store, state, player);
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(

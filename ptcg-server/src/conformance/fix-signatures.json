@@ -744,14 +744,16 @@
       "file": "set-mega-evolution/cinderace.ts",
       "signatures": [
         "const hasBench = player.bench.some(b => b.cards.length > 0);",
-        "return SHUFFLE_DECK(store, state, player);"
+        "return SHUFFLE_DECK(store, state, player);",
+        "      // ORDER IS LOAD-BEARING: the DESTINATION test runs first."
       ]
     },
     {
       "file": "set-surging-sparks/vivillion.ts",
       "signatures": [
         "Evo-Powder is legal to use whenever its cost is met",
-        "return SHUFFLE_DECK(store, state, player);"
+        "return SHUFFLE_DECK(store, state, player);",
+        "if (!player.bench.some(b => b.cards.length > 0)) {"
       ]
     },
     {
@@ -3135,7 +3137,8 @@
       "file": "set-black-bolt-white-flare/reuniclus.ts",
       "signatures": [
         "import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';",
-        "return SHUFFLE_DECK(store, state, player);"
+        "return SHUFFLE_DECK(store, state, player);",
+        "if (!player.bench.some(b => b.cards.length > 0)) {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
