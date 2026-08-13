@@ -3541,7 +3541,8 @@
     {
       "file": "set-destined-rivals/yanmega-ex.ts",
       "signatures": [
-        "name: 'Buzzing Boost',"
+        "name: 'Buzzing Boost',",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -5110,7 +5111,8 @@
     {
       "file": "set-journey-together/volcanion-ex.ts",
       "signatures": [
-        "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {"
+        "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {",
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
       "note": "TA-210/B.27 \u2014 an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu."
     },
@@ -5519,6 +5521,24 @@
       "signatures": [
         "public set = 'MEP';",
         "public name = 'Celebratory Fanfare';"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/infernape.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/chien-pao.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-perfect-order/klefki.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ]
     }
   ]

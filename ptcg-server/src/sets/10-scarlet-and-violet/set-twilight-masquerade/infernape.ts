@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
@@ -64,6 +64,9 @@ export class Infernape extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
+      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
 

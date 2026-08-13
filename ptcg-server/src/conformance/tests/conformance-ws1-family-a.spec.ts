@@ -279,3 +279,36 @@ describe('WS1 batch 1e — opponent-hand disruption riders fire AFTER base damag
     expect(res.state.players.B.active!.damage).toBe(30);
   });
 });
+
+describe('TA-258 — the TA-79 second wave: pool growth 1206→1821 brought new deferral members', () => {
+  // Same conjunction as every cell above: base damage LANDED and the rider still pending. All five
+  // were zone-axis DIVERGENCE rows (tl dmg=0 at the rider pending, roto already applied); the pool
+  // enumeration is the census, so these witnessed members ARE the visible population.
+  const cases: Array<[string, string, string, CardRef[], number, boolean]> = [
+    // [printing, attack, itLabel, attacker energy, expected damage, needsBench]
+    ['dri-003', 'Jet Cyclone', 'Yanmega ex', [
+      { iid: 'g0', printing: GRASS }, { iid: 'g1', printing: GRASS }, { iid: 'g2', printing: GRASS }, { iid: 'c0', printing: COLOR }], 210, true],
+    ['jtg-031', 'Scorching Cyclone', 'Volcanion ex', [
+      { iid: 'r0', printing: FIRE }, { iid: 'r1', printing: FIRE }, { iid: 'c0', printing: COLOR }], 160, true],
+    ['twm-033', 'Scorching Fire', 'Infernape', [
+      { iid: 'r0', printing: FIRE }, { iid: 'r1', printing: FIRE }, { iid: 'c0', printing: COLOR }], 200, false],
+    ['ssp-056', 'Icicle Loop', 'Chien-Pao', [
+      { iid: 'w0', printing: COLOR }, { iid: 'w1', printing: COLOR }, { iid: 'c0', printing: COLOR }], 120, false],
+    ['por-059', 'Memory Lock', 'Klefki', [{ iid: 'm0', printing: METAL }], 30, false],
+  ];
+  for (const [printing, attack, label, energy, dmg, needsBench] of cases) {
+    it(`${attack}: ${dmg} lands, then the rider is still pending [${printing} ${label}]`, () => {
+      const res = step(
+        board(
+          player({ active: pip('A-act', printing, energy),
+                   bench: needsBench ? [pip('A-b1', BENCHMON)] : [] }),
+          player({ active: pip('B-act', DEFENDER) }),
+        ),
+        [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: attack }],
+      );
+      expect(`${printing}:${res.status}`).toBe(`${printing}:awaitingAction`);
+      expect(`${printing}:n=${(res.pending?.legalActions ?? []).length > 0}`).toBe(`${printing}:n=true`); // rider pending
+      expect(`${printing}:dmg=${res.state.players.B.active!.damage}`).toBe(`${printing}:dmg=${dmg}`);      // damage already landed
+    });
+  }
+});

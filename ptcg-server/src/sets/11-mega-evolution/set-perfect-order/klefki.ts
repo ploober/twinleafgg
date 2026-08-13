@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Klefki extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -26,6 +26,9 @@ export class Klefki extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
+      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       return OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK(store, state, effect, this);
     }
 

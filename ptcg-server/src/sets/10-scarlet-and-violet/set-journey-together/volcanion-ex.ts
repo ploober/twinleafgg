@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Volcanionex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex];
@@ -81,6 +81,9 @@ export class Volcanionex extends PokemonCard {
 
     // Heat Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
+      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       const player = effect.player;
       const hasBench = player.bench.some(b => b.cards.length > 0);
 
@@ -88,11 +91,15 @@ export class Volcanionex extends PokemonCard {
         return state;
       }
 
+      // TA-259: the move's destination is "1 of YOUR Benched Pokemon" — BOTTOM_PLAYER, as Yanmega's
+      // Jet Cyclone already does. TOP_PLAYER pointed the transfer at the OPPONENT's bench, and the
+      // malformed prompt shape also made the decomposer surface `discard` picks instead of
+      // CF-34's moveEnergy.
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
         player.active,
-        PlayerType.TOP_PLAYER,
+        PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
         { allowCancel: false, min: 1, max: 1 }

@@ -4,7 +4,7 @@ import { StoreLike, State, PlayerType, SlotType, PowerType, ConfirmPrompt, Attac
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
 import { MovedToActiveEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import { MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Yanmegaex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex];
@@ -103,6 +103,9 @@ export class Yanmegaex extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
+      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       const player = effect.player;
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
