@@ -1159,6 +1159,67 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(threeFuture.state.players.B.active!.damage).toBe(210);
   });
 
+  it('the owed "Then, shuffle your deck" survives an empty deck [TA-250 / B.33]', () => {
+    // B.33: the shuffle's grammatical OBJECT decides, not the word "Then". #1979 (Sinistcha ex
+    // Re-Brew) also says "Then," and is still suppressed — because its object is "THOSE Energy
+    // cards", which ceases to exist when no counters are placed. "shuffle YOUR DECK" names an object
+    // that survives whatever the search did, so #361 ("you can use the attack, but you cannot search
+    // your deck") leaves the shuffle standing.
+    //
+    // A census of all 104 in-pool printings whose attack text names a shuffle, driven to quiescence
+    // on both engines at deck=0, split exactly on that line with no card crossing it in either
+    // direction: 30 twinleaf omissions here, and 3 spurious emissions in the mirror (TA-251 below).
+    const owed: Array<[string, string, string]> = [
+      ['asc-085', 'Ascension', 'sve-005'],           // Misdreavus     — the generator early-return
+      ['blk-068', 'Gather Strength', 'sve-001'],     // Axew           — via the shared prefab
+      ['dri-127', 'Deceit', 'sve-007'],              // TR's Murkrow   — in reduceEffect
+      ['scr-103', 'Knickknack Carrying', 'sve-008'], // Meltan         — the if/else shape
+      ['pfl-027', 'Call for Support', 'sve-001'],    // Piplup         — via the shared prefab
+    ];
+    for (const [printing, name, energy] of owed) {
+      const r = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], en(energy, 3, 'a')), deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', name)],
+      );
+      expect(`${printing}:${r.status === 'invalidAction'}`).toBe(`${printing}:false`);
+      expect(`${printing}:${r.events.some(e => /shuffle/i.test(e.kind))}`).toBe(`${printing}:true`);
+    }
+  });
+
+  it('a DEPENDENT-object shuffle is suppressed when its object is empty [TA-251 / B.33]', () => {
+    // The mirror of TA-250, and the cell that stops a fix keyed on "empty deck" instead of on the
+    // object. Larimar Rain reads "Look at the top 20 cards of your deck ... Shuffle THE OTHER CARDS
+    // back into your deck" — an empty deck means the look returned none, so there are no "other
+    // cards" and nothing to shuffle (#1979's suppressed consequent).
+    //
+    // The two cards below it are the in-engine controls: they print the IDENTICAL construction and
+    // already emitted nothing, which is what convicted Lapras ex without appealing to rotomancer at
+    // all (CF-19: an inconsistently applied convention is a defect whichever form is right).
+    // TYPED costs: attaching 4 of one basic energy pays a [C] cost but NOT [W][P][M], and the first
+    // draft of this guard did exactly that — both mixed-cost cards came back `invalidAction`, which
+    // reads as "the attack was refused" and has nothing to say about shuffling.
+    const dependent: Array<[string, string, CardRef[]]> = [
+      // Lapras ex, [W][P][M] — the card that was emitting a spurious shuffle
+      ['scr-032', 'Larimar Rain', [...en('sve-003', 1, 'aw'), ...en('sve-005', 1, 'ap'), ...en('sve-008', 1, 'am')]],
+      // Reuniclus, [C] — control, already correct before the fix
+      ['tef-072', 'Summoning Gate', en('sve-005', 2, 'a')],
+      // Tatsugiri ex, [R][W][D] — control, already correct before the fix
+      ['ssp-142', 'Cinnabar Lure', [...en('sve-002', 1, 'ar'), ...en('sve-003', 1, 'aw'), ...en('sve-007', 1, 'ad')]],
+    ];
+    for (const [printing, name, energy] of dependent) {
+      const r = step(
+        boardKeepingEmptyDeck(
+          player({ active: inPlay('A-act', [printing], energy), deck: [] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', name)],
+      );
+      expect(`${printing}:${r.status === 'invalidAction'}`).toBe(`${printing}:false`);
+      expect(`${printing}:${r.events.some(e => /shuffle/i.test(e.kind))}`).toBe(`${printing}:false`);
+    }
+  });
+
   it('an empty deck WHIFFS a searching attack instead of refusing it [TA-249 / SD-20]', () => {
     // Compendium #361, by name, on the very attack three of these cards print: "Can I use Eevee's
     // 'Call for Family' to search through my deck if I already have four Eevee in play or in the

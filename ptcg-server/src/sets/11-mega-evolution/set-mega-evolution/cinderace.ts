@@ -50,8 +50,16 @@ export class Cinderace extends PokemonCard {
       // find) or NO Benched Pokémon (no legal destination, compendium #1108) there is no search — and
       // therefore no shuffle. Deal the 50 and stop; do NOT block the attack (was: throw
       // CANNOT_USE_ATTACK before the damage even landed).
+      // TA-250 / B.33: the two antecedents above are NOT the same question and were conflated into
+      // one guard. An empty BENCH is RE-38/RE-32's case — no legal destination, so the search never
+      // happens and neither does its shuffle; that stays. An empty DECK is not: *"Then, shuffle your
+      // deck"* names an object that still exists, so the shuffle is owed (and this very method
+      // already shuffles on the cancelled-transfer path, three lines below).
       const hasBench = player.bench.some(b => b.cards.length > 0);
-      if (player.deck.cards.length === 0 || !hasBench) {
+      if (player.deck.cards.length === 0) {
+        return SHUFFLE_DECK(store, state, player);
+      }
+      if (!hasBench) {
         return state;
       }
 

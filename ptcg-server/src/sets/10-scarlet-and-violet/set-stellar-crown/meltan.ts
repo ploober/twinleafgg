@@ -37,8 +37,10 @@ export class Meltan extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // TA-250 / B.33: whiff the search, still owe *"Then, shuffle your deck."* The cancelled-pick
+      // branch below already shuffles, so returning here made the same outcome depend on the route.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       } else {
 
         return store.prompt(state, new ChooseCardsPrompt(

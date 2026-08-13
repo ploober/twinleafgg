@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { GameMessage } from '../../../game/game-message';
 import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 function* useEvolutionPowder(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
@@ -14,8 +14,10 @@ function* useEvolutionPowder(next: Function, store: StoreLike, state: State,
 
   // TA-97: Evo-Powder is legal to use whenever its cost is met — with an empty deck there is nothing
   // to search, so it simply does nothing. Do NOT block the attack (was: throw CANNOT_PLAY_THIS_CARD).
+  // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+  // separate printed instruction whose object survives — so the shuffle is still owed.
   if (player.deck.cards.length === 0) {
-    return state;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // Look through all known cards to find out if Pokemon can evolve

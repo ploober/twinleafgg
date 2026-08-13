@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag, SuperType, TrainerType } from '../../../game/
 import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, ShowCardsPrompt, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK, WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsMurkrow extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -39,8 +39,10 @@ export class TeamRocketsMurkrow extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+      // separate printed instruction whose object survives — so the shuffle is still owed.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       const blocked: number[] = [];

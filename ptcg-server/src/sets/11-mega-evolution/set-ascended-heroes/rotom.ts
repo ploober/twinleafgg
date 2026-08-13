@@ -4,14 +4,16 @@ import { StoreLike, State, GameMessage, Card, ChooseCardsPrompt, ShuffleDeckProm
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 function* useRotocall(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+  // separate printed instruction whose object survives — so the shuffle is still owed.
   if (player.deck.cards.length === 0) {
-    return state;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // Find available bench slots

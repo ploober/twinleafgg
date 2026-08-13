@@ -6,15 +6,17 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { GameMessage } from '../../../game/game-message';
 import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 function* useCellularAwakening(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
   // TA-131: an empty deck makes the search a no-op, not an illegal attack (rulebook p.20, TA-19 family).
+  // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+  // separate printed instruction whose object survives — so the shuffle is still owed.
   if (player.deck.cards.length === 0) {
-    return state;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // Look through all known cards to find out if Pokemon can evolve

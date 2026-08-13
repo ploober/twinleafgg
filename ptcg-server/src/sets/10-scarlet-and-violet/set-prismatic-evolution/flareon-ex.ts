@@ -7,15 +7,17 @@ import { PlayerType } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 function* useBurningCharge(next: Function, store: StoreLike, state: State,
   effect: AttackEffect | AfterAttackEffect): IterableIterator<State> {
 
   const player = effect.player;
 
+  // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+  // separate printed instruction whose object survives — so the shuffle is still owed.
   if (player.deck.cards.length === 0) {
-    return state;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   // TA-123: "attach them to 1 of your Pokémon" includes the ACTIVE, so the rider must run even with

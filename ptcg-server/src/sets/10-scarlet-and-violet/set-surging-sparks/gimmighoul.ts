@@ -4,7 +4,7 @@ import { Card, ChooseCardsPrompt, ShuffleDeckPrompt } from '../../../game';
 import { StoreLike, State, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
 
 export class Gimmighoul extends PokemonCard {
 
@@ -54,8 +54,10 @@ export class Gimmighoul extends PokemonCard {
       const player = effect.player;
       const opponent = effect.opponent;
 
+      // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+      // separate printed instruction whose object survives — so the shuffle is still owed.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       let cards: Card[] = [];

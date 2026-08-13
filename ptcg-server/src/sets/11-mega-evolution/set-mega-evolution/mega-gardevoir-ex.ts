@@ -42,12 +42,15 @@ export class MegaGardevoirex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // The empty-BENCH guard stays (RE-38/RE-32: no legal destination, no search, no shuffle).
       const hasBenched = player.bench.some(b => b.cards.length > 0);
       if (!hasBenched) {
         return state;
       }
+      // TA-250 / B.33: an empty DECK is the other question — the shuffle's object survives, so it is
+      // owed. The transfers callback below already shuffles when nothing is transferred.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(

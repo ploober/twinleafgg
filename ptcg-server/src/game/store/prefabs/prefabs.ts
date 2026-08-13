@@ -2058,7 +2058,18 @@ export function SEARCH_DECK_FOR_CARDS_TO_HAND(
   options: Partial<ChooseCardsOptions> = {},
   sourceEffect?: any,
 ) {
-  if (player.deck.cards.length === 0) return;
+  // TA-250 / B.33: an empty deck whiffs the SEARCH but does not cancel the SHUFFLE. The decisive
+  // argument is not rotomancer's disagreement, it is this function's own success path: the callback
+  // below calls SHUFFLE_DECK unconditionally, so a search of a STOCKED deck that finds nothing
+  // already shuffles. Returning here made "found nothing" and "could not look" — the same outcome
+  // reached two ways — behave differently.
+  // Safe at the prefab and not per call site, unlike SD-20's BLOCK_IF_DECK_EMPTY: every one of the
+  // 87 resolvable callers prints a shuffle clause ("Then, shuffle your deck"), 0 exceptions. The
+  // remaining 7 call sites are all out-of-pool and were not individually verified.
+  if (player.deck.cards.length === 0) {
+    SHUFFLE_DECK(store, state, player);
+    return;
+  }
   const opponent = StateUtils.getOpponent(state, player);
 
   store.prompt(

@@ -77,6 +77,18 @@ export class Laprasex extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
+
+      // TA-251 / B.33: on an EMPTY deck this attack owes nothing. Its shuffle's printed object is
+      // *"the other cards"* — the ones looked at and not attached — and a look that returned none
+      // leaves no such cards, so the shuffle is suppressed (#1979: a prevented antecedent suppresses
+      // the consequent). This is the OPPOSITE of TA-250, where the object is *"your deck"* and
+      // survives. Twinleaf's own `tef-072`/`tef-171` Summoning Gate and `ssp-142` Cinnabar Lure print
+      // the identical construction and already emit nothing; this card was the odd one out.
+      // Without the guard the empty look also opened a degenerate ShowCardsPrompt over zero cards.
+      if (player.deck.cards.length === 0) {
+        return state;
+      }
+
       const temp = new CardList();
       player.deck.moveTo(temp, 20); // look at the top 20 (or fewer)
 

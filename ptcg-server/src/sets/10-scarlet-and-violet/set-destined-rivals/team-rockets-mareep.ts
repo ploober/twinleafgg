@@ -37,8 +37,10 @@ export class TeamRocketsMareep extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+      // separate printed instruction whose object survives — so the shuffle is still owed.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       let cards: Card[] = [];
