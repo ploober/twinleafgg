@@ -19,7 +19,7 @@ export class Ninjask extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'U-Turn',
+    name: 'U-turn',
     cost: [G, C],
     damage: 90,
     text: 'Switch this Pokémon with 1 of your Benched Pokémon.'

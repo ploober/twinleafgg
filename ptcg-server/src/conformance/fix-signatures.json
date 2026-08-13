@@ -487,7 +487,8 @@
     {
       "file": "set-journey-together/shelmet.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "name: 'Shell Smack',"
       ]
     },
     {
@@ -4242,7 +4243,8 @@
     {
       "file": "set-mega-evolution/clawitizer.ts",
       "signatures": [
-        "public name: string = 'Clawitzer';"
+        "public name: string = 'Clawitzer';",
+        "name: 'Fall Back to Reload',"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -5492,6 +5494,31 @@
       "file": "set-temporal-forces/gengar-ex.ts",
       "signatures": [
         "const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/togepi.ts",
+      "signatures": [
+        "name: 'Pound',"
+      ]
+    },
+    {
+      "file": "set-journey-together/piloswine.ts",
+      "signatures": [
+        "name: 'Impaling Tusk',"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/ninjask.ts",
+      "signatures": [
+        "name: 'U-turn',"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/celebration-fanfare.ts",
+      "signatures": [
+        "public set = 'MEP';",
+        "public name = 'Celebratory Fanfare';"
       ]
     }
   ]

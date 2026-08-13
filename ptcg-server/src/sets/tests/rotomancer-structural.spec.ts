@@ -30,8 +30,9 @@ const KNOWN: Record<string, string> = {
   // me1→MEG / me2pt5→ASC are Japan-only Mega-era sets whose English attack names aren't yet canonical;
   // these are translation/cosmetic differences (Twinleaf localisation vs IR/pokemontcg.io). Adjudication
   // deferred (cf. me3-46 Hawlucha). Surfaced when the loader fix made MEG/ASC loadable.
-  'me1-137 U-turn': 'Ninjask MEG: Twinleaf "U-Turn" vs IR "U-turn" — casing. Deferred.',
-  'me1-17 U-turn': 'Ninjask MEG (alt print): Twinleaf "U-Turn" vs IR "U-turn" — casing. Deferred.',
+  // 'me1-137/me1-17 U-turn' retired 2026-08-12: fixed at source (TA-255 — canonical + rotomancer
+  // both say "U-turn"; the casing was ours alone and made the fuzzer's recorded declareAttack
+  // unlowerable to rotomancer, which refused it as invalidAction).
   'me1-156 Volcanic Meteor': 'Mega Camerupt ex MEG: Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
   'me1-22 Volcanic Meteor': 'Mega Camerupt ex MEG (alt print): Twinleaf "Volcano Meteor" vs IR "Volcanic Meteor". Translation. Deferred.',
   // 'me1-28 Turbo Flare' retired 2026-07-02: fixed at source (card-data/final corroborates "Turbo

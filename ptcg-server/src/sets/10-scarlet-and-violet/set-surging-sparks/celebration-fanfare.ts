@@ -8,11 +8,15 @@ import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-e
 
 export class CelebrationFanfare extends TrainerCard {
   public trainerType = TrainerType.STADIUM;
-  public set = 'SVP';
+  // TA-256: this card is canonically mep-028 "Celebratory Fanfare" (Mega Evolution Promos), not
+  // svp-174 — that printing id belongs to Eevee ex, which rotomancer implements. The mislabel put a
+  // Stadium and a Pokemon behind the same id, so every svp-174 differential cell was vacuous by
+  // construction. fullName is the immutable identity key and stays as-is; set/number/name are data.
+  public set = 'MEP';
   public regulationMark = 'H';
   public cardImage: string = 'assets/cardback.png';
-  public setNumber: string = '174';
-  public name = 'Celebration Fanfare';
+  public setNumber: string = '28';
+  public name = 'Celebratory Fanfare';
   public fullName = 'Celebration Fanfare SVP';
   public text = 'Once during each player\'s turn, that player may heal 10 damage from each of their Pokémon. If they do, that player\'s turn ends.';
 

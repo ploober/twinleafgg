@@ -12,7 +12,7 @@ export class Shelmet extends PokemonCard {
   public retreat = [C, C, C];
 
   public attacks = [{
-    name: 'Shell Hit',
+    name: 'Shell Smack',
     cost: [G, C],
     damage: 20,
     text: 'Flip a coin. If heads, during your opponent\'s next turn, prevent all damage done to this Pokémon by attacks.'

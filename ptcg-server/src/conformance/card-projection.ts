@@ -112,7 +112,12 @@ function projectAttacks(attacks: Attack[] | undefined): NeutralAttack[] | undefi
 
 function projectAbilities(powers: Power[] | undefined): NeutralAbility[] | undefined {
   if (!powers || powers.length === 0) { return undefined; }
-  const out = powers.filter(p => p.name).map(p => {
+  // TA-257: a fossil's play-as-a-Pokemon/discard-from-play rule is modeled as an `isFossil` power
+  // so the engine can offer the discard action, but on the CARD it is rule-box text, not an
+  // Ability — the canonical golden data and rotomancer both list only the real Ability. Emitting
+  // it here made all 4 in-pool Antique Fossils deviate from the oracle by a phantom ability named
+  // after the card itself.
+  const out = powers.filter(p => p.name && !p.isFossil).map(p => {
     const a: NeutralAbility = { name: p.name };
     const t = norm(p.text);
     if (t !== undefined) { a.text = t; }

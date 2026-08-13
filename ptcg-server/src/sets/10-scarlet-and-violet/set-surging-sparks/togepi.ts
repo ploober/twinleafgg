@@ -10,7 +10,7 @@ export class Togepi extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Flutter',
+    name: 'Pound',
     cost: [C, C],
     damage: 30,
     text: ''

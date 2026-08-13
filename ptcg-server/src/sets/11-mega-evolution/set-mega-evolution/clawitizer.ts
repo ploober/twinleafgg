@@ -12,7 +12,7 @@ export class Clawitizer extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Reverse and Reload',
+    name: 'Fall Back to Reload',
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, when this Pokémon moves from the Active Spot to the Bench, you may use this Ability. Attach up to 2 Basic [W] Energy cards from your hand to this Pokémon.'
   }];
