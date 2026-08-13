@@ -10,7 +10,10 @@ export class DrumsOfAwakening extends TrainerCard {
 
   public trainerType: TrainerType = TrainerType.ITEM;
 
-  public tags = [CardTag.ACE_SPEC];
+  // TA-260: canonical prints BOTH rule-box tags — `['Ancient', 'ACE SPEC']`. The Ancient half was
+  // missing, so this card is invisible to Ancient-counting readers (e.g. Roaring Moon's
+  // discard-pile count). Rotomancer agrees with canonical.
+  public tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];
 
   public regulationMark = 'H';
 

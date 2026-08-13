@@ -1,9 +1,13 @@
-import { CardType, PokemonCard, Stage, State, StateUtils, StoreLike } from '../../../game';
+import { CardTag, CardType, PokemonCard, Stage, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class IronBoulder extends PokemonCard {
+  // TA-260: the printed rule-box tag. 33 in-pool cards read CardTag.FUTURE (Miraidon's "attach to
+  // your Future Pokemon", Iron Moth, Iron Crown, ...); without it this card is invisible to all of
+  // them. Canonical golden data carries `tags: ['Future']` and rotomancer agrees.
+  public tags = [CardTag.FUTURE];
   public stage: Stage = Stage.BASIC;
   public cardType: CardType = P;
   public hp: number = 140;

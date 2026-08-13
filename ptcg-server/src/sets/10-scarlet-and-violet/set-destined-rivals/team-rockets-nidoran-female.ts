@@ -25,7 +25,12 @@ export class TeamRocketsNidoranFemale extends PokemonCard {
   public set: string = 'DRI';
   public setNumber: string = '114';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = "Team Rocket's Nidoran ♀";
+  // TA-261: canonical (and every printed card) writes the gender glyph with NO space before it —
+  // "Nidoran♀"/"Nidoran♂". The spaced form is a twinleaf-only orthography, and `evolvesFrom` is a
+  // STRING MATCH, so the name and the two evolvesFrom references must move together or Nidorina /
+  // Nidorino stop evolving. fullName (…"Nidoran F DRI"/"Nidoran M DRI") is the identity key and is
+  // deliberately untouched.
+  public name: string = "Team Rocket's Nidoran♀";
   public fullName: string = "Team Rocket's Nidoran F DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

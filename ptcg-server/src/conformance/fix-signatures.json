@@ -3462,7 +3462,8 @@
     {
       "file": "set-destined-rivals/team-rockets-nidoran-female.ts",
       "signatures": [
-        "name: 'Surprise Attack',"
+        "name: 'Surprise Attack',",
+        "public name: string = \"Team Rocket's Nidoran\u2640\";"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -3470,14 +3471,16 @@
       "file": "set-destined-rivals/team-rockets-nidorina.ts",
       "signatures": [
         "// \"Choose UP TO 2 of your [D] Pok\u00e9mon\" \u2014 zero is a legal count, so min is 0 (TA-136): the // player may decline (choosing none evolves nothing and, having searched nothing, does not shuffle). { min: 0, max: 2, allowCancel: false, blocked: blocked2 },",
-        "return SHUFFLE_DECK(store, state, player);"
+        "return SHUFFLE_DECK(store, state, player);",
+        "public evolvesFrom = \"Team Rocket's Nidoran\u2640\";"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
     {
       "file": "set-destined-rivals/team-rockets-nidorino.ts",
       "signatures": [
-        "name: 'Horn Rend',"
+        "name: 'Horn Rend',",
+        "public evolvesFrom = \"Team Rocket's Nidoran\u2642\";"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -5410,7 +5413,8 @@
     {
       "file": "set-destined-rivals/team-rockets-nidoran-male.ts",
       "signatures": [
-        "// TA-245: printed cost is [D][C], not [D][D]."
+        "// TA-245: printed cost is [D][C], not [D][D].",
+        "public name: string = \"Team Rocket's Nidoran\u2642\";"
       ]
     },
     {
@@ -5539,6 +5543,18 @@
       "file": "set-perfect-order/klefki.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/iron-boulder.ts",
+      "signatures": [
+        "public tags = [CardTag.FUTURE];"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/drums-of-awakening.ts",
+      "signatures": [
+        "public tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];"
       ]
     }
   ]

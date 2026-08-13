@@ -1359,6 +1359,52 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
   const koOf = (r: ReturnType<typeof step>, target: string): boolean =>
     r.events.some(e => e.kind === 'ko' && (e as { target?: string }).target === target);
 
+  it('Iron Boulder is a legal FUTURE attach target, and non-Future is not [TA-260 scr-071]', () => {
+    // The printed rule-box tag was missing, so 33 in-pool CardTag.FUTURE readers could not see this
+    // card. Driven through Miraidon tef-121 "Peak Acceleration" (*"attach them to your Future
+    // Pokemon"*), which enumerates its legal targets up front.
+    const futureTargets = (benchPrinting: string): string[] => {
+      const r = step(
+        board(
+          player({ active: inPlay('A-act', ['tef-121'], en('sve-004', 1, 'a')),
+                   bench: [inPlay('A-b1', [benchPrinting])],
+                   deck: [{ iid: 'A-d0', printing: 'sve-004' }, { iid: 'A-d1', printing: 'sve-004' }] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        [attack('A-act', 'Peak Acceleration')]);
+      // The DISTINCT targets: the prompt offers one action per (deck card × legal target), so the
+      // raw list repeats a target once per candidate Energy. The target SET is the question.
+      return [...new Set((r.pending?.legalActions ?? [])
+        .filter(a => a.type === 'attachEnergy')
+        .map(a => (a as { target: string }).target))].sort();
+    };
+    // SUBJECT: the fixed card must now be offered.
+    expect(`scr-071:${futureTargets('scr-071').join(',')}`).toBe('scr-071:A-act,A-b1');
+    // POSITIVE control — a card that was ALREADY tagged Future. Without it, a fix that offered every
+    // bench slot would pass the subject cell.
+    expect(`ssp-132:${futureTargets('ssp-132').join(',')}`).toBe('ssp-132:A-act,A-b1');
+    // NEGATIVE control — a non-Future Pokemon must still be excluded.
+    expect(`asc-004:${futureTargets('asc-004').join(',')}`).toBe('asc-004:A-act');
+  });
+
+  it('the Nidoran gender glyph is unspaced, and evolution still resolves [TA-261 dri-114/117]', () => {
+    // `evolvesFrom` is a STRING MATCH against `name`, so the printed-orthography fix had to move all
+    // four files together. This asserts the pair: the corrected names AND that evolution still works
+    // — a rename that fixed the name and broke evolution would pass a name-only assertion.
+    const evolves = (basic: string, stage1: string): boolean => {
+      const r = step(
+        board(
+          player({ active: inPlay('A-act', [basic]), hand: [{ iid: 'A-h0', printing: stage1 }] }),
+          player({ active: inPlay('B-act', ['meg-181']) })),
+        []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'evolve' && a.card === 'A-h0');
+    };
+    expect(`female:${evolves('dri-114', 'dri-115')}`).toBe('female:true');
+    expect(`male:${evolves('dri-117', 'dri-118')}`).toBe('male:true');
+    // NEGATIVE control: the female line must not evolve off the MALE basic (a match-anything
+    // evolvesFrom would pass both cells above).
+    expect(`mismatch:${evolves('dri-117', 'dri-115')}`).toBe('mismatch:false');
+  });
+
   it('a bench Pokemon KO\'d by placed counters gets its `damaged` in a multi-KO batch [TA-252 twm-130]', () => {
     // Phantom Dive: 200 to the Active (exactly lethal on a pre-damaged Mega Latias ex) + 6 counters
     // to the lone benched Bellsprout (60 HP → also KO'd). The KO batch holds only the placement log
