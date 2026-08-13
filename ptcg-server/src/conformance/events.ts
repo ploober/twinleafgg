@@ -81,7 +81,7 @@ export interface TurnCarry {
 }
 
 export function deriveEvents(before: NeutralState, after: NeutralState, logs: StateLog[],
-  carry?: TurnCarry): NeutralEvent[] {
+  carry?: TurnCarry, displayNames?: Map<string, string>): NeutralEvent[] {
   const informational = mapDelta(logs);
   const significant: NeutralEvent[] = [];
 
@@ -195,7 +195,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
           && (afterDmg.get(afterActive.stack[0].iid) ?? 0) > (beforeDmg.get(afterActive.stack[0].iid) ?? Infinity);
         const ticks = wasOwnersActive && !ticksConsumedBySurvivor
           ? (ticksByPlayer.get(hit.player) ?? []) : [];
-        return { ...hit, wasOwnersActive, ticks };
+        return { iid, ...hit, wasOwnersActive, ticks };
       });
       const tickSum = koHits.reduce((s, k) => s + k.ticks.reduce((a, b) => a + b, 0), 0);
       if (tickSum > 0 && tickSum <= pool) {
@@ -203,6 +203,35 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
           for (const t of k.ticks) {
             significant.push({ kind: 'damaged', player: k.player, target: k.printing, hp: t });
             pool -= t;
+          }
+        }
+      }
+      // TA-252: placed damage COUNTERS attributed to the KO'd they landed on, BY LOG TARGET NAME.
+      // The defender remainder below needs a deals-log to name a dealer — but a Pokemon KO'd by
+      // counters alone can die in a batch with NO deals-log at all (Phantom Dive: the defender's
+      // lethal 200 was already emitted as a survivor event in the PRIOR batch; the KO batch holds
+      // only the placement log and two KO logs, so `dealer` is undefined, the multi-KO fallback
+      // yields nothing, and the 60 evaporated — a `ko` with no `damaged` at all). Names are unsafe
+      // for KO COUNTING (ambiguous across identical printings) but safe here: a placement is
+      // consumed only when its target name matches exactly ONE KO'd hit and NO survivor whose
+      // damage rose this batch (a survivor's placement is already in the state diff and netted out
+      // of the pool). Anything ambiguous falls through to the old behavior.
+      if (pool > 0 && displayNames !== undefined) {
+        for (const log of logs) {
+          if (log.message !== GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS) { continue; }
+          const targetName = log.params?.['target'];
+          const amount = logNum(log, 'damage');
+          if (typeof targetName !== 'string' || amount <= 0 || amount > pool) { continue; }
+          const survivorShares = [...beforeDmg.keys()].some(iid => {
+            const afterVal = afterDmg.get(iid);
+            return afterVal !== undefined && afterVal > (beforeDmg.get(iid) ?? 0)
+              && displayNames.get(iid) === targetName;
+          });
+          if (survivorShares) { continue; }
+          const matches = koHits.filter(k => displayNames.get(k.iid) === targetName);
+          if (matches.length === 1) {
+            significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].printing, hp: amount });
+            pool -= amount;
           }
         }
       }

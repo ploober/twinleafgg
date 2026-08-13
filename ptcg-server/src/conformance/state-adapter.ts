@@ -496,6 +496,30 @@ function projectPlayerLastAttack(state: State): PlayerLastAttacks | undefined {
   return (out.A || out.B) ? out : undefined;
 }
 
+/**
+ * basic iid → the slot's DISPLAY name (stack top), for attributing log targets (TA-252). Twinleaf's
+ * damage logs name their target by the top card's display name — ambiguous across identical
+ * printings, which is why KO COUNTING never matches on names (see events.ts). Attribution is the
+ * one place a name is safe: the consumer requires an exactly-one match among the KO'd and skips
+ * otherwise, so an ambiguous name degrades to the old behavior instead of guessing.
+ */
+export function basicIidDisplayNames(state: State, ctx: IidContext): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const player of state.players) {
+    for (const slot of [player.active, ...player.bench]) {
+      const pokemons = slot.getPokemons();
+      const top = slot.getPokemonCard();
+      if (pokemons.length > 0 && top !== undefined) {
+        const iid = ctx.cardToIid.get(pokemons[0]);
+        if (iid !== undefined) {
+          out.set(iid, top.name);
+        }
+      }
+    }
+  }
+  return out;
+}
+
 export function projectState(state: State, ctx: IidContext): NeutralState {
   const lastAttack = projectPlayerLastAttack(state); // CF-15
   return {

@@ -11,7 +11,7 @@ import {
   UseAbilityAction as UseAbilityGameAction, UseStadiumAction as UseStadiumGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { ImportedGame, importState, projectState, actorIndex } from './state-adapter';
+import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames } from './state-adapter';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
 import { classify, decomposerFor, realPicks, WirePick } from './decomposers';
@@ -444,6 +444,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeState = projectState(game.state, game.ctx);
+    // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
+    const beforeNames = basicIidDisplayNames(game.state, game.ctx);
     let starved: FlipStarvation | undefined;
     try {
       fire();
@@ -459,7 +461,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       starved = err;
     }
     const afterState = projectState(game.state, game.ctx);
-    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry));
+    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames));
     if (starved !== undefined) { throw starved; }
   };
 

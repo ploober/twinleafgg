@@ -1,7 +1,7 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, PowerType, AttachEnergyPrompt } from '../../../game';
-import { Effect } from '../../../game/store/effects/game-effects';
+import { Effect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -81,7 +81,13 @@ export class Gengarex extends PokemonCard {
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
-      effect.target.damage += 20;
+      // TA-254 / SD-13 (same fix as TA-253): route through PlaceDamageCountersEffect, not a raw
+      // `.damage +=`. The raw write bypasses prevention effects AND leaves no placement log, so the
+      // LETHAL tick produced a `ko` whose `damaged` the projection could not reconstruct (TA-132 —
+      // twinleaf emitted 2 damaged events to rotomancer's 3, dropping exactly the one that KO'd).
+      // The counters are placed by Gengar's OWNER (`opponent` of the attaching player).
+      const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);
+      state = store.reduceEffect(state, placeCounters);
     }
     return state;
   }

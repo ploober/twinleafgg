@@ -1345,4 +1345,63 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(step(oneCard, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-h0' }])
       .status).not.toBe('invalidAction');
   });
+
+  // ── TA-252/253/254 — every `ko` must carry its `damaged` cause ─────────────────────────────────
+  // Three members of one family (the TA-132 shape): damage that KO's a Pokemon left no `damaged`
+  // event, because the wire projection derives `damaged` by state-diffing and a KO'd Pokemon has no
+  // after-state to diff. The reconstruction needs the engine's placement LOGS — so a card that
+  // writes `.damage +=` raw (SD-13) starves it, and a multi-KO batch with no deals-log had no
+  // attribution rule at all.
+
+  const damagedTotal = (r: ReturnType<typeof step>, target: string): number =>
+    r.events.filter(e => e.kind === 'damaged' && (e as { target?: string }).target === target)
+      .reduce((s, e) => s + ((e as { hp?: number }).hp ?? 0), 0);
+  const koOf = (r: ReturnType<typeof step>, target: string): boolean =>
+    r.events.some(e => e.kind === 'ko' && (e as { target?: string }).target === target);
+
+  it('a bench Pokemon KO\'d by placed counters gets its `damaged` in a multi-KO batch [TA-252 twm-130]', () => {
+    // Phantom Dive: 200 to the Active (exactly lethal on a pre-damaged Mega Latias ex) + 6 counters
+    // to the lone benched Bellsprout (60 HP → also KO'd). The KO batch holds only the placement log
+    // — no deals-log, so no "dealer" — and with TWO KO'd the old fallback attributed nothing: the
+    // 60 evaporated and asc-004 got a `ko` with no `damaged` at all. Now the placement log is
+    // attributed by target name (exactly-one match among the KO'd).
+    const r = step(
+      board(player({ active: inPlay('A-act', ['twm-130'], [...en(FIRE, 1, 'af'), ...en(PSY, 1, 'ap')]) }),
+            player({ active: inPlay('B-act', ['meg-181'], [], 140), bench: [inPlay('B-b1', ['asc-004'])] })),
+      [attack('A-act', 'Phantom Dive')],
+    );
+    expect(damagedTotal(r, 'asc-004')).toBe(60);   // the fixed half: the counters reach the wire
+    expect(koOf(r, 'asc-004')).toBe(true);
+    expect(damagedTotal(r, 'meg-181')).toBe(200);  // control: the survivor-diff half still works
+    expect(koOf(r, 'meg-181')).toBe(true);
+  });
+
+  it('Sand Stream\'s lethal Checkup tick emits `damaged` before the `ko` [TA-253 dri-096]', () => {
+    // "During Pokemon Checkup ... put 2 damage counters on each of your opponent's Basic Pokemon."
+    // The raw `cardList.damage += 20` left no placement log, so the tick that KO'd a benched Basic
+    // was invisible — the survivor's tick appeared (state diff) while the lethal one vanished.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['dri-096']) }),
+            player({ active: inPlay('B-act', ['meg-181']), bench: [inPlay('B-b1', ['asc-004'], [], 40)] })),
+      [{ actor: 'A' as const, type: 'endTurn' as const }],
+    );
+    expect(damagedTotal(r, 'asc-004')).toBe(20);   // the fixed half: the lethal tick is visible
+    expect(koOf(r, 'asc-004')).toBe(true);
+    expect(damagedTotal(r, 'meg-181')).toBe(20);   // control: the surviving Basic's tick, as before
+    expect(koOf(r, 'meg-181')).toBe(false);
+  });
+
+  it('Gnawing Curse\'s lethal tick emits `damaged` before the `ko` [TA-254 tef-104 / TA-132]', () => {
+    // The TA-132 register row verbatim: ability-placed counters on an energy attach, where twinleaf
+    // emitted the first ticks (survivor diffs) and dropped exactly the lethal one. Same raw
+    // `.damage +=` root as TA-253.
+    const gengarBoard: NeutralState = {
+      ...board(player({ active: inPlay('A-act', ['tef-104']) }),
+               player({ active: inPlay('B-act', ['asc-004'], [], 40), hand: [{ iid: 'B-h0', printing: WATER }] })),
+      activePlayer: 'B',
+    };
+    const r = step(gengarBoard, [{ actor: 'B' as const, type: 'attachEnergy' as const, card: 'B-h0', target: 'B-act' }]);
+    expect(damagedTotal(r, 'asc-004')).toBe(20);
+    expect(koOf(r, 'asc-004')).toBe(true);
+  });
 });

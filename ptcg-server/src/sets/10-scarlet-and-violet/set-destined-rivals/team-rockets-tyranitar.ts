@@ -4,6 +4,7 @@ import { StoreLike, State, ChooseCardsPrompt, GameMessage, Card, PowerType, Stat
 import { Effect } from '../../../game/store/effects/effect';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { BetweenTurnsEffect } from '../../../game/store/effects/game-phase-effects';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 
 export class TeamRocketsTyranitar extends PokemonCard {
@@ -48,7 +49,12 @@ export class TeamRocketsTyranitar extends PokemonCard {
 
       opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         if (card.stage === Stage.BASIC) {
-          cardList.damage += 20;
+          // TA-253 / SD-13: route through PlaceDamageCountersEffect, not a raw `.damage +=`.
+          // The raw write bypasses prevention effects AND leaves no placement log, so a Pokemon
+          // this ability KO's gets a `ko` the projection cannot pair with a `damaged` (the lethal
+          // tick is invisible to the KO reconstruction — the Demolition Tackle zone-axis rows).
+          const placeCounters = new PlaceDamageCountersEffect(player, cardList, 20, this);
+          state = store.reduceEffect(state, placeCounters);
         }
       });
 

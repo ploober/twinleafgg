@@ -3497,7 +3497,8 @@
     {
       "file": "set-destined-rivals/team-rockets-tyranitar.ts",
       "signatures": [
-        "name: 'Demolition Tackle',"
+        "name: 'Demolition Tackle',",
+        "const placeCounters = new PlaceDamageCountersEffect(player, cardList, 20, this);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -5485,6 +5486,12 @@
       "file": "set-mega-evolution/mega-gardevoir-ex.ts",
       "signatures": [
         "return SHUFFLE_DECK(store, state, player);"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/gengar-ex.ts",
+      "signatures": [
+        "const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);"
       ]
     }
   ]
