@@ -78,15 +78,39 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
     if (iid === undefined) { continue; }
 
     if (card.superType === SuperType.POKEMON && card instanceof PokemonCard) {
-      if (!playable.has(card.id)) { continue; }
       if (card.evolvesFrom === '' && card.stage === Stage.BASIC) {
+        if (!playable.has(card.id)) { continue; }
         if (hasBenchSpace) { out.push({ type: 'benchBasic', card: iid }); }
       } else {
-        // Evolution: one entry per in-play Pokemon it legally evolves (matching name, not played
-        // this turn — POKEMON_CANT_EVOLVE_THIS_TURN gates `pokemonPlayedTurn >= state.turn`).
+        // Evolutions are NOT gated on playableCardIds — the same call already made for trainers
+        // above, and for the same reason. `CAN_PLAY_POKEMON_CARD` (which fills playableCardIds)
+        // decides an evolution with a raw `pokemonPlayedTurn < state.turn` read, so it is false for
+        // exactly the printed first-turn-exception cards whose handler rewrites that field during
+        // dispatch. Gating on it hid wht-008 Shelmet's legal turn-1 evolution from the menu while
+        // playCardAction accepted it. The probe below IS the engine's real predicate, so it
+        // subsumes the conservative static one.
+        // Evolution: one entry per in-play Pokemon it legally evolves. The name match is the only
+        // check that can be made statically; both legality gates are settled by a dry run
+        // (TA-263).
+        //
+        // Why a probe and not a static test. The reducer's gates are
+        // `state.turn <= 2 && !player.canEvolve` (CANNOT_EVOLVE_ON_YOUR_FIRST_TURN) and
+        // `pokemonPlayedTurn >= state.turn` (POKEMON_CANT_EVOLVE_THIS_TURN) — but BOTH operands are
+        // rewritten mid-dispatch by the printed first-turn-exception cards (Shelmet wht-008,
+        // Clamperl, Metapod). Those cards react to the PlayPokemonEffect itself, setting
+        // `canEvolve = true` and back-dating `pokemonPlayedTurn`, and the gates are evaluated only
+        // AFTER that propagation. So at menu time both fields still read "banned" and no static
+        // check can be right: reading them withholds a legal evolution, ignoring them offers an
+        // illegal one. The menu was doing the latter (over-offering on a first turn), and the
+        // obvious fix would have silently converted it into the former.
+        //
+        // Note the ban is the ACTING PLAYER's first turn — global turn 1 going first, turn 2 going
+        // second. Keying it to turn 1 alone is rotomancer's RE-112 defect; the probe inherits the
+        // engine's own predicate and cannot drift from it.
         for (const s of own) {
           const top = s.list.getPokemonCard();
-          if (top && top.name === card.evolvesFrom && s.list.pokemonPlayedTurn < state.turn) {
+          if (!top || top.name !== card.evolvesFrom) { continue; }
+          if (evolveProbeAccepts(state, player, card, s)) {
             out.push({ type: 'evolve', card: iid, target: s.iid });
           }
         }
@@ -229,6 +253,34 @@ function attackProbeAccepts(state: State, player: Player, attackName: string): b
  * no effect", of any draw Trainer with no cards in deck (also #1124 Juniper/Sycamore, #1497 Roxie,
  * #973 Cynthia & Caitlin). Rotomancer withholds it. We offered it and then refused it.
  */
+/**
+ * Dry-run an evolution on a clone: does `card` legally evolve the Pokemon in `slot` right now?
+ * The Trainer/attack-probe idiom (TA-14/TA-248) applied to PlayPokemonEffect, because the
+ * first-turn and played-this-turn gates read operands that the evolved Pokemon's own handler
+ * rewrites during the same dispatch — see the call site. Throw-only: B.29 endorses "can the
+ * prescribed ACTION be carried out" and warns off state-diff inertness tests.
+ */
+function evolveProbeAccepts(state: State, player: Player, card: PokemonCard, slot: OwnSlot): boolean {
+  const handIndex = player.hand.cards.indexOf(card);
+  if (handIndex === -1) { return true; }
+  const playerIndex = state.players.indexOf(player);
+  const benchIndex = slot.benchIndex;
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[playerIndex];
+  const target = benchIndex === null
+    ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
+    : { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: benchIndex };
+  try {
+    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+}
+
 function trainerProbeAccepts(state: State, player: Player, card: TrainerCard): boolean {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
