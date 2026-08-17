@@ -538,8 +538,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           const deckLen = player ? player.deck.cards.length : 0;
           if (deckLen <= 1) {
             const perm = Array.from({ length: deckLen }, (_, i) => i);
-            dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
+            // Push BEFORE the dispatch: resolving this prompt can run the game on past the turn
+            // boundary, and dispatchAndCollect appends everything that derives from it. Pushing
+            // after would place `shuffled` behind the `draw` it causally precedes, which is a
+            // `shuffled ≺ draw` violation the engine never committed. See the sibling site below.
             events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
+            dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
             continue;
           }
         }
@@ -552,9 +556,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
               + `deck len=${player ? player.deck.cards.length : '?'}, playerId=${prompt.playerId}`);
           }
           cursor.i++;
-          dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
-          // No deck-shuffle GameLog exists; emit the significant `shuffled` for the deck's owner here.
+          // No deck-shuffle GameLog exists; emit the significant `shuffled` for the deck's owner
+          // here — BEFORE the dispatch. Resolving a shuffle that is the last checkup prompt lets
+          // the engine run straight on into the next turn, so dispatchAndCollect derives
+          // `turnEnded`/`turnStarted`/`draw` from that one dispatch. Pushing afterwards put
+          // `shuffled` last and reported `draw ≺ shuffled` for a deck the engine had in fact
+          // already shuffled — a false `order` divergence (ssp-162 Amulet of Hope). The shuffle
+          // causally precedes everything the dispatch triggers, so it belongs before it.
           events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
+          dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
           continue;
         }
         // CF-12 (strict): a further action that isn't THIS system pending's `flip`/`shuffle` is
