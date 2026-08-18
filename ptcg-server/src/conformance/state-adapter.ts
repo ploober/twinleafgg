@@ -244,6 +244,10 @@ class Importer {
     ps.deck.forEach(ref => player.deck.cards.push(this.materialize(ref)));
     ps.discard.forEach(ref => player.discard.cards.push(this.materialize(ref)));
     ps.lostZone.forEach(ref => player.lostzone.cards.push(this.materialize(ref)));
+    // CF-42: round-trip the staging zone. Optional on ingest — boards authored before 0.5.0, and
+    // every board a human writes, simply omit it. Without this, export->import would silently DROP a
+    // staged Trainer and break card conservation across the round trip.
+    (ps.resolving ?? []).forEach(ref => player.supporter.cards.push(this.materialize(ref)));
 
     player.prizes = ps.prizes.map(ref => {
       const list = new CardList();
@@ -459,14 +463,18 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number): PlayerSta
       .map(b => projectPip(ctx, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
     deck: player.deck.cards.map(c => cardRef(ctx, c)),
-    // A Trainer mid-resolution is staged in player.supporter (play-trainer-effect.ts) until its
-    // effect finishes; the API legitimately pauses there at an externalized flip/choose, and the
-    // DTO has no "resolving" zone — so surface the staged card in discard now. It stays observable
-    // (card conservation holds) and lands where it heads a moment later. player.supporter is empty
-    // at every quiescent non-resolution boundary, so ordinary states are unaffected.
-    discard: player.discard.cards.concat(player.supporter.cards).map(c => cardRef(ctx, c)),
+    discard: player.discard.cards.map(c => cardRef(ctx, c)),
     lostZone: player.lostzone.cards.map(c => cardRef(ctx, c)),
     prizes,
+    // CF-42 — a Trainer mid-resolution is staged in player.supporter (play-trainer-effect.ts) until
+    // its effect finishes, and the API legitimately pauses there at an externalized flip/choose.
+    //
+    // This USED to be folded into `discard` because the DTO had no zone for it. The fold kept card
+    // conservation, but the projection asserted something #919 forbids, and because the projection
+    // was the UNION of the two zones an engine that correctly DEFERS the discard and one that
+    // WRONGLY discards early produced a byte-identical state — the harness could not detect a #919
+    // violation in either engine, by construction. Schema 0.5.0 added the zone; this is it.
+    resolving: player.supporter.cards.map(c => cardRef(ctx, c)),
     flags: projectFlags(player, turn),
   };
 }

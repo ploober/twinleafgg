@@ -128,9 +128,26 @@ describe('Conformance M0 — import/project + attach energy', () => {
     const game = importState(initial);
     const projected = projectGame(game);
 
-    expect(projected).toEqual(initial);
+    // CF-42 — `resolving` is the ONE optional field that is deliberately NOT round-trip-symmetric,
+    // and the contrast with `prizesTaken` is the reason. CF-17 omits `prizesTaken: 0` on purpose so
+    // the projection round-trips a board that never carried it — correct there, because `0` and
+    // ABSENT mean the same thing. For `resolving` they do not: `[]` means "nothing is staged" and
+    // ABSENT means "this engine does not model the mid-resolution zone at all". The cross-engine
+    // compare is GATED on that distinction, so omitting `[]` would read as "not modelled" and switch
+    // the comparison off silently. The projection therefore ADDS a field a hand-authored board need
+    // not carry, and ingest tolerates its absence.
+    const withResolving = {
+      ...initial,
+      players: {
+        A: { ...initial.players.A, resolving: [] },
+        B: { ...initial.players.B, resolving: [] },
+      },
+    };
+    expect(projected).toEqual(withResolving);
 
-    // Idempotence: re-importing the projection and projecting again is stable.
+    // Idempotence: re-importing the projection and projecting again is stable. This is the property
+    // that actually matters — a projection fed back in must be a fixed point, even though the FIRST
+    // projection of a hand-authored board is not identity.
     const reprojected = projectGame(importState(projected));
     expect(reprojected).toEqual(projected);
   });

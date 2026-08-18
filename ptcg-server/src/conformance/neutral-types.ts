@@ -166,6 +166,22 @@ export interface PlayerState {
   lostZone: CardRef[];
   /** Remaining prizes; taken by position. */
   prizes: PrizeRef[];
+  /**
+   * CF-42 — Trainers that have been PLAYED and are still resolving: on the playing field, not yet in
+   * the discard. Compendium **#919** fixes the order as cost -> effect -> discard, so while a
+   * Trainer's own prompt is open the card is NOT in the discard pile and a card that reads its own
+   * discard mid-resolution must not see itself.
+   *
+   * Emitted as `[]` at every quiescent boundary rather than omitted. That is deliberate and the
+   * harness depends on it: the cross-engine compare is GATED on both engines projecting the field,
+   * so `[]` means "nothing staged" while ABSENT means "this engine does not model the distinction".
+   * Omitting it when empty would read as the latter and switch the compare off silently.
+   *
+   * OPTIONAL on the type (matching the OpenAPI required-list, which excludes it) so that boards
+   * authored before 0.5.0 — and every board a human writes — need not carry it. The PROJECTION
+   * always emits it; only INGEST tolerates its absence.
+   */
+  resolving?: CardRef[];
   flags: PlayerFlags;
 }
 

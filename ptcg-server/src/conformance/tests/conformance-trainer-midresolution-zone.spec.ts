@@ -26,19 +26,25 @@ import {
  * card-file headcount that originally motivated TA-188 ("265 of 395 files use the zone") had no
  * bearing on the observable at all.
  *
- * ## What the wire says (wrong, and blinding)
+ * ## What the wire USED to say (wrong, and blinding) — FIXED 2026-08-18
  *
- * The neutral DTO has no "resolving" zone, so `state-adapter.ts` surfaces the staged card inside
+ * The neutral DTO had no "resolving" zone, so `state-adapter.ts` surfaced the staged card inside
  * `discard`:  `discard: player.discard.cards.concat(player.supporter.cards)`.
- * Card conservation holds, but the projected state asserts something #919 forbids.
+ * Card conservation held, but the projected state asserted something #919 forbids.
  *
- * **The cost is a blind spot, not just a cosmetic lie.** Because the projection is the union of the
+ * **The cost was a blind spot, not just a cosmetic lie.** Because the projection was the union of the
  * two zones, an engine that CORRECTLY defers the discard and an engine that WRONGLY discards early
- * produce a byte-identical projection. The harness therefore cannot detect a #919 violation in
- * either engine, by construction. That is what these specs pin.
+ * produced a byte-identical projection. The harness could not detect a #919 violation in either
+ * engine, by construction.
+ *
+ * **Schema 0.5.0 added `PlayerState.resolving` (CF-42) and this adapter now projects it.** The cell
+ * at the bottom of this file is the one that matters: it used to assert that a correct engine and a
+ * violating engine are INDISTINGUISHABLE, and it now asserts that they DIVERGE. Same board, same
+ * mutation, opposite expectation — which is the only honest way to show a blind spot was closed
+ * rather than merely described.
  *
  * Filed as CF-42 (contract). See also TA-188, which was filed against twinleaf on the strength of
- * this projection and is WITHDRAWN — the engine was right and the harness was wrong.
+ * the old projection and is WITHDRAWN — the engine was right and the harness was wrong.
  */
 
 const BELLSPROUT = 'asc-004';
@@ -102,36 +108,67 @@ describe('Conformance — CF-42 Trainer mid-resolution has no wire zone', () => 
     expect(A.discard.cards.map(c => c.name)).toEqual([]);
   });
 
-  it('the PROJECTION folds it into discard — the documented workaround, pinned so it cannot drift silently', () => {
+  it('the PROJECTION now says it: staged in `resolving`, and NOT in the discard', () => {
     const game = playedMidPrompt();
-    const projected = projectState(game.state, game.ctx).players.A.discard.map(c => c.printing);
+    const A = projectState(game.state, game.ctx).players.A;
 
-    // If this ever stops being true, the DTO gained a real zone (or the fold was removed) and CF-42
-    // should be revisited — including the twinleaf/rotomancer wire agreement it currently manufactures.
-    expect(projected).toEqual([IRIS]);
+    expect(A.resolving?.map(c => c.printing)).toEqual([IRIS]);
+    // The half that was inexpressible before the field. `discard` no longer over-reports.
+    expect(A.discard.map(c => c.printing)).toEqual([]);
+  });
+
+  it('`resolving` is EMPTY, not absent, at a quiescent boundary', () => {
+    // Load-bearing, and not a style choice. The harness compare is GATED on both engines projecting
+    // the field: `[]` means "nothing staged", ABSENT means "does not model the distinction". An
+    // engine that omitted the field when empty would read as the latter and the cross-engine compare
+    // would switch itself off silently at exactly the boundaries where most states live.
+    const game = importState(board());
+    const A = projectState(game.state, game.ctx).players.A;
+    expect(A.resolving).toEqual([]);
+  });
+
+  it('the staged card ROUND-TRIPS: export -> import -> export preserves the zone', () => {
+    // Without ingest support the staged card would be silently DROPPED on re-import and card
+    // conservation would break across the round trip — the same class of bug as the fold, moved.
+    const game = playedMidPrompt();
+    const once = projectState(game.state, game.ctx);
+    const reimported = importState(once);
+    const twice = projectState(reimported.state, reimported.ctx);
+
+    expect(twice.players.A.resolving?.map(c => c.printing)).toEqual([IRIS]);
+    expect(twice.players.A.discard.map(c => c.printing)).toEqual([]);
   });
 
   it('card conservation holds across the fold: the card is observable in exactly one place', () => {
     const game = playedMidPrompt();
     const st = projectState(game.state, game.ctx);
     const A = st.players.A;
-    const zones = [A.hand, A.deck, A.discard, A.lostZone].map(z => z.map(c => c.printing));
+    const zones = [A.hand, A.deck, A.discard, A.lostZone, A.resolving ?? []].map(z => z.map(c => c.printing));
     const seen = zones.reduce((n, z) => n + z.filter(p => p === IRIS).length, 0);
 
     expect(seen).toBe(1);
   });
 
-  it('the fold makes a #919 violation undetectable: correct-defer and wrong-early-discard project identically', () => {
+  it('a #919 violation is now DETECTABLE: correct-defer and wrong-early-discard project differently', () => {
+    // ⚠️ THIS CELL IS THE INVERSE OF ITS FORMER SELF, deliberately. It used to end
+    // `expect(violating).toEqual(correct)` — the blind spot demonstrated rather than asserted. Same
+    // board, same mutation, opposite expectation. A blind spot is only shown to be CLOSED by taking
+    // the exact input that used to be invisible and watching it become visible.
     const game = playedMidPrompt();
     const A = game.state.players[0];
-    const correct = projectState(game.state, game.ctx).players.A.discard.map(c => c.printing);
+    const correct = projectState(game.state, game.ctx).players.A;
 
     // Simulate an engine that WRONGLY discards the Trainer before resolving it (the #919 violation),
     // by moving the staged card into the discard pile ourselves. In-memory only; nothing is edited.
     A.supporter.moveTo(A.discard);
-    const violating = projectState(game.state, game.ctx).players.A.discard.map(c => c.printing);
+    const violating = projectState(game.state, game.ctx).players.A;
 
-    // Byte-identical. This is the blind spot, demonstrated rather than asserted.
-    expect(violating).toEqual(correct);
+    expect(violating.discard.map(c => c.printing)).toEqual([IRIS]);
+    expect(violating.resolving ?? []).toEqual([]);
+    expect(correct.discard.map(c => c.printing)).toEqual([]);
+    expect(correct.resolving?.map(c => c.printing)).toEqual([IRIS]);
+
+    // The projections now differ, which is the whole point of the field.
+    expect(JSON.stringify(violating)).not.toEqual(JSON.stringify(correct));
   });
 });
