@@ -5556,6 +5556,12 @@
       "signatures": [
         "public tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];"
       ]
+    },
+    {
+      "file": "11-mega-evolution/set-mega-evolution-promos/slowpoke.ts",
+      "signatures": [
+        "public setNumber = '86';"
+      ]
     }
   ]
 }
