@@ -5562,6 +5562,20 @@
       "signatures": [
         "public setNumber = '86';"
       ]
+    },
+    {
+      "file": "set-pitch-black/vikavolt.ts",
+      "signatures": [
+        "(c) => c instanceof VoltaicLightningEnergy || c.name === 'Voltaic Lightning Energy',"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-pitch-black/voltaic-lightning-energy.ts",
+      "signatures": [
+        "public name = 'Voltaic Lightning Energy';"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     }
   ]
 }

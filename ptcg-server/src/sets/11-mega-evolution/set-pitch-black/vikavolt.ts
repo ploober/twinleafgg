@@ -68,7 +68,7 @@ export class Vikavolt extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const hasVoltaic = effect.player.active.cards.some(
-        (c) => c instanceof VoltaicLightningEnergy || c.name === 'Voltaic [L] Energy',
+        (c) => c instanceof VoltaicLightningEnergy || c.name === 'Voltaic Lightning Energy',
       );
       if (!hasVoltaic) {
         effect.damage = 0;
