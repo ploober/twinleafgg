@@ -12,6 +12,7 @@ import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action
 import { CardTarget, PlayerType, SlotType, PlayCardAction } from '../game/store/actions/play-card-action';
 import { deepClone } from '../utils/utils';
 import { ConformanceStoreHandler } from './conformance-store-handler';
+import { atOnceWireSpec } from './at-once';
 import {
   SuperType, TrainerType, Stage, SpecialCondition, BoardEffect, CardType
 } from '../game/store/card/card-types';
@@ -72,6 +73,8 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
   const playable = new Set(player.playableCardIds);
   const own = ownInPlay(player, ctx);
   const hasBenchSpace = player.bench.some(b => b.cards.length === 0);
+  /** CF-55: card NAMES that have already contributed their one at-once template to this menu. */
+  const atOnceEmitted = new Set<string>();
 
   for (const card of player.hand.cards) {
     const iid = ctx.cardToIid.get(card);
@@ -134,9 +137,46 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
             if (s.list.tools.length === 0) { out.push({ type: 'attachTool', card: iid, target: s.iid }); }
           }
           break;
-        case TrainerType.ITEM: out.push({ type: 'playItem', card: iid }); break;
-        case TrainerType.SUPPORTER: out.push({ type: 'playSupporter', card: iid }); break;
-        case TrainerType.STADIUM: out.push({ type: 'playStadium', card: iid }); break;
+        case TrainerType.ITEM:
+        case TrainerType.SUPPORTER:
+        case TrainerType.STADIUM: {
+          const playType: 'playItem' | 'playSupporter' | 'playStadium' =
+            card.trainerType === TrainerType.ITEM ? 'playItem'
+              : card.trainerType === TrainerType.SUPPORTER ? 'playSupporter' : 'playStadium';
+          // CF-55 — an at-once printing gets ONE template for the whole NAME, carrying `candidates`
+          // and `counts`, instead of one `card` offer per copy in hand. Emitted at the FIRST copy
+          // encountered and suppressed for the rest, so four Transformation Tomes yield one entry
+          // rather than four — and, crucially, not the C(4,2)=6 combinations that enumerating
+          // concrete plays would produce.
+          //
+          // ⚠️ THE PROBE AND THE OFFER ARE DIFFERENT OBJECTS, and the split is deliberate. Every
+          // trainer here is gated on `trainerProbeAccepts`, a DRY RUN of the concrete play. A
+          // template is not dispatchable by construction — it names no single card — so probing the
+          // template would fail its own dry run and the offer would vanish from the menu silently.
+          // We probe the CONCRETE play (already done above, against `card`) and offer the TEMPLATE.
+          // Rotomancer hit exactly this in their own enumerator and warned us before we wrote it.
+          const spec = atOnceWireSpec(card);
+          if (spec !== null) {
+            if (atOnceEmitted.has(card.name)) { break; }
+            atOnceEmitted.add(card.name);
+            // Keyed on NAME, not printing: a hand holding Custom Catcher LOT-171 and LOT-231 holds
+            // two Custom Catchers and may play them together — they are the same card by rule.
+            const candidates = player.hand.cards
+              .filter(c => c.name === card.name)
+              .map(c => ctx.cardToIid.get(c))
+              .filter((x): x is string => x !== undefined)
+              .sort();
+            // A count the hand cannot supply is not a legal length HERE, whatever the text permits
+            // in principle.
+            const counts = spec.counts.filter(n => n <= candidates.length);
+            if (counts.length > 0) {
+              out.push({ type: playType, candidates, counts });
+            }
+            break;
+          }
+          out.push({ type: playType, card: iid });
+          break;
+        }
       }
     }
   }

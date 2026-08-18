@@ -12,6 +12,7 @@ import {
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames } from './state-adapter';
+import { atOnceWireSpec } from './at-once';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
 import { classify, decomposerFor, realPicks, WirePick } from './decomposers';
@@ -144,10 +145,64 @@ function dispatchEndTurn(game: ImportedGame, action: EndTurnAction): void {
  * passed for the rare trainer that targets a Pokemon — `findPokemonTarget` swallows a non-resolving
  * target, and non-targeting trainers ignore it; the card's own effect drives any real selection.
  */
-function dispatchPlayTrainer(game: ImportedGame, action: { actor: NeutralPlayerId; type: string; card: string }): void {
+function dispatchPlayTrainer(
+  game: ImportedGame,
+  action: { actor: NeutralPlayerId; type: string; card?: string; cards?: string[] },
+): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const card = lookupCard(game, action.card, `${action.type}.card`);
-  const handIndex = handIndexOf(player, card, `${action.type}.card`, action.actor);
+  const role = `${action.type}.card`;
+
+  // ── CF-55: which field is legal is decided by the PRINTING, not by the client ──────────────
+  //
+  // ⚠️ ROW ORDER IS LOAD-BEARING, and the reason is rotomancer's row-4 warning: the duplicate-iid
+  // check runs on the RAW IID ARRAY, before anything is resolved to a Card. Resolving first would
+  // collapse two iids naming the same physical card into one object and make "a physical card
+  // cannot be played twice" unenforceable downstream — the gate would silently accept it.
+  if (action.cards !== undefined) {
+    if (new Set(action.cards).size !== action.cards.length) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);   // row 4: duplicate iid
+    }
+    if (action.card !== undefined) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);   // both fields — never legal
+    }
+    if (action.cards.length === 0) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);
+    }
+    const cards = action.cards.map(iid => lookupCard(game, iid, `${action.type}.cards`));
+    const spec = atOnceWireSpec(cards[0]);
+    if (spec === null) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);   // row 1: `cards` on a non-at-once printing
+    }
+    // "play N <Card> cards" — every named card is the SAME card by name. Matching on name rather
+    // than printing is deliberate: two different printings of Custom Catcher are two Custom
+    // Catchers.
+    if (cards.some(c => c.name !== cards[0].name)) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);
+    }
+    if (!spec.counts.includes(action.cards.length)) {
+      throw new GameError(GameMessage.ILLEGAL_ACTION);   // row 3: the LENGTH is the branch count
+    }
+    // Every named card must actually be in hand; handIndexOf throws if not.
+    const handIndexes = cards.map(c => handIndexOf(player, c, `${action.type}.cards`, action.actor));
+    const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+    // The engine's own reducer consumes the companion copies (transformation-tome.ts finds and
+    // discards the second itself), so dispatch names the first and lets it. Copies of one name are
+    // fungible for every at-once effect in the registry; the wire contract is what needs all N
+    // named, so the caller's set is VALIDATED here and then collapsed.
+    game.store.dispatch(new PlayCardAction(player.id, handIndexes[0], target));
+    return;
+  }
+
+  if (action.card === undefined) {
+    throw new GameError(GameMessage.ILLEGAL_ACTION);
+  }
+  const card = lookupCard(game, action.card, role);
+  if (atOnceWireSpec(card) !== null) {
+    // Row 2: a lone copy sent through the singular field would back-door the count gate, which is
+    // the exact play #2366 forbids.
+    throw new GameError(GameMessage.ILLEGAL_ACTION);
+  }
+  const handIndex = handIndexOf(player, card, role, action.actor);
   const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
   game.store.dispatch(new PlayCardAction(player.id, handIndex, target));
 }
@@ -181,7 +236,8 @@ function dispatchAction(game: ImportedGame, action: NeutralAction): void {
     case 'playItem':
     case 'playSupporter':
     case 'playStadium':
-      dispatchPlayTrainer(game, action as { actor: NeutralPlayerId; type: string; card: string }); break;
+      dispatchPlayTrainer(
+        game, action as { actor: NeutralPlayerId; type: string; card?: string; cards?: string[] }); break;
     case 'useAbility': dispatchUseAbility(game, action as UseAbilityAction); break;
     case 'useStadium': dispatchUseStadium(game, action as { actor: NeutralPlayerId }); break;
     default:

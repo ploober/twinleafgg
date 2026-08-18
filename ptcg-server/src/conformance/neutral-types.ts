@@ -294,25 +294,45 @@ export interface EndTurnAction {
 
 // Trainer plays (M5). Each dispatches through twinleaf's PlayCardAction; the card's own effect
 // then drives any follow-up prompts (decomposed / system) the same way an attack's do.
-export interface PlayItemAction {
+/**
+ * CF-55 — the play-N-copies-at-once fields, shared by all three trainer plays.
+ *
+ * `card` and `cards` are mutually exclusive and which one is legal is decided by the PRINTING, not
+ * by the client: a printing with an at-once clause must be played with `cards`, and one without must
+ * be played with `card`. Sending the wrong one is `invalidAction` either way — a lone copy sent as
+ * `card` on an at-once printing would back-door the count gate through the singular field.
+ *
+ * `candidates` and `counts` appear only on MENU TEMPLATES, mirroring `shuffle` (template carries
+ * `deck`, answer carries `order`). One template per playable printing, never one per combination.
+ */
+export interface AtOnceFields {
+  /** ANSWER: the iids being played together, sorted. Its LENGTH selects the effect branch. */
+  cards?: string[];
+  /** TEMPLATE: every iid in hand that could take part, sorted. */
+  candidates?: string[];
+  /** TEMPLATE: the legal `cards` lengths, ascending. */
+  counts?: number[];
+}
+
+export interface PlayItemAction extends AtOnceFields {
   actor: NeutralPlayerId;
   type: 'playItem';
-  /** iid of the Item card in hand. */
-  card: string;
+  /** iid of the Item card in hand. Absent on an at-once printing, which uses `cards`. */
+  card?: string;
 }
 
-export interface PlaySupporterAction {
+export interface PlaySupporterAction extends AtOnceFields {
   actor: NeutralPlayerId;
   type: 'playSupporter';
-  /** iid of the Supporter card in hand. */
-  card: string;
+  /** iid of the Supporter card in hand. Absent on an at-once printing, which uses `cards`. */
+  card?: string;
 }
 
-export interface PlayStadiumAction {
+export interface PlayStadiumAction extends AtOnceFields {
   actor: NeutralPlayerId;
   type: 'playStadium';
-  /** iid of the Stadium card in hand. */
-  card: string;
+  /** iid of the Stadium card in hand. Absent on an at-once printing, which uses `cards`. */
+  card?: string;
 }
 
 /**
@@ -539,9 +559,9 @@ export type LegalAction =
   | { type: 'evolve'; card: string; target: string }
   | { type: 'attachEnergy'; card: string; target: string }
   | { type: 'attachTool'; card: string; target: string }
-  | { type: 'playItem'; card: string }
-  | { type: 'playSupporter'; card: string }
-  | { type: 'playStadium'; card: string }
+  | { type: 'playItem'; card?: string; candidates?: string[]; counts?: number[] }
+  | { type: 'playSupporter'; card?: string; candidates?: string[]; counts?: number[] }
+  | { type: 'playStadium'; card?: string; candidates?: string[]; counts?: number[] }
   | { type: 'retreat'; to: number }
   | { type: 'declareAttack'; source: string; name: string }
   | { type: 'useAbility'; source: string; ability: string }
