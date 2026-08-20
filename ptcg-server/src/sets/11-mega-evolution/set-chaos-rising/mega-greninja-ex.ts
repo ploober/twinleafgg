@@ -148,16 +148,18 @@ export class MegaGreninjaex extends PokemonCard {
         player,
         (result) => {
           if (result) {
+            // §B.38 / TA-288. "You may put a [W] Energy attached to this Pokemon into your hand AND
+            // have this attack do 80 more damage" — no "in order to", so the return is not a cost:
+            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off
+            // `onEnergyMoved` made it a cost and withheld the payoff at zero Water — the same #327
+            // error Metagross carried explicitly. Reachable only through a copier (Greninja must
+            // pay [W][W] to attack, so it always holds Water on the direct route).
+            effect.damage += 80;
             PUT_SPECIFIC_ENERGY_FROM_THIS_POKEMON_INTO_HAND(
               store,
               state,
               effect,
               [CardType.WATER],
-              {
-                onEnergyMoved: () => {
-                  effect.damage += 80;
-                },
-              },
             );
           }
         },

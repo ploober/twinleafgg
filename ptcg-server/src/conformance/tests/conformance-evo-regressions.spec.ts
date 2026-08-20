@@ -39,7 +39,10 @@ function en(printing: string, n: number, tag: string): CardRef[] {
 /** A Pokémon in play whose stack is the given basic→top printings (single-element for a Basic). */
 function inPlay(iid: string, printings: string[], energy: CardRef[] = [], played = 1, conditions: ConditionToken[] = []): PokemonInPlay {
   return {
-    stack: printings.map((printing, i) => ({ iid: i === printings.length - 1 ? iid : `${iid}-s${i}`, printing })),
+    // TA-291: the friendly iid names the BOTTOM (basic) card — the wire's identifier for a Pokemon
+    // in play. It used to be stamped on the TOP card, so these evolved-stack cells submitted a
+    // `source` no menu ever offered.
+    stack: printings.map((printing, i) => ({ iid: i === 0 ? iid : `${iid}-s${i}`, printing })),
     energy, tools: [], damage: 0, conditions, markers: markers(played),
   };
 }

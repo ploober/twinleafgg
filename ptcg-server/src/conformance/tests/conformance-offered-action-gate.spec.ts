@@ -138,3 +138,83 @@ describe('Conformance — the driver refuses an action the pending never offered
       .toThrowError(/out of range/);
   });
 });
+
+/**
+ * TA-291: the same class one level up — the TOP-LEVEL dispatcher, not a decomposer pick.
+ *
+ * `declareAttack` and `useAbility` carry a `source` iid. `legal-actions.ts` emits the BOTTOM Pokemon
+ * of the stack (`ctx.cardToIid.get(list.getPokemons()[0])`) — the wire's identifier for a Pokemon in
+ * play — but the dispatcher accepted ANY card in the containing slot, so a caller could name an
+ * evolved printing no menu ever offered and have it silently resolve to the slot. Rotomancer refuses
+ * it (`CF-52: source names iid a2, which is not a Pokemon in play`) and is right; measured live
+ * 2026-08-19 on this exact stack — both engines' menus offered only a0, and twinleaf ran the attack
+ * for 300 damage when sent a2.
+ *
+ * RE-117 / RE-121 / TA-273 mirrored onto us: the menu and the dispatcher are written in two places.
+ *
+ * Note what did NOT guard it. The four regression spec files' own `inPlay()` helper stamped its
+ * friendly iid on the TOP card, so 14 existing cells had been submitting exactly this un-offered
+ * spelling and passing; tightening the check turned all 14 red at once and the helper now names the
+ * bottom card. That is a helper convention silently contradicting the wire — so the cells below
+ * assert the rule DIRECTLY, against a board built from raw printings, where no helper can drift.
+ */
+describe('Conformance — `source` names the Pokemon, not a card in its stack (TA-291)', () => {
+
+  const ROWDY_HAMMER = 'Rowdy Hammer';
+
+  /** Evolved Active: pbl-073 (Basic) -> pbl-044 -> pbl-045 Rampardos ex, two Fighting attached. */
+  function stackBoard(): NeutralState {
+    const b = board();
+    b.players.A.active = {
+      stack: [
+        { iid: 'a0', printing: 'pbl-073' },
+        { iid: 'a1', printing: 'pbl-044' },
+        { iid: 'a2', printing: 'pbl-045' },
+      ],
+      energy: [{ iid: 'ae0', printing: 'sve-006' }, { iid: 'ae1', printing: 'sve-006' }],
+      tools: [], damage: 0, conditions: [], markers: markers(),
+    };
+    b.players.B.active = { stack: [{ iid: 'b1', printing: 'meg-003' }], energy: [], tools: [], damage: 0, conditions: [], markers: markers() };
+    return b;
+  }
+
+  it('the menu names ONLY the bottom card — the premise the rejection rests on', () => {
+    const offered = replay(importState(stackBoard()), []).pending?.legalActions ?? [];
+    const sources = offered
+      .filter(a => (a as { type: string }).type === 'declareAttack' || (a as { type: string }).type === 'useAbility')
+      .map(a => (a as { source: string }).source);
+    expect(sources.length).toBeGreaterThan(0);
+    expect(new Set(sources)).toEqual(new Set(['a0']));
+  });
+
+  it('a `declareAttack` whose source is a NON-BOTTOM stack member is rejected, not resolved', () => {
+    for (const bad of ['a1', 'a2']) {
+      const res = replay(importState(stackBoard()),
+        [{ actor: 'A', type: 'declareAttack', source: bad, name: ROWDY_HAMMER } as NeutralAction]);
+      expect(res.rejection).toBeDefined();
+      expect(res.applied).toBe(0);
+    }
+  });
+
+  it('POSITIVE CONTROL — the same attack with the BOTTOM iid still runs', () => {
+    const res = replay(importState(stackBoard()),
+      [{ actor: 'A', type: 'declareAttack', source: 'a0', name: ROWDY_HAMMER } as NeutralAction]);
+    expect(res.rejection).toBeUndefined();
+    expect(res.applied).toBe(1);
+  });
+
+  it('`useAbility` carries the same rule, and its bottom-iid control still runs', () => {
+    const offered = replay(importState(stackBoard()), []).pending?.legalActions ?? [];
+    const abilities = offered.filter(a => (a as { type: string }).type === 'useAbility');
+    expect(abilities.length).toBeGreaterThan(0);
+    const ability = (abilities[0] as { ability: string }).ability;
+
+    const bad = replay(importState(stackBoard()),
+      [{ actor: 'A', type: 'useAbility', source: 'a2', ability } as NeutralAction]);
+    expect(bad.rejection).toBeDefined();
+
+    const good = replay(importState(stackBoard()),
+      [{ actor: 'A', type: 'useAbility', source: 'a0', ability } as NeutralAction]);
+    expect(good.rejection).toBeUndefined();
+  });
+});

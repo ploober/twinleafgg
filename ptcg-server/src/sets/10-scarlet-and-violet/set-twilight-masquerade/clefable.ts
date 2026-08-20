@@ -3,6 +3,7 @@ import { Attack, ChooseAttackPrompt, GameLog, GameMessage, PokemonCard, State, S
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
+import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useMetronome(next: Function, store: StoreLike, state: State,
@@ -39,7 +40,9 @@ function* useMetronome(next: Function, store: StoreLike, state: State,
 
   // Perform attack
   const attackEffect = new AttackEffect(player, opponent, attack);
-  store.reduceEffect(state, attackEffect);
+  attackEffect.source = player.active;
+  attackEffect.target = opponent.active;
+  state = store.reduceEffect(state, attackEffect);
 
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());
@@ -48,6 +51,16 @@ function* useMetronome(next: Function, store: StoreLike, state: State,
   if (attackEffect.damage > 0) {
     const dealDamage = new DealDamageEffect(attackEffect, attackEffect.damage);
     state = store.reduceEffect(state, dealDamage);
+  }
+
+  // TA-289: Metronome is an inline copy of COPY_OPPONENT_ACTIVE_ATTACK and carried the same gap —
+  // the copied attack's post-damage rider now lives on AFTER_ATTACK (family-A / TA-128), so the
+  // copy route must issue the AfterAttackEffect the direct route issues in game-effect.ts.
+  const afterAttackEffect = new AfterAttackEffect(player, opponent, attack, attackEffect);
+  state = store.reduceEffect(state, afterAttackEffect);
+
+  if (store.hasPrompts()) {
+    yield store.waitPrompt(state, () => next());
   }
 
   return state;

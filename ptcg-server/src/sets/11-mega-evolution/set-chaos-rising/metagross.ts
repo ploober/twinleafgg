@@ -12,7 +12,6 @@ import {
   ConfirmPrompt,
 } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON } from '../../../game/store/prefabs/costs';
 
@@ -72,32 +71,35 @@ export class Metagross extends PokemonCard {
     }
     if (WAS_ATTACK_USED(effect, 1, this) && effect instanceof AttackEffect) {
       const player = effect.player;
-      const checkEnergy = new CheckProvidedEnergyEffect(player);
-      checkEnergy.source = effect.source;
-      state = store.reduceEffect(state, checkEnergy);
-      const metalCount = checkEnergy.energyMap.filter((e) =>
-        e.provides.some((p: CardType) => p === CardType.METAL),
-      ).length;
-      if (metalCount >= 3) {
-        return store.prompt(
-          state,
-          new ConfirmPrompt(player.id, GameMessage.WANT_TO_DISCARD_ENERGY),
-          (confirm) => {
-            if (confirm) {
-              effect.damage += 150;
-              return DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
-                store,
-                state,
-                effect,
-                3,
-                CardType.METAL,
-                3,
-                [SlotType.ACTIVE],
-              );
-            }
-          },
-        );
-      }
+      // §B.38 / TA-285. The rider says "You may discard 3 [M] Energy from this Pokemon AND have
+      // this attack do 150 more damage" — there is no "in order to", so the discard is NOT a cost
+      // (#454, #456, and #2352 naming this very card). Consequences, all three of which the old
+      // `metalCount >= 3` gate got wrong because it implemented the superseded #327:
+      //   1. the "You may" is OFFERED at every holding, including zero Metal;
+      //   2. accepting adds the +150 REGARDLESS of how much Metal is attached; and
+      //   3. the discard is performed "as much as you can, up to 3" — which is already what
+      //      DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON does (it clamps max AND min to the
+      //      available count, and returns untouched when none is attached).
+      // Reachable only through a copier (Metagross itself must pay [M][M][M][C] to attack), which
+      // is why the direct-route tests never saw it.
+      return store.prompt(
+        state,
+        new ConfirmPrompt(player.id, GameMessage.WANT_TO_DISCARD_ENERGY),
+        (confirm) => {
+          if (confirm) {
+            effect.damage += 150;
+            return DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
+              store,
+              state,
+              effect,
+              3,
+              CardType.METAL,
+              3,
+              [SlotType.ACTIVE],
+            );
+          }
+        },
+      );
     }
     return state;
   }

@@ -2,6 +2,7 @@ import { Card } from '../game/store/card/card';
 import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
+import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { State, GameWinner } from '../game/store/state/state';
 import { Prompt } from '../game/store/prompts/prompt';
 import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
@@ -124,11 +125,29 @@ function dispatchRetreat(game: ImportedGame, action: RetreatAction): void {
   game.store.dispatch(new RetreatGameAction(player.id, slot.i));
 }
 
+/**
+ * TA-291 / CF-12 + CF-52: a `source` iid must be the IDENTIFIER of a Pokemon in play, and the
+ * settled convention is that the identifier is the BOTTOM Pokemon of the stack — which is exactly
+ * what `legal-actions.ts` emits (`ctx.cardToIid.get(list.getPokemons()[0])`). Accepting any card in
+ * the stack let a caller name an evolved printing (`a2`) that no menu ever offered and have it
+ * silently resolve to the containing slot. The menu and the dispatcher are written in two places;
+ * this is the same class as RE-117 / RE-121 / TA-273.
+ */
+function resolveSourcePokemon(game: ImportedGame, player: Player, iid: string, role: string): PokemonCardList {
+  const card = lookupCard(game, iid, role);
+  for (const list of [player.active, ...player.bench]) {
+    if (list.getPokemons()[0] === card) { return list; }
+  }
+  // Either not in this player's play area at all, or a stack member that is not the identifier.
+  throw new GameError(GameMessage.INVALID_TARGET);
+}
+
 function dispatchDeclareAttack(game: ImportedGame, action: DeclareAttackAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const sourceCard = lookupCard(game, action.source, 'declareAttack.source');
-  if (!player.active.cards.includes(sourceCard)) {
-    throw new Error('[conformance] declareAttack.source is not the acting player\'s active Pokemon');
+  const source = resolveSourcePokemon(game, player, action.source, 'declareAttack.source');
+  if (source !== player.active && !source.getPokemons().some(p => p.attacks.some(a => a.useOnBench === true))) {
+    // A bench Pokemon may only be named as the attacker when it prints a `useOnBench` attack.
+    throw new GameError(GameMessage.INVALID_TARGET);
   }
   // The attack parks on a WaitPrompt (and may raise card prompts mid-attack); the loop drives those.
   game.store.dispatch(new AttackAction(player.id, action.name));
@@ -218,8 +237,10 @@ function dispatchUseStadium(game: ImportedGame, action: { actor: NeutralPlayerId
 
 function dispatchUseAbility(game: ImportedGame, action: UseAbilityAction): void {
   const player = game.state.players[actorIndex(action.actor)];
-  const sourceCard = lookupCard(game, action.source, 'useAbility.source');
-  const target = resolveOwnPokemonTarget(player, sourceCard);
+  // TA-291: same identity rule as declareAttack — `source` names the Pokemon, i.e. the stack's
+  // bottom Pokemon, which is the iid the ability menu emits.
+  const source = resolveSourcePokemon(game, player, action.source, 'useAbility.source');
+  const target = resolveOwnPokemonTarget(player, source.getPokemons()[0]);
   game.store.dispatch(new UseAbilityGameAction(player.id, action.ability, target));
 }
 

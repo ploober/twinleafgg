@@ -527,7 +527,11 @@ function* copyBenchAttackGenerator(
   });
 
   const attackEffect = new AttackEffect(player, opponent, copiedAttack);
-  store.reduceEffect(state, attackEffect);
+  attackEffect.source = player.active;
+  attackEffect.target = opponent.active;
+  // (was `store.reduceEffect(...)` with the returned State dropped — the sibling generators
+  // all assign; found while closing TA-289.)
+  state = store.reduceEffect(state, attackEffect);
 
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());
@@ -536,6 +540,14 @@ function* copyBenchAttackGenerator(
   if (attackEffect.damage > 0) {
     const dealDamage = new DealDamageEffect(attackEffect, attackEffect.damage);
     state = store.reduceEffect(state, dealDamage);
+  }
+
+  // TA-289: see COPY_OPPONENT_ACTIVE_ATTACK above — same gap, same fix.
+  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);
+  state = store.reduceEffect(state, afterAttackEffect);
+
+  if (store.hasPrompts()) {
+    yield store.waitPrompt(state, () => next());
   }
 
   return state;
@@ -599,6 +611,8 @@ function* copyOpponentActiveAttackGenerator(
   });
 
   const attackEffect = new AttackEffect(player, opponent, attack);
+  attackEffect.source = player.active;
+  attackEffect.target = opponent.active;
   state = store.reduceEffect(state, attackEffect);
 
   if (store.hasPrompts()) {
@@ -608,6 +622,17 @@ function* copyOpponentActiveAttackGenerator(
   if (attackEffect.damage > 0) {
     const dealDamage = new DealDamageEffect(attackEffect, attackEffect.damage);
     state = store.reduceEffect(state, dealDamage);
+  }
+
+  // TA-289: a copied attack's POST-DAMAGE rider lives on AFTER_ATTACK since the family-A
+  // migration (TA-128), so the copy route must issue the AfterAttackEffect the direct route
+  // issues in game-effect.ts. Without it the rider is silently dropped at EVERY holding —
+  // COPY_OPPONENTS_LAST_ATTACK already did this; these two did not.
+  const afterAttackEffect = new AfterAttackEffect(player, opponent, attack, attackEffect);
+  state = store.reduceEffect(state, afterAttackEffect);
+
+  if (store.hasPrompts()) {
+    yield store.waitPrompt(state, () => next());
   }
 
   return state;

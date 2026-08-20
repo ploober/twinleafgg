@@ -43,7 +43,12 @@ function en(printing: string, n: number, tag: string): CardRef[] {
 /** A Pokémon-in-play from basic→top printings (single-element for a Basic); optional pre-set damage. */
 function inPlay(iid: string, printings: string[], energy: CardRef[] = [], damage = 0, conditions: ConditionToken[] = []): PokemonInPlay {
   return {
-    stack: printings.map((p, i) => ({ iid: i === printings.length - 1 ? iid : `${iid}-s${i}`, printing: p })),
+    // TA-291: the friendly iid names the BOTTOM (basic) card, because that is what identifies a
+    // Pokemon in play on the wire — `legal-actions.ts` emits `getPokemons()[0]` and the dispatcher
+    // now enforces it. This helper used to stamp it on the TOP card, so every evolved-stack cell
+    // below submitted a `source` no menu had ever offered and only passed because the dispatcher
+    // resolved any stack member to its containing slot.
+    stack: printings.map((p, i) => ({ iid: i === 0 ? iid : `${iid}-s${i}`, printing: p })),
     energy, tools: [], damage, conditions, markers: markers(),
   };
 }

@@ -16,7 +16,12 @@ import { playerIdToActor } from '../iid-targets';
  */
 function isMovePick(prompt: ChooseEnergyPrompt): boolean {
   return prompt.message === GameMessage.CHOOSE_ENERGIES_TO_HAND
-    || prompt.message === GameMessage.CHOOSE_ENERGIES_TO_DECK;
+    || prompt.message === GameMessage.CHOOSE_ENERGIES_TO_DECK
+    // TA-290: `CHOOSE_CARD_TO_HAND` is the third to-hand spelling and it was missing, so
+    // PUT_SPECIFIC_ENERGY_FROM_THIS_POKEMON_INTO_HAND (Ninja Spinner `cri-022`, Tapu Fini-GX,
+    // Quaquaval ex) surfaced its return-to-hand pick as `discard` while rotomancer emitted
+    // `choose`. Keyed on the destination, per CF-8 — the enum member name is not the criterion.
+    || prompt.message === GameMessage.CHOOSE_CARD_TO_HAND;
 }
 
 /**
@@ -47,6 +52,50 @@ function forcedFullPick(prompt: ChooseEnergyPrompt): boolean {
 }
 
 /**
+ * TA-290: which energies may be OFFERED at this point.
+ *
+ * `prompt.energy` is every Energy attached (the CheckProvidedEnergyEffect map); `prompt.cost` is what
+ * the pick has to pay — for a typed rider such as Ninja Spinner's "put a [W] Energy attached to this
+ * Pokemon into your hand", `[WATER]`. Offering the whole attached set therefore advertised an
+ * out-of-type Energy the prompt's own `validate` (checkExactEnergy) can never accept: taking it was
+ * consumed into an accumulator that could no longer complete, so the pick was neither honoured nor
+ * rejected — a silently swallowed action, which CF-12 forbids in both directions.
+ *
+ * An index is offerable iff SOME completion containing it satisfies the very predicate `validate`
+ * uses, so this can never offer a pick validate would reject and never withhold one it would accept.
+ * The subset walk is exponential in the unpicked count; attachments are single digits in practice and
+ * the guard below falls back to offering everything rather than stalling on a pathological board.
+ * Note the constructor has already reduced `cost` to the payable part when `allowCancel === false`
+ * (`getCostThatCanBePaid`), so an unpayable rider arrives here as an empty cost and completes at once
+ * — that is why zero attached Water never raises this prompt at all.
+ */
+const OFFER_FILTER_MAX_ENERGY = 16;
+
+function offerableIndices(prompt: ChooseEnergyPrompt, picked: number[]): Set<number> {
+  const used = new Set(picked);
+  const rest: number[] = [];
+  for (let i = 0; i < prompt.energy.length; i++) {
+    if (!used.has(i)) { rest.push(i); }
+  }
+  if (rest.length > OFFER_FILTER_MAX_ENERGY) {
+    return new Set(rest);
+  }
+  const base = picked.map(i => prompt.energy[i]);
+  const ok = new Set<number>();
+  for (let mask = 1; mask < (1 << rest.length); mask++) {
+    const chosen: number[] = [];
+    for (let b = 0; b < rest.length; b++) {
+      if (mask & (1 << b)) { chosen.push(rest[b]); }
+    }
+    if (chosen.every(i => ok.has(i))) { continue; }
+    if (StateUtils.checkExactEnergy([...base, ...chosen.map(i => prompt.energy[i])], prompt.cost)) {
+      for (const i of chosen) { ok.add(i); }
+    }
+  }
+  return ok;
+}
+
+/**
  * ChooseEnergyPrompt ('Choose energy'): pick which attached energies pay a cost (retreat, or an
  * energy-cost payment). Each chosen energy is discarded to pay, so it surfaces on the wire as a
  * contract `discard{owner,target}` (design Q2) — unless the message marks a relocation to hand/deck,
@@ -73,9 +122,10 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
 
     const move = isMovePick(prompt);
     const used = new Set(picked);
+    const offerable = offerableIndices(prompt, picked);
     const legalActions: LegalAction[] = [];
     for (let i = 0; i < prompt.energy.length; i++) {
-      if (used.has(i)) {
+      if (used.has(i) || !offerable.has(i)) {
         continue;
       }
       const iid = ctx.cardToIid.get(prompt.energy[i].card);
