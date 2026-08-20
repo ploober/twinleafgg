@@ -41,7 +41,15 @@ import {
 function lookupCard(game: ImportedGame, iid: string, role: string): Card {
   const card = game.ctx.iidToCard.get(iid);
   if (card === undefined) {
-    throw new Error(`[conformance] ${role} iid "${iid}" not found in this game`);
+    // CF-52: "a syntactically valid action whose required verb payload is unresolvable (absent
+    // `to`, UNKNOWN IID, bad index) MUST produce HTTP 200 + status invalidAction". An iid that
+    // names no card in this game is ALWAYS a caller error — the iid map is built from the caller's
+    // own initialState — so it is an illegal action, never an adapter fault. This used to throw a
+    // plain Error, which the runner reports as engineFault/HTTP 500 while rotomancer answered 200
+    // + invalidAction on the same request. Found 2026-08-20 by a blind-enumerated `por-062` spec
+    // naming a bench iid its own board did not contain; TA-291 had fixed the sibling half (an iid
+    // that resolves to a card but is not the Pokemon's identifier) and left this one.
+    throw new GameError(GameMessage.INVALID_TARGET);
   }
   return card;
 }
