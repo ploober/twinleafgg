@@ -441,10 +441,16 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
     cardsPlayedThisTurn: 0, // deferred: no twinleaf per-turn counter yet
     prizesTakenThisTurn: player.prizesTakenThisTurn,
     prizesTakenLastTurn: player.prizesTakenLastTurn,
-    // CF-17: cumulative prizes taken (has live readers, unlike the per-turn tallies). Optional field —
-    // OMIT the 0 default so it round-trips symmetrically with the ingest default (`?? 0`) and doesn't
-    // add a property the 26 pre-CF-17 flag fixtures never carried. Emitted only once a prize is taken.
-    ...(player.prizesTaken ? { prizesTaken: player.prizesTaken } : {}),
+    // CF-17 / CF-48: cumulative prizes taken (has live readers, unlike the per-turn tallies).
+    // ALWAYS EMITTED, including the 0. It used to be omitted while zero, to round-trip symmetrically
+    // with the `?? 0` ingest — but symmetry on OUR wire is not the property that matters, because
+    // rotomancer always emits it. Absent and `0` are the same board and a different wire, so anything
+    // keyed on presence (or any consumer reading `flags.prizesTaken` without a default) splits the two
+    // engines on every board where no Prize has yet been taken, and CF-48's comparison had to stay
+    // switched off for it. A projected flags object that omits a DEFINED field is the weaker contract,
+    // which is why ours is the side that moved. Ingest still defaults (`?? 0`), so seeded boards that
+    // predate this and omit the field are unaffected.
+    prizesTaken: player.prizesTaken ?? 0,
     vstarUsed: player.usedVSTAR,
   };
 }

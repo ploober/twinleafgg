@@ -146,7 +146,10 @@ export interface PlayerFlags {
    *  per-turn tallies above). Prize-count-scaled cost/effect readers key on this (Radiant Charizard
    *  "Excited Heart"). Unlike the per-turn tallies (CF-2, behavior-dead), this has live readers.
    *  OPTIONAL on INPUT (defaults to 0 on ingest, matching the OpenAPI `Flags`, which requires no
-   *  field); the projection always emits it. */
+   *  field); the projection ALWAYS emits it, including the 0 — CF-48. ⚠️ That sentence was already
+   *  here and the projection did not do it: `projectFlags` spread the field in only when truthy, so
+   *  the documented contract and the emitted wire disagreed for two weeks and the comment read as
+   *  confirmation. Kept optional on the TYPE because ingest still accepts its absence. */
   prizesTaken?: number;
   /** Once-per-game VSTAR Power. */
   vstarUsed: boolean;
@@ -534,7 +537,7 @@ export type NeutralEvent =
   | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }
   | { kind: 'energyAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
   | { kind: 'toolAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'attackUsed'; actor: NeutralPlayerId; attack: string }
+  | { kind: 'attackUsed'; player: NeutralPlayerId; attack: string }  // CF-57: `player`, pinned
   | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
   | { kind: 'deckedOut'; actor: NeutralPlayerId }
   | { kind: 'abilityUsed'; actor: NeutralPlayerId; ability: string }

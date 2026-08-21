@@ -630,6 +630,25 @@ export class Store implements StoreLike {
    */
   private probeWouldAct(card: Card, state: State, effect: Effect): boolean {
     const refMap = new Map<object, object>();
+    // 🚨 IDENTITY THAT LIVES ON A CARD MUST SURVIVE THE CLONE, AND `Card` IN THE IGNORE LIST IS NOT
+    // ENOUGH TO GIVE IT THAT. `deepClone` treats a `Card` as opaque and never walks into it, so
+    // `this.attacks[0]` is the SAME object on both sides -- but the identical Attack reached through
+    // `effect.attack` is a plain object on the effect, so it gets cloned, and every handler gating on
+    // `effect.attack === this.attacks[N]` reports "I would not act". `tef-040` Croconaw's Reverse
+    // Thrust is the live in-pool carrier: it switches its own bearer after damage, and the probe
+    // could not see it. That is a SILENT UNDER-REPORT -- the card acts for real, the batch it belongs
+    // to loses an actor, and an ordering decision that should be surfaced is resolved by list order
+    // instead. `Attack` is an INTERFACE, so it cannot join `Card` in the ignore list; seeding the
+    // shared refMap with an identity entry is the equivalent that works for a structural type.
+    //
+    // Sharing the object rather than cloning it is the same contract the `Card` entry already sets:
+    // printed data on a card is shared with the probe. Checked before relying on it -- the five card
+    // files that write to `effect.attack.*` all do so in `CheckAttackCost`/attack-declaration
+    // branches, none of which a probe of an `AfterDamageEffect` can enter.
+    const attackOfEffect = (effect as unknown as { attack?: object }).attack;
+    if (attackOfEffect) {
+      refMap.set(attackOfEffect, attackOfEffect);
+    }
     const probeState: State = deepClone(state, [Card, StateLog], refMap);
     const probeEffect: Effect = deepClone(effect, [Card, StateLog], refMap);
     // No third clone for the before-image: `state` IS it. `probeState` was cloned FROM `state` and

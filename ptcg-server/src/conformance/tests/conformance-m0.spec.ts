@@ -128,22 +128,29 @@ describe('Conformance M0 — import/project + attach energy', () => {
     const game = importState(initial);
     const projected = projectGame(game);
 
-    // CF-42 — `resolving` is the ONE optional field that is deliberately NOT round-trip-symmetric,
-    // and the contrast with `prizesTaken` is the reason. CF-17 omits `prizesTaken: 0` on purpose so
-    // the projection round-trips a board that never carried it — correct there, because `0` and
-    // ABSENT mean the same thing. For `resolving` they do not: `[]` means "nothing is staged" and
-    // ABSENT means "this engine does not model the mid-resolution zone at all". The cross-engine
-    // compare is GATED on that distinction, so omitting `[]` would read as "not modelled" and switch
-    // the comparison off silently. The projection therefore ADDS a field a hand-authored board need
-    // not carry, and ingest tolerates its absence.
-    const withResolving = {
+    // CF-42 + CF-48 — TWO optional fields are deliberately NOT round-trip-symmetric, for ONE reason.
+    //
+    // This comment used to say `resolving` was the only one, and drew the contrast with
+    // `prizesTaken`: `[]` vs ABSENT differ for `resolving` ("nothing is staged" vs "this engine does
+    // not model the mid-resolution zone"), while `0` vs ABSENT were the same board and so `0` could
+    // be omitted. **The second half of that was wrong, and it is the reason CF-48's comparison sat
+    // switched off for two weeks.** Rotomancer always emits `prizesTaken`; we omitted it while zero;
+    // so on every board where no Prize had been taken the two engines shipped the same board on
+    // different wire, and anything keyed on presence split them. Same board, different wire is
+    // exactly the `resolving` argument — it applies to a scalar no differently than to an array.
+    //
+    // So the projection ADDS both fields to a hand-authored board that need not carry either, and
+    // ingest tolerates the absence of both.
+    const withProjectionOnlyFields = {
       ...initial,
       players: {
-        A: { ...initial.players.A, resolving: [] },
-        B: { ...initial.players.B, resolving: [] },
+        A: { ...initial.players.A, resolving: [],
+          flags: { ...initial.players.A.flags, prizesTaken: 0 } },
+        B: { ...initial.players.B, resolving: [],
+          flags: { ...initial.players.B.flags, prizesTaken: 0 } },
       },
     };
-    expect(projected).toEqual(withResolving);
+    expect(projected).toEqual(withProjectionOnlyFields);
 
     // Idempotence: re-importing the projection and projecting again is stable. This is the property
     // that actually matters — a projection fed back in must be a fixed point, even though the FIRST

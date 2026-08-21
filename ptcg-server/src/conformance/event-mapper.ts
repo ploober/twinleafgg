@@ -44,7 +44,13 @@ export function mapLog(log: StateLog): NeutralEvent | undefined {
     case GameLog.LOG_PLAYER_PLAYS_TOOL:
       return { kind: 'toolAttached', actor: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
     case GameLog.LOG_PLAYER_USES_ATTACK:
-      return { kind: 'attackUsed', actor: actor(log), attack: str(log, 'attack') };
+      // CF-57: `player`, NOT `actor` like its siblings below. The difference is deliberate and it is
+      // the whole point of the entry — `attackUsed` is the one event in this group the contract PINS
+      // (`player` + a required `attack`), because it is the only wire fact that says WHICH ATTACK
+      // resolved. The siblings are informational and unpinned, so they keep the native spelling.
+      // `player` is the schema's own PlayerRef field name, already used by every compared event
+      // (`damaged`, `draw`, `turnStarted`), and it is what rotomancer emits; ours was the outlier.
+      return { kind: 'attackUsed', player: actor(log), attack: str(log, 'attack') };
     case GameLog.LOG_PLAYER_RETREATS:
       return { kind: 'retreated', actor: actor(log), from: str(log, 'active'), to: str(log, 'benched') };
     case GameLog.LOG_PLAYER_NO_CARDS_IN_DECK:

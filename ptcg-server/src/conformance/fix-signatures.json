@@ -5626,9 +5626,10 @@
         "      return this.resolveSimultaneous(state, effect, batchable);",
         "    if (this.probing) {",
         "    const wasProbing = this.probing;",
-        "    return raised || boardDiffers(state, after);"
+        "    return raised || boardDiffers(state, after);",
+        "      refMap.set(attackOfEffect, attackOfEffect);"
       ],
-      "note": "TA-292 / CF-38 / B.40 2026-08-20: simultaneous after-damage effects were resolved on propagateEffect's `superType` sort -- an arbitrary order that, where two effects compete for one resource, decided WHICH PRINTED EFFECT HAPPENED and never showed the player the choice. Line 1-2 are the dispatch into the batch path; delete them and the engine silently reverts to the sort. Line 3 is the probe's prompt short-circuit -- WITHOUT IT a probe enqueues the prompt it was only supposed to detect AND runs the handler's continuation, where dri-125 Team Rocket's Koffing shuffles. Line 4 is the SAVE of the probe flag -- assigning `false` on the way out instead would hand a nested probe's caller a live store, and a probed handler that deals damage can raise another AfterDamageEffect. Line 5 is the two-part `would act` signal: a prompt-only test misses twm-158 Lucky Helmet, which draws via deck.moveTo with no prompt, so the deck-competing pairs would never batch. Guards: ta292-por-017-twm-150-simultaneous-batch-order-decides-a-zone (abilityEffect branch -> discard), ta292-por-017-twm-150-cardtexteffect-first-... (the OTHER branch -> bench, which is what proves the decision is real), and ta292-negative-control-por-017-alone-... (one effect must raise NO decision). Mutation-tested both ways: disabling the dispatch reds the two positive cells and leaves the control green; prompting on a one-effect batch reds the control and 10 other scenarios."
+      "note": "TA-292 / CF-38 / B.40 2026-08-20: simultaneous after-damage effects were resolved on propagateEffect's `superType` sort -- an arbitrary order that, where two effects compete for one resource, decided WHICH PRINTED EFFECT HAPPENED and never showed the player the choice. Line 1-2 are the dispatch into the batch path; delete them and the engine silently reverts to the sort. Line 3 is the probe's prompt short-circuit -- WITHOUT IT a probe enqueues the prompt it was only supposed to detect AND runs the handler's continuation, where dri-125 Team Rocket's Koffing shuffles. Line 4 is the SAVE of the probe flag -- assigning `false` on the way out instead would hand a nested probe's caller a live store, and a probed handler that deals damage can raise another AfterDamageEffect. Line 5 is the two-part `would act` signal: a prompt-only test misses twm-158 Lucky Helmet, which draws via deck.moveTo with no prompt, so the deck-competing pairs would never batch. Guards: ta292-por-017-twm-150-simultaneous-batch-order-decides-a-zone (abilityEffect branch -> discard), ta292-por-017-twm-150-cardtexteffect-first-... (the OTHER branch -> bench, which is what proves the decision is real), and ta292-negative-control-por-017-alone-... (one effect must raise NO decision). Mutation-tested both ways: disabling the dispatch reds the two positive cells and leaves the control green; prompting on a one-effect batch reds the control and 10 other scenarios. || TA-298 2026-08-21: the `refMap.set(attackOfEffect, ...)` line keeps the effect's ATTACK object identical across the probe clone. `deepClone` never walks into a `Card`, so `this.attacks[0]` is the original object while the same Attack reached through `effect.attack` is cloned -- so every handler gating on `effect.attack === this.attacks[N]` reported \"I would not act\". Deleting this line silently under-reports the batch's actors (tef-040 Croconaw is the live in-pool carrier) and no scenario reddens, because the legacy path runs the same handlers anyway: the cost is a LOST PROMPT, not a lost effect."
     },
     {
       "file": "game/store/prompts/resolve-next-prompt.ts",
@@ -5637,6 +5638,76 @@
         "  readonly type: string = 'ResolveNext';"
       ],
       "note": "TA-292 / CF-38 2026-08-20: the ordering decision's prompt type. Registered even though a revert would also break `store.ts`'s compile, because the coverage guard works PER FILE -- an unprotected new file in src/game is exactly the 'take-upstream merge reverts it with nothing to detect it' case the guard exists for, and relying on a compile error in a DIFFERENT file to catch it is the kind of indirect guarantee that stops holding the moment the other file changes. The `type` string is load-bearing beyond the class: the adapter's decomposer registry keys on it, so a rename silently unregisters the wire half while the engine half keeps working."
+    },
+    {
+      "file": "set-destined-rivals/hydrapple.ts",
+      "signatures": [
+        "text: 'Discard 6 Basic [G] Energy from your hand, and Knock Out your opponent\\'s Active Pokémon. If you can\\'t discard 6 Basic [G] Energy in this way, this attack does nothing.'"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-shrouded-fable/galvantula.ts",
+      "signatures": [
+        "text: 'This Pokémon\\'s attacks do 50 more damage to your opponent\\'s Active Pokémon that has an Ability (before applying Weakness and Resistance).'"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-surging-sparks/drayton.ts",
+      "signatures": [
+        "'Look at the top 7 cards of your deck. You may reveal a Pokémon and a Trainer card you find there and put them into your hand. Shuffle the other cards back into your deck.';"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-surging-sparks/dusk-ball.ts",
+      "signatures": [
+        "'Look at the bottom 7 cards of your deck. You may reveal a Pokémon you find there and put it into your hand. Shuffle the other cards back into your deck.';"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-temporal-forces/maximum-belt.ts",
+      "signatures": [
+        "'Attacks used by the Pokémon this card is attached to do 50 more damage to your opponent\\'s Active Pokémon ex (before applying Weakness and Resistance).';"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-twilight-masquerade/kieran.ts",
+      "signatures": [
+        "• During this turn, attacks used by your Pokémon do 30 more damage to your opponent's Active Pokémon ex and Active Pokémon V (before applying Weakness and Resistance).`;"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-phantasmal-flames/sacred-charm.ts",
+      "signatures": [
+        "public text: string = 'The Pokémon this card is attached to takes 30 less damage from attacks from your opponent\\'s Pokémon that have an Ability (after applying Weakness and Resistance).';"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-pitch-black/antique-armor-fossil.ts",
+      "signatures": [
+        "text: \"While this Pokémon is in the Active Spot, all of your Pokémon take 10 less damage from attacks from your opponent's Pokémon (after applying Weakness and Resistance).\","
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-pitch-black/antique-skull-fossil.ts",
+      "signatures": [
+        "text: \"If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon (even if this Pokémon is Knocked Out), place 3 damage counters on the Attacking Pokémon.\","
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-pitch-black/bronzong.ts",
+      "signatures": [
+        "text: 'During your opponent\\'s next turn, this Pokémon takes 100 less damage from attacks from Evolution Pokémon (after applying Weakness and Resistance).'"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     }
   ]
 }

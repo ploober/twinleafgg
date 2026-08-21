@@ -128,6 +128,22 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
       }
       const [ref] = proj.prizes.splice(at, 1);
       (toDiscard ? proj.discard : proj.hand).push({ iid: ref.iid, printing: ref.printing });
+      if (!toDiscard) {
+        // 🚨 THE COUNTERS ARE PART OF "READS AS ALREADY-TAKEN", AND THEY WERE NOT MOVED WITH THE CARD.
+        // Moving the pile card and leaving `flags.prizesTaken` alone made the projection contradict
+        // itself: mid-cascade on a 2-prize KO the card sat in the hand while the tally still said 0,
+        // and rotomancer -- who counts per pick -- read 1 on the identical board. Not a granularity
+        // difference (CF-43): the card is in the HAND on both engines, so twinleaf was disagreeing
+        // with its own projection rather than deferring an effect. 27 in-pool cards read the
+        // cumulative tally, so a card resolving between the two takes reads a stale number.
+        //
+        // The `!toDiscard` gate MIRRORS the engine's own rule in `TAKE_SPECIFIC_PRIZES`, which
+        // increments only when `destination === player.hand`: a prize an effect sends to the discard
+        // was never TAKEN by the player. Deriving the condition from the engine rather than restating
+        // it is what keeps the adapter's arithmetic and the engine's from drifting apart.
+        proj.flags.prizesTaken = (proj.flags.prizesTaken ?? 0) + 1;
+        proj.flags.prizesTakenThisTurn = (proj.flags.prizesTakenThisTurn ?? 0) + 1;
+      }
     }
   },
 };
