@@ -245,6 +245,16 @@ export class JacintheFA extends Jacinthe {
 }
 
 export class ForestOfVitalityFA extends LushForest {
+  // 🚨 `set` MUST be declared, not inherited. `LushForest` is MEG-117, so a subclass that overrides
+  // only `setNumber` inherits `set = 'MEG'` and lands on **MEG-109** — an id that canonically holds
+  // Yungoos — while leaving POR-109 (this card's real printing) absent from the catalog entirely.
+  //
+  // It was found because the registry race is decided PER PROCESS: on a 16-worker conformance
+  // cluster meg-109 served *Forest of Vitality* in 19 of 20 sampled requests and *Yungoos* in 1,
+  // exactly 1-in-16, so `meg-110` Gumshoos could not be evolved from its own pre-evolution in 15 of
+  // 16 workers. A single-worker server happened to win the race the other way, which is why this
+  // was invisible for as long as it was.
+  public set: string = 'POR';
   public fullName = 'Forest of Vitality FA POR';
   public setNumber = '109';
 }

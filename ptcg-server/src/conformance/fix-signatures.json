@@ -5614,9 +5614,10 @@
       "file": "set-perfect-order/other-prints.ts",
       "signatures": [
         "  // TA-293: this reprint extends the 1999 JUNGLE Poke Ball, whose printed text is a different",
-        "  public text: string ="
+        "  public text: string =",
+        "  public set: string = 'POR';"
       ],
-      "note": "TA-293 2026-08-20: `por-080` PokeBallPOR overrides `text` HERE rather than on the 1999 Jungle base it extends. Reprints are SUBCLASSES in this codebase, so editing the base to fix a reprint corrupts a genuine printing ([[twinleaf-reprint-inheritance-leak]]). A revert re-inherits the Jungle wording -- a DIFFERENT card's text -- and nothing errors."
+      "note": "TA-293 2026-08-20: `por-080` PokeBallPOR overrides `text` HERE rather than on the 1999 Jungle base it extends. Reprints are SUBCLASSES in this codebase, so editing the base to fix a reprint corrupts a genuine printing ([[twinleaf-reprint-inheritance-leak]]). A revert re-inherits the Jungle wording -- a DIFFERENT card's text -- and nothing errors. || TA-297 2026-08-21: `ForestOfVitalityFA` MUST declare set='POR'. It extends LushForest (MEG-117) and overrides only setNumber='109', so without this line it inherits set='MEG' and squats on meg-109 -- an id canonically holding Yungoos -- while deleting por-109 from the catalog. The collision is resolved PER PROCESS at module load, so on a 16-worker cluster meg-109 served the wrong card in 19 of 20 sampled requests while a 1-worker server served it correctly: reverting this line is invisible to any single-worker check."
     },
     {
       "file": "game/store/store.ts",
