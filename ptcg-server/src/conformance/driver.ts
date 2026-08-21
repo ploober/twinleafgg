@@ -350,6 +350,11 @@ const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
   takePrize: ['index'],
   confirm: ['value'],
   selectOption: ['option'],
+  // CF-38: `source` names the CARD the effect comes from, `kind` the sort of effect, and `ability`
+  // disambiguates two effects on ONE card. All three are identity. `ability` is absent on every
+  // `cardTextEffect` candidate, and the comparison below skips a field the OFFER leaves undefined,
+  // so including it costs nothing there and buys strictness where the offer does carry it.
+  resolveNext: ['source', 'kind', 'ability'],
   flip: ['face'],
 };
 

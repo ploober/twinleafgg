@@ -433,6 +433,24 @@ export interface SelectOptionAction {
   option: number;
 }
 
+/**
+ * Which of several SIMULTANEOUS effects resolves next (CF-38, §B.40, TA-292). One action per pick,
+ * repeated until the batch is empty — NOT a single permutation.
+ *
+ * `kind` is a REQUIRED discriminator naming what sort of object was chosen, and it decides which of
+ * the other fields may appear: `abilityEffect` REQUIRES both `source` and `ability`;
+ * `cardTextEffect` REQUIRES `source` and forbids `ability`. `source` is the iid of the CARD THE
+ * EFFECT COMES FROM — a Tool's own iid, not the Pokemon it is pinned to — so two copies on one
+ * bearer stay distinguishable.
+ */
+export interface ResolveNextAction {
+  actor: NeutralPlayerId;
+  type: 'resolveNext';
+  kind: 'abilityEffect' | 'cardTextEffect';
+  source: string;
+  ability?: string;
+}
+
 // ── System actions (the `system` actor — design §5) ────────────────────────
 // Randomness externalized to the action log: the harness supplies shuffle orders and coin faces.
 
@@ -486,6 +504,7 @@ export type NeutralAction =
   | TakePrizeAction
   | ConfirmAction
   | SelectOptionAction
+  | ResolveNextAction
   | ShuffleSystemAction
   | FlipSystemAction
   | PickSystemAction
@@ -543,6 +562,7 @@ export type LegalAction =
   | { type: 'takePrize'; index: number }
   | { type: 'confirm'; value: boolean }
   | { type: 'selectOption'; option: number }
+  | { type: 'resolveNext'; kind: 'abilityEffect' | 'cardTextEffect'; source: string; ability?: string }
   // `endChoice` is the INTERNAL variable-count terminator only — it is never emitted on the wire
   // (the contract has no such Action; completion is signalled by the next non-pick action, R1). The
   // wire transform (`toWirePending`) strips it; decomposers still append it to mark "stop allowed".

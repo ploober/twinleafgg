@@ -3,6 +3,9 @@ import { AbortGameAction } from './actions/abort-game-action';
 import { AppendLogAction } from './actions/append-log-action';
 import { ConcedeAction } from './actions/concede-action';
 import { Card } from './card/card';
+import { AfterDamageEffect } from './effects/attack-effects';
+import { Player } from './state/player';
+import { PowerType } from './card/pokemon-types';
 import { SuperType, TrainerType } from './card/card-types';
 import { TrainerCard } from './card/trainer-card';
 import { ChangeAvatarAction } from './actions/change-avatar-action';
@@ -24,6 +27,7 @@ import { StateLog, StateLogParam } from './state/state-log';
 import { StoreHandler } from './store-handler';
 import { StoreLike } from './store-like';
 import { generateId, deepClone } from '../../utils/utils';
+import { ResolveNextPrompt, ResolveNextCandidate } from './prompts/resolve-next-prompt';
 import { attackReducer } from './effect-reducers/attack-effect';
 import { playCardReducer } from './reducers/play-card-reducer';
 import { playEnergyReducer } from './effect-reducers/play-energy-effect';
@@ -57,6 +61,41 @@ interface PromptItem {
 const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
   hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit'
 });
+
+/**
+ * Did running a handler change the board?
+ *
+ * A structural walk rather than a field whitelist, because a whitelist is a classification we would
+ * have to maintain per card family and get wrong quietly. `Card` and `StateLog` instances are
+ * compared by IDENTITY: `deepClone` shares them (they are immutable definitions and append-only log
+ * entries), so a card moving zones shows up as a different member of a CardList's `cards` array —
+ * which is the change we want to see — while the card object itself is the same reference on both
+ * sides and must not be walked.
+ *
+ * Cycles terminate on the `seen` pair-set. Functions and undefined-vs-missing are treated as equal,
+ * since neither is board state.
+ */
+function boardDiffers(a: any, b: any, seen: Set<string> = new Set(), depth = 0): boolean {
+  if (a === b) { return false; }
+  if (depth > 24) { return false; }
+  if (a === null || b === null || a === undefined || b === undefined) { return a !== b; }
+  if (typeof a === 'function' || typeof b === 'function') { return false; }
+  if (typeof a !== 'object' || typeof b !== 'object') { return a !== b; }
+  // Shared-by-reference classes: identity is the whole comparison (see the note above).
+  if (a instanceof Card || b instanceof Card) { return a !== b; }
+  if (a instanceof StateLog || b instanceof StateLog) { return a !== b; }
+  if (Array.isArray(a) !== Array.isArray(b)) { return true; }
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) { return true; }
+    return a.some((item, i) => boardDiffers(item, b[i], seen, depth + 1));
+  }
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (boardDiffers(a[key], b[key], seen, depth + 1)) { return true; }
+  }
+  return false;
+}
+
 
 export class Store implements StoreLike {
 
@@ -136,6 +175,15 @@ export class Store implements StoreLike {
     return state;
   }
 
+  /**
+   * Set while a candidate handler is being PROBED on a throwaway clone (see `resolveSimultaneous`).
+   * `prompt()` reads it and refuses to enqueue, which is both the "this handler would act" signal
+   * and the guard that stops a probe from running the handler's CONTINUATION — the callback is where
+   * `dri-125` Team Rocket's Koffing shuffles and where every real mutation lives.
+   */
+  private probing = false;
+  private probeRaisedPrompt = false;
+
   public reduceEffect(state: State, effect: Effect): State {
     // Track Active ability-lock activation order before card handlers run.
     if (effect instanceof MovedToActiveEffect) {
@@ -194,6 +242,14 @@ export class Store implements StoreLike {
   }
 
   public prompt(state: State, prompts: Prompt<any>[] | Prompt<any>, then: (results: any) => void): State {
+    // A PROBE never enqueues and never runs the continuation. Raising a prompt is the clearest
+    // possible "this handler would act", and returning here keeps the probe from reaching the side
+    // effects that live in `then` — the search, the shuffle, the discard.
+    if (this.probing) {
+      this.probeRaisedPrompt = true;
+      return state;
+    }
+
     if (!(prompts instanceof Array)) {
       prompts = [prompts];
     }
@@ -464,13 +520,179 @@ export class Store implements StoreLike {
     } else {
       cards.sort((a, b) => a.superType - b.superType);
     }
-    cards.forEach(c => {
-      if (playPokemonTargetTools.includes(c)) {
-        return;
-      }
+    const batchable = cards.filter(c => !playPokemonTargetTools.includes(c));
+
+    // TA-292 / CF-38 / §B.40 — the `superType` sort above IS the order simultaneous effects resolve
+    // in, and it is arbitrary with respect to the rules. Where two of them compete for one resource
+    // it silently picks a winner for the player. `resolveSimultaneous` returns the untouched forEach
+    // whenever fewer than two candidates would act, so every board that is not a real batch keeps
+    // byte-identical behaviour.
+    if (effect instanceof AfterDamageEffect) {
+      return this.resolveSimultaneous(state, effect, batchable);
+    }
+
+    batchable.forEach(c => {
       state = this.callReduceEffect(c, this, state, effect);
     });
     return state;
+  }
+
+  /**
+   * Run a simultaneous batch, asking the owner for the order when there is a real choice.
+   *
+   * SCOPE, deliberately narrow: `AfterDamageEffect` only. That is the family §B.40 adjudicates and
+   * the one TA-292's board sits in. `resolveNext` as a contract also covers Checkup, KO cascades and
+   * end-of-turn; those are NOT batched here, and widening is a separate decision with its own
+   * measurement rather than a free consequence of this one.
+   */
+  private resolveSimultaneous(state: State, effect: Effect, cards: Card[]): State {
+    // Probe only cards IN PLAY. `propagateEffect`'s list also carries hand, deck, discard and
+    // prizes — probing all of them would mean ~120 full state clones per damage event, and no
+    // after-damage rider can fire from those zones anyway. A card the probe never looks at simply
+    // stays on the legacy path (it lands in `nonActors` and runs after the batch), so narrowing the
+    // probe can cost a missing prompt but never a missing effect.
+    const inPlay = new Set<Card>();
+    for (const player of state.players) {
+      for (const slot of [player.active, ...player.bench]) {
+        slot.cards.forEach(c => inPlay.add(c));
+        slot.tools.forEach(t => inPlay.add(t));
+      }
+    }
+    const probeable = cards.filter(c => inPlay.has(c));
+    if (probeable.length < 2) {
+      cards.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+      return state;
+    }
+    const actors = probeable.filter(c => this.probeWouldAct(c, state, effect));
+
+    // Fewer than two effects in the batch: there is no order to choose, so behave exactly as before.
+    // Note this runs the FULL list, not just the probed actors — a handler that declines to act is a
+    // no-op anyway, and re-running the list keeps this path identical to the old forEach even if the
+    // probe's judgement is wrong. A probe that under-reports costs a missing prompt, never a missing
+    // effect.
+    if (actors.length < 2) {
+      cards.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+      return state;
+    }
+
+    // The decider is the OWNER of the triggers (#1874). When the batch spans BOTH players the
+    // deciding rule is a split-trigger tie-break we have not adjudicated (#146's window), so rather
+    // than guess we fall through to the legacy order — a wrong prompt is worse than a known gap,
+    // because a prompt asserts that the answer is settled.
+    const owners = actors.map(c => this.ownerOfEffect(state, c));
+    if (owners.some(o => o === undefined || o !== owners[0])) {
+      cards.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+      return state;
+    }
+
+    const nonActors = cards.filter(c => !actors.includes(c));
+    state = this.askResolveNext(state, effect, actors, owners[0] as Player);
+    // Handlers the probe judged inert still get their turn, after the batch. They are no-ops by
+    // construction; running them preserves the old path's guarantee that every card sees the effect.
+    nonActors.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+    return state;
+  }
+
+  /** One pending per pick, re-asked with the remainder (CF-38: not a single permutation). */
+  private askResolveNext(state: State, effect: Effect, remaining: Card[], owner: Player): State {
+    if (remaining.length === 0) {
+      return state;
+    }
+    if (remaining.length === 1) {
+      return this.callReduceEffect(remaining[0], this, state, effect);
+    }
+    const candidates: ResolveNextCandidate[] = remaining.map(c => ({
+      card: c,
+      ability: this.abilityNameOf(c),
+    }));
+    return this.prompt(state, new ResolveNextPrompt(owner.id, candidates), choice => {
+      const index = (typeof choice === 'number' && choice >= 0 && choice < remaining.length) ? choice : 0;
+      const picked = remaining[index];
+      state = this.callReduceEffect(picked, this, state, effect);
+      state = this.askResolveNext(state, effect, remaining.filter((_, i) => i !== index), owner);
+    });
+  }
+
+  /**
+   * Would this handler DO anything on this effect?
+   *
+   * Runs it against a throwaway clone and asks two questions: did it raise a prompt, and did it
+   * change the board. Neither alone is enough — `twm-150` Handheld Fan prompts and `twm-158` Lucky
+   * Helmet does not (it calls `deck.moveTo(hand, 2)` outright), and a batch that missed the second
+   * would leave the deck-competing pairs unordered.
+   *
+   * 🚨 THE STATE AND THE EFFECT MUST BE CLONED TOGETHER. Handlers test identity —
+   * `effect.target.getPokemonCard() === this`, `player.active !== effect.target` — so cloning the
+   * state while the effect still points into the ORIGINAL graph makes every one of those tests fail
+   * and the probe reports a unanimous "nobody acts", which reads exactly like a clean board and
+   * silently disables the feature. Sharing one `refMap` across both clones is what keeps the
+   * references pointing at the same objects.
+   */
+  private probeWouldAct(card: Card, state: State, effect: Effect): boolean {
+    const refMap = new Map<object, object>();
+    const probeState: State = deepClone(state, [Card, StateLog], refMap);
+    const probeEffect: Effect = deepClone(effect, [Card, StateLog], refMap);
+    // No third clone for the before-image: `state` IS it. `probeState` was cloned FROM `state` and
+    // only the clone is mutated, so comparing the run result against the original graph is the same
+    // comparison for a third of the allocation. `Card` instances are shared across both graphs
+    // (deepClone ignores them), so the identity test inside `boardDiffers` still holds.
+
+    const promptItemsBefore = this.promptItems.length;
+    const logIdBefore = this.logId;
+    // SAVE AND RESTORE, never assign false. A probed handler can dispatch damage that raises another
+    // `AfterDamageEffect` — a counter-placing rider that knocks the attacker out is the live shape —
+    // which re-enters `resolveSimultaneous` and probes again. A nested probe that cleared the flag on
+    // the way out would hand control back to its CALLER with `probing` false, and the outer probe
+    // would then enqueue prompts and run continuations for real, on a state it is about to throw
+    // away. Restoring the previous value makes the nesting harmless instead of load-bearing.
+    const wasProbing = this.probing;
+    const outerRaised = this.probeRaisedPrompt;
+    this.probing = true;
+    this.probeRaisedPrompt = false;
+    let after: State;
+    let raised: boolean;
+    try {
+      after = this.callReduceEffect(card, this, probeState, probeEffect);
+    } catch {
+      // A handler that throws is doing what several of them do to decline (the `ToolEffect` stub in
+      // `handy-fan.ts` is caught by the CARD, but a lock can throw past it). Not acting.
+      return false;
+    } finally {
+      raised = this.probeRaisedPrompt;
+      this.probing = wasProbing;
+      this.probeRaisedPrompt = outerRaised;
+      this.promptItems.length = promptItemsBefore;
+      this.logId = logIdBefore;
+    }
+    return raised || boardDiffers(state, after);
+  }
+
+  /** The player who owns the card an effect comes from — a Tool's owner is the Pokemon's owner. */
+  private ownerOfEffect(state: State, card: Card): Player | undefined {
+    for (const player of state.players) {
+      const slots = [player.active, ...player.bench];
+      for (const slot of slots) {
+        if (slot.cards.includes(card) || slot.tools.includes(card)) {
+          return player;
+        }
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * The Ability's name when the card's effect is a named Ability, else undefined — CF-38's
+   * `abilityEffect` / `cardTextEffect` split, decided by whether the card HAS an Ability rather than
+   * by its superType. The six Antique Fossils are Trainers carrying a real Ability, so a superType
+   * test would file them under the wrong kind.
+   */
+  private abilityNameOf(card: Card): string | undefined {
+    const powers = (card as any).powers as Array<{ name: string; powerType: number }> | undefined;
+    if (!powers || powers.length === 0) {
+      return undefined;
+    }
+    const ability = powers.find(pw => pw.powerType === PowerType.ABILITY) || powers[0];
+    return ability ? ability.name : undefined;
   }
 
   // Utility function to call reduceEffect with override support
