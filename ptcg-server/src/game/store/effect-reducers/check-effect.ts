@@ -329,8 +329,18 @@ export function checkWinner(store: StoreLike, state: State, onComplete?: () => v
   for (let i = 0; i < state.players.length; i++) {
     const player = state.players[i];
 
-    // Check for no active Pokemon
-    if (player.active.cards.length === 0) {
+    // TA-296 — losing the Active is only a LOSS CONDITION when the Bench cannot replace it.
+    // This used to award the opponent a point for a merely EMPTY Active Spot. On a simultaneous
+    // double KO both players have an empty Active and a Bench, so both scored a phantom point,
+    // both counts were non-zero, and the draw branch below fired before anything was compared —
+    // which is why twinleaf's `tie` looked symmetric. The rulebook's condition is "can't do this
+    // because their Bench is empty", not "has no Active".
+    //
+    // ⚠️ `player.bench.length` is NEVER the emptiness test: bench slots are pre-allocated
+    // CardLists, so the array is full-length even on an empty Bench. `.some(b => b.cards.length)`
+    // is the idiom, and the same one is already used by chooseActivePokemons above.
+    const hasBenched = player.bench.some(bench => bench.cards.length > 0);
+    if (player.active.cards.length === 0 && !hasBenched) {
       store.log(state, GameLog.LOG_PLAYER_NO_ACTIVE_POKEMON, { name: player.name });
       points[i === 0 ? 1 : 0]++;
       reasons[i === 0 ? 1 : 0].push('no_active');
@@ -343,15 +353,29 @@ export function checkWinner(store: StoreLike, state: State, onComplete?: () => v
     }
   }
 
-  // Both players meet a loss condition at the same time (both last Pokémon Knocked Out, both took
-  // their last Prize, or one of each) → the game is a TIE per the base rulebook. Sudden death is a
-  // Play!-Pokémon TOURNAMENT tiebreaker overlay, not a base-game rule: it re-setups the whole game
-  // (resets decks/prizes, re-shuffles, re-flips for first player), which the differential contract
-  // cannot model and which native rotomancer — the conformance oracle — never does; twinleaf's
-  // auto-sudden-death left the game projecting `ongoing` with both boards empty (e.g. Revavroom ex
-  // "Shattering Speed" KOing the last defender while self-discarding the last attacker). Sudden death
-  // stays reachable only inside an already-sudden-death (sandbox-initiated) game.
-  if (points[0] > 0 && points[1] > 0) {
+  // Both players meet an EQUAL NUMBER of win conditions → the game is a TIE per the base rulebook.
+  // Sudden death is a Play!-Pokémon TOURNAMENT tiebreaker overlay, not a base-game rule: it re-setups
+  // the whole game (resets decks/prizes, re-shuffles, re-flips for first player), which the
+  // differential contract cannot model and which native rotomancer — the conformance oracle — never
+  // does; twinleaf's auto-sudden-death left the game projecting `ongoing` with both boards empty
+  // (e.g. Revavroom ex "Shattering Speed" KOing the last defender while self-discarding the last
+  // attacker). Sudden death stays reachable only inside an already-sudden-death (sandbox-initiated)
+  // game. That case is UNAFFECTED by TA-296: both players end with no Active and no Bench, so the
+  // counts are 1 and 1 and this branch still takes it.
+  //
+  // TA-296 — the guard used to be `points[0] > 0 && points[1] > 0`, which short-circuited to DRAW
+  // whenever BOTH sides had any points, WITHOUT EVER COMPARING THEM. The comparison that decides
+  // the game is twelve lines below and was correct all along; this branch stopped it running in
+  // exactly the case it exists to decide.
+  //
+  // > #245: "If both players arrived at a win condition at the same time but ONE PLAYER HAS MORE
+  // > WIN CONDITIONS THAN THE OTHER (like KO'ing the last Pokemon AND taking their sixth prize),
+  // > the player with the most win conditions met wins the game. However, if both players have the
+  // > SAME NUMBER of win conditions, the game is unresolved and a Tiebreaker game takes place."
+  //
+  // Restated by #1832's tail ("they would lose due to 2 win conditions vs. only 1!") and #2036.
+  // A tie needs an EQUAL count, never merely a mutual one.
+  if (points[0] > 0 && points[0] === points[1]) {
     return state.isSuddenDeath ? initiateSuddenDeath(store, state) : endGame(store, state, GameWinner.DRAW);
   }
 
