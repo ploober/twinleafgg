@@ -63,7 +63,7 @@ export class AntiqueArmorFossil extends TrainerCard {
     {
       name: 'Protective Armor',
       powerType: PowerType.ABILITY,
-      text: "While this Pokémon is in the Active Spot, all of your Pokémon take 10 less damage from attacks from your opponent's Pokémon.",
+      text: "While this Pokémon is in the Active Spot, all of your Pokémon take 10 less damage from attacks from your opponent's Pokémon (after applying Weakness and Resistance).",
     },
   ];
 

@@ -17,7 +17,7 @@ export class Galvantula extends PokemonCard {
   public powers = [{
     name: 'Compound Eyes',
     powerType: PowerType.ABILITY,
-    text: 'This Pokémon\'s attacks do 50 more damage to your opponent\'s Active Pokémon that have an Ability.'
+    text: 'This Pokémon\'s attacks do 50 more damage to your opponent\'s Active Pokémon that has an Ability (before applying Weakness and Resistance).'
   }];
 
   public attacks = [{

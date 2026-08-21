@@ -62,7 +62,7 @@ export class AntiqueSkullFossil extends TrainerCard {
     {
       name: 'Spiny Skull',
       powerType: PowerType.ABILITY,
-      text: "If this Pokémon is in the Active Spot and takes damage from an attack from your opponent's Pokémon, put 3 damage counters on the attacking Pokémon.",
+      text: "If this Pokémon is in the Active Spot and is damaged by an attack from your opponent's Pokémon (even if this Pokémon is Knocked Out), place 3 damage counters on the Attacking Pokémon.",
     },
   ];
 

@@ -16,7 +16,7 @@ export class SacredCharm extends TrainerCard {
   public fullName: string = 'Sacred Charm M2';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '93';
-  public text: string = 'The Pokémon this card is attached to takes 30 less damage from attacks from your opponent\'s Pokémon that have any Abilities.';
+  public text: string = 'The Pokémon this card is attached to takes 30 less damage from attacks from your opponent\'s Pokémon that have an Ability (after applying Weakness and Resistance).';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

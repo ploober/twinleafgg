@@ -23,7 +23,7 @@ export class Genesectex extends PokemonCard {
     name: 'Protect Charge',
     cost: [M, M, C],
     damage: 150,
-    text: 'During your opponent\'s next turn, this Pokemon takes 30 less damage from attacks.'
+    text: 'During your opponent\'s next turn, this Pokemon takes 30 less damage from attacks (after applying Weakness and Resistance).'
   }];
 
   public regulationMark = 'I';

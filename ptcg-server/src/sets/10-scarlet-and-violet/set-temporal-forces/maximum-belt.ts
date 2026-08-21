@@ -27,7 +27,7 @@ export class MaximumBelt extends TrainerCard {
   public fullName: string = 'Maximum Belt TEF';
 
   public text: string =
-    'The attacks of the Pokémon this card is attached to do 50 more damage to your opponent\'s Active Pokémon ex.';
+    'Attacks used by the Pokémon this card is attached to do 50 more damage to your opponent\'s Active Pokémon ex (before applying Weakness and Resistance).';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

@@ -30,7 +30,10 @@ export class Sunkern extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-127: index 1 on a ONE-attack card -- `effect.attack === this.attacks[1]` is a compare
+    // against `undefined`, so this whole block was dead and Bullet Seed dealt a flat 10 with no
+    // flips at all. The coin prompt was never the problem; it was never reached.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       state = store.prompt(state, [
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP),

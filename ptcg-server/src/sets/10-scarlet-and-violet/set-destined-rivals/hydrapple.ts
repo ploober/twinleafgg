@@ -20,7 +20,7 @@ export class Hydrapple extends PokemonCard {
     name: 'Hydra Breath',
     cost: [G],
     damage: 0,
-    text: 'Discard 6 Basic [G] Energy from your hand in order to Knock Out your opponent\'s Active Pokémon. If you can\'t discard 6 Basic [G] Energy in this way, this attack does nothing.'
+    text: 'Discard 6 Basic [G] Energy from your hand, and Knock Out your opponent\'s Active Pokémon. If you can\'t discard 6 Basic [G] Energy in this way, this attack does nothing.'
   },
   {
     name: 'Whip Smash',

@@ -63,6 +63,13 @@ export class PokeBallPOR extends PokeBall {
   public set = 'POR';
   public setNumber = '80';
   public regulationMark = 'J';
+  // TA-293: this reprint extends the 1999 JUNGLE Poke Ball, whose printed text is a different
+  // card's ('any Basic Pokemon or Evolution card', 'Show that card to your opponent'). The modern
+  // printing reads differently, so the text is overridden HERE rather than on the base -- editing
+  // the Jungle card would corrupt a genuine printing to fix a reprint
+  // ([[twinleaf-reprint-inheritance-leak]]).
+  public text: string =
+    'Flip a coin. If heads, search your deck for a Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.';
 }
 
 export class PokePadPOR extends PokePad {

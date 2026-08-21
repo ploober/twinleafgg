@@ -18,7 +18,7 @@ export class TeamRocketsArbok extends PokemonCard {
   public powers = [{
     name: 'Potent Glare',
     powerType: PowerType.ABILITY,
-    text: 'If this Pokemon is your Active Pokemon, your opponent can\'t play any Pokemon cards with Abilities from their hand (excluding Rocket\'s Pokemon).'
+    text: 'If this Pokemon is your Active Pokemon, your opponent can\'t play any Pokemon cards with Abilities from their hand except for Team Rocket\'s Pokémon.'
   }];
 
   public attacks = [

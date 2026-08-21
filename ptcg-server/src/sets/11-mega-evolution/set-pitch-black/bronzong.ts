@@ -23,7 +23,7 @@ export class Bronzong extends PokemonCard {
     name: 'Metal Block',
     cost: [M, M, C],
     damage: 120,
-    text: 'During your opponent\'s next turn, this Pokémon takes 100 less damage from attacks from Evolution Pokémon.'
+    text: 'During your opponent\'s next turn, this Pokémon takes 100 less damage from attacks from Evolution Pokémon (after applying Weakness and Resistance).'
   }];
 
   public regulationMark = 'J';

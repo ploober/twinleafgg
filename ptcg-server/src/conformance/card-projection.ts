@@ -110,6 +110,23 @@ function projectAttacks(attacks: Attack[] | undefined): NeutralAttack[] | undefi
   });
 }
 
+/**
+ * TA-295 — a fossil's rule box, recovered as `text`.
+ *
+ * TA-257 correctly stopped emitting the `isFossil` power as an ABILITY (canonical and rotomancer
+ * both list only the real Ability, so emitting it made all in-pool Antique Fossils deviate from the
+ * oracle by a phantom ability named after the card). But filtering it dropped it from the wire
+ * ENTIRELY, and canonical does carry it — as the card's rule-box `text`. The result was that the one
+ * sentence making a Fossil play as a Pokemon reached the wire in NEITHER field, on all six in-pool
+ * Fossils: nothing observable said the card has 60 HP, is Colorless, can't retreat, can't take
+ * Special Conditions, or can be discarded at will. That is the exact TA-272/B.37 cast, and a spec
+ * author reading /v1/cards could not author a B.37 cell from it at all.
+ */
+function fossilRuleBox(powers: Power[] | undefined): string | undefined {
+  const fossil = (powers ?? []).find(p => p.isFossil && p.text);
+  return fossil ? norm(fossil.text) : undefined;
+}
+
 function projectAbilities(powers: Power[] | undefined): NeutralAbility[] | undefined {
   if (!powers || powers.length === 0) { return undefined; }
   // TA-257: a fossil's play-as-a-Pokemon/discard-from-play rule is modeled as an `isFossil` power
@@ -176,7 +193,8 @@ export function projectCard(card: Card): NeutralCard {
     const t = card as TrainerCard;
     const category = TRAINER_CATEGORY_NAMES[t.trainerType];
     if (category) { out.category = category; }
-    const text = norm(t.text);
+    // a fossil carries no `text` of its own; its rule box lives on the isFossil power (TA-295)
+    const text = norm(t.text) ?? fossilRuleBox(t.powers);
     if (text) { out.text = text; }
     const abilities = projectAbilities(t.powers);
     if (abilities) { out.abilities = abilities; }

@@ -161,10 +161,37 @@ function handleBenchSizeChange(store: StoreLike, state: State, benchSizes: numbe
   return state;
 }
 
+/**
+ * TA-130 / #815 — player indices in "whose turn would be next" order.
+ *
+ * > #815 (TPCi Rules Team, 2018-04-05): "In the case where both players have Pokemon Knocked Out
+ * > SIMULTANEOUSLY ... The player whose turn would be next takes their prizes first, and then the
+ * > other player takes their prizes. Then the player whose turn would be next promotes a new Active
+ * > Pokemon if needed, followed by the other player."
+ *
+ * Restated verbatim in #2239 (2025); #818 (2000) says the same for promotion. Both loops below used
+ * SEAT order, which is an internal detail with no rules meaning, and it disagreed with the ruling
+ * exactly when the ruling applies.
+ *
+ * ⚠️ This is a NO-OP unless BOTH players are owed something. With a single Knock Out only one player
+ * takes a prize and only one promotes, so the iteration order is unobservable — which is why the
+ * change is narrow despite touching a global sequence.
+ *
+ * "Whose turn would be next" is the player who is NOT the current `activePlayer`: an attack ends the
+ * turn, and an Ability-driven KO mid-turn (the #2239 Dusknoir case) still hands the next turn to the
+ * opponent. It is deliberately NOT read off any turn-ending flag, which would be undefined for the
+ * Ability case.
+ */
+function turnNextOrder(state: State): number[] {
+  const next = 1 - state.activePlayer;
+  return [next, state.activePlayer];
+}
+
 function chooseActivePokemons(state: State): ChoosePokemonPrompt[] {
   const prompts: ChoosePokemonPrompt[] = [];
 
-  for (const player of state.players) {
+  for (const idx of turnNextOrder(state)) {
+    const player = state.players[idx];
     const hasActive = player.active.cards.length > 0;
     const hasBenched = player.bench.some(bench => bench.cards.length > 0);
     if (!hasActive && hasBenched) {
@@ -184,7 +211,7 @@ function chooseActivePokemons(state: State): ChoosePokemonPrompt[] {
 function choosePrizeCards(store: StoreLike, state: State, prizeGroups: PrizeGroup[][]): ChoosePrizePrompt[] {
   const prompts: ChoosePrizePrompt[] = [];
 
-  for (let i = 0; i < state.players.length; i++) {
+  for (const i of turnNextOrder(state)) {
     const player = state.players[i];
     for (const group of prizeGroups[i]) {
       const prizeLeft = player.getPrizeLeft();

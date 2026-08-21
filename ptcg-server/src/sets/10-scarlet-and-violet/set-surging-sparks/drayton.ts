@@ -104,7 +104,7 @@ export class Drayton extends TrainerCard {
   public fullName: string = 'Drayton SSP';
 
   public text: string =
-    'Look at the top 7 cards of your deck. Choose a Pokémon and a Trainer card from those cards, reveal them, and put them into your hand. Shuffle the other cards back into your deck.';
+    'Look at the top 7 cards of your deck. You may reveal a Pokémon and a Trainer card you find there and put them into your hand. Shuffle the other cards back into your deck.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {

@@ -30,7 +30,7 @@ export class Kieran extends TrainerCard {
   public text: string = `Choose 1:
   
     • Switch your Active Pokémon with 1 of your Benched Pokémon.
-    • Your Pokémon's attacks do 30 more damage to your opponent's Active Pokémon ex and Pokémon V this turn.`;
+    • During this turn, attacks used by your Pokémon do 30 more damage to your opponent's Active Pokémon ex and Active Pokémon V (before applying Weakness and Resistance).`;
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {

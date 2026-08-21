@@ -27,7 +27,7 @@ export class Mesprit extends PokemonCard {
     name: 'Guardian Burst',
     cost: [P, P],
     damage: 160,
-    text: 'You can only use this attack if you have Uxie and Azelf on your Bench.'
+    text: 'If you don\'t have Uxie and Azelf on your Bench, this attack does nothing.'
   }];
 
   public regulationMark = 'H';

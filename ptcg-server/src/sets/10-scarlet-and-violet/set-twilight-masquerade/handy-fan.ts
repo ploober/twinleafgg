@@ -18,7 +18,7 @@ export class HandyFan extends TrainerCard {
   public name = 'Handheld Fan';
   public fullName = 'Handheld Fan TWM';
 
-  public text: string = 'Whenever the Active Pokémon this card is attached to takes damage from an opponent\'s attack, move an Energy from the attacking Pokémon to 1 of your opponent\'s Benched Pokémon.';
+  public text: string = 'If the Pokémon this card is attached to is in the Active Spot and is damaged by an attack from your opponent\'s Pokémon (even if this Pokémon is Knocked Out), move an Energy from the Attacking Pokémon to 1 of your opponent\'s Benched Pokémon.';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof AfterDamageEffect && effect.target.tools.includes(this)) {

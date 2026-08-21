@@ -1555,7 +1555,9 @@
     {
       "file": "game/store/effect-reducers/check-effect.ts",
       "signatures": [
-        "const prizesAlreadyTaken = state.players.some(p => p.prizes.every(pr => pr.cards.length === 0));"
+        "const prizesAlreadyTaken = state.players.some(p => p.prizes.every(pr => pr.cards.length === 0));",
+        "function turnNextOrder(state: State): number[] {",
+        "  for (const i of turnNextOrder(state)) {"
       ]
     },
     {
@@ -5598,6 +5600,13 @@
         "            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off"
       ],
       "note": "TA-288 / §B.38 2026-08-19: the fix MOVES `effect.damage += 80` out of the prefab's onEnergyMoved callback, so the discriminating change is a relocation, not a new statement — the comment is the only line that exists post-fix and not pre-fix."
+    },
+    {
+      "file": "set-twilight-masquerade/sunkern.ts",
+      "signatures": [
+        "    if (WAS_ATTACK_USED(effect, 0, this)) {",
+        "    // TA-127: index 1 on a ONE-attack card -- `effect.attack === this.attacks[1]` is a compare"
+      ]
     }
   ]
 }
