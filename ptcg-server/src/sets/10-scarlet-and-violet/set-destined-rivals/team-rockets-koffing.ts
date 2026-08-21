@@ -3,7 +3,7 @@ import { CardTag, CardType, Stage, SuperType } from '../../../game/store/card/ca
 import { StoreLike, State, GameMessage, ChooseCardsPrompt, PowerType, GameLog, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
-import { CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class TeamRocketsKoffing extends PokemonCard {
@@ -50,33 +50,39 @@ export class TeamRocketsKoffing extends PokemonCard {
 
       store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: this.name });
 
-      CONFIRMATION_PROMPT(store, state, player, result => {
-        if (result) {
-          const maxPokemons = Math.min(openSlots.length, 2);
+      // 🚨 NO CONFIRMATION PROMPT. Smog Signals is MANDATORY -- compendium #2171, on this exact
+      // Ability: "The use of the Ability is not optional, so if you have bench space available you
+      // must search your deck and shuffle it afterwards. Of course you can voluntarily fail the deck
+      // search, but you must search and shuffle your deck." The card prints no "you may".
+      //
+      // The opt-out the player is entitled to is the VOLUNTARY FAIL, and it already exists one level
+      // down as `min: 0` on the pick. Wrapping the whole Ability in a confirm added a SECOND opt-out
+      // that the rules do not grant, and declining it skipped the mandated shuffle entirely -- which
+      // is not cosmetic, since an unshuffled deck leaves a known order in the player's favour.
+      // (#2171's bench-full case is the early return above: no space, so no search at all.)
+      const maxPokemons = Math.min(openSlots.length, 2);
 
-          const blocked: number[] = [];
-          player.deck.cards.forEach((card, index) => {
-            if (!card.name.includes('Koffing')) {
-              blocked.push(index);
-            }
-          });
-
-          return store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_PUT_ONTO_BENCH,
-            player.deck,
-            { superType: SuperType.POKEMON },
-            { min: 0, max: Math.min(2, maxPokemons), allowCancel: false, blocked }
-          ), selectedCards => {
-            const cards = selectedCards || [];
-
-            cards.forEach((card, index) => {
-              store.reduceEffect(state, new PlayPokemonFromDeckEffect(player, card as PokemonCard, openSlots[index]));
-            });
-
-            SHUFFLE_DECK(store, state, player);
-          });
+      const blocked: number[] = [];
+      player.deck.cards.forEach((card, index) => {
+        if (!card.name.includes('Koffing')) {
+          blocked.push(index);
         }
+      });
+
+      return store.prompt(state, new ChooseCardsPrompt(
+        player,
+        GameMessage.CHOOSE_CARD_TO_PUT_ONTO_BENCH,
+        player.deck,
+        { superType: SuperType.POKEMON },
+        { min: 0, max: Math.min(2, maxPokemons), allowCancel: false, blocked }
+      ), selectedCards => {
+        const cards = selectedCards || [];
+
+        cards.forEach((card, index) => {
+          store.reduceEffect(state, new PlayPokemonFromDeckEffect(player, card as PokemonCard, openSlots[index]));
+        });
+
+        SHUFFLE_DECK(store, state, player);
       });
     }
 

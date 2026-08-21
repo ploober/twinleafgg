@@ -608,9 +608,45 @@ export class Store implements StoreLike {
     return this.prompt(state, new ResolveNextPrompt(owner.id, candidates), choice => {
       const index = (typeof choice === 'number' && choice >= 0 && choice < remaining.length) ? choice : 0;
       const picked = remaining[index];
-      state = this.callReduceEffect(picked, this, state, effect);
-      state = this.askResolveNext(state, effect, remaining.filter((_, i) => i !== index), owner);
+      const rest = remaining.filter((_, i) => i !== index);
+      state = this.runThenContinue(state, effect, picked, rest, owner);
     });
+  }
+
+  /**
+   * Resolve ONE picked candidate, and only then move on to the rest.
+   *
+   * 🚨 THE ORDER A HANDLER IS INVOKED IN IS NOT THE ORDER ITS EFFECT APPLIES IN, and the first
+   * version of `askResolveNext` conflated them. `prompt()` ENQUEUES and returns (see its own body),
+   * so a handler whose work lives in a prompt callback — `dri-125` Smog Signals behind its
+   * confirmation, `por-017` Shell Spikes, `twm-150` Handheld Fan — has done NOTHING by the time
+   * control comes back. Running the next candidate immediately then let a SYNCHRONOUS handler —
+   * `twm-158` Lucky Helmet's `deck.moveTo(hand, 2)` — apply its effect first no matter what the
+   * player picked. Driven: on `dri-125` + `twm-158` both branches reached a byte-identical board,
+   * so the decision was offered and then ignored.
+   *
+   * ⚠️ **TA-292's own two guards could not see this**, and the reason is worth keeping: its pair is
+   * prompt × prompt, where enqueue order IS resolution order and the pick happens to work. The
+   * broken shape is prompt × SYNCHRONOUS, and in pool that is the common one — 10 of the 14
+   * in-pool after-damage responders apply inline. A fix verified only on the shape that works is
+   * [[fix-and-test-sharing-an-axis]].
+   *
+   * `waitPrompt` is the sequencing primitive already in the store: `resolveWaitItems` drains it only
+   * once `promptItems` is EMPTY, i.e. after the picked effect's whole prompt chain (confirm →
+   * choose → shuffle) has been answered. So the remainder resumes when the pick has really finished,
+   * not when its first prompt has been posted.
+   */
+  private runThenContinue(
+    state: State, effect: Effect, picked: Card, rest: Card[], owner: Player,
+  ): State {
+    const promptsBefore = this.promptItems.length;
+    state = this.callReduceEffect(picked, this, state, effect);
+    if (this.promptItems.length > promptsBefore) {
+      return this.waitPrompt(state, () => {
+        state = this.askResolveNext(state, effect, rest, owner);
+      });
+    }
+    return this.askResolveNext(state, effect, rest, owner);
   }
 
   /**
