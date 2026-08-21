@@ -41,12 +41,38 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
    * moved Energy has exactly one destination — rotomancer applies it and hands the turn to B, twinleaf
    * pended the single `moveEnergy` pick.
    *
-   * NOT ENABLED — deferred 2026-07-29. Enabling it broke both committed Energy Switch specs, one of
-   * which pins the opposite ON PURPOSE: *"surfaces the move as a pending with a moveEnergy legalAction
-   * when the log is dry (CF-34)"*. That is a deliberate CF-34 pin about what the harness reports when
-   * the action log runs out mid-decision, so collapsing a forced single transfer is a re-pin of CF-34,
-   * not a bug fix. Needs an explicit contract decision. Tracked on `dri-070`.
+   * ── ENABLED 2026-08-21 (TA-303). The deferral rested on a spec, and the CONTRACT had already
+   * decided the day before. ────────────────────────────────────────────────────────────────────
+   *
+   * Deferred 2026-07-29 because enabling it broke the Energy Switch spec that "pins the opposite ON
+   * PURPOSE" — *"surfaces the move as a pending with a moveEnergy legalAction when the log is dry
+   * (CF-34)"* — which was read as making the collapse a re-pin of CF-34 rather than a bug fix.
+   *
+   * That reading was wrong on two counts, and both are worth keeping:
+   *
+   * 1. **CF-34's own adjudication text already says to collapse**, and it was written 2026-07-28 —
+   *    the day BEFORE the deferral. `conformance-api.yaml`, closing sentence of the IN-PLAY ENERGY
+   *    RELOCATION block: *"A forced 1-of-1 relocation still collapses per CF-14."* So the contract
+   *    decision the deferral said was needed had already been made; what blocked it was one of our
+   *    own specs, and a spec is not an oracle.
+   * 2. **The spec's board could not test what the spec is for.** It held one Energy and ONE benched
+   *    Pokemon, so the relocation had exactly one legal (card, destination) pair — a degenerate board
+   *    for a test whose real assertions are about the MENU (that the verb is `moveEnergy` and not
+   *    `attachEnergy`, and that a Pokemon is excluded as its own destination). Neither is observable
+   *    on a board with no menu. The board now carries a SECOND bench slot, so the two assertions run
+   *    against a real 2-option menu and the collapse case gets its own cell asserting the STATE
+   *    EFFECT rather than the absence of a pending.
+   *
+   * Rotomancer collapses this (their note ninety-seven §1: *"a single reachable destination collapses
+   * to it"*), so enabling it converges toward them rather than away — the check that falsified the
+   * bare `max === 1` hypothesis for choose-cards.
+   *
+   * Scope: `max === 1` only. A multi-transfer prompt (`max > 1`) stays excluded — it can be
+   * momentarily narrowed to one option without the overall decision being forced, which is the
+   * "momentarily-forced sub-pick" the decomposer contract warns about. The driver's `!canStopNow`
+   * gate additionally keeps an optional "you may move 1" (min: 0) surfacing its decline.
    */
+  atomicResolvable: prompt => prompt.options.max === 1,
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
