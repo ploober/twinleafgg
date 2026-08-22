@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, PowerType, StateUtils, GameError, GameMessage, PlayerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DAMAGE_OPPONENT_POKEMON, IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DAMAGE_OPPONENT_POKEMON, IS_ABILITY_BLOCKED, WAS_ATTACK_USED, IS_POKEMON_PLAY_FROM_HAND } from '../../../game/store/prefabs/prefabs';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { CheckPokemonPowersEffect } from '../../../game/store/effects/check-effects';
 
@@ -53,7 +53,13 @@ export class TeamRocketsArbok extends PokemonCard {
       const powersEffect = new CheckPokemonPowersEffect(player, effect.pokemonCard);
       state = store.reduceEffect(state, powersEffect);
 
-      if (powersEffect.powers.some(power => power.powerType === PowerType.ABILITY) && !pokemonCard.tags.includes(CardTag.TEAM_ROCKET)) {
+      // TA-272 / B.37: the clause bans playing a POKEMON from hand. A Fossil in hand is an ITEM and
+      // only reaches this effect because its own PlayItemEffect handler raises a PlayPokemonEffect
+      // for itself, so it must not be caught here. Measured on all 6 in-pool Fossils; rotomancer
+      // lands the play on every one.
+      if (IS_POKEMON_PLAY_FROM_HAND(effect)
+        && powersEffect.powers.some(power => power.powerType === PowerType.ABILITY)
+        && !pokemonCard.tags.includes(CardTag.TEAM_ROCKET)) {
         throw new GameError(GameMessage.BLOCKED_BY_ABILITY);
       }
     }

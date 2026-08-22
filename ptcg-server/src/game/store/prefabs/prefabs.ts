@@ -4441,6 +4441,27 @@ export function OPPONENT_CANNOT_PLAY_CARDS(
   return store.reduceEffect(state, playLockEffect(effect, source, options));
 }
 
+/**
+ * B.37 / TA-272 — does this `PlayPokemonEffect` represent a POKEMON played from hand?
+ *
+ * A FOSSIL in hand is an **Item**, not a Pokémon. It reaches the Pokémon-play path only because the
+ * Fossil's own `PlayItemEffect` handler raises a `PlayPokemonEffect` for itself, casting
+ * `this as unknown as PokemonCard` — so the card arriving here is a `TrainerCard`. Any effect that
+ * bans the opponent from *"playing a Pokémon from their hand"* must not bite it; an ITEM ban
+ * (`cannotPlayItemCards`) is what reaches a Fossil, and still does.
+ *
+ * Keyed on `superType`, which is what the card IS IN HAND, rather than on a Fossil tag or a card
+ * list — those are proxies for the fact the ruling turns on.
+ *
+ * ⚠️ Measured cast when TA-272 was filed: **6 in-pool Fossils x 1 lock** — which is ONE lock measured
+ * six times, not six independent tests. A second in-pool lock is still the first real test of this
+ * rule. A loose scan finds up to **82** card files with an opponent-facing `PlayPokemonEffect` block;
+ * they are NOT censused and NOT fixed. Call this helper when touching one.
+ */
+export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {
+  return effect.pokemonCard.superType === SuperType.POKEMON;
+}
+
 export function OPPONENT_CANNOT_PLAY_POKEMON_WITH_ABILITIES(
   store: StoreLike,
   state: State,

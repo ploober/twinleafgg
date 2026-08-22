@@ -2,7 +2,7 @@ import { PlayPokemonEffect } from '../effects/play-card-effects';
 import { GameError } from '../../game-error';
 import { GameMessage, GameLog } from '../../game-message';
 import { Effect } from '../effects/effect';
-import { BoardEffect, Stage } from '../card/card-types';
+import { BoardEffect, Stage, SuperType } from '../card/card-types';
 import { State } from '../state/state';
 import { StoreLike } from '../store-like';
 import { CheckPokemonPlayedTurnEffect, CheckSpecialConditionRemovalEffect } from '../effects/check-effects';
@@ -35,7 +35,20 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
 
   /* Play pokemon card */
   if (effect instanceof PlayPokemonEffect) {
+    // TA-272 / B.37: the lock reads *"your opponent can't play any Pokemon that has an Ability FROM
+    // THEIR HAND"*. A FOSSIL in hand is an ITEM, not a Pokemon — settled as B.37 — and it reaches this
+    // reducer only because the Fossil's own `PlayItemEffect` handler raises a `PlayPokemonEffect` for
+    // itself, casting `this as unknown as PokemonCard`. So the card being "played as a Pokemon" here
+    // is a `TrainerCard`, and an Item ban is what should reach it (`cannotPlayItemCards` still does),
+    // not a Pokemon ban.
+    //
+    // Keying on `superType` rather than on the Fossil tag or on a card list: the property that decides
+    // the ruling is what the card IS IN HAND, and superType is that fact rather than a proxy for it.
+    // Measured cast when filed: 6 in-pool Fossils x 1 lock. ⚠️ That is ONE lock measured six times,
+    // not six independent tests — a second in-pool lock is still the first real test of this rule.
+    const playedFromHandAsAPokemon = effect.pokemonCard.superType === SuperType.POKEMON;
     if (effect.player.cannotPlayPokemonWithAbilities
+      && playedFromHandAsAPokemon
       && effect.pokemonCard.powers.some(power => power.powerType === PowerType.ABILITY)) {
       throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
     }

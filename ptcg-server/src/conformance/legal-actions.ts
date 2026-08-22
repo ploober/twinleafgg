@@ -81,7 +81,7 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
     if (iid === undefined) { continue; }
 
     if (card.superType === SuperType.POKEMON && card instanceof PokemonCard) {
-      if (card.evolvesFrom === '' && card.stage === Stage.BASIC) {
+      if (handPlayVerbFor(card) === 'benchBasic') {
         if (!playable.has(card.id)) { continue; }
         if (hasBenchSpace) { out.push({ type: 'benchBasic', card: iid }); }
       } else {
@@ -140,9 +140,9 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
         case TrainerType.ITEM:
         case TrainerType.SUPPORTER:
         case TrainerType.STADIUM: {
-          const playType: 'playItem' | 'playSupporter' | 'playStadium' =
-            card.trainerType === TrainerType.ITEM ? 'playItem'
-              : card.trainerType === TrainerType.SUPPORTER ? 'playSupporter' : 'playStadium';
+          // Read from the shared derivation (TA-273), never re-derived here: this line and the
+          // dispatcher's check must be the same fact or they drift apart again.
+          const playType = handPlayVerbFor(card) as 'playItem' | 'playSupporter' | 'playStadium';
           // CF-55 — an at-once printing gets ONE template for the whole NAME, carrying `candidates`
           // and `counts`, instead of one `card` offer per copy in hand. Emitted at the FIRST copy
           // encountered and suppressed for the rest, so four Transformation Tomes yield one entry
@@ -181,6 +181,42 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
     }
   }
   return out;
+}
+
+/**
+ * The ONE hand-play verb a card in hand can be played with (CF-54: the verb selects the gates).
+ * Returns null for a card that cannot be played from hand at all.
+ *
+ * ⚠️ THIS EXISTS SO THE MENU AND THE DISPATCHER CANNOT DRIFT. TA-273: `benchBasic`,
+ * `playSupporter`, `attachTool` and `attachEnergy` all resolved an Item, because the executor
+ * dispatched `PlayCardAction` and let the ENGINE pick from the card's own category while the menu
+ * derived the verb separately and correctly. Every engine's menu offered exactly `playItem` for
+ * Ultra Ball; only the executor did not check. Rotomancer hit the same class twice (RE-117, RE-121)
+ * and it is the shape they named: **the menu and the dispatcher are written in two places.** So the
+ * derivation lives here, once, and both callers read it.
+ *
+ * The distinction is `evolvesFrom === '' && stage === BASIC` for `benchBasic` and everything else
+ * Pokémon for `evolve` — the same test the menu already used. A FOSSIL is a `TrainerType.ITEM` in
+ * hand and therefore `playItem`, which is B.37's settled reading (*in hand a Fossil is an Item, not
+ * a Pokémon*) and matches what the menu offers for it.
+ */
+export function handPlayVerbFor(card: Card): string | null {
+  if (card.superType === SuperType.POKEMON && card instanceof PokemonCard) {
+    return card.evolvesFrom === '' && card.stage === Stage.BASIC ? 'benchBasic' : 'evolve';
+  }
+  if (card.superType === SuperType.ENERGY && card instanceof EnergyCard) {
+    return 'attachEnergy';
+  }
+  if (card.superType === SuperType.TRAINER && card instanceof TrainerCard) {
+    switch (card.trainerType) {
+      case TrainerType.TOOL: return 'attachTool';
+      case TrainerType.ITEM: return 'playItem';
+      case TrainerType.SUPPORTER: return 'playSupporter';
+      case TrainerType.STADIUM: return 'playStadium';
+      default: return null;
+    }
+  }
+  return null;
 }
 
 /**

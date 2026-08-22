@@ -17,7 +17,7 @@ import { atOnceWireSpec } from './at-once';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
 import { classify, decomposerFor, realPicks, WirePick } from './decomposers';
-import { topLevelMenu } from './legal-actions';
+import { topLevelMenu, handPlayVerbFor } from './legal-actions';
 import { mapRejection } from './rejection-codes';
 import {
   SCHEMA_VERSION,
@@ -252,8 +252,49 @@ function dispatchUseAbility(game: ImportedGame, action: UseAbilityAction): void 
   game.store.dispatch(new UseAbilityGameAction(player.id, action.ability, target));
 }
 
+/**
+ * TA-273: the hand-play VERB must name the card it is played with. Every hand-play verb dispatches
+ * the same `PlayCardAction`, so the ENGINE resolved from the card's own category and the verb the
+ * client sent was never read — `benchBasic`, `playSupporter`, `attachTool` and `attachEnergy` all
+ * successfully resolved an Ultra Ball. Every engine's MENU offered exactly `playItem` for it; only
+ * the executor did not check, which is the "menu and dispatcher written in two places" shape
+ * rotomancer named in RE-117 / RE-121.
+ *
+ * CF-54 pins that the verb SELECTS THE GATES, so a non-load-bearing verb is a contract violation and
+ * not merely untidy. It matters at scale rather than at the table: with 2,000 agent-authored specs,
+ * agents WILL write the wrong verb, twinleaf would accept where rotomancer refuses, and the harness
+ * would report DIVERGED with no rules content in it — manufactured noise landing in the S-7 yield
+ * numbers, on a population large enough to swamp real findings.
+ *
+ * The verb comes from `handPlayVerbFor`, the SAME derivation the menu uses, so the two cannot drift.
+ */
+function assertHandPlayVerb(game: ImportedGame, action: NeutralAction, role: string): void {
+  const iid = (action as { card?: string }).card;
+  if (iid === undefined) {
+    return; // a CF-55 at-once play names `cards`; its verb is checked per card below
+  }
+  const card = lookupCard(game, iid, role);
+  const expected = handPlayVerbFor(card);
+  if (expected !== null && expected !== action.type) {
+    throw new GameError(GameMessage.ILLEGAL_ACTION);
+  }
+}
+
 /** Dispatch one top-level neutral action, returning the game-log delta it produced. */
 function dispatchAction(game: ImportedGame, action: NeutralAction): void {
+  switch (action.type) {
+    case 'benchBasic':
+    case 'evolve':
+    case 'attachEnergy':
+    case 'attachTool':
+    case 'playItem':
+    case 'playSupporter':
+    case 'playStadium':
+      assertHandPlayVerb(game, action, `${action.type}.card`);
+      break;
+    default:
+      break;
+  }
   switch (action.type) {
     case 'benchBasic': dispatchBenchBasic(game, action as BenchBasicAction); break;
     case 'evolve': dispatchEvolve(game, action as EvolveAction); break;
