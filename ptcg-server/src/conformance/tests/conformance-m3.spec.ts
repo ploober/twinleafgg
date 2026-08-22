@@ -5,6 +5,7 @@ import {
   NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION
 } from '../neutral-types';
 import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
+import { GameMessage } from '../../game/game-message';
 
 const PSY = 'Psychic Energy SVE';
 const WATER = 'Water Energy SVE';
@@ -56,6 +57,47 @@ describe('Conformance M3 — the system actor (shuffle + coin flip)', () => {
     const res = replay(game, [{ actor: 'system', type: 'shuffle', order: ['d2', 'd0', 'd1'] }]);
     expect(res.pending!.descriptor).toBe('main'); // shuffle resolved → A's main-phase menu (M5)
     expect(projectGame(game).players.A.deck.map(c => c.iid)).toEqual(['d2', 'd0', 'd1']);
+  });
+
+  /**
+   * TA-302 / CF-52, and the retirement of CF-22's identity fallback. Every malformed `order` shape is
+   * `invalidAction` — a client payload the pending never advertised — not a fault and not a silently
+   * accepted no-op. Rotomancer answers `invalidAction` on all five (their RE-127 fix); twinleaf used
+   * to answer 500 on four of them and `awaitingAction` on the fifth, which is the worse one: it
+   * claimed to still be waiting for an answer it had just been given and quietly discarded.
+   *
+   * The `order` is the ONLY thing that makes a shuffle reproducible across engines, so accepting
+   * "you must have meant the current order" makes one engine shuffle while the other does not, and
+   * the divergence that follows gets attributed to the CARD.
+   */
+  it('rejects every malformed shuffle order as invalidAction, and still applies a valid permutation', () => {
+    const mk = () => {
+      const game = importState(board(
+        player({ active: pip('A-act', 'Ralts SIT'), deck: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }, { iid: 'd2', printing: LIGHT }] }),
+        player({ active: pip('B-act', 'Ralts SIT') }),
+      ));
+      const p = game.state.players[0];
+      game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), (order: number[]) => { p.deck.applyOrder(order); });
+      return game;
+    };
+    const malformed: Array<[string, NeutralAction]> = [
+      ['order absent', { actor: 'system', type: 'shuffle' } as NeutralAction],
+      ['order empty', { actor: 'system', type: 'shuffle', order: [] } as NeutralAction],
+      ['order short', { actor: 'system', type: 'shuffle', order: ['d0', 'd1'] } as NeutralAction],
+      ['unknown iid', { actor: 'system', type: 'shuffle', order: ['d0', 'd1', 'ZZZ'] } as NeutralAction],
+      ['repeated iid', { actor: 'system', type: 'shuffle', order: ['d0', 'd1', 'd1'] } as NeutralAction],
+      ['deck echoed instead of order', { actor: 'system', type: 'shuffle', deck: ['d0', 'd1', 'd2'] } as unknown as NeutralAction],
+    ];
+    for (const [label, action] of malformed) {
+      const res = replay(mk(), [action]);
+      expect(res.applied).toBe(0, label);
+      expect(res.rejection!.nativeReason!.code).toBe(GameMessage.ILLEGAL_ACTION, label);
+    }
+
+    // The control: a valid permutation still applies, so the rejection is not a blanket refusal.
+    const ok = mk();
+    expect(replay(ok, [{ actor: 'system', type: 'shuffle', order: ['d2', 'd0', 'd1'] }]).applied).toBe(1);
+    expect(projectGame(ok).players.A.deck.map(c => c.iid)).toEqual(['d2', 'd0', 'd1']);
   });
 
   it('surfaces a ShuffleDeckPrompt as a system pending when the order is not yet in the log', () => {

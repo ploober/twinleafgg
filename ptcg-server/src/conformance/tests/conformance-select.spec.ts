@@ -80,6 +80,10 @@ describe('Conformance — SelectPrompt decomposer', () => {
       game.store.prompt(game.state, new SelectPrompt(p.id, GameMessage.CHOOSE_OPTION, VALUES), () => { /* unresolved */ });
       return game;
     };
-    expect(() => replay(mk(), [{ actor: 'A', type: 'selectOption', option: 9 }])).toThrowError(/out of range/);
+    // TA-302 / CF-52: an out-of-range index is not in the advertised menu, so it is `invalidAction`
+    // rather than a fault. It threw until 2026-08-21, reaching the HTTP layer as a 500.
+    const res = replay(mk(), [{ actor: 'A', type: 'selectOption', option: 9 }]);
+    expect(res.applied).toBe(0);
+    expect(res.rejection!.nativeReason!.code).toBe(GameMessage.ILLEGAL_ACTION);
   });
 });

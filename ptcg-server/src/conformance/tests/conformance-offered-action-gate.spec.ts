@@ -5,6 +5,7 @@ import {
   PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, CardRef, SCHEMA_VERSION
 } from '../neutral-types';
 import { GameMessage } from '../../game/game-message';
+import { selectOptionDecomposer } from '../decomposers/select-option';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { SelectOptionPrompt } from '../../game/store/prompts/select-option-prompt';
 import { SuperType, EnergyType } from '../../game/store/card/card-types';
@@ -35,10 +36,20 @@ import { SuperType, EnergyType } from '../../game/store/card/card-types';
  * cannot reach this.
  *
  * ORDERING, asserted below because it is the subtle part: the gate runs AFTER the decomposer's own
- * `toPick`. Several decomposers already reject structurally-incoherent picks with a descriptive Error
+ * `toPick`. Several decomposers reject structurally-incoherent picks with a descriptive Error
  * (`select-option` on a disabled or out-of-range index) — the harness's "this log is malformed"
- * channel, which is distinct from "illegal at a live decision node". Gating before `toPick` collapsed
- * the two and silently downgraded those diagnostics to a generic ILLEGAL_ACTION.
+ * channel, which is distinct from "illegal at a live decision node".
+ *
+ * ⚠️ AMENDED 2026-08-21 (TA-302). That distinction was drawn in the wrong place. CF-52 names *"absent
+ * `to`, unknown iid, bad index"* as `invalidAction` explicitly, so a DISABLED or OUT-OF-RANGE
+ * `selectOption` — neither of which the menu offers — is an invalid action, not a malformed log, and
+ * the descriptive Error was reaching the HTTP layer as a 500. An 11-cell (verb, required-field)
+ * census on 2026-08-21 put twinleaf at 4 of 11 and rotomancer at 11 of 11.
+ *
+ * The ordering is UNCHANGED and still asserted; what changed is who decides the channel. `toPick`
+ * still runs first, but a throw from it is now routed by the membership test: NOT OFFERED →
+ * `invalidAction`; OFFERED and still unmappable → rethrown, because a menu advertising something the
+ * adapter cannot map is OUR bug and an adapter-only fault must stay a loud harness gap.
  */
 
 const FIRE = 'Fire Energy SVE';
@@ -120,9 +131,13 @@ describe('Conformance — the driver refuses an action the pending never offered
     expect(() => replay(game, [pick('d1')])).not.toThrow();
   });
 
-  it('the gate runs AFTER toPick, so a decomposer keeps its own descriptive rejection', () => {
-    // select-option already omits disabled indices AND rejects them in toPick with a specific message.
-    // That is the "malformed log" channel and must not be downgraded to a generic ILLEGAL_ACTION.
+  /**
+   * TA-302 / CF-52. A disabled index and an out-of-range index are both things the menu does not
+   * offer, so both are `invalidAction` — the same answer rotomancer gives, measured live on
+   * `option: 99` and `option: -1`. Before this they were a decomposer Error, which the HTTP layer
+   * reported as a 500 `engineFault`.
+   */
+  it('an UNOFFERED pick is invalidAction even when the decomposer has its own descriptive rejection', () => {
     const mk = (): ImportedGame => {
       const game = importState(board());
       const p = game.state.players[0];
@@ -132,10 +147,38 @@ describe('Conformance — the driver refuses an action the pending never offered
       return game;
     };
 
-    expect(() => replay(mk(), [{ actor: 'A', type: 'selectOption', option: 1 } as NeutralAction]))
-      .toThrowError(/disabled/);
-    expect(() => replay(mk(), [{ actor: 'A', type: 'selectOption', option: 9 } as NeutralAction]))
-      .toThrowError(/out of range/);
+    for (const option of [1, 9]) {
+      // A GameError(ILLEGAL_ACTION) is caught by the driver and returned as a `rejection`, which the
+      // caller renders as HTTP 200 + `status: invalidAction`. A bare Error escapes `replay` entirely
+      // and reaches the HTTP layer as a 500 `engineFault` — which is exactly what these two did.
+      const res = replay(mk(), [{ actor: 'A', type: 'selectOption', option } as NeutralAction]);
+
+      expect(res.applied).toBe(0, `option ${option} must not be applied`);
+      expect(res.rejection).toBeDefined();
+      expect(res.rejection!.nativeReason!.code).toBe(GameMessage.ILLEGAL_ACTION);
+    }
+  });
+
+  /**
+   * The other half of the same routing, and the half with no natural board: an action the menu DOES
+   * offer whose `toPick` still throws. That combination is a decomposer inconsistency (SD-14's class)
+   * — every real descriptive rejection we have is for an un-offered action — so it is provoked here
+   * with a spy rather than a board. Without this cell the rethrow branch is unexercised, and a later
+   * edit could route every throw to `invalidAction` and silently turn our own adapter bugs into
+   * clean-looking rejections. That is the failure the census was measuring in the other direction.
+   */
+  it('an OFFERED pick whose toPick throws is RETHROWN, so an adapter inconsistency stays loud', () => {
+    const game = importState(board());
+    const p = game.state.players[0];
+    game.store.prompt(game.state, new SelectOptionPrompt(
+      p.id, GameMessage.CHOOSE_OPTION, ['a', 'b', 'c'], { disabled: [false, false, false] }
+    ), () => { /* unresolved */ });
+
+    spyOn(selectOptionDecomposer, 'toPick').and.throwError('[conformance] synthetic adapter fault');
+
+    // option 0 IS offered (nothing is disabled), so the throw is ours, not the caller's.
+    expect(() => replay(game, [{ actor: 'A', type: 'selectOption', option: 0 } as NeutralAction]))
+      .toThrowError(/synthetic adapter fault/);
   });
 });
 

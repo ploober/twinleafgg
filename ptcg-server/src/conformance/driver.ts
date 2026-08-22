@@ -415,20 +415,37 @@ function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, acti
   }
   const deck = player.deck.cards;
   // CF-22: the pending template advertises `{type:'shuffle', deck}` (the multiset to reorder); the
-  // ANSWER is defined to carry `order` (the new deck order — §5). A client that echoes the offered
-  // template verbatim sends `deck` (or omits the order); since the shuffle order is externalized ONLY
-  // for cross-engine reproducibility, a caller that does not specify one accepts the deck's current
-  // order. Accept either field and fall back to the current order (identity) — never fault on
-  // `undefined.map`, which made every post-search-shuffle step 500 and left "assert after a shuffle"
-  // undrivable on both engines.
-  const orderIids: string[] = action.order
-    ?? (action as { deck?: string[] }).deck
-    ?? deck.map(c => game.ctx.cardToIid.get(c)).filter((iid): iid is string => iid !== undefined);
+  // ANSWER is defined to carry `order` (the new deck order — §5). CF-22 originally accepted EITHER
+  // field and fell back to the deck's current order, on the reasoning that the order is externalized
+  // only for reproducibility so a caller who supplies none accepts the current one. That fixed a real
+  // 500 (`undefined.map`, which made every post-search-shuffle step fault) but the leniency was the
+  // wrong half of the fix.
+  //
+  // ⚠️ RETIRED 2026-08-21 (TA-302, CF-22 amended). Two reasons, and the first is the load-bearing one:
+  //
+  // 1. **The order is the ONLY thing that makes a shuffle reproducible across engines.** Silently
+  //    accepting "you meant the current order" means one engine shuffles and the other does not, and
+  //    the resulting divergence is attributed to the CARD. A leniency that manufactures false card
+  //    findings costs more than the convenience it buys.
+  // 2. CF-52 (later, and specifically about malformed payloads) pins an unresolvable required verb
+  //    payload as `invalidAction`, and rotomancer implemented exactly that for all five malformed
+  //    `order` shapes (their RE-127 fix). `deck` in an ANSWER is the caller confusing input with
+  //    answer — which is the case CF-52 exists for, not a spelling to accept.
+  //
+  // No committed scenario or seed relied on the fallback (scanned 2026-08-21): the canonical JSON
+  // writer emits `order: []` on every action, and an empty `order` already failed `validate`.
+  const orderIids: string[] | undefined = action.order;
+  if (orderIids === undefined) {
+    return []; // an empty permutation fails `prompt.validate` -> invalidAction at the call site
+  }
   return orderIids.map(iid => {
     const card = game.ctx.iidToCard.get(iid);
     const index = card ? deck.indexOf(card) : -1;
     if (index === -1) {
-      throw new Error(`[conformance] shuffle order iid '${iid}' is not in the deck`);
+      // Not a fault: an iid the deck does not hold is a malformed client payload, and CF-52 answers
+      // it with `invalidAction`. Returning an out-of-range index makes `validate` reject it on the
+      // same path as every other bad `order` shape, so there is ONE rejection route, not two.
+      return -1;
     }
     return index;
   });
@@ -640,10 +657,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         if (prompt.type.startsWith('Shuffle') && next !== undefined && next.type === 'shuffle') {
           const perm = shuffleOrderToPermutation(game, prompt, next as ShuffleSystemAction);
           if (!prompt.validate(perm, game.state)) {
-            const player = game.state.players.find(p => p.id === prompt.playerId);
-            throw new Error(`[conformance] shuffle order invalid for prompt '${prompt.type}': `
-              + `perm=[${perm.join(',')}] (len=${perm.length}), `
-              + `deck len=${player ? player.deck.cards.length : '?'}, playerId=${prompt.playerId}`);
+            // TA-302 / CF-52: `order` is a CLIENT payload, and an order that is absent, empty, short,
+            // names an iid the deck does not hold, or repeats one, is an action the pending never
+            // advertised — `invalidAction`, not an `engineFault`. This threw a bare Error until
+            // 2026-08-21, which the HTTP layer reported as a 500; rotomancer answers `invalidAction`
+            // on all five malformed shapes (their RE-127 fix) and 200 on a valid permutation.
+            cursor.i++;
+            throw new GameError(GameMessage.ILLEGAL_ACTION);
           }
           cursor.i++;
           // No deck-shuffle GameLog exists; emit the significant `shuffled` for the deck's owner
@@ -777,14 +797,35 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // offered is an invalid action, not an engine fault — without the gate below it is accepted here
       // and only caught downstream by validate(), which the caller reports as a 500.
       //
-      // ORDER MATTERS. `toPick` runs FIRST and is allowed to throw: several decomposers already reject
+      // ORDER MATTERS. `toPick` runs FIRST and is allowed to throw: several decomposers reject
       // structurally-incoherent picks with a descriptive Error (`select-option` on a disabled or
       // out-of-range index, `choose-energy` on an iid the prompt never held), and that is the harness's
       // "this log is malformed" channel — distinct from "this action is illegal at a live decision
-      // node", which is what `invalidAction` means. Gating before `toPick` collapsed the two and
-      // silently downgraded those diagnostics. `toPick` is a pure action→WirePick mapping with no side
-      // effects, so running it before the membership test costs nothing.
-      const pick = dec.toPick(prompt, nextAction, game.ctx, game.state, accum);
+      // node", which is what `invalidAction` means. `toPick` is a pure action→WirePick mapping with no
+      // side effects, so running it before the membership test costs nothing.
+      //
+      // TA-302: but that distinction was drawn in the WRONG place, and CF-52 had already settled it.
+      // An action missing a required field is not in the advertised menu, so `invalidAction` is its
+      // answer whatever `toPick` thinks of it — CF-52 names *"absent `to`, unknown iid, bad index"*
+      // explicitly, and TA-294 already converted the unknown-iid half. Measured 2026-08-21 across an
+      // 11-cell (verb, required-field) census: twinleaf answered 4, rotomancer 11. Six of the seven
+      // misses were this throw reaching the HTTP layer as a 500 `engineFault`.
+      //
+      // So the membership test now decides which channel a `toPick` throw belongs to, rather than
+      // being unreachable behind it. NOT OFFERED → `invalidAction`, whatever the decomposer's
+      // complaint was. OFFERED and still unmappable → RETHROW: the menu advertised something the
+      // adapter cannot turn into a pick, which is our bug and must stay loud (an adapter-only fault is
+      // a harness gap, the line rotomancer holds in their note ninety-seven §3 and we agreed with).
+      let pick;
+      try {
+        pick = dec.toPick(prompt, nextAction, game.ctx, game.state, accum);
+      } catch (e) {
+        if (!offersAction(sub.legalActions, nextAction)) {
+          cursor.i++;
+          throw new GameError(GameMessage.ILLEGAL_ACTION);
+        }
+        throw e;
+      }
       if (!offersAction(sub.legalActions, nextAction)) {
         cursor.i++;
         throw new GameError(GameMessage.ILLEGAL_ACTION);

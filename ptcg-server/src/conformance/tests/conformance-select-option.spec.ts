@@ -90,10 +90,15 @@ describe('Conformance — SelectOptionPrompt decomposer', () => {
       { actor: 'A', type: 'selectOption', option: 2 },
     ]);
 
-    // naming the disabled index is a malformed log (contract violation) → hard throw
-    expect(() => replay(mk(), [{ actor: 'A', type: 'selectOption', option: 1 }])).toThrowError(/disabled/);
-
-    // out-of-range index likewise throws
-    expect(() => replay(mk(), [{ actor: 'A', type: 'selectOption', option: 9 }])).toThrowError(/out of range/);
+    // TA-302 / CF-52: naming the disabled index, or an out-of-range one, names something the menu
+    // above does NOT offer — so both are `invalidAction`, not a hard throw. They threw until
+    // 2026-08-21, and the HTTP layer turned that into a 500 `engineFault`; rotomancer answers
+    // `invalidAction` on both. The decomposer keeps its descriptive message for the case that IS
+    // offered and still unmappable (see conformance-offered-action-gate.spec.ts).
+    for (const option of [1, 9]) {
+      const res = replay(mk(), [{ actor: 'A', type: 'selectOption', option }]);
+      expect(res.applied).toBe(0, `option ${option}`);
+      expect(res.rejection!.nativeReason!.code).toBe(GameMessage.ILLEGAL_ACTION);
+    }
   });
 });
