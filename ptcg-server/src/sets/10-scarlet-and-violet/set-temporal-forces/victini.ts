@@ -4,9 +4,9 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { Card, ChooseCardsPrompt, EnergyCard, GameMessage, ShuffleDeckPrompt, StateUtils } from '../../..';
+import { Card, ChooseCardsPrompt, EnergyCard, GameMessage, StateUtils } from '../../..';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
 
 export class Victini extends PokemonCard {
 
@@ -52,18 +52,21 @@ export class Victini extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
 
       const player = effect.player;
-      const cards = player.hand.cards.filter(c => c !== this);
-
-      if (cards.length > 0) {
-        player.hand.moveCardsTo(cards, player.deck);
-
-        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
-        });
-      }
-
-      player.deck.moveTo(player.hand, 6);
-      return state;
+      // TA-304: the draw ran AFTER the `store.prompt` call but BEFORE the prompt resolved --
+      // `store.prompt` enqueues and returns -- so the six cards came off the UNSHUFFLED deck and were
+      // fully determined by the pre-attack order. The printed clause sequences it with "Then", and
+      // randomising the draw is the only thing the shuffle is there for. Now inside the continuation.
+      //
+      // The `.filter(c => c !== this)` that used to guard the move is gone with it: `this` is the
+      // ATTACKING Victini, which is in play and never in hand, so the filter excluded nothing. A
+      // second copy of Victini in hand is a different object and was never excluded by it either.
+      //
+      // The `if (cards.length > 0)` guard is gone too, and deliberately: with an empty hand it
+      // skipped the shuffle entirely, so the draw again came off an unshuffled deck. #930 reads a
+      // hand of zero cards as still shufflable, and rotomancer shuffles on that board.
+      const cards = [...player.hand.cards];
+      cards.forEach(c => player.hand.moveCardTo(c, player.deck));
+      return SHUFFLE_THEN_DRAW(store, state, player, 6);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

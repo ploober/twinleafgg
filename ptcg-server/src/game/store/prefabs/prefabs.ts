@@ -1978,6 +1978,35 @@ export function GET_PRIZES_AS_CARD_ARRAY(player: Player): Card[] {
 /**
  * Shuffles the player's deck.
  */
+/**
+ * "Shuffle your hand into your deck. **Then**, draw N cards." — the draw runs INSIDE the shuffle's
+ * continuation, which is the only way to make it happen after.
+ *
+ * ⚠️ WHY THIS PREFAB EXISTS (TA-304 / SD-25). `store.prompt` ENQUEUES and returns, so
+ *
+ *     SHUFFLE_DECK(store, state, player);
+ *     DRAW_CARDS(store, state, player, 6);
+ *
+ * READS as ordered and is not: the draw executes immediately, off the UNSHUFFLED deck, and the
+ * shuffle then reorders whatever is left. The cards drawn are therefore fully determined by the
+ * pre-shuffle order — which defeats the entire purpose of the shuffle, since randomising what you
+ * draw is the only thing it is there for. Measured on `tef-030` Victini and `asc-102` Hitmontop:
+ * twinleaf handed the player the pre-attack top 6 while rotomancer had not drawn yet.
+ *
+ * A static scan finds **35** card files spelling it the unsafe way. Call this instead.
+ */
+export function SHUFFLE_THEN_DRAW(
+  store: StoreLike,
+  state: State,
+  player: Player,
+  count: number,
+): State {
+  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+    player.deck.applyOrder(order);
+    DRAW_CARDS(store, state, player, count);
+  });
+}
+
 export function SHUFFLE_DECK(store: StoreLike, state: State, player: Player): State {
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) =>
     player.deck.applyOrder(order),

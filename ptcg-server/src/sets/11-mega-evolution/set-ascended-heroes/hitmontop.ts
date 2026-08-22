@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DRAW_CARDS, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, WAS_ATTACK_USED, SHUFFLE_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
 
 export class Hitmontop extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -35,8 +35,10 @@ export class Hitmontop extends PokemonCard {
     // Spin and Draw
     if (WAS_ATTACK_USED(effect, 0, this)) {
       MOVE_CARDS(store, state, effect.player.hand, effect.player.deck);
-      SHUFFLE_DECK(store, state, effect.player);
-      DRAW_CARDS(store, state, effect.player, 6);
+      // TA-304: the draw must run INSIDE the shuffle's continuation. `SHUFFLE_DECK` then
+      // `DRAW_CARDS` reads as ordered and is not -- `store.prompt` enqueues and returns, so the draw
+      // came off the UNSHUFFLED deck and handed the player the pre-attack top 6.
+      return SHUFFLE_THEN_DRAW(store, state, effect.player, 6);
     }
 
     return state;
