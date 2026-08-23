@@ -5,7 +5,7 @@ import { StoreLike, State, GameMessage, StateUtils, GameError } from '../../../g
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { ABILITY_USED, DRAW_CARDS, MOVE_CARDS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, MOVE_CARDS, SHUFFLE_THEN_DRAW, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Gothitelle extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -66,8 +66,13 @@ export class Gothitelle extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // SD-25 (omission sub-shape) / TA-305: the printed text is "shuffle their hand into their deck
+      // AND DRAW 3". The shuffle was simply absent — `MOVE_CARDS` then `DRAW_CARDS` hands the
+      // opponent back the very cards they just put in, in order, so the ability's whole randomising
+      // purpose was lost while every COUNT stayed identical (hand 3 in, 3 out) and no cell noticed.
+      // The draw must run INSIDE the shuffle's continuation, per `SHUFFLE_THEN_DRAW` (TA-304).
       MOVE_CARDS(store, state, opponent.hand, opponent.deck, { sourceCard: this });
-      DRAW_CARDS(store, state, opponent, 3);
+      return SHUFFLE_THEN_DRAW(store, state, opponent, 3);
     }
 
     if (effect instanceof EndTurnEffect) {
