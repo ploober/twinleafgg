@@ -850,7 +850,8 @@
       "file": "set-temporal-forces/delivery-box.ts",
       "signatures": [
         "{ min: 0, max: 2, allowCancel: false }",
-        "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
+        "const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {",
+        "), () => { takeIntoHand(); shuffleDeck(); });"
       ]
     },
     {
@@ -5583,7 +5584,9 @@
       "signatures": [
         "  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);",
         "export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {",
-        "export function SHUFFLE_THEN_DRAW("
+        "export function SHUFFLE_THEN_DRAW(",
+        "export function SHOW_CARDS_THEN(",
+        "SHOW_CARDS_THEN(store, state, opponent, cards, () => {"
       ],
       "note": "TA-289 2026-08-19: the copy route must issue the AfterAttackEffect the direct route issues. Reverting this silently drops EVERY family-A rider whenever an attack is copied — 13 card files at once, with no error anywhere."
     },
@@ -5739,6 +5742,12 @@
       "file": "set-ascended-heroes/hitmontop.ts",
       "signatures": [
         "      return SHUFFLE_THEN_DRAW(store, state, effect.player, 6);"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/ultra-ball.ts",
+      "signatures": [
+        "), () => {\n        player.deck.moveCardsTo(selected, player.hand);"
       ]
     }
   ]

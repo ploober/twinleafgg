@@ -46,24 +46,28 @@ export class DeliveryBox extends TrainerCard {
       ), selected => {
         cards = selected || [];
 
-        player.deck.moveCardsTo(cards, player.hand);
-
-
-        cards.forEach((card, index) => {
-          store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-        });
-
         const shuffleDeck = () => store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);
         });
+
+        // TA-265 / §B.34: the reveal is printed BEFORE the cards enter the hand, and the adapter
+        // reads the revealed card's zone at show time. Moving first reported `from: 'hand'` for
+        // cards disclosed out of the deck, so the move now runs inside the show's continuation.
+        const takeIntoHand = () => {
+          player.deck.moveCardsTo(cards, player.hand);
+          cards.forEach((card) => {
+            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
+          });
+        };
 
         if (cards.length > 0) {
           return store.prompt(state, new ShowCardsPrompt(
             opponent.id,
             GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
             cards
-          ), () => shuffleDeck());
+          ), () => { takeIntoHand(); shuffleDeck(); });
         }
+        takeIntoHand();
         shuffleDeck();
       });
       const endTurnEffect = new EndTurnEffect(player);

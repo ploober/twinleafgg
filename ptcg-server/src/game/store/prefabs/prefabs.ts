@@ -319,9 +319,13 @@ export function SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(
     new ChooseCardsPrompt(player, GameMessage.CHOOSE_CARD_TO_HAND, player.deck, filter, options),
     (selected) => {
       const cards = selected || [];
-      SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
-      cards.forEach((card) => MOVE_CARD_TO(state, card, player.hand));
-      SHUFFLE_DECK(store, state, player);
+      // TA-265 / §B.34: the reveal is printed BEFORE the card enters the hand, so the move has to run
+      // inside the show's continuation. Written flat, `store.prompt`'s enqueue-and-return put the card
+      // in the hand first and the reveal reported `from: 'hand'`.
+      SHOW_CARDS_THEN(store, state, opponent, cards, () => {
+        cards.forEach((card) => MOVE_CARD_TO(state, card, player.hand));
+        SHUFFLE_DECK(store, state, player);
+      });
     },
   );
 }
@@ -3216,6 +3220,36 @@ export function SHOW_CARDS_TO_PLAYER(
     state,
     new ShowCardsPrompt(player.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
     () => { },
+  );
+}
+
+/**
+ * Show `cards` to `player` and run `then` **after** the show has been answered.
+ *
+ * TA-265 / §B.34 / SD-25. `SHOW_CARDS_TO_PLAYER` is a `store.prompt`, which ENQUEUES and returns, so
+ * a statement written after it executes BEFORE the show is processed. On a printed *"search your deck
+ * for X, **reveal it**, and put it into your hand"* that put the card in the hand first, and the
+ * reveal was therefore reported as `from: 'hand'` — a disclosure attributed to a zone the card was
+ * not yet in when the card text says it is disclosed. §B.34 adjudicated `from: 'deck'` correct.
+ *
+ * The empty case runs `then` immediately and raises no prompt, matching `SHOW_CARDS_TO_PLAYER`: a
+ * show of nothing has nothing to sequence against.
+ */
+export function SHOW_CARDS_THEN(
+  store: StoreLike,
+  state: State,
+  player: Player,
+  cards: Card[],
+  then: () => void,
+): State {
+  if (cards.length === 0) {
+    then();
+    return state;
+  }
+  return store.prompt(
+    state,
+    new ShowCardsPrompt(player.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
+    () => { then(); },
   );
 }
 

@@ -47,14 +47,19 @@ function* playCard(next: Function, store: StoreLike, state: State,
     { min: 0, max: 1, allowCancel: false }
   ), selected => {
     if (selected && selected.length > 0) {
-      player.deck.moveCardsTo(selected, player.hand);
-      store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: selected[0].name });
-
+      // TA-265 / §B.34: "search your deck for a Pokémon, REVEAL IT, and put it into your hand" —
+      // the reveal is printed BEFORE the card enters the hand, and the adapter reads the revealed
+      // card's zone at show time. Moving first reported `from: 'hand'` for a card disclosed out of
+      // the deck. The move now runs inside the show's continuation.
       store.prompt(state, new ShowCardsPrompt(
         opponent.id,
         GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
         selected
-      ), () => next());
+      ), () => {
+        player.deck.moveCardsTo(selected, player.hand);
+        store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: selected[0].name });
+        next();
+      });
     } else {
       next();
     }
