@@ -47,7 +47,17 @@ function* playCard(next: Function, store: StoreLike, state: State,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.discard,
     {},
-    { min: 0, max: 1, allowCancel: false, blocked, maxPokemons, maxEnergies }
+    // TA-309: Night Stretcher's text is *"Put a Pokemon or a Basic Energy card from your discard
+    // pile into your hand"* — no "you may", no "up to", no "any number". The effect is MANDATORY,
+    // so `min` is 1, not 0. With `min: 0` the prompt offered `confirm{false}` and declining left the
+    // card in the discard: the player skipped a mandatory effect outright.
+    //
+    // This is NOT the deck-search case. Compendium #577 (Roll Call, TPCi Rules Team 2017-05-04) —
+    // *"since the contents of the deck are unknown you can also voluntarily fail to find"* — licenses
+    // `min: 0` when the source zone is HIDDEN. The discard pile is PUBLIC and demonstrably holds a
+    // legal target here, so "I choose not to find it" is not available. Compendium #468: *"play each
+    // attack as it is written on its card"*; #805 names the mandatory actions you must take.
+    { min: 1, max: 1, allowCancel: false, blocked, maxPokemons, maxEnergies }
   ), selected => {
     cards = selected || [];
     next();

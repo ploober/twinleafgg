@@ -5761,6 +5761,14 @@
         "const damageEffect = new DealDamageEffect(effect, effect.damage);"
       ],
       "note": "TA-306 is a MOVE, not an addition: the `if (!opponent.active.cards.some(... ENERGY))` guard exists in BOTH the buggy and the fixed file, only at a different depth, so no substring of the guard itself can tell them apart ([[a-deletion-cannot-be-a-signature]]). The TA-306 comment line is the marker that only exists post-fix; do not delete it without replacing this signature. goldeen.ts additionally gains the damage-first block, which IS new code."
+    },
+    {
+      "file": "set-shrouded-fable/nightly-stretcher.ts",
+      "signatures": [
+        "// TA-309: Night Stretcher's text is",
+        "{ min: 1, max: 1, allowCancel: false, blocked, maxPokemons, maxEnergies }"
+      ],
+      "note": "TA-309 \u2014 the fix is min: 0 -> min: 1 on a MANDATORY effect over a PUBLIC zone. A deletion cannot be a signature, so both markers are POSITIVE strings absent from the buggy version. The bare `min: 1` alone would be too weak: the same token appears in dozens of legitimate prompts, so the full options literal is pinned. An origin/main merge that restores `min: 0` reds this loudly instead of silently reintroducing an illegal decline on 4 printings (asc-196, sfa-061, meg-173, ssp-251 \u2014 the last three inherit via subclass)."
     }
   ]
 }
