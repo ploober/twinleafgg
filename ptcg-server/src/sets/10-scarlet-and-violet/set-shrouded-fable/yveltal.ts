@@ -56,11 +56,6 @@ export class Yveltal extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Defending Pokemon has no energy cards attached
-      if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
-        return state;
-      }
-
       // Rulebook attack step F: damage first, then the post-damage effect flip
       // (compendium #649) — the flip pauses, so the 100 must already be placed.
       const damageEffect = new DealDamageEffect(effect, effect.damage);
@@ -71,6 +66,16 @@ export class Yveltal extends PokemonCard {
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)
       ], result => {
         if (result === true) {
+
+          // TA-306 / compendium #1661 (Clefable "Moonlit Miracle", TPCi Rules Team 2022-02-24):
+          // "You can use the attack no matter what, but AFTER FLIPPING COINS if you have no Pokemon
+          // that can evolve the attack stops there." The flip is a mandated STEP of the attack, not a
+          // decision, so CF-33's zero-achievable suppression does not reach it — only the DISCARD is
+          // gated on a target existing. This guard used to sit above the flip and skipped it entirely
+          // on an Energy-less defender.
+          if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
+            return;
+          }
 
           let card: Card;
           return store.prompt(state, new ChooseCardsPrompt(

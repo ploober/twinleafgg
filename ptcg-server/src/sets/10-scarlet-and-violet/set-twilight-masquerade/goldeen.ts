@@ -2,7 +2,7 @@ import { CardType, Stage, SuperType } from '../../../game/store/card/card-types'
 import { Attack, Card, ChooseCardsPrompt, CoinFlipPrompt, GameMessage, PokemonCard, Power, PowerType, State, StateUtils, StoreLike } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
+import { DealDamageEffect, DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Goldeen extends PokemonCard {
@@ -47,15 +47,29 @@ export class Goldeen extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Defending Pokemon has no energy cards attached
-      if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
-        return state;
-      }
+      // Rulebook attack step F / compendium #543, #649 (the TA-79 family): base damage is applied
+      // BEFORE a post-damage rider. The flip PAUSES, so the 10 must already be placed. This was
+      // latent while the early return above skipped the flip on an Energy-less defender — nothing
+      // paused, so the core damage landed on its own. TA-306 made the flip real and exposed it.
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
 
       state = store.prompt(state, [
         new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)
       ], result => {
         if (result === true) {
+
+          // TA-306 / compendium #1661 (Clefable "Moonlit Miracle", TPCi Rules Team 2022-02-24):
+          // "You can use the attack no matter what, but AFTER FLIPPING COINS if you have no Pokemon
+          // that can evolve the attack stops there." The flip is a mandated STEP of the attack, not a
+          // decision, so CF-33's zero-achievable suppression does not reach it — only the DISCARD is
+          // gated on a target existing. This guard used to sit above the flip: it skipped the flip
+          // entirely on an Energy-less defender, AND it returned before the Festival Lead `barrage`
+          // assignment below, so Whirlpool silently kept the previous invocation's barrage value.
+          if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
+            return;
+          }
 
           let card: Card;
           return store.prompt(state, new ChooseCardsPrompt(
