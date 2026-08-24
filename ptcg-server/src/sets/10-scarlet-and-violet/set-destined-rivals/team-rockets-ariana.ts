@@ -23,10 +23,58 @@ export class TeamRocketsAriana extends TrainerCard {
   public text: string =
     'Draw cards until you have 5 cards in your hand. If all of your Pokémon in play are Team Rocket\'s Pokemon, draw cards until you have 8 cards in your hand instead.';
 
+  /**
+   * The printed target, computed from the board: 8 when the player HAS Pokemon in play and every one
+   * of them is a Team Rocket's Pokemon, otherwise 5. Shared with `reduceEffect` on purpose — a gate
+   * that recomputes the target independently of the effect it gates can drift away from it, and then
+   * the card is offered for a draw it will not perform.
+   */
+  private targetHandSize(player: Player): number {
+    let allTeamRocket = true;
+    let hasPokemon = false;
+
+    if (player.active.cards.length > 0) {
+      hasPokemon = true;
+      const activePokemon = player.active.getPokemonCard();
+      if (!activePokemon || !activePokemon.tags
+        || !activePokemon.tags.includes(CardTag.TEAM_ROCKET)) {
+        allTeamRocket = false;
+      }
+    }
+
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+      if (cardList !== player.active && card instanceof PokemonCard) {
+        hasPokemon = true;
+        if (!card.tags || !card.tags.includes(CardTag.TEAM_ROCKET)) {
+          allTeamRocket = false;
+        }
+      }
+    });
+
+    return (hasPokemon && allTeamRocket) ? 8 : 5;
+  }
+
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
       return false;
     }
+
+    // TA-270 / §B.36: a COUNT that computes to zero makes the card unplayable — *"you cannot play a
+    // Trainer card for no effect"* (#925, #1030). Compendium **#1042 (Hugh)** is this card's
+    // arithmetic verbatim: *"If I have 6 cards in my hand including a Hugh ... can I play Hugh? — No.
+    // After playing Hugh both players would have exactly 5 cards in their hands."* Note WHERE it
+    // counts from: the hand AFTER the Supporter has left it, so the card's own trip to the discard is
+    // not an effect. Hence `- 1`.
+    const handAfterPlay = player.hand.cards.length - 1;
+    if (handAfterPlay >= this.targetHandSize(player)) {
+      return false;
+    }
+
+    // §B.29 / the other half: the count is non-zero but there is nothing to draw FROM.
+    if (player.deck.cards.length === 0) {
+      return false;
+    }
+
     return true;
   }
 
@@ -44,33 +92,8 @@ export class TeamRocketsAriana extends TrainerCard {
       player.hand.moveCardTo(effect.trainerCard, player.supporter);
       effect.preventDefault = true;
 
-      // Check if all Pokémon in play are Team Rocket's Pokémon
-      let allTeamRocket = true;
-      let hasPokemon = false;
-
-      // Check active
-      if (player.active.cards.length > 0) {
-        hasPokemon = true;
-        const activePokemon = player.active.getPokemonCard();
-        if (!activePokemon ||
-          !activePokemon.tags ||
-          !activePokemon.tags.includes(CardTag.TEAM_ROCKET)) {
-          allTeamRocket = false;
-        }
-      }
-
-      // Check bench
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        if (cardList !== player.active && card instanceof PokemonCard) {
-          hasPokemon = true;
-          if (!card.tags || !card.tags.includes(CardTag.TEAM_ROCKET)) {
-            allTeamRocket = false;
-          }
-        }
-      });
-
-      // Set target hand size
-      const targetHandSize = (hasPokemon && allTeamRocket) ? 8 : 5;
+      // Same computation the play gate uses — see `targetHandSize`.
+      const targetHandSize = this.targetHandSize(player);
 
       // Draw until target hand size is reached
       while (player.hand.cards.length < targetHandSize) {

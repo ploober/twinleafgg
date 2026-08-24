@@ -92,6 +92,21 @@ Draw a card for each of your opponent's Benched Pokémon.`;
     if (player.deck.cards.length === 0) {
       return false;
     }
+
+    // TA-270 / §B.36: the COUNT gate. *"Draw a card for each of your opponent's Benched Pokemon"* on
+    // an empty opposing Bench draws ZERO, and *"you cannot play a Trainer card for no effect"*
+    // (#925). Compendium **#1030** is this exact operand: *"Can I play Guzma if my opponent doesn't
+    // have any Pokemon on their Bench? — No."* The discard above is a COST, and a payable cost buys
+    // nothing (#1124, #1188), so it does not rescue the play.
+    //
+    // ⚠️ A bench SLOT always exists, so `opponent.bench.length` is never 0 — emptiness is
+    // `cards.length`, per the same reduce the effect itself uses.
+    const opponent = StateUtils.getOpponent(state, player);
+    const opponentBenched = opponent.bench.reduce((left, b) => left + (b.cards.length ? 1 : 0), 0);
+    if (opponentBenched === 0) {
+      return false;
+    }
+
     return true;
   }
 

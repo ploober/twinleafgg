@@ -5795,6 +5795,19 @@
         "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);",
         "'Reveal up to 2 Pok\u00e9mon in your hand and put them into your deck. If you do, search your deck for up to that many Pok\u00e9mon, reveal them, and put them into your hand. Then, shuffle your deck.'"
       ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-ariana.ts",
+      "signatures": [
+        "    const handAfterPlay = player.hand.cards.length - 1;",
+        "    if (handAfterPlay >= this.targetHandSize(player)) {"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/mortys-conviction.ts",
+      "signatures": [
+        "    const opponentBenched = opponent.bench.reduce((left, b) => left + (b.cards.length ? 1 : 0), 0);\n    if (opponentBenched === 0) {"
+      ]
     }
   ]
 }
