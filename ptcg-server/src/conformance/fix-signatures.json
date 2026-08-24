@@ -5769,6 +5769,32 @@
         "{ min: 1, max: 1, allowCancel: false, blocked, maxPokemons, maxEnergies }"
       ],
       "note": "TA-309 \u2014 the fix is min: 0 -> min: 1 on a MANDATORY effect over a PUBLIC zone. A deletion cannot be a signature, so both markers are POSITIVE strings absent from the buggy version. The bare `min: 1` alone would be too weak: the same token appears in dozens of legitimate prompts, so the full options literal is pinned. An origin/main merge that restores `min: 0` reds this loudly instead of silently reintroducing an illegal decline on 4 printings (asc-196, sfa-061, meg-173, ssp-251 \u2014 the last three inherit via subclass)."
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-petrel.ts",
+      "signatures": [
+        "SHOW_CARDS_THEN(store, state, opponent, cards, () => {\n    MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/energy-search.ts",
+      "signatures": [
+        "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/bug-catching-set.ts",
+      "signatures": [
+        "      () => next(),\n    );\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/perrin.ts",
+      "signatures": [
+        "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  player.hand.moveCardsTo(cards, player.deck);",
+        "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);",
+        "'Reveal up to 2 Pok\u00e9mon in your hand and put them into your deck. If you do, search your deck for up to that many Pok\u00e9mon, reveal them, and put them into your hand. Then, shuffle your deck.'"
+      ]
     }
   ]
 }

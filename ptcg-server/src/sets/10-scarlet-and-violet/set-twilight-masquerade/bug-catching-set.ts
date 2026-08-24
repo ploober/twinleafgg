@@ -66,7 +66,11 @@ function* playCard(
 
     return state;
   }
-  deckTop.moveCardsTo(cards, player.hand);
+  // TA-265 residual / §B.34: the reveal must name the SOURCE zone (`deck`). The looked-at cards live
+  // in the TEMPORARY `deckTop` list, which `locateCard` cannot see -- showing them from there reports
+  // `from: 'unknown'`, not `from: 'deck'` -- so the whole window goes back to the deck FIRST, the
+  // reveal is raised while the chosen cards are genuinely in the deck, and only then do they move to
+  // the hand. Net state is unchanged: the deck is shuffled at the end of the effect either way.
   deckTop.moveTo(player.deck);
 
   if (cards.length > 0) {
@@ -76,6 +80,8 @@ function* playCard(
       () => next(),
     );
   }
+
+  player.deck.moveCardsTo(cards, player.hand);
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);

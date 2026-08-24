@@ -8,7 +8,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { GameError } from '../../../game/game-error';
 import { GameMessage } from '../../../game/game-message';
-import { MOVE_CARDS, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, SHOW_CARDS_THEN, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 import { Player, StateUtils } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
@@ -39,11 +39,16 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     next();
   });
 
-  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
-
-  SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
-
-  SHUFFLE_DECK(store, state, player);
+  // TA-265 residual / §B.34: `SHOW_CARDS_TO_PLAYER` is a `store.prompt` -- it ENQUEUES and returns --
+  // so a flat call written after the move is not merely mis-ordered on the page, it CANNOT run first.
+  // Swapping the two lines would change nothing; the move has to happen inside the show's
+  // continuation, which is what `SHOW_CARDS_THEN` exists for. This card was the largest live-diverging
+  // row in the 2026-08-23 corpus (7,396 occurrences) precisely because it does not call the
+  // SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND prefab that TA-265's first fix repaired.
+  SHOW_CARDS_THEN(store, state, opponent, cards, () => {
+    MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
+    SHUFFLE_DECK(store, state, player);
+  });
 }
 
 export class TeamRocketsPetrel extends TrainerCard {

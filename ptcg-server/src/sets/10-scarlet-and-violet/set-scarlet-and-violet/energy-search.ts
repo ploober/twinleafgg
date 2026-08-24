@@ -37,8 +37,9 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     next();
   });
 
-  player.deck.moveCardsTo(cards, player.hand);
-
+  // TA-265 residual / §B.34: the reveal is printed BEFORE the card changes zones, so the
+  // `reveal` event must name the SOURCE zone. Showing after the move made the adapter read the
+  // card's zone with the move already applied, and it reported the DESTINATION.
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
       opponent.id,
@@ -46,6 +47,8 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       cards
     ), () => next());
   }
+
+  player.deck.moveCardsTo(cards, player.hand);
 
 
 

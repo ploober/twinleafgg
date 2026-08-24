@@ -48,14 +48,19 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   if (cards.length === 0) {
     return;
   }
-  // Put Pokemon from hand into the deck
-  player.hand.moveCardsTo(cards, player.deck);
-
+  // TA-265 residual / §B.34 — THE INVERTED CELL. Every earlier B.34 witness moved deck -> hand and
+  // twinleaf answered `from: 'hand'`, which reads like a (wrong but stable) "a reveal is always from
+  // the hand" convention. This move is hand -> deck, and showing after it answered `from: 'deck'`.
+  // So the bug is not "names the hand", it is "names the DESTINATION" -- and a population detector
+  // keyed on "a deck search paired with a reveal" cannot see this direction at all.
   yield store.prompt(state, new ShowCardsPrompt(
     opponent.id,
     GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
     cards
   ), () => next());
+
+  // Put Pokemon from hand into the deck
+  player.hand.moveCardsTo(cards, player.deck);
 
   const minMax = cards.length;
 
@@ -70,10 +75,9 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     next();
   });
 
-  player.deck.moveCardsTo(cards, player.hand);
-
-
-
+  // TA-265 residual / §B.34: the reveal is printed BEFORE the card changes zones, so the
+  // `reveal` event must name the SOURCE zone. Showing after the move made the adapter read the
+  // card's zone with the move already applied, and it reported the DESTINATION.
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
       opponent.id,
@@ -81,6 +85,8 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       cards
     ), () => next());
   }
+
+  player.deck.moveCardsTo(cards, player.hand);
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
     player.deck.applyOrder(order);
@@ -98,7 +104,7 @@ export class Perrin extends TrainerCard {
   public setNumber: string = '160';
 
   public text: string =
-    'Reveal up to 2 Pokémon from your hand and shuffle them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.';
+    'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.';
 
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
