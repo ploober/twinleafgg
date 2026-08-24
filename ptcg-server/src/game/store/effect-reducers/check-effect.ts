@@ -15,6 +15,7 @@ import { ShuffleDeckPrompt } from '../prompts/shuffle-prompt';
 import { setupGame } from '../reducers/setup-reducer';
 import { CardList } from '../state/card-list';
 import { PokemonCardList } from '../state/pokemon-card-list';
+import { Player } from '../state/player';
 import { StateUtils } from '../state-utils';
 import { GamePhase, GameWinner, State } from '../state/state';
 import { StoreLike } from '../store-like';
@@ -185,6 +186,49 @@ function handleBenchSizeChange(store: StoreLike, state: State, benchSizes: numbe
 function turnNextOrder(state: State): number[] {
   const next = 1 - state.activePlayer;
   return [next, state.activePlayer];
+}
+
+/**
+ * The prompt a player needs when their Active spot is empty and their Bench is not, or `null` when
+ * no choice is owed. Shared so that the post-attack replacement (compendium **#479**, §B.42 / TA-282) and the
+ * checkState sweep raise the SAME prompt rather than two spellings of it.
+ */
+export function choosePromotionPrompt(player: Player): ChoosePokemonPrompt | null {
+  const hasActive = player.active.cards.length > 0;
+  const hasBenched = player.bench.some(bench => bench.cards.length > 0);
+  if (hasActive || !hasBenched) {
+    return null;
+  }
+  return new ChoosePokemonPrompt(
+    player.id,
+    GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
+    PlayerType.BOTTOM_PLAYER,
+    [SlotType.BENCH],
+    { min: 1, allowCancel: false }
+  );
+}
+
+/** Apply a `choosePromotionPrompt` answer: swap the chosen Bench slot into the Active spot. */
+export function applyPromotion(store: StoreLike, state: State, player: Player, result: unknown): void {
+  const selectedPokemon = result as PokemonCardList[];
+  if (selectedPokemon.length !== 1) {
+    throw new GameError(GameMessage.ILLEGAL_ACTION);
+  }
+  const benchIndex = player.bench.indexOf(selectedPokemon[0]);
+  if (benchIndex === -1 || player.active.cards.length > 0) {
+    throw new GameError(GameMessage.ILLEGAL_ACTION);
+  }
+  const temp = player.active;
+  player.active = player.bench[benchIndex];
+  player.bench[benchIndex] = temp;
+  const newActivePokemon = player.active.getPokemonCard();
+  if (newActivePokemon) {
+    if (!player.movedToActiveThisTurn.includes(newActivePokemon.id)) {
+      player.movedToActiveThisTurn.push(newActivePokemon.id);
+    }
+    newActivePokemon.movedToActiveThisTurn = true;
+    store.reduceEffect(state, new MovedToActiveEffect(player, newActivePokemon));
+  }
 }
 
 function chooseActivePokemons(state: State): ChoosePokemonPrompt[] {
@@ -536,28 +580,7 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
     }
 
     state = store.prompt(state, prompt, (result) => {
-      const selectedPokemon = result as PokemonCardList[];
-      if (selectedPokemon.length !== 1) {
-        throw new GameError(GameMessage.ILLEGAL_ACTION);
-      }
-      const benchIndex = player.bench.indexOf(selectedPokemon[0]);
-      if (benchIndex === -1 || player.active.cards.length > 0) {
-        throw new GameError(GameMessage.ILLEGAL_ACTION);
-      }
-      const temp = player.active;
-      player.active = player.bench[benchIndex];
-      player.bench[benchIndex] = temp;
-      const newActivePokemon = player.active.getPokemonCard();
-      if (newActivePokemon) {
-        // Add to new tracking system
-        if (!player.movedToActiveThisTurn.includes(newActivePokemon.id)) {
-          player.movedToActiveThisTurn.push(newActivePokemon.id);
-        }
-        // Keep existing boolean for backwards compatibility
-        newActivePokemon.movedToActiveThisTurn = true;
-        // Dispatch MovedToActiveEffect for cards that intercept it
-        store.reduceEffect(state, new MovedToActiveEffect(player, newActivePokemon));
-      }
+      applyPromotion(store, state, player, result);
     });
 
     if (store.hasPrompts()) {

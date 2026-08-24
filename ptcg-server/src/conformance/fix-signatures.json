@@ -1543,7 +1543,8 @@
     {
       "file": "game/store/effect-reducers/game-effect.ts",
       "signatures": [
-        "const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);"
+        "const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);",
+        "const attackerPromotion = attackerWasKnockedOut ? null : choosePromotionPrompt(player);"
       ]
     },
     {
@@ -5615,7 +5616,8 @@
       "file": "game/store/effect-reducers/check-effect.ts",
       "signatures": [
         "    if (player.active.cards.length === 0 && !hasBenched) {",
-        "  if (points[0] > 0 && points[0] === points[1]) {"
+        "  if (points[0] > 0 && points[0] === points[1]) {",
+        "export function choosePromotionPrompt(player: Player): ChoosePokemonPrompt | null {"
       ],
       "note": "TA-296 2026-08-20: two guards that stopped checkWinner's OWN win-condition comparison from running. Line 1 -- an empty Active Spot is a loss condition only when the Bench cannot replace it; without it a double KO scores a phantom point for BOTH sides. Line 2 -- the draw branch must require an EQUAL count (#245), not merely mutual points; without it the comparison twelve lines below is unreachable in the one case it exists to decide. Reverting either returns `tie` for a game one player has plainly won, and NEITHER is caught by the five-cell prize grid that found the bug -- see the two purpose-built guards ta296-por-065-earthquake-... and ta296-ssp-100-two-win-conditions-... ."
     },

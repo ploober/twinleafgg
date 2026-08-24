@@ -37,6 +37,7 @@ import { GameStatsTracker } from '../game-stats-tracker';
 import { PokemonCardList } from '../state/pokemon-card-list';
 import { MOVE_CARDS, COIN_FLIP_PROMPT } from '../prefabs/prefabs';
 import { STAMP_ABILITY_LOCK_ACTIVATION } from '../prefabs/ability-lock';
+import { applyPromotion, choosePromotionPrompt } from './check-effect';
 import { RESOLVE_COIN_FLIP_EFFECT, RUN_COIN_FLIP_SEQUENCE } from '../prefabs/attack-coin-reflip';
 import { CardList } from '../state/card-list';
 import { ConfirmPrompt } from '../prompts/confirm-prompt';
@@ -298,6 +299,40 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
 
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());
+  }
+
+  // TA-282 / §B.42 / compendium #479: if the attack's own EFFECT removed the attacker from play
+  // ("Put this Pokémon and all attached cards into your hand", "Shuffle this Pokémon … into your
+  // deck"), the ATTACKING player replaces it here — before any Knock Out is checked. #479, on this
+  // exact shape: "Greninja GX is shuffled back in as an effect of the attack before KO's are
+  // checked, so it must be replaced before either player checks for KO's."
+  //
+  // Without this the empty Active spot falls into the same `checkState` sweep as the defender's KO,
+  // where the sweep's own (correct, #817/#815) order — prizes, then the next player's promote — puts
+  // the prize and the DEFENDER's replacement ahead of the attacker's. The rule here is not an
+  // exception to that order; it is that this replacement happens BEFORE the sweep begins.
+  //
+  // Deliberately placed in the attack pipeline rather than in the self-removal prefabs: several
+  // printings hand-roll the removal instead of calling one (`por-062` Meowth ex is written out in
+  // full in its own file), so a prefab-level fix would miss them by construction.
+  //
+  // ⚠️ Gated on the attacker NOT having been Knocked Out. `ssp-100` Annihilape *Destined Fight*
+  // ("Both Active Pokémon are Knocked Out") empties the attacker's Active spot too — but by a KO,
+  // which owes a prize and therefore belongs to the checkState sweep, where #817's prizes-first and
+  // #815's turn-next ordering apply. An "Active spot is empty" test alone cannot tell the two apart
+  // and regressed the RE-124 / TA-296 double-KO cells the first time this was written. Every direct
+  // KO records its owed prize on `state.pendingDirectKoPrizes` keyed by the KO'd Pokémon's OWNER, so
+  // an entry for the attacking player is exactly "the attacker left play by being Knocked Out".
+  // (A damage KO cannot reach here at all: the Pokémon is still on the board until checkState
+  // discards it, so the Active spot is not empty.)
+  const attackerWasKnockedOut = state.pendingDirectKoPrizes
+    .some(owed => owed.playerNum === state.players.indexOf(player));
+  const attackerPromotion = attackerWasKnockedOut ? null : choosePromotionPrompt(player);
+  if (attackerPromotion !== null) {
+    yield store.prompt(state, attackerPromotion, result => {
+      applyPromotion(store, state, player, result);
+      next();
+    });
   }
 
   if ((attack.barrage || hasBarragePower) && !(effect as any)._barrageUsed) {
