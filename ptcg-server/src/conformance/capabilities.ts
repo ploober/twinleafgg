@@ -26,10 +26,42 @@ export interface CapabilitiesResponse {
    * them across every card: a convention applied inconsistently is a defect, not a convention.
    */
   conventions: Conventions;
+  /**
+   * The BUILD this process is running, captured ONCE at module load — `<short-sha>` or
+   * `<short-sha>-dirty`, or `unknown` off a git checkout.
+   *
+   * Why it is captured at load and not read per request: it must identify the code the PROCESS is
+   * executing, not the state of somebody's working tree. Before this existed the harness inferred
+   * twinleaf's commit by shelling `git rev-parse` against the local checkout — so editing a card
+   * without restarting the server recorded the NEW commit while the OLD code answered every probe,
+   * silently and with a perfectly plausible hash. That is the same shape as RE-129 (a stale
+   * rotomancer deployment reporting an unchanged version string).
+   *
+   * It does NOT replace the behavioural fingerprint (`tools/engine_fingerprint.py`), which fails in
+   * the opposite direction: a commit hash moves on a docs-only change (sensitive, not specific)
+   * while the fingerprint moves only when PROBED behaviour changes (specific, not sensitive — it
+   * missed the TA-309 card fix entirely). Both, or neither answers the question.
+   */
+  build: string;
 }
 
 const ENGINE_NAME = 'twinleaf';
 const ENGINE_VERSION: string = (require('../../package.json') as { version: string }).version;
+
+/** See `CapabilitiesResponse.build`. Resolved once, at module load, so it names the running code. */
+const ENGINE_BUILD: string = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { execSync } = require('child_process');
+    const opts = { cwd: __dirname, encoding: 'utf8' as const, stdio: ['ignore', 'pipe', 'ignore'] as const };
+    const sha = execSync('git rev-parse --short HEAD', opts).toString().trim();
+    // A dirty tree is NOT a build id. Say so rather than reporting a hash that names code nobody ran.
+    const dirty = execSync('git status --porcelain', opts).toString().trim().length > 0;
+    return sha ? (dirty ? `${sha}-dirty` : sha) : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+})();
 
 /**
  * CF-23: every card this engine can INSTANTIATE via `/v1/step` — the full loaded registry. This is
@@ -103,6 +135,7 @@ export function buildCapabilities(): CapabilitiesResponse {
   return {
     engine: ENGINE_NAME,
     version: ENGINE_VERSION,
+    build: ENGINE_BUILD,
     schemaVersion: SCHEMA_VERSION,
     sets,
     conventions: CONVENTIONS,
