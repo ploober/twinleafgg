@@ -1,6 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, MoveEnergyPrompt, GameMessage, PlayerType, SlotType, SuperType, StateUtils, GameError } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_POWER_USED, ABILITY_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class Azumarillex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -79,21 +80,18 @@ export class Azumarillex extends PokemonCard {
       });
     }
 
-    // Energy Balloon attack
+    // Energized Balloon attack
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      let psychicEnergyCount = 0;
-
-      player.active.energies.cards.forEach(card => {
-        if (card.superType === SuperType.ENERGY) {
-          const energyCard = card as any;
-          if (energyCard.energyType === 'P' || energyCard.provides?.includes('P')) {
-            psychicEnergyCount++;
-          }
-        }
-      });
-
-      effect.damage += (40 * psychicEnergyCount);
+      // Golden (asc.json #84): "60+, does 40 more damage for each [P] Energy attached to this Pokemon."
+      // The prior string scan (`energyType === 'P'`, `provides.includes('P')`) NEVER matched: `provides`
+      // holds numeric CardType enum values (CardType.PSYCHIC), not the letter 'P', and EnergyCard has no
+      // `energyType` string field -- so the bonus was always 0 (60 vs rotomancer/golden 180 on 3 [P]).
+      // Count [P] via CheckProvidedEnergyEffect on the Active, the kyogre.ts idiom.
+      const checkEnergy = new CheckProvidedEnergyEffect(effect.player);
+      store.reduceEffect(state, checkEnergy);
+      const psychicCount = checkEnergy.energyMap.reduce((sum, em) =>
+        sum + em.provides.filter(t => t === CardType.PSYCHIC || t === CardType.ANY).length, 0);
+      effect.damage += 40 * psychicCount;
     }
 
     return state;
