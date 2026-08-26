@@ -105,12 +105,33 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     }
   }
 
+  // TA-318(b): a damage-counter MOVE (Alakazam `twm-082` "Strange Hacking") relocates counters by
+  // mutating `.damage` directly with NO damage log, so a state diff sees the recipient's HP rise and
+  // would emit a spurious `damaged` — rotomancer, which LOGS damage rather than diffing, emits none
+  // (relocating a counter is not damage). Detect a relocation-only dispatch: NO logged damage of any
+  // kind (deals / poison / burn / counter placement) AND some Pokemon's damage FELL (the move source,
+  // which survives — you cannot move counters off a KO'd Pokemon). A dispatch that dealt any logged
+  // damage keeps its normal diff-based emission untouched, so this cannot suppress a real hit. (A
+  // compound dispatch that BOTH deals logged damage AND moves counters is a residual: `anyDamageLogged`
+  // is true, so a moved rise there is still emitted — vanishingly rare and left as documented residue.)
+  const anyDamageLogged = logs.some(l =>
+    l.message === GameLog.LOG_PLAYER_DEALS_DAMAGE
+    || l.message === GameLog.LOG_POKEMON_TAKES_POISON_DAMAGE
+    || l.message === GameLog.LOG_POKEMON_TAKES_BURN_DAMAGE
+    || l.message === GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS);
+  const anyDamageDropped = [...beforeDmg].some(([iid, b]) => {
+    const a = afterDmg.get(iid);
+    return a !== undefined && a < b;
+  });
+  const relocationOnly = !anyDamageLogged && anyDamageDropped;
+
   // damaged — survivors with a positive net damage delta. The player's ACTIVE splits its delta
   // into the logged condition ticks + the remainder (ticks only ever hit the active).
   let survivorDamage = 0;
   for (const [iid, dmgBefore] of beforeDmg) {
     const dmgAfter = afterDmg.get(iid);
     if (dmgAfter !== undefined && dmgAfter > dmgBefore) {
+      if (relocationOnly) { continue; } // TA-318(b): a counter relocation, not damage
       const delta = dmgAfter - dmgBefore;
       survivorDamage += delta;
       const at = identify(after, iid); // survivor: still in `after`
@@ -236,12 +257,52 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
         }
       }
       if (pool > 0) {
-        // The attack placement: the dealer's opponent-side KO'd active if identifiable,
-        // else (single KO) the sole victim — emitted as one aggregate placement.
-        const defender = koHits.find(k => k.wasOwnersActive && dealer !== undefined && k.player !== dealer)
-          ?? (koHits.length === 1 ? koHits[0] : undefined);
-        if (defender) {
-          significant.push({ kind: 'damaged', player: defender.player, target: defender.printing, hp: pool });
+        // TA-318: attribute the attack placement to the KO'd Pokemon the deals-log NAMED, the same
+        // disambiguation the counter branch uses (TA-252). A single resolution can KO more than one
+        // Pokemon — Obsidian (`ssp-119`) KOs the Active with its base 130 while the bench-spread rider
+        // KOs a Benched Pokemon — and the positional `defender` heuristic below piles BOTH placements
+        // onto the opponent's-active KO'd, mis-attributing the bench hit. (The Active's own lethal hit
+        // was already emitted as a `damaged` in the PRIOR dispatch, when its damage rose and it was
+        // still a survivor; here only the bench-spread deals-log is present.) Aggregate the deals per
+        // target NAME first (so multi-hit `30x3` on one target stays ONE aggregate event, not three),
+        // then attribute a name-group to the unique KO'd hit it matches and no survivor whose damage
+        // rose (a survivor's placement is already in the state diff, netted out of the pool). Names
+        // are ambiguous across identical printings, so a name matching 0 or >1 KO'd hits falls through
+        // to the positional dump, preserving the prior behavior for the single-defender case.
+        const dealtByName = new Map<string, number>();
+        if (displayNames !== undefined) {
+          for (const log of logs) {
+            if (log.message !== GameLog.LOG_PLAYER_DEALS_DAMAGE) { continue; }
+            const targetName = log.params?.['target'];
+            const amount = logNum(log, 'damage');
+            if (typeof targetName !== 'string' || amount <= 0) { continue; }
+            dealtByName.set(targetName, (dealtByName.get(targetName) ?? 0) + amount);
+          }
+          for (const [targetName, amount] of dealtByName) {
+            if (amount > pool) { continue; }
+            const survivorShares = [...beforeDmg.keys()].some(iid => {
+              const afterVal = afterDmg.get(iid);
+              return afterVal !== undefined && afterVal > (beforeDmg.get(iid) ?? 0)
+                && displayNames.get(iid) === targetName;
+            });
+            if (survivorShares) { continue; }
+            const matches = koHits.filter(k => displayNames.get(k.iid) === targetName);
+            if (matches.length === 1) {
+              significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].printing, hp: amount });
+              pool -= amount;
+            }
+          }
+        }
+        if (pool > 0) {
+          // The remaining placement: the dealer's opponent-side KO'd active if identifiable, else
+          // (single KO) the sole victim — emitted as one aggregate placement. Reached for the
+          // single-defender case (one named target ⇒ the loop above already consumed it and pool is
+          // 0, so this only fires when the name was ambiguous or absent) and for tick/counter residue.
+          const defender = koHits.find(k => k.wasOwnersActive && dealer !== undefined && k.player !== dealer)
+            ?? (koHits.length === 1 ? koHits[0] : undefined);
+          if (defender) {
+            significant.push({ kind: 'damaged', player: defender.player, target: defender.printing, hp: pool });
+          }
         }
       }
     }

@@ -1455,4 +1455,47 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(damagedTotal(r, 'asc-004')).toBe(20);
     expect(koOf(r, 'asc-004')).toBe(true);
   });
+
+  // ── TA-318 — the diff-based `damaged` projection mis-reports two shapes (state stays correct) ──
+  // Both surfaced as pure `[events]` DIVERGENCE rows in the 2026-08-23 fuzz corpus (558 + 104 occ);
+  // the game STATE converges on both engines, only the intermediate `damaged` stream diverged.
+
+  it('a spread attack that KOs the Active AND a Bench Pokemon attributes each hit to its own target [TA-318(a) ssp-119]', () => {
+    // Obsidian: base 130 to the Active (lethal on a Mega Latias ex pre-damaged to 200 ⇒ 330 HP) plus
+    // a post-damage rider dealing 130 to a Benched Pokemon (Erika's Bellsprout, also KO'd). Both KO
+    // in the SAME dispatch, whose only deals-log names the BENCH — the base hit was already emitted
+    // when the Active rose to 330 as a survivor in the prior dispatch. The old multi-KO fallback piled
+    // the bench 130 onto the opponent's-active KO'd (`meg-181` ⇒ 260, `asc-004` a `ko` with no
+    // `damaged`); the deals-log target NAME attributes it to `asc-004` (the same TA-252 rule the
+    // counter branch uses). Darkness = sve-007.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['ssp-119'], [...en(PSY, 1, 'p'), ...en('sve-007', 1, 'd'), ...en(METAL, 1, 'm'), ...en(WATER, 1, 'c')]) }),
+            player({ active: inPlay('B-act', ['meg-181'], [], 200), bench: [inPlay('B-b1', ['asc-004'])] })),
+      [attack('A-act', 'Obsidian')],
+    );
+    expect(damagedTotal(r, 'asc-004')).toBe(130);  // the fixed half: the bench hit reaches its OWN target
+    expect(koOf(r, 'asc-004')).toBe(true);
+    expect(damagedTotal(r, 'meg-181')).toBe(130);  // control: the Active's own lethal hit, NOT 260
+    expect(koOf(r, 'meg-181')).toBe(true);
+  });
+
+  it('a moved damage counter is NOT a `damaged` event on the recipient [TA-318(b) twm-082]', () => {
+    // Strange Hacking relocates a counter by mutating `.damage` directly with NO damage log, so a
+    // diff sees the recipient's HP rise and would emit a spurious `damaged` (rotomancer, which LOGS
+    // damage, emits none — relocating a counter is not damage). Board: A Alakazam; B Active `meg-181`
+    // carrying one counter (10) and one benched `asc-004`. The forced single transfer moves the
+    // counter Active→Bench (the destination step collapses, TA-239). STATE must show the move; the
+    // recipient must get NO `damaged`.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['twm-082'], en(PSY, 1, 'p')) }),
+            player({ active: inPlay('B-act', ['meg-181'], [], 10), bench: [inPlay('B-b1', ['asc-004'])] })),
+      [attack('A-act', 'Strange Hacking'), { actor: 'A' as const, type: 'choose' as const, target: 'B-act' }],
+    );
+    // the move landed: Active lost its counter, the Bench gained it
+    expect((r.state as NeutralState).players.B.active?.damage).toBe(0);
+    expect((r.state as NeutralState).players.B.bench[0]?.damage).toBe(10);
+    // ...and NO spurious `damaged` on the recipient (nor anywhere — a relocation deals no damage)
+    expect(damagedTotal(r, 'asc-004')).toBe(0);
+    expect(koOf(r, 'asc-004')).toBe(false);
+  });
 });
