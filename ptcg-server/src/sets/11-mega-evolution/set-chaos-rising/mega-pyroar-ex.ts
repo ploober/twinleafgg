@@ -20,7 +20,7 @@ export class MegaPyroarex extends PokemonCard {
     text: 'During your opponent\'s next turn, attacks used by the Defending Pokémon do 50 less damage (before applying Weakness and Resistance).'
   },
   {
-    name: 'Big Bang Fire',
+    name: 'Fiery Big Bang',
     cost: [R, R, C],
     damage: 290,
     damageCalculation: '-',
@@ -40,7 +40,7 @@ export class MegaPyroarex extends PokemonCard {
       return DEFENDING_POKEMON_DOES_LESS_DAMAGE(store, state, effect, this, 50);
     }
 
-    // Big Bang Fire
+    // Fiery Big Bang
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       const damageCounters = Math.floor(player.active.damage / 10);

@@ -5581,7 +5581,29 @@
     {
       "file": "set-mega-evolution-promos/slowpoke.ts",
       "signatures": [
-        "public setNumber = '86';"
+        "public setNumber = '86';",
+        "name: 'Super Psy Bolt',"
+      ],
+      "absentSignatures": [
+        "name: 'Super Psy',"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/keldeo.ts",
+      "signatures": [
+        "name: 'Shoot Through',"
+      ],
+      "absentSignatures": [
+        "name: 'Shoot THrough',"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/mega-pyroar-ex.ts",
+      "signatures": [
+        "name: 'Fiery Big Bang',"
+      ],
+      "absentSignatures": [
+        "name: 'Big Bang Fire',"
       ]
     },
     {
@@ -5845,6 +5867,27 @@
         "if (AFTER_ATTACK(effect, 0, this)) {",
         "const available = opponent.active.cards.filter(c => c.superType === SuperType.ENERGY).length;"
       ]
+    },
+    {
+      "file": "set-temporal-forces/gastly.ts",
+      "signatures": [
+        "text: 'Flip a coin. If heads, discard an Energy from your opponent\\'s Active Pokémon.'"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-chaos-rising/espurr.ts",
+      "signatures": [
+        "text: 'If you played Emma from your hand during this turn, this attack does 60 more damage.',"
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-chaos-rising/trubbish.ts",
+      "signatures": [
+        "text: \"Flip a coin. If heads, discard an Energy from your opponent's Active Pokémon.\","
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     }
   ]
 }

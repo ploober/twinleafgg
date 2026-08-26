@@ -20,7 +20,7 @@ export class Slowpoke extends PokemonCard {
   }];
 
   public attacks = [{
-    name: 'Super Psy',
+    name: 'Super Psy Bolt',
     cost: [P, P, C],
     damage: 50,
     text: ''
