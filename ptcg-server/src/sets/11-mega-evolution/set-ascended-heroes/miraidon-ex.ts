@@ -36,7 +36,8 @@ export class Miraidonex extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       if (effect.opponent.active.getPokemonCard()?.tags.includes(CardTag.POKEMON_ex)) {
-        effect.damage += 20;
+        // Golden/text: "does 120 more damage" if the opponent's Active is a Pokemon ex — was +20.
+        effect.damage += 120;
       }
     }
 
