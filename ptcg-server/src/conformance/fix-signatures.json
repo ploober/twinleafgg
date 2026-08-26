@@ -5919,6 +5919,16 @@
         "GameMessage.CHOOSE_POKEMON_TO_DAMAGE,"
       ],
       "note": "TA-311 (2026-08-26): Nutrients heal restricted to DAMAGED Pokemon (Busybody/CF-14). Absent-marker is upstream's wrong CHOOSE_POKEMON_TO_DAMAGE message, which a revert re-introduces."
+    },
+    {
+      "file": "set-ascended-heroes/miraidon-ex.ts",
+      "signatures": [
+        "effect.damage += 120;"
+      ],
+      "absentSignatures": [
+        "effect.damage += 20;"
+      ],
+      "note": "TA-313 (2026-08-26): Hadron Spark ex-bonus is +120 (golden/text), was +20. Absent-marker is the buggy +20 a revert re-introduces."
     }
   ]
 }
