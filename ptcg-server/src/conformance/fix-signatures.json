@@ -3905,7 +3905,8 @@
     {
       "file": "set-surging-sparks/cyclizar-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';"
+        "import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';",
+        "if (player.deck.cards.length === 0) {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -4045,7 +4046,8 @@
     {
       "file": "set-twilight-masquerade/blissey-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';"
+        "import { AFTER_ATTACK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';",
+        "if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -5516,7 +5518,9 @@
     {
       "file": "set-temporal-forces/gengar-ex.ts",
       "signatures": [
-        "const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);"
+        "const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);",
+        "if (AFTER_ATTACK(effect, 0, this)) {",
+        "const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
       ]
     },
     {
@@ -5819,6 +5823,27 @@
       "file": "set-temporal-forces/mortys-conviction.ts",
       "signatures": [
         "    const opponentBenched = opponent.bench.reduce((left, b) => left + (b.cards.length ? 1 : 0), 0);\n    if (opponentBenched === 0) {"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/deoxys-4.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {",
+        "if (player.hand.cards.length >= 5 || player.deck.cards.length === 0) {"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/meowstic.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {",
+        "{ allowCancel: false, min: 1, max: 1 },"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/unfezant.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {",
+        "const available = opponent.active.cards.filter(c => c.superType === SuperType.ENERGY).length;"
       ]
     }
   ]

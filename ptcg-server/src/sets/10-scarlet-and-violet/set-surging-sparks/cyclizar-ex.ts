@@ -66,6 +66,21 @@ export class Cyclizarex extends PokemonCard {
     if (AFTER_ATTACK(effect, 1, this)) {
       const player = effect.player;
 
+      // CF-33 (pinned 2026-07-29): a `may` whose effect can achieve NOTHING presents NO decision —
+      // both branches leave an identical board, so by CF-14 it has exactly one resolution and collapses.
+      // Rotomancer suppresses; twinleaf was offering a phantom `confirm{true,false}`. The condition
+      // reads the acting player's OWN hand and deck, which are open to them, so suppressing on it leaks
+      // nothing (CF-33 Boundary 1). Only the DECK arm applies here: *"draw 5 cards"* is a
+      // fixed count with no hand target, so it is zero-achievable exactly when the deck is empty. Shape copied from `cynthias-garchomp-ex.ts`
+      // Corkscrew Dive, which already carries it and is the in-class positive control — the correct
+      // form is expressible, so this is a per-card omission and not a framework gap.
+      // Found by the mandated TA-307 re-fuzz: the step-F fix let the walk past the first attack, so
+      // a SECOND use on a board the first use had drawn down became reachable at all.
+      // [[collapse-fix-widens-fuzzer-reach]]
+      if (player.deck.cards.length === 0) {
+        return state;
+      }
+
       state = store.prompt(state, new ConfirmPrompt(
         player.id,
         GameMessage.WANT_TO_USE_ABILITY,

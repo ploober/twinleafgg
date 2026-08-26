@@ -16,7 +16,7 @@ export class Trubbish extends PokemonCard {
       name: 'Acid Spray',
       cost: [D],
       damage: 10,
-      text: "Flip a coin. If heads, discard an Energy attached to your opponent's Active Pokémon.",
+      text: "Flip a coin. If heads, discard an Energy from your opponent's Active Pokémon.",
     },
   ];
 

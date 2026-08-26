@@ -3,7 +3,7 @@ import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/ca
 import { StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, PowerType, AttachEnergyPrompt } from '../../../game';
 import { Effect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
-import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Gengarex extends PokemonCard {
   public tags = [CardTag.POKEMON_ex];
@@ -36,28 +36,55 @@ export class Gengarex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    if (AFTER_ATTACK(effect, 0, this)) {
+      // TA-307 / TA-128 family A. Rulebook attack step F, compendium #543 ("Do damage first,
+      // then apply effects") and #649 ("Like all attacks that don't explicitly say otherwise, the
+      // effects of attacks are not applied until after damage is done", TPCi Rules Team 2015-05-07):
+      // this rider PAUSES, so the base damage must already be on the board when it does. Written on
+      // WAS_ATTACK_USED the rider ran inside the pre-damage block and the game paused showing the
+      // defender at dmg=0 -- a mid-resolution divergence the end board never shows, which is why
+      // nothing downstream reported it. AFTER_ATTACK is dispatched by the attack pipeline AFTER
+      // DealDamage and BEFORE the KO sweep (game-effect.ts), which is exactly step F's order --
+      // so this does not trade TA-79 (damage deferred) for TA-123 (rider dropped past the KO).
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+      // CF-32 second class (PINNED 2026-07-28), the count-1 arm. This card prints the SAME rider as
+      // `dri-070` Jamming Wing, which the pin names as its worked example -- *"a fixed count-1, the gate
+      // is the only decline… which is exactly why BOTH engines already externalise it there"* -- and
+      // which is already written this way in this repo. This card was not, so twinleaf inlined the
+      // decline as a `confirm{false}` inside a flat min:0 pick while rotomancer externalised the gate.
+      //
+      // ⚠️ The Energy guard is NEW, and its absence was a latent CF-33 defect independent of the shape:
+      // this card checked only `hasBench`, so on an opposing Active with NO Energy attached it offered a
+      // `may` that could achieve nothing. `dri-070` and `cri-037` both check BOTH conditions. With the
+      // gate externalised the inner pick is min:1, so the guard is also load-bearing here. Both zones are
+      // public to the acting player, so suppressing on them leaks nothing -- CF-33 Boundary 1.
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
 
-      if (hasBench === false) {
+      if (!hasBench || !hasEnergy) {
         return state;
       }
 
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        opponent.active,
-        PlayerType.TOP_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, max: 1 }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          opponent.active.moveCardTo(transfer.card, target);
+      CONFIRMATION_PROMPT(store, state, player, result => {
+        if (result) {
+          return store.prompt(state, new AttachEnergyPrompt(
+            player.id,
+            GameMessage.ATTACH_ENERGY_TO_BENCH,
+            opponent.active,
+            PlayerType.TOP_PLAYER,
+            [SlotType.BENCH],
+            { superType: SuperType.ENERGY },
+            { allowCancel: false, min: 1, max: 1 }
+          ), transfers => {
+            transfers = transfers || [];
+            for (const transfer of transfers) {
+              // TA-147: resolve the destination in the PROMPT's frame (`player`), not `opponent` --
+              // the prompt is built player.id + TOP_PLAYER, so a second flip steals the Energy.
+              const target = StateUtils.getTarget(state, player, transfer.to);
+              opponent.active.moveCardTo(transfer.card, target);
+            }
+          });
         }
       });
     }
