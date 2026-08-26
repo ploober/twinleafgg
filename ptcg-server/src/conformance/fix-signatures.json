@@ -5557,8 +5557,15 @@
     {
       "file": "set-surging-sparks/chien-pao.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
-      ]
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "GameMessage.CHOOSE_ENERGIES_TO_HAND,",
+        "[CardType.COLORLESS],"
+      ],
+      "absentSignatures": [
+        "[CardType.COLORLESS, CardType.COLORLESS],",
+        "GameMessage.CHOOSE_ENERGIES_TO_DISCARD,"
+      ],
+      "note": "TA-258 (APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS) + TA-312 (2026-08-26): Icicle Loop returns ONE Energy to HAND (golden ssp.json #56), not two as discard. Absent-markers are the two-energy selector and the DISCARD message a revert re-introduces."
     },
     {
       "file": "set-perfect-order/klefki.ts",
