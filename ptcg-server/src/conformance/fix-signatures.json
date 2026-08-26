@@ -5888,6 +5888,30 @@
         "text: \"Flip a coin. If heads, discard an Energy from your opponent's Active Pokémon.\","
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+    },
+    {
+      "file": "set-perfect-order/spritzee.ts",
+      "signatures": [
+        "if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }",
+        "if (!hasDamaged) { return state; }",
+        "{ allowCancel: false, blocked },"
+      ],
+      "absentSignatures": [
+        "{ allowCancel: false },"
+      ],
+      "note": "TA-311 (2026-08-26): Sweet Scent heal restricted to DAMAGED Pokemon (Busybody/CF-14). The guard line is the fix; absent-marker is upstream's unguarded prompt options, which a revert re-introduces."
+    },
+    {
+      "file": "set-destined-rivals/dolliv.ts",
+      "signatures": [
+        "if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }",
+        "if (!hasDamaged) { return state; }",
+        "{ allowCancel: false, blocked }"
+      ],
+      "absentSignatures": [
+        "GameMessage.CHOOSE_POKEMON_TO_DAMAGE,"
+      ],
+      "note": "TA-311 (2026-08-26): Nutrients heal restricted to DAMAGED Pokemon (Busybody/CF-14). Absent-marker is upstream's wrong CHOOSE_POKEMON_TO_DAMAGE message, which a revert re-introduces."
     }
   ]
 }
