@@ -3,7 +3,7 @@ import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card
 import { StoreLike, State, StateUtils, CoinFlipPrompt, GameMessage, CardList, GameLog, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckHpEffect, CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Tyrantrum extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -60,6 +60,11 @@ export class Tyrantrum extends PokemonCard {
 
     // Attack: Flip coins until tails, discard top card for each heads
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-258/TA-79 damage-ordering: the base 160 is Step F and must land BEFORE the coin-flip
+      // rider pends (rotomancer/rulebook emit `damaged:160` up front; without this twinleaf deferred
+      // the whole 160 past the flip loop, so the coin-flip pending carried no damage yet).
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
