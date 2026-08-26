@@ -5949,6 +5949,14 @@
       ],
       "absentSignatures": [],
       "note": "TA-315 (2026-08-26): Wreak Havoc's base 160 (Step F) must land before the coin-flip rider pends. Absent form went straight into flipCoins(state), deferring all 160 past the flip loop (0 vs roto 160 at the pending). Removing this call reverts it."
+    },
+    {
+      "file": "set-mega-evolution/inteleon.ts",
+      "signatures": [
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+      ],
+      "absentSignatures": [],
+      "note": "TA-316 (2026-08-26): Water Shot's 110 (Step F) must land before the discard-an-energy rider pends (0 vs roto 110 at the pending). Removing this call reverts the deferral."
     }
   ]
 }
