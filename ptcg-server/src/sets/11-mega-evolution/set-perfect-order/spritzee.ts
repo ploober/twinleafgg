@@ -8,6 +8,7 @@ import {
   GameMessage,
   PlayerType,
   SlotType,
+  CardTarget,
 } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
 import { HealEffect } from "../../../game/store/effects/game-effects";
@@ -47,6 +48,17 @@ export class Spritzee extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // Compendium (Audino "Busybody" / Moonlit Hill): you can only heal a Pokemon that HAS
+      // damage. Restrict the pick to damaged Pokemon so a board with none skips the heal
+      // (no-op, turn ends) and a single damaged Pokemon collapses instead of surfacing a
+      // forced 1-option `choose` — the CF-14 over-pend rotomancer already auto-resolves.
+      const blocked: CardTarget[] = [];
+      let hasDamaged = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+        if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }
+      });
+      if (!hasDamaged) { return state; }
+
       return store.prompt(
         state,
         new ChoosePokemonPrompt(
@@ -54,7 +66,7 @@ export class Spritzee extends PokemonCard {
           GameMessage.CHOOSE_POKEMON_TO_HEAL,
           PlayerType.BOTTOM_PLAYER,
           [SlotType.ACTIVE, SlotType.BENCH],
-          { allowCancel: false },
+          { allowCancel: false, blocked },
         ),
         (selected) => {
           const targets = selected || [];
