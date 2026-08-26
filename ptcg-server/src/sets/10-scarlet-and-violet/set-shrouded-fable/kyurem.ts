@@ -70,12 +70,25 @@ export class Kyurem extends PokemonCard {
       discardEnergy.target = player.active;
       state = store.reduceEffect(state, discardEnergy);
 
+      // "does 110 damage to 3 of your opponent's Pokemon" is a FIXED spread of 3, capped at how many
+      // the opponent actually has -- NOT "up to 3", so min === max === min(3, available). When the
+      // opponent has <=3 Pokemon the pick is forced (all of them) and the choose-pokemon decomposer
+      // collapses it (min >= candidates); rotomancer auto-resolves that forced spread while twinleaf's
+      // old min:1,max:3 over-pended and let the player under-select. CF-14 collapse family (TA-311).
+      const opponent = StateUtils.getOpponent(state, player);
+      let available = 0;
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, () => { available++; });
+      const count = Math.min(3, available);
+      if (count === 0) {
+        return state;
+      }
+
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: 1, max: 3, allowCancel: false }
+        { min: count, max: count, allowCancel: false }
       ), selected => {
         const targets = selected || [];
         DAMAGE_OPPONENT_POKEMON(store, state, effect, 110, targets);

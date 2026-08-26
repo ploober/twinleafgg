@@ -5957,6 +5957,17 @@
       ],
       "absentSignatures": [],
       "note": "TA-316 (2026-08-26): Water Shot's 110 (Step F) must land before the discard-an-energy rider pends (0 vs roto 110 at the pending). Removing this call reverts the deferral."
+    },
+    {
+      "file": "set-shrouded-fable/kyurem.ts",
+      "signatures": [
+        "const count = Math.min(3, available);",
+        "{ min: count, max: count, allowCancel: false }"
+      ],
+      "absentSignatures": [
+        "{ min: 1, max: 3, allowCancel: false }"
+      ],
+      "note": "TA-317 (2026-08-26): Trifrost hits a FIXED min(3,available) spread, pinned min===max so the <=3 case is forced and the choose-pokemon decomposer collapses it (CF-14). Buggy form min:1,max:3 over-pended and let the player under-select."
     }
   ]
 }
