@@ -83,11 +83,14 @@ export class ChienPao extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
+      // Golden (ssp.json #56): "Put AN Energy attached to this Pokemon into your hand" — ONE energy,
+      // not two. The `[COLORLESS, COLORLESS]` selector over-took 2, so twinleaf kept pending for a
+      // second pick after rotomancer had taken its one and ended the turn.
       state = store.prompt(state, new ChooseEnergyPrompt(
         player.id,
-        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+        GameMessage.CHOOSE_ENERGIES_TO_HAND,
         checkProvidedEnergy.energyMap,
-        [CardType.COLORLESS, CardType.COLORLESS],
+        [CardType.COLORLESS],
         { allowCancel: false }
       ), energy => {
         const cards: Card[] = (energy || []).map(e => e.card);
