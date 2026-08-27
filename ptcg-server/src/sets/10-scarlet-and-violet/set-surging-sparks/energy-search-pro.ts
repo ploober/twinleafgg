@@ -46,6 +46,12 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
     player.deck.moveCardsTo(cards, player.hand);
 
+    // TA-320: resume the generator so the trailing `return store.prompt(ShuffleDeckPrompt)` is
+    // reached. Without this next() the generator stayed suspended at the choose yield and the owed
+    // "Then, shuffle your deck" never fired — the deck was left unshuffled (rotomancer shuffled).
+    // This matches the working idiom (Poké Ball JU and the other return-shuffle cards all next()).
+    next();
+
   });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

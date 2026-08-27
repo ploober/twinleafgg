@@ -5981,6 +5981,13 @@
         "const shuffleBack = (): State => {"
       ],
       "note": "TA-251/B.33 missing-shuffle when a Supporter is taken; object-keyed shuffle-back (found by the dependent-object census 2026-08-27)"
+    },
+    {
+      "file": "set-surging-sparks/energy-search-pro.ts",
+      "signatures": [
+        "    next();"
+      ],
+      "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census."
     }
   ]
 }

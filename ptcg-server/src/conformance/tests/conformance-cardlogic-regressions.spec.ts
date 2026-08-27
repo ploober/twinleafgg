@@ -163,6 +163,26 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Energy Search Pro "Then, shuffle your deck" fires after the search resolves [TA-320 ssp-176]', () => {
+    // ACE SPEC Item: "Search your deck for any number of Basic Energy cards of different types … put
+    // them into your hand. Then, shuffle your deck." A deck with NO Basic Energy is a zero-take
+    // (min 0), so the search whiffs — but the shuffle is still mandatory (like TA-53 Mareep). Pre-fix
+    // the ChooseCardsPrompt callback never called next(), so the generator stayed suspended at the
+    // choose yield and the trailing `return store.prompt(ShuffleDeckPrompt)` was never reached: the
+    // deck was left UNSHUFFLED (rotomancer shuffled; a public search leaked the order). next() fixes it.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS]),
+                     hand: [{ iid: 'A-esp', printing: 'ssp-176' }],
+                     deck: [{ iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+                            { iid: 'A-d2', printing: RALTS }, { iid: 'A-d3', printing: RALTS }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-esp' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.
