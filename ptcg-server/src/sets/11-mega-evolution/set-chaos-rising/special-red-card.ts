@@ -25,6 +25,14 @@ export class SpecialRedCard extends TrainerCard {
     if (prizeCount > 3) {
       return false;
     }
+    // TA-326: withhold when the opponent's hand is EMPTY — the whole effect ("shuffle their hand
+    // onto the bottom of their deck; IF they put any cards down this way, they draw 3") then does
+    // nothing, and a Trainer cannot be played for no effect (compendium #2365 rules this exact card;
+    // #2306 Grand Wing is the same conditional-draw shape; the modern line, B.41/B.36). Opponent hand
+    // SIZE is public, so a zero is provably a no-op. rotomancer withholds here.
+    if (opponent.hand.cards.length === 0) {
+      return false;
+    }
     return true;
   }
 

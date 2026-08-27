@@ -295,6 +295,29 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Special Red Card is withheld when the opponent has an empty hand [TA-326 cri-082]', () => {
+    // "Your opponent shuffles their hand and puts it on the bottom of their deck. If they put any
+    // cards on the bottom of their deck in this way, they draw 3 cards." With an EMPTY opponent hand
+    // the whole effect does nothing (the draw is conditional, exactly Grand Wing #2306), and a
+    // Trainer cannot be played for no effect — compendium #2365 rules this card directly (modern
+    // line, B.41/B.36). Opponent hand SIZE is public, so a zero is a provable no-op. Pre-fix `canPlay`
+    // gated only on the Prize count and offered the card on an empty opponent hand (rotomancer withheld).
+    const oppPrizes = [0, 1, 2].map(i => ({ iid: `B-pz${i}`, printing: WATER, faceUp: false }));
+    const offers = (oppHand: { iid: string; printing: string }[]) => {
+      const r = step(
+        board(player({ active: inPlay('A-act', [RALTS]),
+                       hand: [{ iid: 'A-src', printing: 'cri-082' }],
+                       deck: [{ iid: 'A-d0', printing: WATER }] }),
+              player({ active: inPlay('B-act', [RALTS]), hand: oppHand,
+                       prizes: oppPrizes, deck: [{ iid: 'B-d0', printing: WATER }] })),
+        []);
+      return (r.pending?.legalActions ?? []).some(a =>
+        (a as { type: string }).type === 'playItem' && (a as { card?: string }).card === 'A-src');
+    };
+    expect(offers([])).toBe(false);                                  // empty opp hand -> withheld
+    expect(offers([{ iid: 'B-h0', printing: WATER }])).toBe(true);   // 1-card opp hand -> offered
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.

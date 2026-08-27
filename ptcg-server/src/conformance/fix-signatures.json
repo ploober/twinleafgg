@@ -6038,6 +6038,13 @@
         "if (pokemonInDiscard < 5) {"
       ],
       "note": "TA-325 (2026-08-27): canPlay demanded `pokemonInDiscard >= 5` and refused a legal play with 1..4 Pokemon in the discard. 'Shuffle UP TO 5 Pokemon' on a Trainer is a 1..max range (compendium #2301), so >=1 is playable; only a Pokemon-empty discard is a zero-count no-op (B.36). Fix relaxes the gate to `< 1`. absentSignatures catches a revert to the `< 5` threshold. Guard = conformance-cardlogic-regressions.spec [TA-325 dri-168]. Found by shuffle_reach.py discard-source routing."
+    },
+    {
+      "file": "set-chaos-rising/special-red-card.ts",
+      "signatures": [
+        "if (opponent.hand.cards.length === 0) {"
+      ],
+      "note": "TA-326 (2026-08-27): canPlay gated only on the opponent Prize count and OFFERED the card on an EMPTY opponent hand, where the whole effect ('opponent shuffles their hand onto the bottom of their deck; IF they put any cards there, they draw 3') does nothing — a Trainer cannot be played for no effect (compendium #2365 rules this exact card; the conditional-draw shape of #2306 Grand Wing; modern line B.41/B.36). Opponent hand SIZE is public, so a zero is a provable no-op; rotomancer withholds. Fix adds the empty-hand withhold to canPlay (the signature line). Reverting it removes the line and reddens the signature. Guard = conformance-cardlogic-regressions.spec [TA-326 cri-082]. Found by shuffle_reach.py opponent-hand routing."
     }
   ]
 }
