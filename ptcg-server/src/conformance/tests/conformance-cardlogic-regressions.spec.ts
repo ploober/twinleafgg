@@ -205,6 +205,30 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Secret Box shuffles the deck even when the four-type search takes nothing [TA-322 twm-163]', () => {
+    // ACE SPEC Item: "… discard 3 other cards from your hand. Search your deck for an Item card, a
+    // Pokémon Tool card, a Supporter card, and a Stadium card, reveal them, and put them into your
+    // hand. Then, shuffle your deck." A deck with NONE of the four types caps the search at count 0
+    // (and the prompt is min:0, so a voluntary fail is legal too) — either way you SEARCHED the deck,
+    // so the shuffle is mandatory (compendium #2171; same family as TA-53/TA-320/TA-321). Pre-fix an
+    // `if (cards.length === 0) return state` early-returned on the zero-take, leaving the deck
+    // UNSHUFFLED (rotomancer shuffled; a public four-type search leaked the order). The discard-3 is
+    // forced (exactly 3 other cards) so it auto-resolves; the search then whiffs to the shuffle.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS]),
+                     hand: [{ iid: 'A-sb', printing: 'twm-163' },
+                            { iid: 'A-h1', printing: WATER }, { iid: 'A-h2', printing: FIRE },
+                            { iid: 'A-h3', printing: PSY }],
+                     deck: [{ iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+                            { iid: 'A-d2', printing: RALTS }, { iid: 'A-d3', printing: RALTS }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-sb' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.

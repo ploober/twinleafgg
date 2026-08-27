@@ -85,11 +85,11 @@ function* playCard(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  if (cards.length === 0) {
-
-    return state;
-  }
-
+  // TA-322: "Then, shuffle your deck" is owed even on a zero-take. The search count is capped
+  // to what the deck actually holds (count === 0 when it holds none of the four types), and the
+  // prompt is min:0 so a voluntary fail is always legal — either way you SEARCHED the deck, and
+  // any deck search is followed by a shuffle (compendium #2171; same family as TA-53/TA-56 and
+  // TA-320/TA-321). Pre-fix this early-returned on a zero-take and left the deck unshuffled.
   player.deck.moveCardsTo(cards, player.hand);
 
 
