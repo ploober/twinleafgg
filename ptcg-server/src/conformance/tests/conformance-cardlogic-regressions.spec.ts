@@ -252,6 +252,49 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Telepathic Psychic Energy shuffles after the on-attach search even on a zero-take [TA-324 por-088]', () => {
+    // Special Energy: "When you attach this card from your hand to a [P] Pokémon, search your deck for
+    // up to 2 Basic [P] Pokémon and put them onto your Bench. Then, shuffle your deck." A deck with NO
+    // Basic Psychic Pokémon (energy filler) is a zero-take, but the search still EXECUTED (deck
+    // non-empty, Bench has room), so the shuffle is owed (B.33/#2171; family of TA-320/TA-322). Pre-fix
+    // an `if (validPokemon.length === 0) return state` early-returned on the zero-FIND and dropped the
+    // shuffle (rotomancer shuffled). The bench-full / empty-deck skips (#1108/#840) are preserved.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS]),
+                     hand: [{ iid: 'A-e', printing: 'por-088' }],
+                     deck: [{ iid: 'A-d0', printing: WATER }, { iid: 'A-d1', printing: FIRE },
+                            { iid: 'A-d2', printing: PSY }, { iid: 'A-d3', printing: WATER }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-e', target: 'A-act' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
+  it('Sacred Ash is playable with as few as ONE Pokémon in the discard [TA-325 dri-168]', () => {
+    // "Shuffle up to 5 Pokémon from your discard pile into your deck." On a Trainer "up to X" is a
+    // 1..X range (compendium #2301), so ONE Pokémon in the discard is enough to play it. Pre-fix
+    // `canPlay` demanded `pokemonInDiscard >= 5` and refused a legal 1..4 play (rotomancer played it);
+    // an empty-of-Pokémon discard is still a zero-count no-op and correctly unplayable (B.36). One
+    // Pokémon in discard forces the min:1/max:1 move, which auto-resolves to the mandatory shuffle.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS]),
+                     hand: [{ iid: 'A-sa', printing: 'dri-168' }],
+                     discard: [{ iid: 'A-x0', printing: RALTS }],
+                     deck: [{ iid: 'A-d0', printing: WATER }, { iid: 'A-d1', printing: FIRE }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      // playItem is ACCEPTED (the canPlay fix), then the single eligible Pokémon is moved to the deck
+      // (the move pick carries allowCancel, so it surfaces rather than auto-resolving), reaching the
+      // mandatory shuffle. Pre-fix the play was refused outright (`invalidAction`) with < 5 in discard.
+      [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-sa' },
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-x0' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.

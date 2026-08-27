@@ -70,7 +70,11 @@ export class SacredAsh extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     const pokemonInDiscard = player.discard.cards.filter(c => c instanceof PokemonCard).length;
-    if (pokemonInDiscard < 5) {
+    // TA-325: "Shuffle UP TO 5 Pokemon …" on a Trainer is a 1..5 range (compendium #2301: "up to X"
+    // on a Trainer/Ability = 1..max, unlike 0..max on an attack), so ONE Pokemon in the discard is
+    // enough to play it — only an empty-of-Pokemon discard makes it a zero-count no-op (B.36). The
+    // pre-fix `< 5` gate demanded a FULL five and refused a legal 1..4 play (rotomancer played it).
+    if (pokemonInDiscard < 1) {
       return false;
     }
     return true;
