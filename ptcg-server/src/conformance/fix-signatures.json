@@ -5144,7 +5144,8 @@
     {
       "file": "set-temporal-forces/pidove.ts",
       "signatures": [
-        "      // masked the gate. Now: THROW (an empty deck cannot be searched, compendium #13), and let the HP"
+        "      // masked the gate. Now: THROW (an empty deck cannot be searched, compendium #13), and let the HP",
+        "            SHUFFLE_DECK(store, state, player);"
       ],
       "note": "TA-210/B.27 — the empty-deck bail-out `return state` sat ABOVE the HP gate and masked the card's printed precondition from the dry-run probe. Now throws. Stays `=== 0`: a non-empty deck with no Unfezant must remain usable (#127)."
     },

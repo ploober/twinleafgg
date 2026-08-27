@@ -10,7 +10,7 @@ import { PlayerType } from '../../../game';
 import { Card } from '../../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { CheckHpEffect } from '../../../game/store/effects/check-effects';
-import { WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Pidove extends PokemonCard {
 
@@ -90,6 +90,11 @@ export class Pidove extends PokemonCard {
               cardList.clearEffects();
               cardList.pokemonPlayedTurn = state.turn;
             }
+            // TA-250 / B.33: "Then, shuffle your deck" is a SEPARATE printed instruction, owed even
+            // on the whiff (min:0 decline) and after the searched card leaves the deck. rotomancer
+            // emits `shuffled`; twinleaf omitted it (bespoke reduceEffect, not the shared prefab).
+            // Mirrors magmar.ts / SEARCH_DECK_FOR_CARDS_TO_HAND, both of which shuffle unconditionally.
+            SHUFFLE_DECK(store, state, player);
           });
         }
       });

@@ -1543,4 +1543,28 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(rTake1.state.players.A.hand[0].printing).toBe('asc-004');
   });
 
+  it('Pidove "Emergency Evolution" shuffles the deck after the search [TA-250 / B.33 tef-133]', () => {
+    // "...search your deck for an Unfezant ... Then, shuffle your deck." The bespoke reduceEffect
+    // moved the found card and evolved, but NEVER shuffled -- rotomancer emits `shuffled`, twinleaf
+    // emitted nothing (SD-20 / B.33: the "Then, shuffle your deck" is a SEPARATE printed instruction,
+    // owed on every path -- the shared search/attach prefabs shuffle unconditionally, this bespoke
+    // ability did not). Pidove HP 50 with 20 damage = 30 remaining, satisfying the HP<=30 gate; the
+    // single Unfezant (tef-135) in the deck collapses the min:0/max:1 search, so the lone useAbility
+    // action drives to quiescence.
+    // Drive the DECLINE path (confirm:false at the min:0 search): the shuffle is owed even when NO
+    // card is taken, so this cell fails a fix that only shuffled after a successful find.
+    const r = step(
+      board(
+        player({ active: inPlay('A-act', ['tef-133'], [], 20), deck: [{ iid: 'A-unfz', printing: 'tef-135' }] }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ),
+      [
+        { actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability: 'Emergency Evolution' },
+        { actor: 'A' as const, type: 'confirm' as const, value: false },
+      ],
+    );
+    expect(r.events.some(e => e.kind === 'abilityUsed')).toBe(true);
+    expect(`tef-133:${r.events.some(e => /shuffle/i.test(e.kind))}`).toBe('tef-133:true');
+  });
+
 });
