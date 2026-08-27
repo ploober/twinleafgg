@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardType, StoreLike, State, CardTag, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AFTER_ATTACK, IS_ABILITY_BLOCKED, SEARCH_DECK_FOR_CARDS_TO_HAND } from '../../../game/store/prefabs/prefabs';
-import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Serperiorex extends PokemonCard {
 
@@ -34,8 +34,11 @@ export class Serperiorex extends PokemonCard {
   public fullName: string = 'Serperior ex SV11B';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Royal Cheer ability - increase damage by 20
-    if (effect instanceof PutDamageEffect && effect.target === effect.opponent.active) {
+    // Regal Cheer ability - +20 damage BEFORE Weakness and Resistance (TA-268).
+    // Must hook DealDamageEffect: the pipeline is DealDamage -> ApplyWeakness -> PutDamage, so a
+    // boost on PutDamageEffect lands AFTER the multiplier ((30x2)+20=80 instead of (30+20)x2=100).
+    // Same phase Altaria/Iron Crown ex use for the identical "attacks do 20 more (before W&R)".
+    if (effect instanceof DealDamageEffect && effect.target === effect.opponent.active) {
       const player = effect.player;
 
       // Check if this card is in play

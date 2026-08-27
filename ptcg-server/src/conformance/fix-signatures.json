@@ -3162,9 +3162,10 @@
     {
       "file": "set-black-bolt-white-flare/serperior-ex.ts",
       "signatures": [
-        "name: 'Regal Cheer',"
+        "name: 'Regal Cheer',",
+        "    if (effect instanceof DealDamageEffect && effect.target === effect.opponent.active) {"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-268: Regal Cheer +20 hooked on DealDamageEffect (before Weakness) not PutDamageEffect (after) — this line reverts if the phase is put back"
     },
     {
       "file": "set-black-bolt-white-flare/tirtouga.ts",

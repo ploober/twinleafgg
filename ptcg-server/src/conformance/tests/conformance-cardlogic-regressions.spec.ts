@@ -1695,4 +1695,30 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(`tef-133:${r.events.some(e => /shuffle/i.test(e.kind))}`).toBe('tef-133:true');
   });
 
+  it('Serperior ex "Regal Cheer" +20 is applied BEFORE Weakness [TA-268 / blk-003]', () => {
+    // Regal Cheer: "Attacks used by your Pokemon do 20 more damage ... (before applying Weakness and
+    // Resistance)." Charmander asc-020 Fire Claws (base 30) into a FIRE-WEAK defender twm-025 (x2):
+    // printed arithmetic is (30+20)x2 = 100. Twinleaf produced 80 = 30x2+20 -- the boost was hooked
+    // on PutDamageEffect (AFTER weakness) instead of DealDamageEffect. The multiplier is the whole
+    // discriminator, so all three cells share one board and vary only the defender / Serperior.
+    const charmander = (bench: PokemonInPlay[], defender: string) =>
+      board(player({ active: inPlay('A-act', ['asc-020'], en(FIRE, 2, 'a')), bench }),
+            player({ active: inPlay('B-act', [defender]) }));
+    const SERP = inPlay('A-serp', ['blk-003']);   // Stage 2 sits in play; Regal Cheer is passive
+
+    // (1) Fire-weak defender, Serperior in play: +20 lands before the x2.
+    const weak = step(charmander([SERP], 'twm-025'), [attack('A-act', 'Fire Claws')]);
+    expect(weak.state.players.B.active!.damage).toBe(100);
+
+    // (2) NON-weak defender (RALTS), Serperior in play: (30+20) with no multiplier = 50, unchanged by
+    // the fix -- proving it moved only the weakness case, not the magnitude of the boost.
+    const flat = step(charmander([SERP], RALTS), [attack('A-act', 'Fire Claws')]);
+    expect(flat.state.players.B.active!.damage).toBe(50);
+
+    // (3) Fire-weak defender, NO Serperior: 30x2 = 60. Isolates the +20 to the ability, so a fix that
+    // over-applied (e.g. added twice) would red here.
+    const noSerp = step(charmander([], 'twm-025'), [attack('A-act', 'Fire Claws')]);
+    expect(noSerp.state.players.B.active!.damage).toBe(60);
+  });
+
 });
