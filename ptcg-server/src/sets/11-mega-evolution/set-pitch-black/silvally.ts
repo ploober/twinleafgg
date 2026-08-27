@@ -96,9 +96,12 @@ export class Silvally extends PokemonCard {
         }
       });
 
-      if (blocked.length >= player.deck.cards.length) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
-      }
+      // TA-323: do NOT refuse the ability when the deck holds no Supporter. Per compendium #990
+      // ("you can search for energy cards even if you know you won't find them ... they can be
+      // searched for") and #903, a search of a NON-EMPTY deck may legally whiff — the empty-deck
+      // case (#840) is already handled by the deck.length === 0 throw above. Removing this guard and
+      // relaxing the prompt to min:0 lets the ability be USED, find nothing, and still shuffle
+      // (the callback below already shuffles unconditionally); rotomancer offers+shuffles here.
 
       return store.prompt(
         state,
@@ -107,7 +110,7 @@ export class Silvally extends PokemonCard {
           GameMessage.CHOOSE_CARD_TO_HAND,
           player.deck,
           {},
-          { min: 1, max: 1, blocked, allowCancel: false },
+          { min: 0, max: 1, blocked, allowCancel: false },
         ),
         (picked) => {
           const sel = picked || [];

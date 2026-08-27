@@ -6008,6 +6008,16 @@
         "if (cards.length === 0) {"
       ],
       "note": "TA-322/B.33 (2026-08-27): Secret Box's four-type search skipped its owed 'Then, shuffle your deck' on a zero-take via `if (cards.length === 0) return state` (deck holds none of Item/Tool/Supporter/Stadium -> count 0; also min:0 voluntary fail). Fix removes the early return so control falls through to the trailing ShuffleDeckPrompt; the empty moveCardsTo/log are no-ops and the ShowCardsPrompt stays guarded by `cards.length > 0`. absentSignatures catches a revert reintroducing the early return (compendium #2171; family of TA-53/TA-56/TA-320/TA-321). Guard = conformance-cardlogic-regressions.spec [TA-322 twm-163]. Found by the shuffle-reach candidate triage."
+    },
+    {
+      "file": "set-pitch-black/silvally.ts",
+      "signatures": [
+        "{ min: 0, max: 1, blocked, allowCancel: false }"
+      ],
+      "absentSignatures": [
+        "blocked.length >= player.deck.cards.length"
+      ],
+      "note": "TA-323 (2026-08-27): 'Call a Buddy' refused to activate (threw CANNOT_USE_POWER via `blocked.length >= deck.cards.length`, and the prompt was min:1) whenever the deck held no Supporter, so with an empty hand + non-empty no-Supporter deck the ability was NOT OFFERED while rotomancer offered it and shuffled. A non-empty deck may be searched even when the target category is absent (compendium #990/#903; only an EMPTY deck blocks, #840). Fix drops the guard and relaxes to min:0 so the ability is usable and whiffs to the already-unconditional shuffle. absentSignatures catches a revert reintroducing the guard. Guard = conformance-cardlogic-regressions.spec [TA-323 pbl-070]. Found by shuffle_reach.py empty-hand routing (#9 residual tail)."
     }
   ]
 }

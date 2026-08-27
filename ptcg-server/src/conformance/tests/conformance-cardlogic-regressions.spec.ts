@@ -229,6 +229,29 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Silvally "Call a Buddy" is usable (and shuffles) when the deck holds no Supporter [TA-323 pbl-070]', () => {
+    // "Once during your turn, if you have no cards in your hand, you may use this Ability. Search your
+    // deck for a Supporter card … Then, shuffle your deck." A non-empty deck with NO Supporter is a
+    // legal whiff: compendium #990 ("you can search for energy cards even if you know you won\'t find
+    // them … they can be searched for") + #903; only an EMPTY deck blocks the search (#840). Pre-fix a
+    // `blocked.length >= deck.length` guard threw CANNOT_USE_POWER (and the prompt was min:1), so the
+    // ability was NOT OFFERED at all when no Supporter was present — twinleaf sat on `endTurn` while
+    // rotomancer offered it and shuffled. Fix: drop the guard, relax to min:0; the callback already
+    // shuffles unconditionally. Empty-hand + non-empty no-Supporter deck now offers the ability and
+    // whiffs to the shuffle.
+    const r = step(
+      board(player({ active: inPlay('A-act', ['pbl-070']),
+                     hand: [],
+                     deck: [{ iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+                            { iid: 'A-d2', printing: RALTS }, { iid: 'A-d3', printing: RALTS }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability: 'Call a Buddy' }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.
