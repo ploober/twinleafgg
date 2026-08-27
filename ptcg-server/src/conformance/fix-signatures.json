@@ -5988,6 +5988,16 @@
         "    next();"
       ],
       "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census."
+    },
+    {
+      "file": "set-temporal-forces/drilbur.ts",
+      "signatures": [
+        "if (cards.length > 0) {"
+      ],
+      "absentSignatures": [
+        "// Operation canceled by the user"
+      ],
+      "note": "TA-321/B.33 (2026-08-27): 'Dig Dig Dig' zero-take skipped its owed shuffle via `if (cards.length === 0) return state`. Fix shuffles regardless of take-count once the ability is used (compendium #2171; family of TA-53/TA-56). absentSignatures catches a revert restoring the old cancel comment. Guard = conformance-cardlogic-regressions.spec [TA-321 tef-085]. Found by the shuffle-reach play-bench routing."
     }
   ]
 }

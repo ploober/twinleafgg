@@ -72,12 +72,13 @@ export class Drilbur extends PokemonCard {
           ), selected => {
             const cards = selected || [];
 
-            // Operation canceled by the user
-            if (cards.length === 0) {
-              return state;
+            // TA-321: once the ability is USED (wantToUse === true), the owed "Then, shuffle your
+            // deck" is mandatory even on a zero-take — you may voluntarily fail the deck search but
+            // you still searched and must shuffle (compendium #2171; same family as TA-53 Mareep /
+            // TA-56 Dwebble). Pre-fix this early-returned on a zero-take and left the deck unshuffled.
+            if (cards.length > 0) {
+              player.deck.moveCardsTo(cards, player.discard);
             }
-
-            player.deck.moveCardsTo(cards, player.discard);
 
             return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
               player.deck.applyOrder(order);

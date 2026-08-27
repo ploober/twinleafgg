@@ -183,6 +183,28 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Drilbur "Dig Dig Dig" shuffles even on a zero-take once the ability is used [TA-321 tef-085]', () => {
+    // On-play-to-Bench ability: "you may search your deck for up to 3 Basic [F] Energy … and discard
+    // them. Then, shuffle your deck." With NO Basic Fighting Energy in the deck the search is a
+    // zero-take, but once the player USES the ability (confirm true) the shuffle is mandatory — you
+    // may voluntarily fail the deck search but you still searched (compendium #2171; cf. TA-53/TA-56).
+    // Pre-fix an `if (cards.length === 0) return state` early-returned on the zero-take, leaving the
+    // deck UNSHUFFLED (rotomancer shuffled). Declining (confirm false) still shuffles nothing — that
+    // path is untouched.
+    const r = step(
+      board(player({ active: inPlay('A-act', [RALTS]),
+                     hand: [{ iid: 'A-dril', printing: 'tef-085' }],
+                     deck: [{ iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+                            { iid: 'A-d2', printing: RALTS }, { iid: 'A-d3', printing: RALTS }] }),
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [{ actor: 'A' as const, type: 'benchBasic' as const, card: 'A-dril' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true }],
+    );
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.
