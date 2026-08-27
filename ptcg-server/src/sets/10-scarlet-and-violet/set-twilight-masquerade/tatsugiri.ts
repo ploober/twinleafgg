@@ -99,19 +99,34 @@ export class Tatsugiri extends PokemonCard {
         });
 
         deckTop.moveCardsTo(selected, player.hand);
+
+        // TA-251 / B.33: "Shuffle THE OTHER cards back into your deck" is a SEPARATE, unconditional
+        // printed instruction — the up-to-6 looked-at cards minus the taken Supporter. The reveal
+        // branch (a Supporter WAS taken) returned WITHOUT shuffling, a MISSING shuffle rotomancer
+        // performs (RO-ONLY: it shuffles the other 5 whether or not a Supporter left). It is still
+        // suppressed when the object is empty — a lone Supporter looked at and taken leaves no
+        // "other cards" (#1979) — so key on the OBJECT going back, not on whether a Supporter was
+        // taken. otherCards is counted BEFORE moving the remainder back to the deck.
+        const otherCards = deckTop.cards.length;
         deckTop.moveTo(player.deck);
+
+        const shuffleBack = (): State => {
+          if (otherCards === 0) {
+            return state;
+          }
+          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
+        };
 
         if (selected.length > 0) {
           return store.prompt(state, new ShowCardsPrompt(
             opponent.id,
             GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
             selected
-          ), () => {
-          });
+          ), () => { return shuffleBack(); });
         }
-        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
-        });
+        return shuffleBack();
       });
     }
 

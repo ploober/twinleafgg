@@ -82,7 +82,18 @@ export class IronThorns extends PokemonCard {
         const toDiscard = deckTop.cards.filter(c =>
           c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
         deckTop.moveCardsTo(toDiscard, player.discard);
+
+        // TA-251 / B.33: "shuffle THE OTHER cards back" — the revealed cards NOT discarded. If every
+        // revealed card was a Future card (all discarded), there are no "other cards" and the
+        // shuffle is suppressed (#1979). Key on the OBJECT, not the deck: the top5-empty guard above
+        // reds only the empty-DECK cell and never reaches the all-Future-with-stocked-deck path.
+        // rotomancer suppresses here.
+        const otherCards = deckTop.cards.length;
         deckTop.moveTo(player.deck, deckTop.cards.length);
+
+        if (otherCards === 0) {
+          return state;
+        }
 
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);

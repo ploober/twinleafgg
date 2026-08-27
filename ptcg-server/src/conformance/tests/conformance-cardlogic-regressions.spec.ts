@@ -1262,6 +1262,134 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     }
   });
 
+  it('a DEPENDENT-object shuffle is suppressed on a STOCKED deck when the object empties [TA-251 reopened / B.33]', () => {
+    // The reopening: the shipped fix guarded on `deck.length === 0`, but the rule keys on the OBJECT
+    // — "shuffle THE OTHER cards" — and the two axes come apart on a STOCKED deck whose looked-at
+    // cards all leave. The empty-deck cell above cannot see it: reverting that guard reds the same
+    // deck=0 cell it was written for, so a mutation test there proves nothing about this one. Each
+    // card is asserted as a PAIR — object-empty (no cards go back -> NO shuffle) and object-nonempty
+    // (some go back -> shuffle) — because only the pair pins the object axis: the empty cell alone
+    // passes a fix that never shuffles, the nonempty cell alone passes one that always does.
+    //
+    // "shuffle owed" = a `shuffled` event fired OR a `shuffle` system decision is pending. The
+    // driver only auto-emits `shuffled` when the returning deck is <=1 card (a forced order, CF-11);
+    // with more it SURFACES the shuffle pending and stops without the event (line ~728). So the
+    // event alone is not the observable — the pending is the other half, and both mean the shuffle
+    // is happening. Object-empty must show NEITHER.
+    const shuffleOwed = (r: ReturnType<typeof step>): boolean =>
+      r.events.some(e => /shuffle/i.test(e.kind)) ||
+      (r.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'shuffle');
+
+    // Lapras ex — "Look at the top 20 ... attach any number of Energy ... Shuffle THE OTHER cards
+    // back." Deck is two Basic Energy; attaching BOTH empties the object on a deck that was NEVER
+    // empty. Attaching ONE leaves one "other card" and must still shuffle.
+    const lapEnergy = [...en('sve-003', 1, 'aw'), ...en('sve-005', 1, 'ap'), ...en('sve-008', 1, 'am')];
+    const lapBoard = () => board(
+      player({ active: inPlay('A-act', ['scr-032'], lapEnergy),
+               deck: [{ iid: 'A-d0', printing: 'sve-003' }, { iid: 'A-d1', printing: 'sve-005' }] }),
+      player({ active: inPlay('B-act', ['meg-181']) }));
+    const att = (card: string) => ({ actor: 'A' as const, type: 'attachEnergy' as const, card, target: 'A-act' });
+    const decline = { actor: 'A' as const, type: 'confirm' as const, value: false };
+
+    const lapBoth = step(lapBoard(), [attack('A-act', 'Larimar Rain'), att('A-d0'), att('A-d1')]);
+    expect(`scr-032/objEmpty:invalid=${lapBoth.status === 'invalidAction'}`).toBe('scr-032/objEmpty:invalid=false');
+    expect(`scr-032/objEmpty:owed=${shuffleOwed(lapBoth)}`).toBe('scr-032/objEmpty:owed=false');
+
+    const lapOne = step(lapBoard(), [attack('A-act', 'Larimar Rain'), att('A-d0'), decline]);
+    expect(`scr-032/objFull:invalid=${lapOne.status === 'invalidAction'}`).toBe('scr-032/objFull:invalid=false');
+    expect(`scr-032/objFull:owed=${shuffleOwed(lapOne)}`).toBe('scr-032/objFull:owed=true');
+
+    // Iron Thorns — "Reveal the top 5 ... discard the revealed Future cards and shuffle THE OTHER
+    // cards back." Both in-pool printings. Top-5 all Future empties the object; a mix leaves the
+    // non-Future cards to shuffle back. Destructo-Press is forced, so one step resolves it. B is the
+    // 210-HP tanky so the mixed control's 140 does not KO and the walk reaches the shuffle pending.
+    for (const printing of ['tef-062', 'svp-098']) {
+      const itEnergy = [...en('sve-004', 1, 'al'), ...en('sve-003', 1, 'ac')];
+      const allFuture = step(
+        board(player({ active: inPlay('A-act', [printing], itEnergy),
+                       deck: Array.from({ length: 5 }, (_, i) => ({ iid: `A-f${i}`, printing })) }),
+              player({ active: inPlay('B-act', [TANKY]) })),
+        [attack('A-act', 'Destructo-Press')]);
+      expect(`${printing}/objEmpty:invalid=${allFuture.status === 'invalidAction'}`).toBe(`${printing}/objEmpty:invalid=false`);
+      expect(`${printing}/objEmpty:owed=${shuffleOwed(allFuture)}`).toBe(`${printing}/objEmpty:owed=false`);
+
+      const mixed = step(
+        board(player({ active: inPlay('A-act', [printing], itEnergy),
+                       deck: [{ iid: 'A-f0', printing }, { iid: 'A-f1', printing },
+                              { iid: 'A-e0', printing: 'sve-003' }, { iid: 'A-e1', printing: 'sve-003' },
+                              { iid: 'A-e2', printing: 'sve-003' }] }),
+              player({ active: inPlay('B-act', [TANKY]) })),
+        [attack('A-act', 'Destructo-Press')]);
+      expect(`${printing}/objFull:invalid=${mixed.status === 'invalidAction'}`).toBe(`${printing}/objFull:invalid=false`);
+      expect(`${printing}/objFull:owed=${shuffleOwed(mixed)}`).toBe(`${printing}/objFull:owed=true`);
+    }
+
+    // Tatsugiri (twm-131) "Attract Customers" — an ABILITY that looks at the top 6, may put a
+    // Supporter into hand, then "Shuffle THE OTHER cards back." The census found it MISSING the
+    // shuffle whenever a Supporter WAS taken (the reveal branch returned without shuffling) while
+    // still owing it — the TA-250 direction hiding inside the same B.33 family, and rotomancer
+    // shuffles. object-nonempty (five others after the take) must shuffle; object-empty (a lone
+    // Supporter looked at and taken) must not. A Supporter must sit in the top 6 for the take.
+    const SUPP = 'asc-182';
+    const tatBoard = (deck: CardRef[]) => board(
+      player({ active: inPlay('A-act', ['twm-131']), deck }),
+      player({ active: inPlay('B-act', ['meg-181']) }));
+    const useAbil = { actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability: 'Attract Customers' };
+    const choose = (t: string) => ({ actor: 'A' as const, type: 'choose' as const, target: t });
+
+    const tatFive = step(tatBoard([{ iid: 'A-s', printing: SUPP },
+      ...Array.from({ length: 5 }, (_, i) => ({ iid: `A-o${i}`, printing: 'sve-003' }))]),
+      [useAbil, choose('A-s')]);
+    expect(`twm-131/objFull:invalid=${tatFive.status === 'invalidAction'}`).toBe('twm-131/objFull:invalid=false');
+    expect(`twm-131/objFull:owed=${shuffleOwed(tatFive)}`).toBe('twm-131/objFull:owed=true');
+
+    const tatLone = step(tatBoard([{ iid: 'A-s', printing: SUPP }]), [useAbil, choose('A-s')]);
+    expect(`twm-131/objEmpty:invalid=${tatLone.status === 'invalidAction'}`).toBe('twm-131/objEmpty:invalid=false');
+    expect(`twm-131/objEmpty:owed=${shuffleOwed(tatLone)}`).toBe('twm-131/objEmpty:owed=false');
+
+    // no Supporter in the top 6: nothing taken, all six are "other cards" -> shuffle owed via the
+    // else branch (already correct before the fix, kept as the third leg of the object axis).
+    const tatSix = step(tatBoard(Array.from({ length: 6 }, (_, i) => ({ iid: `A-o${i}`, printing: 'sve-003' }))), [useAbil]);
+    expect(`twm-131/noSupp:invalid=${tatSix.status === 'invalidAction'}`).toBe('twm-131/noSupp:invalid=false');
+    expect(`twm-131/noSupp:owed=${shuffleOwed(tatSix)}`).toBe('twm-131/noSupp:owed=true');
+  });
+
+  it('a set-shuffle emits ONE shuffled event, not one per member [TA-251-adjacent / ssp-086]', () => {
+    // Found by the dependent-object census. Sylveon ex "Angelite" — "Choose 2 of your opponent's
+    // Benched Pokemon. Shuffle THOSE Pokemon and all attached cards into your opponent's deck." —
+    // is ONE shuffle of a set, but the ShuffleDeckPrompt sat inside the per-target forEach, so
+    // choosing 2 emitted TWO `shuffled` events where rotomancer emits ONE (a multiset-count
+    // divergence). This is the multiplicity sibling of the B.33 suppression family, not a
+    // suppression case — the shuffle is owed, just once.
+    //
+    // The opponent deck is left with >1 card so the shuffle SURFACES as a system decision rather
+    // than auto-resolving (CF-11), then each pending is resolved with its advertised order; the
+    // count of `shuffled` events across the settled walk is the observable. Pre-fix: 2. Fixed: 1.
+    const settleCountingShuffles = (b: NeutralState, actions: Array<Record<string, unknown>>): number => {
+      const acts = actions.map(a => ({ ...a }));
+      for (let i = 0; i < 10; i++) {
+        const r = step(b, acts);
+        if (r.status === 'invalidAction') { return -1; }
+        const la = r.pending?.legalActions ?? [];
+        const sh = la.find(a => (a as { type: string }).type === 'shuffle') as { deck?: string[] } | undefined;
+        if (sh === undefined) { return r.events.filter(e => /shuffle/i.test(e.kind)).length; }
+        acts.push({ actor: 'system', type: 'shuffle', order: sh.deck ?? [] });
+      }
+      throw new Error('ssp-086 guard did not settle');
+    };
+    const count = settleCountingShuffles(
+      board(
+        player({ active: inPlay('A-act', ['ssp-086'],
+          [...en('sve-003', 1, 'aw'), ...en('sve-004', 1, 'al'), ...en('sve-005', 1, 'ap')]) }),
+        player({ active: inPlay('B-act', ['meg-181']),
+          bench: [inPlay('B-b0', ['por-063']), inPlay('B-b1', ['asc-136'])],
+          deck: [{ iid: 'B-d0', printing: 'sve-003' }, { iid: 'B-d1', printing: 'sve-003' }] })),
+      [attack('A-act', 'Angelite'),
+       { actor: 'A', type: 'choose', target: 'B-b0' },
+       { actor: 'A', type: 'choose', target: 'B-b1' }]);
+    expect(`ssp-086/shuffleCount:${count}`).toBe('ssp-086/shuffleCount:1');
+  });
+
   it('an empty deck WHIFFS a searching attack instead of refusing it [TA-249 / SD-20]', () => {
     // Compendium #361, by name, on the very attack three of these cards print: "Can I use Eevee's
     // 'Call for Family' to search through my deck if I already have four Eevee in play or in the

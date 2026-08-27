@@ -268,7 +268,8 @@
       "signatures": [
         "const energyInTemp = temp.cards.filter(card => card instanceof EnergyCard);",
         "const target = StateUtils.getTarget(state, player, transfer.to);",
-        "// TA-251 / B.33: on an EMPTY deck this attack owes nothing."
+        "// TA-251 / B.33: on an EMPTY deck this attack owes nothing.",
+        "if (temp.cards.length === 0) {"
       ]
     },
     {
@@ -5326,7 +5327,8 @@
       "file": "set-surging-sparks/sylveon-ex.ts",
       "signatures": [
         "const last = state.playerLastAttack?.[player.id];",
-        "last.attack.name === 'Angelite'"
+        "last.attack.name === 'Angelite'",
+        "if (targets.length === 0) {"
       ],
       "note": "TA-227/CF-49 2026-08-07: the Angelite once-per-two-turns lockout now reads state.playerLastAttack instead of a private per-card marker, so it survives a state round-trip and covers '1 of your Pokemon' rather than this instance only."
     },
@@ -5447,7 +5449,8 @@
       "file": "set-temporal-forces/iron-thorns.ts",
       "signatures": [
         "effect.damage = 70 * futureCards.length;",
-        "if (top5.length === 0) {"
+        "if (top5.length === 0) {",
+        "const otherCards = deckTop.cards.length;"
       ]
     },
     {
@@ -5970,6 +5973,13 @@
         "{ min: 1, max: 3, allowCancel: false }"
       ],
       "note": "TA-317 (2026-08-26): Trifrost hits a FIXED min(3,available) spread, pinned min===max so the <=3 case is forced and the choose-pokemon decomposer collapses it (CF-14). Buggy form min:1,max:3 over-pended and let the player under-select."
+    },
+    {
+      "file": "set-twilight-masquerade/tatsugiri.ts",
+      "signatures": [
+        "const shuffleBack = (): State => {"
+      ],
+      "note": "TA-251/B.33 missing-shuffle when a Supporter is taken; object-keyed shuffle-back (found by the dependent-object census 2026-08-27)"
     }
   ]
 }

@@ -97,6 +97,16 @@ export class Laprasex extends PokemonCard {
       // the deck and shuffle ONCE. (The old code fired a ShuffleDeckPrompt per card,
       // which stranded most of them and left the deck/shuffle inconsistent.)
       const returnAndShuffle = (): void => {
+        // TA-251 / B.33: the shuffle's printed object is *"the OTHER cards"* — the looked-at cards
+        // not attached. If every looked-at Energy was attached (or the look returned none), there
+        // are no "other cards" and the shuffle is suppressed (#1979: a prevented antecedent
+        // suppresses the consequent). Key on the OBJECT (cards actually going back), not the deck:
+        // the earlier deck-empty guard reds the same cell it was written for, so it could never
+        // reach the object-empty-with-stocked-deck path. rotomancer suppresses here; twinleaf's own
+        // tef-072/ssp-142 already do.
+        if (temp.cards.length === 0) {
+          return;
+        }
         temp.moveTo(player.deck);
         store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);

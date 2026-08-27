@@ -82,14 +82,22 @@ export class Sylveonex extends PokemonCard {
       ), selected => {
         const targets = selected || [];
 
+        // "Shuffle THOSE Pokemon and all attached cards into your opponent's deck" is ONE shuffle of
+        // a SET, not one per Pokemon. The ShuffleDeckPrompt sat inside this forEach, so choosing 2
+        // Benched emitted TWO `shuffled` events where rotomancer emits ONE (a multiset-count
+        // divergence, twinleaf wrong). Move every chosen Pokemon to the deck first, then shuffle once.
         targets.forEach(target => {
           target.clearEffects();
           target.damage = 0;
           target.moveTo(opponent.deck);
+        });
 
-          return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
-            opponent.deck.applyOrder(order);
-          });
+        if (targets.length === 0) {
+          return state;
+        }
+
+        return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+          opponent.deck.applyOrder(order);
         });
       });
     }
