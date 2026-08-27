@@ -5838,7 +5838,8 @@
       "signatures": [
         "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  player.hand.moveCardsTo(cards, player.deck);",
         "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);",
-        "'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.'"
+        "'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.'",
+        "{ min: 1, max: minMax, allowCancel: false }"
       ]
     },
     {

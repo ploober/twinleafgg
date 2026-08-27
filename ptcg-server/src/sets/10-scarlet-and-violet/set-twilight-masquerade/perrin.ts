@@ -64,12 +64,16 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   const minMax = cards.length;
 
+  // TA-319 / compendium #2301: "search your deck for up to that many Pokemon" is a Trainer effect,
+  // so the count is 1..that-many (min 1), NOT exactly-that-many. `min: minMax` forced the player to
+  // take all `minMax` and offered no way to take just 1 when >=2 were revealed. `max` stays `minMax`.
+  // (rotomancer's mirror defect -- it lets you take 0 here -- is RE-134, adjudicated roto-side.)
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.deck,
     { superType: SuperType.POKEMON },
-    { min: minMax, max: minMax, allowCancel: false }
+    { min: 1, max: minMax, allowCancel: false }
   ), selected => {
     cards = selected || [];
     next();

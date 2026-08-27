@@ -1498,4 +1498,49 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(damagedTotal(r, 'asc-004')).toBe(0);
     expect(koOf(r, 'asc-004')).toBe(false);
   });
+
+  it('Perrin "search for up to that many" lets the player take just 1 of 2 revealed [TA-319 twm-160, #2301]', () => {
+    // Compendium #2301 asymmetry (the Trainer-side companion to Minccino above): on a Trainer card
+    // "up to X" is 1..max, NOT exactly-max. Perrin reveals up to 2 Pokemon to the deck, then "search
+    // your deck for up to that many Pokemon". The search prompt declared { min: minMax, max: minMax },
+    // so with 2 revealed the range collapsed to 2..2 and forced the player to take BOTH -- there was
+    // no way to take just 1. Fix: min:1 (max stays minMax). (rotomancer mirrors the opposite error --
+    // it offers a 0-take here -- which is RE-134, adjudicated roto-side.) Erika's Bellsprout asc-004
+    // is the Pokemon; both hand copies are revealed so minMax = 2.
+    const bd = () => {
+      const A = player({
+        active: inPlay('A-act', [RALTS]),
+        hand: [{ iid: 'A-perrin', printing: 'twm-160' }, { iid: 'A-bell1', printing: 'asc-004' }, { iid: 'A-bell2', printing: 'asc-004' }],
+        deck: [{ iid: 'A-dk0', printing: 'asc-004' }, { iid: 'A-dk1', printing: 'asc-004' }, { iid: 'A-dk2', printing: 'asc-004' }],
+      });
+      const B = player({ active: inPlay('B-act', [RALTS]) });
+      return board(A, B);
+    };
+    const play = { actor: 'A' as const, type: 'playSupporter' as const, card: 'A-perrin' };
+    const toDeck = [
+      { actor: 'A' as const, type: 'choose' as const, target: 'A-bell1' },
+      { actor: 'A' as const, type: 'choose' as const, target: 'A-bell2' },
+    ];
+
+    // (a) the search surfaces with a mandatory FIRST pick: min:1 offers no stop at 0 picks.
+    const rSearch0 = step(bd(), [play, ...toDeck]);
+    expect(rSearch0.status).toBe('awaitingAction');
+    expect(types(rSearch0)).toContain('choose');
+    expect(types(rSearch0)).not.toContain('confirm');            // min-1 floor: cannot take 0
+    const searchPicks = (rSearch0.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose');
+    expect(searchPicks.length).toBeGreaterThanOrEqual(2);        // 3 in deck + 2 just revealed
+
+    // (b) THE fix: after ONE pick the stop appears (1..2 is the real range) and a 2nd pick is still
+    //     offered. Pre-fix (min:minMax=2) no stop surfaced here -- the player was forced to take 2.
+    const rAfter1 = step(bd(), [play, ...toDeck, searchPicks[0] as never]);
+    expect(types(rAfter1)).toContain('confirm');                 // can stop at 1
+    expect(types(rAfter1)).toContain('choose');                  // can still take the 2nd (max:2)
+
+    // (c) taking exactly 1 lands exactly one Pokemon in hand -- the whole flow carries the floor.
+    const rTake1 = step(bd(), [play, ...toDeck, searchPicks[0] as never,
+      { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(rTake1.state.players.A.hand.length).toBe(1);
+    expect(rTake1.state.players.A.hand[0].printing).toBe('asc-004');
+  });
+
 });
