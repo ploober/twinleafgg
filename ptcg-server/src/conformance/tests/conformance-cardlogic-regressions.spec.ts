@@ -1909,4 +1909,56 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(noSerp.state.players.B.active!.damage).toBe(60);
   });
 
+  it('Redeemable Ticket draws new prizes from the TOP of the deck, old prizes to the BOTTOM [TA-328 jtg-156]', () => {
+    // "Count your Prize cards and shuffle them face down, then put them at the bottom of your deck.
+    // If you do, add that many cards from the top of your deck to your Prize cards." The engine's
+    // deck is top-at-index-0 (CardList.moveTo draws with `splice(0, count)`; a normal draw takes
+    // deck[0]). The bespoke reduceEffect had its orientation BACKWARDS: it `unshift`ed the old
+    // prizes onto the TOP and drew the new prizes with `pop()` from the BOTTOM -- so the new prizes
+    // were the WRONG END of the deck. Rotomancer draws the top (correct, matching card text); this
+    // was a deterministic RO-vs-TL divergence (the prize SHUFFLE is nondeterministic, but WHICH END
+    // the cards come from is not). Fixed: push (bottom) + shift (top).
+    //
+    // Board: 3 DISTINCT Pokemon on top of the deck, 3 WATER filler below, and 3 DISTINCT (non-deck)
+    // energies as prizes -- so "new prizes == top 3" is a clean discriminator that the prize shuffle
+    // cannot perturb. Pre-fix the new prizes would be the 3 WATER filler (drawn from the bottom).
+    const bd = board(
+      player({
+        active: inPlay('A-act', [RALTS]),
+        hand: [{ iid: 'A-tik', printing: 'jtg-156' }],
+        deck: [
+          { iid: 'A-t0', printing: 'meg-034' },   // TOP (index 0) -> becomes a new prize
+          { iid: 'A-t1', printing: 'pfl-048' },
+          { iid: 'A-t2', printing: 'twm-063' },
+          { iid: 'A-f0', printing: WATER },
+          { iid: 'A-f1', printing: WATER },
+          { iid: 'A-f2', printing: WATER },        // BOTTOM (index 5)
+        ],
+        prizes: [
+          { iid: 'A-pz0', printing: FIRE, faceUp: false },
+          { iid: 'A-pz1', printing: PSY, faceUp: false },
+          { iid: 'A-pz2', printing: METAL, faceUp: false },
+        ],
+      }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const r = step(bd, [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-tik' }]);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.discard.some(c => c.printing === 'jtg-156')).toBe(true);
+
+    // THE fix: the 3 new prizes are the TOP 3 of the deck (not the bottom WATER filler). Deterministic
+    // despite the nondeterministic prize shuffle -- which end the draw comes from is not random.
+    const newPrizes = r.state.players.A.prizes.map(p => p.printing).sort();
+    expect(newPrizes).toEqual(['meg-034', 'pfl-048', 'twm-063'].sort());
+
+    // ...and the OLD prizes are now at the BOTTOM of the deck (last 3), not unshifted onto the top.
+    const deck = r.state.players.A.deck.map(c => c.printing);
+    expect(deck.slice(-3).sort()).toEqual([FIRE, PSY, METAL].sort());
+
+    // no card lost or duplicated: deck back to 6, deck U prizes conserves all 9 non-ticket cards.
+    expect(deck.length).toBe(6);
+    expect([...deck, ...newPrizes].sort())
+      .toEqual(['meg-034', 'pfl-048', 'twm-063', WATER, WATER, WATER, FIRE, PSY, METAL].sort());
+  });
+
 });

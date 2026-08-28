@@ -49,23 +49,26 @@ export class RedeemableTicket extends TrainerCard {
       // Shuffle the prize cards
       this.shuffleArray(allPrizeCards);
 
-      // Move prize cards to the bottom of the deck
+      // Move prize cards to the bottom of the deck. The engine's deck is top-at-index-0
+      // (CardList.moveTo draws with `splice(0, count)`), so the BOTTOM is the END of the array:
+      // append with push (NOT unshift, which would put them on top). (TA-328)
       allPrizeCards.forEach(card => {
-        player.deck.cards.unshift(card);
+        player.deck.cards.push(card);
       });
 
       // Clear the prize cards
       prizes.forEach(p => p.cards = []);
 
-      // Draw cards from the top of the deck to the prize cards
+      // Draw cards from the top of the deck to the prize cards. The TOP is index 0, so take with
+      // shift (NOT pop, which would draw from the bottom). (TA-328)
       for (let i = 0; i < prizeCount; i++) {
-        const card = player.deck.cards.pop();
+        const card = player.deck.cards.shift();
         if (card) {
           const prize = player.prizes.find(p => p.cards.length === 0);
           if (prize) {
             prize.cards.push(card);
           } else {
-            player.deck.cards.push(card);
+            player.deck.cards.unshift(card);
           }
         }
       }
