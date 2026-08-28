@@ -17,6 +17,7 @@ export class Heliolisk extends PokemonCard {
 
   public powers = [{
     name: 'Frilled Generator',
+    useWhenInPlay: true,
     powerType: PowerType.ABILITY,
     text: 'Once during your turn, if you played Canari from your hand this turn, you may use this Ability. Search your deck for up to 2 Basic Lightning Energy cards and attach them to this Pokémon. Then, shuffle your deck.'
   }];

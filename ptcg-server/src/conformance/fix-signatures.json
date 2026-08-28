@@ -6045,6 +6045,13 @@
         "if (opponent.hand.cards.length === 0) {"
       ],
       "note": "TA-326 (2026-08-27): canPlay gated only on the opponent Prize count and OFFERED the card on an EMPTY opponent hand, where the whole effect ('opponent shuffles their hand onto the bottom of their deck; IF they put any cards there, they draw 3') does nothing — a Trainer cannot be played for no effect (compendium #2365 rules this exact card; the conditional-draw shape of #2306 Grand Wing; modern line B.41/B.36). Opponent hand SIZE is public, so a zero is a provable no-op; rotomancer withholds. Fix adds the empty-hand withhold to canPlay (the signature line). Reverting it removes the line and reddens the signature. Guard = conformance-cardlogic-regressions.spec [TA-326 cri-082]. Found by shuffle_reach.py opponent-hand routing."
+    },
+    {
+      "file": "set-ascended-heroes/heliolisk.ts",
+      "signatures": [
+        "useWhenInPlay: true,"
+      ],
+      "note": "TA-327 (2026-08-27): Heliolisk's 'Frilled Generator' ('Once during your turn, if you played Canari from your hand this turn, you may use this Ability. Search your deck for up to 2 Basic Lightning Energy cards ... Then, shuffle your deck.') is a PLAYER-ACTIVATED in-play ability, but its power decl OMITTED `useWhenInPlay: true`, so legal-actions.ts:517 ('if (power.useWhenInPlay !== true) continue') dropped it from the menu — it was NEVER offered even after Canari (asc-185) set player.playedCanari this turn: twinleaf sat on endTurn while rotomancer offered it and fired the owed shuffle. The abilityProbeAccepts dry-run already gates the offer on playedCanari (Heliolisk.reduceEffect throws CANNOT_USE_POWER when !playedCanari), so adding the flag offers the ability ONLY after Canari and its up-to-2 Basic Lightning search + mandatory shuffle fire (owed even on a zero-take, B.33/#2171). Card text plainly grants a usable ability, so twinleaf was wrong; sibling activated abilities (Silvally 'Call a Buddy' pbl-070) carry the flag. Reverting removes the line and reddens the signature. Guard = conformance-cardlogic-regressions.spec [TA-327 asc-064]. Found by shuffle_reach.py played-Canari routing (#9 residual tail)."
     }
   ]
 }

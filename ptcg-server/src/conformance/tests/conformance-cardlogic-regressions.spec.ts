@@ -318,6 +318,39 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offers([{ iid: 'B-h0', printing: WATER }])).toBe(true);   // 1-card opp hand -> offered
   });
 
+  it('Heliolisk "Frilled Generator" is offered (and shuffles) only after Canari is played this turn [TA-327 asc-064]', () => {
+    // "Once during your turn, if you played Canari from your hand this turn, you may use this Ability.
+    // Search your deck for up to 2 Basic Lightning Energy cards and attach them to this Pokémon. Then,
+    // shuffle your deck." Frilled Generator is a PLAYER-ACTIVATED in-play ability ("you may use this
+    // Ability"), gated on player.playedCanari — which Canari (asc-185) sets when played from hand.
+    // Pre-fix the power decl omitted `useWhenInPlay: true`, so legal-actions.ts:517 dropped it from
+    // the menu and it was NEVER offered, even after Canari was played this turn: twinleaf sat on
+    // `endTurn` while rotomancer offered it and shuffled. The `abilityProbeAccepts` dry-run already
+    // gates the offer on playedCanari, so with the flag added the ability is offered ONLY after
+    // Canari, and its up-to-2 Basic Lightning search then the mandatory shuffle fire (owed even on a
+    // zero-take, B.33/#2171). A 1-card deck makes both Canari's and Frilled Generator's shuffles the
+    // forced-order (<=1) auto-shuffle (CF-11), so each emits a `shuffled` event with no order needed.
+    const start = board(player({ active: inPlay('A-act', ['asc-064']),
+                                 hand: [{ iid: 'A-can', printing: 'asc-185' },
+                                        { iid: 'A-sp', printing: WATER }] }),
+                        player({ active: inPlay('B-act', [RALTS]) }));
+    // Boundary control (baseline-differs-by-ONE-change): before Canari, the playedCanari gate is
+    // unmet, so the ability is NOT offered — the fix does not blanket-offer it.
+    expect(types(step(start, []))).not.toContain('useAbility');
+    // Playing Canari (its own discard + [L]-Pokemon search + shuffle auto-resolve on a 1-card deck)
+    // now OPENS the offer — pre-fix this menu was `endTurn` only (the bug).
+    const afterCanari = step(start, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-can' }]);
+    expect(afterCanari.status).toBe('awaitingAction');
+    expect(types(afterCanari)).toContain('useAbility');
+    // Using it fires the owed second shuffle: Canari's shuffle + Frilled Generator's shuffle = 2.
+    const used = step(start, [
+      { actor: 'A' as const, type: 'playSupporter' as const, card: 'A-can' },
+      { actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability: 'Frilled Generator' },
+    ]);
+    expect(used.status).toBe('awaitingAction');
+    expect(used.events.filter(e => e.kind === 'shuffled').length).toBe(2);
+  });
+
   it('Iron Moth "Suction" heals ITSELF for the damage it did [TA-56 sfa-009]', () => {
     // "Heal from THIS Pokémon the same amount of damage you did." Iron Moth at 50 damage, deals 30 →
     // heals 30 → 20. Pre-fix it healed the OPPONENT (effect.target), leaving Iron Moth at 50.
