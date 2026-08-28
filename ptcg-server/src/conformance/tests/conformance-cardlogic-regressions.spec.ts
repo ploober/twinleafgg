@@ -1961,4 +1961,46 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       .toEqual(['meg-034', 'pfl-048', 'twm-063', WATER, WATER, WATER, FIRE, PSY, METAL].sort());
   });
 
+  it('Caretaker shuffles itself into the deck (not a bare move) when Community Center is in play [TA-329 twm-144]', () => {
+    // "Draw 2 cards. Then, if Community Center is in play, shuffle this Caretaker back into your deck."
+    // The clause MANDATES a deck shuffle. Pre-fix the CC branch was a bare `player.supporter.moveTo(
+    // player.deck)` — Caretaker was appended to the deck but the deck was NEVER shuffled, so the order
+    // was left intact (rotomancer shuffled; a preserved order leaks deck knowledge). Same family as
+    // TA-320..TA-322 (an owed shuffle skipped). Fix: dispatch ShuffleDeckPrompt after the move, the
+    // pattern every sibling "shuffle X into your deck" card uses (Unfair Stamp, Spikemuth Gym).
+    const deck5 = [
+      { iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+      { iid: 'A-d2', printing: RALTS }, { iid: 'A-d3', printing: RALTS },
+      { iid: 'A-d4', printing: RALTS },
+    ];
+    const hand = [{ iid: 'A-care', printing: 'twm-144' }, { iid: 'A-h1', printing: WATER }];
+    const withCC = {
+      ...board(
+        player({ active: inPlay('A-act', [RALTS]), hand, deck: deck5 }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ),
+      stadium: { iid: 'stad', printing: 'twm-146', owner: 'A' as const },  // Community Center
+    };
+    const r = step(withCC, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-care' }]);
+    // THE fix: the play pauses on the mandated deck shuffle (a system `shuffle` decision), and
+    // Caretaker is back in the deck (moved before the shuffle prompt), not the discard.
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+    expect(r.state.players.A.deck.some(c => c.printing === 'twm-144')).toBe(true);
+    expect(r.state.players.A.discard.some(c => c.printing === 'twm-144')).toBe(false);
+
+    // Boundary (baseline-differs-by-ONE-change): with NO Community Center in play the shuffle clause
+    // is not met — Caretaker is discarded and NO shuffle is owed. The Community-Center presence is the
+    // load-bearing axis; this path is untouched by the fix.
+    const noCC = board(
+      player({ active: inPlay('A-act', [RALTS]), hand, deck: deck5 }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const r2 = step(noCC, [{ actor: 'A' as const, type: 'playSupporter' as const, card: 'A-care' }]);
+    expect(types(r2)).not.toContain('shuffle');
+    expect(r2.state.players.A.discard.some(c => c.printing === 'twm-144')).toBe(true);
+    expect(r2.state.players.A.deck.some(c => c.printing === 'twm-144')).toBe(false);
+  });
+
 });
