@@ -2068,4 +2068,65 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).toContain('shuffle');
   });
 
+  it('Lycanroc "Spike-Clad" attaches Spiky Energy to THIS Pokemon only, never an unrelated Active [TA-332 jtg-085]', () => {
+    // "You may use this Ability when you play this Pokemon from your hand to evolve 1 of your Pokemon.
+    // Attach up to 2 Spiky Energy cards from your discard pile to THIS Pokemon." The destination is a
+    // single FORCED target — the evolved Lycanroc — not a free choice. Pre-fix the AttachEnergyPrompt
+    // used slots [BENCH, ACTIVE] with NO blockedTo, so twinleaf OFFERED and EXECUTED attaching to any
+    // of the player's Pokemon; rotomancer forces the Lycanroc (matching card text). TA-269/TA-332.
+    // Fix: block every Pokemon except `this`, the toxtricity.ts / TA-198 blockedTo idiom.
+    const SNIVY = 'blk-001', ROCKRUFF = 'jtg-084', LYCANROC = 'jtg-085', SPIKY = 'jtg-159';
+    const attachTargets = (r: ReturnType<typeof step>): string[] =>
+      (r.pending?.legalActions ?? [])
+        .filter(a => (a as { type: string }).type === 'attachEnergy')
+        .map(a => (a as { target: string }).target);
+
+    // THE cell (needs a SECOND Pokemon so a wrong destination is even reachable): a filler Snivy is the
+    // Active and Rockruff is on the Bench; evolve the BENCHED Rockruff into Lycanroc, accept Spike-Clad.
+    const twoMon = () => board(
+      player({ active: inPlay('A-act', [SNIVY]),
+               bench: [inPlay('A-bench', [ROCKRUFF])],
+               hand: [{ iid: 'A-h0', printing: LYCANROC }],
+               discard: [{ iid: 'A-x0', printing: SPIKY }, { iid: 'A-x1', printing: SPIKY }] }),
+      player({ active: inPlay('B-act', [RALTS]) }));
+    const offered = step(twoMon(),
+      [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-bench' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true }]);
+    // THE fix: the only legal attach destination is the evolved Lycanroc ('A-bench'); the unrelated
+    // Active Snivy ('A-act') is NEVER offered. Pre-fix `attachTargets` also contained 'A-act'.
+    expect(new Set(attachTargets(offered))).toEqual(new Set(['A-bench']));
+    expect(attachTargets(offered)).not.toContain('A-act');
+
+    // Driving both Spiky Energy lands them on the Lycanroc, and NOTHING on the Active — the STATE the
+    // card text mandates (pre-fix, driving both onto 'A-act' SUCCEEDED: Active.E=2, Lycanroc.E=0).
+    const resolved = step(twoMon(),
+      [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-bench' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true },
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x0', target: 'A-bench' },
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x1', target: 'A-bench' },
+       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(resolved.state.players.A.bench[0].energy.length).toBe(2);   // Lycanroc got both
+    expect(resolved.state.players.A.active!.energy.length).toBe(0);    // Active got none
+
+    // Boundary (baseline-differs-by-ONE-change): with Rockruff the SOLE (Active) Pokemon, the forced
+    // destination equals the only target, so the bug is INVISIBLE here and the fix leaves it working —
+    // the second Pokemon is the load-bearing axis. Spike-Clad still attaches onto the evolved Lycanroc.
+    const oneMon = board(
+      player({ active: inPlay('A-act', [ROCKRUFF]),
+               hand: [{ iid: 'A-h0', printing: LYCANROC }],
+               discard: [{ iid: 'A-x0', printing: SPIKY }, { iid: 'A-x1', printing: SPIKY }] }),
+      player({ active: inPlay('B-act', [RALTS]) }));
+    const soleOffered = step(oneMon,
+      [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-act' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true }]);
+    expect(new Set(attachTargets(soleOffered))).toEqual(new Set(['A-act']));   // the sole Lycanroc slot
+    const soleResolved = step(oneMon,
+      [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-act' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true },
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x0', target: 'A-act' },
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x1', target: 'A-act' },
+       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(soleResolved.state.players.A.active!.energy.length).toBe(2);
+  });
+
 });

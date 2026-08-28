@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType, Power, PowerType, Attack, StateUtils, SlotType, AttachEnergyPrompt, ConfirmPrompt, GameMessage } from '../../../game';
+import { StoreLike, State, PlayerType, Power, PowerType, Attack, StateUtils, SlotType, AttachEnergyPrompt, ConfirmPrompt, GameMessage, CardTarget } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EvolveEffect } from '../../../game/store/effects/game-effects';
@@ -55,6 +55,16 @@ export class Lycanroc extends PokemonCard {
         if (wantToUse) {
 
           const player = effect.player;
+          // TA-269/TA-332: Spike-Clad attaches the Spiky Energy "to this Pokemon" -- the single forced
+          // destination is the evolved Lycanroc (`this`), NOT any of the player's Pokemon. Block every
+          // OTHER Pokemon so an unrelated Active/Benched Pokemon can never be offered or receive the
+          // Energy (mirrors the toxtricity.ts / TA-198 blockedTo idiom).
+          const blockedTo: CardTarget[] = [];
+          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
+            if (card !== this) {
+              blockedTo.push(target);
+            }
+          });
           return store.prompt(state, new AttachEnergyPrompt(
             player.id,
             GameMessage.ATTACH_ENERGY_CARDS,
@@ -62,7 +72,7 @@ export class Lycanroc extends PokemonCard {
             PlayerType.BOTTOM_PLAYER,
             [SlotType.BENCH, SlotType.ACTIVE],
             { superType: SuperType.ENERGY, name: 'Spiky Energy' },
-            { allowCancel: false, min: 0, max: 2 },
+            { allowCancel: false, min: 0, max: 2, blockedTo },
           ), transfers => {
             transfers = transfers || [];
             // cancelled by user
