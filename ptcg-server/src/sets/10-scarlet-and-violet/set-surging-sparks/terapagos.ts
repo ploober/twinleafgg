@@ -79,16 +79,17 @@ export class Terapagos extends PokemonCard {
       ), transfers => {
         transfers = transfers || [];
 
-        if (transfers.length === 0) {
-          SHUFFLE_DECK(store, state, player);
-          return;
-        }
-
+        // "Then, shuffle your deck." — searching your deck ALWAYS requires a shuffle afterward,
+        // whether 0 or up-to-3 Energy were attached (B.33 / compendium #2171 "up to X"; TA-330).
+        // The prior code shuffled ONLY on the zero-attach branch (and discarded SHUFFLE_DECK's
+        // returned state via a bare `return;`); the >=1-attach branch moved the searched cards but
+        // never re-shuffled the now-revealed deck, so twinleaf skipped the mandated shuffle whenever
+        // any Energy was attached (rotomancer shuffles on both branches).
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
           player.deck.moveCardTo(transfer.card, target);
         }
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       });
     }
     return state;

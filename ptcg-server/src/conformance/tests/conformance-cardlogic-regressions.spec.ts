@@ -2003,4 +2003,47 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r2.state.players.A.deck.some(c => c.printing === 'twm-144')).toBe(false);
   });
 
+  it('Terapagos "Prism Charge" shuffles even when Energy IS attached [TA-330 ssp-161]', () => {
+    // "Search your deck for up to 3 Basic Energy cards of different types and attach them to your Tera
+    // Pokémon in any way you like. Then, shuffle your deck." Searching your deck ALWAYS requires a
+    // shuffle afterward, whether you attach 0 or up to 3 Energy (B.33/#2171; same family as
+    // TA-320..TA-322/TA-324/TA-329, an owed shuffle skipped). Pre-fix the callback shuffled ONLY on the
+    // zero-attach branch (`if (transfers.length === 0) { SHUFFLE_DECK(...); return; }`) and the
+    // >=1-attach branch moved the searched cards but NEVER shuffled the now-revealed deck — so twinleaf
+    // skipped the mandated shuffle whenever any Energy was attached (rotomancer shuffled on both
+    // branches; a public deck search leaked the order). Fix: always SHUFFLE_DECK after the attach.
+    //
+    // A Tera Pokémon must be in play for the attach to have a target (Terapagos itself is a Basic, not
+    // Tera — TA-52/#361); the Bench holds Wellspring Mask Ogerpon ex (a Tera), and the deck holds Basic
+    // Energy the search can attach to it.
+    const teraBoard = () => board(
+      player({ active: inPlay('A-act', ['ssp-161'], en(WATER, 1, 'a')),
+               bench: [inPlay('A-tera', [TANKY])],
+               deck: [{ iid: 'A-d0', printing: WATER }, { iid: 'A-d1', printing: WATER },
+                      { iid: 'A-d2', printing: WATER }] }),
+      player({ active: inPlay('B-act', [RALTS]) }));
+
+    // THE fix: attach ONE Basic Energy from the deck to the Tera, finish (confirm) — the mandated
+    // shuffle still fires. Pre-fix this branch reached `endTurn` with NO shuffle.
+    const attached = step(teraBoard(),
+      [attack('A-act', 'Prism Charge'),
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-d0', target: 'A-tera' },
+       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(attached.status).toBe('awaitingAction');
+    expect(attached.pending!.actor).toBe('system');
+    expect(types(attached)).toContain('shuffle');
+    // the searched Energy really landed on the Tera (the attach happened, then the shuffle is owed)
+    expect(attached.state.players.A.bench[0].energy.length).toBe(1);
+
+    // Boundary (baseline-differs-by-ONE-change): the ZERO-attach branch (finish immediately) was
+    // already correct pre-fix and STILL shuffles — the attach-COUNT is the axis the fix neutralises,
+    // so the shuffle is now owed on both branches, not just on zero-attach.
+    const zeroAttach = step(teraBoard(),
+      [attack('A-act', 'Prism Charge'),
+       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+    expect(zeroAttach.status).toBe('awaitingAction');
+    expect(zeroAttach.pending!.actor).toBe('system');
+    expect(types(zeroAttach)).toContain('shuffle');
+  });
+
 });
