@@ -37,8 +37,16 @@ function* useEnergyGift(next: Function, store: StoreLike, state: State,
     for (const transfer of transfers) {
       const target = StateUtils.getTarget(state, player, transfer.to);
       player.deck.moveCardTo(transfer.card, target);
-      next();
     }
+    // TA-331: resume the generator ONCE after the (possibly empty) attach loop so the trailing
+    // `return store.prompt(ShuffleDeckPrompt)` fires even on a ZERO-take. The prior `next()` sat
+    // INSIDE the for-loop, so a zero-transfer attach — a deck that is non-empty but holds no Basic
+    // Energy (min:0 makes zero a legal voluntary fail; #2171 "you must search and shuffle your
+    // deck") — never resumed the generator and the mandated "Then, shuffle your deck" was skipped
+    // (the same generator-next()-in-loop owed-shuffle-skip as TA-320 Energy Search Pro). Rotomancer
+    // shuffles on the zero-take. On >=1 transfer this still resumes exactly once (a done generator
+    // ignores extra next() calls), so the non-zero path is unchanged.
+    next();
   });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

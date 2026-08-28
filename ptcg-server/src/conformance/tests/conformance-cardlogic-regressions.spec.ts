@@ -2046,4 +2046,26 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(zeroAttach)).toContain('shuffle');
   });
 
+  it('Whimsicott ex "Energy Gift" shuffles even on a zero-take Basic Energy search [TA-331 wht-005]', () => {
+    // "Search your deck for up to 3 Basic Energy cards and attach them to your Pokémon in any way you
+    // like. Then, shuffle your deck." A deck that is NON-EMPTY but holds no Basic Energy is a zero-take
+    // (the AttachEnergyPrompt is min:0), yet the search EXECUTED, so the shuffle is mandatory (B.33 /
+    // compendium #2171; same family as TA-320/TA-321/TA-322/TA-324/TA-330). `useEnergyGift` is a
+    // GENERATOR: pre-fix `next()` sat INSIDE the `for (transfer of transfers)` attach loop, so a
+    // zero-transfer attach never resumed the generator and the trailing `return store.prompt(
+    // ShuffleDeckPrompt)` never fired — the deck was left UNSHUFFLED (rotomancer shuffled; a public
+    // search leaked the order). The exact generator-next()-in-loop shape as TA-320 Energy Search Pro.
+    // Fix: call next() ONCE after the loop. (The empty-DECK branch already shuffled — TA-126/#2171 —
+    // so the gap was the non-empty-deck / no-Basic-Energy zero-FIND.)
+    const r = step(
+      board(player({ active: inPlay('A-act', ['wht-005'], en(GRASS, 1, 'a')),
+                     deck: [{ iid: 'A-d0', printing: RALTS }, { iid: 'A-d1', printing: RALTS },
+                            { iid: 'A-d2', printing: RALTS }] }),   // non-empty, NO Basic Energy
+            player({ active: inPlay('B-act', [RALTS]) })),
+      [attack('A-act', 'Energy Gift')]);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.pending!.actor).toBe('system');
+    expect(types(r)).toContain('shuffle');
+  });
+
 });
