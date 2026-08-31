@@ -2,6 +2,7 @@ import { GameError } from '../../game-error';
 import { GameMessage, GameLog } from '../../game-message';
 import { PlayerType, SlotType, CardTarget } from '../actions/play-card-action';
 import { Card } from '../card/card';
+import { matchesCardFilter } from '../card/card-filter';
 import {
   CardType,
   BoardEffect,
@@ -1517,10 +1518,8 @@ export function COUNT_MATCHING_CARDS_IN_ZONE(
   const cards = zone === 'discard' ? player.discard.cards : player.lostzone.cards;
 
   return cards.reduce((count, card) => {
-    for (const key in filter) {
-      if ((card as any)[key] !== (filter as any)[key]) {
-        return count;
-      }
+    if (!matchesCardFilter(card, filter)) {   // TA-335: array filter fields match by containment
+      return count;
     }
     if (!predicate(card)) {
       return count;
@@ -1547,10 +1546,8 @@ export function HAS_CARD_IN_DISCARD(
   predicate: (card: Card) => boolean = () => true,
 ): boolean {
   return player.discard.cards.some((card) => {
-    for (const key in filter) {
-      if ((card as any)[key] !== (filter as any)[key]) {
-        return false;
-      }
+    if (!matchesCardFilter(card, filter)) {   // TA-335: array filter fields match by containment
+      return false;
     }
     return predicate(card);
   });
@@ -1910,12 +1907,7 @@ export function MOVE_CARDS_TO_HAND(store: StoreLike, state: State, player: Playe
 export type TopDeckRemainderDestination = 'shuffle' | 'bottom' | 'discard' | 'lostzone';
 
 function cardMatchesPartialFilter(card: Card, filter: Partial<Card>): boolean {
-  for (const key in filter) {
-    if ((card as any)[key] !== (filter as any)[key]) {
-      return false;
-    }
-  }
-  return true;
+  return matchesCardFilter(card, filter);   // TA-335: array filter fields match by containment
 }
 
 function moveRemainingTopDeckCards(

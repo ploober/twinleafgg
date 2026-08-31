@@ -1,5 +1,6 @@
 import { GameMessage } from '../../game-message';
 import { Card } from '../card/card';
+import { matchesCardFilter } from '../card/card-filter';
 import { CardType, EnergyType, SuperType, TrainerType, Stage } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
 import { PokemonCard, getPrimaryCardType } from '../card/pokemon-card';
@@ -208,14 +209,8 @@ export class ChooseCardsPrompt extends Prompt<Card[]> {
   }
 
   private matchesFilter(card: Card): boolean {
-    for (const key in this.filter) {
-      if (Object.prototype.hasOwnProperty.call(this.filter, key)) {
-        if ((this.filter as any)[key] !== (card as any)[key]) {
-          return false;
-        }
-      }
-    }
-    return true;
+    // TA-335: array-valued filter fields (`cardType: [X]` since upstream 7a35128f0) match by containment.
+    return matchesCardFilter(card, this.filter);
   }
 
 }

@@ -119,8 +119,23 @@ export function targetKey(t: CardTarget): string {
   return `${t.player}-${t.slot}-${t.index}`;
 }
 
+// TA-335: mirror the ENGINE's matcher when the engine exports one (twinleafgg's card-filter.ts matches
+// array-valued filter fields such as `cardType: [X]` by containment since upstream 7a35128f0 made
+// cardType an array). A build without that module — pristine upstream — keeps the strict-equality copy
+// below, which is exactly what ITS ChooseCardsPrompt.validate applies. Either way this mirror agrees with
+// the engine it runs inside, so offers and acceptance cannot disagree, and the source stays byte-identical
+// across checkouts (the cross-engine diff never becomes a resolver artifact).
+let engineCardMatcher: ((card: Card, filter: object) => boolean) | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  engineCardMatcher = require('../../game/store/card/card-filter').matchesCardFilter;
+} catch {
+  engineCardMatcher = undefined;
+}
+
 /** Partial-Card key-by-key filter, mirroring each prompt's private `matchesFilter`. */
 export function matchesFilter(card: Card, filter: object): boolean {
+  if (engineCardMatcher !== undefined) { return engineCardMatcher(card, filter); }
   for (const key in filter) {
     if (Object.prototype.hasOwnProperty.call(filter, key)) {
       if ((filter as any)[key] !== (card as any)[key]) {

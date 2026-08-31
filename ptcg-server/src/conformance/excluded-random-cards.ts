@@ -4,6 +4,7 @@
 // stays in sync as cards migrate off Math.random.
 export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Absol CRZ",
+  "Aipom PFL",
   "Ambipom LOR 145",
   "Amoonguss PLS",
   "Arbok HIF",
@@ -46,6 +47,7 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Ludicolo PRC 37",
   "Machamp PLB 50",
   "Mankey JU",
+  "Marnie SSH",
   "Mars UPR",
   "Mawile PLF",
   "Mawile V SIT 70",
@@ -78,8 +80,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Snorunt TWM",
   "Spirit Mask EVS",
   "Talonflame M3",
-  "Team Rocket's Chingling DRI",
-  "Team Rocket's Meowth DRI",
   "Thievul EVS",
   "Thwackey CRE",
   "Trevenant V EVS",

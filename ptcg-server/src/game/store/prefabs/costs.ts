@@ -1,3 +1,4 @@
+import { matchesCardFilter } from '../card/card-filter';
 import { Card, CardTarget, ChooseEnergyPrompt, DiscardEnergyPrompt, GameError, GameMessage, PlayerType, SlotType, State, StateUtils, StoreLike } from '../..';
 import { CardType, SuperType } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
@@ -20,13 +21,8 @@ function cardMatchesEnergyFilter(card: Card, filter: Partial<EnergyCard>): card 
     return false;
   }
 
-  for (const key in filter) {
-    if ((card as any)[key] !== (filter as any)[key]) {
-      return false;
-    }
-  }
-
-  return true;
+  // TA-335: array-valued filter fields match by containment (see card-filter.ts).
+  return matchesCardFilter(card, filter);
 }
 
 function energyCardProvidesType(card: Card, cardType: CardType): boolean {

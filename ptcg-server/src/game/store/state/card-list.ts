@@ -2,6 +2,7 @@ import { CardManager } from '../../cards/card-manager';
 import { GameError } from '../../game-error';
 import { GameMessage } from '../../game-message';
 import { Card } from '../card/card';
+import { matchesCardFilter } from '../card/card-filter';
 import { EnergyType, SuperType, TrainerType } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
 import { TrainerCard } from '../card/trainer-card';
@@ -132,18 +133,8 @@ export class CardList {
   }
 
   public filter(query: Partial<Card>): Card[] {
-    return this.cards.filter(c => {
-      for (const key in query) {
-        if (Object.prototype.hasOwnProperty.call(query, key)) {
-          const value: any = (c as any)[key];
-          const expected: any = (query as any)[key];
-          if (value !== expected) {
-            return false;
-          }
-        }
-      }
-      return true;
-    });
+    // TA-335: array-valued query fields (`cardType: [X]`) match by containment, scalars strictly.
+    return this.cards.filter(c => matchesCardFilter(c, query));
   }
 
   public count(query: Partial<Card>): number {

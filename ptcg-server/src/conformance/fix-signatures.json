@@ -1545,7 +1545,8 @@
     {
       "file": "game/store/prefabs/costs.ts",
       "signatures": [
-        "const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));"
+        "const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));",
+        "return matchesCardFilter(card, filter);"
       ]
     },
     {
@@ -1589,7 +1590,8 @@
     {
       "file": "game/store/state/card-list.ts",
       "signatures": [
-        "const toMove = cards === this.cards ? cards.slice() : cards;"
+        "const toMove = cards === this.cards ? cards.slice() : cards;",
+        "return this.cards.filter(c => matchesCardFilter(c, query));"
       ]
     },
     {
@@ -4791,7 +4793,8 @@
     {
       "file": "game/store/prompts/choose-cards-prompt.ts",
       "signatures": [
-        "it MUTATES the real deck/discard order (game state)"
+        "it MUTATES the real deck/discard order (game state)",
+        "return matchesCardFilter(card, this.filter);"
       ],
       "note": "deletion-type fix (display sort removed) - the comment is the signature"
     },
@@ -6125,6 +6128,14 @@
         "  new CelebratoryFanfare(),"
       ],
       "note": "TA-256 follow-up at the 2026-08-31 upstream merge: upstream f0edbdac4 moved Celebratory Fanfare to MEP but registered it in no set index (mep-028 orphaned, pool set). Registration is ours."
+    },
+    {
+      "file": "game/store/card/card-filter.ts",
+      "signatures": [
+        "export function matchesCardFilter(card: Card, filter: object): boolean {",
+        "if (!value.includes(e)) { return false; }"
+      ],
+      "note": "TA-335 (2026-08-31): upstream 7a35128f0 made cardType an array and 65 cards filter with `{ cardType: [X] }`, but every matcher compared with `!==`, so typed deck searches matched nothing. Containment matcher; wired into ChooseCardsPrompt, CardList.filter, costs.ts and three prefabs.ts loops."
     }
   ]
 }
