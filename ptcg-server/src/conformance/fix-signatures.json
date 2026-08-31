@@ -6136,6 +6136,13 @@
         "if (!value.includes(e)) { return false; }"
       ],
       "note": "TA-335 (2026-08-31): upstream 7a35128f0 made cardType an array and 65 cards filter with `{ cardType: [X] }`, but every matcher compared with `!==`, so typed deck searches matched nothing. Containment matcher; wired into ChooseCardsPrompt, CardList.filter, costs.ts and three prefabs.ts loops."
+    },
+    {
+      "file": "set-silver-tempest/rufflet.ts",
+      "signatures": [
+        "new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)"
+      ],
+      "note": "2026-08-31 merge: kept the raw CoinFlipPrompt (upstream converted to the COIN_FLIP_PROMPT prefab = inline CoinFlipEffect path). Rufflet SIT is the seam-coverage corpus' only 'Coin flip' PROMPT seam; on the inline path the flip is consumed from the action log during dispatch and never surfaces as a pausing prompt."
     }
   ]
 }
