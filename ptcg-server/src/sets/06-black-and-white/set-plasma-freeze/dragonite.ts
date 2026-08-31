@@ -3,12 +3,13 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { HEAL_X_DAMAGE_FROM_THIS_POKEMON } from '../../../game/store/prefabs/attack-effects';
-import { OPPONENT_CANNOT_PLAY_ITEM_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { OPPONENT_CANNOT_PLAY_ITEM_CARDS } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Dragonite extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Dragonair';
-  public cardType: CardType = N;
+  public cardType: CardType[] = [N];
   public hp: number = 150;
   public weakness = [{ type: N }];
   public retreat = [C, C, C];

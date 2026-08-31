@@ -10,7 +10,7 @@ import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-
 export class Luxray extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Luxio';
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public hp: number = 140;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -20,8 +20,7 @@ export class Luxray extends PokemonCard {
     cost: [L],
     damage: 60,
     text: 'Does 20 damage to 1 of your Benched Pokémon.'
-  },
-  {
+  }, {
     name: 'Crunch',
     cost: [L, L, C],
     damage: 80,

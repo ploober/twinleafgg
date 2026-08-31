@@ -5,21 +5,25 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, StateUtils } from '../../../game';
-import { HealTargetEffect, PutCountersEffect, PutDamageEffect, RemoveSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
+import {
+  HealTargetEffect,
+  PutCountersEffect,
+  PutDamageEffect,
+  RemoveSpecialConditionsEffect,
+} from '../../../game/store/effects/attack-effects';
 import { CheckHpEffect } from '../../../game/store/effects/check-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Tsareenaex extends PokemonCard {
-
   public regulationMark = 'G';
 
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
 
   public stage = Stage.STAGE_2;
 
   public evolvesFrom = 'Steenee';
 
-  public cardType = CardType.WATER;
+  public cardType: CardType[] = [CardType.WATER];
 
   public hp = 310;
 
@@ -32,14 +36,14 @@ export class Tsareenaex extends PokemonCard {
       name: 'Icicle Sole',
       cost: [CardType.GRASS],
       damage: 0,
-      text: 'Put damage counters on 1 of your opponent\'s Pokémon until its remaining HP is 30.'
+      text: "Put damage counters on 1 of your opponent's Pokémon until its remaining HP is 30.",
     },
     {
       name: 'Trop Kick',
       cost: [CardType.GRASS, CardType.GRASS],
       damage: 180,
-      text: 'Heal 30 damage from this Pokémon and it recovers from all Special Conditions.'
-    }
+      text: 'Heal 30 damage from this Pokémon and it recovers from all Special Conditions.',
+    },
   ];
 
   public set: string = 'PAR';
@@ -53,7 +57,6 @@ export class Tsareenaex extends PokemonCard {
   public fullName: string = 'Tsareena ex PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
@@ -104,7 +107,11 @@ export class Tsareenaex extends PokemonCard {
       state = store.reduceEffect(state, removeSpecialCondition);
     }
 
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
+    if (
+      effect instanceof PutDamageEffect &&
+      effect.target.cards.includes(this) &&
+      effect.target.getPokemonCard() === this
+    ) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
@@ -118,4 +125,3 @@ export class Tsareenaex extends PokemonCard {
     return state;
   }
 }
-

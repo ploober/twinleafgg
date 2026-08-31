@@ -6,25 +6,22 @@ import { WAS_ATTACK_USED, COIN_FLIP_PROMPT } from "../../../game/store/prefabs/p
 export class Gothitelle2 extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Gothorita';
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 120;
   public weakness = [{ type: P }];
   public retreat = [C];
 
-  public attacks = [
-    {
-      name: 'Smack',
-      cost: [P],
-      damage: 30,
-      text: ''
-    },
-    {
-      name: 'Mental Shock',
-      cost: [P, C, C],
-      damage: 60,
-      text: 'Flip a coin. If heads, the Defending Pokémon is now Confused. If tails, discard an Energy attached to the Defending Pokémon.'
-    }
-  ];
+  public attacks = [{
+    name: 'Smack',
+    cost: [P],
+    damage: 30,
+    text: ''
+  }, {
+    name: 'Mental Shock',
+    cost: [P, C, C],
+    damage: 60,
+    text: 'Flip a coin. If heads, the Defending Pokémon is now Confused. If tails, discard an Energy attached to the Defending Pokémon.'
+  }];
 
   public set: string = 'EPO';
   public cardImage: string = 'assets/cardback.png';

@@ -8,7 +8,7 @@ import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/s
 export class Kirlia extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Ralts';
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 70;
   public weakness = [{ type: P }];
   public retreat = [C];
@@ -18,8 +18,7 @@ export class Kirlia extends PokemonCard {
     cost: [P],
     damage: 10,
     text: 'Flip a coin. If heads, discard 1 Energy card attached to the Defending Pokémon.'
-  },
-  {
+  }, {
     name: 'Super Psy',
     cost: [P, C, C],
     damage: 50,

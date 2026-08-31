@@ -1,7 +1,7 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
-import { StoreLike, State, GameMessage, StateUtils, PlayerType, ChooseCardsPrompt, Card, TrainerCard } from '../../../game';
+import { StoreLike, State, GameMessage, StateUtils, PlayerType, ChooseCardsPrompt, Card, TrainerCard, pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT, IS_POKEBODY_BLOCKED, MOVE_CARDS, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
@@ -13,7 +13,7 @@ import {
 
 export class Lunatone extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 60;
   public weakness = [{ type: P }];
   public retreat = [C];
@@ -71,7 +71,7 @@ export class Lunatone extends PokemonCard {
         return false;
       }
 
-      if (card.tags.includes(CardTag.POKEMON_ex)) {
+      if (card.hasTag(CardTag.POKEMON_ex)) {
         return false;
       }
 
@@ -85,7 +85,7 @@ export class Lunatone extends PokemonCard {
       } catch {
         return false;
       }
-      return card.cardType === CardType.FIRE;
+      return pokemonHasCardType(card, CardType.FIRE);
     }, {
       powerTypes: POKEPOWER_TYPES,
       error: GameMessage.BLOCKED_BY_EFFECT,

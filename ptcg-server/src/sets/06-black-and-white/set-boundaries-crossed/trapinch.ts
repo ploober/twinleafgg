@@ -7,7 +7,7 @@ import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/s
 
 export class Trapinch extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = F;
+  public cardType: CardType[] = [F];
   public hp: number = 60;
   public weakness = [{ type: W }];
   public resistance = [{ type: L, value: -20 }];
@@ -18,8 +18,7 @@ export class Trapinch extends PokemonCard {
     cost: [C],
     damage: 0,
     text: 'Flip a coin. If heads, discard an Energy attached to the Defending Pokémon.'
-  },
-  {
+  }, {
     name: 'Hyper Beam',
     cost: [F, C],
     damage: 20,

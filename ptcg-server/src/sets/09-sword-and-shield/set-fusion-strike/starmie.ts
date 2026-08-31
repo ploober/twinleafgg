@@ -1,6 +1,18 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, ChooseCardsPrompt, GameMessage, PlayerType, SlotType, DamageMap, PutDamagePrompt, StateUtils, EnergyCard, CardList } from '../../../game';
+import {
+  StoreLike,
+  State,
+  ChooseCardsPrompt,
+  GameMessage,
+  PlayerType,
+  SlotType,
+  DamageMap,
+  PutDamagePrompt,
+  StateUtils,
+  EnergyCard,
+  CardList,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { DiscardCardsEffect, PutCountersEffect } from '../../../game/store/effects/attack-effects';
@@ -9,18 +21,20 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 export class Starmie extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Staryu';
-  public cardType: CardType = CardType.WATER;
+  public cardType: CardType[] = [CardType.WATER];
   public hp: number = 90;
   public weakness = [{ type: CardType.LIGHTNING }];
   public retreat = [CardType.COLORLESS];
-  public tags = [CardTag.RAPID_STRIKE];
+  protected _tags = [CardTag.RAPID_STRIKE];
 
-  public attacks = [{
-    name: 'Multishot Star',
-    cost: [CardType.WATER],
-    damage: 0,
-    text: 'Discard any amount of [W] Energy from this Pokémon. Then, for each Energy you discarded in this way, choose 1 of your opponent\'s Pokémon and do 30 damage to it. (You can choose the same Pokémon more than once.) This damage isn\'t affected by Weakness or Resistance. '
-  }];
+  public attacks = [
+    {
+      name: 'Multishot Star',
+      cost: [CardType.WATER],
+      damage: 0,
+      text: "Discard any amount of [W] Energy from this Pokémon. Then, for each Energy you discarded in this way, choose 1 of your opponent's Pokémon and do 30 damage to it. (You can choose the same Pokémon more than once.) This damage isn't affected by Weakness or Resistance. ",
+    },
+  ];
 
   public set: string = 'FST';
   public regulationMark = 'E';
@@ -30,21 +44,36 @@ export class Starmie extends PokemonCard {
   public fullName: string = 'Starmie FST';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
       const blocked: number[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-        if (cardList.cards.some(c => c.superType === SuperType.ENERGY && (c as EnergyCard).provides.includes(CardType.WATER))) {
+        if (
+          cardList.cards.some(
+            (c) =>
+              c.superType === SuperType.ENERGY &&
+              (c as EnergyCard).provides.includes(CardType.WATER),
+          )
+        ) {
           blocked.push();
         }
-        if (cardList.cards.some(c => c.superType === SuperType.ENERGY && (c as EnergyCard).provides.includes(CardType.ANY))) {
+        if (
+          cardList.cards.some(
+            (c) =>
+              c.superType === SuperType.ENERGY && (c as EnergyCard).provides.includes(CardType.ANY),
+          )
+        ) {
           blocked.push();
         }
-        if (cardList.cards.some(c => c.superType === SuperType.ENERGY && (c as EnergyCard).blendedEnergies.includes(CardType.WATER))) {
+        if (
+          cardList.cards.some(
+            (c) =>
+              c.superType === SuperType.ENERGY &&
+              (c as EnergyCard).blendedEnergies.includes(CardType.WATER),
+          )
+        ) {
           blocked.push();
         }
       });

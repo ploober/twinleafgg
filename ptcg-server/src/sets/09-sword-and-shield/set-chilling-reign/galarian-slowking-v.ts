@@ -6,31 +6,31 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, GameMessage, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import {
-  KNOCK_OUT_DEFENDING_POKEMON_AT_END_OF_OPPONENTS_NEXT_TURN,
-} from '../../../game/store/prefabs/attack-effects';
+import { KNOCK_OUT_DEFENDING_POKEMON_AT_END_OF_OPPONENTS_NEXT_TURN } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED, DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class GalarianSlowkingV extends PokemonCard {
-  public tags = [CardTag.POKEMON_V, CardTag.SINGLE_STRIKE];
+  protected _tags = [CardTag.POKEMON_V, CardTag.SINGLE_STRIKE];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 220;
   public weakness = [{ type: F }];
   public retreat = [C, C, C];
 
-  public attacks = [{
-    name: 'Concoction',
-    cost: [C],
-    damage: 0,
-    text: 'Discard a card from your hand. If you do, draw 3 cards.'
-  },
-  {
-    name: 'Word of Ruin',
-    cost: [D, C],
-    damage: 0,
-    text: 'At the end of your opponent\'s next turn, the Defending Pokémon will be Knocked Out.'
-  }];
+  public attacks = [
+    {
+      name: 'Concoction',
+      cost: [C],
+      damage: 0,
+      text: 'Discard a card from your hand. If you do, draw 3 cards.',
+    },
+    {
+      name: 'Word of Ruin',
+      cost: [D, C],
+      damage: 0,
+      text: "At the end of your opponent's next turn, the Defending Pokémon will be Knocked Out.",
+    },
+  ];
 
   public regulationMark: string = 'E';
   public set: string = 'CRE';

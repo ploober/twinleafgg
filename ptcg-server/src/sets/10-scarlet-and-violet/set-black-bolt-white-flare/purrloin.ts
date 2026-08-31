@@ -7,7 +7,7 @@ import { AFTER_ATTACK, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND, ATTACK_SE
 
 export class Purrloin extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 60;
   public weakness = [{ type: G }];
   public retreat = [C];
@@ -43,7 +43,7 @@ export class Purrloin extends PokemonCard {
       if (ATTACK_SEARCH_WHIFFS(effect.player)) {
         return SHUFFLE_DECK(store, state, effect.player);
       }
-      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(store, state, effect.player, { cardType: CardType.DARK }, { min: 0, max: 3 });
+      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(store, state, effect.player, { cardType: [CardType.DARK] }, { min: 0, max: 3 });
     }
 
     return state;

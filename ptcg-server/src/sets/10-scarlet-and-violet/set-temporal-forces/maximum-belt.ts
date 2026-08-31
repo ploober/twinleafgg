@@ -7,12 +7,10 @@ import { StateUtils } from '../../../game/store/state-utils';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
 
-
 export class MaximumBelt extends TrainerCard {
-
   public trainerType: TrainerType = TrainerType.TOOL;
 
-  public tags = [CardTag.ACE_SPEC];
+  protected _tags = [CardTag.ACE_SPEC];
 
   public set: string = 'TEF';
 
@@ -30,7 +28,6 @@ export class MaximumBelt extends TrainerCard {
     'Attacks used by the Pokémon this card is attached to do 50 more damage to your opponent\'s Active Pokémon ex (before applying Weakness and Resistance).';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof DealDamageEffect && effect.source.tools.includes(this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, effect.player);
@@ -48,12 +45,11 @@ export class MaximumBelt extends TrainerCard {
       }
 
       const targetCard = effect.target.getPokemonCard();
-      if (targetCard && targetCard.tags.includes(CardTag.POKEMON_ex) && effect.damage > 0) {
+      if (targetCard && targetCard.hasTag(CardTag.POKEMON_ex) && effect.damage > 0) {
         effect.damage += 50;
       }
     }
 
     return state;
   }
-
 }

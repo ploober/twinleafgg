@@ -4,14 +4,13 @@ import { Effect } from '../../../game/store/effects/effect';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class IronJugulis extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
 
   public regulationMark = 'H';
 
-  public tags = [CardTag.FUTURE];
+  protected _tags = [CardTag.FUTURE];
 
-  public cardType: CardType = CardType.COLORLESS;
+  public cardType: CardType[] = [CardType.COLORLESS];
 
   public hp: number = 130;
 
@@ -26,8 +25,8 @@ export class IronJugulis extends PokemonCard {
       name: 'Blasting Wind',
       cost: [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
       damage: 110,
-      text: ''
-    }
+      text: '',
+    },
   ];
 
   public powers = [{

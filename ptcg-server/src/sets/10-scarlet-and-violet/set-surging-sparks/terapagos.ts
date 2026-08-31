@@ -5,7 +5,7 @@ import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefa
 
 export class Terapagos extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = C;
+  public cardType: CardType[] = [C];
   public hp: number = 120;
   public weakness = [{ type: F }];
   public retreat = [C, C];
@@ -15,14 +15,15 @@ export class Terapagos extends PokemonCard {
       name: 'Prism Charge',
       cost: [C],
       damage: 0,
-      text: 'Search your deck for up to 3 Basic Energy cards of different types and attach them to your Tera Pokémon in any way you like. Then, shuffle your deck.'
+      text: 'Search your deck for up to 3 Basic Energy cards of different types and attach them to your Tera Pokémon in any way you like. Then, shuffle your deck.',
     },
     {
       name: 'Hard Tackle',
       cost: [C, C, C],
       damage: 100,
-      text: ''
-    }];
+      text: '',
+    },
+  ];
 
   public regulationMark = 'H';
   public set: string = 'SSP';
@@ -32,14 +33,13 @@ export class Terapagos extends PokemonCard {
   public fullName: string = 'Terapagos SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
       let teraPokemonInPlay = false;
 
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card) => {
-        if (card.tags.includes(CardTag.POKEMON_TERA)) {
+        if (card.hasTag(CardTag.POKEMON_TERA)) {
           teraPokemonInPlay = true;
         }
       });
@@ -53,7 +53,7 @@ export class Terapagos extends PokemonCard {
 
       const blocked2: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-        if (!card.tags.includes(CardTag.POKEMON_TERA)) {
+        if (!card.hasTag(CardTag.POKEMON_TERA)) {
           blocked2.push(target);
         }
       });
@@ -68,16 +68,19 @@ export class Terapagos extends PokemonCard {
 
       //   chosen.forEach(target => {
 
-      state = store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_ACTIVE,
-        player.deck,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH, SlotType.ACTIVE],
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 0, max: 3, blockedTo: blocked2 }
-      ), transfers => {
-        transfers = transfers || [];
+      state = store.prompt(
+        state,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_TO_ACTIVE,
+          player.deck,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH, SlotType.ACTIVE],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { allowCancel: false, min: 0, max: 3, blockedTo: blocked2 },
+        ),
+        (transfers) => {
+          transfers = transfers || [];
 
         // "Then, shuffle your deck." — searching your deck ALWAYS requires a shuffle afterward,
         // whether 0 or up-to-3 Energy were attached (B.33 / compendium #2171 "up to X"; TA-330).

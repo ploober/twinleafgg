@@ -6,12 +6,11 @@ import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class HoOh extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
 
   public regulationMark = 'H';
 
-  public cardType: CardType = CardType.FIRE;
+  public cardType: CardType[] = [CardType.FIRE];
 
   public hp: number = 130;
 
@@ -26,7 +25,7 @@ export class HoOh extends PokemonCard {
       name: 'Flap',
       cost: [CardType.FIRE, CardType.COLORLESS],
       damage: 50,
-      text: ''
+      text: '',
     },
     {
       name: 'Shining Blaze',
@@ -49,7 +48,6 @@ export class HoOh extends PokemonCard {
   public fullName: string = 'Ho-Oh SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
@@ -64,7 +62,7 @@ export class HoOh extends PokemonCard {
       let hasTeraOnBench = false;
       player.bench.forEach(benchSlot => {
         const card = benchSlot.getPokemonCard();
-        if (card && card.tags.includes(CardTag.POKEMON_TERA)) {
+        if (card && card.hasTag(CardTag.POKEMON_TERA)) {
           hasTeraOnBench = true;
         }
       });
@@ -76,5 +74,4 @@ export class HoOh extends PokemonCard {
 
     return state;
   }
-
 }

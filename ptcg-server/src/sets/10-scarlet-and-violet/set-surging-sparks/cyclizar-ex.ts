@@ -1,14 +1,26 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { StoreLike, State, StateUtils, CardTag, CardType, Stage, GameMessage, ConfirmPrompt, ChoosePokemonPrompt, PlayerType, SlotType } from '../../../game';
+import {
+  StoreLike,
+  State,
+  StateUtils,
+  CardTag,
+  CardType,
+  Stage,
+  GameMessage,
+  ConfirmPrompt,
+  ChoosePokemonPrompt,
+  PlayerType,
+  SlotType,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Cyclizarex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = C;
+  public cardType: CardType[] = [C];
   public hp: number = 210;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -18,14 +30,14 @@ export class Cyclizarex extends PokemonCard {
       name: 'Break Through',
       cost: [C, C, C],
       damage: 130,
-      text: 'This attack also does 30 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
+      text: "This attack also does 30 damage to 1 of your opponent's Benched Pokémon. (Don't apply Weakness and Resistance for Benched Pokémon.)",
     },
     {
       name: 'Zircon Road',
       cost: [G, R, P],
       damage: 180,
-      text: 'You may draw 5 cards.'
-    }
+      text: 'You may draw 5 cards.',
+    },
   ];
 
   public set: string = 'SSP';
@@ -41,25 +53,29 @@ export class Cyclizarex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const hasBenched = opponent.bench.some(b => b.cards.length > 0);
+      const hasBenched = opponent.bench.some((b) => b.cards.length > 0);
       if (!hasBenched) {
         return state;
       }
 
-      return store.prompt(state, new ChoosePokemonPrompt(
-        player.id,
-        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-        PlayerType.TOP_PLAYER,
-        [SlotType.BENCH],
-        { allowCancel: false }
-      ), targets => {
-        if (!targets || targets.length === 0) {
-          return;
-        }
-        const damageEffect = new PutDamageEffect(effect, 30);
-        damageEffect.target = targets[0];
-        store.reduceEffect(state, damageEffect);
-      });
+      return store.prompt(
+        state,
+        new ChoosePokemonPrompt(
+          player.id,
+          GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+          PlayerType.TOP_PLAYER,
+          [SlotType.BENCH],
+          { allowCancel: false },
+        ),
+        (targets) => {
+          if (!targets || targets.length === 0) {
+            return;
+          }
+          const damageEffect = new PutDamageEffect(effect, 30);
+          damageEffect.target = targets[0];
+          store.reduceEffect(state, damageEffect);
+        },
+      );
     }
 
     // Zircon Road — post-damage draw rider (family A): "You may draw 5" runs AFTER the 180 lands (TA-128).
@@ -91,7 +107,11 @@ export class Cyclizarex extends PokemonCard {
       });
     }
 
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
+    if (
+      effect instanceof PutDamageEffect &&
+      effect.target.cards.includes(this) &&
+      effect.target.getPokemonCard() === this
+    ) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

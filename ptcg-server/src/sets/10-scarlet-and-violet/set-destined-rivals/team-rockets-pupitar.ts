@@ -6,7 +6,12 @@ import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefa
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
-function* useExplosiveAwakening(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
+function* useExplosiveAwakening(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   // TA-126/CF-9: an empty deck still owes the trailing shuffle. This comment used to assert the
@@ -63,9 +68,9 @@ function* useExplosiveAwakening(next: Function, store: StoreLike, state: State, 
 
 export class TeamRocketsPupitar extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom = 'Team Rocket\'s Larvitar';
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = F;
+  public evolvesFrom = "Team Rocket's Larvitar";
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [F];
   public hp: number = 100;
   public weakness = [{ type: G }];
   public retreat = [C, C];
@@ -75,16 +80,16 @@ export class TeamRocketsPupitar extends PokemonCard {
       name: 'Explosive Ascension',
       cost: [C],
       damage: 30,
-      text: 'Search your deck for a card that evolves from this Pokémon and put it onto this Pokémon to evolve it. Then, shuffle your deck.'
-    }
+      text: 'Search your deck for a card that evolves from this Pokémon and put it onto this Pokémon to evolve it. Then, shuffle your deck.',
+    },
   ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
   public setNumber: string = '95';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Team Rocket\'s Pupitar';
-  public fullName: string = 'Team Rocket\'s Pupitar DRI';
+  public name: string = "Team Rocket's Pupitar";
+  public fullName: string = "Team Rocket's Pupitar DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {

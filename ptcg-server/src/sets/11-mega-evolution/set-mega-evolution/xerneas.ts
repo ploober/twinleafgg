@@ -6,7 +6,7 @@ import { SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, WAS_ATTACK_USED, ATTAC
 
 export class Xerneas extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 120;
   public weakness = [{ type: M }];
   public retreat = [C];
@@ -36,7 +36,7 @@ export class Xerneas extends PokemonCard {
       // SD-20: an empty deck WHIFFS the search; the attack still happens (#361 Call for Family,
       // #2018 Breezy Gift). The shared prefab's BLOCK_IF_DECK_EMPTY is the Trainer answer.
       if (ATTACK_SEARCH_WHIFFS(effect.player)) { return SHUFFLE_DECK(store, state, effect.player); }
-      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, effect.player, { stage: Stage.BASIC, cardType: CardType.PSYCHIC }, { min: 0, max: 3 });
+      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, effect.player, { stage: Stage.BASIC, cardType: [CardType.PSYCHIC] }, { min: 0, max: 3 });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

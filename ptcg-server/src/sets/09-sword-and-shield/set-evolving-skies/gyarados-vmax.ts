@@ -7,16 +7,15 @@ import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class GyaradosVMAX extends PokemonCard {
-
   public regulationMark = 'E';
 
-  public tags = [CardTag.POKEMON_VMAX];
+  protected _tags = [CardTag.POKEMON_VMAX];
 
   public stage: Stage = Stage.VMAX;
 
   public evolvesFrom = 'Gyarados V';
 
-  public cardType: CardType = CardType.WATER;
+  public cardType: CardType[] = [CardType.WATER];
 
   public hp: number = 330;
 
@@ -47,28 +46,30 @@ export class GyaradosVMAX extends PokemonCard {
   public fullName: string = 'Gyarados VMAX EVS';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
       // Defending Pokemon has no energy cards attached
-      if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
+      if (!opponent.active.cards.some((c) => c.superType === SuperType.ENERGY)) {
         return state;
       }
 
       let card: Card;
-      return store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        opponent.active,
-        { superType: SuperType.ENERGY },
-        { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-        card = selected[0];
-        return store.reduceEffect(state, new DiscardCardsEffect(effect, [card]));
-      });
+      return store.prompt(
+        state,
+        new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          opponent.active,
+          { superType: SuperType.ENERGY },
+          { min: 1, max: 1, allowCancel: false },
+        ),
+        (selected) => {
+          card = selected[0];
+          return store.reduceEffect(state, new DiscardCardsEffect(effect, [card]));
+        },
+      );
     }
     return state;
   }

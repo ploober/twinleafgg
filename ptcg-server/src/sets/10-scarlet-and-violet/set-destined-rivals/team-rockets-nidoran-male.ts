@@ -3,8 +3,8 @@ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 
 export class TeamRocketsNidoranMale extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = D;
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [D];
   public hp: number = 70;
   public weakness = [{ type: F }];
   public retreat = [C];

@@ -1,17 +1,13 @@
 import { CardType, PokemonCard, SpecialCondition, Stage, State, StoreLike } from '../../../game';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import {
-  COIN_FLIP_PROMPT,
-  PREVENT_DAMAGE,
-  PREVENT_EFFECTS_OF_ATTACKS,
-  WAS_ATTACK_USED,
-} from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { PREVENT_DAMAGE, PREVENT_EFFECTS_OF_ATTACKS } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Rapidash extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Ponyta';
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public hp: number = 100;
   public weakness = [{ type: W }];
   public retreat = [C];
@@ -21,8 +17,7 @@ export class Rapidash extends PokemonCard {
     cost: [R],
     damage: 20,
     text: 'Your opponent\'s Active Pokémon is now Burned.'
-  },
-  {
+  }, {
     name: 'Agility',
     cost: [R, R],
     damage: 60,

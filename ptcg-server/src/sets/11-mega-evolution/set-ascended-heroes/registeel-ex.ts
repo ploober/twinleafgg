@@ -4,25 +4,27 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Registeelex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = M;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [M];
   public hp: number = 230;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
   public retreat = [C, C, C];
 
-  public attacks = [{
-    name: 'Regi Charge',
-    cost: [C],
-    damage: 0,
-    text: 'Attach up to 2 Basic [M] Energy cards from your discard pile to this Pokémon.'
-  },
-  {
-    name: 'Protecting Steel',
-    cost: [M, C, C, C],
-    damage: 140,
-    text: 'During your opponent\'s next turn, this Pokemon takes 50 less damage from attacks (after applying Weakness and Resistance).'
-  }];
+  public attacks = [
+    {
+      name: 'Regi Charge',
+      cost: [C],
+      damage: 0,
+      text: 'Attach up to 2 Basic [M] Energy cards from your discard pile to this Pokémon.',
+    },
+    {
+      name: 'Protecting Steel',
+      cost: [M, C, C, C],
+      damage: 140,
+      text: "During your opponent's next turn, this Pokemon takes 50 less damage from attacks (after applying Weakness and Resistance).",
+    },
+  ];
 
   public regulationMark: string = 'I';
   public set: string = 'ASC';
@@ -36,10 +38,13 @@ export class Registeelex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasEnergyInDiscard = player.discard.cards.some(c => {
-        return c.superType === SuperType.ENERGY
-          && (c as EnergyCard).energyType === EnergyType.BASIC
-          && (c as EnergyCard).provides && (c as EnergyCard).provides.includes(CardType.METAL);
+      const hasEnergyInDiscard = player.discard.cards.some((c) => {
+        return (
+          c.superType === SuperType.ENERGY &&
+          (c as EnergyCard).energyType === EnergyType.BASIC &&
+          (c as EnergyCard).provides &&
+          (c as EnergyCard).provides.includes(CardType.METAL)
+        );
       });
       // "Attach up to 2" is a whiff: with no Metal Energy in the discard there is nothing to attach,
       // but the attack is still legal to declare (do not reject it — that was an offer-then-reject).
@@ -61,11 +66,12 @@ export class Registeelex extends PokemonCard {
           return;
         }
 
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          player.discard.moveCardTo(transfer.card, target);
-        }
-      });
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            player.discard.moveCardTo(transfer.card, target);
+          }
+        },
+      );
 
       return state;
     }

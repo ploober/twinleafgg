@@ -6,7 +6,7 @@ import { DISCARD_ALL_ENERGY_FROM_POKEMON, WAS_ATTACK_USED } from '../../../game/
 
 export class Zeraora extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public hp: number = 100;
   public weakness: Weakness[] = [{ type: F }];
   public retreat: CardType[] = [C];
@@ -54,7 +54,7 @@ export class Zeraora extends PokemonCard {
       // is chosen BEFORE the energy discard (a Step-E/F effect) resolves.
       const benchHasEx = opponent.bench.some(b => {
         const pokemon = b.getPokemonCard();
-        return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);
+        return pokemon !== undefined && pokemon.hasTag(CardTag.POKEMON_ex);
       });
 
       // The attack is usable with no Benched Pokemon ex to hit; there is no
@@ -65,7 +65,7 @@ export class Zeraora extends PokemonCard {
 
       const blocked: CardTarget[] = [];
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
-        if (!card.tags.includes(CardTag.POKEMON_ex)) {
+        if (!card.hasTag(CardTag.POKEMON_ex)) {
           blocked.push(target);
         }
       });

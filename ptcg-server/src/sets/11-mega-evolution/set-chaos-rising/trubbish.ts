@@ -7,7 +7,7 @@ import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/s
 export class Trubbish extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 70;
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public weakness = [{ type: F }];
   public retreat = [C, C];
 
@@ -21,6 +21,7 @@ export class Trubbish extends PokemonCard {
   ];
 
   public regulationMark = 'J';
+
   public set: string = 'CRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '56';

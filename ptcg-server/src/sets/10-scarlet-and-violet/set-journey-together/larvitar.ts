@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, CoinFlipPrompt, StateUtils, Card, ChooseCardsPrompt } from '../../../game';
+import { StoreLike, State, GameMessage, StateUtils, Card, ChooseCardsPrompt, CoinFlipPrompt } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
@@ -8,22 +8,22 @@ import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../ga
 
 export class Larvitar extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = CardType.FIGHTING;
+  public cardType: CardType[] = [F];
   public hp: number = 70;
-  public weakness = [{ type: CardType.GRASS }];
-  public retreat = [CardType.COLORLESS];
+  public weakness = [{ type: G }];
+  public retreat = [C];
 
-  public attacks = [
-    {
-      name: 'Crunch',
-      cost: [CardType.COLORLESS, CardType.COLORLESS],
-      damage: 20,
-      text: 'Flip a coin. If heads, discard an Energy from your opponent\'s Active Pokémon.'
-    }
-  ];
+  public attacks = [{
+    name: 'Crunch',
+    cost: [C, C],
+    damage: 20,
+    text: 'Flip a coin. If heads, discard an Energy from your opponent\'s Active Pokémon.'
+  }];
 
   public set: string = 'JTG';
+
   public regulationMark = 'I';
+
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '80';
   public name: string = 'Larvitar';

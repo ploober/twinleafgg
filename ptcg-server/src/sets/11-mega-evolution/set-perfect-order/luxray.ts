@@ -6,7 +6,7 @@ import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../ga
 export class Luxray extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Luxio';
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public hp: number = 150;
   public weakness = [{ type: F }];
   public retreat = [];

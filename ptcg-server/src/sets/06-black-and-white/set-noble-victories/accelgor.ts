@@ -12,7 +12,7 @@ import {
 export class Accelgor extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Shelmet';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 90;
   public weakness = [{ type: R }];
   public retreat = [];
@@ -22,8 +22,7 @@ export class Accelgor extends PokemonCard {
     cost: [G],
     damage: 20,
     text: 'Flip a coin. If heads, discard an Energy attached to the Defending Pokémon.'
-  },
-  {
+  }, {
     name: 'Deck and Cover',
     cost: [C, C],
     damage: 50,

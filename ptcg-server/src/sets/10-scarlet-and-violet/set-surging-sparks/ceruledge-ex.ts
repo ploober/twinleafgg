@@ -9,11 +9,11 @@ import { WAS_ATTACK_USED, DISCARD_ALL_ENERGY_FROM_POKEMON } from '../../../game/
 export class Ceruledgeex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Charcadet';
-  public cardType: CardType = CardType.FIRE;
+  public cardType: CardType[] = [CardType.FIRE];
   public hp: number = 270;
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
   public weakness = [{ type: CardType.WATER }];
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
 
   public attacks = [
     {
@@ -21,14 +21,14 @@ export class Ceruledgeex extends PokemonCard {
       cost: [CardType.FIRE],
       damage: 30,
       damageCalculation: '+',
-      text: 'This attack does 20 more damage for each Energy card in your discard pile.'
+      text: 'This attack does 20 more damage for each Energy card in your discard pile.',
     },
     {
       name: 'Raging Amethyst',
       cost: [CardType.FIRE, CardType.PSYCHIC, CardType.METAL],
       damage: 280,
-      text: 'Discard all Energy from this Pokémon.'
-    }
+      text: 'Discard all Energy from this Pokémon.',
+    },
   ];
 
   public regulationMark = 'H';
@@ -39,10 +39,11 @@ export class Ceruledgeex extends PokemonCard {
   public setNumber: string = '36';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const energyInDiscard = player.discard.cards.filter(c => c.superType === SuperType.ENERGY).length;
+      const energyInDiscard = player.discard.cards.filter(
+        (c) => c.superType === SuperType.ENERGY,
+      ).length;
       effect.damage += energyInDiscard * 20;
     }
 
@@ -54,7 +55,11 @@ export class Ceruledgeex extends PokemonCard {
       DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
     }
 
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
+    if (
+      effect instanceof PutDamageEffect &&
+      effect.target.cards.includes(this) &&
+      effect.target.getPokemonCard() === this
+    ) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

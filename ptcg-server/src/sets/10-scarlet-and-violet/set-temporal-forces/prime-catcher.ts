@@ -82,7 +82,7 @@ export class PrimeCatcher extends TrainerCard {
 
   public trainerType: TrainerType = TrainerType.ITEM;
 
-  public tags = [CardTag.ACE_SPEC];
+  protected _tags = [CardTag.ACE_SPEC];
 
   public regulationMark = 'H';
 

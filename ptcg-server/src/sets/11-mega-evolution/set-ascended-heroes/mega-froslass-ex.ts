@@ -8,26 +8,28 @@ import { State, StoreLike } from '../../../game';
 export class MegaFroslassex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Snorunt';
-  public tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
-  public cardType: CardType = W;
+  protected _tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
+  public cardType: CardType[] = [W];
   public hp: number = 310;
   public weakness = [{ type: M }];
   public resistance = [];
   public retreat = [C];
 
-  public attacks = [{
-    name: 'Resentful Refrain',
-    cost: [W],
-    damage: 50,
-    damageCalculation: 'x',
-    text: 'This attack does 50 damage for each card in your opponent\'s hand.'
-  },
-  {
-    name: 'Absolute Snow',
-    cost: [W, C, C],
-    damage: 150,
-    text: 'Your opponent\'s Active Pokemon is now Asleep.'
-  }];
+  public attacks = [
+    {
+      name: 'Resentful Refrain',
+      cost: [W],
+      damage: 50,
+      damageCalculation: 'x',
+      text: "This attack does 50 damage for each card in your opponent's hand.",
+    },
+    {
+      name: 'Absolute Snow',
+      cost: [W, C, C],
+      damage: 150,
+      text: "Your opponent's Active Pokemon is now Asleep.",
+    },
+  ];
 
   public regulationMark: string = 'I';
   public set: string = 'ASC';
@@ -52,4 +54,3 @@ export class MegaFroslassex extends PokemonCard {
     return state;
   }
 }
-

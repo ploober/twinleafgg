@@ -5,12 +5,13 @@ import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, DEFENDING_POKEMON_DOES_LESS_DAMAGE } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DEFENDING_POKEMON_DOES_LESS_DAMAGE } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Sylveon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Eevee';
-  public cardType: CardType = Y;
+  public cardType: CardType[] = [Y];
   public hp: number = 110;
   public weakness = [{ type: M }];
   public resistance = [{ type: D, value: -20 }];
@@ -39,10 +40,13 @@ export class Sylveon extends PokemonCard {
   public fullName: string = 'Sylveon CEC';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect
-      && effect.trainerCard instanceof TrainerCard
-      && effect.trainerCard.trainerType === TrainerType.SUPPORTER
-      && effect.trainerCard.tags.includes(CardTag.TAG_TEAM)) {
+    // Track when a TAG TEAM Supporter is played
+    if (
+      effect instanceof TrainerEffect &&
+      effect.trainerCard instanceof TrainerCard &&
+      effect.trainerCard.trainerType === TrainerType.SUPPORTER &&
+      effect.trainerCard.hasTag(CardTag.TAG_TEAM)
+    ) {
       effect.player.marker.addMarker(this.TAG_TEAM_SUPPORTER_PLAYED_MARKER, this);
     }
 

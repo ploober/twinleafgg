@@ -7,26 +7,28 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
 export class MistysStaryu extends PokemonCard {
-  public tags = [CardTag.MISTYS];
+  protected _tags = [CardTag.MISTYS];
   public stage: Stage = Stage.BASIC;
   public regulationMark = 'I';
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public hp: number = 70;
   public weakness = [{ type: L }];
   public retreat = [C];
 
-  public attacks = [{
-    name: 'Bubble Beam',
-    cost: [W],
-    damage: 20,
-    text: 'If heads, your opponent\'s Active Pokémon is now Paralyzed.'
-  }];
+  public attacks = [
+    {
+      name: 'Bubble Beam',
+      cost: [W],
+      damage: 20,
+      text: "If heads, your opponent's Active Pokémon is now Paralyzed.",
+    },
+  ];
 
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '46';
-  public name: string = 'Misty\'s Staryu';
-  public fullName: string = 'Misty\'s Staryu DRI';
+  public name: string = "Misty's Staryu";
+  public fullName: string = "Misty's Staryu DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Bubble Beam

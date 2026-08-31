@@ -2,11 +2,12 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { BLOCK_SELF_RETREAT, HEAL_X_DAMAGE_FROM_THIS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { HEAL_X_DAMAGE_FROM_THIS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { BLOCK_SELF_RETREAT } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Slakoth extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = C;
+  public cardType: CardType[] = [C];
   // TA-192 data correction (2026-08-04): was 90; the authoritative record is UNANIMOUS at 60
   // (limitless, pio⊕scrydex, pkmncards, tcgdex — 4 witnesses incl. the independent one). Rotomancer
   // agrees at 60. Wrong HP changes KO math, so this was a mechanical defect, not cosmetic.

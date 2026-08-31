@@ -1,12 +1,29 @@
-import { PokemonCard, Stage, CardType, State, StoreLike, PowerType, GameError, GameMessage, SuperType, CardTag } from '../../../game';
+import { PokemonCard,
+  Stage,
+  CardType,
+  State,
+  StoreLike,
+  PowerType,
+  GameError,
+  GameMessage,
+  SuperType,
+  CardTag, pokemonHasCardType } from '../../../game';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 
-import { HAS_MARKER, ABILITY_USED, ADD_MARKER, REMOVE_MARKER_AT_END_OF_TURN, SEARCH_DECK_FOR_CARDS_TO_HAND, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import {
+  HAS_MARKER,
+  ABILITY_USED,
+  ADD_MARKER,
+  REMOVE_MARKER_AT_END_OF_TURN,
+  SEARCH_DECK_FOR_CARDS_TO_HAND,
+  WAS_ATTACK_USED,
+  WAS_POWER_USED,
+} from '../../../game/store/prefabs/prefabs';
 
 export class Genesectex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = M;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [M];
   public hp: number = 220;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
@@ -64,12 +81,27 @@ export class Genesectex extends PokemonCard {
 
       const blocked: number[] = [];
       player.deck.cards.forEach((card, index) => {
-        if (!(card instanceof PokemonCard && card.cardType === CardType.METAL && card.evolvesFrom !== '' && card.stage !== Stage.LV_X)) {
+        if (
+          !(
+            card instanceof PokemonCard &&
+            pokemonHasCardType(card, CardType.METAL) &&
+            card.evolvesFrom !== '' &&
+            card.stage !== Stage.LV_X
+          )
+        ) {
           blocked.push(index);
         }
       });
 
-      SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, player, this, { superType: SuperType.POKEMON }, { min: 0, max: 2, allowCancel: false, blocked }, this.powers[0]);
+      SEARCH_DECK_FOR_CARDS_TO_HAND(
+        store,
+        state,
+        player,
+        this,
+        { superType: SuperType.POKEMON },
+        { min: 0, max: 2, allowCancel: false, blocked },
+        this.powers[0],
+      );
       ABILITY_USED(player, this);
       ADD_MARKER(this.METAL_SIGNAL_MARKER, player, this);
     }

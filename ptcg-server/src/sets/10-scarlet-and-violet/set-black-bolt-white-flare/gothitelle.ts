@@ -9,7 +9,7 @@ import { ABILITY_USED, MOVE_CARDS, SHUFFLE_THEN_DRAW, WAS_ATTACK_USED, WAS_POWER
 
 export class Gothitelle extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 150;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];

@@ -1,6 +1,13 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, CardTag } from '../../../game/store/card/card-types';
-import { PowerType, MoveEnergyPrompt, CardTransfer, PlayerType, SlotType, SuperType } from '../../../game';
+import {
+  PowerType,
+  MoveEnergyPrompt,
+  CardTransfer,
+  PlayerType,
+  SlotType,
+  SuperType,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { State } from '../../../game/store/state/state';
@@ -9,7 +16,12 @@ import { GameError, GameMessage, StateUtils } from '../../../game';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
-function* moveEnergy(next: Function, store: StoreLike, state: State, effect: PowerEffect): IterableIterator<State> {
+function* moveEnergy(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: PowerEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   let pokemonWithEnergy = 0;
@@ -38,17 +50,21 @@ function* moveEnergy(next: Function, store: StoreLike, state: State, effect: Pow
   }
 
   let transfers: CardTransfer[] = [];
-  yield store.prompt(state, new MoveEnergyPrompt(
-    player.id,
-    GameMessage.MOVE_ENERGY_CARDS,
-    PlayerType.BOTTOM_PLAYER,
-    [SlotType.ACTIVE, SlotType.BENCH],
-    { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-    { min: 0, allowCancel: false }
-  ), result => {
-    transfers = result || [];
-    next();
-  });
+  yield store.prompt(
+    state,
+    new MoveEnergyPrompt(
+      player.id,
+      GameMessage.MOVE_ENERGY_CARDS,
+      PlayerType.BOTTOM_PLAYER,
+      [SlotType.ACTIVE, SlotType.BENCH],
+      { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
+      { min: 0, allowCancel: false },
+    ),
+    (result) => {
+      transfers = result || [];
+      next();
+    },
+  );
 
   if (transfers.length === 0) {
     return state;
@@ -66,8 +82,8 @@ function* moveEnergy(next: Function, store: StoreLike, state: State, effect: Pow
 export class MegaVenusaurEx extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Ivysaur';
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_SV_MEGA];
-  public cardType: CardType = G;
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_SV_MEGA];
+  public cardType: CardType[] = [G];
   public hp: number = 380;
   public weakness = [{ type: R }];
   public retreat = [C, C, C, C];
@@ -79,12 +95,14 @@ export class MegaVenusaurEx extends PokemonCard {
     text: 'As many times as you like during your turn, you may move a Basic [G] Energy from one of your Pokémon to another one of your Pokémon.'
   }];
 
-  public attacks = [{
-    name: 'Jungle Dump',
-    cost: [G, G, G, G],
-    damage: 240,
-    text: 'Heal 30 damage from this Pokémon.'
-  }];
+  public attacks = [
+    {
+      name: 'Jungle Dump',
+      cost: [G, G, G, G],
+      damage: 240,
+      text: 'Heal 30 damage from this Pokémon.',
+    },
+  ];
 
   public regulationMark = 'I';
   public set: string = 'MEG';
@@ -107,4 +125,4 @@ export class MegaVenusaurEx extends PokemonCard {
 
     return state;
   }
-} 
+}

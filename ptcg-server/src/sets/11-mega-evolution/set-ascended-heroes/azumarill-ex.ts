@@ -6,8 +6,8 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 export class Azumarillex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Marill';
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = P;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [P];
   public hp: number = 270;
   public weakness = [{ type: M }];
   public resistance = [];

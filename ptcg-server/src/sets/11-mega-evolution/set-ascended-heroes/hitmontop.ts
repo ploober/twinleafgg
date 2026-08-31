@@ -7,7 +7,7 @@ import { MOVE_CARDS, WAS_ATTACK_USED, SHUFFLE_THEN_DRAW } from '../../../game/st
 export class Hitmontop extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 100;
-  public cardType: CardType = F;
+  public cardType: CardType[] = [F];
   public weakness = [{ type: P }];
   public retreat = [C];
 

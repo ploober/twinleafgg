@@ -125,8 +125,7 @@ export function evalPredicate(state: State, effect: AttackEffect, pred: any, sub
         for (const list of [p.active, ...p.bench]) {
           const c = list.getPokemonCard() as PokemonCard | undefined;
           if (!c) { continue; }
-          set.add(c.cardType);
-          (c.additionalCardTypes ?? []).forEach(t => set.add(t));
+          c.cardType.forEach(t => set.add(t));   // upstream 7a35128f0: cardType is the full type array
         }
         return set;
       };

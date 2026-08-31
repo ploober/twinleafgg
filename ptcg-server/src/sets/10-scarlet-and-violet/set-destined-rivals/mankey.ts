@@ -4,7 +4,7 @@ import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/p
 
 export class Mankey extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = F;
+  public cardType: CardType[] = [F];
   public hp: number = 70;
   public weakness = [{ type: P }];
   public retreat = [C];
@@ -19,7 +19,9 @@ export class Mankey extends PokemonCard {
   ];
 
   public set: string = 'DRI';
+
   public regulationMark = 'I';
+
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '90';
   public name: string = 'Mankey';

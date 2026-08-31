@@ -2,12 +2,13 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, Attack } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, THIS_POKEMON_RETALIATES_ON_DAMAGE_DURING_OPPONENTS_NEXT_TURN } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { THIS_POKEMON_RETALIATES_ON_DAMAGE_DURING_OPPONENTS_NEXT_TURN } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Aggron extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Lairon';
-  public cardType: CardType = M;
+  public cardType: CardType[] = [M];
   public hp: number = 180;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];

@@ -55,6 +55,11 @@ export function deepIterate(source: any, callback: (holder: any, key: string, va
 export function deepClone(source: any, ignores: Function[] = [], refMap: Map<object, object> = new Map()): any {
   if (source === null) { return null; }
 
+  // upstream: functions pass through by reference (attack-level `effect:` handlers live on card objects)
+  if (typeof source === 'function') {
+    return source;
+  }
+
   if (source instanceof Array) {
     return source.map((item: any) => deepClone(item, ignores, refMap));
   }
@@ -83,7 +88,7 @@ export function deepClone(source: any, ignores: Function[] = [], refMap: Map<obj
   return source;
 }
 
-export function generateId<T extends {id: number}[]>(array: T): number {
+export function generateId<T extends { id: number }[]>(array: T): number {
   if (array.length === 0) {
     return 1;
   }

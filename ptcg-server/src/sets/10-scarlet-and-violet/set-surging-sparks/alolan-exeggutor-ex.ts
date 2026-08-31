@@ -1,15 +1,32 @@
-import { PokemonCard, CardTag, Stage, CardType, StoreLike, State, StateUtils, CoinFlipPrompt, GameMessage, ChoosePokemonPrompt, PlayerType, SlotType, CardTarget, AttachEnergyPrompt, EnergyCard, EnergyType, SuperType } from '../../../game';
+import {
+  PokemonCard,
+  CardTag,
+  Stage,
+  CardType,
+  StoreLike,
+  State,
+  StateUtils,
+  GameMessage,
+  ChoosePokemonPrompt,
+  PlayerType,
+  SlotType,
+  CardTarget,
+  AttachEnergyPrompt,
+  EnergyCard,
+  EnergyType,
+  SuperType,
+} from '../../../game';
 import { KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
-import { AFTER_ATTACK, TERA_RULE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, TERA_RULE, WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class AlolanExeggutorex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Exeggcute';
-  public cardType: CardType = N;
+  public cardType: CardType[] = [N];
   public hp: number = 300;
   public retreat = [C, C, C];
 
@@ -27,6 +44,7 @@ export class AlolanExeggutorex extends PokemonCard {
   }];
 
   public regulationMark = 'H';
+
   public set: string = 'SSP';
   public setNumber: string = '133';
   public cardImage: string = 'assets/cardback.png';
@@ -41,31 +59,34 @@ export class AlolanExeggutorex extends PokemonCard {
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
 
-      const hasEnergyInHand = player.hand.cards.some(c => {
-        return c instanceof EnergyCard
-          && c.energyType === EnergyType.BASIC;
+      const hasEnergyInHand = player.hand.cards.some((c) => {
+        return c instanceof EnergyCard && c.energyType === EnergyType.BASIC;
       });
       if (!hasEnergyInHand) {
         return state;
       }
 
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_CARDS,
-        player.hand,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH, SlotType.ACTIVE],
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          const energyCard = transfer.card as EnergyCard;
-          const attachEnergyEffect = new AttachEnergyEffect(player, energyCard, target);
-          store.reduceEffect(state, attachEnergyEffect);
-        }
-      });
+      return store.prompt(
+        state,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_CARDS,
+          player.hand,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH, SlotType.ACTIVE],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { allowCancel: false },
+        ),
+        (transfers) => {
+          transfers = transfers || [];
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            const energyCard = transfer.card as EnergyCard;
+            const attachEnergyEffect = new AttachEnergyEffect(player, energyCard, target);
+            store.reduceEffect(state, attachEnergyEffect);
+          }
+        },
+      );
     }
 
     // Swinging Sphene
@@ -75,21 +96,20 @@ export class AlolanExeggutorex extends PokemonCard {
       const blocked: CardTarget[] = [];
 
       const opponentActive = opponent.active.getPokemonCard();
-      const opponentBench = opponent.bench.filter(card => card.getPokemonCard()?.stage === Stage.BASIC);
-      opponentBench.forEach(card => {
+      const opponentBench = opponent.bench.filter(
+        (card) => card.getPokemonCard()?.stage === Stage.BASIC,
+      );
+      opponentBench.forEach((card) => {
         if (!card.isStage(Stage.BASIC)) {
           blocked.push();
         }
       });
 
-      return store.prompt(state, [
-        new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)
-      ], result => {
+      return COIN_FLIP_PROMPT(store, state, player, (result) => {
         if (result === true) {
           if (opponentActive && opponentActive.stage !== Stage.BASIC) {
             return state;
-          }
-          if (opponentActive && opponentActive.stage === Stage.BASIC) {
+          } else {
             KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
           }
         }
@@ -98,18 +118,22 @@ export class AlolanExeggutorex extends PokemonCard {
             return state;
           }
           if (opponentBench) {
-            return store.prompt(state, new ChoosePokemonPrompt(
-              player.id,
-              GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-              PlayerType.TOP_PLAYER,
-              [SlotType.BENCH],
-              { min: 1, max: 1, allowCancel: false, blocked: blocked }
-            ), selected => {
-              const targets = selected || [];
-              targets.forEach(target => {
-                KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON(store, state, effect, target);
-              });
-            });
+            return store.prompt(
+              state,
+              new ChoosePokemonPrompt(
+                player.id,
+                GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+                PlayerType.TOP_PLAYER,
+                [SlotType.BENCH],
+                { min: 1, max: 1, allowCancel: false, blocked: blocked },
+              ),
+              (selected) => {
+                const targets = selected || [];
+                targets.forEach((target) => {
+                  KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON(store, state, effect, target);
+                });
+              },
+            );
           }
         }
       });

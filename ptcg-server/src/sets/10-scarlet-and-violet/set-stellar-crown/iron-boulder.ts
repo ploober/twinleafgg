@@ -7,9 +7,9 @@ export class IronBoulder extends PokemonCard {
   // TA-260: the printed rule-box tag. 33 in-pool cards read CardTag.FUTURE (Miraidon's "attach to
   // your Future Pokemon", Iron Moth, Iron Crown, ...); without it this card is invisible to all of
   // them. Canonical golden data carries `tags: ['Future']` and rotomancer agrees.
-  public tags = [CardTag.FUTURE];
+  protected _tags = [CardTag.FUTURE];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 140;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];

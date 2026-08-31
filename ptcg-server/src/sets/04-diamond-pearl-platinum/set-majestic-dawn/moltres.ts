@@ -11,7 +11,7 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 export class Moltres extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 100;
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public weakness = [{ type: W }];
   public resistance = [{ type: F, value: -20 }];
   public retreat = [C, C];
@@ -19,7 +19,7 @@ export class Moltres extends PokemonCard {
   public powers = [{
     name: 'Flame Charge',
     powerType: PowerType.POKEPOWER,
-    text: 'Once during your turn, when you put Moltres from your hand onto your Bench, you may flip a coin. If heads, search your discard pile for up to 3 Fire Energy cards and attach them to Moltres.',
+    text: 'Once during your turn, when you put Moltres from your hand onto your Bench, you may flip a coin. If heads, search your discard pile for up to 3 [R] Energy cards and attach them to Moltres.',
   }];
 
   public attacks = [{

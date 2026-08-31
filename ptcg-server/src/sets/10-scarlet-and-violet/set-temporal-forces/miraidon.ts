@@ -12,13 +12,13 @@ import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Miraidon extends PokemonCard {
 
-  public tags = [CardTag.FUTURE];
+  protected _tags = [CardTag.FUTURE];
 
   public regulationMark = 'H';
 
   public stage: Stage = Stage.BASIC;
 
-  public cardType: CardType = CardType.DRAGON;
+  public cardType: CardType[] = [CardType.DRAGON];
 
   public hp: number = 110;
 
@@ -66,7 +66,7 @@ export class Miraidon extends PokemonCard {
       // never-reject-your-own-offer contract rule).
       const blockedTo: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-        if (!card.tags.includes(CardTag.FUTURE)) {
+        if (!card.hasTag(CardTag.FUTURE)) {
           blockedTo.push(target);
         }
       });
@@ -90,11 +90,11 @@ export class Miraidon extends PokemonCard {
 
           const target = StateUtils.getTarget(state, player, transfer.to);
 
-          if (!target.cards[0].tags.includes(CardTag.FUTURE)) {
+          if (!target.cards[0].hasTag(CardTag.FUTURE)) {
             throw new GameError(GameMessage.INVALID_TARGET);
           }
 
-          if (target.cards[0].tags.includes(CardTag.FUTURE)) {
+          if (target.cards[0].hasTag(CardTag.FUTURE)) {
 
             player.deck.moveCardTo(transfer.card, target);
           }

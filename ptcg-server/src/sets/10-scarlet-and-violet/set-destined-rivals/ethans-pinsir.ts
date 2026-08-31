@@ -2,12 +2,15 @@ import { CardTag, CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN } from '../../../game/store/prefabs/prefabs';
+import {
+  WAS_ATTACK_USED,
+  WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN,
+} from '../../../game/store/prefabs/prefabs';
 
 export class EthansPinsir extends PokemonCard {
-  public tags = [CardTag.ETHANS];
+  protected _tags = [CardTag.ETHANS];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 120;
   public weakness = [{ type: R }];
   public retreat = [C, C];
@@ -30,18 +33,20 @@ export class EthansPinsir extends PokemonCard {
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '1';
-  public name: string = 'Ethan\'s Pinsir';
-  public fullName: string = 'Ethan\'s Pinsir DRI';
+  public name: string = "Ethan's Pinsir";
+  public fullName: string = "Ethan's Pinsir DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Rallying Horn
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      if (WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN(player, {
-        byAttackDamage: true,
-        tags: [CardTag.ETHANS],
-      })) {
+      if (
+        WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN(player, {
+          byAttackDamage: true,
+          tags: [CardTag.ETHANS],
+        })
+      ) {
         effect.damage += 100;
       }
     }

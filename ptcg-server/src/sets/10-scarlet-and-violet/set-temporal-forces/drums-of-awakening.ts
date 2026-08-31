@@ -7,13 +7,12 @@ import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 
 export class DrumsOfAwakening extends TrainerCard {
-
   public trainerType: TrainerType = TrainerType.ITEM;
 
   // TA-260: canonical prints BOTH rule-box tags — `['Ancient', 'ACE SPEC']`. The Ancient half was
   // missing, so this card is invisible to Ancient-counting readers (e.g. Roaring Moon's
   // discard-pile count). Rotomancer agrees with canonical.
-  public tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];
+  protected _tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];
 
   public regulationMark = 'H';
 
@@ -27,32 +26,28 @@ export class DrumsOfAwakening extends TrainerCard {
 
   public fullName: string = 'Awakening Drum TEF';
 
-  public text: string =
-    'Draw a card for each of your Ancient Pokémon in play.';
+  public text: string = 'Draw a card for each of your Ancient Pokémon in play.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return true;
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
 
       let ancientPokemonCount = 0;
 
-      if (player.active?.getPokemonCard()?.tags.includes(CardTag.ANCIENT)) {
+      if (player.active?.getPokemonCard()?.hasTag(CardTag.ANCIENT)) {
         ancientPokemonCount++;
       }
 
-      player.bench.forEach(benchSpot => {
-        if (benchSpot.getPokemonCard()?.tags.includes(CardTag.ANCIENT)) {
+      player.bench.forEach((benchSpot) => {
+        if (benchSpot.getPokemonCard()?.hasTag(CardTag.ANCIENT)) {
           ancientPokemonCount++;
         }
       });
       player.deck.moveTo(player.hand, ancientPokemonCount);
-
     }
     return state;
   }

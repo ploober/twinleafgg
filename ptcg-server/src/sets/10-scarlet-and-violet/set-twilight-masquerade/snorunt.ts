@@ -8,7 +8,7 @@ import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '
 
 export class Snorunt extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public hp: number = 60;
   public weakness = [{ type: M }];
   public retreat = [C];

@@ -4,11 +4,10 @@ import { AFTER_ATTACK, IS_ABILITY_BLOCKED, SEARCH_DECK_FOR_CARDS_TO_HAND } from 
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Serperiorex extends PokemonCard {
-
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Servine';
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = G;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [G];
   public hp: number = 320;
   public weakness = [{ type: R }];
   public retreat = [C, C];
@@ -42,8 +41,9 @@ export class Serperiorex extends PokemonCard {
       const player = effect.player;
 
       // Check if this card is in play
-      const isInPlay = player.bench.some(b => b.cards.some(c => c === this)) ||
-        player.active.cards.some(c => c === this);
+      const isInPlay =
+        player.bench.some((b) => b.cards.some((c) => c === this)) ||
+        player.active.cards.some((c) => c === this);
 
       if (isInPlay && !IS_ABILITY_BLOCKED(store, state, player, this)) {
         effect.damage += 20;
@@ -53,7 +53,15 @@ export class Serperiorex extends PokemonCard {
     // Grass Order attack
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
-      SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, player, this, {}, { min: 0, max: 3, allowCancel: false }, this.attacks[0]);
+      SEARCH_DECK_FOR_CARDS_TO_HAND(
+        store,
+        state,
+        player,
+        this,
+        {},
+        { min: 0, max: 3, allowCancel: false },
+        this.attacks[0],
+      );
     }
     return state;
   }

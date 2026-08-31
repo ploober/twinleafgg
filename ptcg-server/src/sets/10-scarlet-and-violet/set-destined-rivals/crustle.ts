@@ -4,14 +4,18 @@ import { StoreLike } from '../../../game/store/store-like';
 import { GamePhase, State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerType, StateUtils } from '../../../game';
-import { AfterDamageEffect, ApplyWeaknessEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import {
+  AfterDamageEffect,
+  ApplyWeaknessEffect,
+  PutDamageEffect,
+} from '../../../game/store/effects/attack-effects';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Crustle extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Dwebble';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 150;
   public weakness = [{ type: R }];
   public retreat = [C, C, C];
@@ -21,8 +25,8 @@ export class Crustle extends PokemonCard {
       name: 'Mysterious Rock Inn',
       useWhenInPlay: false,
       powerType: PowerType.ABILITY,
-      text: 'Prevent all damage done to this Pokémon by attacks from your opponent\'s Pokémon ex.'
-    }
+      text: "Prevent all damage done to this Pokémon by attacks from your opponent's Pokémon ex.",
+    },
   ];
 
   public attacks = [{
@@ -63,8 +67,7 @@ export class Crustle extends PokemonCard {
         return state;
       }
 
-      if (sourceCard.tags.includes(CardTag.POKEMON_ex)) {
-
+      if (sourceCard.hasTag(CardTag.POKEMON_ex)) {
         // Try to reduce PowerEffect, to check if something is blocking our ability
         try {
           const powerEffect = new PowerEffect(player, this.powers[0], this);
@@ -98,5 +101,4 @@ export class Crustle extends PokemonCard {
 
     return state;
   }
-
 }

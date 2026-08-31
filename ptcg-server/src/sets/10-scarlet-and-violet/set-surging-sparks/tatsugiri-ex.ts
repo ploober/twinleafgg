@@ -2,20 +2,32 @@ import { CardTag, CardType, Stage, SuperType } from '../../../game/store/card/ca
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { Card, CardList, ChooseCardsPrompt, GameError, GameMessage, PokemonCard, ShuffleDeckPrompt, StateUtils } from '../../../game';
-import { ApplyWeaknessEffect, AfterDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import {
+  Card,
+  CardList,
+  ChooseCardsPrompt,
+  GameError,
+  GameMessage,
+  PokemonCard,
+  ShuffleDeckPrompt,
+  StateUtils,
+} from '../../../game';
+import {
+  ApplyWeaknessEffect,
+  AfterDamageEffect,
+  PutDamageEffect,
+} from '../../../game/store/effects/attack-effects';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Tatsugiriex extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
 
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
 
   public regulationMark = 'H';
 
-  public cardType: CardType = N;
+  public cardType: CardType[] = [N];
 
   public hp: number = 160;
 
@@ -31,14 +43,14 @@ export class Tatsugiriex extends PokemonCard {
       cost: [R, W],
       damage: 100,
       shredAttack: true,
-      text: 'This attack\'s damage isn\'t affected by any effects on your opponent\'s Active Pokémon.'
+      text: "This attack's damage isn't affected by any effects on your opponent's Active Pokémon.",
     },
     {
       name: 'Cinnabar Lure',
       cost: [R, W, D],
       damage: 0,
-      text: 'Look at the top 10 cards of your deck. You may put any number of Pokémon you find there onto your Bench. Shuffle the other cards back into your deck.'
-    }
+      text: 'Look at the top 10 cards of your deck. You may put any number of Pokémon you find there onto your Bench. Shuffle the other cards back into your deck.',
+    },
   ];
 
   public set: string = 'SSP';
@@ -52,7 +64,6 @@ export class Tatsugiriex extends PokemonCard {
   public fullName: string = 'Tatsugiri ex SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
@@ -71,7 +82,6 @@ export class Tatsugiriex extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-
       const player = effect.player;
 
       // TA-131: declarable with an empty deck (rulebook p.20) — the top-of-deck look simply whiffs.
@@ -83,7 +93,7 @@ export class Tatsugiriex extends PokemonCard {
       // directions. Note this covers TWO ways of reaching "nothing to put back": an empty deck, and
       // the player benching every Pokemon they looked at (#2377's own board).
       // Check if bench has open slots
-      const openSlots = player.bench.filter(b => b.cards.length === 0);
+      const openSlots = player.bench.filter((b) => b.cards.length === 0);
 
       if (openSlots.length === 0) {
         // No open slots, throw error
@@ -122,7 +132,11 @@ export class Tatsugiriex extends PokemonCard {
       });
     }
 
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
+    if (
+      effect instanceof PutDamageEffect &&
+      effect.target.cards.includes(this) &&
+      effect.target.getPokemonCard() === this
+    ) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

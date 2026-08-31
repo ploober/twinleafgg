@@ -7,25 +7,27 @@ import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/
 export class MegaEelektrossex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Eelektrik';
-  public tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
-  public cardType: CardType = L;
+  protected _tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
+  public cardType: CardType[] = [L];
   public hp: number = 350;
   public weakness = [{ type: F }];
   public resistance = [];
   public retreat = [C, C];
 
-  public attacks = [{
-    name: 'Split Bomb',
-    cost: [L, L],
-    damage: 0,
-    text: 'This attack does 60 damage to 2 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
-  },
-  {
-    name: 'Disaster Shock',
-    cost: [L, L, L],
-    damage: 190,
-    text: 'You may discard 2 [L] Energy from this Pokémon and make your opponent\'s Active Pokemon Paralyzed.'
-  }];
+  public attacks = [
+    {
+      name: 'Split Bomb',
+      cost: [L, L],
+      damage: 0,
+      text: "This attack does 60 damage to 2 of your opponent's Pokémon. (Don't apply Weakness and Resistance for Benched Pokémon.)",
+    },
+    {
+      name: 'Disaster Shock',
+      cost: [L, L, L],
+      damage: 190,
+      text: "You may discard 2 [L] Energy from this Pokémon and make your opponent's Active Pokemon Paralyzed.",
+    },
+  ];
 
   public regulationMark: string = 'I';
   public set: string = 'ASC';
@@ -35,11 +37,19 @@ export class MegaEelektrossex extends PokemonCard {
   public fullName: string = 'Mega Eelektross ex M2a';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // Split Bomb: 60 damage to 2 opponent's Pokemon
       // Don't apply Weakness and Resistance for Benched Pokemon
-      THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(60, effect, store, state, 2, 2, false, [SlotType.ACTIVE, SlotType.BENCH]);
+      THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
+        60,
+        effect,
+        store,
+        state,
+        2,
+        2,
+        false,
+        [SlotType.ACTIVE, SlotType.BENCH],
+      );
     }
 
     // Disaster Shock — post-damage "may" rider (family A): the 190 lands first, then the optional
@@ -59,4 +69,3 @@ export class MegaEelektrossex extends PokemonCard {
     return state;
   }
 }
-

@@ -10,9 +10,9 @@ import { WAS_ATTACK_USED, WAS_POWER_USED, BLOCK_IF_DECK_EMPTY } from '../../../g
 export class Mamoswineex extends PokemonCard {
 
   public stage: Stage = Stage.STAGE_2;
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public evolvesFrom = 'Piloswine';
-  public cardType: CardType = F;
+  public cardType: CardType[] = [F];
   public hp: number = 340;
   public weakness = [{ type: G }];
   public retreat = [C, C, C, C];

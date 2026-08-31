@@ -112,7 +112,7 @@ describe('Rotomancer lock differential — incoming-damage modifiers (multi-turn
     if (res.status !== 'exact') { skipped++; continue; }
     if (KNOWN_LOCK_BUGS[s.attackLabel] || KNOWN_LOCK_BUGS_BY_PRINTING[s.printingId]) { skipped++; continue; }
     const card = getCardByName(res.fullName!);
-    if (!(card instanceof PokemonCard) || card.weakness?.some(w => w.type === card.cardType)) { skipped++; continue; }
+    if (!(card instanceof PokemonCard) || card.weakness?.some(w => card.cardType.includes(w.type))) { skipped++; continue; }
 
     const cost = s.cost.filter(c => c.toUpperCase() !== 'FREE');
     const fragments: IrFragment[] = [{ label: s.attackLabel, cost: s.cost, body: s.body }];
@@ -388,7 +388,7 @@ describe('Rotomancer lock differential — next-turn damage buffs (own-turn dama
     const res = resolvePrinting(s.printingId, s.name);
     if (res.status !== 'exact') { skipped++; continue; }
     const card = getCardByName(res.fullName!);
-    if (!(card instanceof PokemonCard) || card.weakness?.some(w => w.type === card.cardType)) { skipped++; continue; }
+    if (!(card instanceof PokemonCard) || card.weakness?.some(w => card.cardType.includes(w.type))) { skipped++; continue; }
 
     let native: number | 'KO', interp: number | 'KO';
     try {

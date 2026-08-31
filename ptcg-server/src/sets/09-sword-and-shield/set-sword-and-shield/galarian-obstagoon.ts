@@ -4,12 +4,13 @@ import { ConfirmPrompt, GameMessage, PlayerType, PowerType, SlotType, StoreLike,
 import { Effect } from '../../../game/store/effects/effect';
 import { DamageMap } from '../../../game/store/prompts/move-damage-prompt';
 import { PutDamagePrompt } from '../../../game/store/prompts/put-damage-prompt';
-import { WAS_ATTACK_USED, JUST_EVOLVED, IS_ABILITY_BLOCKED, PREVENT_DAMAGE } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, JUST_EVOLVED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { PREVENT_DAMAGE } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class GalarianObstagoon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Galarian Linoone';
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 160;
   public weakness = [{ type: G }];
   public retreat = [C, C];

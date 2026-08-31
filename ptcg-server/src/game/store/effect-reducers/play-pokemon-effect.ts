@@ -47,6 +47,11 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
     // Measured cast when filed: 6 in-pool Fossils x 1 lock. ⚠️ That is ONE lock measured six times,
     // not six independent tests — a second in-pool lock is still the first real test of this rule.
     const playedFromHandAsAPokemon = effect.pokemonCard.superType === SuperType.POKEMON;
+    // upstream `cannotPlayPokemonCards` lock — scoped by the same B.37 reasoning as the ability lock
+    // below: a Fossil played from hand is an Item, so a Pokemon ban must not reach it.
+    if (effect.player.cannotPlayPokemonCards && playedFromHandAsAPokemon) {
+      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    }
     if (effect.player.cannotPlayPokemonWithAbilities
       && playedFromHandAsAPokemon
       && effect.pokemonCard.powers.some(power => power.powerType === PowerType.ABILITY)) {
@@ -89,6 +94,10 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
       (isEvolved && Array.isArray(pokemonCard.evolvesFromBase) && pokemonCard.evolvesFromBase.length > 0 && pokemonCard.evolvesFromBase.includes(effect.pokemonCard.evolvesFrom));
 
     if (isValidEvolution) {
+      if (player.cannotEvolvePokemonCards || effect.target.cannotEvolveNextTurn) {
+        throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+      }
+
       const playedTurnEffect = new CheckPokemonPlayedTurnEffect(effect.player, effect.target);
       store.reduceEffect(state, playedTurnEffect);
 

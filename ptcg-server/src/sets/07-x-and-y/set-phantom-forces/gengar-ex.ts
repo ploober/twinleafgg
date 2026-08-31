@@ -4,12 +4,16 @@ import { StoreLike, State, ChoosePokemonPrompt, PlayerType, SlotType } from '../
 import { Effect } from '../../../game/store/effects/effect';
 import { PutCountersEffect } from '../../../game/store/effects/attack-effects';
 import { GameMessage } from '../../../game/game-message';
-import { ADD_POISON_TO_PLAYER_ACTIVE, SWITCH_ACTIVE_WITH_BENCHED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {
+  ADD_POISON_TO_PLAYER_ACTIVE,
+  SWITCH_ACTIVE_WITH_BENCHED,
+  WAS_ATTACK_USED,
+} from '../../../game/store/prefabs/prefabs';
 
 export class GengarEx extends PokemonCard {
-  public tags = [CardTag.POKEMON_EX];
+  protected _tags = [CardTag.POKEMON_EX];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 170;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -20 }];
@@ -20,12 +24,13 @@ export class GengarEx extends PokemonCard {
       name: 'Night Attack',
       cost: [C],
       damage: 0,
-      text: 'Put 3 damage counters on 1 of your opponent\'s Pokémon.'
-    }, {
+      text: "Put 3 damage counters on 1 of your opponent's Pokémon.",
+    },
+    {
       name: 'Dark Corridor',
       cost: [P, C, C],
       damage: 60,
-      text: 'Your opponent\'s Active Pokémon is now Poisoned. Switch this Pokémon with 1 of your Benched Pokémon.'
+      text: "Your opponent's Active Pokémon is now Poisoned. Switch this Pokémon with 1 of your Benched Pokémon.",
     },
   ];
 
@@ -62,5 +67,4 @@ export class GengarEx extends PokemonCard {
 
     return state;
   }
-
 }

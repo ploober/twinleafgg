@@ -1,5 +1,5 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardTag } from '../../../game/store/card/card-types';
+import { CardType, Stage, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
@@ -10,9 +10,9 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Excadrillex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public evolvesFrom = 'Drilbur';
-  public cardType = F;
+  public cardType: CardType[] = [F];
   public hp: number = 270;
   public weakness = [{ type: G }];
   public retreat = [C, C, C];

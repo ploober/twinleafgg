@@ -1,4 +1,4 @@
-import { CoinFlipPrompt, GameMessage, State } from '../../../game';
+import { State } from '../../../game';
 import { StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
@@ -8,11 +8,8 @@ import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Electabuzz extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
-
-  public cardType: CardType = CardType.LIGHTNING;
-
+  public cardType: CardType[] = [L];
   public hp: number = 70;
 
   public weakness = [{ type: CardType.FIGHTING }];
@@ -37,13 +34,9 @@ export class Electabuzz extends PokemonCard {
   ];
 
   public set: string = 'EVO';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '41';
-
   public name: string = 'Electabuzz';
-
   public fullName: string = 'Electabuzz EVO';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
@@ -59,9 +52,7 @@ export class Electabuzz extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      return store.prompt(state, [
-        new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)
-      ], result => {
+      return COIN_FLIP_PROMPT(store, state, player, result => {
         if (result === true) {
           effect.damage += 10;
         }

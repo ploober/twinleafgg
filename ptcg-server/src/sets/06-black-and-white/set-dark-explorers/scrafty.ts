@@ -8,7 +8,7 @@ import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/s
 export class Scrafty extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Scraggy';
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 100;
   public weakness = [{ type: F }];
   public resistance = [{ type: P, value: -20 }];
@@ -19,8 +19,7 @@ export class Scrafty extends PokemonCard {
     cost: [C, C],
     damage: 30,
     text: ''
-  },
-  {
+  }, {
     name: 'Crushing Blow',
     cost: [D, D, C],
     damage: 70,

@@ -1,7 +1,7 @@
 import { GameError } from '../../game-error';
 import { GameLog, GameMessage } from '../../game-message';
 import { BoardEffect, CardTag, CardType, SpecialCondition, SuperType } from '../card/card-types';
-import { PokemonCard } from '../card/pokemon-card';
+import { PokemonCard, getPrimaryCardType } from '../card/pokemon-card';
 import { Power, PowerType, Resistance, Weakness } from '../card/pokemon-types';
 import { ApplyWeaknessEffect, DealDamageEffect, DiscardCardsEffect } from '../effects/attack-effects';
 import { Player } from '../state/player';
@@ -80,14 +80,13 @@ function emitAbilityAnimationEvent(
 function applyWeaknessAndResistance(
   damage: number,
   cardTypes: CardType[],
-  additionalCardTypes: CardType[],
   weakness: Weakness[],
   resistance: Resistance[]
 ): number {
   let multiply = 1;
   let modifier = 0;
 
-  const allTypes = [...cardTypes, ...additionalCardTypes];
+  const allTypes = cardTypes;
 
   for (const item of weakness) {
     if (allTypes.includes(item.type)) {
@@ -148,6 +147,11 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
   }
 
+  // Player-wide attack lock (e.g. Steelix Gigaton Shake)
+  if (player.cannotAttackTurnsRemaining > 0) {
+    throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+  }
+
   // Check if specific attack cannot be used next turn
   if (attackingPokemon.cannotUseAttacksNextTurn.includes(attack.name)) {
     throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
@@ -155,6 +159,10 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
 
   // Check if a specific attack was disabled by an opponent's effect
   if (attackingPokemon.blockedAttackNameNextTurn === attack.name) {
+    throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+  }
+  if (attackingPokemon.onlyAllowedAttackNameNextTurn !== undefined
+    && attackingPokemon.onlyAllowedAttackNameNextTurn !== attack.name) {
     throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
   }
   if (attackingPokemon.blockedAttackNameUntilLeavesActive === attack.name) {
@@ -255,7 +263,7 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
   }
   const card = attackingPokemon.getPokemonCard();
   const cardId = card ? card.id : undefined;
-  const cardType = card ? card.cardType : undefined;
+  const cardType = card ? getPrimaryCardType(card) : undefined;
 
   // Emit attack animation event
   const game = (store as any).handler;
@@ -268,6 +276,7 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
           slot,
           index,
           cardType,
+          damage: attackEffect.damage,
           opponentId: opponent.id
         });
       }
@@ -633,7 +642,9 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
   }
 
   if (effect instanceof CheckPokemonStatsEffect) {
-    if (effect.target.weaknessOverrideType !== undefined) {
+    if (effect.target.noWeaknessNextTurn) {
+      effect.weakness = [];
+    } else if (effect.target.weaknessOverrideType !== undefined) {
       effect.weakness = [{ type: effect.target.weaknessOverrideType }];
     }
     return state;
@@ -645,11 +656,10 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
     const checkPokemonStats = new CheckPokemonStatsEffect(effect.target);
     state = store.reduceEffect(state, checkPokemonStats);
 
-    const cardType = checkPokemonType.cardTypes;
-    const additionalCardTypes = checkPokemonType.cardTypes;
+    const cardTypes = checkPokemonType.cardTypes;
     const weakness = effect.ignoreWeakness ? [] : checkPokemonStats.weakness;
     const resistance = effect.ignoreResistance ? [] : checkPokemonStats.resistance;
-    effect.damage = applyWeaknessAndResistance(effect.damage, cardType, additionalCardTypes, weakness, resistance);
+    effect.damage = applyWeaknessAndResistance(effect.damage, cardTypes, weakness, resistance);
     return state;
   }
 
@@ -694,6 +704,9 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
   }
 
   if (effect instanceof UseStadiumEffect) {
+    if (state.players.some(p => p.stadiumAndToolHaveNoEffectTurnsRemaining > 0)) {
+      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    }
     const player = effect.player;
     store.log(state, GameLog.LOG_PLAYER_USES_STADIUM, { name: player.name, stadium: effect.stadium.name });
     player.stadiumUsedTurn = state.turn;
@@ -708,6 +721,9 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
     if (effect.preventDefault || effect.target.cannotBeHealedNextTurn) {
       effect.preventDefault = true;
       return state;
+    }
+    if (effect.damage > 0 && effect.target.damage > 0) {
+      effect.target.healedThisTurn = true;
     }
     effect.target.damage = Math.max(0, effect.target.damage - effect.damage);
     return state;
@@ -772,6 +788,15 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
   }
 
   if (effect instanceof EvolveEffect) {
+    if (effect.player.cannotPlayPokemonCards) {
+      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    }
+    if (effect.player.cannotEvolvePokemonCards) {
+      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    }
+    if (effect.target.cannotEvolveNextTurn) {
+      throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+    }
     if (effect.player.cannotPlayPokemonWithAbilities
       && effect.pokemonCard.powers.some(power => power.powerType === PowerType.ABILITY)) {
       throw new GameError(GameMessage.BLOCKED_BY_EFFECT);

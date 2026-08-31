@@ -1,10 +1,11 @@
 import { CardType, PokemonCard, Stage, State, StoreLike } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
-import { WAS_ATTACK_USED, DRAW_CARDS, DEFENDING_POKEMON_DOES_LESS_DAMAGE } from "../../../game/store/prefabs/prefabs";
+import { WAS_ATTACK_USED, DRAW_CARDS } from "../../../game/store/prefabs/prefabs";
+import { DEFENDING_POKEMON_DOES_LESS_DAMAGE } from "../../../game/store/prefabs/effect-of-attack-prefabs";
 
 export class Lunatone extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = F;
+  public cardType: CardType[] = [F];
   public hp: number = 80;
   public weakness = [{ type: G }];
   public retreat = [C];

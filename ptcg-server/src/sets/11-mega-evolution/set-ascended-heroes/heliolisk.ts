@@ -11,7 +11,7 @@ export class Heliolisk extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Helioptile';
   public hp: number = 120;
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public weakness = [{ type: F }];
   public retreat = [C];
 
@@ -31,6 +31,7 @@ export class Heliolisk extends PokemonCard {
   }];
 
   public regulationMark = 'I';
+
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '64';

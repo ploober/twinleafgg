@@ -6,18 +6,17 @@ import { HealEffect, UseStadiumEffect } from '../../../game/store/effects/game-e
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-effect';
 
-export class CelebrationFanfare extends TrainerCard {
+export class CelebratoryFanfare extends TrainerCard {
   public trainerType = TrainerType.STADIUM;
-  // TA-256: this card is canonically mep-028 "Celebratory Fanfare" (Mega Evolution Promos), not
-  // svp-174 — that printing id belongs to Eevee ex, which rotomancer implements. The mislabel put a
-  // Stadium and a Pokemon behind the same id, so every svp-174 differential cell was vacuous by
-  // construction. fullName is the immutable identity key and stays as-is; set/number/name are data.
+  // TA-256 (ours) / upstream f0edbdac4: canonically mep-028 "Celebratory Fanfare" (Mega Evolution Promos),
+  // not svp-174. Upstream moved the file here and re-keyed fullName to MEP; regulationMark 'I' matches
+  // canonical card-data/final/mep.json. Registered in the MEP index below (upstream left it orphaned).
   public set = 'MEP';
-  public regulationMark = 'H';
+  public regulationMark = 'I';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '28';
   public name = 'Celebratory Fanfare';
-  public fullName = 'Celebration Fanfare SVP';
+  public fullName = 'Celebration Fanfare MEP';
   public text = 'Once during each player\'s turn, that player may heal 10 damage from each of their Pokémon. If they do, that player\'s turn ends.';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

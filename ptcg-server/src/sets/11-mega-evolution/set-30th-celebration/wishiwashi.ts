@@ -7,7 +7,7 @@ import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED, COIN_FLIP_PROMPT } from "../../../
 export class Wishiwashi extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 30;
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public weakness = [{ type: L }];
   public retreat = [C];
 
@@ -25,6 +25,7 @@ export class Wishiwashi extends PokemonCard {
   }];
 
   public regulationMark: string = 'J';
+
   public set: string = '30C';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '22';

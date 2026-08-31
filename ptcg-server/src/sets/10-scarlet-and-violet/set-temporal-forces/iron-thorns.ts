@@ -1,17 +1,24 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, CardList, ShuffleDeckPrompt, GameMessage, ShowCardsPrompt, StateUtils } from '../../../game';
+import {
+  StoreLike,
+  State,
+  CardList,
+  ShuffleDeckPrompt,
+  GameMessage,
+  ShowCardsPrompt,
+  StateUtils,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class IronThorns extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
 
-  public tags = [CardTag.FUTURE];
+  protected _tags = [CardTag.FUTURE];
 
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
 
   public hp: number = 140;
 
@@ -27,7 +34,7 @@ export class IronThorns extends PokemonCard {
       cost: [L, C],
       damage: 70,
       damageCalculation: 'x',
-      text: 'Reveal the top 5 cards of your deck. This attack does 70 damage times for each Future card you find there. Then, discard the revealed Future cards and shuffle the other cards back into your deck.'
+      text: 'Reveal the top 5 cards of your deck. This attack does 70 damage times for each Future card you find there. Then, discard the revealed Future cards and shuffle the other cards back into your deck.',
     },
     { name: 'Megaton Lariat', cost: [L, L, L, C], damage: 140, text: '' },
   ];
@@ -45,7 +52,6 @@ export class IronThorns extends PokemonCard {
   public fullName: string = 'Iron Thorns TEF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
@@ -57,7 +63,7 @@ export class IronThorns extends PokemonCard {
       // converging with rotomancer's CF-18 `reveal{owner, cards, from:"deck", to:"all"}`.
       const top5 = player.deck.cards.slice(0, 5);
       const futureCards = top5.filter(c =>
-        c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
+        c instanceof PokemonCard && c.hasTag(CardTag.FUTURE));
 
       // TA-247: assign the damage BEFORE the empty-deck bail-out, not after. `damage: 70` with
       // `damageCalculation: 'x'` declares a MULTIPLICAND, not a base — so returning early left the
@@ -80,7 +86,7 @@ export class IronThorns extends PokemonCard {
 
         // Discard the revealed Future cards; shuffle the rest back into the deck.
         const toDiscard = deckTop.cards.filter(c =>
-          c instanceof PokemonCard && c.tags.includes(CardTag.FUTURE));
+          c instanceof PokemonCard && c.hasTag(CardTag.FUTURE));
         deckTop.moveCardsTo(toDiscard, player.discard);
 
         // TA-251 / B.33: "shuffle THE OTHER cards back" — the revealed cards NOT discarded. If every

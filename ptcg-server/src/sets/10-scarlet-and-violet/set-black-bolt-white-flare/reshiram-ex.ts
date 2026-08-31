@@ -5,10 +5,9 @@ import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Reshiramex extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = R;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [R];
   public hp: number = 230;
   public weakness = [{ type: W }];
   public retreat = [C, C];
@@ -35,7 +34,6 @@ export class Reshiramex extends PokemonCard {
   public fullName: string = 'Reshiram ex SV11W';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const opponent = effect.opponent;
       const prizesTaken = 6 - opponent.getPrizeLeft();

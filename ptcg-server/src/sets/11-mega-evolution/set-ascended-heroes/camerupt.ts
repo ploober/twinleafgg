@@ -7,7 +7,7 @@ import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../ga
 export class Camerupt extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Numel';
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public hp: number = 140;
   public weakness = [{ type: W }];
   public resistance = [];

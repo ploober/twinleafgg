@@ -9,7 +9,7 @@ export class Tinkatuff extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Tinkatink';
   public hp: number = 90;
-  public cardType: CardType = M;
+  public cardType: CardType[] = [M];
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];
   public retreat = [C, C];
@@ -28,6 +28,7 @@ export class Tinkatuff extends PokemonCard {
   }];
 
   public regulationMark = 'I';
+
   public set: string = 'MEG';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '97';

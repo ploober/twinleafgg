@@ -9,7 +9,7 @@ export class Typhlosion extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Quilava';
   public hp: number = 110;
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public weakness = [{ type: W, value: 30 }];
   public retreat = [C, C];
 
@@ -17,7 +17,7 @@ export class Typhlosion extends PokemonCard {
     name: 'Firestarter',
     powerType: PowerType.POKEPOWER,
     useWhenInPlay: true,
-    text: 'Once during your turn (before your attack), you may attach a Fire Energy card from your discard pile to 1 of your Benched Pokémon. This power can\'t be used if Typhlosion is affected by a Special Condition.'
+    text: 'Once during your turn (before your attack), you may attach a [R] Energy card from your discard pile to 1 of your Benched Pokémon. This power can\'t be used if Typhlosion is affected by a Special Condition.'
   }];
 
   public attacks = [{

@@ -7,8 +7,8 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsMoltresex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex, CardTag.TEAM_ROCKET];
-  public cardType: CardType = R;
+  protected _tags = [CardTag.POKEMON_ex, CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [R];
   public hp: number = 220;
   public weakness = [{ type: L }];
   public resistance = [{ type: F, value: -30 }];
@@ -44,22 +44,34 @@ export class TeamRocketsMoltresex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      if (!player.active.cards.some(c => c.superType === SuperType.ENERGY && c.name === 'Team Rocket Energy')) {
+      if (
+        !player.active.cards.some(
+          (c) => c.superType === SuperType.ENERGY && c.name === 'Team Rocket Energy',
+        )
+      ) {
         return state;
       }
 
-      store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_ENERGY_TO_DISCARD,
-        player.active,
-        { superType: SuperType.ENERGY, energyType: EnergyType.SPECIAL, name: 'Team Rocket Energy' },
-        { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-        const cards = selected || [];
+      store.prompt(
+        state,
+        new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_ENERGY_TO_DISCARD,
+          player.active,
+          {
+            superType: SuperType.ENERGY,
+            energyType: EnergyType.SPECIAL,
+            name: 'Team Rocket Energy',
+          },
+          { min: 1, max: 1, allowCancel: false },
+        ),
+        (selected) => {
+          const cards = selected || [];
 
-        player.active.moveCardsTo(cards, player.discard);
-        DISCARD_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
-      });
+          player.active.moveCardsTo(cards, player.discard);
+          DISCARD_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+        },
+      );
     }
 
     return state;

@@ -48,8 +48,10 @@ import { Pikachuex2 } from './pikachu-ex-2';
 import { Grisham } from './grisham';
 import { MegaTatsugiriex } from './mega-tatsugiri-ex';
 import { Lida } from './lida';
+import { CelebratoryFanfare } from './celebratory-fanfare';
 
 export const setMegaEvolutionPromos: Card[] = [
+  new CelebratoryFanfare(),
   new Psyduck(),
   new Sneasel(),
   new Weavile(),

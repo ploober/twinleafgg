@@ -7,7 +7,7 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 export class Mabosstiff extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Maschiff';
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 140;
   public weakness = [{ type: G }];
   public retreat = [C, C, C];
@@ -33,8 +33,7 @@ export class Mabosstiff extends PokemonCard {
   public fullName: string = 'Mabosstiff M5';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Plunging Headbutt — self takes more damage (negative damageReductionNextTurn)
-    // Ref: set-crimson-invasion/kommo-o.ts (Clanging Scales)
+    // Plunging Headbutt
     if (WAS_ATTACK_USED(effect, 1, this)) {
       effect.player.active.damageReductionNextTurn = -100;
     }

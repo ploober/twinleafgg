@@ -1,13 +1,13 @@
 import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage, CoinFlipPrompt } from '../../../game';
+import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage, CoinFlipPrompt, pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Dedenne extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public hp: number = 70;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -65,7 +65,7 @@ export class Dedenne extends PokemonCard {
       const lightningPokemon: any[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
         const pokemonCard = cardList.getPokemonCard();
-        if (pokemonCard && pokemonCard.cardType === CardType.LIGHTNING) {
+        if (pokemonCard && pokemonHasCardType(pokemonCard, CardType.LIGHTNING)) {
           lightningPokemon.push(cardList);
         }
       });

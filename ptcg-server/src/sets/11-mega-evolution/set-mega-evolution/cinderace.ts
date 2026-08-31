@@ -8,17 +8,19 @@ import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefa
 export class Cinderace extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom: string = 'Raboot';
-  public tags = [CardTag.PLAY_DURING_SETUP];
-  public cardType: CardType = R;
+  protected _tags = [CardTag.PLAY_DURING_SETUP];
+  public cardType: CardType[] = [R];
   public hp: number = 160;
   public weakness = [{ type: W }];
   public retreat = [];
 
-  public powers = [{
-    name: 'Explosiveness',
-    powerType: PowerType.ABILITY,
-    text: 'If this Pokémon is in your hand when you are setting up to play, you may put it face down as your Active Pokémon.'
-  }];
+  public powers = [
+    {
+      name: 'Explosiveness',
+      powerType: PowerType.ABILITY,
+      text: 'If this Pokémon is in your hand when you are setting up to play, you may put it face down as your Active Pokémon.',
+    },
+  ];
 
   public attacks = [{
     name: 'Turbo Flare',
@@ -35,7 +37,6 @@ export class Cinderace extends PokemonCard {
   public regulationMark = 'I';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
@@ -68,30 +69,34 @@ export class Cinderace extends PokemonCard {
         return SHUFFLE_DECK(store, state, player);
       }
 
-      state = store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.deck,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 0, max: 3 },
-      ), transfers => {
-        transfers = transfers || [];
-        // cancelled by user
-        if (transfers.length === 0) {
-          SHUFFLE_DECK(store, state, player);
-          return state;
-        }
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          player.deck.moveCardTo(transfer.card, target);
-        }
-      });
+      state = store.prompt(
+        state,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_TO_BENCH,
+          player.deck,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { allowCancel: false, min: 0, max: 3 },
+        ),
+        (transfers) => {
+          transfers = transfers || [];
+          // cancelled by user
+          if (transfers.length === 0) {
+            SHUFFLE_DECK(store, state, player);
+            return state;
+          }
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            player.deck.moveCardTo(transfer.card, target);
+          }
+        },
+      );
 
       SHUFFLE_DECK(store, state, player);
     }
 
     return state;
   }
-} 
+}

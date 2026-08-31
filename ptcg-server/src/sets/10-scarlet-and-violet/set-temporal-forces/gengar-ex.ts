@@ -6,26 +6,30 @@ import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effect
 import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Gengarex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Haunter';
-  public cardType: CardType = CardType.DARK;
+  public cardType: CardType[] = [CardType.DARK];
   public hp: number = 310;
   public weakness = [{ type: CardType.FIGHTING }];
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
-  public powers = [{
-    name: 'Gnawing Curse',
-    powerType: PowerType.ABILITY,
-    text: 'Whenever your opponent attaches an Energy card from their hand to 1 of their Pokémon, put 2 damage counters on that Pokémon.'
-  }];
+  public powers = [
+    {
+      name: 'Gnawing Curse',
+      powerType: PowerType.ABILITY,
+      text: 'Whenever your opponent attaches an Energy card from their hand to 1 of their Pokémon, put 2 damage counters on that Pokémon.',
+    },
+  ];
 
-  public attacks = [{
-    name: 'Tricky Steps',
-    cost: [CardType.DARK, CardType.DARK],
-    damage: 160,
-    text: 'You may move an Energy from your opponent\'s Active Pokémon to 1 of their Benched Pokémon.'
-  }];
+  public attacks = [
+    {
+      name: 'Tricky Steps',
+      cost: [CardType.DARK, CardType.DARK],
+      damage: 160,
+      text: "You may move an Energy from your opponent's Active Pokémon to 1 of their Benched Pokémon.",
+    },
+  ];
 
   public regulationMark = 'H';
   public set: string = 'TEF';

@@ -1,4 +1,22 @@
-import { AttachEnergyPrompt, Card, CardList, CardTag, CardType, EnergyCard, GameMessage, PlayerType, PokemonCard, ShowCardsPrompt, ShuffleDeckPrompt, SlotType, Stage, State, StateUtils, StoreLike, SuperType } from '../../../game';
+import {
+  AttachEnergyPrompt,
+  Card,
+  CardList,
+  CardTag,
+  CardType,
+  EnergyCard,
+  GameMessage,
+  PlayerType,
+  PokemonCard,
+  ShowCardsPrompt,
+  ShuffleDeckPrompt,
+  SlotType,
+  Stage,
+  State,
+  StateUtils,
+  StoreLike,
+  SuperType,
+} from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
@@ -6,10 +24,9 @@ import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Laprasex extends PokemonCard {
+  public cardType: CardType[] = [CardType.WATER];
 
-  public cardType = CardType.WATER;
-
-  public tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
 
   public hp = 220;
 
@@ -25,14 +42,14 @@ export class Laprasex extends PokemonCard {
       cost: [CardType.WATER],
       damage: 40,
       damageCalculation: 'x',
-      text: 'This attack does 40 damage for each Energy attached to this Pokémon.'
+      text: 'This attack does 40 damage for each Energy attached to this Pokémon.',
     },
     {
       name: 'Larimar Rain',
       cost: [CardType.WATER, CardType.PSYCHIC, CardType.METAL],
       damage: 0,
-      text: 'Look at the top 20 cards of your deck and attach any number of Energy cards you find there to your Pokémon in any way you like. Shuffle the other cards back into your deck.'
-    }
+      text: 'Look at the top 20 cards of your deck and attach any number of Energy cards you find there to your Pokémon in any way you like. Shuffle the other cards back into your deck.',
+    },
   ];
 
   public regulationMark = 'H';
@@ -48,9 +65,7 @@ export class Laprasex extends PokemonCard {
   public fullName: string = 'Lapras ex SCR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
-
       const player = effect.player;
 
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
@@ -60,7 +75,7 @@ export class Laprasex extends PokemonCard {
 
           const blockedCards: Card[] = [];
 
-          checkProvidedEnergy.energyMap.forEach(em => {
+          checkProvidedEnergy.energyMap.forEach((em) => {
             if (!em.provides.includes(CardType.ANY)) {
               blockedCards.push(em.card);
             }
@@ -141,7 +156,11 @@ export class Laprasex extends PokemonCard {
       });
     }
 
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this) && effect.target.getPokemonCard() === this) {
+    if (
+      effect instanceof PutDamageEffect &&
+      effect.target.cards.includes(this) &&
+      effect.target.getPokemonCard() === this
+    ) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

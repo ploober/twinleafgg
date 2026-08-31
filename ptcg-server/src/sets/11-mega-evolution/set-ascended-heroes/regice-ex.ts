@@ -5,25 +5,27 @@ import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../ga
 
 export class Regiceex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = W;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [W];
   public hp: number = 230;
   public weakness = [{ type: M }];
   public resistance = [];
   public retreat = [C, C, C];
 
-  public attacks = [{
-    name: 'Regi Charge',
-    cost: [C],
-    damage: 0,
-    text: 'Attach up to 2 Basic [W] Energy cards from your discard pile to this Pokémon.'
-  },
-  {
-    name: 'Ice Prison',
-    cost: [W, C, C, C],
-    damage: 140,
-    text: 'Discard 2 Energy from this Pokémon, and your opponent\'s Active Pokémon is now Paralyzed.'
-  }];
+  public attacks = [
+    {
+      name: 'Regi Charge',
+      cost: [C],
+      damage: 0,
+      text: 'Attach up to 2 Basic [W] Energy cards from your discard pile to this Pokémon.',
+    },
+    {
+      name: 'Ice Prison',
+      cost: [W, C, C, C],
+      damage: 140,
+      text: "Discard 2 Energy from this Pokémon, and your opponent's Active Pokémon is now Paralyzed.",
+    },
+  ];
 
   public regulationMark: string = 'I';
   public set: string = 'ASC';
@@ -37,10 +39,13 @@ export class Regiceex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasEnergyInDiscard = player.discard.cards.some(c => {
-        return c.superType === SuperType.ENERGY
-          && (c as EnergyCard).energyType === EnergyType.BASIC
-          && (c as EnergyCard).provides && (c as EnergyCard).provides.includes(CardType.WATER);
+      const hasEnergyInDiscard = player.discard.cards.some((c) => {
+        return (
+          c.superType === SuperType.ENERGY &&
+          (c as EnergyCard).energyType === EnergyType.BASIC &&
+          (c as EnergyCard).provides &&
+          (c as EnergyCard).provides.includes(CardType.WATER)
+        );
       });
       // "Attach UP TO 2" is a whiff: with no Water Energy in the discard there is simply nothing to
       // attach, but the attack is still legal to use (do not reject it — that was an offer-then-reject).
@@ -62,11 +67,12 @@ export class Regiceex extends PokemonCard {
           return;
         }
 
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          player.discard.moveCardTo(transfer.card, target);
-        }
-      });
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            player.discard.moveCardTo(transfer.card, target);
+          }
+        },
+      );
 
       return state;
     }

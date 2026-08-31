@@ -4,12 +4,13 @@ import { Card, ChooseEnergyPrompt, GameMessage, State, StoreLike } from '../../.
 import { Effect } from '../../../game/store/effects/effect';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { NEXT_TURN_ATTACK_BONUS, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { NEXT_TURN_ATTACK_BONUS } from '../../../game/store/prefabs/attack-effects';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Metagross extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Metang';
-  public cardType: CardType = M;
+  public cardType: CardType[] = [M];
   public hp: number = 180;
   public weakness = [{ type: R }];
   public resistance = [{ type: G, value: -30 }];

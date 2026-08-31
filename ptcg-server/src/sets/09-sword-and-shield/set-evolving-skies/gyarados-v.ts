@@ -6,15 +6,14 @@ import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class GyaradosV extends PokemonCard {
-
   public regulationMark = 'E';
 
-  public tags = [CardTag.POKEMON_V];
+  protected _tags = [CardTag.POKEMON_V];
 
   public stage: Stage = Stage.BASIC;
 
 
-  public cardType: CardType = CardType.WATER;
+  public cardType: CardType[] = [CardType.WATER];
 
   public hp: number = 220;
 
@@ -45,9 +44,7 @@ export class GyaradosV extends PokemonCard {
   public fullName: string = 'Gyarados V EVS';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
-
       // Get Drifloon's damage
       const gyaradosDamage = effect.player.active.damage;
 
@@ -60,5 +57,4 @@ export class GyaradosV extends PokemonCard {
 
     return state;
   }
-
 }

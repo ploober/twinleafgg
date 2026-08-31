@@ -1,6 +1,22 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType, SpecialCondition } from '../../../game/store/card/card-types';
-import { StoreLike, State, PowerType, AttachEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils, GameError } from '../../../game';
+import {
+  Stage,
+  CardType,
+  CardTag,
+  SuperType,
+  SpecialCondition,
+} from '../../../game/store/card/card-types';
+import {
+  StoreLike,
+  State,
+  PowerType,
+  AttachEnergyPrompt,
+  GameMessage,
+  PlayerType,
+  SlotType,
+  StateUtils,
+  GameError,
+} from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
@@ -9,9 +25,9 @@ import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/che
 import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Volcanionex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = CardType.FIRE;
+  public cardType: CardType[] = [CardType.FIRE];
   public hp: number = 220;
   public weakness = [{ type: CardType.WATER }];
   public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
@@ -28,8 +44,8 @@ export class Volcanionex extends PokemonCard {
       name: 'Scorching Cyclone',
       cost: [CardType.FIRE, CardType.FIRE, CardType.COLORLESS],
       damage: 160,
-      text: 'Move an Energy from this Pokémon to 1 of your Benched Pokémon.'
-    }
+      text: 'Move an Energy from this Pokémon to 1 of your Benched Pokémon.',
+    },
   ];
 
   public set: string = 'JTG';
@@ -71,7 +87,7 @@ export class Volcanionex extends PokemonCard {
         opponent,
         this,
         opponent.active,
-        [SpecialCondition.BURNED]
+        [SpecialCondition.BURNED],
       );
       store.reduceEffect(state, specialCondition);
 
@@ -85,7 +101,7 @@ export class Volcanionex extends PokemonCard {
       // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
       const player = effect.player;
-      const hasBench = player.bench.some(b => b.cards.length > 0);
+      const hasBench = player.bench.some((b) => b.cards.length > 0);
 
       if (hasBench === false) {
         return state;
@@ -118,5 +134,4 @@ export class Volcanionex extends PokemonCard {
 
     return state;
   }
-
 }

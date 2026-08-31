@@ -7,35 +7,37 @@ import { AFTER_ATTACK, DISCARD_ALL_ENERGY_FROM_POKEMON, WAS_ATTACK_USED } from '
 
 export class StevensClaydol extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom = 'Steven\'s Baltoy';
-  public tags = [CardTag.STEVENS];
-  public cardType: CardType = P;
+  public evolvesFrom = "Steven's Baltoy";
+  protected _tags = [CardTag.STEVENS];
+  public cardType: CardType[] = [P];
   public hp: number = 120;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];
   public retreat = [C, C];
 
-  public attacks = [{
-    name: 'Eerie Light',
-    cost: [P],
-    damage: 20,
-    text: 'Your opponent\'s Active Pokémon is now Confused.'
-  }, {
-    name: 'Clay Blast',
-    cost: [P, P, C],
-    damage: 220,
-    text: 'Discard all Energy from this Pokémon.'
-  }];
+  public attacks = [
+    {
+      name: 'Eerie Light',
+      cost: [P],
+      damage: 20,
+      text: "Your opponent's Active Pokémon is now Confused.",
+    },
+    {
+      name: 'Clay Blast',
+      cost: [P, P, C],
+      damage: 220,
+      text: 'Discard all Energy from this Pokémon.',
+    },
+  ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
   public setNumber: string = '84';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Steven\'s Claydol';
-  public fullName: string = 'Steven\'s Claydol DRI';
+  public name: string = "Steven's Claydol";
+  public fullName: string = "Steven's Claydol DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (AFTER_ATTACK(effect, 0, this)) {
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);
     }

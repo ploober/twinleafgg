@@ -7,11 +7,11 @@ import { MovedToActiveEffect, PowerEffect } from '../../../game/store/effects/ga
 import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Yanmegaex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public regulationMark = 'I';
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Yanma';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 280;
   public weakness = [{ type: L }];
   public resistance = [{ type: F, value: -30 }];

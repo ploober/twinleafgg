@@ -7,7 +7,7 @@ import { WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/p
 export class Swadloon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Sewaddle';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 80;
   public weakness = [{ type: R }];
   public retreat = [C, C];
@@ -17,8 +17,7 @@ export class Swadloon extends PokemonCard {
     cost: [G],
     damage: 0,
     text: 'During your opponent\'s next turn, any damage done to this Pokémon by attacks is reduced by 40 (after applying Weakness and Resistance).'
-  },
-  {
+  }, {
     name: 'Surprise Attack',
     cost: [C, C],
     damage: 40,

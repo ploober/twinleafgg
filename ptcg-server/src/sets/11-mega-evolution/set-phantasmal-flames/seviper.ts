@@ -4,12 +4,12 @@ import { State } from '../../../game/store/state/state';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
-import { PowerType, PlayerType } from '../../../game';
+import { PowerType, PlayerType, pokemonHasCardType } from '../../../game';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Seviper extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 120;
   public weakness = [{ type: F }];
   public resistance = [];
@@ -38,7 +38,6 @@ export class Seviper extends PokemonCard {
   public fullName: string = 'Seviper M2';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof AttackEffect && effect.source.cards.includes(this)) {
       const player = effect.player;
 
@@ -57,9 +56,9 @@ export class Seviper extends PokemonCard {
       let hasDarkMegaPokemonEx = false;
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         if (card && card instanceof PokemonCard &&
-          card.cardType === CardType.DARK &&
-          card.tags.includes(CardTag.POKEMON_ex) &&
-          card.tags.includes(CardTag.POKEMON_SV_MEGA)) {
+          pokemonHasCardType(card, CardType.DARK) &&
+          card.hasTag(CardTag.POKEMON_ex) &&
+          card.hasTag(CardTag.POKEMON_SV_MEGA)) {
           hasDarkMegaPokemonEx = true;
         }
       });

@@ -78,7 +78,7 @@ function runScenario(s: Scenario): Result {
     return { scenario: s, category: 'skip', reason: 'not-a-pokemon' };
   }
   // Mirror match would double damage if the species is weak to its own type — skip those.
-  if (card.weakness?.some(w => w.type === card.cardType)) {
+  if (card.weakness?.some(w => card.cardType.includes(w.type))) {
     return { scenario: s, category: 'skip', reason: 'self-weakness' };
   }
   try {

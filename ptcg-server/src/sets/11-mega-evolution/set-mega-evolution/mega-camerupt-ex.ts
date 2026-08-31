@@ -8,9 +8,9 @@ import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../ga
 export class MegaCameruptEx extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Numel';
-  public tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
   public hp: number = 340;
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public weakness = [{ type: W }];
   public retreat = [C, C, C, C];
 
@@ -55,28 +55,32 @@ export class MegaCameruptEx extends PokemonCard {
       state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       // Check if this Pokémon has at least 2 energy attached
-      const energyCount = player.active.cards.filter(card =>
-        card.superType === SuperType.ENERGY
+      const energyCount = player.active.cards.filter(
+        (card) => card.superType === SuperType.ENERGY,
       ).length;
 
       if (energyCount >= 2) {
-        state = store.prompt(state, new DiscardEnergyPrompt(
-          player.id,
-          GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.ACTIVE],
-          { superType: SuperType.ENERGY },
-          { allowCancel: false, min: 2, max: 2 },
-        ), transfers => {
-          transfers = transfers || [];
-          if (transfers.length === 0) {
-            return state;
-          }
-          for (const transfer of transfers) {
-            const source = StateUtils.getTarget(state, player, transfer.from);
-            source.moveCardTo(transfer.card, player.discard);
-          }
-        });
+        state = store.prompt(
+          state,
+          new DiscardEnergyPrompt(
+            player.id,
+            GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+            PlayerType.BOTTOM_PLAYER,
+            [SlotType.ACTIVE],
+            { superType: SuperType.ENERGY },
+            { allowCancel: false, min: 2, max: 2 },
+          ),
+          (transfers) => {
+            transfers = transfers || [];
+            if (transfers.length === 0) {
+              return state;
+            }
+            for (const transfer of transfers) {
+              const source = StateUtils.getTarget(state, player, transfer.from);
+              source.moveCardTo(transfer.card, player.discard);
+            }
+          },
+        );
       }
     }
 

@@ -12,7 +12,13 @@ import { MOVE_CARDS, SHOW_CARDS_THEN, SHUFFLE_DECK } from '../../../game/store/p
 import { Player, StateUtils } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect, self: Card): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+  self: Card,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
   let cards: Card[] = [];
@@ -28,16 +34,20 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   player.rocketSupporter = true;
 
-  yield store.prompt(state, new ChooseCardsPrompt(
-    player,
-    GameMessage.CHOOSE_CARD_TO_HAND,
-    player.deck,
-    { superType: SuperType.TRAINER },
-    { min: 0, max: 1, allowCancel: false }
-  ), selected => {
-    cards = selected || [];
-    next();
-  });
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
+      player,
+      GameMessage.CHOOSE_CARD_TO_HAND,
+      player.deck,
+      { superType: SuperType.TRAINER },
+      { min: 0, max: 1, allowCancel: false },
+    ),
+    (selected) => {
+      cards = selected || [];
+      next();
+    },
+  );
 
   // TA-265 residual / §B.34: `SHOW_CARDS_TO_PLAYER` is a `store.prompt` -- it ENQUEUES and returns --
   // so a flat call written after the move is not merely mis-ordered on the page, it CANNOT run first.
@@ -53,10 +63,10 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
 export class TeamRocketsPetrel extends TrainerCard {
   public trainerType: TrainerType = TrainerType.SUPPORTER;
-  public tags = [CardTag.TEAM_ROCKET];
+  protected _tags = [CardTag.TEAM_ROCKET];
   public set: string = 'DRI';
-  public name: string = 'Team Rocket\'s Petrel';
-  public fullName: string = 'Team Rocket\'s Petrel DRI';
+  public name: string = "Team Rocket's Petrel";
+  public fullName: string = "Team Rocket's Petrel DRI";
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '176';
   public regulationMark = 'I';
@@ -74,9 +84,7 @@ export class TeamRocketsPetrel extends TrainerCard {
     return true;
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const generator = playCard(() => generator.next(), store, state, effect, this);
       return generator.next().value;
@@ -88,5 +96,4 @@ export class TeamRocketsPetrel extends TrainerCard {
 
     return state;
   }
-
 }

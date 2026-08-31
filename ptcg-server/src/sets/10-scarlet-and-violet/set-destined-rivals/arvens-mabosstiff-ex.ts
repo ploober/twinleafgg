@@ -6,9 +6,9 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class ArvensMabosstiffex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom = 'Arven\'s Maschiff';
-  public tags = [CardTag.POKEMON_ex, CardTag.ARVENS];
-  public cardType: CardType = D;
+  public evolvesFrom = "Arven's Maschiff";
+  protected _tags = [CardTag.POKEMON_ex, CardTag.ARVENS];
+  public cardType: CardType[] = [D];
   public hp: number = 270;
   public weakness = [{ type: G }];
   public retreat = [C, C, C];
@@ -31,8 +31,8 @@ export class ArvensMabosstiffex extends PokemonCard {
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '139';
-  public name: string = 'Arven\'s Mabosstiff ex';
-  public fullName: string = 'Arven\'s Mabosstiff ex DRI';
+  public name: string = "Arven's Mabosstiff ex";
+  public fullName: string = "Arven's Mabosstiff ex DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Hustle Tackle

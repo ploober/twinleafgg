@@ -2,12 +2,13 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameMessage, Card, PlayerType, SlotType, EnergyCard, ChooseCardsPrompt, ChoosePokemonPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { NEXT_TURN_ATTACK_BONUS, AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { NEXT_TURN_ATTACK_BONUS } from '../../../game/store/prefabs/attack-effects';
 
 export class Sylveon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Eevee';
-  public cardType: CardType = Y;
+  public cardType: CardType[] = [Y];
   public hp: number = 90;
   public weakness = [{ type: M }];
   public resistance = [{ type: D, value: -20 }];

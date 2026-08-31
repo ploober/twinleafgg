@@ -1,47 +1,71 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { ChooseCardsPrompt, EnergyCard, GameError, GameMessage, PokemonCardList, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import {
+  Stage,
+  CardType,
+  CardTag,
+  SuperType,
+  EnergyType,
+} from '../../../game/store/card/card-types';
+import {
+  ChooseCardsPrompt,
+  EnergyCard,
+  GameError,
+  GameMessage,
+  PokemonCardList,
+  PowerType,
+  State,
+  StateUtils,
+  StoreLike,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
-import { ABILITY_USED, ADD_MARKER, DRAW_CARDS_UNTIL_CARDS_IN_HAND, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import {
+  ABILITY_USED,
+  ADD_MARKER,
+  DRAW_CARDS_UNTIL_CARDS_IN_HAND,
+  WAS_POWER_USED,
+} from '../../../game/store/prefabs/prefabs';
 
 export class IonosKilowattrel extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom: string = 'Iono\'s Wattrel';
-  public tags = [CardTag.IONOS];
-  public cardType: CardType = L;
+  public evolvesFrom: string = "Iono's Wattrel";
+  protected _tags = [CardTag.IONOS];
+  public cardType: CardType[] = [L];
   public hp: number = 120;
   public weakness = [{ type: L }];
   public resistance = [{ type: F, value: -30 }];
   public retreat = [C];
 
-  public powers = [{
-    name: 'Flashing Draw',
-    useWhenInPlay: true,
-    powerType: PowerType.ABILITY,
-    text: 'You must discard a Basic [L] Energy from this Pokémon in order to use this Ability. Once during your turn, you may draw cards until you have 6 cards in your hand.'
-  }];
+  public powers = [
+    {
+      name: 'Flashing Draw',
+      useWhenInPlay: true,
+      powerType: PowerType.ABILITY,
+      text: 'You must discard a Basic [L] Energy from this Pokémon in order to use this Ability. Once during your turn, you may draw cards until you have 6 cards in your hand.',
+    },
+  ];
 
-  public attacks = [{
-    name: 'Mach Bolt',
-    cost: [L, C, C],
-    damage: 70,
-    text: ''
-  }];
+  public attacks = [
+    {
+      name: 'Mach Bolt',
+      cost: [L, C, C],
+      damage: 70,
+      text: '',
+    },
+  ];
 
   public regulationMark = 'I';
   public set: string = 'JTG';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '55';
-  public name: string = 'Iono\'s Kilowattrel';
-  public fullName: string = 'Iono\'s Kilowattrel JTG';
+  public name: string = "Iono's Kilowattrel";
+  public fullName: string = "Iono's Kilowattrel JTG";
 
   public readonly RUMBLING_ENGINE_MARKER = 'RUMBLING_ENGINE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof PlayPokemonEffect && effect.pokemonCard === this) {
       const player = effect.player;
       player.marker.removeMarker(this.RUMBLING_ENGINE_MARKER, this);
@@ -82,9 +106,12 @@ export class IonosKilowattrel extends PokemonCard {
       }
 
       const cardList = StateUtils.findCardList(state, this) as PokemonCardList;
-      const lightningEnergy = cardList.cards.filter(c =>
-        c instanceof EnergyCard && c.superType === SuperType.ENERGY &&
-        c.energyType === EnergyType.BASIC && c.name === 'Lightning Energy'
+      const lightningEnergy = cardList.cards.filter(
+        (c) =>
+          c instanceof EnergyCard &&
+          c.superType === SuperType.ENERGY &&
+          c.energyType === EnergyType.BASIC &&
+          c.name === 'Lightning Energy',
       );
 
       if (lightningEnergy.length === 0) {

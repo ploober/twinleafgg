@@ -11,9 +11,9 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class GiratinaVSTAR extends PokemonCard {
   public stage: Stage = Stage.VSTAR;
-  public tags = [CardTag.POKEMON_VSTAR];
+  protected _tags = [CardTag.POKEMON_VSTAR];
   public evolvesFrom = 'Giratina V';
-  public cardType: CardType = N;
+  public cardType: CardType[] = [N];
   public hp: number = 280;
   public retreat = [C, C];
 
@@ -42,27 +42,28 @@ export class GiratinaVSTAR extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      return store.prompt(state, new DiscardEnergyPrompt(
-        player.id,
-        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.ACTIVE, SlotType.BENCH],// Card source is target Pokemon
-        { superType: SuperType.ENERGY },
-        { min: 2, max: 2, allowCancel: false }
-      ), transfers => {
+      return store.prompt(
+        state,
+        new DiscardEnergyPrompt(
+          player.id,
+          GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH], // Card source is target Pokemon
+          { superType: SuperType.ENERGY },
+          { min: 2, max: 2, allowCancel: false },
+        ),
+        (transfers) => {
+          if (transfers === null) {
+            return;
+          }
 
-        if (transfers === null) {
-          return;
-        }
-
-        for (const transfer of transfers) {
-
-          const source = StateUtils.getTarget(state, player, transfer.from);
-          const target = player.lostzone;
-          source.moveCardTo(transfer.card, target);
-
-        }
-      });
+          for (const transfer of transfers) {
+            const source = StateUtils.getTarget(state, player, transfer.from);
+            const target = player.lostzone;
+            source.moveCardTo(transfer.card, target);
+          }
+        },
+      );
     }
 
     // Star Requium

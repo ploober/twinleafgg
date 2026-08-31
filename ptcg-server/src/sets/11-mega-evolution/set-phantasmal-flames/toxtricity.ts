@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { PowerType, GameMessage, PlayerType, SlotType, AttachEnergyPrompt, StateUtils, State, StoreLike, GameError, CardTarget } from '../../../game';
+import { PowerType, GameMessage, PlayerType, SlotType, AttachEnergyPrompt, StateUtils, State, StoreLike, GameError, CardTarget, pokemonHasCardType } from '../../../game';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { Effect } from '../../../game/store/effects/effect';
@@ -10,7 +10,7 @@ import { ABILITY_USED, SHUFFLE_DECK, WAS_POWER_USED } from '../../../game/store/
 export class Toxtricity extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Toxel';
-  public cardType: CardType = D;
+  public cardType: CardType[] = [D];
   public hp: number = 140;
   public weakness = [{ type: F }];
   public retreat = [C, C];
@@ -64,7 +64,7 @@ export class Toxtricity extends PokemonCard {
       // never a measure of occupancy (TA-200/SD-12) -- occupancy has to come from getPokemonCard().
       const hasBenchedDarkness = player.bench.some(b => {
         const benched = b.getPokemonCard();
-        return benched !== undefined && benched.cardType === CardType.DARK;
+        return benched !== undefined && pokemonHasCardType(benched, CardType.DARK);
       });
       if (!hasBenchedDarkness) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
@@ -72,7 +72,7 @@ export class Toxtricity extends PokemonCard {
 
       const blocked2: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-        if (card.cardType !== CardType.DARK) {
+        if (!pokemonHasCardType(card, CardType.DARK)) {
           blocked2.push(target);
         }
       });

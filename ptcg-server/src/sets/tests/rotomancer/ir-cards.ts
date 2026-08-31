@@ -74,7 +74,7 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
     if (card instanceof EnergyCard) {
       if (!card.provides.includes(type)) return false;
     } else if (card instanceof PokemonCard) {
-      if (card.cardType !== type) return false;
+      if (!card.cardType.includes(type)) return false;
     } else {
       return false; // Trainers have no type
     }
@@ -88,10 +88,10 @@ export function matchesCardPredicate(card: Card, pred: any): boolean {
       case 'Special': if (!(card instanceof EnergyCard) || card.energyType !== EnergyType.SPECIAL) return false; break;
       case 'Stage 1': if ((card as PokemonCard).stage !== Stage.STAGE_1) return false; break;
       case 'Stage 2': if ((card as PokemonCard).stage !== Stage.STAGE_2) return false; break;
-      case 'ex': if (!card.tags.includes(CardTag.POKEMON_ex)) return false; break;
-      case 'Tera': if (!card.tags.includes(CardTag.POKEMON_TERA)) return false; break;
-      case 'Future': if (!card.tags.includes(CardTag.FUTURE)) return false; break;
-      case 'Ancient': if (!card.tags.includes(CardTag.ANCIENT)) return false; break;
+      case 'ex': if (!card.hasTag(CardTag.POKEMON_ex)) return false; break;
+      case 'Tera': if (!card.hasTag(CardTag.POKEMON_TERA)) return false; break;
+      case 'Future': if (!card.hasTag(CardTag.FUTURE)) return false; break;
+      case 'Ancient': if (!card.hasTag(CardTag.ANCIENT)) return false; break;
       case 'Pokémon Tool': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.TOOL) return false; break;
       case 'Supporter': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.SUPPORTER) return false; break;
       case 'Item': if (!(card instanceof TrainerCard) || card.trainerType !== TrainerType.ITEM) return false; break;

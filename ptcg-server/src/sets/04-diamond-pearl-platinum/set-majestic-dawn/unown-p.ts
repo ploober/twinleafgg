@@ -16,7 +16,7 @@ import { ADD_MARKER, REMOVE_MARKER, HAS_MARKER } from '../../../game/store/prefa
 export class UnownP extends PokemonCard {
 
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 50;
   public weakness = [{ type: P, value: +10 }];
   public retreat = [C];

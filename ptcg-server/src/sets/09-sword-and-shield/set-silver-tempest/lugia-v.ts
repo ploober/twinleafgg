@@ -1,19 +1,25 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, ChooseCardsPrompt, StateUtils, GameMessage, ConfirmPrompt } from '../../../game';
+import {
+  StoreLike,
+  State,
+  ChooseCardsPrompt,
+  StateUtils,
+  GameMessage,
+  ConfirmPrompt,
+} from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class LugiaV extends PokemonCard {
-
-  public tags = [CardTag.POKEMON_V];
+  protected _tags = [CardTag.POKEMON_V];
 
   public regulationMark = 'F';
 
   public stage: Stage = Stage.BASIC;
 
-  public cardType: CardType = CardType.COLORLESS;
+  public cardType: CardType[] = [CardType.COLORLESS];
 
   public hp: number = 220;
 
@@ -28,14 +34,14 @@ export class LugiaV extends PokemonCard {
       name: 'Read the Wind',
       cost: [CardType.COLORLESS],
       damage: 0,
-      text: 'Discard a card from your hand. If you do, draw 3 cards.'
+      text: 'Discard a card from your hand. If you do, draw 3 cards.',
     },
     {
       name: 'Aero Dive',
       cost: [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
       damage: 130,
-      text: 'You may discard a Stadium in play.'
-    }
+      text: 'You may discard a Stadium in play.',
+    },
   ];
 
   public set: string = 'SIT';
@@ -49,7 +55,6 @@ export class LugiaV extends PokemonCard {
   public fullName: string = 'Lugia V SIT';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
@@ -78,21 +83,20 @@ export class LugiaV extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const stadiumCard = StateUtils.getStadiumCard(state);
       if (stadiumCard !== undefined) {
-
-        state = store.prompt(state, new ConfirmPrompt(
-          effect.player.id,
-          GameMessage.WANT_TO_USE_ABILITY,
-        ), wantToUse => {
-          if (wantToUse) {
-
-            // Discard Stadium
-            const cardList = StateUtils.findCardList(state, stadiumCard);
-            const player = StateUtils.findOwner(state, cardList);
-            cardList.moveTo(player.discard);
+        state = store.prompt(
+          state,
+          new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_USE_ABILITY),
+          (wantToUse) => {
+            if (wantToUse) {
+              // Discard Stadium
+              const cardList = StateUtils.findCardList(state, stadiumCard);
+              const player = StateUtils.findOwner(state, cardList);
+              cardList.moveTo(player.discard);
+              return state;
+            }
             return state;
-          }
-          return state;
-        });
+          },
+        );
       }
       return state;
     }

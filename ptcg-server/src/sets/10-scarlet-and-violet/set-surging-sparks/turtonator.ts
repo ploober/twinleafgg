@@ -11,7 +11,7 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Turtonator extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = CardType.DRAGON;
+  public cardType: CardType[] = [CardType.DRAGON];
   public hp: number = 120;
   public weakness = [];
   public resistance = [];
@@ -49,7 +49,7 @@ export class Turtonator extends PokemonCard {
       // TA-233: this read `activeCard.cardTag`, the DEPRECATED tag field ("Use Card.tags instead",
       // pokemon-card.ts) which defaults to [] — so the gate was false for every modern card and the
       // attack's printed effect could never happen on any board.
-      if (!activeCard || !activeCard.tags.includes(CardTag.POKEMON_ex)) {
+      if (!activeCard || !activeCard.hasTag(CardTag.POKEMON_ex)) {
         return state;
       }
       // Check for any energy attached

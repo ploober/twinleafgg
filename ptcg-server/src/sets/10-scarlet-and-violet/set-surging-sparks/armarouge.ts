@@ -8,7 +8,7 @@ import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects
 export class Armarouge extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Charcadet';
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public hp: number = 140;
   public weakness = [{ type: W }];
   public retreat = [C, C];

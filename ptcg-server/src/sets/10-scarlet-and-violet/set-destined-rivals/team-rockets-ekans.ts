@@ -7,8 +7,8 @@ import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/pref
 
 export class TeamRocketsEkans extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = D;
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [D];
   public hp: number = 70;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -18,22 +18,23 @@ export class TeamRocketsEkans extends PokemonCard {
       name: 'Drag Down',
       cost: [C],
       damage: 0,
-      text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed.'
+      text: "Flip a coin. If heads, your opponent's Active Pokémon is now Paralyzed.",
     },
     {
       name: 'Gnaw',
       cost: [D],
       damage: 10,
-      text: ''
-    }
+      text: '',
+    },
   ];
 
   public regulationMark = 'I';
+
   public set: string = 'DRI';
   public setNumber: string = '112';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Team Rocket\'s Ekans';
-  public fullName: string = 'Team Rocket\'s Ekans DRI';
+  public name: string = "Team Rocket's Ekans";
+  public fullName: string = "Team Rocket's Ekans DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (AFTER_ATTACK(effect, 0, this)) {

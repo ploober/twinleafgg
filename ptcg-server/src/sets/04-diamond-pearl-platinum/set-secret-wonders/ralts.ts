@@ -1,16 +1,13 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, CoinFlipPrompt, StateUtils } from '../../../game';
+import { StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { GameMessage } from '../../../game/game-message';
-import { ADD_CONFUSION_TO_PLAYER_ACTIVE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+
+import { ADD_CONFUSION_TO_PLAYER_ACTIVE, WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class Ralts extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
-
-  public cardType: CardType = CardType.PSYCHIC;
-
+  public cardType: CardType[] = [P];
   public hp: number = 60;
 
   public weakness = [{ type: CardType.PSYCHIC, value: +10 }];
@@ -33,13 +30,9 @@ export class Ralts extends PokemonCard {
   ];
 
   public set: string = 'SW';
-
   public name: string = 'Ralts';
-
   public fullName: string = 'Ralts SW';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '102';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
@@ -47,9 +40,7 @@ export class Ralts extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      return store.prompt(state, [
-        new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP)
-      ], result => {
+      return COIN_FLIP_PROMPT(store, state, player, result => {
         if (result === true) {
           ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, opponent, this);
         }

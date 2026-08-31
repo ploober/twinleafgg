@@ -12,7 +12,7 @@ import {
 export class Maushold extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Tandemaus';
-  public cardType: CardType = C;
+  public cardType: CardType[] = [C];
   public hp: number = 80;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -22,8 +22,7 @@ export class Maushold extends PokemonCard {
     cost: [C],
     damage: 0,
     text: 'Search your deck for up to 2 in any combination of Maushold and Maushold ex and put them onto your Bench. Then, shuffle your deck.'
-  },
-  {
+  }, {
     name: 'Incessant Incisors',
     cost: [C],
     damage: 30,
@@ -32,6 +31,7 @@ export class Maushold extends PokemonCard {
   }];
 
   public regulationMark = 'H';
+
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '158';

@@ -1,12 +1,13 @@
 import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
 import { KnockOutEffect } from "../../../game/store/effects/game-effects";
-import { IS_ABILITY_BLOCKED, COIN_FLIP_PROMPT, WAS_ATTACK_USED, BLOCK_RETREAT } from "../../../game/store/prefabs/prefabs";
+import { IS_ABILITY_BLOCKED, COIN_FLIP_PROMPT, WAS_ATTACK_USED } from "../../../game/store/prefabs/prefabs";
+import { BLOCK_RETREAT } from "../../../game/store/prefabs/effect-of-attack-prefabs";
 
 export class GalarianCursola extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Galarian Corsola';
-  public cardType: CardType = P;
+  public cardType: CardType[] = [P];
   public hp: number = 100;
   public weakness = [{ type: D }];
   public resistance = [{ type: F, value: -30 }];
@@ -26,6 +27,7 @@ export class GalarianCursola extends PokemonCard {
   }];
 
   public regulationMark: string = 'D';
+
   public set: string = 'RCL';
   public setNumber: string = '79';
   public cardImage: string = 'assets/cardback.png';

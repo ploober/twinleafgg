@@ -1,6 +1,14 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardTag, CardType, Stage, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, ChooseCardsPrompt, PowerType, GameLog, StateUtils } from '../../../game';
+import {
+  StoreLike,
+  State,
+  GameMessage,
+  ChooseCardsPrompt,
+  PowerType,
+  GameLog,
+  StateUtils,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
 import { IS_ABILITY_BLOCKED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
@@ -8,8 +16,8 @@ import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class TeamRocketsKoffing extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = D;
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [D];
   public hp: number = 70;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -25,24 +33,26 @@ export class TeamRocketsKoffing extends PokemonCard {
       name: 'Leaking Gas',
       cost: [D, C],
       damage: 30,
-      text: ''
-    }
+      text: '',
+    },
   ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '125';
-  public name: string = 'Team Rocket\'s Koffing';
-  public fullName: string = 'Team Rocket\'s Koffing DRI';
+  public name: string = "Team Rocket's Koffing";
+  public fullName: string = "Team Rocket's Koffing DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this) {
       const player = StateUtils.findOwner(state, effect.target);
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) { return state; }
+      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+        return state;
+      }
 
-      const openSlots = player.bench.filter(b => b.cards.length === 0);
+      const openSlots = player.bench.filter((b) => b.cards.length === 0);
 
       if (player.deck.cards.length === 0 || openSlots.length === 0) {
         return state;

@@ -4,7 +4,7 @@ import { GET_PLAYER_PRIZES, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND, WAS_
 
 export class TapuKoko extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public hp: number = 120;
   public weakness = [{ type: F }];
   public retreat = [C];
@@ -38,7 +38,7 @@ export class TapuKoko extends PokemonCard {
       // #2018 Breezy Gift). The shared prefab's BLOCK_IF_DECK_EMPTY is the Trainer answer.
       if (ATTACK_SEARCH_WHIFFS(effect.player)) { return SHUFFLE_DECK(store, state, effect.player); }
       return SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_INTO_HAND(
-        store, state, effect.player, { cardType: L }, { min: 0, max: 2 }
+        store, state, effect.player, { cardType: [L] }, { min: 0, max: 2 }
       );
     }
 

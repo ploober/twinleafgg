@@ -5,27 +5,19 @@ import { Effect } from '../../game/store/effects/effect';
 import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../game/store/prefabs/prefabs';
 
 export class Gyarados extends PokemonCard {
-
   public set = 'BS';
-
   public fullName = 'Gyarados BS';
-
   public name = 'Gyarados';
 
-  public cardType: CardType = CardType.WATER;
-
+  public cardType: CardType[] = [W];
   public stage: Stage = Stage.STAGE_1;
-
   public evolvesFrom: string = 'Magikarp';
 
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '6';
 
   public hp: number = 100;
-
   public weakness = [{ type: G }];
-
   public retreat = [C, C, C];
 
   public attacks = [

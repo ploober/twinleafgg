@@ -14,11 +14,11 @@ export class Blisseyex extends PokemonCard {
 
   public evolvesFrom: string = 'Chansey';
 
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
 
   public regulationMark = 'H';
 
-  public cardType: CardType = CardType.COLORLESS;
+  public cardType: CardType[] = [CardType.COLORLESS];
 
   public weakness = [{ type: CardType.FIGHTING }];
 

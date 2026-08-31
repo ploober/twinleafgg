@@ -5,7 +5,7 @@ import { MULTIPLE_COIN_FLIPS_PROMPT, WAS_ATTACK_USED } from '../../../game/store
 export class Combusken extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Torchic';
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
   public hp: number = 100;
   public weakness = [{ type: W }];
   public retreat = [C, C];
@@ -27,7 +27,9 @@ export class Combusken extends PokemonCard {
   ];
 
   public set: string = 'DRI';
+
   public regulationMark = 'I';
+
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '41';
   public name: string = 'Combusken';

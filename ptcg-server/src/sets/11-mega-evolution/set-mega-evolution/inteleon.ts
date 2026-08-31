@@ -11,7 +11,7 @@ import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED } from '../../../ga
 export class Inteleon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
   public evolvesFrom = 'Drizzile';
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public hp: number = 150;
   public weakness = [{ type: L }];
   public retreat = [C];

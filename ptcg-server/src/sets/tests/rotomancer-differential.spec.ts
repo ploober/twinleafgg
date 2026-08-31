@@ -891,7 +891,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       if (res.status !== 'exact') continue;
       const card = getCardByName(res.fullName!);
       if (!(card instanceof PokemonCard)) continue;
-      if (card.weakness?.some(w => w.type === card.cardType)) continue;
+      if (card.weakness?.some(w => card.cardType.includes(w.type))) continue;
       if (KNOWN_MISMATCHES[s.attackLabel]) continue;
       if (KNOWN_NATIVE_BUGS_BY_PRINTING[s.printingId]) continue;
       // Benchless-only native bugs: skip on `bare` (no opponent Bench) where native mishandles the
@@ -1055,7 +1055,7 @@ describe('Rotomancer IR interpreter — differential vs native Twinleaf', () => 
       if (res.status !== 'exact') { bump(`non-exact:${res.status}`); continue; }
       const card = getCardByName(res.fullName!);
       if (!(card instanceof PokemonCard)) { bump('non-pokemon'); continue; }
-      if (card.weakness?.some(w => w.type === card.cardType)) { bump('self-weak'); continue; }
+      if (card.weakness?.some(w => card.cardType.includes(w.type))) { bump('self-weak'); continue; }
       if (KNOWN_MISMATCHES[s.attackLabel]) { bump('allowlist-mismatch'); continue; }
       if (KNOWN_NATIVE_BUGS_BY_PRINTING[s.printingId]) { bump('allowlist-native-bug'); continue; }
 
@@ -1194,7 +1194,7 @@ describe('Rotomancer choice differential — option-set equivalence', () => {
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_CHOICE_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const energies = s.cost.filter(c => c.toUpperCase() !== 'FREE').map(energyToCard);
@@ -1393,7 +1393,7 @@ describe('Rotomancer card-choice differential — ChooseCards option-set equival
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_CARD_CHOICE_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const { eligible, decoy } = eligiblePileFor(op.select?.where);
@@ -1555,7 +1555,7 @@ describe('Rotomancer switch differential — bench→active option-set equivalen
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_SWITCH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const benchOwner: 'self' | 'opponent' = op.from?.owner === 'opponent' ? 'opponent' : 'self';
@@ -1719,7 +1719,7 @@ describe('Rotomancer multi-select differential — option-combination equivalenc
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_MULTI_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
@@ -1886,7 +1886,7 @@ describe('Rotomancer energy-attach differential — destination option-set equiv
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_ATTACH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const energies = s.cost.filter((c: string) => c.toUpperCase() !== 'FREE').map(energyToCard);
@@ -2072,7 +2072,7 @@ describe('Rotomancer deck-search differential — search option-set equivalence'
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_DECK_SEARCH_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const { eligible, decoy } = searchPileFor(op.select?.where);
@@ -2265,7 +2265,7 @@ describe('Rotomancer discard→bench differential — place option-set equivalen
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
 
     const { eligible, decoy } = pileFor(op.select?.where);
     if (eligible.length < 2) { skip('unseedable-predicate'); continue; }
@@ -2448,7 +2448,7 @@ describe('Rotomancer energy-attach-from-deck differential — source option-set 
     if (res.status !== 'exact') { skip('non-exact'); continue; }
     const card = getCardByName(res.fullName!);
     if (!(card instanceof PokemonCard)) { skip('non-pokemon'); continue; }
-    if (card.weakness?.some(w => w.type === card.cardType)) { skip('self-weak'); continue; }
+    if (card.weakness?.some(w => card.cardType.includes(w.type))) { skip('self-weak'); continue; }
     if (KNOWN_ATTACH_DECK_BUGS[s.printingId]) { skip('allowlisted-native-bug'); continue; }
 
     const { eligible, decoy } = pileForEnergy(op.card?.predicate);

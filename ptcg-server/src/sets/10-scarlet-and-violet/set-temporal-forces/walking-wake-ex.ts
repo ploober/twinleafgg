@@ -7,14 +7,13 @@ import { AfterDamageEffect, ApplyWeaknessEffect } from '../../../game/store/effe
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class WalkingWakeex extends PokemonCard {
-
-  public tags = [CardTag.POKEMON_ex, CardTag.ANCIENT];
+  protected _tags = [CardTag.POKEMON_ex, CardTag.ANCIENT];
 
   public regulationMark = 'H';
 
   public stage: Stage = Stage.BASIC;
 
-  public cardType: CardType = CardType.WATER;
+  public cardType: CardType[] = [CardType.WATER];
 
   public hp: number = 220;
 
@@ -33,8 +32,8 @@ export class WalkingWakeex extends PokemonCard {
       name: 'Catharsis Roar',
       cost: [CardType.WATER, CardType.COLORLESS, CardType.COLORLESS],
       damage: 120,
-      text: 'If your opponent\'s Active Pokémon is affected by a Special Condition, this attack does 120 more damage.'
-    }
+      text: "If your opponent's Active Pokémon is affected by a Special Condition, this attack does 120 more damage.",
+    },
   ];
 
   public set: string = 'TEF';
@@ -48,21 +47,22 @@ export class WalkingWakeex extends PokemonCard {
   public fullName: string = 'Walking Wake ex TEF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof AttackEffect) {
-
       const player = effect.player;
 
       const targetCard = player.active.getPokemonCard();
       if (targetCard && targetCard.name == 'Walking Wake ex') {
-
         // Try to reduce PowerEffect, to check if something is blocking our ability
         try {
-          const stub = new PowerEffect(player, {
-            name: 'test',
-            powerType: PowerType.ABILITY,
-            text: ''
-          }, this);
+          const stub = new PowerEffect(
+            player,
+            {
+              name: 'test',
+              powerType: PowerType.ABILITY,
+              text: '',
+            },
+            this,
+          );
           store.reduceEffect(state, stub);
         } catch {
           return state;
@@ -87,7 +87,6 @@ export class WalkingWakeex extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       if (opponent.active.specialConditions.length > 0) {

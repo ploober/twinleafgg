@@ -1,6 +1,20 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { CardType, Stage, CardTag, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, TrainerCard } from '../../../game';
+import {
+  CardType,
+  Stage,
+  CardTag,
+  SuperType,
+  EnergyType,
+} from '../../../game/store/card/card-types';
+import {
+  StoreLike,
+  State,
+  GameMessage,
+  PlayerType,
+  SlotType,
+  StateUtils,
+  TrainerCard,
+} from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
@@ -8,9 +22,12 @@ import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
-function* useEnergyGift(next: Function, store: StoreLike, state: State,
-  effect: AttackEffect): IterableIterator<State> {
-
+function* useEnergyGift(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   // TA-126/CF-9: the trailing shuffle survives an empty deck. Energy Gift attaches "to your Pokémon",
@@ -49,17 +66,16 @@ function* useEnergyGift(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
-
   });
 }
 
 export class Whimsicottex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public evolvesFrom = 'Cottonee';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 230;
   public weakness = [{ type: R }];
   public resistance = [];
@@ -96,16 +112,22 @@ export class Whimsicottex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      state = store.prompt(state, new ShowCardsPrompt(
-        player.id,
-        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-        opponent.hand.cards
-      ), () => {
-        const cardsInOpponentHand = opponent.hand.cards.filter(card => card instanceof TrainerCard).length;
-        const damage = opponent.hand.cards.slice(0, cardsInOpponentHand);
-        effect.damage = damage.length * 50;
-      });
+      state = store.prompt(
+        state,
+        new ShowCardsPrompt(
+          player.id,
+          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+          opponent.hand.cards,
+        ),
+        () => {
+          const cardsInOpponentHand = opponent.hand.cards.filter(
+            (card) => card instanceof TrainerCard,
+          ).length;
+          const damage = opponent.hand.cards.slice(0, cardsInOpponentHand);
+          effect.damage = damage.length * 50;
+        },
+      );
     }
     return state;
   }
-} 
+}

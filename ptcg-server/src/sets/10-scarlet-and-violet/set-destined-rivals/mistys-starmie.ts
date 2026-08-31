@@ -6,11 +6,11 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
 export class MistysStarmie extends PokemonCard {
-  public tags = [CardTag.MISTYS];
+  protected _tags = [CardTag.MISTYS];
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom = 'Misty\'s Staryu';
+  public evolvesFrom = "Misty's Staryu";
   public regulationMark = 'I';
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public hp: number = 100;
   public weakness = [{ type: L }];
   public retreat = [C];
@@ -26,8 +26,8 @@ export class MistysStarmie extends PokemonCard {
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '47';
-  public name: string = 'Misty\'s Starmie';
-  public fullName: string = 'Misty\'s Starmie DRI';
+  public name: string = "Misty's Starmie";
+  public fullName: string = "Misty's Starmie DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Sudden Flash

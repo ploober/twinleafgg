@@ -8,8 +8,8 @@ export class TeamRocketsNidorino extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   // TA-261: matches the corrected unspaced printed name on team-rockets-nidoran-male.ts.
   public evolvesFrom = "Team Rocket's Nidoran♂";
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = D;
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [D];
   public hp: number = 100;
   public weakness = [{ type: F }];
   public retreat = [C, C];

@@ -1,13 +1,21 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType, AttachEnergyPrompt, GameMessage, SlotType, StateUtils } from '../../../game';
+import {
+  StoreLike,
+  State,
+  PlayerType,
+  AttachEnergyPrompt,
+  GameMessage,
+  SlotType,
+  StateUtils,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CONFIRMATION_PROMPT, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsZapdos extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.TEAM_ROCKET];
-  public cardType: CardType = L;
+  protected _tags = [CardTag.TEAM_ROCKET];
+  public cardType: CardType[] = [L];
   public hp: number = 120;
   public weakness = [{ type: L }];
   public resistance = [{ type: F, value: -30 }];
@@ -18,23 +26,23 @@ export class TeamRocketsZapdos extends PokemonCard {
       name: 'Jamming Wing',
       cost: [C, C],
       damage: 30,
-      text: 'You may move an Energy from your opponent\'s Active Pokémon to 1 of their Benched Pokémon.'
+      text: "You may move an Energy from your opponent's Active Pokémon to 1 of their Benched Pokémon.",
     },
     {
       name: 'Wicked Thunder',
       cost: [L, C, C],
       damage: 60,
       damageCalculation: '+',
-      text: 'If this Pokémon has Team Rocket Energy attached, this attack does 60 more damage.'
-    }
+      text: 'If this Pokémon has Team Rocket Energy attached, this attack does 60 more damage.',
+    },
   ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
   public setNumber: string = '70';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Team Rocket\'s Zapdos';
-  public fullName: string = 'Team Rocket\'s Zapdos DRI';
+  public name: string = "Team Rocket's Zapdos";
+  public fullName: string = "Team Rocket's Zapdos DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Jamming Wave
@@ -97,7 +105,13 @@ export class TeamRocketsZapdos extends PokemonCard {
 
     // Bad Thunder
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      if (effect.player.active.cards.some(c => c.superType === SuperType.ENERGY && c.name === 'Team Rocket Energy')) { effect.damage += 60; }
+      if (
+        effect.player.active.cards.some(
+          (c) => c.superType === SuperType.ENERGY && c.name === 'Team Rocket Energy',
+        )
+      ) {
+        effect.damage += 60;
+      }
     }
 
     return state;

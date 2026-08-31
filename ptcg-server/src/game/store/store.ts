@@ -16,6 +16,7 @@ import { MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect } from '
 import {
   CLEAR_ABILITY_LOCK_ACTIVATION,
   STAMP_ABILITY_LOCK_ACTIVATION,
+  APPLY_ATTACK_EFFECT_ABILITY_LOCKS,
 } from './prefabs/ability-lock';
 import { GameError } from '../game-error';
 import { GameMessage, GameLog } from '../game-message';
@@ -192,6 +193,8 @@ export class Store implements StoreLike {
       CLEAR_ABILITY_LOCK_ACTIVATION(state, effect.pokemonCard);
     }
 
+    APPLY_ATTACK_EFFECT_ABILITY_LOCKS(state, effect);
+
     state = this.propagateEffect(state, effect);
 
     const gs = state.gameSettings;
@@ -257,6 +260,17 @@ export class Store implements StoreLike {
     for (let i = 0; i < prompts.length; i++) {
       const id = generateId(state.prompts);
       prompts[i].id = id;
+
+      // Route answers to promptController while keeping board perspective on the
+      // original owner (Hand Control / forced opponent card play).
+      const controllerId = state.promptControllerId;
+      if (controllerId !== undefined && controllerId !== prompts[i].playerId) {
+        if (prompts[i].perspectivePlayerId === undefined) {
+          prompts[i].perspectivePlayerId = prompts[i].playerId;
+        }
+        prompts[i].playerId = controllerId;
+      }
+
       state.prompts.push(prompts[i]);
     }
 

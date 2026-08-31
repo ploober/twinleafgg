@@ -10,8 +10,8 @@ import { PUT_X_DAMAGE_COUNTERS_ON_YOUR_OPPONENTS_ACTIVE_POKEMON } from '../../..
 
 export class MrMimeex2 extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.POKEMON_ex];
-  public cardType: CardType = P;
+  protected _tags = [CardTag.POKEMON_ex];
+  public cardType: CardType[] = [P];
   public hp: number = 80;
   public retreat = [C];
 
@@ -35,23 +35,23 @@ export class MrMimeex2 extends PokemonCard {
   public fullName: string = 'Mr. Mime ex RG 111';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof PutDamageEffect && effect.target.getPokemonCard() === this) {
       if (IS_POKEBODY_BLOCKED(store, state, effect.player, this)) {
         return state;
       }
       // Prevent all damage if damage is an odd multiple of 10 between 10 and 250 (inclusive)
-      if (
-        effect.damage % 20 === 0 &&
-        effect.damage >= 20 &&
-        effect.damage <= 180
-      ) {
+      if (effect.damage % 20 === 0 && effect.damage >= 20 && effect.damage <= 180) {
         effect.preventDefault = true;
       }
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      PUT_X_DAMAGE_COUNTERS_ON_YOUR_OPPONENTS_ACTIVE_POKEMON(effect.opponent.hand.cards.length, store, state, effect);
+      PUT_X_DAMAGE_COUNTERS_ON_YOUR_OPPONENTS_ACTIVE_POKEMON(
+        effect.opponent.hand.cards.length,
+        store,
+        state,
+        effect,
+      );
     }
 
     return state;

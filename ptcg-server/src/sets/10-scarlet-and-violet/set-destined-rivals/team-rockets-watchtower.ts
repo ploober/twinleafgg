@@ -1,3 +1,4 @@
+import { pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { GameError } from '../../../game/game-error';
 import { GameMessage } from '../../../game/game-message';
@@ -41,7 +42,7 @@ export class TeamRocketsWatchtower extends TrainerCard {
       // distinction that matches the card text ("Pokemon in play ... have no Abilities"), because an
       // arriving Pokemon is coming into play while a `useFromHand` Ability is not. Callers must pass
       // their power to `IS_ABILITY_BLOCKED` for that exemption to be visible to the probe.
-      const lockedByPrintedType = () => card.cardType === CardType.COLORLESS;
+      const lockedByPrintedType = () => pokemonHasCardType(card, CardType.COLORLESS);
       try {
         const cardList = StateUtils.findCardList(state, card);
         if (!(cardList instanceof PokemonCardList)) {

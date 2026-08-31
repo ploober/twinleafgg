@@ -1,4 +1,10 @@
-import { CardTag, CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
+import {
+  CardTag,
+  CardType,
+  EnergyType,
+  Stage,
+  SuperType,
+} from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
@@ -8,9 +14,9 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 export class MegaAbomasnowEx extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Snover';
-  public tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_SV_MEGA, CardTag.POKEMON_ex];
   public hp: number = 350;
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public weakness = [{ type: M }];
   public retreat = [C, C, C, C];
 
@@ -35,7 +41,6 @@ export class MegaAbomasnowEx extends PokemonCard {
   public fullName: string = 'Mega Abomasnow ex M1S';
   public regulationMark: string = 'I';
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const deckTop = new CardList();
@@ -44,8 +49,11 @@ export class MegaAbomasnowEx extends PokemonCard {
       player.deck.moveTo(deckTop, 6);
 
       // Filter for Energy cards
-      const energyCount = deckTop.cards.filter(c =>
-        c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Water Energy'
+      const energyCount = deckTop.cards.filter(
+        (c) =>
+          c.superType === SuperType.ENERGY &&
+          c.energyType === EnergyType.BASIC &&
+          c.name === 'Water Energy',
       );
 
       // Move all cards to discard
@@ -58,5 +66,4 @@ export class MegaAbomasnowEx extends PokemonCard {
 
     return state;
   }
-
 }

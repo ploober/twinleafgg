@@ -4,13 +4,13 @@
     {
       "file": "set-black-bolt-white-flare/excadrill-ex.ts",
       "signatures": [
-        "public tags = [CardTag.POKEMON_ex];"
+        "protected _tags = [CardTag.POKEMON_ex];"
       ]
     },
     {
       "file": "set-phantasmal-flames/oricorio-ex.ts",
       "signatures": [
-        "public tags = [CardTag.POKEMON_ex];"
+        "protected _tags = [CardTag.POKEMON_ex];"
       ]
     },
     {
@@ -128,7 +128,7 @@
     {
       "file": "set-destined-rivals/zeraora.ts",
       "signatures": [
-        "return pokemon !== undefined && pokemon.tags.includes(CardTag.POKEMON_ex);",
+        "return pokemon !== undefined && pokemon.hasTag(CardTag.POKEMON_ex);",
         "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {"
       ]
     },
@@ -216,7 +216,7 @@
     {
       "file": "set-prismatic-evolution/tyranitar-ex.ts",
       "signatures": [
-        "const energies = player.active.cards.filter(card => card.superType === SuperType.ENERGY);",
+        "const energies = player.active.cards.filter((card) => card.superType === SuperType.ENERGY);",
         "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ]
@@ -1538,7 +1538,8 @@
       "file": "game/store/prefabs/attack-effects.ts",
       "signatures": [
         "base, [SpecialCondition.ASLEEP]",
-        "base, [SpecialCondition.POISONED]"
+        "base, [SpecialCondition.POISONED]",
+        "  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);"
       ]
     },
     {
@@ -2369,7 +2370,7 @@
     {
       "file": "set-noble-victories/golett.ts",
       "signatures": [
-        "public cardType: CardType = F;"
+        "public cardType: CardType[] = [F];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -2418,7 +2419,7 @@
     {
       "file": "set-noble-victories/petilil.ts",
       "signatures": [
-        "public cardType: CardType = CardType.WATER;"
+        "public cardType: CardType[] = [CardType.WATER];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -2537,7 +2538,7 @@
     {
       "file": "set-x-and-y/pumpkaboo.ts",
       "signatures": [
-        "public cardType: CardType = P;"
+        "public cardType: CardType[] = [P];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -2600,7 +2601,7 @@
     {
       "file": "set-cosmic-eclipse/mega-lopuny-and-jigglypuff-gx.ts",
       "signatures": [
-        "public cardType: CardType = C; public hp: number = 240; public weakness = [{ type: F }]; public retreat = [C];"
+        "public cardType: CardType[] = [C]; public hp: number = 240; public weakness = [{ type: F }]; public retreat = [C];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -2677,7 +2678,7 @@
     {
       "file": "set-team-up/other-prints.ts",
       "signatures": [
-        "public cardType: CardType = P;"
+        "public cardType: CardType[] = [P];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -3276,7 +3277,7 @@
       "file": "set-destined-rivals/ethans-quilava.ts",
       "signatures": [
         "name: 'Bonded by the Journey',",
-        "public evolvesFrom = 'Ethan\\'s Cyndaquil';"
+        "public evolvesFrom = \"Ethan's Cyndaquil\";"
       ],
       "note": "TA-218. The ADD_MARKER/ABILITY_USED lines this entry originally named are ALSO in upstream, so they could not detect a revert of our version of this file; the added line is unique to ours."
     },
@@ -3886,7 +3887,7 @@
     {
       "file": "set-surging-sparks/alolan-exeggutor-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, TERA_RULE, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';"
+        "import { AFTER_ATTACK, TERA_RULE, WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -3929,7 +3930,7 @@
     {
       "file": "set-surging-sparks/gastrodon.ts",
       "signatures": [
-        "public cardType: CardType = F;"
+        "public cardType: CardType[] = [F];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -4312,7 +4313,7 @@
     {
       "file": "set-mega-evolution/houndstone.ts",
       "signatures": [
-        "import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';"
+        "import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, FLIP_UNTIL_TAILS_AND_COUNT_HEADS } from '../../../game/store/prefabs/prefabs';"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -4530,7 +4531,7 @@
     {
       "file": "set-pitch-black/mega-slowbro-ex.ts",
       "signatures": [
-        "public cardType: CardType = F; public hp: number = 310; public weakness = [{ type: G }];"
+        "public cardType: CardType[] = [F]; public hp: number = 310; public weakness = [{ type: G }];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -4855,28 +4856,32 @@
       "absentSignatures": [
         "public evolvesFrom = 'Unown P';"
       ],
-      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail."
+      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail.",
+      "signatures": []
     },
     {
       "file": "set-undaunted/slugma.ts",
       "absentSignatures": [
         "public evolvesFrom = 'Slugma';"
       ],
-      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail."
+      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail.",
+      "signatures": []
     },
     {
       "file": "set-cosmic-eclipse/aipom.ts",
       "absentSignatures": [
         "public evolvesFrom = 'Aipom';"
       ],
-      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail."
+      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail.",
+      "signatures": []
     },
     {
       "file": "set-scarlet-and-violet/dondozo.ts",
       "absentSignatures": [
         "public evolvesFrom = 'Dondozo';"
       ],
-      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail."
+      "note": "deletion-type fix: this Basic declared evolvesFrom ITSELF, making it unplayable as a Basic. The fix removes the line, so the guard asserts ABSENCE - a merge that restores it must fail.",
+      "signatures": []
     },
     {
       "file": "set-stellar-crown/meltan.ts",
@@ -4891,7 +4896,7 @@
     {
       "file": "set-destined-rivals/team-rockets-watchtower.ts",
       "signatures": [
-        "const lockedByPrintedType = () => card.cardType === CardType.COLORLESS;"
+        "const lockedByPrintedType = () => pokemonHasCardType(card, CardType.COLORLESS);"
       ]
     },
     {
@@ -4947,7 +4952,6 @@
     {
       "file": "game/store/prefabs/prefabs.ts",
       "signatures": [
-        "case TrainerType.ITEM:",
         "    SHUFFLE_DECK(store, state, player);\n    return;",
         "export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {"
       ],
@@ -5021,7 +5025,7 @@
     {
       "file": "set-phantasmal-flames/seviper.ts",
       "signatures": [
-        "card.tags.includes(CardTag.POKEMON_SV_MEGA)) {",
+        "card.hasTag(CardTag.POKEMON_SV_MEGA)) {",
         "If you have any Darkness Mega Evolution Pokémon ex in play"
       ],
       "note": "TA-197 — the boost is gated on a Darkness MEGA EVOLUTION Pokémon ex; without the tag test ANY Darkness Pokémon ex granted +120 (measured 240 vs roto's 120)"
@@ -5212,7 +5216,7 @@
       "signatures": [
         "        ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);",
         "        ABILITY_USED(player, this);",
-        "public evolvesFrom = 'Ethan\\'s Cyndaquil';"
+        "public evolvesFrom = \"Ethan's Cyndaquil\";"
       ],
       "note": "TA-218. The ADD_MARKER/ABILITY_USED lines this entry originally named are ALSO in upstream, so they could not detect a revert of our version of this file; the added line is unique to ours."
     },
@@ -5357,7 +5361,7 @@
     {
       "file": "set-surging-sparks/turtonator.ts",
       "signatures": [
-        "if (!activeCard || !activeCard.tags.includes(CardTag.POKEMON_ex)) {"
+        "if (!activeCard || !activeCard.hasTag(CardTag.POKEMON_ex)) {"
       ]
     },
     {
@@ -5547,7 +5551,7 @@
       ]
     },
     {
-      "file": "set-surging-sparks/celebration-fanfare.ts",
+      "file": "set-mega-evolution-promos/celebratory-fanfare.ts",
       "signatures": [
         "public set = 'MEP';",
         "public name = 'Celebratory Fanfare';"
@@ -5581,13 +5585,13 @@
     {
       "file": "set-stellar-crown/iron-boulder.ts",
       "signatures": [
-        "public tags = [CardTag.FUTURE];"
+        "protected _tags = [CardTag.FUTURE];"
       ]
     },
     {
       "file": "set-temporal-forces/drums-of-awakening.ts",
       "signatures": [
-        "public tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];"
+        "protected _tags = [CardTag.ANCIENT, CardTag.ACE_SPEC];"
       ]
     },
     {
@@ -5635,7 +5639,6 @@
     {
       "file": "game/store/prefabs/prefabs.ts",
       "signatures": [
-        "  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);",
         "export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {",
         "export function SHUFFLE_THEN_DRAW(",
         "export function SHOW_CARDS_THEN(",
@@ -6109,6 +6112,19 @@
         "effect.player === opponent"
       ],
       "note": "TA-334 / SD-26 (2026-08-30): SINK half. 'Luminous Wing' (prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon) had TWO bugs: (1) an always-false owner guard `if (targetOwner === opponent)` where `opponent = getOpponent(targetOwner)` — a player is never their own opponent, so the whole block was dead code; (2) it intercepted only PowerEffect (the ability activation), never the EffectOfAbilityEffect wrapper the reducer runs for ability-aware effects, so even a fixed guard would miss the counter. Rewritten to intercept EffectOfAbilityEffect with the corrected guard `effect.player === opponent` + `effect.target.getPokemonCard() === this`, nulling effect.target (the enamorus-v.ts idiom), preserving IS_ABILITY_BLOCKED for the Iron Thorns ex ability-lock interaction. Reverting either signature restores the dead-code / wrong-effect bug. Guard: por-031 c12/c13 DIVERGED->PASS; c14 (own-side) + c15/c16 (attack effects) stay PASS; twm-077 Iron Thorns ex 11/11 PASS."
+    },
+    {
+      "file": "game/store/prefabs/trainer-prefabs.ts",
+      "signatures": [
+        "case TrainerType.ITEM:"
+      ]
+    },
+    {
+      "file": "set-mega-evolution-promos/index.ts",
+      "signatures": [
+        "  new CelebratoryFanfare(),"
+      ],
+      "note": "TA-256 follow-up at the 2026-08-31 upstream merge: upstream f0edbdac4 moved Celebratory Fanfare to MEP but registered it in no set index (mep-028 orphaned, pool set). Registration is ours."
     }
   ]
 }

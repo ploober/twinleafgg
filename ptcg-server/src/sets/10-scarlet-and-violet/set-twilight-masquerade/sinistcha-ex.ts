@@ -7,10 +7,10 @@ import { HealTargetEffect, PutCountersEffect } from '../../../game/store/effects
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Sinistchaex extends PokemonCard {
-  public tags = [CardTag.POKEMON_ex];
+  protected _tags = [CardTag.POKEMON_ex];
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom = 'Poltchageist';
-  public cardType: CardType = CardType.GRASS;
+  public cardType: CardType[] = [CardType.GRASS];
   public hp: number = 240;
   public weakness = [{ type: CardType.FIRE }];
   public retreat = [CardType.COLORLESS];
@@ -20,13 +20,13 @@ export class Sinistchaex extends PokemonCard {
       name: 'Re-Brew',
       cost: [CardType.COLORLESS],
       damage: 0,
-      text: 'Put 2 damage counters on 1 of your opponent\'s Pokémon for each Basic [G] Energy card in your discard pile. Then, shuffle those Energy cards into your deck.'
+      text: "Put 2 damage counters on 1 of your opponent's Pokémon for each Basic [G] Energy card in your discard pile. Then, shuffle those Energy cards into your deck.",
     },
     {
       name: 'Matcha Splash',
       cost: [CardType.GRASS, CardType.COLORLESS],
       damage: 120,
-      text: 'Heal 30 damage from each of your Pokémon.'
+      text: 'Heal 30 damage from each of your Pokémon.',
     },
   ];
 
@@ -97,5 +97,4 @@ export class Sinistchaex extends PokemonCard {
 
     return state;
   }
-
 }

@@ -6,7 +6,7 @@ import { WAS_ATTACK_USED, SHOW_CARDS_TO_PLAYER, MOVE_CARDS, SHUFFLE_DECK, COIN_F
 export class Lapras extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 130;
-  public cardType: CardType = W;
+  public cardType: CardType[] = [W];
   public weakness = [{ type: M }];
   public retreat = [C, C];
 
@@ -15,8 +15,7 @@ export class Lapras extends PokemonCard {
     cost: [C],
     damage: 0,
     text: 'Search your deck for a Supporter card, reveal it, and put it into your hand. Then, shuffle your deck.'
-  },
-  {
+  }, {
     name: 'Ice Beam',
     cost: [W, C, C],
     damage: 80,
@@ -24,6 +23,7 @@ export class Lapras extends PokemonCard {
   }];
 
   public regulationMark: string = 'J';
+
   public set: string = '30C';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '17';

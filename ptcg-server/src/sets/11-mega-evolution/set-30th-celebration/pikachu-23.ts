@@ -7,7 +7,7 @@ import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from "../../../game/store/prefabs/p
 export class Pikachu23 extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public hp: number = 70;
-  public cardType: CardType = L;
+  public cardType: CardType[] = [L];
   public weakness = [{ type: F }];
   public retreat = [C];
 
@@ -19,6 +19,7 @@ export class Pikachu23 extends PokemonCard {
   }];
 
   public regulationMark: string = 'J';
+
   public set: string = '30C';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '23';

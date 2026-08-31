@@ -8,14 +8,13 @@ import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class NsDarmanitan extends PokemonCard {
-
-  public tags = [CardTag.NS];
+  protected _tags = [CardTag.NS];
 
   public stage: Stage = Stage.STAGE_1;
 
-  public evolvesFrom = 'N\'s Darumaka';
+  public evolvesFrom = "N's Darumaka";
 
-  public cardType: CardType = R;
+  public cardType: CardType[] = [R];
 
   public weakness = [{ type: W }];
 
@@ -28,13 +27,13 @@ export class NsDarmanitan extends PokemonCard {
       name: 'Back Draft',
       cost: [C, C],
       damage: 30,
-      text: 'This attack does 30 damage for each Basic Energy card in your opponent\'s discard pile.'
+      text: "This attack does 30 damage for each Basic Energy card in your opponent's discard pile.",
     },
     {
       name: 'Flamebody Cannon',
       cost: [R, R, C],
       damage: 90,
-      text: 'Discard all Energy from this Pokémon. This attack also does 90 damage to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
+      text: "Discard all Energy from this Pokémon. This attack also does 90 damage to 1 of your opponent's Benched Pokémon. (Don't apply Weakness and Resistance for Benched Pokémon.)",
     },
   ];
 
@@ -46,18 +45,17 @@ export class NsDarmanitan extends PokemonCard {
 
   public setNumber = '27';
 
-  public name: string = 'N\'s Darmanitan';
+  public name: string = "N's Darmanitan";
 
-  public fullName: string = 'N\'s Darmanitan JTG';
+  public fullName: string = "N's Darmanitan JTG";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
       let energyCount = 0;
-      opponent.discard.cards.forEach(c => {
+      opponent.discard.cards.forEach((c) => {
         if (c instanceof EnergyCard && c.energyType === EnergyType.BASIC) {
           energyCount += 1;
         }

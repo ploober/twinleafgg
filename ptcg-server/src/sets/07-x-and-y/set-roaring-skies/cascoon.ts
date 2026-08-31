@@ -1,10 +1,5 @@
-import {
-  ADD_POISON_TO_PLAYER_ACTIVE,
-  AFTER_ATTACK,
-  COIN_FLIP_PROMPT,
-  PREVENT_DAMAGE,
-  WAS_ATTACK_USED,
-} from '../../../game/store/prefabs/prefabs';
+import { ADD_POISON_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { PREVENT_DAMAGE } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -13,7 +8,7 @@ import { State, StoreLike } from '../../../game';
 export class Cascoon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
   public evolvesFrom: string = 'Wurmple';
-  public cardType: CardType = G;
+  public cardType: CardType[] = [G];
   public hp: number = 80;
   public weakness = [{ type: R }];
   public retreat = [C, C, C];
@@ -23,8 +18,7 @@ export class Cascoon extends PokemonCard {
     cost: [G],
     damage: 0,
     text: 'Your opponent\'s Active Pokémon is now Poisoned.'
-  },
-  {
+  }, {
     name: 'Iron Defense',
     cost: [C, C],
     damage: 0,

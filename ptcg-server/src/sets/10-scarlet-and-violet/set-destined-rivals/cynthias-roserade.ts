@@ -7,9 +7,9 @@ import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class CynthiasRoserade extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
-  public evolvesFrom = 'Cynthia\'s Roselia';
-  public tags = [CardTag.CYNTHIAS];
-  public cardType: CardType = G;
+  public evolvesFrom = "Cynthia's Roselia";
+  protected _tags = [CardTag.CYNTHIAS];
+  public cardType: CardType[] = [G];
   public hp: number = 130;
   public weakness = [{ type: R }];
   public retreat = [C];
@@ -29,26 +29,25 @@ export class CynthiasRoserade extends PokemonCard {
       name: 'Leaf Step',
       cost: [G, C, C],
       damage: 80,
-      text: ''
-    }
+      text: '',
+    },
   ];
 
   public regulationMark = 'I';
   public set: string = 'DRI';
   public setNumber: string = '8';
   public cardImage: string = 'assets/cardback.png';
-  public name: string = 'Cynthia\'s Roserade';
-  public fullName: string = 'Cynthia\'s Roserade DRI';
+  public name: string = "Cynthia's Roserade";
+  public fullName: string = "Cynthia's Roserade DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof DealDamageEffect && StateUtils.isPokemonInPlay(effect.player, this)) {
       const player = effect.player;
       const attackingCard = effect.source.getPokemonCard();
 
       IS_ABILITY_BLOCKED(store, state, player, this);
 
-      if (attackingCard !== undefined && attackingCard.tags.includes(CardTag.CYNTHIAS)) {
+      if (attackingCard !== undefined && attackingCard.hasTag(CardTag.CYNTHIAS)) {
         effect.damage += 30;
       }
     }

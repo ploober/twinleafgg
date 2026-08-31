@@ -4,11 +4,10 @@ import { StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
-
 export class Stonjourner extends PokemonCard {
   public stage: Stage = Stage.BASIC;
-  public tags = [CardTag.SINGLE_STRIKE];
-  public cardType: CardType = F;
+  protected _tags = [CardTag.SINGLE_STRIKE];
+  public cardType: CardType[] = [F];
   public hp: number = 130;
   public weakness = [{ type: G }];
   public retreat = [C, C, C];
@@ -34,7 +33,6 @@ export class Stonjourner extends PokemonCard {
   public fullName: string = 'Stonjourner BST';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const stadiumCard = StateUtils.getStadiumCard(state);
       if (stadiumCard !== undefined) {
