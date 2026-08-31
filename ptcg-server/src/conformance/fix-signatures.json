@@ -5404,14 +5404,13 @@
   {
    "file": "set-black-bolt-white-flare/gothitelle.ts",
    "signatures": [
-    "if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {",
     "return SHUFFLE_THEN_DRAW(store, state, opponent, 3);",
     "if (opponent.deck.cards.length === 0 && opponent.hand.cards.length <= 3) {"
    ],
    "absentSignatures": [
     "if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {"
    ],
-   "note": "TA-338 (2026-08-31): B.41 cycle cell — withhold Distorted Future when opp deck=0 and hand<=3 (widens the TA-235 both-empty gate; a revert restores the narrower gate)."
+   "note": "TA-338 (2026-08-31): B.41 cycle cell — withhold Distorted Future when opp deck=0 and hand<=3 (widens the TA-235 both-empty gate; a revert restores the narrower gate). TA-338 widened the TA-235 both-empty gate to the deck-0 cycle cell; the old narrower line is now the ABSENT tripwire (its return would mean the widening was reverted)."
   },
   {
    "file": "set-surging-sparks/maushold.ts",
