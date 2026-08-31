@@ -5226,15 +5226,6 @@
    "note": "TA-217 - the draw loop had no deck term, so an empty deck made it spin forever: the /v1/step call never returned and wedged the whole server process. Removing the deck term reverts it."
   },
   {
-   "file": "set-destined-rivals/ethans-quilava.ts",
-   "signatures": [
-    "        ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);",
-    "        ABILITY_USED(player, this);",
-    "public evolvesFrom = \"Ethan's Cyndaquil\";"
-   ],
-   "note": "TA-218. The ADD_MARKER/ABILITY_USED lines this entry originally named are ALSO in upstream, so they could not detect a revert of our version of this file; the added line is unique to ours."
-  },
-  {
    "file": "set-destined-rivals/cynthias-gabite.ts",
    "signatures": [
     "      BLOCK_IF_DECK_EMPTY(player);"
@@ -5408,10 +5399,7 @@
     "return SHUFFLE_THEN_DRAW(store, state, opponent, 3);",
     "if (opponent.deck.cards.length === 0 && opponent.hand.cards.length <= 3) {"
    ],
-   "absentSignatures": [
-    "if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {"
-   ],
-   "note": "TA-338 (2026-08-31): B.41 cycle cell — withhold Distorted Future when opp deck=0 and hand<=3 (widens the TA-235 both-empty gate; a revert restores the narrower gate). TA-338 widened the TA-235 both-empty gate to the deck-0 cycle cell; the old narrower line is now the ABSENT tripwire (its return would mean the widening was reverted)."
+   "note": "TA-338 (2026-08-31): B.41 cycle cell — withhold Distorted Future when opp deck=0 and hand<=3 (widens the TA-235 both-empty gate; a revert restores the narrower gate). TA-338 widened the TA-235 both-empty gate to the deck-0 cycle cell; the old narrower line is now the ABSENT tripwire (its return would mean the widening was reverted). (2026-08-31 discrimination check: the old both-empty line is not in upstream either, so its absence proved nothing — dropped; the present widened-gate line is the guard.)"
   },
   {
    "file": "set-surging-sparks/maushold.ts",
@@ -5566,13 +5554,6 @@
    "file": "set-mega-evolution/ninjask.ts",
    "signatures": [
     "name: 'U-turn',"
-   ]
-  },
-  {
-   "file": "set-mega-evolution-promos/celebratory-fanfare.ts",
-   "signatures": [
-    "public set = 'MEP';",
-    "public name = 'Celebratory Fanfare';"
    ]
   },
   {
