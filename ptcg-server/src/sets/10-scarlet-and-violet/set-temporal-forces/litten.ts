@@ -7,23 +7,31 @@ import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-e
 import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
 export class Litten extends PokemonCard {
+
   public stage: Stage = Stage.BASIC;
 
   public cardType: CardType[] = [CardType.FIRE];
 
   public hp: number = 70;
 
-  public attacks = [{
-    name: 'Fake Out', cost: [R], damage: 10, text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed. '
-  }];
+  public weakness = [{ type: CardType.WATER }];
+
+  public retreat = [CardType.COLORLESS, CardType.COLORLESS];
+
+  public attacks = [
+    { name: 'Fake Out', cost: [CardType.FIRE], damage: 10, text: 'Flip a coin. If heads, your opponent\'s Active Pokémon is now Paralyzed. ' }
+  ];
 
   public set: string = 'TEF';
+
   public setNumber = '32';
+
   public cardImage = 'assets/cardback.png';
 
   public regulationMark: string = 'H';
 
   public name: string = 'Litten';
+
   public fullName: string = 'Litten TEF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
