@@ -22,23 +22,38 @@ import { StoreHandler } from '../game/store/store-handler';
 export class ConformanceStoreHandler implements StoreHandler {
 
   private store!: Store;
-  private flipProvider?: () => boolean;
+  private flipProvider?: () => boolean | undefined;
 
   setStore(store: Store): void {
     this.store = store;
   }
 
   /** Install the source of scripted coin flips (the driver wires this to the action-log cursor). */
-  setFlipProvider(provider: () => boolean): void {
+  setFlipProvider(provider: () => boolean | undefined): void {
     this.flipProvider = provider;
   }
 
-  /** Called inline by CoinFlipEffect; returns the next scripted flip (heads = true). */
+  /**
+   * The next scripted flip, or `undefined` when the log has none aligned (or no provider is
+   * installed — e.g. a legal-action probe). `undefined` tells RESOLVE_COIN_FLIP_EFFECT to surface a
+   * REAL pausing CoinFlipPrompt instead of resolving inline, so everything already reduced (attack
+   * damage, prior riders) COMMITS before the pause — the TA-79/TA-306 observability the raw-prompt
+   * cards had and the ~50 upstream COIN_FLIP_PROMPT conversions lost (queue item (a), 2026-08-31).
+   */
+  tryScriptedFlip(): boolean | undefined {
+    return this.flipProvider === undefined ? undefined : this.flipProvider();
+  }
+
+  /** Legacy inline hook (BotArbiter-shaped handlers keep this contract); conformance now uses tryScriptedFlip. */
   flipCoin(): boolean {
     if (this.flipProvider === undefined) {
       throw new Error('[conformance] coin flip requested but no flip provider is set');
     }
-    return this.flipProvider();
+    const r = this.flipProvider();
+    if (r === undefined) {
+      throw new Error('[conformance] coin flip requested but the next action is not a flip');
+    }
+    return r;
   }
 
   /** True when the engine is blocked on at least one unresolved prompt. */

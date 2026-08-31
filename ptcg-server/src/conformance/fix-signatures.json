@@ -4796,9 +4796,10 @@
   {
    "file": "game/store/prefabs/attack-coin-reflip.ts",
    "signatures": [
-    "const result = typeof flipHandler?.flipCoin === 'function' ? !!flipHandler.flipCoin() : Math.random() < 0.5;"
+    "const scripted = flipHandler.tryScriptedFlip();",
+    "return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (r: boolean) => {"
    ],
-   "note": "conformance forced-flip hook; upstream's RESOLVE_COIN_FLIP_EFFECT refactor already dropped it once"
+   "note": "conformance forced-flip hook; upstream's RESOLVE_COIN_FLIP_EFFECT refactor already dropped it once 2026-08-31: hook widened to the conformance flip seam — scripted flips inline via tryScriptedFlip, UNSCRIPTED flips surface a real pausing CoinFlipPrompt (queue item (a), TA-79/TA-306 observability; also cures the stray-flip 500 class). A revert to the flipCoin-only line drops both new signatures."
   },
   {
    "file": "game/store/prompts/choose-cards-prompt.ts",

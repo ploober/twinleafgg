@@ -6,6 +6,7 @@ import { GamePhase, State } from '../state/state';
 import { StoreLike } from '../store-like';
 import { Player } from '../state/player';
 import { WaitPrompt } from '../prompts/wait-prompt';
+import { CoinFlipPrompt } from '../prompts/coin-flip-prompt';
 import { ConfirmPrompt } from '../prompts/confirm-prompt';
 
 // =============================================================================
@@ -99,10 +100,33 @@ export function RESOLVE_COIN_FLIP_EFFECT(store: StoreLike, state: State, effect:
   // store handler / BotArbiter does this for ALL_HEADS/ALL_TAILS scenario replay); production handlers
   // do not, so fall back to a random flip. Re-applied after the upstream RESOLVE_COIN_FLIP_EFFECT
   // refactor dropped this hook (game-effect.ts once carried it inline). See conformance-store-handler.ts.
+  //
+  // 2026-08-31 (queue item (a), TA-79/TA-306 class): when the conformance log has NO aligned flip
+  // (tryScriptedFlip → undefined), surface a REAL pausing CoinFlipPrompt instead of resolving inline.
+  // Everything already reduced — the attack's damage, prior riders — COMMITS before the pause, which
+  // is the observable the raw-CoinFlipPrompt cards had and the ~50 upstream COIN_FLIP_PROMPT
+  // conversions silently lost (the FlipStarvation pause rolled the whole attack back). Scripted
+  // replays keep the inline path byte-identical. Production (no conformance handler) is unchanged.
   const flipHandler = (store as any).handler;
-  const result = typeof flipHandler?.flipCoin === 'function' ? !!flipHandler.flipCoin() : Math.random() < 0.5;
-  effect.result = result;
   const player = effect.player;
+  let result: boolean;
+  if (typeof flipHandler?.tryScriptedFlip === 'function') {
+    const scripted = flipHandler.tryScriptedFlip();
+    if (scripted === undefined) {
+      return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (r: boolean) => {
+        effect.result = r;
+        emitCoinFlipAnimation(store, player, r);
+        store.log(state, r ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS, { name: player.name });
+        effect.callback?.(r);
+      });
+    }
+    result = scripted;
+  } else if (typeof flipHandler?.flipCoin === 'function') {
+    result = !!flipHandler.flipCoin();
+  } else {
+    result = Math.random() < 0.5;
+  }
+  effect.result = result;
 
   emitCoinFlipAnimation(store, player, result);
   store.log(
@@ -178,9 +202,33 @@ function resolveAttackCoinFlipWithReflipOption(
   config: AttackCoinReflipConfig,
 ): State {
   effect.preventDefault = true;
-  const result = Math.random() < 0.5;
-  effect.result = result;
   const player = effect.player;
+  // Same conformance seam as RESOLVE_COIN_FLIP_EFFECT: scripted → inline; conformance-unscripted →
+  // a real pausing prompt (the reflip offer runs in its continuation); production → random.
+  const reflipHandler = (store as any).handler;
+  let result: boolean;
+  if (typeof reflipHandler?.tryScriptedFlip === 'function') {
+    const scripted = reflipHandler.tryScriptedFlip();
+    if (scripted === undefined) {
+      return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (r: boolean) => {
+        effect.result = r;
+        emitCoinFlipAnimation(store, player, r);
+        store.log(state, r ? GameLog.LOG_PLAYER_FLIPS_HEADS : GameLog.LOG_PLAYER_FLIPS_TAILS, { name: player.name });
+        offerAttackCoinReflip(store, state, player, config,
+          () => effect.callback?.(r),
+          () => {
+            const reflip = new CoinFlipEffect(player, effect.callback);
+            reflip.skipReflipStadium = true;
+            reflip.skipReflipTool = true;
+            store.reduceEffect(state, reflip);
+          });
+      });
+    }
+    result = scripted;
+  } else {
+    result = Math.random() < 0.5;
+  }
+  effect.result = result;
 
   emitCoinFlipAnimation(store, player, result);
 

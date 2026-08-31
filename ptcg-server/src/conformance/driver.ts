@@ -577,10 +577,14 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
 
   // The system actor's inline coin source: consume the next `flip` action from the same cursor the
   // loop walks, so inline flips (CoinFlipEffect) and the loop stay aligned in log order.
-  game.handler.setFlipProvider((): boolean => {
+  // When the next action is NOT a flip, return undefined: RESOLVE_COIN_FLIP_EFFECT then surfaces a
+  // REAL pausing CoinFlipPrompt (damage-first, TA-79/TA-306-correct) which this loop answers like any
+  // raw-prompt card's. The FlipStarvation throw/rollback pause below is retained only as a backstop
+  // for any handler shape that still throws — the provider itself no longer starves (2026-08-31).
+  game.handler.setFlipProvider((): boolean | undefined => {
     const next = cursor.i < actions.length ? actions[cursor.i] : undefined;
     if (next === undefined || next.type !== 'flip') {
-      throw new FlipStarvation();
+      return undefined;
     }
     cursor.i++;
     return (next as FlipSystemAction).face === 'heads';
