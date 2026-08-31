@@ -80,6 +80,8 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Snorunt TWM",
   "Spirit Mask EVS",
   "Talonflame M3",
+  "Team Rocket's Chingling DRI",
+  "Team Rocket's Meowth DRI",
   "Thievul EVS",
   "Thwackey CRE",
   "Trevenant V EVS",
