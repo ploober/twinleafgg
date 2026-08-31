@@ -2129,4 +2129,88 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(soleResolved.state.players.A.active!.energy.length).toBe(2);
   });
 
+
+  it('Cursed Roots blocks the attach OFFER, not just the attach [TA-337 cri-039]', () => {
+    // "During your opponent's next turn, Energy can't be attached from your opponent's hand to the
+    // Defending Pokémon." The reducer refused the attach (BLOCKED_BY_EFFECT) but legal-actions.ts
+    // still offered the Defending-Pokémon target, so the menu rejected its own action — the fuzz
+    // CONTRACT class (x276 in fuzz-after 20260831). Rotomancer offers Bench targets only.
+    const PSYE = 'sve-005';
+    const trevBoard = () => board(
+      player({ active: inPlay('A-act', ['cri-038', 'cri-039'], en(PSYE, 2, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])],
+               hand: en(PSYE, 2, 'Bh'), deck: fillerDeck('B', 4) }),
+    );
+    const attachTargetsOf = (r: ReturnType<typeof step>) =>
+      (r.pending?.legalActions ?? [])
+        .filter(a => (a as { type: string }).type === 'attachEnergy')
+        .map(a => (a as { target?: string }).target);
+    // After Cursed Roots, B's menu must NOT offer the Defending (Active) target — Bench only.
+    const blocked = step(trevBoard(), [attack('A-act', 'Cursed Roots')]);
+    const targets = new Set(attachTargetsOf(blocked));
+    expect(targets.has('B-act')).toBe(false);
+    expect(targets.has('B-b0')).toBe(true);
+    // Baseline differs by ONE change (the attack): Overwhelming Pain carries no attach block, so the
+    // very same board offers the Active target.
+    const free = step(trevBoard(), [attack('A-act', 'Overwhelming Pain')]);
+    expect(new Set(attachTargetsOf(free)).has('B-act')).toBe(true);
+  });
+
+  it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
+    // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
+    // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).
+    // Rotomancer withholds AND refuses the take; pre-fix twinleaf offered and executed the cycle.
+    // boardKeepingEmptyDeck: board() backfills deck: [] with one filler card (the G-8 blind
+    // spot) — deck EMPTINESS is the thing under test here.
+    const goth = (oppHand: number, oppDeck: number) => step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', ['wht-043']) }),
+      player({ active: inPlay('B-act', [RALTS]), hand: en(WATER, oppHand, 'Bh'),
+               deck: fillerDeck('B', oppDeck) }),
+    ), []);
+    const offersAbility = (r: ReturnType<typeof step>) =>
+      (r.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'useAbility');
+    expect(offersAbility(goth(3, 0))).toBe(false);  // cycle cell -> withheld
+    expect(offersAbility(goth(4, 0))).toBe(true);   // 4 in, 3 back: hand changes -> offered
+    expect(offersAbility(goth(0, 2))).toBe(true);   // B.41(b): empty hand over a STOCKED deck stays offered
+  });
+
+  it('Grand Wing is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 4) [TA-338 por-009]', () => {
+    // Same law, conditional-draw sibling (#2306 names Grand Wing). The empty-hand cell was already
+    // withheld (TA-326-adjacent); the deck-0 cycle cell is the fix.
+    // boardKeepingEmptyDeck: board() backfills deck: [] with one filler card (the G-8 blind
+    // spot) — deck EMPTINESS is the thing under test here.
+    const viv = (oppHand: number, oppDeck: number) => step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', ['por-009']) }),
+      player({ active: inPlay('B-act', [RALTS]), hand: en(WATER, oppHand, 'Bh'),
+               deck: fillerDeck('B', oppDeck) }),
+    ), []);
+    const offersAbility = (r: ReturnType<typeof step>) =>
+      (r.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'useAbility');
+    expect(offersAbility(viv(4, 0))).toBe(false);   // cycle cell -> withheld
+    expect(offersAbility(viv(5, 0))).toBe(true);    // 5 in, 4 back: hand changes -> offered
+    expect(offersAbility(viv(0, 3))).toBe(false);   // #2306: empty opp hand -> withheld (pre-existing)
+  });
+
+  it('×-damage flip attacks pay per-heads ONLY, no base [TA-336 jtg-103 / jtg-105]', () => {
+    // Canonical dmg is 10×/120× (zero base). The files authored `damage: 10/120` in the attacks
+    // array AND `effect.damage += D*heads` — paying D + D×heads (fuzz-after 20260831: TL 30 vs RO 20
+    // on HH). `damageCalculation` has no engine consumer, so the fix is assignment, the ×-attack
+    // house convention (cf. asc-162 Comet Punch).
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const klink = () => board(
+      player({ active: inPlay('A-act', ['jtg-103'], en(METAL, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const hh = step(klink(), [attack('A-act', 'Double Spin'), flip('heads'), flip('heads')]);
+    expect(hh.state.players.B.active!.damage).toBe(20);
+    const tt = step(klink(), [attack('A-act', 'Double Spin'), flip('tails'), flip('tails')]);
+    expect(tt.state.players.B.active!.damage).toBe(0);
+    const klinklang = () => board(
+      player({ active: inPlay('A-act', ['jtg-105'], en(METAL, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const tth = step(klinklang(), [attack('A-act', 'Triple Smash'), flip('tails'), flip('tails'), flip('heads')]);
+    expect(tth.state.players.B.active!.damage).toBe(120);
+  });
+
 });

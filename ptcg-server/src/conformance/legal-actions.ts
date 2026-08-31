@@ -120,7 +120,13 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
       }
     } else if (card.superType === SuperType.ENERGY && card instanceof EnergyCard) {
       if (!playable.has(card.id)) { continue; }
-      for (const s of own) { out.push({ type: 'attachEnergy', card: iid, target: s.iid }); }
+      for (const s of own) {
+        // TA-337: mirror the reducer's fromHand denial (play-energy-effect.ts) — a slot carrying
+        // cannotAttachEnergyFromHandNextTurn (Cursed Roots cri-039 et al.) refuses the hand attach,
+        // so offering it makes the menu reject its own action (the fuzz CONTRACT class).
+        if (s.list.cannotAttachEnergyFromHandNextTurn) { continue; }
+        out.push({ type: 'attachEnergy', card: iid, target: s.iid });
+      }
     } else if (card.superType === SuperType.TRAINER && card instanceof TrainerCard) {
       // Trainers are NOT gated on playableCardIds: that mirrors CAN_PLAY_CARD, which defaults
       // Items/Supporters lacking a canPlay() override to `false` — yet the playCardAction reducer

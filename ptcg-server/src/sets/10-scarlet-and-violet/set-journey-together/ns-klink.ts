@@ -39,7 +39,9 @@ export class NsKlink extends PokemonCard {
       return MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 2, results => {
         let heads: number = 0;
         results.forEach(r => { heads += r ? 1 : 0; });
-        effect.damage += 10 * heads;
+        // TA-336: canonical damage is 10× (per heads, ZERO base). `+=` on top of the authored
+        // `damage: 10` paid 10 + 10×heads; assignment matches the ×-attack house convention.
+        effect.damage = 10 * heads;
       });
     }
     return state;

@@ -46,7 +46,8 @@ export class NsKlinklang extends PokemonCard {
       return MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 3, results => {
         let heads: number = 0;
         results.forEach(r => { heads += r ? 1 : 0; });
-        effect.damage += 120 * heads;
+        // TA-336: canonical damage is 120× (per heads, ZERO base) — see ns-klink.ts.
+        effect.damage = 120 * heads;
       });
     }
     return state;

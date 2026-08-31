@@ -46,7 +46,13 @@ export class Vivillon extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
-      if (opponent.hand.cards.length === 0) {
+      // #2306 rules this exact ability: an empty opponent hand is a provable no-op — withhold.
+      // TA-338 / B.41 addendum 2026-08-31 (the CYCLE cell): with the opponent's deck EMPTY and
+      // hand ≤ 4, the bottomed cards are drawn straight back, so the whole effect provably returns
+      // the hand unchanged (both counts public). Withhold there too; hand > 4 over an empty deck
+      // genuinely changes the hand and stays offered.
+      if (opponent.hand.cards.length === 0
+        || (opponent.deck.cards.length === 0 && opponent.hand.cards.length <= 4)) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 

@@ -55,7 +55,13 @@ export class Gothitelle extends PokemonCard {
       // halves of the effect ("shuffle their hand into their deck and draw 3") are inert, and both
       // counts are public. Checked BEFORE the marker is added so a blocked use cannot consume the
       // once-per-turn.
-      if (opponent.hand.cards.length === 0 && opponent.deck.cards.length === 0) {
+      // TA-338 / B.41 addendum 2026-08-31 (the CYCLE cell) widens it: with the opponent's deck
+      // EMPTY and hand ≤ 3, the shuffled-in cards are drawn straight back, so the effect provably
+      // returns the hand unchanged (both counts public) — withhold. Hand > 3 over an empty deck
+      // genuinely changes the hand (3 drawn of >3 shuffled) and stays offered, and the B.41(b)
+      // empty-hand/STOCKED-deck cell stays offered (the unconditional draw moves cards that stay
+      // moved).
+      if (opponent.deck.cards.length === 0 && opponent.hand.cards.length <= 3) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
