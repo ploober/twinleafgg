@@ -177,7 +177,11 @@ export function projectCard(card: Card): NeutralCard {
     const stage = STAGE_NAMES[p.stage];
     if (stage) { out.stage = stage; }
     out.hp = p.hp;
-    const types = [p.cardType, ...(p.additionalCardTypes ?? [])].map(typeName);
+    // Version-agnostic: upstream 7a35128f0 (2026-08-30) turned `cardType` into `CardType[]` and
+    // removed `additionalCardTypes`. This lens is grafted onto EVERY ref the pristine-witness dumper
+    // samples (tools/dump_twinleaf_ref.py), so it must read both shapes identically.
+    const shape = p as unknown as { cardType: CardType | CardType[]; additionalCardTypes?: CardType[] };
+    const types = ([] as CardType[]).concat(shape.cardType, shape.additionalCardTypes ?? []).map(typeName);
     if (types.length) { out.types = types; }
     if (p.evolvesFrom) { out.evolvesFrom = p.evolvesFrom; }
     const abilities = projectAbilities(p.powers);
