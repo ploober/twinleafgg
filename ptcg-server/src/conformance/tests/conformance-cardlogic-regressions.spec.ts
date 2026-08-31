@@ -2,7 +2,7 @@ import { step } from '../driver';
 import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers,
   ConditionToken, CardRef, SCHEMA_VERSION
-} from '../neutral-types';
+, NeutralAction } from '../neutral-types';
 
 // Behavioural regression guards for twinleaf `src/sets` card-logic fixes that had ONLY a
 // fix-signature entry (or none) before this pass — the ALL-TIME backfill (2026-07-07). Each `it`
@@ -1553,15 +1553,15 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // The opponent deck is left with >1 card so the shuffle SURFACES as a system decision rather
     // than auto-resolving (CF-11), then each pending is resolved with its advertised order; the
     // count of `shuffled` events across the settled walk is the observable. Pre-fix: 2. Fixed: 1.
-    const settleCountingShuffles = (b: NeutralState, actions: Array<Record<string, unknown>>): number => {
-      const acts = actions.map(a => ({ ...a }));
+    const settleCountingShuffles = (b: NeutralState, actions: NeutralAction[]): number => {
+      const acts: NeutralAction[] = actions.map(a => ({ ...a }));
       for (let i = 0; i < 10; i++) {
         const r = step(b, acts);
         if (r.status === 'invalidAction') { return -1; }
         const la = r.pending?.legalActions ?? [];
         const sh = la.find(a => (a as { type: string }).type === 'shuffle') as { deck?: string[] } | undefined;
         if (sh === undefined) { return r.events.filter(e => /shuffle/i.test(e.kind)).length; }
-        acts.push({ actor: 'system', type: 'shuffle', order: sh.deck ?? [] });
+        acts.push({ actor: 'system', type: 'shuffle', order: sh.deck ?? [] } as unknown as NeutralAction);
       }
       throw new Error('ssp-086 guard did not settle');
     };
