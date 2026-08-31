@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, StateUtils, SuperType, ChooseCardsPrompt, GameMessage } from '../../../game';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { PowerEffect } from '../../../game/store/effects/game-effects';
+import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MegaClefableex extends PokemonCard {
@@ -35,21 +35,17 @@ export class MegaClefableex extends PokemonCard {
   public fullName: string = 'Mega Clefable ex M3';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Wings of Light - Prevent opponent ability effects on this Pokemon
-    if (effect instanceof PowerEffect && effect.target && effect.target.cards.includes(this)) {
-      const pokemonCard = effect.target.getPokemonCard();
-      if (pokemonCard === this) {
-        const targetOwner = StateUtils.findOwner(state, effect.target);
-        const opponent = StateUtils.getOpponent(state, targetOwner);
+    // Luminous Wing - Prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon.
+    // Ability effects reach their target through EffectOfAbilityEffect (the ability-aware wrapper);
+    // null its target to prevent. Ref: set-lost-origin/enamorus-v.ts. (TA-334 / SD-26)
+    if (effect instanceof EffectOfAbilityEffect && effect.target && effect.target.getPokemonCard() === this) {
+      const targetOwner = StateUtils.findOwner(state, effect.target);
+      const opponent = StateUtils.getOpponent(state, targetOwner);
 
-        // Only prevent effects from opponent's abilities
-        if (targetOwner === opponent) {
-          // Check if ability is blocked (to allow our own abilities)
-          if (!IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
-            effect.preventDefault = true;
-            return state;
-          }
-        }
+      // Only from the opponent's abilities, and only while our own ability is active (not Iron-Thorns-locked).
+      if (effect.player === opponent && !IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
+        effect.target = undefined;
+        return state;
       }
     }
 

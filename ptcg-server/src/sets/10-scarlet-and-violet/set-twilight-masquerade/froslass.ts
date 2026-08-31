@@ -1,7 +1,7 @@
 import { PlayerType, PokemonCard, PowerType, StateUtils } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
-import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
+import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { CheckPokemonPowersEffect } from '../../../game/store/effects/check-effects';
 import { BetweenTurnsEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { GamePhase, State } from '../../../game/store/state/state';
@@ -64,13 +64,10 @@ export class Froslass extends PokemonCard {
             const powersEffect = new CheckPokemonPowersEffect(player, card);
             state = store.reduceEffect(state, powersEffect);
             if (powersEffect.powers.some(power => power.powerType === PowerType.ABILITY)) {
-              const placeCountersEffect = new PlaceDamageCountersEffect(
-                player,
-                cardList,
-                10 * numberOfFroslass,
-                this
-              );
-              state = store.reduceEffect(state, placeCountersEffect);
+              // Ability-aware effect so "prevent opponent ability effects" protection can intercept (SD-26/TA-334)
+              const powerEffect = new PowerEffect(player, this.powers[0], this, cardList);
+              const putCountersEffect = new PutDamageCountersEffect(powerEffect, 10 * numberOfFroslass);
+              state = store.reduceEffect(state, putCountersEffect);
             }
           }
         });
@@ -80,13 +77,10 @@ export class Froslass extends PokemonCard {
             const powersEffect = new CheckPokemonPowersEffect(opponent, card);
             state = store.reduceEffect(state, powersEffect);
             if (powersEffect.powers.some(power => power.powerType === PowerType.ABILITY)) {
-              const placeCountersEffect = new PlaceDamageCountersEffect(
-                player,
-                cardList,
-                10 * numberOfFroslass,
-                this
-              );
-              state = store.reduceEffect(state, placeCountersEffect);
+              // Ability-aware effect so "prevent opponent ability effects" protection can intercept (SD-26/TA-334)
+              const powerEffect = new PowerEffect(player, this.powers[0], this, cardList);
+              const putCountersEffect = new PutDamageCountersEffect(powerEffect, 10 * numberOfFroslass);
+              state = store.reduceEffect(state, putCountersEffect);
             }
           }
         });

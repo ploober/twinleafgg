@@ -6094,6 +6094,21 @@
       "signatures": [
         "new CheckRetreatCostEffect(opponent)"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/froslass.ts",
+      "signatures": [
+        "new PutDamageCountersEffect(powerEffect, 10 * numberOfFroslass)"
+      ],
+      "note": "TA-334 / SD-26 (2026-08-30): SOURCE half of the two-card fix. Froslass 'Freezing Shroud' checkup counter was dispatched as a RAW PlaceDamageCountersEffect, which carries no EffectOfAbilityEffect wrapper, so NO 'prevent opponent ability effects' protection (Mega Clefable ex por-031 'Luminous Wing', Enamorus V lor-082) could ever intercept it — the ability effect bypassed protection SILENTLY. Migrated both loops (own-side + opponent-side) to the ability-aware PutDamageCountersEffect built from a PowerEffect — the canonical maushold-ex / hisuian-samurott-vstar pattern; the reducer runs effect.effectOfAbility (an EffectOfAbilityEffect) before applying damage, so a protector can now null the target. Reverting to the raw effect re-hides the counter from every protector. svp-117 inherits this (FroslassSVP extends Froslass). Guard: conformance spec por-031 c12/c13 (Froslass-counter-on-Clefable) DIVERGED->PASS; c14 own-side Froslass stays PASS (not over-prevented)."
+    },
+    {
+      "file": "set-perfect-order/mega-clefable-ex.ts",
+      "signatures": [
+        "effect instanceof EffectOfAbilityEffect",
+        "effect.player === opponent"
+      ],
+      "note": "TA-334 / SD-26 (2026-08-30): SINK half. 'Luminous Wing' (prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon) had TWO bugs: (1) an always-false owner guard `if (targetOwner === opponent)` where `opponent = getOpponent(targetOwner)` — a player is never their own opponent, so the whole block was dead code; (2) it intercepted only PowerEffect (the ability activation), never the EffectOfAbilityEffect wrapper the reducer runs for ability-aware effects, so even a fixed guard would miss the counter. Rewritten to intercept EffectOfAbilityEffect with the corrected guard `effect.player === opponent` + `effect.target.getPokemonCard() === this`, nulling effect.target (the enamorus-v.ts idiom), preserving IS_ABILITY_BLOCKED for the Iron Thorns ex ability-lock interaction. Reverting either signature restores the dead-code / wrong-effect bug. Guard: por-031 c12/c13 DIVERGED->PASS; c14 (own-side) + c15/c16 (attack effects) stay PASS; twm-077 Iron Thorns ex 11/11 PASS."
     }
   ]
 }
