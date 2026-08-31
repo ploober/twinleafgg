@@ -67,7 +67,12 @@ export class Ariados extends PokemonCard {
 
       const opponentActiveCard = opponent.active.getPokemonCard();
       if (opponentActiveCard) {
-        const retreatCost = opponentActiveCard.retreat.filter(c => c === CardType.COLORLESS).length;
+        // Read the EFFECTIVE retreat cost, which includes retreat-cost modifiers (this Ariados' own
+        // Big Net, tools, etc.) — NOT the printed card.retreat. compendium#1970: Big Net's extra
+        // retreat cost increases String Bind's damage. (TA-333)
+        const checkRetreat = new CheckRetreatCostEffect(opponent);
+        store.reduceEffect(state, checkRetreat);
+        const retreatCost = checkRetreat.cost.filter(c => c === CardType.COLORLESS).length;
 
         effect.damage += retreatCost * 30;
       }
