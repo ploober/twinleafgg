@@ -22,7 +22,7 @@ export const selectOptionDecomposer: PromptDecomposer<SelectOptionPrompt> = {
       if (disabled[i]) {
         continue;
       }
-      legalActions.push({ type: 'selectOption', option: i });
+      legalActions.push({ type: 'selectOption', option: i, label: String(prompt.values[i]) });
     }
     if (legalActions.length === 0) {
       return null;

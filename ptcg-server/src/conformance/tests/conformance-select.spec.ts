@@ -56,8 +56,8 @@ describe('Conformance — SelectPrompt decomposer', () => {
     expect(res.pending).not.toBeNull();
     expect(res.pending!.descriptor).toContain('Select');
     expect(res.pending!.legalActions).toEqual([
-      { actor: 'A', type: 'selectOption', option: 0 },
-      { actor: 'A', type: 'selectOption', option: 1 },
+      { actor: 'A', type: 'selectOption', option: 0, label: VALUES[0] },
+      { actor: 'A', type: 'selectOption', option: 1, label: VALUES[1] },
     ]);
   });
 

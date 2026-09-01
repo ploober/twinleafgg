@@ -1,7 +1,7 @@
 import { importState } from '../state-adapter';
 import { replay } from '../driver';
 import {
-  NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION,
+  NeutralAction, NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, SCHEMA_VERSION,
 } from '../neutral-types';
 import { GameMessage } from '../../game/game-message';
 import { SelectOptionPrompt } from '../../game/store/prompts/select-option-prompt';
@@ -54,10 +54,33 @@ describe('Conformance — SelectOptionPrompt decomposer', () => {
     expect(res.pending).not.toBeNull();
     expect(res.pending!.descriptor).toContain('SelectOption');
     expect(res.pending!.legalActions).toEqual([
-      { actor: 'A', type: 'selectOption', option: 0 },
-      { actor: 'A', type: 'selectOption', option: 1 },
-      { actor: 'A', type: 'selectOption', option: 2 },
+      { actor: 'A', type: 'selectOption', option: 0, label: VALUES[0] },
+      { actor: 'A', type: 'selectOption', option: 1, label: VALUES[1] },
+      { actor: 'A', type: 'selectOption', option: 2, label: VALUES[2] },
     ]);
+  });
+
+  // CF-59: `option` is an index into THIS engine's enumeration order, so an answer that names the
+  // index cannot be engine-neutral; the template carries the option's text as `label` and an
+  // incoming action may address the choice by label alone.
+  it('[CF-59] accepts a label-addressed selectOption (casefold, punctuation-collapsed) in place of the index', () => {
+    const game = importState(board());
+    const p = game.state.players[0];
+    let picked: number | undefined;
+    game.store.prompt(game.state, new SelectOptionPrompt(p.id, GameMessage.CHOOSE_OPTION, VALUES), choice => { picked = choice; });
+
+    const res = replay(game, [{ actor: 'A', type: 'selectOption', label: 'discard up to 2 tools' } as unknown as NeutralAction]);
+    expect(picked).toBe(1);
+    expect(res.pending!.descriptor).toBe('main');
+  });
+
+  it('[CF-59] an unknown label is an invalidAction (absent identity field), never a guess', () => {
+    const game = importState(board());
+    const p = game.state.players[0];
+    game.store.prompt(game.state, new SelectOptionPrompt(p.id, GameMessage.CHOOSE_OPTION, VALUES), () => { /* unresolved */ });
+    const res = replay(game, [{ actor: 'A', type: 'selectOption', label: 'Discard everything' } as unknown as NeutralAction]);
+    expect(res.applied).toBe(0);
+    expect(res.rejection!.nativeReason!.code).toBe(GameMessage.ILLEGAL_ACTION);
   });
 
   it('resolves to the chosen index and drives past to the main menu', () => {
@@ -86,8 +109,8 @@ describe('Conformance — SelectOptionPrompt decomposer', () => {
     // disabled index 1 is not offered
     const menu = replay(mk(), []);
     expect(menu.pending!.legalActions).toEqual([
-      { actor: 'A', type: 'selectOption', option: 0 },
-      { actor: 'A', type: 'selectOption', option: 2 },
+      { actor: 'A', type: 'selectOption', option: 0, label: VALUES[0] },
+      { actor: 'A', type: 'selectOption', option: 2, label: VALUES[2] },
     ]);
 
     // TA-302 / CF-52: naming the disabled index, or an out-of-range one, names something the menu

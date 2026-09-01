@@ -434,6 +434,13 @@ export interface SelectOptionAction {
   type: 'selectOption';
   /** Index into the prompt's `values` list. */
   option: number;
+  /**
+   * CF-59: the option's own text (the prompt's `values[i]` — a GameMessage key such as `BURNED`, or
+   * a literal such as `Fire`). Emitted on every template; an INCOMING action may carry it INSTEAD of
+   * `option`, and the driver resolves it against the advertised menu (casefold, punctuation-collapsed)
+   * before membership is decided — `option` stays the identity field.
+   */
+  label?: string;
 }
 
 /**
@@ -564,7 +571,7 @@ export type LegalAction =
   | { type: 'moveEnergy'; card: string; source: string; target: string }
   | { type: 'takePrize'; index: number }
   | { type: 'confirm'; value: boolean }
-  | { type: 'selectOption'; option: number }
+  | { type: 'selectOption'; option: number; label?: string }
   | { type: 'resolveNext'; kind: 'abilityEffect' | 'cardTextEffect'; source: string; ability?: string }
   // `endChoice` is the INTERNAL variable-count terminator only — it is never emitted on the wire
   // (the contract has no such Action; completion is signalled by the next non-pick action, R1). The

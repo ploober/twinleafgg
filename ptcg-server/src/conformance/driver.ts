@@ -413,6 +413,35 @@ const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
  * thing that rejects a pick type it has no identity rule for. Adding a verb to the table is what
  * extends coverage; the default stays permissive so a gap here is a missed catch, never a false reject.
  */
+/** CF-59 label equality: casefold, collapse runs of non-alphanumerics to one space, trim. */
+export function normalizeOptionLabel(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * CF-59: a `selectOption` that names its choice by `label` and omits `option` is resolved against the
+ * advertised menu here, IN PLACE, before `toPick` and the membership gate see it — so both keep
+ * reasoning about `option` (the identity field) and a label-addressed answer is exactly as legal as
+ * the index it denotes. An unknown label leaves `option` absent, and the membership gate turns that
+ * into `invalidAction` (CF-52's "absent required field"), never a guess.
+ */
+function resolveSelectOptionLabel(legalActions: LegalAction[], action: NeutralAction): void {
+  if (action.type !== 'selectOption') {
+    return;
+  }
+  const a = action as unknown as { option?: unknown; label?: unknown };
+  if (a.option !== undefined || typeof a.label !== 'string') {
+    return;
+  }
+  const want = normalizeOptionLabel(a.label);
+  for (const la of legalActions) {
+    if (la.type === 'selectOption' && la.label !== undefined && normalizeOptionLabel(la.label) === want) {
+      a.option = la.option;
+      return;
+    }
+  }
+}
+
 function offersAction(legalActions: LegalAction[], action: NeutralAction): boolean {
   const fields = PICK_IDENTITY_FIELDS[action.type];
   if (fields === undefined) {
@@ -861,6 +890,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // complaint was. OFFERED and still unmappable → RETHROW: the menu advertised something the
       // adapter cannot turn into a pick, which is our bug and must stay loud (an adapter-only fault is
       // a harness gap, the line rotomancer holds in their note ninety-seven §3 and we agreed with).
+      resolveSelectOptionLabel(sub.legalActions, nextAction);
       let pick;
       try {
         pick = dec.toPick(prompt, nextAction, game.ctx, game.state, accum);

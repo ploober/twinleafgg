@@ -20,7 +20,7 @@ export const selectDecomposer: PromptDecomposer<SelectPrompt> = {
     }
     const legalActions: LegalAction[] = [];
     for (let i = 0; i < prompt.values.length; i++) {
-      legalActions.push({ type: 'selectOption', option: i });
+      legalActions.push({ type: 'selectOption', option: i, label: String(prompt.values[i]) });
     }
     if (legalActions.length === 0) {
       return null;

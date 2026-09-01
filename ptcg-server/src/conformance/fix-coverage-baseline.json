@@ -2,5 +2,7 @@
   "comment": "Waiver list for the anti-revert coverage ratchet (conformance-fix-signatures.spec.ts, the 'every branch-changed file is signature-covered or explicitly waived' spec). A file belongs here only if it was modified on this branch under src/sets or src/game AND genuinely should not be signature-protected — pure reorg, upstream-owned, no fix content. Anything else must be registered in fix-signatures.json instead, which is what actually makes a silent revert detectable. THIS LIST IS DEBT: it may shrink but should never grow casually, and every entry needs a real reason, not a placeholder.",
   "history": "Seeded EMPTY on 2026-08-01. It was designed to absorb a 468-file backlog (455 src/sets + 13 src/game changed with no signature), but that backlog was paid down instead rather than blessed: 447 card files bulk-registered via register_fix_signatures.py, 3 more after its candidate generator was taught to look past block prefixes, 5 deletion-type evolvesFrom fixes registered via the new absentSignatures mechanism, and all 13 engine files registered by hand with load-bearing lines. Coverage is therefore 695/695 and the spec is a strict assertion.",
   "seededFrom": "82e2f26e31e3c8089e9ed468e3725824c664009d",
-  "waived": {}
+  "waived": {
+    "ptcg-server/src/sets/11-mega-evolution/set-mega-evolution-promos/celebratory-fanfare.ts": "2026-09-01: the branch's only change is a 3-line provenance COMMENT (TA-256 / upstream f0edbdac4). The fix itself — MEP set, regulationMark 'I', MEP index registration — exists at origin/main verbatim, so a take-upstream merge reverts nothing; the former signature entry was removed 2026-08-31 for exactly that (non-discriminating: present at HEAD AND upstream). Nothing to protect."
+  }
 }
