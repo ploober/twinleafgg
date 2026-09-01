@@ -177,21 +177,27 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
       if (beforeDmg.has(ref.iid) && !afterDmg.has(ref.iid)) { bounced.add(ref.iid); }
     }
   }
-  let koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid) && !bounced.has(iid));
+  // TA-344 (2026-09-01): a hand reappearance is NOT proof of a bounce. Gengar's Infinite Shadow is a
+  // genuine Knock Out (prize taken, LOG_POKEMON_KO written) whose remains go to the HAND instead of
+  // the discard, and the bounce heuristic silently dropped its `ko` and `damaged`. So bounced iids
+  // stay CANDIDATES, ranked last: the KO-log cap below decides how many vanishers were real KOs, and
+  // a bounce is only ever counted when the logs say more Pokemon were KO'd than went to the discard.
+  let koList = [...beforeDmg.keys()].filter(iid => !afterDmg.has(iid));
   // A Pokemon can leave play into the discard by a NON-KO effect ("Discard this Pokemon and all
   // attached cards" — Revavroom ex "Shattering Speed", TA-140). An effect-discard is not a Knock Out:
   // it awards no prize, and the engine never runs a KnockOutEffect (the sole LOG_POKEMON_KO emitter).
   // The state diff can't tell the two apart — both end in the discard — so cap the `ko` count at the
-  // KO-log count. When trimming, drop the ACTIVE player's own vanished Pokemon first: an attack KOs the
-  // DEFENDER (opponent-of-active) while a self-discard removes the attacker's own, so opponent-side
-  // vanishers are the real KOs. (Matching KO logs by display NAME is avoided by design — names are
-  // ambiguous across identical printings; the count + ownership is unambiguous.)
+  // KO-log count. When trimming, drop bounced (hand/deck) vanishers first, then the ACTIVE player's
+  // own: an attack KOs the DEFENDER (opponent-of-active) while a self-discard/self-bounce removes the
+  // attacker's own, so opponent-side discard-vanishers are the real KOs. (Matching KO logs by display
+  // NAME is avoided by design — names are ambiguous across identical printings; the count +
+  // ownership is unambiguous.)
   const koLogCount = logs.filter(l => l.message === GameLog.LOG_POKEMON_KO).length;
   if (koList.length > koLogCount) {
     const attacker = before.activePlayer;
-    koList = [...koList]
-      .sort((a, b) => (identify(before, a).player === attacker ? 1 : 0) - (identify(before, b).player === attacker ? 1 : 0))
-      .slice(0, koLogCount);
+    const rank = (iid: string): number =>
+      (bounced.has(iid) ? 2 : 0) + (identify(before, iid).player === attacker ? 1 : 0);
+    koList = [...koList].sort((a, b) => rank(a) - rank(b)).slice(0, koLogCount);
   }
   if (koList.length > 0) {
     // CF-6: one `damaged` event per damage placement, reconstructed for the KO'd (their damage

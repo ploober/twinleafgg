@@ -6,7 +6,7 @@ import { GameError } from '../game/game-error';
 import { Store } from '../game/store/store';
 import {
   UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction,
-  UseStadiumAction as UseStadiumGameAction
+  UseStadiumAction as UseStadiumGameAction, RetreatAction as RetreatGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { CardTarget, PlayerType, SlotType, PlayCardAction } from '../game/store/actions/play-card-action';
@@ -447,7 +447,28 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
   // `to` indexes the PROJECTED bench (occupied slots only, in order) — native slot numbers are
   // engine-private and drift from the projection once a promote/KO leaves a hole (TA-9). The
   // driver's dispatchRetreat translates back to the native slot.
-  return benchSlots.map((_slot, k) => ({ type: 'retreat', to: k } as LegalAction));
+  //
+  // Final gate (TA-340 / TA-271): dry-run the real RetreatAction on a clone. A card-private
+  // "can't retreat" lives as a `throw` on RetreatEffect (the Fossils: "This card … can't retreat"),
+  // invisible to the cost query above, so the menu advertised a retreat the executor then refused.
+  // Same idiom as attackProbeAccepts: a GameError = don't offer; any other throw = offer.
+  return benchSlots
+    .filter(x => retreatProbeAccepts(state, player, x.i))
+    .map((_slot, k) => ({ type: 'retreat', to: k } as LegalAction));
+}
+
+function retreatProbeAccepts(state: State, player: Player, nativeSlot: number): boolean {
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[state.players.indexOf(player)];
+  try {
+    probe.dispatch(new RetreatGameAction(cloned.id, nativeSlot));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
 }
 
 /**

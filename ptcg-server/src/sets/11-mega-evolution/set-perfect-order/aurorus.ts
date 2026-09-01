@@ -82,7 +82,9 @@ export class Aurorus extends PokemonCard {
       );
 
       if (hasWaterEnergy) {
-        effect.damage = Math.max(0, effect.damage - 50);
+        // TA-342: "The effect of Tundra Wall doesn't stack" — the named reducer applies once per
+        // attack however many Aurorus are in play; the raw subtraction applied per copy.
+        effect.reduceDamage(50, this.powers[0].name);
       }
     }
 

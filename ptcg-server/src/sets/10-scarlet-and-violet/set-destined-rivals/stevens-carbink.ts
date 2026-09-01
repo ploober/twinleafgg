@@ -42,15 +42,21 @@ export class StevensCarbink extends PokemonCard {
   public fullName: string = "Steven's Carbink DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (
-      effect instanceof PutDamageEffect &&
-      StateUtils.isPokemonInPlay(effect.player, this, SlotType.BENCH)
-    ) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
+    // TA-339: "all of YOUR Steven's Pokémon take 30 less damage from attacks from YOUR OPPONENT's
+    // Pokémon" — the Palace belongs to the DEFENDER's Bench. `effect.player` is the attacker, so the
+    // old `isPokemonInPlay(effect.player, …)` test made the attacker's own Palace shield the defender
+    // and left the defender's Palace inert.
+    if (effect instanceof PutDamageEffect) {
+      const targetOwner = StateUtils.findOwner(state, effect.target);
+      if (effect.player === targetOwner) {
+        return state; // damage from the owner's own attack is not "from your opponent's Pokémon"
+      }
+      if (!StateUtils.isPokemonInPlay(targetOwner, this, SlotType.BENCH)) {
+        return state;
+      }
 
       // Try to reduce PowerEffect, to check if something is blocking our ability
-      if (IS_ABILITY_BLOCKED(store, state, opponent, this)) {
+      if (IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
         return state;
       }
 

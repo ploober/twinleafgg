@@ -14,6 +14,7 @@ import {
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
+import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MegaClefableex extends PokemonCard {
@@ -61,6 +62,19 @@ export class MegaClefableex extends PokemonCard {
       // Only from the opponent's abilities, and only while our own ability is active (not Iron-Thorns-locked).
       if (effect.player === opponent && !IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
         effect.target = undefined;
+        return state;
+      }
+    }
+
+    // TA-346 / SD-26 (condition half): an ability-inflicted Special Condition arrives as
+    // AddSpecialConditionsPowerEffect, which the reducer applies RAW — it carries no
+    // EffectOfAbilityEffect wrapper, so the interceptor above never sees it (Cradily's Selective
+    // Slime burned this Pokémon). Intercept the class itself, as Enamorus V does; same owner guard.
+    if (effect instanceof AddSpecialConditionsPowerEffect && effect.target && effect.target.getPokemonCard() === this) {
+      const targetOwner = StateUtils.findOwner(state, effect.target);
+      const opponent = StateUtils.getOpponent(state, targetOwner);
+      if (effect.player === opponent && !IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
+        effect.preventDefault = true;
         return state;
       }
     }

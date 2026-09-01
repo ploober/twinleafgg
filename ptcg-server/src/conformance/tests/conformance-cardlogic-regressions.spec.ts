@@ -1,8 +1,8 @@
 import { step } from '../driver';
 import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers,
-  ConditionToken, CardRef, SCHEMA_VERSION
-, NeutralAction } from '../neutral-types';
+  ConditionToken, CardRef, SCHEMA_VERSION, NeutralAction,
+} from '../neutral-types';
 
 // Behavioural regression guards for twinleaf `src/sets` card-logic fixes that had ONLY a
 // fix-signature entry (or none) before this pass — the ALL-TIME backfill (2026-07-07). Each `it`
@@ -2211,6 +2211,200 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     );
     const tth = step(klinklang(), [attack('A-act', 'Triple Smash'), flip('tails'), flip('tails'), flip('heads')]);
     expect(tth.state.players.B.active!.damage).toBe(120);
+  });
+
+  it('Kaleidowaltz owes no shuffle on zero heads: the flip-gated search never happened [TA-345 asc-172]', () => {
+    // B.44 (2026-09-01): "Then, shuffle your deck" rides on the search having been PERFORMED
+    // (#2322/#2171: cannot search => cannot shuffle; #2303: a performed-but-failed search still
+    // shuffles). "For each heads, search…" on three tails performs no search. Rotomancer ends
+    // the turn; pre-fix twinleaf pended a system shuffle. One heads (the isolating boundary) still
+    // searches and therefore still shuffles.
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const audino = () => board(
+      player({ active: inPlay('A-act', ['asc-172'], en(METAL, 1, 'a')), bench: [inPlay('A-b0', [RALTS])],
+               deck: fillerDeck('A', 6) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const zero = step(audino(), [attack('A-act', 'Kaleidowaltz'), flip('tails'), flip('tails'), flip('tails')]);
+    expect(zero.pending?.actor).not.toBe('system');
+    expect(types(zero)).not.toContain('shuffle');
+    const one = step(audino(), [attack('A-act', 'Kaleidowaltz'), flip('heads'), flip('tails'), flip('tails')]);
+    expect(types(one)).toContain('attachEnergy');   // the search ran -> its shuffle is owed downstream
+  });
+
+  it('Luminous Wing prevents an ability-inflicted Special Condition (Selective Slime) [TA-346 por-031]', () => {
+    // SD-26, condition half: AddSpecialConditionsPowerEffect is reduced RAW (no EffectOfAbilityEffect
+    // wrapper), so a sink that intercepts only the wrapper (TA-334's fix) never sees it. Enamorus V
+    // intercepts the class itself. Rotomancer prevents; pre-fix twinleaf burned Mega Clefable ex.
+    // Control: the same ability burns an unprotected Active.
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const slime = (defender: string) => step(board(
+      player({ active: inPlay('A-act', ['scr-130', 'scr-005', 'scr-006'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [defender]) }),
+    ), [
+      { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Selective Slime' },
+      flip('heads'),
+      { actor: 'A', type: 'selectOption', label: 'Burned' } as unknown as NeutralAction,
+    ]);
+    expect(slime('por-031').state.players.B.active!.conditions).not.toContain('burned');
+    expect(slime(RALTS).state.players.B.active!.conditions).toContain('burned');
+  });
+
+  it('Biting Spree: a declined "you may" places nothing and prompts for nothing; accepted, its counters respect Luminous Wing [TA-341 dri-122]', () => {
+    // (a) The CONFIRMATION_PROMPT callback's early return never gated the ChoosePokemonPrompt that
+    // followed it, so a decline still pended CHOOSE_POKEMON_TO_DAMAGE. (b) `target.damage += 20` is
+    // a raw write — no PutDamageCountersEffect, so no EffectOfAbilityEffect for a protector to catch
+    // (SD-26 source half, the TA-334 froslass shape). Rotomancer: decline -> turn menu; accept ->
+    // por-031 stays at 0, the Bellsprout takes 20.
+    const crobat = (defender: string) => board(
+      player({ active: inPlay('A-act', ['dri-120', 'dri-121']), hand: [{ iid: 'Ah0', printing: 'dri-122' }] }),
+      player({ active: inPlay('B-act', [defender]), bench: [inPlay('B-b0', [RALTS])] }),
+    );
+    const evolve = { actor: 'A' as const, type: 'evolve' as const, card: 'Ah0', target: 'A-act' };
+    const confirm = (value: boolean) => ({ actor: 'A' as const, type: 'confirm' as const, value });
+    const choose = (target: string) => ({ actor: 'A' as const, type: 'choose' as const, target });
+
+    const declined = step(crobat(TANKY), [evolve, confirm(false)]);
+    expect(declined.pending?.descriptor).toBe('main');
+    expect(declined.state.players.B.active!.damage).toBe(0);
+    expect(declined.state.players.B.bench[0].damage).toBe(0);
+
+    const accepted = step(crobat(TANKY), [evolve, confirm(true), choose('B-act'), choose('B-b0')]);
+    expect(accepted.state.players.B.active!.damage).toBe(20);
+    expect(accepted.state.players.B.bench[0].damage).toBe(20);
+
+    const shielded = step(crobat('por-031'), [evolve, confirm(true), choose('B-act'), choose('B-b0')]);
+    expect(shielded.state.players.B.active!.damage).toBe(0);   // Luminous Wing
+    expect(shielded.state.players.B.bench[0].damage).toBe(20);
+  });
+
+  it('Tundra Wall does not stack: two Aurorus reduce by 50, not 100 [TA-342 por-024]', () => {
+    // "The effect of Tundra Wall doesn't stack." The card wrote `effect.damage = max(0, damage - 50)`
+    // raw, so every copy in play applied; PutDamageEffect.reduceDamage(amount, source) is the
+    // engine's named non-stacking reducer. Mach Bolt 70 into a Water-holding Active behind two
+    // Aurorus: rotomancer 20, pre-fix twinleaf 0. One Aurorus (control) is also 20.
+    const LIGHTNING = 'sve-004';
+    const aurorus = (copies: string[]) => board(
+      player({ active: inPlay('A-act', ['jtg-054', 'jtg-055'], en(LIGHTNING, 3, 'a')) }),
+      player({ active: inPlay('B-act', ['por-063'], en(WATER, 1, 'b')),
+               bench: copies.map((p, i) => inPlay(`B-b${i}`, ['por-069', 'por-023', p], en(WATER, 1, `bb${i}`))) }),
+    );
+    expect(step(aurorus(['por-024', 'por-092']), [attack('A-act', 'Mach Bolt')]).state.players.B.active!.damage).toBe(20);
+    expect(step(aurorus(['por-024']), [attack('A-act', 'Mach Bolt')]).state.players.B.active!.damage).toBe(20);
+  });
+
+  it("Stone Palace protects its OWNER's Steven's Pokémon from the opponent's attacks, never the other way round [TA-339 dri-086]", () => {
+    // "As long as this Pokémon is on your Bench, all of YOUR Steven's Pokémon take 30 less damage
+    // from attacks from YOUR OPPONENT's Pokémon." The card tested `effect.player` (the ATTACKER) for
+    // a benched Carbink, so the attacker's own Palace shielded the defender and the defender's did
+    // nothing. Four one-variable cells, rotomancer matching print on all four.
+    const LIGHTNING = 'sve-004';
+    const cell = (aBench: string[], bBench: string[], atk: [string, string[], string]) => step(board(
+      player({ active: inPlay('A-act', [atk[0]], atk[1].map((e, i) => ({ iid: `ae${i}`, printing: e }))),
+               bench: aBench.map((p, i) => inPlay(`A-b${i}`, [p])) }),
+      player({ active: inPlay('B-act', ['dri-086']), bench: bBench.map((p, i) => inPlay(`B-b${i}`, [p])) }),
+    ), [attack('A-act', atk[2])]).state.players.B.active!.damage;
+    const machBolt: [string, string[], string] = ['jtg-055', [LIGHTNING, LIGHTNING, LIGHTNING], 'Mach Bolt'];
+    const fireClaws: [string, string[], string] = ['asc-020', [FIRE, WATER], 'Fire Claws'];
+    expect(cell([], ['dri-086'], machBolt)).toBe(40);   // defender's Palace: 70 - 30
+    expect(cell([], [RALTS], machBolt)).toBe(70);        // no Palace on the defender's side
+    expect(cell(['dri-086'], [], fireClaws)).toBe(30);   // ATTACKER's Palace must not shield the defender
+    expect(cell(['dri-086'], ['dri-086'], fireClaws)).toBe(0); // defender's Palace floors 30 at 0
+  });
+
+  it('Infinite Shadow returns the KO\'d Gengar AND its underlying cards to the hand; attached cards are discarded [TA-344 por-050]', () => {
+    // "If this Pokémon is Knocked Out by damage from an attack from your opponent's Pokémon, put it
+    // into your hand instead of the discard pile. (Discard all attached cards.)" — #2308: "this
+    // Pokémon" includes the underlying Basic/Stage cards. The old handler read the DAMAGE_DEALT
+    // marker off the WRONG player (the marker sits on the damaged Pokémon's owner) and never fired,
+    // so the whole stack went to the discard. Rotomancer: hand gains Gastly/Haunter/Gengar, the
+    // Energy is discarded, the prize is still taken (#2307).
+    const DARK = 'sve-007';
+    const gengar = (damage: number) => board(
+      player({ active: inPlay('A-act', ['asc-020'], [{ iid: 'ae0', printing: FIRE }, { iid: 'ae1', printing: WATER }]) }),
+      player({ active: inPlay('B-act', ['asc-123', 'asc-124', 'por-050'], en(DARK, 2, 'b'), damage),
+               bench: [inPlay('B-b0', [RALTS])] }),
+    );
+    const ko = step(gengar(100), [attack('A-act', 'Fire Claws')]);   // 30 = exact KO
+    const hand = ko.state.players.B.hand.map(c => c.printing).sort();
+    expect(hand).toEqual(['asc-123', 'asc-124', 'por-050']);
+    expect(ko.state.players.B.discard.map(c => c.printing)).toEqual([DARK, DARK]);
+    expect(types(ko)).toContain('takePrize');                        // the prize is still owed
+    // The event mapper used to read a hand reappearance as a BOUNCE and drop the `ko`/`damaged`;
+    // a KO whose remains go to the hand is still a Knock Out (the KO log + prize say so).
+    const kinds = ko.events.map(e => `${e.kind}:${(e as { target?: string }).target ?? ''}`);
+    expect(kinds).toContain('ko:asc-123');
+    expect(kinds).toContain('damaged:asc-123');
+    const survives = step(gengar(90), [attack('A-act', 'Fire Claws')]); // 120 < 130: nothing moves
+    // (B's hand holds its turn-start draw here — the attack ended A's turn — so assert the stack.)
+    expect(survives.state.players.B.hand.map(c => c.printing)).not.toContain('por-050');
+    expect(survives.state.players.B.active!.stack.length).toBe(3);
+  });
+
+  it('Selective Slime is withheld when the opponent\'s Active already carries all three conditions, and offers exactly Burned/Confused/Poisoned [TA-343 scr-006]', () => {
+    // #2014: "Can I use Selective Slime if my opponent's Active is already Burned, Confused, and
+    // Poisoned? — No, you cannot." (B.41's withhold line: the effect provably does nothing and the
+    // operand is public.) Two of three (control) is still offered. And the choice menu printed a 4th
+    // option — Asleep — the text does not offer; the choice is exactly the three printed words.
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const cradily = (conds: ConditionToken[]) => board(
+      player({ active: inPlay('A-act', ['scr-130', 'scr-005', 'scr-006'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY], [], 0, conds) }),
+    );
+    const offersAbility = (r: ReturnType<typeof step>) =>
+      (r.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'useAbility');
+    expect(offersAbility(step(cradily(['burned', 'confused', 'poisoned']), []))).toBe(false);
+    expect(offersAbility(step(cradily(['burned', 'confused']), []))).toBe(true);
+
+    const menu = step(cradily([]), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Selective Slime' }, flip('heads')]);
+    const labels = (menu.pending?.legalActions ?? [])
+      .filter(a => (a as { type: string }).type === 'selectOption')
+      .map(a => String((a as { label?: string }).label).toLowerCase()).sort();
+    expect(labels).toEqual(['burned', 'confused', 'poisoned']);
+  });
+
+  it('a can\'t-retreat Fossil Active is not OFFERED a retreat (menu = executor) [TA-340 scr-130 / TA-271 por-068]', () => {
+    // "This card … can't retreat." The RetreatEffect throws CANNOT_RETREAT, but retreatMenu never
+    // dry-ran it, so the menu advertised a retreat the executor then refused (the TA-225 offer-then-
+    // reject family). retreatMenu now probes the real RetreatAction on a clone, like attacks do.
+    const active = (printing: string) => step(board(
+      player({ active: inPlay('A-act', [printing], en(WATER, 2, 'a')), bench: [inPlay('A-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), []);
+    expect(types(active('scr-130'))).not.toContain('retreat');
+    expect(types(active('por-068'))).not.toContain('retreat');
+    expect(types(active(RALTS))).toContain('retreat');   // control: a plain Basic retreats
+  });
+
+  it('Primal Root: attacks used by the opponent\'s Basic Pokémon cost [C] more [TA-340 scr-130]', () => {
+    // twinleaf's Antique Root Fossil carried only its Fossil trainer-ability; the printed second
+    // ability was missing entirely. Snivy with GG facing a Root Fossil Active: Vine Whip (GG) now
+    // costs GGC and is not offered; with GGG it is. A non-Fossil defender: both offered at GG.
+    const snivy = (defender: string, grass: number) => attacksOffered(step(board(
+      player({ active: inPlay('A-act', ['blk-001'], en(GRASS, grass, 'a')) }),
+      player({ active: inPlay('B-act', [defender]) }),
+    ), []));
+    expect(snivy('scr-130', 2)).toEqual(['Tackle']);
+    expect(snivy('scr-130', 3)).toEqual(['Tackle', 'Vine Whip']);
+    expect(snivy(TANKY, 2)).toEqual(['Tackle', 'Vine Whip']);
+  });
+
+  it('attacks AGAINST an Antique Armor Fossil Active are offered and land at printed minus 10 [TA-340 pbl-072]', () => {
+    // armorProtectionActive() dispatched a PowerEffect for powers[0] — the Fossil TRAINER_ABILITY,
+    // whose WAS_POWER_USED handler DISCARDS THE FOSSIL — so checking the armor mid-attack removed the
+    // defender, the attack pipeline threw, the menu probe withheld every attack and a submitted one
+    // was ILLEGAL_ACTION. The lock check must name Protective Armor (powers[1]).
+    const servine = (grass: number, name: string) => step(board(
+      player({ active: inPlay('A-act', ['blk-001', 'blk-002'], en(GRASS, grass, 'a')) }),
+      player({ active: inPlay('B-act', ['pbl-072']), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [attack('A-act', name)]);
+    const menu = step(board(
+      player({ active: inPlay('A-act', ['blk-001', 'blk-002'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', ['pbl-072']), bench: [inPlay('B-b0', [RALTS])] }),
+    ), []);
+    expect(attacksOffered(menu)).toEqual(['Wrap']);
+    expect(servine(1, 'Wrap').state.players.B.active!.damage).toBe(10);        // 20 - 10
+    expect(servine(3, 'Vine Whip').state.players.B.active!.damage).toBe(50);   // 60 - 10, survives at 60 HP
   });
 
 });

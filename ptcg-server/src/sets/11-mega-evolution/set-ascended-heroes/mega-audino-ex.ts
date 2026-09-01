@@ -86,9 +86,11 @@ export class MegaAudinoex extends PokemonCard {
               SHUFFLE_DECK(store, state, player);
             },
           );
-        } else {
-          SHUFFLE_DECK(store, state, player);
         }
+        // TA-345 / B.44: "Then, shuffle your deck" rides on the search having been performed
+        // (#2322/#2171 vs #2303). Zero heads = "For each heads, search…" ran zero times = no
+        // search = no shuffle owed. Only a performed search (>= 1 heads, above) shuffles.
+        return state;
       });
     }
 

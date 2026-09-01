@@ -13,6 +13,7 @@ import {
   SlotType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import {
@@ -65,28 +66,33 @@ export class TeamRocketsCrobatex extends PokemonCard {
         return state;
       }
 
+      // TA-341: the target prompt belongs INSIDE the "you may" — a decline used to fall through
+      // to it anyway. And the counters go through PutDamageCountersEffect (an ability-aware
+      // effect) so a "prevent effects of your opponent's Abilities" protector can intercept them
+      // (SD-26 source half, the TA-334 froslass shape); `target.damage += 20` bypassed every sink.
       CONFIRMATION_PROMPT(store, state, player, (result) => {
         if (!result) {
           return state;
         }
+        return store.prompt(
+          state,
+          new ChoosePokemonPrompt(
+            player.id,
+            GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+            PlayerType.TOP_PLAYER,
+            [SlotType.ACTIVE, SlotType.BENCH],
+            { min: 1, max: 2, allowCancel: false },
+          ),
+          (selected) => {
+            const targets = selected || [];
+            targets.forEach((target) => {
+              const powerEffect = new PowerEffect(player, this.powers[0], this, target);
+              store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));
+            });
+          },
+        );
       });
-
-      return store.prompt(
-        state,
-        new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-          PlayerType.TOP_PLAYER,
-          [SlotType.ACTIVE, SlotType.BENCH],
-          { min: 1, max: 2, allowCancel: false },
-        ),
-        (selected) => {
-          const targets = selected || [];
-          targets.forEach((target) => {
-            target.damage += 20;
-          });
-        },
-      );
+      return state;
     }
 
     // Assassin's Return

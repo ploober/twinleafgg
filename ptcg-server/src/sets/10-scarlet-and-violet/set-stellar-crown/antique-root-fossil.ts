@@ -1,7 +1,8 @@
 import { CardTag, CardType, GameError, GameLog, GameMessage, Player, PokemonCard, PokemonType, Power, PowerType, Stage, State, StateUtils, StoreLike, TrainerCard, TrainerType } from "../../../game";
 import { AddSpecialConditionsEffect } from "../../../game/store/effects/attack-effects";
 import { Effect } from "../../../game/store/effects/effect";
-import { RetreatEffect } from "../../../game/store/effects/game-effects";
+import { PowerEffect, RetreatEffect } from "../../../game/store/effects/game-effects";
+import { CheckAttackCostEffect } from "../../../game/store/effects/check-effects";
 import { PlayItemEffect, PlayPokemonEffect } from "../../../game/store/effects/play-card-effects";
 import { WAS_POWER_USED } from "../../../game/store/prefabs/prefabs";
 
@@ -37,6 +38,11 @@ export class AntiqueRootFossil extends TrainerCard {
     exemptFromAbilityLock: true,
     isFossil: true,
     powerType: PowerType.TRAINER_ABILITY,
+  }, {
+    // TA-340: the printed second ability was missing entirely.
+    name: 'Primal Root',
+    powerType: PowerType.ABILITY,
+    text: "As long as this Pokémon is in the Active Spot, attacks used by your opponent's Basic Pokémon cost [C] more.",
   }];
 
   public regulationMark = 'H';
@@ -80,6 +86,24 @@ export class AntiqueRootFossil extends TrainerCard {
         emptySlots[0],
       );
       store.reduceEffect(state, playPokemonEffect);
+    }
+
+    // Primal Root (TA-340): "attacks used by your opponent's Basic Pokémon cost [C] more" while this
+    // is in the Active Spot. Seismitoad's shape; the lock probe names Primal Root, not the Fossil
+    // trainer-ability (whose handler would discard this card).
+    if (effect instanceof CheckAttackCostEffect
+      && StateUtils.getOpponent(state, effect.player).active.getPokemonCard() === this) {
+      const attackerOwner = effect.player;
+      const fossilOwner = StateUtils.getOpponent(state, attackerOwner);
+      const attacker = attackerOwner.active.getPokemonCard();
+      if (attacker && attacker.stage === Stage.BASIC) {
+        try {
+          store.reduceEffect(state, new PowerEffect(fossilOwner, this.powers[1], this as unknown as PokemonCard));
+          effect.cost.push(CardType.COLORLESS);
+        } catch {
+          // ability locked — no cost increase
+        }
+      }
     }
 
     // Prevent retreat

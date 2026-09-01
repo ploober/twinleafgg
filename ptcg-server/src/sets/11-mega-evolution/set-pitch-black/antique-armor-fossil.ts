@@ -20,7 +20,6 @@ import {
 } from '../../../game';
 import {
   AddSpecialConditionsEffect,
-  DealDamageEffect,
   PutDamageEffect,
 } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
@@ -83,10 +82,13 @@ export class AntiqueArmorFossil extends TrainerCard {
     if (activeCard !== this) {
       return false;
     }
+    // TA-340: the lock probe must name Protective Armor (powers[1]). powers[0] is the Fossil
+    // TRAINER_ABILITY whose WAS_POWER_USED handler DISCARDS this card from play — probing it
+    // mid-attack removed the defender, so every attack into the Fossil was withheld/rejected.
     try {
       store.reduceEffect(
         state,
-        new PowerEffect(defenderOwner, this.powers[0], this as unknown as PokemonCard),
+        new PowerEffect(defenderOwner, this.powers[1], this as unknown as PokemonCard),
       );
     } catch {
       return false;
@@ -107,17 +109,9 @@ export class AntiqueArmorFossil extends TrainerCard {
       effect.preventDefault = true;
     }
 
-    if (effect instanceof DealDamageEffect && state.phase === GamePhase.ATTACK) {
-      const defenderOwner = StateUtils.findOwner(state, effect.target);
-      const attackerOwner = StateUtils.findOwner(state, effect.source);
-      if (
-        defenderOwner !== attackerOwner &&
-        attackerOwner === StateUtils.getOpponent(state, defenderOwner) &&
-        this.armorProtectionActive(store, state, defenderOwner)
-      ) {
-        effect.damage = Math.max(0, effect.damage - 10);
-      }
-    }
+    // TA-340: only the post-W/R PutDamageEffect is reduced ("after applying Weakness and
+    // Resistance"). The reducer turns DealDamageEffect into a PutDamageEffect after W/R, so a
+    // DealDamageEffect branch here applied the -10 a second time (20 -> 0, 60 -> 40).
     if (effect instanceof PutDamageEffect && state.phase === GamePhase.ATTACK) {
       const defenderOwner = StateUtils.findOwner(state, effect.target);
       const attackerOwner = StateUtils.findOwner(state, effect.source);

@@ -1,10 +1,8 @@
-import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils, GameLog, Card } from '../../../game';
+import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils, GameLog, GamePhase, PokemonCardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { CheckTableStateEffect } from '../../../game/store/effects/check-effects';
-import { WAS_ATTACK_USED, IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { PokemonCard as PokemonCardType } from '../../../game/store/card/pokemon-card';
-import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { KnockOutEffect, MoveCardsEffect } from '../../../game/store/effects/game-effects';
 
 export class Gengar extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -39,90 +37,40 @@ export class Gengar extends PokemonCard {
   public name: string = 'Gengar';
   public fullName: string = 'Gengar M3';
 
+
   public readonly INFINITE_SHADOW_MARKER = 'INFINITE_SHADOW_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Infinite Shadow - mark Gengar for return when KO'd by opponent's attack
+    // Infinite Shadow — TA-344 (2026-09-01). "If this Pokémon is Knocked Out by damage from an attack
+    // from your opponent's Pokémon, put it into your hand instead of the discard pile. (Discard all
+    // attached cards.)" #2308: "this Pokémon" is the whole stack (Gastly/Haunter too); #2307: the
+    // prize is still taken. The previous marker/DiscardCardsEffect/CheckTableStateEffect chain read
+    // DAMAGE_DEALT_MARKER off the opponent — the marker sits on the DAMAGED Pokémon's owner — so it
+    // never fired and the stack went to the discard.
+    //
+    // Two steps, because the core KO handler must still see the Pokémon in the slot (it reads
+    // getPokemonCard() for the KO log, the ex/V prize rule and the prize accounting): (1) ARM at
+    // KnockOutEffect time; (2) when the core's closing MoveCardsEffect sends the slot to the discard,
+    // pull the Pokémon cards out to the hand first and let the attached cards go to the discard.
     if (effect instanceof KnockOutEffect && effect.target.getPokemonCard() === this) {
       const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // Check if KO was from opponent's attack
-      if (opponent.marker.hasMarker(opponent.DAMAGE_DEALT_MARKER)) {
-        const target = effect.target;
-        const pokemonCard = target.getPokemonCard();
-
-        if (pokemonCard && !IS_ABILITY_BLOCKED(store, state, player, this)) {
-          // Get all cards attached
-          const allCards = [...target.cards];
-
-          // Separate Pokemon cards from other cards
-          const pokemonCards: PokemonCardType[] = [];
-          const otherCards: Card[] = [];
-
-          allCards.forEach(card => {
-            if (card instanceof PokemonCardType && card !== pokemonCard) {
-              pokemonCards.push(card);
-            } else if (card !== pokemonCard) {
-              otherCards.push(card);
-            }
-          });
-
-          // Discard non-Pokemon cards before KO
-          if (otherCards.length > 0) {
-            target.moveCardsTo(otherCards, player.discard);
-          }
-
-          // Add marker to track that this Gengar should be returned to hand
-          // Don't prevent KO - let it go to discard, then CheckTableStateEffect will return it
-          player.marker.addMarker(this.INFINITE_SHADOW_MARKER, this);
-        }
+      const koByOpponentsAttack = state.phase === GamePhase.ATTACK
+        && player.marker.hasMarker(player.DAMAGE_DEALT_MARKER);
+      if (koByOpponentsAttack && !IS_ABILITY_BLOCKED(store, state, player, this)) {
+        player.marker.addMarker(this.INFINITE_SHADOW_MARKER, this);
       }
     }
 
-    // Intercept DiscardCardsEffect to prevent Gengar from being discarded
-    if (effect instanceof DiscardCardsEffect && effect.cards.includes(this)) {
-      const player = effect.player;
-
-      if (!IS_ABILITY_BLOCKED(store, state, player, this)) {
-        const cardsToMove = effect.cards.filter(c => c === this);
-        if (cardsToMove.length > 0) {
-          // Move Gengar to hand instead of discard
-          state = MOVE_CARDS(store, state, effect.target, player.hand, { cards: cardsToMove });
-          effect.cards = effect.cards.filter(c => c !== this);
-          player.marker.removeMarker(this.INFINITE_SHADOW_MARKER, this);
-        }
-      }
-    }
-
-    // CheckTableStateEffect - return Gengar from discard to hand if marker exists
-    if (effect instanceof CheckTableStateEffect && state.players.some(p => p.discard.cards.includes(this))) {
-      for (const player of state.players) {
-        if (!player.marker.hasMarker(this.INFINITE_SHADOW_MARKER, this)) {
-          continue;
-        }
-
-        if (IS_ABILITY_BLOCKED(store, state, player, this)) {
-          player.marker.removeMarker(this.INFINITE_SHADOW_MARKER, this);
-          continue;
-        }
-
-        const rescued: Card[] = player.marker.markers
-          .filter(m => m.name === this.INFINITE_SHADOW_MARKER && m.source !== undefined)
-          .map(m => m.source!);
-
-        const cardsInDiscard = rescued.filter(c => player.discard.cards.includes(c));
-
-        if (cardsInDiscard.length > 0) {
-          cardsInDiscard.forEach(card => {
-            store.log(state, GameLog.LOG_PLAYER_RETURNS_CARD_TO_HAND, {
-              name: player.name,
-              card: card.name
-            });
-          });
-          state = MOVE_CARDS(store, state, player.discard, player.hand, { cards: cardsInDiscard });
-          player.marker.removeMarker(this.INFINITE_SHADOW_MARKER, this);
-        }
+    if (effect instanceof MoveCardsEffect && effect.source instanceof PokemonCardList
+      && effect.source.cards.includes(this)) {
+      const player = StateUtils.findOwner(state, effect.source);
+      if (effect.destination === player.discard && player.marker.hasMarker(this.INFINITE_SHADOW_MARKER, this)) {
+        player.marker.removeMarker(this.INFINITE_SHADOW_MARKER, this);
+        const stack = effect.source.cards.filter(card => card instanceof PokemonCardType);
+        stack.forEach(card => {
+          store.log(state, GameLog.LOG_PLAYER_RETURNS_CARD_TO_HAND, { name: player.name, card: card.name });
+        });
+        effect.source.moveCardsTo(stack, player.hand);
       }
     }
 

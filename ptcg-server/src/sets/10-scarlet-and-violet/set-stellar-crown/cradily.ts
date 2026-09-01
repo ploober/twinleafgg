@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils, GameMessage, SpecialCondition, SelectPrompt } from "../../../game";
+import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils, GameMessage, GameError, SpecialCondition, SelectPrompt } from "../../../game";
 import { AddSpecialConditionsPowerEffect } from "../../../game/store/effects/check-effects";
 import { Effect } from "../../../game/store/effects/effect";
 import { WAS_POWER_USED, USE_ABILITY_ONCE_PER_TURN, ABILITY_USED, COIN_FLIP_PROMPT, WAS_ATTACK_USED, REMOVE_MARKER_AT_END_OF_TURN } from "../../../game/store/prefabs/prefabs";
@@ -41,12 +41,20 @@ export class Cradily extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // TA-343 / #2014: "Can I use Selective Slime if my opponent's Active Pokemon is already
+      // Burned, Confused, and Poisoned? — No, you cannot." The effect provably does nothing and the
+      // operand is public (B.41's withhold line), so the ability is not usable at all.
+      const already = opponent.active.specialConditions;
+      if ([SpecialCondition.BURNED, SpecialCondition.CONFUSED, SpecialCondition.POISONED].every(c => already.includes(c))) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       USE_ABILITY_ONCE_PER_TURN(player, this.SELECTIVE_SLIME_MARKER, this);
       ABILITY_USED(player, this);
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result) {
+          // TA-343: the printed choice is "Burned, Confused, or Poisoned" — no Asleep.
           const options: { message: GameMessage, value: SpecialCondition }[] = [
-            { message: GameMessage.SPECIAL_CONDITION_ASLEEP, value: SpecialCondition.ASLEEP },
             { message: GameMessage.SPECIAL_CONDITION_BURNED, value: SpecialCondition.BURNED },
             { message: GameMessage.SPECIAL_CONDITION_CONFUSED, value: SpecialCondition.CONFUSED },
             { message: GameMessage.SPECIAL_CONDITION_POISONED, value: SpecialCondition.POISONED }
