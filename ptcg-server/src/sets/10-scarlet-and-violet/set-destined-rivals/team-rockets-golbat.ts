@@ -1,6 +1,7 @@
 import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, PowerType, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -47,28 +48,34 @@ export class TeamRocketsGolbat extends PokemonCard {
         return state;
       }
 
+      // TA-347 (the TA-341 shape one stage down): the target prompt belongs INSIDE the "you may" —
+      // a decline used to fall through to it — and the counters go through PutDamageCountersEffect
+      // so a "prevent effects of your opponent's Abilities" protector can intercept them (SD-26);
+      // `target.damage += 20` bypassed every sink AND left no placement log for the event mapper.
       CONFIRMATION_PROMPT(store, state, player, (result) => {
         if (!result) {
           return state;
         }
+        return store.prompt(
+          state,
+          new ChoosePokemonPrompt(
+            player.id,
+            GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+            PlayerType.TOP_PLAYER,
+            [SlotType.ACTIVE, SlotType.BENCH],
+            // CF-32: "put 2 damage counters" is counter PLACEMENT — the wire verb is placeCounter.
+            { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+          ),
+          (selected) => {
+            const targets = selected || [];
+            targets.forEach((target) => {
+              const powerEffect = new PowerEffect(player, this.powers[0], this, target);
+              store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));
+            });
+          },
+        );
       });
-
-      return store.prompt(
-        state,
-        new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-          PlayerType.TOP_PLAYER,
-          [SlotType.ACTIVE, SlotType.BENCH],
-          { min: 1, max: 1, allowCancel: false },
-        ),
-        (selected) => {
-          const targets = selected || [];
-          targets.forEach((target) => {
-            target.damage += 20;
-          });
-        },
-      );
+      return state;
     }
 
     // Confuse Ray

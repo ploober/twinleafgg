@@ -6154,12 +6154,13 @@
     {
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
-        "store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));"
+        "store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));",
+        "{ min: 1, max: 2, allowCancel: false, operation: 'placeCounters' },"
       ],
       "absentSignatures": [
         "target.damage += 20;"
       ],
-      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half)."
+      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz)."
     },
     {
       "file": "set-perfect-order/aurorus.ts",
@@ -6220,6 +6221,17 @@
         "if (opponent.marker.hasMarker(opponent.DAMAGE_DEALT_MARKER)) {"
       ],
       "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it."
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-golbat.ts",
+      "signatures": [
+        "store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+      ],
+      "absentSignatures": [
+        "target.damage += 20;"
+      ],
+      "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz."
     }
   ]
 }

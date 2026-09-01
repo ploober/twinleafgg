@@ -2262,13 +2262,18 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     );
     const evolve = { actor: 'A' as const, type: 'evolve' as const, card: 'Ah0', target: 'A-act' };
     const confirm = (value: boolean) => ({ actor: 'A' as const, type: 'confirm' as const, value });
-    const choose = (target: string) => ({ actor: 'A' as const, type: 'choose' as const, target });
+    const choose = (target: string) => ({ actor: 'A' as const, type: 'placeCounter' as const, target });
 
     const declined = step(crobat(TANKY), [evolve, confirm(false)]);
     expect(declined.pending?.descriptor).toBe('main');
     expect(declined.state.players.B.active!.damage).toBe(0);
     expect(declined.state.players.B.bench[0].damage).toBe(0);
 
+    // CF-32: "put 2 damage counters" is counter placement — the menu verb is placeCounter, not choose
+    // (found by the 2026-09-01 targeted re-fuzz over the sample-batch boards, the first time this
+    // board was ever fuzzed; rotomancer offers placeCounter{target}).
+    const menu = step(crobat(TANKY), [evolve, confirm(true)]);
+    expect(placeCounterTargets(menu).sort()).toEqual(['B-act', 'B-b0']);
     const accepted = step(crobat(TANKY), [evolve, confirm(true), choose('B-act'), choose('B-b0')]);
     expect(accepted.state.players.B.active!.damage).toBe(20);
     expect(accepted.state.players.B.bench[0].damage).toBe(20);
@@ -2405,6 +2410,24 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(attacksOffered(menu)).toEqual(['Wrap']);
     expect(servine(1, 'Wrap').state.players.B.active!.damage).toBe(10);        // 20 - 10
     expect(servine(3, 'Vine Whip').state.players.B.active!.damage).toBe(50);   // 60 - 10, survives at 60 HP
+  });
+
+  it('Sneaky Bite: a declined "you may" places nothing; accepted, its counters are placeCounter picks that respect Luminous Wing [TA-347 dri-121]', () => {
+    // TA-341's shape one evolution stage down, found by the 2026-09-01 targeted re-fuzz on the
+    // post-bounce walk of the Crobat boards (Zubat re-benched, then evolved to Golbat).
+    const golbat = (defender: string) => board(
+      player({ active: inPlay('A-act', ['dri-120']), hand: [{ iid: 'Ah0', printing: 'dri-121' }] }),
+      player({ active: inPlay('B-act', [defender]), bench: [inPlay('B-b0', [RALTS])] }),
+    );
+    const evolve = { actor: 'A' as const, type: 'evolve' as const, card: 'Ah0', target: 'A-act' };
+    const confirm = (value: boolean) => ({ actor: 'A' as const, type: 'confirm' as const, value });
+    const place = (target: string) => ({ actor: 'A' as const, type: 'placeCounter' as const, target });
+    const declined = step(golbat(TANKY), [evolve, confirm(false)]);
+    expect(declined.pending?.descriptor).toBe('main');
+    expect(declined.state.players.B.active!.damage).toBe(0);
+    expect(placeCounterTargets(step(golbat(TANKY), [evolve, confirm(true)])).sort()).toEqual(['B-act', 'B-b0']);
+    expect(step(golbat(TANKY), [evolve, confirm(true), place('B-act')]).state.players.B.active!.damage).toBe(20);
+    expect(step(golbat('por-031'), [evolve, confirm(true), place('B-act')]).state.players.B.active!.damage).toBe(0);
   });
 
 });
