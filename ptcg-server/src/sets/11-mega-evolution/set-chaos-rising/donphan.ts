@@ -3,6 +3,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, StateUtils } from '../../../game';
 import {
   ADD_MARKER,
+  AFTER_ATTACK,
   HAS_MARKER,
   REMOVE_MARKER_AT_END_OF_TURN,
   REPLACE_MARKER_AT_END_OF_TURN,
@@ -68,7 +69,9 @@ export class Donphan extends PokemonCard {
       this.NO_REPRIEVE_CLEAR_MARKER,
       this,
     );
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-365 (7th site, found by the post-fix re-fuzz — reachable once No Reprieve stopped
+    // KOing): Step F, damage before the discard pick.
+    if (AFTER_ATTACK(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
     }
     return state;

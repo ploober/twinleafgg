@@ -4209,7 +4209,8 @@
    "signatures": [
     "name: 'Smashing Headbutt',",
     "HAS_MARKER(this.NO_REPRIEVE_CLEAR_MARKER, player, this)",
-    "effect.damage += 120;"
+    "effect.damage += 120;",
+    "if (AFTER_ATTACK(effect, 1, this)) {"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -6386,7 +6387,8 @@
    "file": "set-chaos-rising/delphox.ts",
    "signatures": [
     "ABILITY_USED(player, this);",
-    "throw new GameError(GameMessage.POWER_ALREADY_USED);"
+    "throw new GameError(GameMessage.POWER_ALREADY_USED);",
+    "if (player.hand.cards.length - 1 >= 7) {"
    ]
   },
   {

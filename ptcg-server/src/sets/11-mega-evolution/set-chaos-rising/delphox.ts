@@ -54,6 +54,12 @@ export class Delphox extends PokemonCard {
       if (player.active.boardEffect.includes(BoardEffect.ABILITY_USED)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
+      // TA-372 (B.41 self-side, #2042): "discard a Basic [R] … Draw cards until you have 7" —
+      // at hand ≥ 8 the post-discard hand is already ≥ 7, the draw arm provably draws ZERO, and
+      // the discard is pure cost; withhold (rotomancer does; the Lacey/TA-349 shape).
+      if (player.hand.cards.length - 1 >= 7) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
       const basicRInHand = player.hand.cards.find(
         (c) =>
           c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(R),
