@@ -2578,6 +2578,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(noGrass.state.players.B.active!.damage).toBe(20);
     expect((noGrass.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'shuffle')
       || (noGrass.events ?? []).some(e => (e as { kind: string }).kind === 'shuffled')).toBe(true);    // a whiffed search still shuffles (B.43)
+    const empty = step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', ['cri-005', 'cri-006'], en(GRASS, 1, 'a')), deck: [] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Leafy Charge')]);
+    expect(empty.state.players.B.active!.damage).toBe(20);
+    expect((empty.events ?? []).some(e => (e as { kind: string }).kind === 'shuffled')).toBe(true);   // CF-11: the event at any deck size
   });
 
 });

@@ -9,7 +9,7 @@ import {
   ShuffleDeckPrompt,
 } from '../../../game';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Quilladin extends PokemonCard {
@@ -54,9 +54,11 @@ export class Quilladin extends PokemonCard {
       effect.damage = 0;
 
       // B.43: a search over the non-public deck is always PERFORMED (no gate on what the deck holds —
-      // that both leaks the deck and skips the shuffle). An empty deck cannot be searched: no prompt.
+      // that both leaks the deck and skips the shuffle). An empty deck cannot be searched: no prompt,
+      // but "Then, shuffle" still runs and CF-11 says the `shuffled` event is emitted at any size
+      // (the TA-79 Pupitar idiom; rotomancer emits it here).
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       const blocked: number[] = [];
