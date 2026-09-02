@@ -1,6 +1,24 @@
 import { importState } from '../state-adapter';
 import { replay, step } from '../driver';
 import { NeutralAction } from '../neutral-types';
+
+// CF-60: damaged/ko name the affected Pokemon by its shared basic `iid`. Resolve back to the basic
+// printing via the response state to keep this a per-printing assertion (the KO'd Ralts' basic card
+// is in the discard after the KO).
+function basicPrintingByIid(state: { players: Record<string, { active: { stack: { iid: string; printing: string }[] } | null; bench: { stack: { iid: string; printing: string }[] }[]; hand: { iid: string; printing: string }[]; deck: { iid: string; printing: string }[]; discard: { iid: string; printing: string }[]; lostZone: { iid: string; printing: string }[]; prizes: { iid: string; printing: string }[] }> }, iid: string | undefined): string | undefined {
+  if (!iid) { return undefined; }
+  for (const p of Object.keys(state.players)) {
+    const side = state.players[p];
+    for (const slot of [side.active, ...side.bench]) {
+      if (slot) { for (const c of slot.stack) { if (c.iid === iid) { return slot.stack[0].printing; } } }
+    }
+    for (const zone of [side.hand, side.deck, side.discard, side.lostZone]) {
+      for (const c of zone) { if (c.iid === iid) { return c.printing; } }
+    }
+    for (const pc of side.prizes) { if (pc.iid === iid) { return pc.printing; } }
+  }
+  return undefined;
+}
 import { materializeNeutral, BoardSpec } from './support/scenario-runner';
 import { legalToNeutral, mulberry32 } from './support/generators';
 import { toPrinting } from '../printing';
@@ -67,8 +85,10 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     // `printing` (cid, the PROJECTED set-number id) — not the engine-private iid — preceded by the
     // lethal `damaged` on it.
     const koPrinting = toPrinting(getCardByName('Ralts SIT'));
-    expect(res.events.some(e => e.kind === 'damaged' && e.player === 'B' && e.target === koPrinting && e.hp > 0)).toBe(true);
-    expect(res.events.some(e => e.kind === 'ko' && e.player === 'B' && e.target === koPrinting)).toBe(true);
+    expect(res.events.some(e => e.kind === 'damaged' && e.player === 'B'
+      && basicPrintingByIid(res.state, (e as { target?: string }).target) === koPrinting && e.hp > 0)).toBe(true);
+    expect(res.events.some(e => e.kind === 'ko' && e.player === 'B'
+      && basicPrintingByIid(res.state, (e as { target?: string }).target) === koPrinting)).toBe(true);
   });
 
   it('enumerates every takeable prize pile as a takePrize legal action', () => {

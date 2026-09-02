@@ -4,6 +4,25 @@ import {
   ConditionToken, CardRef, SCHEMA_VERSION, NeutralAction,
 } from '../neutral-types';
 
+// CF-60: damaged/ko now name the affected Pokemon by its shared, seeded basic `iid`, not the printing.
+// These guards assert per-PRINTING facts, so resolve each event's iid target back to its basic printing
+// via the response state (a KO'd Pokemon's basic card is still present in discard/hand). Lossless here —
+// every board below uses distinct printings per side — and it also proves the iid resolves to a real card.
+function basicPrintingByIid(state: NeutralState, iid: string | undefined): string | undefined {
+  if (!iid) { return undefined; }
+  for (const p of ['A', 'B'] as const) {
+    const side = state.players[p];
+    for (const slot of [side.active, ...side.bench]) {
+      if (slot) { for (const c of slot.stack) { if (c.iid === iid) { return slot.stack[0].printing; } } }
+    }
+    for (const zone of [side.hand, side.deck, side.discard, side.lostZone]) {
+      for (const c of zone) { if (c.iid === iid) { return c.printing; } }
+    }
+    for (const pc of side.prizes) { if (pc.iid === iid) { return pc.printing; } }
+  }
+  return undefined;
+}
+
 // Behavioural regression guards for twinleaf `src/sets` card-logic fixes that had ONLY a
 // fix-signature entry (or none) before this pass — the ALL-TIME backfill (2026-07-07). Each `it`
 // reproduces the exact board with the in-process `step()` driver and asserts the corrected BEHAVIOUR,
@@ -1675,10 +1694,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
   // attribution rule at all.
 
   const damagedTotal = (r: ReturnType<typeof step>, target: string): number =>
-    r.events.filter(e => e.kind === 'damaged' && (e as { target?: string }).target === target)
+    r.events.filter(e => e.kind === 'damaged'
+        && basicPrintingByIid(r.state, (e as { target?: string }).target) === target)
       .reduce((s, e) => s + ((e as { hp?: number }).hp ?? 0), 0);
   const koOf = (r: ReturnType<typeof step>, target: string): boolean =>
-    r.events.some(e => e.kind === 'ko' && (e as { target?: string }).target === target);
+    r.events.some(e => e.kind === 'ko'
+        && basicPrintingByIid(r.state, (e as { target?: string }).target) === target);
 
   it('Iron Boulder is a legal FUTURE attach target, and non-Future is not [TA-260 scr-071]', () => {
     // The printed rule-box tag was missing, so 33 in-pool CardTag.FUTURE readers could not see this
@@ -2337,7 +2358,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(ko)).toContain('takePrize');                        // the prize is still owed
     // The event mapper used to read a hand reappearance as a BOUNCE and drop the `ko`/`damaged`;
     // a KO whose remains go to the hand is still a Knock Out (the KO log + prize say so).
-    const kinds = ko.events.map(e => `${e.kind}:${(e as { target?: string }).target ?? ''}`);
+    const kinds = ko.events.map(e => `${e.kind}:${basicPrintingByIid(ko.state, (e as { target?: string }).target) ?? ''}`);
     expect(kinds).toContain('ko:asc-123');
     expect(kinds).toContain('damaged:asc-123');
     const survives = step(gengar(90), [attack('A-act', 'Fire Claws')]); // 120 < 130: nothing moves
