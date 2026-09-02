@@ -10,6 +10,7 @@ import {
 } from '../../../game';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Quilladin extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -44,19 +45,26 @@ export class Quilladin extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
+
+      // TA-351: rulebook step F / #543/#649 — the 20 lands on the Defending Pokémon BEFORE the deck
+      // search pauses; left to the framework it landed after the prompt and the defender read 0 at
+      // the pending (the TA-66/TA-69/TA-79 shape; a standing fuzz-baseline row on this card).
+      const damageEffect = new DealDamageEffect(effect, effect.damage);
+      state = store.reduceEffect(state, damageEffect);
+      effect.damage = 0;
+
+      // B.43: a search over the non-public deck is always PERFORMED (no gate on what the deck holds —
+      // that both leaks the deck and skips the shuffle). An empty deck cannot be searched: no prompt.
+      if (player.deck.cards.length === 0) {
+        return state;
+      }
+
       const blocked: number[] = [];
       player.deck.cards.forEach((c, i) => {
         if (!(c instanceof EnergyCard)) blocked.push(i);
         else if (c.energyType !== EnergyType.BASIC) blocked.push(i);
         else if (!c.provides.includes(G)) blocked.push(i);
       });
-      const hasBasicG = player.deck.cards.some(
-        (c) =>
-          c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(G),
-      );
-      if (!hasBasicG) {
-        return state;
-      }
       return store.prompt(
         state,
         new ChooseCardsPrompt(
@@ -73,11 +81,12 @@ export class Quilladin extends PokemonCard {
           const cards = selected || [];
           if (cards.length > 0) {
             player.deck.moveCardTo(cards[0], player.active);
-            return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-              player.deck.applyOrder(order);
-            });
           }
-          return state;
+          // "Then, shuffle your deck." follows the performed search whether or not it found (#2303,
+          // B.44's wording test) — TA-351.
+          return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+            player.deck.applyOrder(order);
+          });
         },
       );
     }

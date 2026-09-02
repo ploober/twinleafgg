@@ -2555,4 +2555,29 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(legal(quill).some(a => a.type === 'confirm')).toBe(true);                             // and may fail to find
   });
 
+  it('Leafy Charge lands its 20 BEFORE the search pauses, and a fail-to-find still shuffles [TA-351 cri-006]', () => {
+    // Standing fuzz-baseline row (cri-006/<defender>, 2,485 occ) re-driven 2026-09-01: rotomancer's
+    // defender reads dmg=20 at the search pending, twinleaf's read 0 — base damage left to the
+    // framework lands AFTER the prompt (the TA-66/TA-69/TA-79 shape). And "Then, shuffle your deck"
+    // follows a PERFORMED search whether or not it finds (#2303; B.44's wording test), so declining
+    // the pick — legal on a hidden deck, #903 — must still shuffle.
+    const q = (deck: CardRef[]) => board(
+      player({ active: inPlay('A-act', ['cri-005', 'cri-006'], en(GRASS, 1, 'a')), deck }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const paused = step(q([{ iid: 'k0', printing: GRASS }, { iid: 'k1', printing: WATER }]), [attack('A-act', 'Leafy Charge')]);
+    expect(paused.state.players.B.active!.damage).toBe(20);                    // damage first
+    expect((paused.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'confirm')).toBe(true);
+    const declined = step(q([{ iid: 'k0', printing: GRASS }, { iid: 'k1', printing: WATER }]),
+      [attack('A-act', 'Leafy Charge'), { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction]);
+    expect(declined.state.players.A.active!.energy.length).toBe(1);            // nothing attached
+    expect((declined.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'shuffle')
+      || (declined.events ?? []).some(e => (e as { kind: string }).kind === 'shuffled')).toBe(true);   // shuffle owed
+    // two non-Grass cards: a ≤1-card deck would collapse the shuffle itself (CF-11) and prove nothing
+    const noGrass = step(q([{ iid: 'k1', printing: WATER }, { iid: 'k2', printing: WATER }]), [attack('A-act', 'Leafy Charge')]);
+    expect(noGrass.state.players.B.active!.damage).toBe(20);
+    expect((noGrass.pending?.legalActions ?? []).some(a => (a as { type: string }).type === 'shuffle')
+      || (noGrass.events ?? []).some(e => (e as { kind: string }).kind === 'shuffled')).toBe(true);    // a whiffed search still shuffles (B.43)
+  });
+
 });
