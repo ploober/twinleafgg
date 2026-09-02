@@ -6325,6 +6325,13 @@
         "return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {"
       ],
       "note": "TA-350 sibling (2026-09-01): a DECK search may always fail to find (#903) — min 0, so the CHOOSE_CARD_TO_ATTACH CF-14 collapse (now allow-listed in choose-cards.ts) can never fire off hidden deck contents. TA-351 (2026-09-01): the 20 lands BEFORE the search pauses (TA-66 shape; standing fuzz-baseline row), the search is always performed (B.43, no deck-content gate) and 'Then, shuffle' runs whether or not it found (#2303)."
+    },
+    {
+      "file": "set-temporal-forces/pidove.ts",
+      "signatures": [
+        "ABILITY_USED(player, this);"
+      ],
+      "note": "TA-212 half 2 (2026-09-02): 'Emergency Evolution' did not consume its once-per-turn on a fruitless search — the slot was never marked ABILITY_USED, so legal-actions.ts re-offered the Ability at the post-shuffle menu while rotomancer had consumed it. Fix marks the slot before the search prompt (mirrors silvally.ts). Half 1 (the skipped shuffle) was TA-250. Guard = pmtcg scenario ta212-tef-133-... (6-action golden with legalActionsExclude on Emergency Evolution). Found while retiring the ta212 XPASS, which stopped one action short of this half."
     }
   ]
 }

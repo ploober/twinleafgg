@@ -10,7 +10,7 @@ import { PlayerType } from '../../../game';
 import { Card } from '../../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { CheckHpEffect } from '../../../game/store/effects/check-effects';
-import { SHUFFLE_DECK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, SHUFFLE_DECK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Pidove extends PokemonCard {
 
@@ -75,6 +75,14 @@ export class Pidove extends PokemonCard {
           if (checkHpEffect.hp - cardList.damage > 30) {
             throw new GameError(GameMessage.CANNOT_USE_POWER);
           }
+
+          // TA-212 (half 2): "Once during your turn" — mark the slot ABILITY_USED here, at the point
+          // the use is committed (gate met, deck non-empty), BEFORE the search prompt. legal-actions.ts
+          // filters slots carrying BoardEffect.ABILITY_USED from the menu (cleared at EndTurnEffect), so
+          // a fruitless search no longer refunds the once-per-turn — twinleaf re-offered it, rotomancer
+          // did not (#127: "since you searched your deck the ability is used up for the turn"). The
+          // sibling shuffle path (TA-250) fixed half 1. Mirrors silvally.ts's ABILITY_USED(player, this).
+          ABILITY_USED(player, this);
 
           let cards: Card[] = [];
           return store.prompt(state, new ChooseCardsPrompt(
