@@ -1,5 +1,5 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
+import { Stage, CardType } from '../../../game/store/card/card-types';
 import { GameMessage, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
@@ -52,7 +52,10 @@ export class Slowpoke extends PokemonCard {
             player,
             GameMessage.CHOOSE_CARD_TO_DISCARD,
             player.hand,
-            { superType: SuperType.ANY },
+            // TA-352: {superType: SuperType.ANY} matches NOTHING (matchesCardFilter has no
+            // wildcard; no card's superType is ANY), so the min-0 prompt auto-resolved empty and
+            // the printed "may discard any number" decision never surfaced. {} matches every card.
+            {},
             { min: 0, max, allowCancel: false },
           ),
           (selected) => {

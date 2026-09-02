@@ -49,8 +49,10 @@ export class Skarmory extends PokemonCard {
           const cards = chosen || [];
           if (cards.length > 0) {
             player.hand.moveCardsTo(cards, player.discard);
-            effect.damage = 40 * cards.length;
           }
+          // TA-355: "40 damage for each card you discarded" — a 0-discard is 0 damage; the old
+          // guard left the declared base 40 in place on the zero branch.
+          effect.damage = 40 * cards.length;
         },
       );
     }

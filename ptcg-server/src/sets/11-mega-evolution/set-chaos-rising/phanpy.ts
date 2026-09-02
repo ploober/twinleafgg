@@ -6,7 +6,7 @@ export class Phanpy extends PokemonCard {
   public cardType: CardType[] = [F];
   public hp: number = 80;
   public weakness = [{ type: G }];
-  public retreat = [C];
+  public retreat = [C, C]; // TA-353: printed retreat is 2 (unanimous), was transcribed as 1
 
   public attacks = [{
     name: 'Mud-Slap',

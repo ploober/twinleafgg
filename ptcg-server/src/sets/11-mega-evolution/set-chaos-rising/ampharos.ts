@@ -53,7 +53,10 @@ export class Ampharos extends PokemonCard {
       }
     }
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      effect.player.active.cannotUseAttacksNextTurnPending.push('Flash Bolt');
+      // TA-354: the marker is matched BY NAME against the declared attack; 'Flash Bolt' (typo)
+      // never matched 'Flashing Bolt', so the printed self-lock was dead and a next-turn re-use
+      // was offered AND accepted.
+      effect.player.active.cannotUseAttacksNextTurnPending.push('Flashing Bolt');
     }
     return state;
   }

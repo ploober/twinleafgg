@@ -36,7 +36,9 @@ export class Weavile extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      if (player.active.hp <= 50) {
+      // TA-357: "remaining HP" is max minus damage — bare .hp is the printed max (90 here), so
+      // the +170 branch was unreachable (cf. archeops.ts, which does hp - damage).
+      if (player.active.hp - player.active.damage <= 50) {
         effect.damage += 170;
       }
     }

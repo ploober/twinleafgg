@@ -51,12 +51,14 @@ export class Donphan extends PokemonCard {
     if (effect instanceof DealDamageEffect && effect.source.getPokemonCard() === this) {
       const player = StateUtils.findOwner(state, effect.source);
       const opponent = StateUtils.getOpponent(state, player);
+      // TA-356: printed rider is +120 (was +80), and it applies only "During your NEXT turn" —
+      // the CLEAR marker (set at this turn's end) is that window; testing NO_REPRIEVE_MARKER too
+      // boosted the very attack that set it (20 → 100 on first use).
       if (
         effect.target === opponent.active &&
-        (HAS_MARKER(this.NO_REPRIEVE_MARKER, player, this) ||
-          HAS_MARKER(this.NO_REPRIEVE_CLEAR_MARKER, player, this))
+        HAS_MARKER(this.NO_REPRIEVE_CLEAR_MARKER, player, this)
       ) {
-        effect.damage += 80;
+        effect.damage += 120;
       }
     }
     REMOVE_MARKER_AT_END_OF_TURN(effect, this.NO_REPRIEVE_CLEAR_MARKER, this);

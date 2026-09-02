@@ -74,7 +74,7 @@ export class Torterraex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      const healTargetEffect = new HealTargetEffect(effect, 30);
+      const healTargetEffect = new HealTargetEffect(effect, 50); // TA-358: printed "Heal 50" (was 30)
       healTargetEffect.target = player.active;
       state = store.reduceEffect(state, healTargetEffect);
     }
