@@ -1,4 +1,5 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
+import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
 import {
   Stage,
   CardType,
@@ -124,6 +125,13 @@ export class AntiqueCoverFossil extends TrainerCard {
     // "This card can't retreat" applies only while the fossil is the in-play Basic Pokémon. Gate on the
     // ACTIVE Pokémon (as the sibling Antique fossils do), not mere presence in the stack — otherwise the
     // lock leaks to any Pokémon evolved onto the fossil (which retreats per its own cost).
+    // TA-348 / SD-26: the ABILITY channel. AddSpecialConditionsPowerEffect is reduced raw (no
+    // wrapper), so the attack-channel interception above never saw an ability-inflicted condition
+    // and Selective Slime burned this Fossil. "can't be affected by any Special Conditions" is
+    // rules text: it holds against every source.
+    if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {
+      effect.preventDefault = true;
+    }
     if (effect instanceof RetreatEffect && effect.player.active.getPokemonCard() === this) {
       throw new GameError(GameMessage.CANNOT_RETREAT);
     }

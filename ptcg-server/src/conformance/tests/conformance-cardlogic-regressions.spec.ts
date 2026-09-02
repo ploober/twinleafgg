@@ -2430,4 +2430,25 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(step(golbat('por-031'), [evolve, confirm(true), place('B-act')]).state.players.B.active!.damage).toBe(0);
   });
 
+  it('a Fossil Active cannot be given a Special Condition by an opponent\'s ABILITY either — all seven in-pool Fossils [TA-348]', () => {
+    // "This card can't be affected by any Special Conditions." Every Fossil intercepted only the ATTACK
+    // channel (AddSpecialConditionsEffect); the ability channel (AddSpecialConditionsPowerEffect, reduced
+    // raw — SD-26) went straight through, so Selective Slime burned a Fossil. Found by the B.45 fizzle
+    // cell (scr-006 c18) the moment it was authored. Attack channel checked too, as the control that the
+    // interception is per-channel, not per-card.
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const slimeVs = (fossil: string) => step(board(
+      player({ active: inPlay('A-act', ['scr-130', 'scr-005', 'scr-006'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [fossil]) }),
+    ), [
+      { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Selective Slime' },
+      flip('heads'),
+      { actor: 'A', type: 'selectOption', label: 'Burned' } as unknown as NeutralAction,
+    ]);
+    for (const fossil of ['scr-130', 'scr-129', 'pbl-072', 'pbl-073', 'por-068', 'por-069', 'wht-079']) {
+      expect(slimeVs(fossil).state.players.B.active!.conditions).toEqual([], fossil);
+    }
+    expect(slimeVs(RALTS).state.players.B.active!.conditions).toEqual(['burned']);   // control
+  });
+
 });

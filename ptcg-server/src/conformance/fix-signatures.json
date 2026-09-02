@@ -6232,6 +6232,55 @@
         "target.damage += 20;"
       ],
       "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz."
+    },
+    {
+      "file": "set-black-bolt-white-flare/antique-plume-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-perfect-order/antique-jaw-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-perfect-order/antique-sail-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-pitch-black/antique-armor-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-pitch-black/antique-skull-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-stellar-crown/antique-cover-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-stellar-crown/antique-root-fossil.ts",
+      "signatures": [
+        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
     }
   ]
 }

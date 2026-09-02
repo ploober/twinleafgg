@@ -16,6 +16,7 @@ import {
   Player,
   CardTag,
 } from '../../../game';
+import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { RetreatEffect } from '../../../game/store/effects/game-effects';
 import {
@@ -108,6 +109,13 @@ export class AntiqueSailFossil extends TrainerCard {
         emptySlots[0],
       );
       store.reduceEffect(state, playPokemonEffect);
+    }
+    // TA-348 / SD-26: the ABILITY channel. AddSpecialConditionsPowerEffect is reduced raw (no
+    // wrapper), so the attack-channel interception above never saw an ability-inflicted condition
+    // and Selective Slime burned this Fossil. "can't be affected by any Special Conditions" is
+    // rules text: it holds against every source.
+    if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {
+      effect.preventDefault = true;
     }
 
     // Prevent retreat
