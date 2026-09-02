@@ -6,12 +6,13 @@ import { mapDelta } from './event-mapper';
 /**
  * Derive the SIGNIFICANT event vocabulary (OpenAPI `Event`, design §10.4) for one dispatch, from a
  * before/after neutral-state diff plus the raw twinleaf log delta. State-diff is the load-bearing
- * trick: the projection carries stable basic `iid`s, so `damaged`/`ko` are detected by diffing them,
- * then `identify`d to a `player` (owner) + `target` (basic printing/cid) — comparable across engines,
- * unlike the engine-private iid — without resolving twinleaf's ambiguous display-name log params.
+ * trick: the projection carries stable basic `iid`s, so `damaged`/`ko` are detected by diffing them
+ * and identified by that basic `iid` — the shared, seeded, cross-engine identity (CF-60), which
+ * distinguishes two copies of one printing that the old printing key collapsed — without resolving
+ * twinleaf's ambiguous display-name log params.
  *
- *  - `damaged{player, target, hp}` — a Pokemon whose `damage` rose (net HP this step); for the (single)
- *    target KO'd in this dispatch, the lethal hit is attributed from the deals-damage log delta.
+ *  - `damaged{player, target, hp}` — a Pokemon whose `damage` rose (net HP this step); `target` is its
+ *    basic iid. For the target KO'd in this dispatch, the lethal hit is attributed from the deals log.
  *  - `ko{player, target}` — a basic iid present before the dispatch and gone after, identified in `before`.
  *  - `draw{player, count}` — aggregated `LOG_PLAYER_DRAWS_CARD` per player.
  *  - `turnStarted{player}` / `turnEnded{player}` — the turn boundary (player resolved from the log /
@@ -40,11 +41,12 @@ function damageByIid(state: NeutralState): Map<string, number> {
 }
 
 /**
- * Owner + basic printing of an in-play Pokemon (by basic `iid`). Significant events identify the
- * affected Pokemon by `player` (owner) + `target` (its basic printing/cid) — both comparable across
- * engines and available even after the Pokemon leaves play (a KO), unlike the engine-private `iid`
- * (§6.1). Throws if the iid is not in play in the given state; callers only `identify` an iid the
- * matching state's `damageByIid` just found.
+ * Owner of an in-play Pokemon found by its basic `iid`. Significant events identify the affected
+ * Pokemon by `player` (owner) + `target` (the basic `iid` itself, CF-60 — the shared/seeded identity,
+ * so two copies of one printing stay distinct). The basic iid is recoverable after a KO because the
+ * harness holds the seed; the event carries it directly. Throws if the iid is not in play in the given
+ * state; callers only `identify` an iid the matching state's `damageByIid` just found. (The `printing`
+ * is returned too, for callers/logs that want the type; it is no longer the event identity.)
  */
 function identify(state: NeutralState, iid: string): { player: NeutralPlayerId; printing: string } {
   for (const p of PLAYERS) {
@@ -140,13 +142,13 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
       const tickSum = ticks.reduce((a, b) => a + b, 0);
       if (tickSum > 0 && tickSum <= delta) {
         for (const t of ticks) {
-          significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: t });
+          significant.push({ kind: 'damaged', player: at.player, target: iid, hp: t });
         }
         if (delta - tickSum > 0) {
-          significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: delta - tickSum });
+          significant.push({ kind: 'damaged', player: at.player, target: iid, hp: delta - tickSum });
         }
       } else {
-        significant.push({ kind: 'damaged', player: at.player, target: at.printing, hp: delta });
+        significant.push({ kind: 'damaged', player: at.player, target: iid, hp: delta });
       }
     }
   }
@@ -228,7 +230,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
       if (tickSum > 0 && tickSum <= pool) {
         for (const k of koHits) {
           for (const t of k.ticks) {
-            significant.push({ kind: 'damaged', player: k.player, target: k.printing, hp: t });
+            significant.push({ kind: 'damaged', player: k.player, target: k.iid, hp: t });
             pool -= t;
           }
         }
@@ -257,7 +259,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
           if (survivorShares) { continue; }
           const matches = koHits.filter(k => displayNames.get(k.iid) === targetName);
           if (matches.length === 1) {
-            significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].printing, hp: amount });
+            significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].iid, hp: amount });
             pool -= amount;
           }
         }
@@ -294,7 +296,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
             if (survivorShares) { continue; }
             const matches = koHits.filter(k => displayNames.get(k.iid) === targetName);
             if (matches.length === 1) {
-              significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].printing, hp: amount });
+              significant.push({ kind: 'damaged', player: matches[0].player, target: matches[0].iid, hp: amount });
               pool -= amount;
             }
           }
@@ -307,7 +309,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
           const defender = koHits.find(k => k.wasOwnersActive && dealer !== undefined && k.player !== dealer)
             ?? (koHits.length === 1 ? koHits[0] : undefined);
           if (defender) {
-            significant.push({ kind: 'damaged', player: defender.player, target: defender.printing, hp: pool });
+            significant.push({ kind: 'damaged', player: defender.player, target: defender.iid, hp: pool });
           }
         }
       }
@@ -315,7 +317,7 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
   }
   for (const iid of koList) {
     const at = identify(before, iid); // KO'd: identify where it was, in `before`
-    significant.push({ kind: 'ko', player: at.player, target: at.printing });
+    significant.push({ kind: 'ko', player: at.player, target: iid });
   }
 
   // turn boundary — `turnEnded` carries the ending player; `turnStarted` the new active player.
