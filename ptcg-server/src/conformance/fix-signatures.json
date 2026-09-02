@@ -6281,6 +6281,48 @@
         "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target.getPokemonCard() === this) {"
       ],
       "note": "TA-348 (2026-09-01): a Fossil's 'can't be affected by any Special Conditions' now also intercepts the ABILITY channel (AddSpecialConditionsPowerEffect, reduced raw — SD-26); only the attack channel was intercepted, so Selective Slime burned a Fossil. Found by the B.45 fizzle cell."
+    },
+    {
+      "file": "set-stellar-crown/lacey.ts",
+      "signatures": [
+        "if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= drawCount) {"
+      ],
+      "note": "TA-349 (2026-09-01) / B.41 addendum (the SELF-side cycle cell; RE-138 withdrawn, rotomancer right): 'shuffle your hand into your deck, then draw N' is withheld when the deck is EMPTY and hand-1 <= the draw count — the recycle provably returns every card (#255/#1124/#1188, #1042). Pre-fix offered on every deck-0 board."
+    },
+    {
+      "file": "set-mega-evolution/lillies-determination.ts",
+      "signatures": [
+        "if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= drawCount) {"
+      ],
+      "note": "TA-349 (2026-09-01) / B.41 addendum (the SELF-side cycle cell; RE-138 withdrawn, rotomancer right): 'shuffle your hand into your deck, then draw N' is withheld when the deck is EMPTY and hand-1 <= the draw count — the recycle provably returns every card (#255/#1124/#1188, #1042). Pre-fix offered on every deck-0 board."
+    },
+    {
+      "file": "set-surging-sparks/drasna.ts",
+      "signatures": [
+        "if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= 3) {"
+      ],
+      "note": "TA-349 (2026-09-01) / B.41 addendum (the SELF-side cycle cell; RE-138 withdrawn, rotomancer right): 'shuffle your hand into your deck, then draw N' is withheld when the deck is EMPTY and hand-1 <= the draw count — the recycle provably returns every card (#255/#1124/#1188, #1042). Pre-fix offered on every deck-0 board."
+    },
+    {
+      "file": "set-twilight-masquerade/teal-mask-ogerpon-ex.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false },"
+      ],
+      "note": "TA-350 (2026-09-01) / B.46 (RE-140 withdrawn, rotomancer right): an ACTIVATED 'once during your turn, you may attach' Ability is decided at useAbility; no post-activation decline (#1197, #2306, #2301 floor, #255). min 0 -> min 1; a zero-take used to charge Stone Arms' once-per-turn for no effect."
+    },
+    {
+      "file": "set-perfect-order/barbaracle.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1, blockedTo: blocked2 }"
+      ],
+      "note": "TA-350 (2026-09-01) / B.46 (RE-140 withdrawn, rotomancer right): an ACTIVATED 'once during your turn, you may attach' Ability is decided at useAbility; no post-activation decline (#1197, #2306, #2301 floor, #255). min 0 -> min 1; a zero-take used to charge Stone Arms' once-per-turn for no effect."
+    },
+    {
+      "file": "set-chaos-rising/quilladin.ts",
+      "signatures": [
+        "{ min: 0, max: 1, allowCancel: false, blocked },"
+      ],
+      "note": "TA-350 sibling (2026-09-01): a DECK search may always fail to find (#903) — min 0, so the CHOOSE_CARD_TO_ATTACH CF-14 collapse (now allow-listed in choose-cards.ts) can never fire off hidden deck contents."
     }
   ]
 }

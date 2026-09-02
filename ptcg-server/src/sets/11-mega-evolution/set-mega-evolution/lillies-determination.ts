@@ -22,6 +22,12 @@ export class LilliesDetermination extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
+    // TA-349 / B.41 addendum 2026-09-01 (the SELF-side cycle cell, see lacey.ts): an empty deck and
+    // hand-1 ≤ the draw count is a provable round trip — withhold (#255/#1124/#1188).
+    const drawCount = player.getPrizeLeft() === 6 ? 8 : 6;
+    if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= drawCount) {
+      return false;
+    }
     return true;
   }
 

@@ -2451,4 +2451,108 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(slimeVs(RALTS).state.players.B.active!.conditions).toEqual(['burned']);   // control
   });
 
+  it('Lacey / Lillie\'s Determination / Drasna are withheld when the recycle provably returns every card (own deck = 0, hand-1 <= draw) [TA-349 pre-175 asc-192 ssp-173]', () => {
+    // B.41 addendum 2026-09-01 (the SELF-side cycle cell; RE-138 withdrawn, rotomancer right): with
+    // the player's own deck EMPTY and every non-Supporter card in hand ≤ the draw count, "shuffle
+    // your hand into your deck, then draw N" hands the same cards straight back — hand, deck and
+    // discard end where they started, the Supporter itself being the cost (#255/#1124/#1188; #1042
+    // Hugh is the same law on a symmetric-count card). Both operands are the actor's own, so the
+    // no-op is provable and the Trainer is withheld (the modern line, B.41/B.36). Pre-fix twinleaf
+    // offered it on every deck-0 board; rotomancer's gate is exactly this arithmetic (measured live
+    // 2026-09-01: offered iff a card stays in the deck).
+    // boardKeepingEmptyDeck: deck EMPTINESS is the thing under test.
+    const menu = (supporter: string, others: number, oppPrizes: number, ownPrizes: number, deck: number) => step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'sup', printing: supporter }, ...en(WATER, others, 'Ah')],
+               deck: fillerDeck('A', deck),
+               prizes: Array.from({ length: ownPrizes }, (_, i) => ({ iid: `A-pz${i}`, printing: WATER, faceUp: false })) }),
+      player({ active: inPlay('B-act', [RALTS]),
+               prizes: Array.from({ length: oppPrizes }, (_, i) => ({ iid: `B-pz${i}`, printing: WATER, faceUp: false })) }),
+    ), []);
+    const offers = (r: ReturnType<typeof step>) =>
+      (r.pending?.legalActions ?? []).some(a => (a as { type: string; card?: string }).type === 'playSupporter' && (a as { card?: string }).card === 'sup');
+    // Lacey pre-175: draw 4, or 8 when the OPPONENT has ≤3 Prizes.
+    expect(offers(menu('pre-175', 3, 3, 6, 0))).toBe(false);   // the RE-138 board: draw 8, 3 back -> withheld
+    expect(offers(menu('pre-175', 5, 3, 6, 0))).toBe(false);   // draw 8, 5 back -> withheld
+    expect(offers(menu('pre-175', 4, 6, 6, 0))).toBe(false);   // draw 4, 4 back -> withheld
+    expect(offers(menu('pre-175', 0, 3, 6, 0))).toBe(false);   // nothing to shuffle, nothing to draw -> withheld
+    expect(offers(menu('pre-175', 5, 6, 6, 0))).toBe(true);    // draw 4, one of 5 stays in the deck -> offered
+    expect(offers(menu('pre-175', 3, 3, 6, 1))).toBe(true);    // a stocked deck: the draw brings a new card -> offered
+    expect(offers(menu('scr-139', 3, 3, 6, 0))).toBe(false);   // reprint inherits the gate
+    // Lillie's Determination asc-192: draw 6, or 8 when YOU have exactly 6 Prizes.
+    expect(offers(menu('asc-192', 8, 6, 6, 0))).toBe(false);   // draw 8, 8 back -> withheld
+    expect(offers(menu('asc-192', 7, 6, 5, 0))).toBe(true);    // draw 6 (5 Prizes), one of 7 stays -> offered
+    expect(offers(menu('asc-192', 6, 6, 5, 0))).toBe(false);   // draw 6, 6 back -> withheld
+    // Drasna ssp-173: flip — draw 8 or 3. Provably a no-op only when BOTH arms return everything.
+    expect(offers(menu('ssp-173', 3, 6, 6, 0))).toBe(false);   // ≤3: heads and tails both return all -> withheld
+    expect(offers(menu('ssp-173', 5, 6, 6, 0))).toBe(true);    // 5: tails leaves two in the deck -> the flip decides -> offered
+  });
+
+  it('an ACTIVATED "once during your turn, you may attach" Ability has no post-activation decline [TA-350 twm-025 por-043]', () => {
+    // B.46 (RE-140 withdrawn, rotomancer right): the `may` IS the activation — `useAbility` is the
+    // decision, and once used the attach is mandatory (#1197 Welder "must be able to attach at least
+    // 1", #2306, #2301's 1..max floor for an Ability's count, #255 no use for no effect). Pre-fix both
+    // prompts were `min: 0`, surfacing a `confirm(false)` decline after activation: Teal Dance's
+    // decline charged nothing (a surplus node); Stone Arms' decline CHARGED the once-per-turn for no
+    // effect (behavioural). With ONE eligible Energy the pick is forced and collapses (CF-14, the
+    // CHOOSE_CARD_TO_ATTACH allow-list entry measured on twm-025 + dri-020); with TWO it is a WHICH pick
+    // and nothing else.
+    const use = (ability: string) => ({ actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability });
+    const legal = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []) as Array<{ type: string; target?: string; value?: unknown }>;
+    // Teal Dance, one Grass: collapsed — attached and drew, back at the main menu.
+    const one = step(board(
+      player({ active: inPlay('A-act', ['twm-025']), hand: [{ iid: 'g0', printing: GRASS }, { iid: 'w0', printing: WATER }], deck: fillerDeck('A', 3) }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [use('Teal Dance')]);
+    expect(one.status).toBe('awaitingAction');
+    expect(one.state.players.A.active!.energy.map(e => e.iid)).toEqual(['g0']);
+    expect(one.state.players.A.hand.length).toBe(2);              // −Grass +draw
+    expect(legal(one).some(a => a.type === 'useAbility')).toBe(false);   // once-per-turn spent
+    expect(legal(one).some(a => a.type === 'confirm')).toBe(false);
+    // Teal Dance, two Grass: a WHICH pick, no decline.
+    const two = step(board(
+      player({ active: inPlay('A-act', ['twm-025']), hand: [{ iid: 'g0', printing: GRASS }, { iid: 'g1', printing: GRASS }], deck: fillerDeck('A', 3) }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [use('Teal Dance')]);
+    expect(legal(two).filter(a => a.type === 'choose').map(a => a.target).sort()).toEqual(['g0', 'g1']);
+    expect(legal(two).some(a => a.type === 'confirm')).toBe(false);
+    // Stone Arms, one Fighting: collapsed and attached; two: a WHICH pick, no decline.
+    const stoneOne = step(board(
+      player({ active: inPlay('A-act', ['por-043']), hand: [{ iid: 'f0', printing: FIGHT }, { iid: 'w0', printing: WATER }] }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [use('Stone Arms')]);
+    expect(stoneOne.state.players.A.active!.energy.map(e => e.iid)).toEqual(['f0']);
+    expect(legal(stoneOne).some(a => a.type === 'confirm')).toBe(false);
+    const stoneTwo = step(board(
+      player({ active: inPlay('A-act', ['por-043']), hand: [{ iid: 'f0', printing: FIGHT }, { iid: 'f1', printing: FIGHT }] }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [use('Stone Arms')]);
+    expect(legal(stoneTwo).filter(a => a.type === 'attachEnergy').length).toBe(2);
+    expect(legal(stoneTwo).some(a => a.type === 'confirm')).toBe(false);
+  });
+
+  it('a forced CHOOSE_CARD_TO_ATTACH pick collapses from a PUBLIC zone, never from the deck [TA-350 dri-020 / cri-006]', () => {
+    // The allow-list entry (choose-cards.ts) was added on measured cells: Charging Up over a discard
+    // holding ONE Basic Energy collapses on both engines, TWO surfaces on both. Quilladin's Leafy
+    // Charge is the deck-search sibling — a search may always fail to find (#903), so its pick is
+    // never forced: `min: 0` (the pre-fix `min: 1` would have collapsed a hidden-zone pick the
+    // moment the message joined the allow-list; rotomancer keeps the decline there).
+    const use = (ability: string) => ({ actor: 'A' as const, type: 'useAbility' as const, source: 'A-act', ability });
+    const legal = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []) as Array<{ type: string; target?: string }>;
+    const spid = (discard: CardRef[]) => step(board(
+      player({ active: inPlay('A-act', ['dri-019', 'dri-020']), discard }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [use('Charging Up')]);
+    const oneE = spid([{ iid: 'd0', printing: GRASS }, { iid: 'd1', printing: 'ssp-176' }]);
+    expect(oneE.state.players.A.active!.energy.map(e => e.iid)).toEqual(['d0']);        // collapsed + applied
+    expect(legal(oneE).some(a => a.type === 'choose')).toBe(false);
+    const twoE = spid([{ iid: 'd0', printing: GRASS }, { iid: 'd1', printing: FIRE }]);
+    expect(legal(twoE).filter(a => a.type === 'choose').map(a => a.target).sort()).toEqual(['d0', 'd1']);
+    const quill = step(board(
+      player({ active: inPlay('A-act', ['cri-005', 'cri-006'], en(GRASS, 1, 'a')), deck: [{ iid: 'k0', printing: GRASS }, { iid: 'k1', printing: WATER }] }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), [attack('A-act', 'Leafy Charge')]);
+    expect(legal(quill).filter(a => a.type === 'choose').map(a => a.target)).toEqual(['k0']);   // surfaced, not collapsed
+    expect(legal(quill).some(a => a.type === 'confirm')).toBe(true);                             // and may fail to find
+  });
+
 });

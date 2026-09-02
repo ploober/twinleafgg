@@ -64,7 +64,10 @@ export class Quilladin extends PokemonCard {
           GameMessage.CHOOSE_CARD_TO_ATTACH,
           player.deck,
           { superType: SuperType.ENERGY },
-          { min: 1, max: 1, allowCancel: false, blocked },
+          // TA-350 (sibling): a DECK search may always fail to find (#903) — `min: 0`, so the pick is
+          // never "forced" and CHOOSE_CARD_TO_ATTACH's CF-14 collapse (choose-cards.ts) cannot fire
+          // off hidden deck contents. rotomancer keeps the decline on this exact board.
+          { min: 0, max: 1, allowCancel: false, blocked },
         ),
         (selected) => {
           const cards = selected || [];

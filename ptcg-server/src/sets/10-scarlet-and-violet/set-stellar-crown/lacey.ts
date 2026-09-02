@@ -30,6 +30,17 @@ export class Lacey extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
+    // TA-349 / B.41 addendum 2026-09-01 (the SELF-side cycle cell): with an EMPTY deck and every other
+    // card in hand ≤ the draw count, the shuffled-in hand is drawn straight back — hand, deck and
+    // discard end where they started, Lacey herself being the cost. That is a play for no effect
+    // (#255/#1124/#1188; #1042 Hugh), both operands are the player's own, so withhold. A stocked deck,
+    // or more fuel than the draw, changes the hand and stays offered. rotomancer gates on exactly this
+    // arithmetic (measured live 2026-09-01).
+    const opponent = StateUtils.getOpponent(state, player);
+    const drawCount = opponent.getPrizeLeft() > 3 ? 4 : 8;
+    if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= drawCount) {
+      return false;
+    }
     return true;
   }
 

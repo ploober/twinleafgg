@@ -26,6 +26,12 @@ export class Drasna extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
+    // TA-349 / B.41 addendum 2026-09-01 (the SELF-side cycle cell, see lacey.ts): the flip draws 8 or 3,
+    // so the recycle is PROVABLY a no-op only when even the tails arm returns everything (empty deck,
+    // hand-1 ≤ 3). With more fuel than 3 the coin decides whether cards stay in the deck — offered.
+    if (player.deck.cards.length === 0 && player.hand.cards.length - 1 <= 3) {
+      return false;
+    }
     return true;
   }
 

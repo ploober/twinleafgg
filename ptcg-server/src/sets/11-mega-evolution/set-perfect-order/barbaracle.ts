@@ -79,7 +79,11 @@ export class Barbaracle extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },
-        { allowCancel: false, min: 0, max: 1, blockedTo: blocked2 }
+        // TA-350 / B.46: "Attach a Basic [F] Energy" once the Ability is used — no post-activation
+        // decline. The old `min: 0` let a zero-take CHARGE the once-per-turn marker below for no
+        // effect (#255/#13). The activation decision is `useAbility` itself, gated above on a legal
+        // source existing (TA-218).
+        { allowCancel: false, min: 1, max: 1, blockedTo: blocked2 }
       ), transfers => {
         transfers = transfers || [];
         ABILITY_USED(player, this);

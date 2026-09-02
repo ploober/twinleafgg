@@ -133,10 +133,18 @@ function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
  *   CHOOSE_CARD_TO_SHUFFLE — Banette jtg-060 "Cursed Words" (see the divergence note below)
  *   CHOOSE_CARD_TO_DECK    — Gumshoos meg-110 "Evidence Gathering" (B.30, added 2026-08-06)
  *
- * The other 39 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. One more
- * is very likely collapsible on the same reasoning (CHOOSE_CARD_TO_ATTACH), but it needs the same cells
- * driven before it is added, because "obviously the same shape" is how the zone rule this change removes
- * got written in the first place.
+ *   CHOOSE_CARD_TO_ATTACH  — added 2026-09-01 (TA-350 / B.46) on driven cells: Teal Dance twm-025 and
+ *                            Charging Up dri-020, ONE eligible Energy (hand / discard) -> roto COLLAPSES and
+ *                            applies the attach, twinleaf surfaced; TWO -> BOTH surface the WHICH pick. The
+ *                            hazard found on the way: Quilladin cri-006 "Leafy Charge" raised this message
+ *                            over the DECK with `min: 1`, and a hidden-zone pick must never be forced (a
+ *                            search may fail to find, #903; roto keeps the decline there) — its floor is
+ *                            now `min: 0`, so `min >= |eligible|` cannot hold and the collapse cannot reach
+ *                            it. That is the only in-pool deck-sourced site of this message.
+ *
+ * The other 38 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. Any
+ * candidate needs the same cells driven before it is added, because "obviously the same shape" is how
+ * the zone rule this change removes got written in the first place.
  *
  * CHOOSE_CARD_TO_DECK was the candidate this note named, and the cells it demanded were driven (B.30):
  *   meg-110 "Evidence Gathering", hand = 1 card  -> roto COLLAPSES and applies the swap, twinleaf surfaced
@@ -171,6 +179,7 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
   GameMessage.CHOOSE_CARD_TO_HAND,
   GameMessage.CHOOSE_CARD_TO_SHUFFLE,
   GameMessage.CHOOSE_CARD_TO_DECK,
+  GameMessage.CHOOSE_CARD_TO_ATTACH,
 ]);
 
 /**

@@ -108,7 +108,11 @@ export class TealMaskOgerponex extends PokemonCard {
           GameMessage.CHOOSE_CARD_TO_ATTACH,
           player.hand,
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-          { min: 0, max: 1, allowCancel: false },
+          // TA-350 / B.46: the `may` IS the activation — `useAbility` is the decision, and once
+          // used the attach is mandatory (#1197, #2306, #2301's 1..max floor for an Ability). The
+          // old `min: 0` surfaced a post-activation decline that no rule provides for; with ONE
+          // Grass the pick is forced and collapses (CF-14), with two it is a WHICH pick.
+          { min: 1, max: 1, allowCancel: false },
         ),
         (cards) => {
           cards = cards || [];
