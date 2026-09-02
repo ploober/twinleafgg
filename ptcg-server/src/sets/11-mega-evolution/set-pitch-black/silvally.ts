@@ -1,6 +1,5 @@
 import { GameError, GameMessage, PowerType, StateUtils, StoreLike, State } from '../../../game';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
@@ -12,7 +11,7 @@ import {
   IS_ABILITY_BLOCKED,
   SHUFFLE_DECK,
   SHOW_CARDS_TO_PLAYER,
-  WAS_ATTACK_USED,
+  AFTER_ATTACK,
   WAS_POWER_USED,
 } from '../../../game/store/prefabs/prefabs';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
@@ -123,9 +122,11 @@ export class Silvally extends PokemonCard {
       );
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts. The DiscardCardsEffect
+    // needs the originating AttackEffect, which AfterAttackEffect carries.
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
-      const atk = effect as AttackEffect;
+      const atk = effect.attackEffect;
 
       const check = new CheckProvidedEnergyEffect(player);
       store.reduceEffect(state, check);

@@ -16,7 +16,7 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealEffect } from '../../../game/store/effects/game-effects';
-import { WAS_ATTACK_USED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class MegaFloetteex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -73,7 +73,8 @@ export class MegaFloetteex extends PokemonCard {
       }
     }
 
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts.
+    if (AFTER_ATTACK(effect, 1, this)) {
       const player = effect.player;
 
       state = store.prompt(

@@ -1,7 +1,7 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Braixen extends PokemonCard {
@@ -29,7 +29,9 @@ export class Braixen extends PokemonCard {
   public fullName: string = 'Braixen M4';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-365 (Step F, #543/#649): the discard resolves POST-damage — hooking it pre-damage
+    // (WAS_ATTACK_USED) suspended resolution with the defender still at dmg=0.
+    if (AFTER_ATTACK(effect, 0, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
     return state;

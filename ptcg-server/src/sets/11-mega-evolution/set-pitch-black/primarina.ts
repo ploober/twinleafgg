@@ -6,7 +6,7 @@ import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-
 import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { SHUFFLE_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_DECK } from '../../../game/store/prefabs/attack-effects';
 
 export class Primarina extends PokemonCard {
@@ -82,7 +82,8 @@ export class Primarina extends PokemonCard {
       return state;
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts.
+    if (AFTER_ATTACK(effect, 0, this)) {
       SHUFFLE_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_DECK(store, state, effect);
     }
 

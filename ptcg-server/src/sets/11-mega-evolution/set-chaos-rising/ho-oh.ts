@@ -8,7 +8,7 @@ import {
   GameMessage,
   PokemonCardList,
 } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class HoOh extends PokemonCard {
@@ -80,7 +80,8 @@ export class HoOh extends PokemonCard {
         },
       );
     }
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts.
+    if (AFTER_ATTACK(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1, CardType.FIRE);
     }
     return state;

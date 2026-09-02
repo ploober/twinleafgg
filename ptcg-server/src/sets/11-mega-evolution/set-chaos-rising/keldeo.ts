@@ -11,7 +11,7 @@ import {
   SlotType,
 } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 
 export class Keldeo extends PokemonCard {
@@ -70,7 +70,8 @@ export class Keldeo extends PokemonCard {
         );
       }
     }
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts.
+    if (AFTER_ATTACK(effect, 1, this)) {
       const player = effect.player;
       const hasBench = player.bench.some((b) => b.cards.length > 0);
       const hasEnergy = player.active.cards.some((c) => c.superType === SuperType.ENERGY);

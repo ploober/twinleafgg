@@ -5606,7 +5606,8 @@
   {
    "file": "set-chaos-rising/keldeo.ts",
    "signatures": [
-    "name: 'Shoot Through',"
+    "name: 'Shoot Through',",
+    "if (AFTER_ATTACK(effect, 1, this)) {"
    ],
    "absentSignatures": [
     "name: 'Shoot THrough',"
@@ -6014,7 +6015,8 @@
   {
    "file": "set-pitch-black/silvally.ts",
    "signatures": [
-    "{ min: 0, max: 1, blocked, allowCancel: false }"
+    "{ min: 0, max: 1, blocked, allowCancel: false }",
+    "if (AFTER_ATTACK(effect, 0, this)) {"
    ],
    "absentSignatures": [
     "blocked.length >= player.deck.cards.length"
@@ -6399,6 +6401,30 @@
    "file": "set-phantasmal-flames/dawn.ts",
    "signatures": [
     "// TA-364 (TA-265's shape, §B.34): \"reveal them, AND PUT THEM into your hand\" — the reveal"
+   ]
+  },
+  {
+   "file": "set-chaos-rising/braixen.ts",
+   "signatures": [
+    "if (AFTER_ATTACK(effect, 0, this)) {"
+   ]
+  },
+  {
+   "file": "set-chaos-rising/ho-oh.ts",
+   "signatures": [
+    "if (AFTER_ATTACK(effect, 1, this)) {"
+   ]
+  },
+  {
+   "file": "set-chaos-rising/mega-floette-ex.ts",
+   "signatures": [
+    "if (AFTER_ATTACK(effect, 1, this)) {"
+   ]
+  },
+  {
+   "file": "set-pitch-black/primarina.ts",
+   "signatures": [
+    "if (AFTER_ATTACK(effect, 0, this)) {"
    ]
   }
  ]
