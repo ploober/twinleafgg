@@ -74,12 +74,20 @@ export class GrimsleysGambit extends TrainerCard {
           openSlots[index].pokemonPlayedTurn = state.turn;
         });
 
+        // TA-370: "Shuffle the OTHER cards and put them on the bottom" permutes only the looked-at
+        // remainder; the un-looked deck keeps its order. The old code bottomed deckTop
+        // SYNCHRONOUSLY after store.prompt, so the order callback hit an emptied list — NO shuffle
+        // happened and the bottom cards stayed in the order the player had just seen. The adapter
+        // projects a ShuffleDeckPrompt over player.deck, so stage the remainder INTO the deck for
+        // the shuffle, then restack the untouched cards on top.
+        const rest = new CardList();
+        state = MOVE_CARDS(store, state, player.deck, rest, {});
+        state = MOVE_CARDS(store, state, deckTop, player.deck, {});
         state = store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          deckTop.applyOrder(order);
+          player.deck.applyOrder(order);
+          MOVE_CARDS(store, state, rest, player.deck, { toTop: true });
+          MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [effect.trainerCard] });
         });
-
-        state = MOVE_CARDS(store, state, deckTop, player.deck, { toBottom: true });
-        state = MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [effect.trainerCard] });
         return state;
       });
     }

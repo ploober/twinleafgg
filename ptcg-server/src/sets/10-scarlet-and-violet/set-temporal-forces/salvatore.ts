@@ -51,10 +51,17 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  // Blocking pokemon cards, that cannot be valid evolutions
+  // Blocking pokemon cards, that cannot be valid evolutions.
+  // TA-371: the old loop only blocked NON-evolutions that carry an Ability — so every ineligible
+  // ability-less Pokemon (e.g. an unrelated Basic) stayed pickable, and an ELIGIBLE evolution WITH
+  // an Ability was offered against the printed "has no Abilities". Block on either failure.
   const blocked: number[] = [];
   player.deck.cards.forEach((card, index) => {
-    if (card instanceof PokemonCard && !evolutionNames.includes(card.name)) {
+    if (card instanceof PokemonCard) {
+      if (!evolutionNames.includes(card.name)) {
+        blocked.push(index);
+        return;
+      }
       const powersEffect = new CheckPokemonPowersEffect(player, card);
       state = store.reduceEffect(state, powersEffect);
       if (powersEffect.powers.some(power => power.powerType === PowerType.ABILITY)) {

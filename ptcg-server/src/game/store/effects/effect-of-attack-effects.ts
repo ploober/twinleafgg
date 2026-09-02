@@ -1361,6 +1361,7 @@ export class ScheduleDefendingPokemonEndOfTurnEffect extends EffectOfAttackEffec
       attack: this.attack,
       sourceCard: this.markerSource as PokemonCard,
       attackerPlayerId: this.player.id,
+      wasActive: this.target === this.opponent.active, // TA-366
       ...this.pending,
     } as PendingEndOfTurnEffect);
   }

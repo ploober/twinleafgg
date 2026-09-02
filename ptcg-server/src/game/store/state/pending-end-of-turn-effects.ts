@@ -8,6 +8,13 @@ export interface PendingEndOfTurnEffectBase {
   attack: Attack;
   sourceCard: PokemonCard;
   attackerPlayerId: number;
+  /**
+   * TA-366: true when the target was the DEFENDING (Active) Pokémon at schedule time. An effect on
+   * the Defending Pokémon ends when it leaves the Active Spot (compendium: Amnesia/Daunt), so the
+   * resolver skips a wasActive pending whose target has since moved to the Bench. Explicit
+   * bench-targeted schedules are not Defending-Pokémon effects and are unaffected.
+   */
+  wasActive?: boolean;
 }
 
 export interface PendingEndOfTurnKnockOut extends PendingEndOfTurnEffectBase {

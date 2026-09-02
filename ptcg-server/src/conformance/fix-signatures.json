@@ -1549,7 +1549,8 @@
    "signatures": [
     "base, [SpecialCondition.ASLEEP]",
     "base, [SpecialCondition.POISONED]",
-    "  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);"
+    "  const afterAttackEffect = new AfterAttackEffect(player, opponent, copiedAttack, attackEffect);",
+    "if (item.wasActive && item.target !== effect.player.active) {"
    ]
   },
   {
@@ -4980,7 +4981,8 @@
   {
    "file": "set-journey-together/iris-fighting-spirit.ts",
    "signatures": [
-    "{ allowCancel: false, min: 1, max: 1 }"
+    "{ allowCancel: false, min: 1, max: 1 }",
+    "// TA-368 (B.41 self-side addendum, TA-349's Lacey pattern; #2042 \"you have to be able to"
    ],
    "note": "TA-184 — the discard is a mandatory cost, not a declinable \"up to\""
   },
@@ -5330,7 +5332,8 @@
   {
    "file": "set-temporal-forces/salvatore.ts",
    "signatures": [
-    "Search your deck for a card that has no Abilities and evolves from 1 of your Pok"
+    "Search your deck for a card that has no Abilities and evolves from 1 of your Pok",
+    "blocked.push(index);\n        return;"
    ]
   },
   {
@@ -5943,7 +5946,8 @@
    "file": "set-ascended-heroes/azumarill-ex.ts",
    "signatures": [
     "const psychicCount = checkEnergy.energyMap.reduce((sum, em) =>",
-    "effect.damage += 40 * psychicCount;"
+    "effect.damage += 40 * psychicCount;",
+    "{ allowCancel: false, min: 1, max: 1, blockedTo, blockedFrom }"
    ],
    "absentSignatures": [
     "energyCard.provides?.includes('P')",
@@ -6425,6 +6429,30 @@
    "file": "set-pitch-black/primarina.ts",
    "signatures": [
     "if (AFTER_ATTACK(effect, 0, this)) {"
+   ]
+  },
+  {
+   "file": "game/store/state/pending-end-of-turn-effects.ts",
+   "signatures": [
+    "wasActive?: boolean;"
+   ]
+  },
+  {
+   "file": "game/store/effects/effect-of-attack-effects.ts",
+   "signatures": [
+    "wasActive: this.target === this.opponent.active, // TA-366"
+   ]
+  },
+  {
+   "file": "set-pitch-black/banette.ts",
+   "signatures": [
+    "{ min: 0, max: 1, allowCancel: false },"
+   ]
+  },
+  {
+   "file": "set-phantasmal-flames/grimsleys-gambit.ts",
+   "signatures": [
+    "MOVE_CARDS(store, state, rest, player.deck, { toTop: true });"
    ]
   }
  ]

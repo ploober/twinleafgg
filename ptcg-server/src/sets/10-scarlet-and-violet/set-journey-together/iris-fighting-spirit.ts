@@ -35,6 +35,12 @@ export class IrisFightingSpirit extends TrainerCard {
     if (player.hand.cards.filter(c => c !== this).length === 0) {
       return false;
     }
+    // TA-368 (B.41 self-side addendum, TA-349's Lacey pattern; #2042 "you have to be able to
+    // draw"): at deck = 0 the draw arm provably draws nothing, so the discard is pure cost and
+    // the play is withheld.
+    if (player.deck.cards.length === 0) {
+      return false;
+    }
     return true;
   }
 

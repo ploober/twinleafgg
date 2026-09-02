@@ -56,19 +56,37 @@ function board(): NeutralState {
 }
 
 describe('Conformance — CF-31 forced-prompt 0-eligible whiff (Salvatore evolve-target)', () => {
-  it('plays Salvatore with no valid evolution target and whiffs cleanly, not a 500', () => {
-    // Play Salvatore, then take the only offered search pick (the ineligible Oddish); the forced
-    // Choose pokemon then has 0 eligible targets. Pre-CF-31 this threw "decomposed result failed validate".
+  // TA-371 (2026-09-03) re-shaped this route: the search filter now blocks INELIGIBLE picks
+  // (Oddish does not evolve from anything in play), so the pick this spec used to take is no
+  // longer offered — with every deck Pokémon blocked, the play resolves straight to the mandated
+  // shuffle (rotomancer's shape). The CF-31 guarantee under test is unchanged: a 0-eligible
+  // resolution is a clean WHIFF, never a 500.
+  it('plays Salvatore with nothing eligible: no phantom pick, straight to the shuffle, clean whiff', () => {
     let res: ReturnType<typeof step> | undefined;
+    expect(() => {
+      res = step(board(), [{ actor: 'A', type: 'playSupporter', card: 'A-sal' }]);
+    }).not.toThrow();
+    // No pick is offered — the pending is the system shuffle over the untouched deck.
+    expect(res!.status).toBe('awaitingAction');
+    expect(res!.pending?.actor).toBe('system');
+    expect((res!.pending?.legalActions ?? []).map(a => (a as { type: string }).type)).toEqual(['shuffle']);
+    // Drive the shuffle through: the whiff settles with Bellsprout unevolved, Supporter spent.
     expect(() => {
       res = step(board(), [
         { actor: 'A', type: 'playSupporter', card: 'A-sal' },
-        { actor: 'A', type: 'choose', target: 'A-d0' },
+        { actor: 'system', type: 'shuffle', order: ['A-d0', 'A-d1', 'A-d2'] },
       ]);
     }).not.toThrow();
     expect(res!.status).toBe('awaitingAction');
-    // Salvatore whiffed: Bellsprout is still A's active (unevolved), and the Supporter was spent.
     expect(res!.state.players.A.active!.stack[0].printing).toBe(BELLSPROUT);
     expect(res!.state.players.A.flags.supporterPlayedThisTurn).toBe(true);
+  });
+
+  it('rejects a direct pick of the ineligible Oddish (TA-371)', () => {
+    const res = step(board(), [
+      { actor: 'A', type: 'playSupporter', card: 'A-sal' },
+      { actor: 'A', type: 'choose', target: 'A-d0' },
+    ]);
+    expect(res.status).toBe('invalidAction');
   });
 });

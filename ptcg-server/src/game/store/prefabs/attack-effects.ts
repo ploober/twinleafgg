@@ -292,6 +292,12 @@ export function RESOLVE_PENDING_END_OF_OPPONENTS_NEXT_TURN_EFFECTS(
     if (!item.target.getPokemonCard()) {
       continue;
     }
+    // TA-366: a Defending-Pokémon delayed effect ends when that Pokémon leaves the Active Spot
+    // (compendium: Amnesia/Daunt) — without this, Intense Kiss's discard FOLLOWED the kissed
+    // Pokémon to the Bench and discarded it there.
+    if (item.wasActive && item.target !== effect.player.active) {
+      continue;
+    }
 
     const attackEffect = buildAttackEffectFromPending(state, effect.player, item);
     if (!attackEffect) {
