@@ -56,7 +56,7 @@ function board(): NeutralState {
 }
 
 describe('Conformance — CF-31 forced-prompt 0-eligible whiff (Salvatore evolve-target)', () => {
-  // TA-371 (2026-09-03) re-shaped this route: the search filter now blocks INELIGIBLE picks
+  // TA-371 (2026-09-02) re-shaped this route: the search filter now blocks INELIGIBLE picks
   // (Oddish does not evolve from anything in play), so the pick this spec used to take is no
   // longer offered — with every deck Pokémon blocked, the play resolves straight to the mandated
   // shuffle (rotomancer's shape). The CF-31 guarantee under test is unchanged: a 0-eligible
