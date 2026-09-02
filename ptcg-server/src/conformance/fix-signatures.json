@@ -3110,7 +3110,8 @@
   {
    "file": "set-black-bolt-white-flare/emboar.ts",
    "signatures": [
-    "name: 'Heat Crash',"
+    "name: 'Heat Crash',",
+    "{ min: 1, allowCancel: false }"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -3843,7 +3844,8 @@
   {
    "file": "set-scarlet-and-violet-promos/scrafty.ts",
    "signatures": [
-    "name: 'Nab \\'n\\' Dash',"
+    "name: 'Nab \\'n\\' Dash',",
+    "{ min: Math.min(1, benched, player.deck.cards.length), max: benched, allowCancel: false }"
    ],
    "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
   },
@@ -5183,7 +5185,8 @@
   {
    "file": "set-mega-evolution/mega-venusaur-ex.ts",
    "signatures": [
-    "  if (!pokemonWithEnergy || pokemonInPlay < 2) {"
+    "  if (!pokemonWithEnergy || pokemonInPlay < 2) {",
+    "{ min: 1, allowCancel: false },"
    ],
    "note": "TA-213/B.27 — an activated Ability whose prescribed action has NO legal operand on the board was still offered, because legal-actions.ts probes by throw-only dry run and these cards did not throw. Rulings #49/#75/#2109 (public knowledge that the effect has no legal target), #1043 (a heal needs at least 10 damage to heal), #2306 (an Ability that \"won't do anything\" may not be used). Removing the guard reverts it. Here: the old guard checked only for a SOURCE; with one Pokemon in play there is no DESTINATION to move the Energy to."
   },
@@ -6371,6 +6374,31 @@
    "file": "set-temporal-forces/torterra-ex.ts",
    "signatures": [
     "const healTargetEffect = new HealTargetEffect(effect, 50); // TA-358: printed \"Heal 50\" (was 30)"
+   ]
+  },
+  {
+   "file": "set-chaos-rising/delphox.ts",
+   "signatures": [
+    "ABILITY_USED(player, this);",
+    "throw new GameError(GameMessage.POWER_ALREADY_USED);"
+   ]
+  },
+  {
+   "file": "set-journey-together/rockruff.ts",
+   "signatures": [
+    "// TA-362 (#361/#338): an attack has no play gate — at deck = 0 Dig It Up is still usable"
+   ]
+  },
+  {
+   "file": "set-perfect-order/aromatisse.ts",
+   "signatures": [
+    "// TA-363 (B.33): \"Then, shuffle your deck\" is owed whether or not the search found —"
+   ]
+  },
+  {
+   "file": "set-phantasmal-flames/dawn.ts",
+   "signatures": [
+    "// TA-364 (TA-265's shape, §B.34): \"reveal them, AND PUT THEM into your hand\" — the reveal"
    ]
   }
  ]

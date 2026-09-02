@@ -66,13 +66,8 @@ function* playCard(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  player.deck.moveCardsTo(cards, player.hand);
-
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
-
+  // TA-364 (TA-265's shape, §B.34): "reveal them, AND PUT THEM into your hand" — the reveal
+  // happens from the deck, so show BEFORE moving or the reveal event reports from=hand.
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
       opponent.id,
@@ -80,6 +75,12 @@ function* playCard(next: Function, store: StoreLike, state: State,
       cards
     ), () => next());
   }
+
+  player.deck.moveCardsTo(cards, player.hand);
+
+  cards.forEach((card, index) => {
+    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
+  });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
     player.deck.applyOrder(order);

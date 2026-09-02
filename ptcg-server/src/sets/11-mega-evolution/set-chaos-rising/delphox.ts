@@ -1,10 +1,10 @@
-import { CardType, EnergyType, Stage } from '../../../game/store/card/card-types';
+import { BoardEffect, CardType, EnergyType, Stage } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, StateUtils, PlayerType } from '../../../game';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 import { GameError } from '../../../game/game-error';
 import { GameMessage } from '../../../game/game-message';
@@ -49,6 +49,11 @@ export class Delphox extends PokemonCard {
       if (player.active.getPokemonCard() !== this) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
+      // TA-361: refuse a direct second use too (menu filtering alone lets a dispatched
+      // useAbility through) — silvally.ts's POWER_ALREADY_USED pattern.
+      if (player.active.boardEffect.includes(BoardEffect.ABILITY_USED)) {
+        throw new GameError(GameMessage.POWER_ALREADY_USED);
+      }
       const basicRInHand = player.hand.cards.find(
         (c) =>
           c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(R),
@@ -56,6 +61,9 @@ export class Delphox extends PokemonCard {
       if (!basicRInHand) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
+      // TA-361: "Once during your turn" — mark the slot used at the point of no return, or the
+      // Ability is re-offered AND a second use is accepted the same turn (TA-212's shape).
+      ABILITY_USED(player, this);
       player.hand.moveCardTo(basicRInHand, player.discard);
       const toDraw = Math.max(0, 7 - player.hand.cards.length);
       if (toDraw > 0) {

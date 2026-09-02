@@ -60,7 +60,9 @@ export class Emboar extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-        { allowCancel: false }
+        // TA-359 (B.46): AttachEnergyPrompt's DEFAULT min is 0, which surfaced a post-activation
+        // decline. The activation is the decision (the hasEnergyInHand gate guarantees a candidate).
+        { min: 1, allowCancel: false }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {

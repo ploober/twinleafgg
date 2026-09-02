@@ -43,7 +43,9 @@ export class Scrafty extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
         {},
-        { min: 0, max: benched, allowCancel: false }
+        // TA-360 (#2315 / TA-163 family): an untyped "up to X" deck search over a stocked deck
+        // floors at 1 — the zero-take is not purchasable. 0 only when the deck (or bench) is empty.
+        { min: Math.min(1, benched, player.deck.cards.length), max: benched, allowCancel: false }
       ), selected => {
         cards = selected || [];
 

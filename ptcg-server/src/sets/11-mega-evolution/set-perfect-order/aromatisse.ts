@@ -54,7 +54,11 @@ export class Aromatisse extends PokemonCard {
       );
 
       if (basicPsychicEnergy.length === 0) {
-        return state;
+        // TA-363 (B.33): "Then, shuffle your deck" is owed whether or not the search found —
+        // the early return skipped the shuffle on the zero-candidate path.
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
       }
 
       const maxToTake = Math.min(2, basicPsychicEnergy.length);

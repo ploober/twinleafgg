@@ -58,7 +58,9 @@ function* moveEnergy(
       PlayerType.BOTTOM_PLAYER,
       [SlotType.ACTIVE, SlotType.BENCH],
       { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-      { min: 0, allowCancel: false },
+      // TA-359 (B.46): an activated "you may" is decided at useAbility — min 0 surfaced a
+      // post-activation decline node the law says must not exist (the gate above guarantees a move).
+      { min: 1, allowCancel: false },
     ),
     (result) => {
       transfers = result || [];

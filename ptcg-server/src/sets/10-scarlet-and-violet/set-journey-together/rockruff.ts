@@ -3,7 +3,7 @@ import { Stage, CardType, BoardEffect } from '../../../game/store/card/card-type
 import { StoreLike, State, CardList, GameMessage, PlayerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ConfirmCardsPrompt } from '../../../game/store/prompts/confirm-cards-prompt';
-import { BLOCK_IF_DECK_EMPTY, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Rockruff extends PokemonCard {
 
@@ -35,7 +35,11 @@ export class Rockruff extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      BLOCK_IF_DECK_EMPTY(player);
+      // TA-362 (#361/#338): an attack has no play gate — at deck = 0 Dig It Up is still usable
+      // and the look simply whiffs. BLOCK_IF_DECK_EMPTY here made the offer dry-run withhold it.
+      if (player.deck.cards.length === 0) {
+        return state;
+      }
 
       const deckTop = new CardList();
       player.deck.moveTo(deckTop, 1);
