@@ -553,6 +553,7 @@ export type NeutralEvent =
   | { kind: 'itemPlayed'; player: NeutralPlayerId; card: string }
   | { kind: 'supporterPlayed'; player: NeutralPlayerId; card: string }
   | { kind: 'stadiumPlayed'; player: NeutralPlayerId; card: string }
+  | { kind: 'promotedFromBench'; player: NeutralPlayerId; pokemon: string } // forced KO-replacement promote; pokemon = basic iid
   | { kind: 'attackUsed'; player: NeutralPlayerId; attack: string }  // CF-57: `player`, pinned
   | { kind: 'retreated'; player: NeutralPlayerId; to: string }       // `to` = the newly-promoted Active
   | { kind: 'abilityUsed'; player: NeutralPlayerId; ability: string }

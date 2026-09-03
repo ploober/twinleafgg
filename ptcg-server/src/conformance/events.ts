@@ -344,6 +344,26 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     significant.push({ kind: 'ko', player: at.player, target: iid });
   }
 
+  // promotedFromBench — a Benched Pokemon FORCED to Active to replace a REMOVED Active (a KO), NOT a
+  // voluntary retreat or a switch effect. Derived from the state diff, because our
+  // LOG_PLAYER_SWITCHES_POKEMON_TO_ACTIVE fires for voluntary switches (Guzma) too: the Active's
+  // basic iid changed AND the old Active is no longer in play (it was KO'd/removed, not sent to the
+  // bench by a retreat/switch). Also fires for the deferred promote (a prior-step KO left `active`
+  // null, filled this step). Observed tier — pinned, not diffed. pokemon = the promoted basic iid (CF-60).
+  for (const p of PLAYERS) {
+    const oldActive = before.players[p].active?.stack[0]?.iid;
+    const newActive = after.players[p].active?.stack[0]?.iid;
+    if (newActive !== undefined && newActive !== oldActive) {
+      const playerRetreated = logs.some(l =>
+        l.message === GameLog.LOG_PLAYER_RETREATS && logActor(l) === p);
+      const oldStillInPlay = oldActive !== undefined
+        && after.players[p].bench.some(b => b?.stack?.[0]?.iid === oldActive);
+      if (!playerRetreated && !oldStillInPlay) {
+        significant.push({ kind: 'promotedFromBench', player: p, pokemon: newActive });
+      }
+    }
+  }
+
   // turn boundary — `turnEnded` carries the ending player; `turnStarted` the new active player.
   // The native log writes LOG_PLAYER_ENDS_TURN as soon as the end-turn action processes — BEFORE
   // the between-turns Checkup resolves, whose coin flips can pause the replay. The turn is not
