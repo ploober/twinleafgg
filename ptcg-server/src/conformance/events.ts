@@ -153,6 +153,30 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     }
   }
 
+  // healed — the inverse of `damaged`: a survivor whose damage counters DECREASED this step. Emit
+  // per Pokemon (basic iid target per CF-60), hp = the decrease, mirroring the `damaged` derivation
+  // so per-(player,target) sums line up with the CF-51 comparison. The one non-heal way damage falls
+  // is a counter RELOCATION (TA-318b, Alakazam "Strange Hacking": counters MOVED with no damage log
+  // — a drop accompanied by a matching RISE, conserving total). A heal REMOVES counters (a drop with
+  // no accompanying rise), so gate on "not a relocation" rather than on a heal LOG: most heals
+  // (Potion, attack self-heals) write no LOG_PLAYER_HEALS_POKEMON, but the state diff shows the drop.
+  // A KO'd Pokemon left `afterDmg` (not a decrease here); an undamaged target has no decrease -> no
+  // event (matches rotomancer: "a heal that removes nothing is not a heal").
+  const anyDamageRose = [...beforeDmg].some(([iid, b]) => {
+    const a = afterDmg.get(iid);
+    return a !== undefined && a > b;
+  });
+  const isRelocation = !anyDamageLogged && anyDamageDropped && anyDamageRose;
+  if (!isRelocation) {
+    for (const [iid, dmgBefore] of beforeDmg) {
+      const dmgAfter = afterDmg.get(iid);
+      if (dmgAfter !== undefined && dmgAfter < dmgBefore) {
+        const at = identify(after, iid); // healed survivor: still in `after`
+        significant.push({ kind: 'healed', player: at.player, target: iid, hp: dmgBefore - dmgAfter });
+      }
+    }
+  }
+
   // ko — a basic iid present before, gone after. For a single KO, attribute the lethal hit (the
   // dealt-damage delta not accounted for by survivors) as its `damaged` before the `ko`. Damage
   // sources: attack damage (LOG_PLAYER_DEALS_DAMAGE) and checkup condition ticks (poison/burn),
@@ -362,9 +386,32 @@ export function deriveEvents(before: NeutralState, after: NeutralState, logs: St
     significant.push({ kind: 'draw', player, count });
   }
 
-  // gameOver — the outcome reaching a terminal value this step.
+  // gameOver — the outcome reaching a terminal value this step. `winner` folds the retired
+  // `matchEnded` (null on a tie); `cause` folds the retired `deckedOut`. Pinned cause vocabulary
+  // (event-vocabulary standardization): prizesTaken | deckOut | noPokemonInPlay | tie. outcome stays
+  // the compared field; winner/cause ride observed until rotomancer also populates them.
   if (before.outcome === 'ongoing' && after.outcome !== 'ongoing') {
-    significant.push({ kind: 'gameOver', outcome: after.outcome });
+    let winner: NeutralPlayerId | null = null;
+    let cause = 'prizesTaken';
+    if (after.outcome === 'tie') {
+      winner = null;
+      cause = 'tie';
+    } else {
+      for (const log of logs) {
+        if (log.message === GameLog.LOG_GAME_FINISHED_WINNER) {
+          const n = log.params?.['name'];
+          if (n === 'A' || n === 'B') { winner = n; }
+        } else if (log.message === GameLog.LOG_PLAYER_NO_CARDS_IN_DECK) {
+          cause = 'deckOut';
+        } else if (log.message === GameLog.LOG_PLAYER_NO_ACTIVE_POKEMON) {
+          cause = 'noPokemonInPlay';
+        }
+      }
+      // winner falls back to the surviving side of a decisive outcome if the WINNER log was in an
+      // earlier batch (the outcome itself names it).
+      if (winner === null) { winner = after.outcome === 'winA' ? 'A' : 'B'; }
+    }
+    significant.push({ kind: 'gameOver', outcome: after.outcome, winner, cause });
   }
 
   return [...informational, ...significant];

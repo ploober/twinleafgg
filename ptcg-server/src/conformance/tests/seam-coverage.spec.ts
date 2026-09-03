@@ -85,14 +85,16 @@ const ALLOW_UNSUPPORTED = new Set<string>([]);
 // GameLogs intentionally not surfaced as neutral events (closed vocabulary; impl §4.8). Each is a
 // game-state transition projected elsewhere, or UI/flip/transient narration with no event kind.
 const ALLOW_UNMAPPED = new Set<string>([
-  'LOG_GAME_FINISHED_WINNER',     // outcome projects via state.winner, not an event
-  'LOG_PLAYER_PLAYS_STADIUM',     // no 'playedStadium' event kind; the stadium shows in the projection
+  'LOG_GAME_FINISHED_WINNER',     // consumed by events.ts as gameOver.winner, not by the mapper
   'LOG_PLAYER_FLIPS_HEADS',       // coin faces are system-actor INPUTS, not observable output events
   'LOG_PLAYER_FLIPS_TAILS',
   'LOG_PLAYER_DISABLES_ATTACK',   // e.g. Memory Skip — effect narration, no event kind
-  'LOG_PLAYER_NO_ACTIVE_POKEMON', // KO transient (before the promote)
+  'LOG_PLAYER_NO_ACTIVE_POKEMON', // consumed by events.ts as gameOver.cause=noPokemonInPlay (KO transient)
+  'LOG_PLAYER_NO_CARDS_IN_DECK',  // consumed by events.ts as gameOver.cause=deckOut (folded deckedOut)
   'LOG_PLAYER_NO_PRIZE_CARD',     // prize-state narration
 ]);
+// LOG_PLAYER_PLAYS_STADIUM is now MAPPED to `stadiumPlayed` (event-vocabulary standardization), so it
+// left this allow-list; LOG_PLAYER_HEALS_POKEMON is consumed by events.ts as the `healed` event.
 
 // Floors so the guard cannot pass vacuously — the corpus must actually exercise these seams.
 const FLOOR_PROMPTS = ['Choose prize', 'Coin flip', 'Choose cards', 'Choose attack', 'Choose energy', 'Choose pokemon'];

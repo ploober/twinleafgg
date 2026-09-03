@@ -527,30 +527,38 @@ export type NeutralAction =
 // and never fail a test — captured only for the divergence report.
 
 export type NeutralEvent =
-  // ── Significant (OpenAPI `Event`) — compared cross-engine ──
+  // ── COMPARED (OpenAPI `Event`) — diffed cross-engine ──
   | { kind: 'draw'; player: NeutralPlayerId; count: number }
-  | { kind: 'damaged'; player: NeutralPlayerId; target: string; hp: number } // target = basic printing (cid); hp = net HP this step
-  | { kind: 'ko'; player: NeutralPlayerId; target: string }                  // target = basic printing (cid)
+  | { kind: 'damaged'; player: NeutralPlayerId; target: string; hp: number } // target = basic iid (CF-60); hp = net HP this step
+  | { kind: 'ko'; player: NeutralPlayerId; target: string }                  // target = basic iid (CF-60)
+  // `healed` (event-vocabulary standardization 2026-09-02): the inverse of `damaged` — hp removed from
+  // `target` (basic iid, CF-60). Compared summed per (player,target) per step, exactly like `damaged`.
+  | { kind: 'healed'; player: NeutralPlayerId; target: string; hp: number }
   | { kind: 'turnStarted'; player: NeutralPlayerId }
   | { kind: 'turnEnded'; player: NeutralPlayerId }
   | { kind: 'shuffled'; player: NeutralPlayerId }
-  | { kind: 'gameOver'; outcome: Outcome }
+  // `winner` folds the retired `matchEnded` (null on a tie); `cause` folds the retired `deckedOut`
+  // ({prizesTaken|deckOut|noPokemonInPlay|tie}). outcome stays the compared field; winner/cause ride
+  // observed until rotomancer also populates them.
+  | { kind: 'gameOver'; outcome: Outcome; winner: NeutralPlayerId | null; cause: string }
   // CF-18 (proposed 2026-07-12): a PUBLIC reveal — otherwise-hidden cards made observable. Both
   // engines emit it → differential-checked ONCE rotomancer also emits (informational meanwhile; see
   // OpenAPI `Event`). `owner` owns the cards; `to:'all'` = public; a private look emits nothing.
   | { kind: 'reveal'; owner: NeutralPlayerId; cards: string[]; from: string; to: NeutralPlayerId | 'all' }
-  // ── Informational trace — never compared ──
-  | { kind: 'benchedBasic'; actor: NeutralPlayerId; card: string }
-  | { kind: 'evolved'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'energyAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'toolAttached'; actor: NeutralPlayerId; card: string; pokemon: string }
+  // ── SHARED-OBSERVED + informational trace — pinned, NOT diffed (`player`, not `actor`) ──
+  | { kind: 'benchedBasic'; player: NeutralPlayerId; card: string }
+  | { kind: 'evolved'; player: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'energyAttached'; player: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'toolAttached'; player: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'itemPlayed'; player: NeutralPlayerId; card: string }
+  | { kind: 'supporterPlayed'; player: NeutralPlayerId; card: string }
+  | { kind: 'stadiumPlayed'; player: NeutralPlayerId; card: string }
   | { kind: 'attackUsed'; player: NeutralPlayerId; attack: string }  // CF-57: `player`, pinned
-  | { kind: 'retreated'; actor: NeutralPlayerId; from: string; to: string }
-  | { kind: 'deckedOut'; actor: NeutralPlayerId }
-  | { kind: 'abilityUsed'; actor: NeutralPlayerId; ability: string }
+  | { kind: 'retreated'; player: NeutralPlayerId; to: string }       // `to` = the newly-promoted Active
+  | { kind: 'abilityUsed'; player: NeutralPlayerId; ability: string }
   // CF-37: the Stadium activation fired. `stadium` is the card's NAME (the log carries a display
   // name, like every other informational event here), not an iid.
-  | { kind: 'stadiumUsed'; actor: NeutralPlayerId; stadium: string };
+  | { kind: 'stadiumUsed'; player: NeutralPlayerId; stadium: string };
 
 // ── Response envelope (design §4.1) ───────────────────────────────────────
 

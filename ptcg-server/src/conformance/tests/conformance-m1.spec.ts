@@ -135,8 +135,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
     // ── events ──
     expect(res.events).toEqual([
-      { kind: 'evolved', actor: 'A', card: 'Kirlia', pokemon: 'Ralts' },
-      { kind: 'energyAttached', actor: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
+      { kind: 'evolved', player: 'A', card: 'Kirlia', pokemon: 'Ralts' },
+      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
       { kind: 'attackUsed', player: 'A', attack: 'Slap' },
       { kind: 'damaged', player: 'B', target: 'B-active', hp: 30 }, // CF-60: target is B's active Ralts' basic iid
       { kind: 'turnEnded', player: 'A' },
@@ -198,8 +198,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.state.players.B.hand.length).toBe(1);
 
     expect(res.events).toEqual([
-      { kind: 'energyAttached', actor: 'A', card: 'Psychic Energy', pokemon: 'Ralts' },
-      { kind: 'retreated', actor: 'A', from: 'Ralts', to: 'Ralts' },
+      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'Ralts' },
+      { kind: 'retreated', player: 'A', to: 'Ralts' },
       { kind: 'turnEnded', player: 'A' },
       { kind: 'turnStarted', player: 'B' },
       { kind: 'draw', player: 'B', count: 1 },

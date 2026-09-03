@@ -111,7 +111,8 @@ describe('Conformance M4 — turn boundaries & checkup', () => {
     expect(res.state.outcome).toBe('winA'); // B drew from an empty deck, so A wins
     expect(res.state.phase).toBe('gameOver');
     expect(res.events.some(e => e.kind === 'turnEnded' && e.player === 'A')).toBe(true);
-    expect(res.events.some(e => e.kind === 'deckedOut' && e.actor === 'B')).toBe(true);
+    // deckedOut folded into gameOver.cause (event-vocabulary standardization): B decked out, A wins.
+    expect(res.events.some(e => e.kind === 'gameOver' && e.cause === 'deckOut' && e.winner === 'A')).toBe(true);
     expect(res.events.some(e => e.kind === 'gameOver' && e.outcome === 'winA')).toBe(true);
   });
 
