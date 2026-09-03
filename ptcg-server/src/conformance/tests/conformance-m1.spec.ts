@@ -135,8 +135,8 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
     // ── events ──
     expect(res.events).toEqual([
-      { kind: 'evolved', player: 'A', card: 'Kirlia', pokemon: 'Ralts' },
-      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'Kirlia' },
+      { kind: 'evolved', player: 'A', card: 'Kirlia', pokemon: 'A-active' },        // CF-60: pokemon is the basic iid (Ralts->Kirlia share it), not a name
+      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'A-active' },
       { kind: 'attackUsed', player: 'A', attack: 'Slap' },
       { kind: 'damaged', player: 'B', target: 'B-active', hp: 30 }, // CF-60: target is B's active Ralts' basic iid
       { kind: 'turnEnded', player: 'A' },
@@ -198,7 +198,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.state.players.B.hand.length).toBe(1);
 
     expect(res.events).toEqual([
-      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'Ralts' },
+      { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'A-bench0' }, // CF-60: basic iid, not a name
       { kind: 'retreated', player: 'A', to: 'Ralts' },
       { kind: 'turnEnded', player: 'A' },
       { kind: 'turnStarted', player: 'B' },

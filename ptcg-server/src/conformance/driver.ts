@@ -12,7 +12,7 @@ import {
   UseAbilityAction as UseAbilityGameAction, UseStadiumAction as UseStadiumGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames } from './state-adapter';
+import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames, allIidNames } from './state-adapter';
 import { atOnceWireSpec } from './at-once';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
@@ -642,7 +642,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       starved = err;
     }
     const afterState = projectState(game.state, game.ctx);
-    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames));
+    // All-card iid -> name (energy/tool/evolution names for the observed-tier state-diff derivations).
+    // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
+    const allNames = allIidNames(game.ctx);
+    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames));
     if (starved !== undefined) { throw starved; }
   };
 

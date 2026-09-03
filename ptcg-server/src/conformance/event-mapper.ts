@@ -21,6 +21,12 @@ import { NeutralEvent, NeutralPlayerId } from './neutral-types';
  *
  * Determinism: `Store.log` injects a wall-clock `timestamp` into every log's params (store.ts). This
  * mapper reads only named fields and never passes `params` through, so events are reproducible.
+ *
+ * One exception to "carries the display name": `pokemon` on `energyAttached`/`toolAttached`/`evolved` is
+ * emitted here as a name (all a log carries) but REWRITTEN to the receiving Pokemon's basic iid by
+ * `resolvePokemonIids` in events.ts (CF-60 — `pokemon` is an iid everywhere on the wire; a name collides
+ * across same-name copies). `card`/`stadium`/`ability` stay display names — they name card types / printed
+ * names, not in-play instances.
  */
 
 function str(log: StateLog, key: string): string {

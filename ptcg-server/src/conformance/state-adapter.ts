@@ -534,6 +534,22 @@ export function basicIidDisplayNames(state: State, ctx: IidContext): Map<string,
   return out;
 }
 
+/**
+ * iid → display name for EVERY card the game knows, not just basic Pokemon. CF-60 forbids minting, so
+ * `ctx.iidToCard` holds every card for the whole game (materialized once at initialState), which is why
+ * this can name an energy/tool/evolution card by its iid at any step. Used by the observed-tier
+ * derivations in events.ts (energyAttached/toolAttached/evolved) to carry the receiving Pokemon's basic
+ * iid (the `pokemon` field is an iid everywhere on the wire, CF-60) alongside the attached/evolution
+ * card's display name (the `card` field, a card type's name).
+ */
+export function allIidNames(ctx: IidContext): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const [iid, card] of ctx.iidToCard) {
+    out.set(iid, card.name);
+  }
+  return out;
+}
+
 export function projectState(state: State, ctx: IidContext): NeutralState {
   const lastAttack = projectPlayerLastAttack(state); // CF-15
   return {
