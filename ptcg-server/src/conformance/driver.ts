@@ -540,6 +540,28 @@ function locateCard(state: State, card: Card): { owner: Player; zone: string } |
 }
 
 /**
+ * TA-373: `reveal.from` is the SOURCE zone (§B.34), not where the card sits when the ShowCardsPrompt
+ * fires. A search-then-reveal ("search your deck … reveal it, put it in your hand") has already moved
+ * the card to the hand by prompt time, so `locateCard` reads `hand`. Snapshot every card's zone at the
+ * START of each top-level action (before the search relocates anything) and read `from` off that. Card
+ * identity is stable, so the snapshot is a durable record of the pre-action zones. Zone labels match
+ * `locateCard`.
+ */
+function snapshotCardZones(state: State): Map<Card, string> {
+  const m = new Map<Card, string>();
+  for (const owner of state.players) {
+    for (const c of owner.hand.cards) { m.set(c, 'hand'); }
+    for (const c of owner.deck.cards) { m.set(c, 'deck'); }
+    for (const c of owner.discard.cards) { m.set(c, 'discard'); }
+    for (const c of owner.lostzone.cards) { m.set(c, 'lostZone'); }
+    for (const c of owner.active.cards) { m.set(c, 'play'); }
+    for (const b of owner.bench) { for (const c of b.cards) { m.set(c, 'play'); } }
+    for (const p of owner.prizes) { for (const c of p.cards) { m.set(c, 'prizes'); } }
+  }
+  return m;
+}
+
+/**
  * CF-18 (proposed): a `ShowCardsPrompt` is twinleaf's public-reveal signal ("reveal a Supporter you
  * find there" — Attract Customers; "reveal it" search-tutors; etc). It carries the revealed `cards`
  * and its `playerId` is the AUDIENCE being shown them — NOT the owner (the owner already knows their
@@ -552,7 +574,7 @@ function locateCard(state: State, card: Card): { owner: Player; zone: string } |
  * already sees their own cards), so every ShowCardsPrompt is a public reveal. Audience-scoped shows
  * (`to:<player>`) and private looks (eventless) are the other CF-18 arms — not raised by this prompt.
  */
-function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt): NeutralEvent | null {
+function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZones: Map<Card, string>): NeutralEvent | null {
   const cards = prompt.cards;
   // Owner fallback for a show we cannot locate by card: the prompt's playerId is the AUDIENCE, so the
   // shower is the other player ("your opponent reveals their hand" prompts the attacker).
@@ -592,7 +614,10 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt): NeutralE
   const loc = locateCard(game.state, cards[0]);
   // Owner = the located zone's owner; fall back to the non-audience player (see above).
   const owner = loc !== null ? playerIdToActor(game.state, loc.owner.id) : fallbackOwner;
-  const from = loc !== null ? loc.zone : 'unknown';
+  // TA-373 / §B.34: `from` is the SOURCE zone — where the card was at the START of this action, before
+  // any search relocated it — not `loc.zone` (its post-move zone at prompt time). Fall back to the
+  // located zone for a card that entered play mid-action (absent from the snapshot).
+  const from = sourceZones.get(cards[0]) ?? (loc !== null ? loc.zone : 'unknown');
   return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
 }
 
@@ -683,6 +708,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   }
 
   function loop(): LoopResult {
+  // TA-373: source-zone snapshot for `reveal.from`, refreshed at each top-level action (below) so a
+  // search-then-reveal reports the card's pre-search zone, not where it landed.
+  let actionStartZones = snapshotCardZones(game.state);
   for (;;) {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
@@ -698,7 +726,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // BEFORE the ack while the cards still sit in their revealed zone. All other wait prompts
         // (WaitPrompt, Alert, non-cancelable Confirm cards) carry no observable and emit nothing.
         if (prompt.type === 'Show cards') {
-          const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt);
+          const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt, actionStartZones);
           if (revealEvent !== null) {
             events.push(revealEvent);
           }
@@ -955,6 +983,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // here: dispatchAndCollect resyncs + captures committed events and re-throws, and the outer
       // catch turns ANY starvation — top-level dispatch OR prompt-resolution continuation — into a
       // single system flip pause. See the outer catch and dispatchAndCollect above.
+      // TA-373: snapshot pre-action card zones so a reveal fired inside this action's effect reports
+      // each card's SOURCE zone, not the zone a mid-effect search moved it into.
+      actionStartZones = snapshotCardZones(game.state);
       dispatchAndCollect(() => dispatchAction(game, action));
       continue;
     }
