@@ -742,10 +742,20 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, heads)));
           continue;
         }
-        if (prompt.type.startsWith('Shuffle') && !(next !== undefined && next.type === 'shuffle')) {
+        if (prompt.type.startsWith('Shuffle')) {
           // CF-11: a deck of 0 or 1 cards has exactly one possible order — a forced
           // non-decision — so the `system shuffle` pending is NOT surfaced; auto-resolve
           // with the identity order. The `shuffled` event still fires (uniform-emit).
+          //
+          // TA-375: this MUST fire before consuming a client `shuffle` action, not only when there
+          // is none. Judge/Iono raise a shuffle for BOTH players; on a deck-0 seed one player's deck
+          // holds ≤1 card (forced) and the other holds the real deck. The forced prompt is never
+          // surfaced, so the client's single `shuffle` order is destined for the REAL prompt — but
+          // the old `&& !(next is shuffle)` guard let the forced prompt swallow it, applying the
+          // other player's order to a 1-card deck and rejecting a valid permutation (an
+          // un-satisfiable pending that wedged the game — the fuzz CONTRACT class, tr-bench-por-076).
+          // A ≤1-card shuffle has only the identity order, so auto-resolving it and NOT consuming the
+          // action is always correct.
           const player = game.state.players.find(p => p.id === prompt.playerId);
           const deckLen = player ? player.deck.cards.length : 0;
           if (deckLen <= 1) {

@@ -2177,6 +2177,65 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(new Set(attachTargetsOf(free)).has('B-act')).toBe(true);
   });
 
+  it("Team Rocket's Energy is offered only onto a Team Rocket's Pokémon [TA-374 dri-182/asc-217]", () => {
+    // "This card can only be attached to a Team Rocket's Pokémon." The restriction lives as a
+    // `throw new GameError` inside the energy's OWN reduceEffect (AttachEnergyEffect); legal-actions
+    // still offered the attach onto every Pokémon and the dispatcher then rejected it — the fuzz
+    // CONTRACT class (enum-asc-217 x366, fuzz-20260904-enum). The fix dry-runs the concrete attach.
+    // Board differs by ONE thing between the two targets: the bench Pokémon carries the TEAM_ROCKET
+    // tag (dri-149 Team Rocket's Meowth), the active does not (Ralts).
+    const TRE = { iid: 'A-tre', printing: 'dri-182' };  // Team Rocket's Energy
+    const trBoard = () => board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['dri-149'])],
+               hand: [TRE], deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const attachTargetsFor = (r: ReturnType<typeof step>, cardIid: string) =>
+      new Set((r.pending?.legalActions ?? [])
+        .filter(a => (a as { type: string; card?: string }).type === 'attachEnergy'
+          && (a as { card?: string }).card === cardIid)
+        .map(a => (a as { target?: string }).target));
+    const targets = attachTargetsFor(step(trBoard(), []), 'A-tre');
+    expect(targets.has('A-act')).toBe(false);  // non-Team-Rocket's active: withheld (was offered → rejected)
+    expect(targets.has('A-b0')).toBe(true);    // Team Rocket's Meowth: legal, still offered
+  });
+
+  it('Judge on a deck-0 seed does not wedge on an un-satisfiable shuffle [TA-375 por-076]', () => {
+    // "Each player shuffles their hand into their deck and draws 4 cards." raises a shuffle for BOTH
+    // players. With A's deck empty and hand emptied by playing Judge, A's shuffle is a forced ≤1-card
+    // non-decision (never surfaced, CF-11); B's is the real 3-card shuffle. The client's single
+    // `shuffle` order is destined for B — but the driver's CF-11 auto-resolve used to be gated on
+    // "no client shuffle action", so A's forced prompt swallowed B's order, applied it to A's 1-card
+    // deck, and rejected the valid permutation: an un-satisfiable pending that wedged the game (the
+    // fuzz CONTRACT class, enum-tr-bench-por-076--deck0 x4, fuzz-20260904-enum).
+    // boardKeepingEmptyDeck leaves deck:[] empty (board() would backfill it) — deck-0 IS the case.
+    const settle = (b: ReturnType<typeof boardKeepingEmptyDeck>, actions: NeutralAction[]) => {
+      const acts: NeutralAction[] = actions.map(a => ({ ...a }));
+      for (let i = 0; i < 12; i++) {
+        const r = step(b, acts);
+        if (r.status === 'invalidAction') { return { ok: false, shuffles: -1 }; }
+        const sh = (r.pending?.legalActions ?? [])
+          .find(a => (a as { type: string }).type === 'shuffle') as { deck?: string[] } | undefined;
+        if (sh === undefined) {
+          return { ok: true, shuffles: r.events.filter(e => /shuffle/i.test(e.kind)).length };
+        }
+        acts.push({ actor: 'system', type: 'shuffle', order: sh.deck ?? [] } as unknown as NeutralAction);
+      }
+      throw new Error('TA-375 guard did not settle');
+    };
+    // A keeps ONE card in hand after Judge (a 1-card forced shuffle over A's empty deck — the CF-11
+    // case), B holds three (its real shuffle). Mirrors the corpus board tr-bench-por-076--deck0.
+    const judgeBoard = boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', [RALTS]),
+               hand: [{ iid: 'A-judge', printing: 'por-076' }, ...en(WATER, 1, 'Ah')], deck: [] }),
+      player({ active: inPlay('B-act', [RALTS]),
+               hand: en(WATER, 3, 'Bh'), deck: [] }),
+    );
+    const out = settle(judgeBoard, [{ actor: 'A', type: 'playSupporter', card: 'A-judge' }]);
+    expect(out.ok).toBe(true);        // pre-fix: false (invalidAction wedge)
+    expect(out.shuffles).toBe(2);     // A's forced shuffle + B's real shuffle both emit `shuffled`
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).

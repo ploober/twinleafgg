@@ -14,7 +14,7 @@ import { deepClone } from '../utils/utils';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import { atOnceWireSpec } from './at-once';
 import {
-  SuperType, TrainerType, Stage, SpecialCondition, BoardEffect, CardType
+  SuperType, TrainerType, Stage, SpecialCondition, BoardEffect, CardType, EnergyType
 } from '../game/store/card/card-types';
 import { Attack, PowerType } from '../game/store/card/pokemon-types';
 import { State, GamePhase } from '../game/store/state/state';
@@ -125,6 +125,14 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
         // cannotAttachEnergyFromHandNextTurn (Cursed Roots cri-039 et al.) refuses the hand attach,
         // so offering it makes the menu reject its own action (the fuzz CONTRACT class).
         if (s.list.cannotAttachEnergyFromHandNextTurn) { continue; }
+        // TA-374: a Special Energy with a printed attachment restriction ("can only be attached to
+        // a Team Rocket's Pokémon", asc-217) enforces it as a `throw` inside its OWN reduceEffect —
+        // invisible to every static check here — so the menu offered the attach onto an ineligible
+        // Pokémon and the dispatcher then rejected it (same CONTRACT class as TA-337). Dry-run the
+        // concrete attach, the Trainer/evolve-probe idiom (TA-248/TA-263). Scoped to SPECIAL energy:
+        // Basic energy carries no attachment restriction, so it is never probed (behaviour unchanged,
+        // and the clone cost is bounded to the few special energies actually in hand).
+        if (card.energyType === EnergyType.SPECIAL && !attachEnergyProbeAccepts(state, player, card, s)) { continue; }
         out.push({ type: 'attachEnergy', card: iid, target: s.iid });
       }
     } else if (card.superType === SuperType.TRAINER && card instanceof TrainerCard) {
@@ -343,6 +351,36 @@ function attackProbeAccepts(state: State, player: Player, attackName: string): b
  * prescribed ACTION be carried out" and warns off state-diff inertness tests.
  */
 function evolveProbeAccepts(state: State, player: Player, card: PokemonCard, slot: OwnSlot): boolean {
+  const handIndex = player.hand.cards.indexOf(card);
+  if (handIndex === -1) { return true; }
+  const playerIndex = state.players.indexOf(player);
+  const benchIndex = slot.benchIndex;
+  const handler = new ConformanceStoreHandler();
+  const probe = new Store(handler);
+  handler.setStore(probe);
+  probe.state = deepClone(state, [Card]);
+  const cloned = probe.state.players[playerIndex];
+  const target = benchIndex === null
+    ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
+    : { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: benchIndex };
+  try {
+    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
+    return true;
+  } catch (err) {
+    return !(err instanceof GameError);
+  }
+}
+
+/**
+ * Dry-run an energy attach from hand onto `slot` on a clone: does `card` legally attach there right
+ * now? The Trainer/evolve-probe idiom (TA-248/TA-263) applied to AttachEnergyEffect — the attachment
+ * restriction of a Special Energy ("can only be attached to a Team Rocket's Pokémon", asc-217) lives
+ * as a `throw new GameError` inside the card's own reduceEffect and is invisible to any static test.
+ * Throw-only, like the siblings: a GameError means the engine refuses the attach, so the menu must
+ * not offer it; any other throw (a prompt with no provider on the clone) gets the benefit of the
+ * doubt and the attach is offered. Only special energies reach here (see the call site). TA-374.
+ */
+function attachEnergyProbeAccepts(state: State, player: Player, card: EnergyCard, slot: OwnSlot): boolean {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
   const playerIndex = state.players.indexOf(player);
