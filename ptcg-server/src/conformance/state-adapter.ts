@@ -6,6 +6,7 @@ import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { CardList } from '../game/store/state/card-list';
 import { StateUtils } from '../game/store/state-utils';
+import { Prompt } from '../game/store/prompts/prompt';
 import { Store } from '../game/store/store';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
@@ -455,7 +456,23 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
   };
 }
 
-function projectPlayer(ctx: IidContext, player: Player, turn: number): PlayerState {
+function projectPlayer(ctx: IidContext, player: Player, turn: number,
+    resolvingExtra: Card[] = []): PlayerState {
+  // Dedup the look-pile extras against themselves (one pile is referenced by both a ChooseCards and an
+  // AttachEnergy prompt during Waitress, arriving twice). The cross-zone dedup — a pile card that is
+  // actually still in some settled zone (Iris's Fighting Spirit selects from the deck; an opponent-peek
+  // pile holds the OTHER player's cards) or that a decomposer's fixupProjection re-homes — is applied
+  // GLOBALLY by pruneResolvingDuplicates, which sees every player's zones and runs both at the end of
+  // projectState and after the fixups in step(). A per-player filter here would miss the cross-player
+  // case, so it is deliberately not done.
+  const resolvingSeen = new Set<string>();
+  const resolvingExtraKept = resolvingExtra.filter(c => {
+    const iid = ctx.cardToIid.get(c);
+    if (iid === undefined || resolvingSeen.has(iid)) { return false; }
+    resolvingSeen.add(iid);
+    return true;
+  });
+
   const prizes: PrizeRef[] = [];
   for (const prize of player.prizes) {
     const card = prize.cards[0];
@@ -480,7 +497,14 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number): PlayerSta
     // was the UNION of the two zones an engine that correctly DEFERS the discard and one that
     // WRONGLY discards early produced a byte-identical state — the harness could not detect a #919
     // violation in either engine, by construction. Schema 0.5.0 added the zone; this is it.
-    resolving: player.supporter.cards.map(c => cardRef(ctx, c)),
+    //
+    // CF-42 GENERALISED (G-44 root cause): a "look at the top N of your deck" effect (Waitress
+    // asc-215, Grimsley's Move pfl-090, Recon Directive asc-159 …) does `deck.moveTo(temp, N)` into a
+    // LOCAL CardList that no settled zone holds, then pauses at a ChooseCardsPrompt/AttachEnergyPrompt
+    // over it. Those cards are IN PLAY, not gone — `resolvingExtra` carries them (from the active
+    // prompt's temp pile, see detachedResolvingCards) so single-engine conservation holds through the
+    // pause instead of reading N cards as vanished.
+    resolving: [...player.supporter.cards, ...resolvingExtraKept].map(c => cardRef(ctx, c)),
     flags: projectFlags(player, turn),
   };
 }
@@ -550,9 +574,72 @@ export function allIidNames(ctx: IidContext): Map<string, string> {
   return out;
 }
 
+/** The temp look pile an active prompt operates over, if any — the two field names it may carry. */
+function promptTempPile(prompt: Prompt<unknown>): CardList | undefined {
+  const p = prompt as unknown as { cards?: unknown; cardList?: unknown };
+  if (p.cards instanceof CardList) { return p.cards; }
+  if (p.cardList instanceof CardList) { return p.cardList; }
+  return undefined;
+}
+
+/**
+ * Per-player-index cards that are staged in an active prompt's temp pile but held in NO settled zone
+ * — the "look at top N" limbo (Waitress `deck.moveTo(temp, 6)` then a ChooseCardsPrompt over `temp`).
+ * CF-42 generalised: they are in play, so they belong in `resolving`, not vanished. Attributed to the
+ * prompt's owning player; a pile card that still sits in a real zone (a prompt over the hand/discard)
+ * is excluded, since it is already projected there.
+ */
+function detachedResolvingCards(state: State): Card[][] {
+  // Collect every card referenced by an active prompt's temp pile, grouped by the prompt's owning
+  // player. NO settled-zone filter here: projectPlayer applies it against the SAME snapshot it
+  // projects (a card can be back in the deck while the prompt still references it), which is the only
+  // place the filter is guaranteed consistent with the projected zones.
+  const out: Card[][] = state.players.map(() => []);
+  if (state.prompts.length === 0) { return out; }
+  for (const prompt of state.prompts) {
+    const pile = promptTempPile(prompt);
+    if (pile === undefined) { continue; }
+    const owner = state.players.findIndex(p => p.id === prompt.playerId);
+    if (owner === -1) { continue; }
+    out[owner].push(...pile.cards);
+  }
+  return out;
+}
+
+/**
+ * I1 guard on a wire state: a `resolving` card whose iid appears in ANY other zone of EITHER player is
+ * a duplicate and is dropped from `resolving`. The look-pile projection stages a mid-effect card into
+ * `resolving`, but the same card may still sit in a settled zone — the prompt selects from the deck
+ * without moving it (Iris), the pile is the OPPONENT's cards (a look-at-opponent effect: prompt owner
+ * ≠ card owner), or a decomposer's `fixupProjection` (CF-1) re-homes it into the deck AFTER projection
+ * (Waitress's "shuffle the rest back"). Global by design — the cross-player case needs both players'
+ * zones. The settled zone is authoritative; resolving yields. Conservation holds: still projected once.
+ * Idempotent, so it runs at the end of projectState and again after the fixups in step().
+ */
+export function pruneResolvingDuplicates(state: NeutralState): void {
+  const elsewhere = new Set<string>();
+  const add = (cards: { iid: string }[]) => cards.forEach(c => elsewhere.add(c.iid));
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const p = state.players[who];
+    for (const slot of [p.active, ...p.bench]) {
+      if (slot) { add(slot.stack); add(slot.energy); add(slot.tools); }
+    }
+    add(p.hand); add(p.deck); add(p.discard); add(p.lostZone);
+    p.prizes.forEach(pc => elsewhere.add(pc.iid));
+  }
+  if (state.stadium) { elsewhere.add(state.stadium.iid); }
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const p = state.players[who];
+    if (p.resolving && p.resolving.length > 0) {
+      p.resolving = p.resolving.filter(c => !elsewhere.has(c.iid));
+    }
+  }
+}
+
 export function projectState(state: State, ctx: IidContext): NeutralState {
   const lastAttack = projectPlayerLastAttack(state); // CF-15
-  return {
+  const detached = detachedResolvingCards(state);
+  const out: NeutralState = {
     schemaVersion: SCHEMA_VERSION,
     turn: state.turn,
     activePlayer: indexToPlayerId(state.activePlayer),
@@ -561,12 +648,17 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),
     players: {
-      A: projectPlayer(ctx, state.players[0], state.turn),
-      B: projectPlayer(ctx, state.players[1], state.turn),
+      A: projectPlayer(ctx, state.players[0], state.turn, detached[0]),
+      B: projectPlayer(ctx, state.players[1], state.turn, detached[1]),
     },
     // CF-15: OMIT the key entirely when neither side has a record — the field is optional, not nullable,
     // so `playerLastAttack: undefined` would still add the property and fail an exact-shape assertion.
     ...(lastAttack ? { playerLastAttack: lastAttack } : {}),
     activeEffects: [], // timed effects are deferred (design §6.3); emitted as [] per the contract default
   };
+  // Drop any look-pile card from `resolving` that is really still in a settled zone (Iris selects in
+  // place; an opponent-peek pile holds the other player's cards). The step() caller re-runs this after
+  // fixupProjection, which can re-home a pile card into the deck (Waitress). Idempotent.
+  pruneResolvingDuplicates(out);
+  return out;
 }

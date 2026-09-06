@@ -2236,6 +2236,55 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(out.shuffles).toBe(2);     // A's forced shuffle + B's real shuffle both emit `shuffled`
   });
 
+  it("a look-at-deck effect keeps every card conserved and unique through the pause [G-44 resolving projection / asc-215]", () => {
+    // Waitress: "Look at the top 6 cards of your deck, attach a Basic Energy you find there to 1 of
+    // your Pokémon, shuffle the rest back." The engine does deck.moveTo(temp, 6) into a local pile
+    // before a ChooseCardsPrompt, so at the pause the 6 cards are in NO settled zone — conservation
+    // read them as vanished (the fuzz INVARIANT|vanish class). The adapter now projects the prompt's
+    // pile into `resolving`. Two laws must hold at EVERY node of the resolution: (I2) every starting
+    // card is still somewhere, and (I1) no iid appears twice — the second is the trap, because the
+    // pile can move a card back to the deck while still referencing it.
+    const allIids = (st: NeutralState): string[] => {
+      const out: string[] = [];
+      for (const who of ['A', 'B'] as const) {
+        const p = st.players[who];
+        for (const slot of [p.active, ...p.bench]) {
+          if (slot) { slot.stack.forEach(c => out.push(c.iid)); slot.energy.forEach(c => out.push(c.iid)); slot.tools.forEach(c => out.push(c.iid)); }
+        }
+        for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? []]) { z.forEach(c => out.push(c.iid)); }
+        p.prizes.forEach(pc => out.push(pc.iid));
+      }
+      return out;
+    };
+    const wBoard = board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-wait', printing: 'asc-215' }],
+               deck: en(WATER, 8, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const start = new Set(allIids(wBoard));
+    const acts: NeutralAction[] = [{ actor: 'A', type: 'playSupporter', card: 'A-wait' }];
+    for (let i = 0; i < 15; i++) {
+      const r = step(wBoard, acts);
+      expect(r.status).not.toBe('invalidAction');
+      if (r.state) {
+        const ids = allIids(r.state);
+        const counts = new Map<string, number>();
+        ids.forEach(x => counts.set(x, (counts.get(x) ?? 0) + 1));
+        const dupes = [...counts].filter(([, n]) => n > 1).map(([x]) => x);
+        expect(`dupes@step${i}:${dupes}`).toBe(`dupes@step${i}:`);      // I1: no iid twice
+        const gone = [...start].filter(x => !counts.has(x));
+        expect(`vanished@step${i}:${gone}`).toBe(`vanished@step${i}:`); // I2: nothing lost
+      }
+      const la = r.pending?.legalActions ?? [];
+      if (la.length === 0) { break; }
+      const a = la[0] as unknown as Record<string, unknown>;
+      const ans: Record<string, unknown> = { actor: a.actor, type: a.type };
+      if (a.type === 'shuffle') { ans.order = a.deck; }
+      else { for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'ability', 'kind', 'face', 'value', 'option', 'cards', 'candidates', 'order']) { if (a[k] !== undefined) { ans[k] = a[k]; } } }
+      acts.push(ans as unknown as NeutralAction);
+    }
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).

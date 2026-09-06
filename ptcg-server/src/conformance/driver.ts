@@ -12,7 +12,7 @@ import {
   UseAbilityAction as UseAbilityGameAction, UseStadiumAction as UseStadiumGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
-import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames, allIidNames } from './state-adapter';
+import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNames, allIidNames, pruneResolvingDuplicates } from './state-adapter';
 import { atOnceWireSpec } from './at-once';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
@@ -1052,6 +1052,10 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
       decomposerFor(open).fixupProjection?.(open, [], game.ctx, game.state, state);
     }
   }
+  // I1 guard: a fixupProjection above may have re-homed a look-pile card (projected into `resolving`)
+  // into a settled zone, leaving it in both. Drop the resolving copy — the settled zone wins. Runs
+  // after every fixup so the wire state never duplicates an iid. (G-44 look-pile projection.)
+  pruneResolvingDuplicates(state);
   if (rejection !== undefined) {
     // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
     // The cursor advances past an action before dispatch, so `applied` is the offending action's index.
