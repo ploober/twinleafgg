@@ -98,17 +98,12 @@ export class Dewgong extends PokemonCard {
             continue;
           }
 
-          // Move the energy
-          if (source.energies.cards.includes(transfer.card)) {
-            source.energies.moveCardTo(transfer.card, target.energies);
-            if (!target.cards.includes(transfer.card)) {
-              target.cards.push(transfer.card);
-            }
-          } else {
-            source.moveCardTo(transfer.card, target);
-            if (!target.energies.cards.includes(transfer.card)) {
-              target.energies.cards.push(transfer.card);
-            }
+          // Move the energy through the SLOT: PokemonCardList.moveCardTo prunes the source's `cards`
+          // AND `energies`, and registers an Energy in the target's `energies`. Moving via the
+          // `energies` sub-list alone left the card in `source.cards` as a phantom (TA-376).
+          source.moveCardTo(transfer.card, target);
+          if (!target.energies.cards.includes(transfer.card)) {
+            target.energies.cards.push(transfer.card);
           }
         }
       });

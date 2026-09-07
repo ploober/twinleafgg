@@ -1,4 +1,6 @@
-import { step } from '../driver';
+import { step, replay } from '../driver';
+import { importState } from '../state-adapter';
+import { SuperType } from '../../game/store/card/card-types';
 import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers,
   ConditionToken, CardRef, SCHEMA_VERSION, NeutralAction,
@@ -2283,6 +2285,156 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       else { for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'ability', 'kind', 'face', 'value', 'option', 'cards', 'candidates', 'order']) { if (a[k] !== undefined) { ans[k] = a[k]; } } }
       acts.push(ans as unknown as NeutralAction);
     }
+  });
+
+  // G-44 residual: the three carriers the prompt-pile projection could not reach, one per staging idiom.
+  //  - bus-122 Rotom Dex: `deck.moveTo(local, 4)` then a ConfirmPrompt that carries NO cards, so the
+  //    pile is a closure-local the adapter cannot see through any prompt (projectOrphans → resolving).
+  //  - aq-141 Weakness Guard / bs-084 PlusPower: "attach this card to a Pokémon" Trainers sit in
+  //    slot.cards as neither Pokémon, Energy nor registered Tool, so every typed projection skipped
+  //    them while attached (projected under `tools`).
+  // Same two laws as the Waitress guard above, at EVERY node: I2 nothing lost, I1 no iid twice.
+  for (const [printing, verb, deck] of [
+    ['bus-122', 'playItem', 8],
+    ['aq-141', 'playItem', 4],
+    ['bs-084', 'playItem', 4],
+  ] as const) {
+    it(`an attached/closure-staged Trainer stays conserved and unique through its resolution [G-44 residual / ${printing}]`, () => {
+      const allIids = (st: NeutralState): string[] => {
+        const out: string[] = [];
+        for (const who of ['A', 'B'] as const) {
+          const p = st.players[who];
+          for (const slot of [p.active, ...p.bench]) {
+            if (slot) { slot.stack.forEach(c => out.push(c.iid)); slot.energy.forEach(c => out.push(c.iid)); slot.tools.forEach(c => out.push(c.iid)); }
+          }
+          for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? []]) { z.forEach(c => out.push(c.iid)); }
+          p.prizes.forEach(pc => out.push(pc.iid));
+        }
+        return out;
+      };
+      const b = board(
+        player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b1', [RALTS])],
+                 hand: [{ iid: 'A-item', printing }], deck: en(WATER, deck, 'Ad') }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      );
+      const start = new Set(allIids(b));
+      const acts: NeutralAction[] = [{ actor: 'A', type: verb, card: 'A-item' } as unknown as NeutralAction];
+      let nodes = 0;
+      for (let i = 0; i < 12; i++) {
+        const r = step(b, acts);
+        expect(`status@step${i}:${r.status}`).not.toBe(`status@step${i}:invalidAction`);
+        if (r.state) {
+          nodes++;
+          const ids = allIids(r.state);
+          const counts = new Map<string, number>();
+          ids.forEach(x => counts.set(x, (counts.get(x) ?? 0) + 1));
+          const dupes = [...counts].filter(([, n]) => n > 1).map(([x]) => x);
+          expect(`dupes@step${i}:${dupes}`).toBe(`dupes@step${i}:`);      // I1
+          const gone = [...start].filter(x => !counts.has(x));
+          expect(`vanished@step${i}:${gone}`).toBe(`vanished@step${i}:`); // I2
+        }
+        const la = r.pending?.legalActions ?? [];
+        if (la.length === 0) { break; }
+        const a = la[0] as unknown as Record<string, unknown>;
+        const ans: Record<string, unknown> = { actor: a.actor, type: a.type };
+        if (a.type === 'shuffle') { ans.order = a.deck; }
+        else { for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'ability', 'kind', 'face', 'value', 'option', 'cards', 'candidates', 'order']) { if (a[k] !== undefined) { ans[k] = a[k]; } } }
+        acts.push(ans as unknown as NeutralAction);
+      }
+      expect(nodes).toBeGreaterThan(0);
+    });
+  }
+
+  it('Sonic Ripper leaves NO phantom Energy in the Active\'s card list after shuffling it into the deck [TA-376 por-055]', () => {
+    // "Shuffle all Energy from this Pokémon into your deck …". mega-skarmory-ex.ts moved the Energy
+    // via `player.active.energies.moveCardsTo(…, deck)` — the ENERGIES sub-list — which leaves every
+    // moved card in `player.active.cards` as well (only PokemonCardList.moveCardsTo prunes both).
+    // The card was then in TWO CardLists (the deck and the Active's master list): every reader of
+    // `active.cards` for Energy (Crawdaunt/Shiinotic/Absol-style `cards.filter(c instanceof
+    // EnergyCard)`, the Little Grudge reader in game-effect.ts) sees phantom Energy for the rest of
+    // the game. Engine-level witness: the master list must hold no Energy once the move happened.
+    const b = board(
+      player({ active: inPlay('A-act', ['por-055'], [...en(METAL, 2, 'Am'), ...en(WATER, 1, 'Aw')]),
+               deck: en(WATER, 6, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const game = importState(b);
+    const acts: NeutralAction[] = [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Sonic Ripper' } as unknown as NeutralAction];
+    let r = replay(game, acts);
+    for (let i = 0; i < 6 && r.pending && r.pending.legalActions.length > 0; i++) {
+      const a = r.pending.legalActions[0] as unknown as Record<string, unknown>;
+      const ans: Record<string, unknown> = { actor: a.actor, type: a.type };
+      if (a.type === 'shuffle') { ans.order = a.deck; }
+      else { for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'kind', 'value', 'option']) { if (a[k] !== undefined) { ans[k] = a[k]; } } }
+      acts.push(ans as unknown as NeutralAction);
+      r = replay(importState(b), acts);
+    }
+    const active = importState(b);
+    replay(active, acts);
+    const slot = active.state.players[0].active;
+    const phantom = slot.cards.filter(c => c.superType === SuperType.ENERGY).map(c => c.name);
+    expect(`phantomEnergyInActiveCards:${phantom}`).toBe('phantomEnergyInActiveCards:');
+    expect(slot.energies.cards.length).toBe(0);
+    expect(active.state.players[0].deck.cards.filter(c => c.superType === SuperType.ENERGY).length).toBe(9);
+  });
+
+  it('Dewgong\'s Energy transfer leaves NO phantom Energy on the source Pokémon\'s card list [TA-376 por-019]', () => {
+    // Same class as Sonic Ripper: dewgong.ts moved the Energy via `source.energies.moveCardTo(card,
+    // target.energies)` and then pushed it into target.cards by hand — so the SOURCE's master list
+    // still held the card after it left. The slot-level move does both ends.
+    const b = board(
+      player({ active: inPlay('A-act', ['por-018', 'por-019']),
+               bench: [inPlay('A-b1', [RALTS], en(WATER, 1, 'Ab'))], deck: en(WATER, 4, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const acts: NeutralAction[] = [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Wash Out' } as unknown as NeutralAction];
+    let r = replay(importState(b), acts);
+    for (let i = 0; i < 6 && r.pending && r.pending.legalActions.length > 0; i++) {
+      const a = r.pending.legalActions[0] as unknown as Record<string, unknown>;
+      if (a.type === 'endTurn' || a.type === 'useAbility' || a.type === 'declareAttack' || a.type === 'retreat') { break; }
+      const ans: Record<string, unknown> = { actor: a.actor, type: a.type };
+      for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'kind', 'value', 'option']) { if (a[k] !== undefined) { ans[k] = a[k]; } }
+      acts.push(ans as unknown as NeutralAction);
+      r = replay(importState(b), acts);
+    }
+    const game = importState(b);
+    replay(game, acts);
+    const [active, bench] = [game.state.players[0].active, game.state.players[0].bench[0]];
+    expect(active.energies.cards.length).withContext('the Energy moved to the Active').toBe(1);
+    expect(bench.energies.cards.length).toBe(0);
+    const phantom = bench.cards.filter(c => c.superType === SuperType.ENERGY).map(c => c.name);
+    expect(`phantomEnergyOnSource:${phantom}`).toBe('phantomEnergyOnSource:');
+    expect(active.cards.filter(c => c.superType === SuperType.ENERGY).length).withContext('the Active master list holds it once').toBe(1);
+  });
+
+  it('Nitro Fire Energy returned to the hand leaves NO phantom Energy on the Pokémon it left [TA-376 cri-086]', () => {
+    // Third carrier: nitro-fire-energy.ts moved itself to the hand via `pokemon.energies.moveCardTo(this,
+    // owner.hand)` when discarded by its [R] Pokémon's attack (Ho-Oh cri-010 Bright Wing: "Discard a [R]
+    // Energy attached to this Pokémon"). The master list kept it.
+    const b = board(
+      player({ active: inPlay('A-act', ['cri-010'], [...en(FIRE, 2, 'Af'), { iid: 'A-nitro', printing: 'cri-086' }]),
+               deck: en(FIRE, 4, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    );
+    const acts: NeutralAction[] = [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Bright Wing' } as unknown as NeutralAction];
+    let r = replay(importState(b), acts);
+    for (let i = 0; i < 6 && r.pending && r.pending.legalActions.length > 0; i++) {
+      const menu = r.pending.legalActions as unknown as Record<string, unknown>[];
+      const a = menu.find(x => typeof x.target === 'string' && (x.target as string).includes('A-nitro')) ?? menu[0];
+      if (a.type === 'endTurn' || a.type === 'declareAttack' || a.type === 'retreat' || a.type === 'takePrize') { break; }
+      const ans: Record<string, unknown> = { actor: a.actor, type: a.type };
+      if (a.type === 'shuffle') { ans.order = a.deck; }
+      else { for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'name', 'kind', 'value', 'option', 'cards']) { if (a[k] !== undefined) { ans[k] = a[k]; } } }
+      acts.push(ans as unknown as NeutralAction);
+      r = replay(importState(b), acts);
+    }
+    const game = importState(b);
+    replay(game, acts);
+    const active = game.state.players[0].active;
+    const hand = game.state.players[0].hand;
+    expect(hand.cards.map(c => c.name)).withContext('Nitro Fire Energy came back to the hand').toContain('Nitro Fire Energy');
+    expect(active.cards.map(c => c.name)).withContext('and left the Active\'s master list').not.toContain('Nitro Fire Energy');
+    expect(active.energies.cards.length).toBe(2);
   });
 
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {

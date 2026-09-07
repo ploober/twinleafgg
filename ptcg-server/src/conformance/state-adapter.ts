@@ -1,6 +1,6 @@
 import { Card } from '../game/store/card/card';
 import { PokemonCard } from '../game/store/card/pokemon-card';
-import { SpecialCondition } from '../game/store/card/card-types';
+import { SpecialCondition, SuperType } from '../game/store/card/card-types';
 import { State, GamePhase, GameWinner } from '../game/store/state/state';
 import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
@@ -413,10 +413,24 @@ function projectPip(ctx: IidContext, slot: PokemonCardList, player: Player, turn
     abilitiesUsedThisTurn: [],
     cannotAttackNextTurn: slot.cannotAttackNextTurn,
   };
+  // An "attach this card to 1 of your Pokémon" Trainer (PlusPower bs-084, Weakness Guard aq-141,
+  // Defender …) lives in slot.cards without being a Pokémon, an Energy or a registered Tool, so the
+  // three typed projections above it all skip it and the card VANISHED from the wire while attached
+  // (G-44 residual, single-engine conservation). It is attached to this Pokémon, which is what the
+  // `tools` slot means on the wire; project it there after the real Tools. TRAINERS ONLY, and only
+  // while the card is in no settled zone of its player: an Energy that an attack is returning to the
+  // deck (Sonic Ripper por-055) can still sit in slot.cards after it left slot.energies and is already
+  // in player.deck — a stale membership, not an attachment — and projecting it here would double it.
+  const pokemons = slot.getPokemons();
+  const settled = [player.deck, player.hand, player.discard, player.lostzone];
+  const attachedOther = slot.cards.filter(c =>
+    c.superType === SuperType.TRAINER
+    && !pokemons.includes(c as PokemonCard) && !slot.tools.includes(c) && !slot.energies.cards.includes(c)
+    && !settled.some(z => z.cards.includes(c)));
   const pip: PokemonInPlay = {
-    stack: slot.getPokemons().map(c => cardRef(ctx, c)),
+    stack: pokemons.map(c => cardRef(ctx, c)),
     energy: slot.energies.cards.map(c => cardRef(ctx, c)),
-    tools: slot.tools.map(c => cardRef(ctx, c)),
+    tools: [...slot.tools, ...attachedOther].map(c => cardRef(ctx, c)),
     damage: slot.damage,
     conditions,
     markers,
@@ -660,5 +674,39 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
   // place; an opponent-peek pile holds the other player's cards). The step() caller re-runs this after
   // fixupProjection, which can re-home a pile card into the deck (Waitress). Idempotent.
   pruneResolvingDuplicates(out);
+  projectOrphans(out, ctx);
   return out;
+}
+
+/**
+ * Conservation by construction (G-44 completion, the general case): every card the game knows is in
+ * `ctx.iidToCard` (materialized once, CF-60 never mints), so any card that the projection above put in
+ * NO zone is a card the engine is holding somewhere the adapter cannot see — a closure-local CardList
+ * that no active prompt references (Rotom Dex bus-122 moves the top 4 into a local pile and then asks a
+ * ConfirmPrompt, which carries no cards), or any future staging idiom. Such a card is IN PLAY and
+ * mid-resolution, so it belongs in its owner's `resolving`, not vanished. Owner = the seeded owner
+ * (`ctx.cardOwner`, the player whose initialState carried it). Runs AFTER pruneResolvingDuplicates so a
+ * card is never both pruned and re-added; the step() caller's post-fixup prune only ever REMOVES, so an
+ * orphan added here stays projected exactly once.
+ */
+export function projectOrphans(state: NeutralState, ctx: IidContext): void {
+  const seen = new Set<string>();
+  const add = (cards: { iid: string }[]) => cards.forEach(c => seen.add(c.iid));
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const p = state.players[who];
+    for (const slot of [p.active, ...p.bench]) {
+      if (slot) { add(slot.stack); add(slot.energy); add(slot.tools); }
+    }
+    add(p.hand); add(p.deck); add(p.discard); add(p.lostZone); add(p.resolving ?? []);
+    p.prizes.forEach(pc => seen.add(pc.iid));
+  }
+  if (state.stadium) { seen.add(state.stadium.iid); }
+  for (const [iid, card] of ctx.iidToCard) {
+    if (seen.has(iid)) { continue; }
+    const ownerIndex = ctx.cardOwner.get(card);
+    const who: NeutralPlayerId = ownerIndex === 1 ? 'B' : 'A';
+    const p = state.players[who];
+    p.resolving = [...(p.resolving ?? []), { iid, printing: toPrinting(card) }];
+    seen.add(iid);
+  }
 }

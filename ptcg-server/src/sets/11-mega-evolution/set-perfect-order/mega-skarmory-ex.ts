@@ -47,9 +47,11 @@ export class MegaSkarmoryex extends PokemonCard {
       // Get all energy cards from this Pokemon
       const energyCards = [...player.active.energies.cards];
 
-      // Move all energy cards to deck
+      // Move all energy cards to deck. Through the SLOT (PokemonCardList.moveCardsTo prunes the card
+      // from `cards` AND `energies`), not through `energies` alone — that left every moved Energy in
+      // `player.active.cards` as a phantom for the rest of the game (TA-376).
       if (energyCards.length > 0) {
-        player.active.energies.moveCardsTo(energyCards, player.deck);
+        player.active.moveCardsTo(energyCards, player.deck);
       }
 
       // Shuffle the deck

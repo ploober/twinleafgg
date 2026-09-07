@@ -30,7 +30,8 @@ export class NitroFireEnergy extends EnergyCard {
         store.reduceEffect(state, checkType);
         if (checkType.cardTypes.includes(CardType.FIRE)) {
           effect.cards = effect.cards.filter((c) => c !== this);
-          pokemon.energies.moveCardTo(this, owner.hand);
+          // Through the SLOT, not `energies` alone — the latter left this card in `pokemon.cards` (TA-376).
+          pokemon.moveCardTo(this, owner.hand);
         }
       } catch {
         return state;
