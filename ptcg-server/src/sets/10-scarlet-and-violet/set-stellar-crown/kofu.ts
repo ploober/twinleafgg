@@ -83,6 +83,12 @@ export class Kofu extends TrainerCard {
     if (player.hand.cards.length <= 2) {
       return false;
     }
+    // TA-380 (B.41 arithmetic, the TA-349 Lacey shape): on an EMPTY deck the two bottomed cards ARE the
+    // deck and "draw 4" returns exactly them — a provable no-op for any hand size. At deck >= 1 the draw
+    // reaches an original card, so the play has an effect. Rotomancer withholds at deck 0.
+    if (player.deck.cards.length === 0) {
+      return false;
+    }
     return true;
   }
 

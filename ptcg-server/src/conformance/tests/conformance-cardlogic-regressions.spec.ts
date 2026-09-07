@@ -2541,6 +2541,23 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       && (a as unknown as { card?: string }).card === 'A-lacey')).toBe(true);
   });
 
+  it('Kofu is withheld on an EMPTY deck (the 2 bottomed cards are the whole deck and come straight back) and offered at deck 1 [TA-380 scr-138]', () => {
+    // "Put 2 cards from your hand on the bottom of your deck … draw 4 cards." At deck 0 the two cards
+    // ARE the deck and the draw returns exactly them — a provable no-op for any hand size (B.41's
+    // arithmetic, TA-349's Lacey shape). At deck 1 the draw reaches the original card: a real effect.
+    // Rotomancer withholds at deck 0 and offers at deck 1 (trainer census 2026-09-07).
+    const offers = (deck: number) => {
+      const r = step(boardKeepingEmptyDeck(
+        player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-kofu', printing: 'scr-138' }, ...en(WATER, 4, 'Ah')], deck: fillerDeck('A', deck) }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'playSupporter'
+        && (a as unknown as { card?: string }).card === 'A-kofu');
+    };
+    expect(offers(1)).withContext('control: deck 1 -> the draw reaches a new card -> offered').toBe(true);
+    expect(offers(0)).withContext('deck 0 -> the bottomed pair is drawn straight back -> withheld').toBe(false);
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).

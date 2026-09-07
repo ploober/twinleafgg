@@ -6546,6 +6546,13 @@
         "deckBottom.moveTo(opponent.deck);"
       ],
       "note": "TA-379 (2026-09-07): the hand-to-bottom is SHUFFLED via an externalized ShuffleDeckPrompt over exactly the moved cards, the untouched deck restacked on top, THEN the draw."
+    },
+    {
+      "file": "set-stellar-crown/kofu.ts",
+      "signatures": [
+        "// TA-380 (B.41 arithmetic, the TA-349 Lacey shape): on an EMPTY deck the two bottomed cards ARE the"
+      ],
+      "note": "TA-380 (2026-09-07): Kofu withheld at deck 0 — the bottomed pair is drawn straight back."
     }
   ]
 }
