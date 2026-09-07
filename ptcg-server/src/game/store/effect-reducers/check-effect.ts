@@ -567,7 +567,18 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
   }
 
   const prizesAlreadyTaken = state.players.some(p => p.prizes.every(pr => pr.cards.length === 0));
-  if (prizesAlreadyTaken) {
+  // TA-382 / §B.16 (adjudicated 2026-09-07) — a player with NO Pokémon in play has lost the moment
+  // the effect that emptied their board has FULLY resolved (KOs discarded, prizes taken). The
+  // survivor's replacement is never owed: rulebook play.turn.attack.c.p5 "If your opponent can't
+  // do this because their Bench is empty (or for any other reason), you win the game!", zones
+  // .active-spot; compendium #1832 ("everything has to be resolved before you check for win
+  // conditions"), #882. The prize-out short-circuit above already ran checkWinner BEFORE the
+  // promotion prompts; the no-Pokémon condition takes the same exit, so a finished game never opens
+  // a pointless decision for the survivor (CF-33). Same emptiness idiom as checkWinner — never
+  // `bench.length` (slots are pre-allocated).
+  const noPokemonInPlay = state.players.some(p =>
+    p.active.cards.length === 0 && !p.bench.some(b => b.cards.length > 0));
+  if (prizesAlreadyTaken || noPokemonInPlay) {
     return checkWinner(store, state, onComplete);
   }
 

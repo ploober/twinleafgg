@@ -6567,6 +6567,13 @@
         "return ancientInPlay > 0;"
       ],
       "note": "TA-381 (2026-09-07): withheld with no Ancient Pokemon in play (draws 0)."
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "  if (prizesAlreadyTaken || noPokemonInPlay) {"
+      ],
+      "note": "TA-382 / B.16 2026-09-07: the no-Pokemon-in-play loss takes the same pre-promotion exit as the prize-out win, so a wiped-out opponent loses BEFORE the survivor is asked to promote. Reverting reopens the survivor's pointless CHOOSE_NEW_ACTIVE_POKEMON on every mutual-KO wipe-out; guarded by scenarios/ta382-mutual-ko-wipeout-win-recognized-before-the-survivor-promotes.json."
     }
   ]
 }
