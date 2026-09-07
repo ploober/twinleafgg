@@ -6485,6 +6485,56 @@
         "if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {"
       ],
       "note": "TA-377 (2026-09-07): B.29 addendum 2 — withhold the flip-gated discard Ability when the opponent's Active has no Energy."
+    },
+    {
+      "file": "set-surging-sparks/precious-trolley.ts",
+      "signatures": [
+        "// TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic"
+      ],
+      "absentSignatures": [
+        "player.supporter.moveCardTo(this, player.discard);"
+      ],
+      "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
+    },
+    {
+      "file": "set-surging-sparks/helper.bell.ts",
+      "signatures": [
+        "// TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic"
+      ],
+      "absentSignatures": [
+        "player.supporter.moveCardTo(this, player.discard);"
+      ],
+      "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
+    },
+    {
+      "file": "set-surging-sparks/dusk-ball.ts",
+      "signatures": [
+        "// TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic"
+      ],
+      "absentSignatures": [
+        "player.supporter.moveCardTo(this, player.discard);"
+      ],
+      "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
+    },
+    {
+      "file": "set-journey-together/hops-bag.ts",
+      "signatures": [
+        "// TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic"
+      ],
+      "absentSignatures": [
+        "player.supporter.moveCardTo(this, player.discard);"
+      ],
+      "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
+    },
+    {
+      "file": "set-temporal-forces/buddy-buddy-poffin.ts",
+      "signatures": [
+        "// TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic"
+      ],
+      "absentSignatures": [
+        "player.supporter.moveCardTo(this, player.discard);"
+      ],
+      "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
     }
   ]
 }

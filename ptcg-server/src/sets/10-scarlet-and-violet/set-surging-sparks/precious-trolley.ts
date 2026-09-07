@@ -97,8 +97,8 @@ export class PreciousTrolley extends TrainerCard {
             store.reduceEffect(state, playPokemonFromDeckEffect);
           });
 
-          player.supporter.moveCardTo(this, player.discard);
-
+          // TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic
+          // finalizeTrainerCleanup discards it once no prompt is open, i.e. after the shuffle (#919).
           return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
             player.deck.applyOrder(order);
           });

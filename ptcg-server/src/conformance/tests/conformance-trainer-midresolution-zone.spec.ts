@@ -97,6 +97,50 @@ function playedMidPrompt() {
 
 describe('Conformance — CF-42 Trainer mid-resolution has no wire zone', () => {
 
+  it('an ITEM whose effect ends in a shuffle stays in player.supporter until the shuffle resolves — not self-discarded first [TA-378 tef-144]', () => {
+    // #919: cost -> effect -> discard. Buddy-Buddy Poffin's effect is "search … put onto your Bench.
+    // Then, shuffle your deck." — the shuffle IS the effect's last step. The card file discarded
+    // itself BEFORE raising the ShuffleDeckPrompt (`player.supporter.moveCardTo(this, player.discard)`
+    // one line above `new ShuffleDeckPrompt`), so at the shuffle pause the wire read discard=[poffin]
+    // where rotomancer reads resolving=[poffin] (fuzz-20260904-enum `enum-asc-102`, 17 occ; Call Bell
+    // ssp-165 2,183 occ). The generic finalizeTrainerCleanup already defers the discard behind
+    // store.waitPrompt, which fires only when NO prompt is open — i.e. after the shuffle — so the
+    // card-level early discard is both wrong and redundant.
+    const POFFIN = 'tef-144';
+    const A: PlayerState = {
+      active: basic('A-act', BELLSPROUT), bench: [],
+      hand: [{ iid: 'A-poffin', printing: POFFIN }, { iid: 'A-h1', printing: WATER }],
+      deck: [{ iid: 'A-d0', printing: BELLSPROUT }, ...Array.from({ length: 6 }, (_, i) => ({ iid: `A-d${i + 1}`, printing: WATER }))],
+      discard: [], lostZone: [], prizes: prize('A'), flags: flags(),
+    };
+    const B: PlayerState = {
+      active: basic('B-act', BELLSPROUT), bench: [], hand: [], deck: [{ iid: 'B-d0', printing: WATER }],
+      discard: [], lostZone: [], prizes: prize('B'), flags: flags(),
+    };
+    const st: NeutralState = {
+      schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A',
+      phase: 'main', outcome: 'ongoing', stadium: null, players: { A, B },
+    };
+    // play, then take the first pick the search offers, until the system shuffle is the pending
+    const acts: any[] = [{ actor: 'A', type: 'playItem', card: 'A-poffin' }];
+    let game = importState(st);
+    let r = replay(game, acts);
+    for (let i = 0; i < 4 && r.pending && r.pending.actor !== 'system'; i++) {
+      const a = r.pending.legalActions[0] as any;
+      const ans: any = { actor: a.actor, type: a.type };
+      for (const k of ['card', 'target', 'source', 'owner', 'to', 'index', 'cards', 'value']) { if (a[k] !== undefined) { ans[k] = a[k]; } }
+      acts.push(ans);
+      game = importState(st); r = replay(game, acts);
+    }
+    expect(r.pending?.actor).withContext('paused at the owed shuffle').toBe('system');
+    const P = game.state.players[0];
+    expect(P.supporter.cards.map(c => c.name)).withContext('engine: still staged').toEqual(['Buddy-Buddy Poffin']);
+    expect(P.discard.cards.map(c => c.name)).withContext('engine: not yet discarded').toEqual([]);
+    const proj = projectState(game.state, game.ctx).players.A;
+    expect(proj.resolving?.map(c => c.printing)).toEqual([POFFIN]);
+    expect(proj.discard.map(c => c.printing)).toEqual([]);
+  });
+
   it('the ENGINE keeps a mid-resolution Supporter in player.supporter, not the discard (#919)', () => {
     const game = playedMidPrompt();
     const A = game.state.players[0];

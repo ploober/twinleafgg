@@ -217,7 +217,9 @@ describe('Conformance — `source` names the Pokemon, not a card in its stack (T
       energy: [{ iid: 'ae0', printing: 'sve-006' }, { iid: 'ae1', printing: 'sve-006' }],
       tools: [], damage: 0, conditions: [], markers: markers(),
     };
-    b.players.B.active = { stack: [{ iid: 'b1', printing: 'meg-003' }], energy: [], tools: [], damage: 0, conditions: [], markers: markers() };
+    // One Energy on the opponent's Active: Rampardos ex's Destructive Headbutting is withheld with none
+    // to discard (TA-377, B.29 addendum 2), and this board's useAbility control needs it OFFERED.
+    b.players.B.active = { stack: [{ iid: 'b1', printing: 'meg-003' }], energy: [{ iid: 'be0', printing: 'sve-003' }], tools: [], damage: 0, conditions: [], markers: markers() };
     return b;
   }
 
