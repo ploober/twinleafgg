@@ -269,7 +269,9 @@ export function handPlayVerbFor(card: Card): string | null {
 // Source phrases only. "on the bottom of your deck" / "into your deck" are DESTINATIONS (a put-back onto an
 // empty deck is fine) and deliberately absent; Dusk Ball reads "Look at the BOTTOM 7 cards of your deck".
 const DECK_SOURCED = /search your deck|look at the (?:top|bottom)|reveal the (?:top|bottom)|from (?:the (?:top|bottom) of )?your deck|\bdraw\b/i;
-const DECK_RESTOCKED_FIRST = /(?:hand|discard pile|in play)[^.]{0,60}\binto (?:your|their) deck|shuffle your hand into your deck/i;
+// A restock from ANY other zone counts — Redeemable Ticket jtg-156 puts the PRIZE cards on the bottom of an
+// empty deck and then takes from the top (measured 2026-09-07: the first cut withheld it, rotomancer offers).
+const DECK_RESTOCKED_FIRST = /(?:hand|discard pile|in play|prize cards?)[^.]{0,80}\b(?:into|(?:on|at) the bottom of|on top of) (?:your|their) deck|shuffle your hand into your deck/i;
 const ALTERNATIVE_SOURCE = /deck or (?:your )?discard pile|discard pile or (?:your )?deck/i;
 // A sentence about the OPPONENT's deck ("Your opponent … they draw 4" — Grand Wing por-009, Special Red
 // Card) or about EACH player (Judge, Iono) is not sourced from the acting player's deck; only a sentence

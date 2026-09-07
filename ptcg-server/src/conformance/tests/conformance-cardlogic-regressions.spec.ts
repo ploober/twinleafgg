@@ -2517,6 +2517,18 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offers(0)).withContext('empty deck -> withheld (B.41: the look provably does nothing)').toBe(false);
   });
 
+  it('CONTROL — an Item that RESTOCKS the deck from the PRIZES before taking from the top is NOT gated [TA-280 jtg-156 Redeemable Ticket]', () => {
+    // "Count your Prize cards, shuffle them, and put them on the bottom of your deck. Then, take that
+    // many cards from the top of your deck …" — at deck 0 the prizes become the deck first. The
+    // census's first pass caught the text gate withholding this where rotomancer offers.
+    const r = step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-ticket', printing: 'jtg-156' }], deck: fillerDeck('A', 0) }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), []);
+    expect((r.pending?.legalActions ?? []).some(a => a.type === 'playItem'
+      && (a as unknown as { card?: string }).card === 'A-ticket')).toBe(true);
+  });
+
   it('CONTROL — a Supporter that RESTOCKS the deck from the hand before drawing is NOT gated by the text rule [TA-280 / TA-349 pre-175 Lacey]', () => {
     // Lacey at deck 0 with a 6-card hand: "shuffle your hand into your deck, then draw 4" — the
     // deck-0 answer is B.41's arithmetic (offered iff a card would stay in the deck), which lives in
