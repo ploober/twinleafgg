@@ -6466,8 +6466,12 @@
     {
       "file": "set-perfect-order/dewgong.ts",
       "signatures": [
-        "source.moveCardTo(transfer.card, target);"
-      ]
+        "// Move the energy through the SLOT: PokemonCardList.moveCardTo prunes the source's `cards`"
+      ],
+      "absentSignatures": [
+        "source.energies.moveCardTo(transfer.card, target.energies);"
+      ],
+      "note": "TA-376 (2026-09-07): the slot-level move already existed in the else-branch upstream, so the line itself does not discriminate; the sub-list move's ABSENCE does, plus the fix comment."
     },
     {
       "file": "set-chaos-rising/nitro-fire-energy.ts",
