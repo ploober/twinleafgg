@@ -2558,6 +2558,34 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offers(0)).withContext('deck 0 -> the bottomed pair is drawn straight back -> withheld').toBe(false);
   });
 
+  // TA-381 — "Draw a card for each of your <X> Pokémon in play" with ZERO such Pokémon draws nothing:
+  // a provable no-op (#2306, B.41). Rotomancer withholds both (trainer census 2026-09-07).
+  it('Jett is withheld when the opponent has no Mega Evolution Pokémon ex in play, offered when they do [TA-381 pbl-079]', () => {
+    const offers = (oppActive: string) => {
+      const r = step(board(
+        player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-jett', printing: 'pbl-079' }], deck: en(WATER, 4, 'Ad') }),
+        player({ active: inPlay('B-act', [oppActive]) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'playSupporter'
+        && (a as unknown as { card?: string }).card === 'A-jett');
+    };
+    expect(offers('mep-011')).withContext('control: Mega Latias ex in play -> offered').toBe(true);
+    expect(offers(RALTS)).withContext('no Mega ex -> draws 0 -> withheld').toBe(false);
+  });
+
+  it('Awakening Drum is withheld with no Ancient Pokémon in play, offered with one [TA-381 tef-141]', () => {
+    const offers = (ownActive: string) => {
+      const r = step(board(
+        player({ active: inPlay('A-act', [ownActive]), hand: [{ iid: 'A-drum', printing: 'tef-141' }], deck: en(WATER, 4, 'Ad') }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'playItem'
+        && (a as unknown as { card?: string }).card === 'A-drum');
+    };
+    expect(offers('pre-043')).withContext('control: Flutter Mane (Ancient) in play -> offered').toBe(true);
+    expect(offers(RALTS)).withContext('no Ancient Pokémon -> draws 0 -> withheld').toBe(false);
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).

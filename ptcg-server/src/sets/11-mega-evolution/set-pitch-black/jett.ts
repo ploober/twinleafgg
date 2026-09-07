@@ -24,6 +24,20 @@ export class Jett extends TrainerCard {
     if (player.deck.cards.length === 0) {
       return false;
     }
+    // TA-381 (B.41 / #2306): "draw a card for each of your opponent's Mega Evolution Pokemon ex in
+    // play" with ZERO of them draws nothing — a provable no-op, so the card is not playable. Same
+    // predicate as the draw below. Rotomancer withholds.
+    const opponent = StateUtils.getOpponent(state, player);
+    let megaEvolutionExInPlay = 0;
+    opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, pokemonCard) => {
+      if (pokemonCard instanceof PokemonCard && pokemonCard.hasTag(CardTag.POKEMON_SV_MEGA)
+        && pokemonCard.hasTag(CardTag.POKEMON_ex)) {
+        megaEvolutionExInPlay++;
+      }
+    });
+    if (megaEvolutionExInPlay === 0) {
+      return false;
+    }
 
     // Check if supporter already played this turn
     if (player.supporterTurn > 0) {

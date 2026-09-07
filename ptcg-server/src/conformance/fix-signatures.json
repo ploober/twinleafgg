@@ -6553,6 +6553,20 @@
         "// TA-380 (B.41 arithmetic, the TA-349 Lacey shape): on an EMPTY deck the two bottomed cards ARE the"
       ],
       "note": "TA-380 (2026-09-07): Kofu withheld at deck 0 — the bottomed pair is drawn straight back."
+    },
+    {
+      "file": "set-pitch-black/jett.ts",
+      "signatures": [
+        "if (megaEvolutionExInPlay === 0) {"
+      ],
+      "note": "TA-381 (2026-09-07): withheld with no opponent Mega Evolution ex in play (draws 0)."
+    },
+    {
+      "file": "set-temporal-forces/drums-of-awakening.ts",
+      "signatures": [
+        "return ancientInPlay > 0;"
+      ],
+      "note": "TA-381 (2026-09-07): withheld with no Ancient Pokemon in play (draws 0)."
     }
   ]
 }

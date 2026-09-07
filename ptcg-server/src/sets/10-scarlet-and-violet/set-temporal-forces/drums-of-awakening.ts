@@ -29,7 +29,18 @@ export class DrumsOfAwakening extends TrainerCard {
   public text: string = 'Draw a card for each of your Ancient Pokémon in play.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
-    return true;
+    // TA-381 (B.41 / #2306): "draw a card for each of your Ancient Pokemon in play" with ZERO of them
+    // draws nothing — a provable no-op, so the card is not playable. Same count as the draw below.
+    let ancientInPlay = 0;
+    if (player.active?.getPokemonCard()?.hasTag(CardTag.ANCIENT)) {
+      ancientInPlay++;
+    }
+    player.bench.forEach((benchSpot) => {
+      if (benchSpot.getPokemonCard()?.hasTag(CardTag.ANCIENT)) {
+        ancientInPlay++;
+      }
+    });
+    return ancientInPlay > 0;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
