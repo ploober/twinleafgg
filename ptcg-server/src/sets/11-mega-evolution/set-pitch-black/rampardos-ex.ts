@@ -1,3 +1,4 @@
+import { SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, StateUtils, GameError, GameMessage } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
 import { AttackEffect } from "../../../game/store/effects/game-effects";
@@ -45,6 +46,12 @@ export class Rampardosex extends PokemonCard {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
       }
       if (player.active.getPokemonCard() !== this) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+      // B.29 addendum 2 (TA-377): the only arm discards an Energy from the opponent's Active; with no
+      // Energy there the Ability does nothing on heads or tails (#2306), so it is not usable — thrown
+      // here so the legal-actions dry run withholds the offer (the TA-213 idiom).
+      if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
       USE_ABILITY_ONCE_PER_TURN(player, this.DESTRUCTIVE_HEADBUTT_MARKER, this);

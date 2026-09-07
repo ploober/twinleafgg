@@ -2437,6 +2437,24 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(active.energies.cards.length).toBe(2);
   });
 
+  it('Destructive Headbutting is withheld when the opponent\'s Active carries no Energy, offered when it does [TA-377 pbl-045]', () => {
+    // B.29 addendum 2 (2026-09-07): a flip gate does not rescue an Ability whose every arm is inert —
+    // the heads arm's operand (an Energy on the opponent's Active) is public and empty, tails does
+    // nothing, and the once-per-turn would be spent for nothing (#2306 "won't do anything" -> No).
+    // Rotomancer withholds; twinleaf offered (driven 2026-09-07). The TA-213 idiom: throw
+    // CANNOT_USE_POWER in the handler, which the legal-actions dry run reads as "not offered".
+    const offers = (oppEnergy: number) => {
+      const r = step(board(
+        player({ active: inPlay('A-act', ['pbl-045'], en(FIGHT, 2, 'Af')) }),
+        player({ active: inPlay('B-act', [RALTS], en(WATER, oppEnergy, 'Be')) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'useAbility'
+        && (a as unknown as { ability?: string }).ability === 'Destructive Headbutting');
+    };
+    expect(offers(1)).withContext('control: an Energy to discard -> offered').toBe(true);
+    expect(offers(0)).withContext('no Energy on the opponent Active -> withheld').toBe(false);
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).

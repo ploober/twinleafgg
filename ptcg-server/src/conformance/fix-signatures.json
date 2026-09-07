@@ -6478,6 +6478,13 @@
       "signatures": [
         "pokemon.moveCardTo(this, owner.hand);"
       ]
+    },
+    {
+      "file": "set-pitch-black/rampardos-ex.ts",
+      "signatures": [
+        "if (!opponent.active.cards.some(c => c.superType === SuperType.ENERGY)) {"
+      ],
+      "note": "TA-377 (2026-09-07): B.29 addendum 2 — withhold the flip-gated discard Ability when the opponent's Active has no Energy."
     }
   ]
 }
