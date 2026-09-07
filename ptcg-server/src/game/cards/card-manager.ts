@@ -7,12 +7,19 @@ export class CardManager {
   private static instance: CardManager;
   private cards: Card[] = [];
   private cardIndex: { [name: string]: number } = {};
-  // O(1) lookup by set code + collector number (key: `${set}|${setNumber}`). First card defined for a
-  // given key wins, matching the previous `getAllCards().find(...)` first-match semantics.
+  // O(1) lookup by set code + collector number (key: `${set}|${setNumber}`, CASE-FOLDED). First card
+  // defined for a given key wins, matching the previous `getAllCards().find(...)` first-match semantics.
   private setNumberIndex: { [key: string]: number } = {};
 
+  // The key is lowercased on BOTH sides because the canonical cross-engine printing id is all
+  // lowercase (`conformance/printing.ts` `toPrinting`), while a card declares its own setNumber in
+  // printed case (`SV1`, `RC20`, `73A`). Keying on the raw string made the round trip asymmetric --
+  // the adapter emitted `ltr-rc20` and then could not resolve it, 500ing with `no card for printing`
+  // -- so 234 card classes across 13 subset sets (Shiny Vault, Radiant Collection, Classic
+  // Collection) were unaddressable by every harness board. Case-folding is safe here and checked, not
+  // assumed: of 10,400 distinct (set, setNumber) pairs in the catalogue, ZERO collide under folding.
   private static setNumberKey(set: string, setNumber: string | number): string {
-    return `${set}|${String(setNumber)}`;
+    return `${set}|${String(setNumber)}`.toLowerCase();
   }
 
   public static getInstance(): CardManager {

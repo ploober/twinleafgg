@@ -37,7 +37,12 @@ function parseForm(s: string): { set: string; setNumber: string } | null {
   if (dash <= 0 || dash === s.length - 1) {
     return null;
   }
-  const set = s.slice(0, dash).toUpperCase();
+  // Case is NOT restored here, and does not need to be: the canonical printing id is all lowercase
+  // (`pad3` above), a card declares its setNumber in printed case (`SV1`, `RC20`, `73A`), and
+  // `CardManager`'s set-number index case-folds its key on both sides. Trying to restore case here
+  // instead would be guesswork -- 234 classes want `SV1` from `sv1` while 12 (`bus-105a`,
+  // `fco-043a`, ...) genuinely are lowercase, and no transform gets both.
+  const set = s.slice(0, dash);
   const raw = s.slice(dash + 1);
   const setNumber = /^\d+$/.test(raw) ? String(parseInt(raw, 10)) : raw; // strip zero-padding for lookup
   return { set, setNumber };

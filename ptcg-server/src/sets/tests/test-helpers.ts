@@ -190,7 +190,16 @@ function loadSetModule(moduleName: string): void {
 }
 
 function ensureSetCodeLoaded(setCode: string): void {
-  const modulePaths = getSetCodeToModules().get(setCode);
+  // Case-insensitive, like the CardManager set-number index it feeds: the canonical wire printing is
+  // all lowercase (`conformance/printing.ts`) while the module map is keyed on the printed uppercase
+  // set code. Matching on the raw string made the set half of a printing id case-sensitive, so
+  // dropping the caller's `.toUpperCase()` silently turned EVERY lookup into a miss (the throw is
+  // swallowed by the caller's `catch`, which returns undefined) — the whole catalogue unaddressable,
+  // not just the subset sets. Fold here so neither side has to remember.
+  const map = getSetCodeToModules();
+  const modulePaths = map.get(setCode)
+    ?? map.get(setCode.toUpperCase())
+    ?? map.get(setCode.toLowerCase());
   if (!modulePaths || modulePaths.length === 0) {
     throw new Error(`[test-helpers] No set module found for set code "${setCode}"`);
   }
