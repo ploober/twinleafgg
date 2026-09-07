@@ -6,6 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { EndTurnEffect, AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DRAW_CARDS, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Frosmoth extends PokemonCard {
@@ -107,8 +108,40 @@ export class Frosmoth extends PokemonCard {
         return state;
       }
 
-      // Valid Water energy types
-      const validTypes = [CardType.WATER, CardType.ANY];
+      // TA-383 (the F-026 class, second carrier). A movable "[W] Energy" is any Energy that PROVIDES a
+      // [W]-ish type RIGHT NOW. A Special Energy can carry a static `provides` that says nothing about
+      // its real type — Legacy Energy `twm-167` is `[COLORLESS]` statically and `[ANY]` only via
+      // `CheckProvidedEnergyEffect`; Wash Water Energy `viv-165` is `[COLORLESS]` statically and
+      // `[WATER]` dynamically — so the dynamic map is the only correct operand. Compendium #443
+      // ("Rainbow Energy counts as all types of energy when in play") and #383 (an all-types Energy
+      // SATISFIES a type-specific condition) put it beyond doubt, and rotomancer already offers it.
+      //
+      // Express the restriction as `blocked` (an index list), NOT as `validCardTypes`: that option is
+      // filtered against the STATIC `provides` array in BOTH the prompt's `validate()`
+      // (`attach-energy-prompt.ts`) and the conformance legalActions menu
+      // (`decomposers/attach-energy.ts`), which would drop the Special Energy right back out.
+      //
+      // Clamping `min`/`max` to what actually qualifies matters as much as the pool: with the Special
+      // Energy wrongly excluded the lone basic left made `min = max = 1` collapse, so the move was
+      // applied with NO prompt and the player never chose which Energy left.
+      const validTypes = [CardType.WATER, CardType.ANY, CardType.WLFM, CardType.GRW];
+      const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);
+      store.reduceEffect(state, checkEnergy);
+      const providesValidType = new Set(
+        checkEnergy.energyMap
+          .filter(em => em.provides.some(t => validTypes.includes(t)))
+          .map(em => em.card)
+      );
+      const blocked: number[] = [];
+      player.active.cards.forEach((card, index) => {
+        if (card.superType === SuperType.ENERGY && !providesValidType.has(card)) {
+          blocked.push(index);
+        }
+      });
+      const numToMove = Math.min(1, providesValidType.size);
+      if (numToMove === 0) {
+        return state;
+      }
 
       // Then prompt for energy movement
       return store.prompt(state, new AttachEnergyPrompt(
@@ -118,7 +151,7 @@ export class Frosmoth extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 1, max: 1, validCardTypes: validTypes }
+        { allowCancel: false, min: numToMove, max: numToMove, blocked }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {
