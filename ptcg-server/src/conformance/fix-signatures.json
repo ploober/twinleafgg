@@ -6535,6 +6535,17 @@
         "player.supporter.moveCardTo(this, player.discard);"
       ],
       "note": "TA-378 (2026-09-07): the Item discarded itself before raising its ShuffleDeckPrompt; #919 says the discard follows the effect, and finalizeTrainerCleanup already does it after the last prompt."
+    },
+    {
+      "file": "set-chaos-rising/special-red-card.ts",
+      "signatures": [
+        "return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {",
+        "rest.moveToTopOfDestination(opponent.deck);"
+      ],
+      "absentSignatures": [
+        "deckBottom.moveTo(opponent.deck);"
+      ],
+      "note": "TA-379 (2026-09-07): the hand-to-bottom is SHUFFLED via an externalized ShuffleDeckPrompt over exactly the moved cards, the untouched deck restacked on top, THEN the draw."
     }
   ]
 }

@@ -141,6 +141,11 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
       // accepts them, so mirroring it would make legalActions under-report most trainer plays
       // (a §10.3 contract gap). Enumerate by the engine's real play-time gates instead.
       if (!trainerPlayable(store, state, player, card)) { continue; }
+      // TA-280 (Trainer side, the TA-248/Dusk Ball class): a deck-sourced Item/Supporter on an EMPTY deck
+      // provably does nothing (B.41) — withheld here, once, from the printed text. Tools/Stadiums carry no
+      // deck-sourced play effect and pass through untouched.
+      if ((card.trainerType === TrainerType.ITEM || card.trainerType === TrainerType.SUPPORTER)
+          && deckSourcedEffectUnusable(player, card.text)) { continue; }
       // Final gate: dry-run on a clone, the Trainer analog of `attackProbeAccepts` / TA-14's ability
       // probe. Cards whose play gate lives as a `throw` inside their own reduceEffect are invisible to
       // every static check above. TA-248.
@@ -243,6 +248,39 @@ export function handPlayVerbFor(card: Card): string | null {
  * checks before its conservative fallback). Over-reporting is self-correcting: the fuzzer's
  * "never reject your own legalAction" invariant flags any enumerated play the reducer refuses.
  */
+/**
+ * TA-280 — the empty-deck gate, ONCE, at the offer (B.27 / B.29 rule 1, B.41): an Ability or Trainer whose
+ * printed effect is sourced from the player's own deck — a search, a look at the top N, a reveal from the
+ * top, a draw — has an action that CANNOT be carried out when that deck is empty (#13 "can't search an
+ * empty deck", #840, #2042 "you have to be able to draw", #2115 a payable cost is no licence). TA-216 fixed
+ * this by hand-writing `if (deck.length === 0) throw` into ONE card file and the class recurred in every
+ * other card (X-Boot, Scent Collection, Metal Maker, Dusk Ball …), because the menu probe is a throw-only
+ * dry run that accepts whatever does not throw. This reads the printed text instead of each file.
+ *
+ * Gated on EMPTINESS only — never on whether a search would find a match (#127/#1114: a fruitless search
+ * of a stocked deck is legal, and gating on the match leaks deck contents through the menu).
+ *
+ * NOT gated (left to the card's own logic), because the text says the deck is (re)stocked first or has
+ * an alternative source: a put-back from the hand/discard into the deck ("Shuffle your hand into your
+ * deck. Then, draw …" — Lacey, whose deck-0 answer is B.41's ARITHMETIC, TA-349), and a choice of source
+ * ("from your deck or discard pile"). Attacks are never gated here (B.33: an attack has no play gate; a
+ * deck-sourced rider whiffs).
+ */
+// Source phrases only. "on the bottom of your deck" / "into your deck" are DESTINATIONS (a put-back onto an
+// empty deck is fine) and deliberately absent; Dusk Ball reads "Look at the BOTTOM 7 cards of your deck".
+const DECK_SOURCED = /search your deck|look at the (?:top|bottom)|reveal the (?:top|bottom)|from (?:the (?:top|bottom) of )?your deck|\bdraw\b/i;
+const DECK_RESTOCKED_FIRST = /(?:hand|discard pile|in play)[^.]{0,60}\binto (?:your|their) deck|shuffle your hand into your deck/i;
+const ALTERNATIVE_SOURCE = /deck or (?:your )?discard pile|discard pile or (?:your )?deck/i;
+// A sentence about the OPPONENT's deck ("Your opponent … they draw 4" — Grand Wing por-009, Special Red
+// Card) or about EACH player (Judge, Iono) is not sourced from the acting player's deck; only a sentence
+// with no such subject counts. (Iono/Judge at own deck 0 are the restock case anyway.)
+const NOT_OWN_DECK = /opponent|\bthey\b|\btheir\b|each player/i;
+export function deckSourcedEffectUnusable(player: Player, text: string | undefined): boolean {
+  if (player.deck.cards.length > 0 || !text) { return false; }
+  if (DECK_RESTOCKED_FIRST.test(text) || ALTERNATIVE_SOURCE.test(text)) { return false; }
+  return text.split(/(?<=[.!?])\s+/).some(sentence => DECK_SOURCED.test(sentence) && !NOT_OWN_DECK.test(sentence));
+}
+
 function trainerPlayable(store: StoreLike, state: State, player: Player, card: TrainerCard): boolean {
   const { CAN_PLAY_CARD } = require('../game/store/prefabs/prefabs');
   if (CAN_PLAY_CARD(store, state, player, card)) { return true; }
@@ -580,6 +618,9 @@ function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidCon
       // the abilityProbeAccepts dry-run keep passive/unusable powers out either way (F-027).
       if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
       if (power.useWhenInPlay !== true) { continue; } // only player-activated in-play abilities
+      // TA-280: a deck-sourced Ability on an EMPTY deck cannot be carried out (B.29 rule 1) — one gate here
+      // instead of a hand-written throw per card file. Text-keyed; see deckSourcedEffectUnusable.
+      if (deckSourcedEffectUnusable(player, power.text)) { continue; }
       // Final gate: dry-run on a clone — card-private preconditions live inside reduceEffect (TA-14).
       if (!abilityProbeAccepts(state, player, power.name, pokemon)) { continue; }
       out.push({ type: 'useAbility', source: s.iid, ability: power.name });

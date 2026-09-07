@@ -5,6 +5,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { StateUtils, StoreLike, State, Player } from '../../../game';
 import { GameError, GameMessage } from '../../../game';
 import { CardList } from '../../../game/store/state/card-list';
+import { ShuffleDeckPrompt } from '../../../game';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SpecialRedCard extends TrainerCard {
@@ -47,10 +48,19 @@ export class SpecialRedCard extends TrainerCard {
       }
       const cardsInHand = opponent.hand.cards.length;
       if (cardsInHand > 0) {
-        const deckBottom = new CardList();
-        opponent.hand.moveTo(deckBottom);
-        deckBottom.moveTo(opponent.deck);
-        DRAW_CARDS(store, state, opponent, Math.min(3, opponent.deck.cards.length));
+        // TA-379: "shuffles their hand and puts it on the bottom" — the old code bottomed the hand IN
+        // HAND ORDER and drew at once: no shuffle happened, the bottom order was known, and no external
+        // order could ever be supplied (TA-305/TA-370 shape). Externalize it the TA-370 way: stage the
+        // hand INTO the (emptied) deck so the adapter's ShuffleDeckPrompt advertises exactly those cards,
+        // restack the untouched deck on top inside the callback, and only THEN draw.
+        const rest = new CardList();
+        opponent.deck.moveTo(rest);
+        opponent.hand.moveTo(opponent.deck);
+        return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+          opponent.deck.applyOrder(order);
+          rest.moveToTopOfDestination(opponent.deck);
+          DRAW_CARDS(store, state, opponent, Math.min(3, opponent.deck.cards.length));
+        });
       }
     }
     return state;

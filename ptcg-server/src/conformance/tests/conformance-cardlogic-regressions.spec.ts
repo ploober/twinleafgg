@@ -2455,6 +2455,80 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(offers(0)).withContext('no Energy on the opponent Active -> withheld').toBe(false);
   });
 
+  it('Special Red Card SHUFFLES the opponent\'s hand before bottoming it — a system shuffle over exactly those cards, not their hand order [TA-379 cri-082]', () => {
+    // "Your opponent shuffles their hand and puts it on the bottom of their deck. If they put any
+    // cards on the bottom of their deck in this way, they draw 3 cards." The old code moved the hand
+    // to the deck bottom IN HAND ORDER and drew — no shuffle at all (TA-305/TA-370 shape: a known
+    // order where the card prints a shuffle), and the draw ran before any external order could be
+    // supplied. Externalize it the TA-370 way: stage the hand into the deck, ShuffleDeckPrompt over
+    // exactly those cards, restack the untouched deck on top, THEN draw.
+    const b = board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-src', printing: 'cri-082' }], deck: en(WATER, 4, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]),
+               hand: [{ iid: 'B-h0', printing: FIRE }, { iid: 'B-h1', printing: WATER }, { iid: 'B-h2', printing: PSY }],
+               deck: [{ iid: 'B-d0', printing: METAL }, { iid: 'B-d1', printing: GRASS }],
+               // the card's own play gate: playable only while the opponent has 3 or fewer Prizes left
+               prizes: Array.from({ length: 3 }, (_, i) => ({ iid: `B-p${i}`, printing: WATER, faceUp: false })) }),
+    );
+    const r1 = step(b, [{ actor: 'A', type: 'playItem', card: 'A-src' } as unknown as NeutralAction]);
+    expect(r1.status).toBe('awaitingAction');
+    const p = r1.pending as unknown as { actor: string; legalActions: { type: string; deck?: string[] }[] } | null;
+    expect(p?.actor).withContext('the hand-to-bottom shuffle is externalized').toBe('system');
+    const shuffle = p?.legalActions?.[0];
+    expect(shuffle?.type).toBe('shuffle');
+    expect([...(shuffle?.deck ?? [])].sort()).withContext('exactly the moved hand cards are permuted').toEqual(['B-h0', 'B-h1', 'B-h2']);
+    // resolve with a REVERSED order and check it took: the bottom three are h2,h1,h0 and B drew the
+    // untouched deck (d0, d1) plus the first bottomed card (h2)
+    const r2 = step(b, [
+      { actor: 'A', type: 'playItem', card: 'A-src' } as unknown as NeutralAction,
+      { actor: 'system', type: 'shuffle', order: ['B-h2', 'B-h1', 'B-h0'] } as unknown as NeutralAction,
+    ]);
+    expect(r2.status).toBe('awaitingAction');
+    const B = r2.state!.players.B;
+    expect(B.hand.map(c => c.iid).sort()).toEqual(['B-d0', 'B-d1', 'B-h2']);
+    expect(B.deck.map(c => c.iid)).toEqual(['B-h1', 'B-h0']);
+  });
+
+  // TA-280 — the empty-deck gate at the OFFER, once, from the printed text (B.27/B.29 rule 1/B.41), instead
+  // of a hand-written throw per card file. Each cell carries its own stocked-deck positive control.
+  it('a deck-search Ability is withheld on an EMPTY deck and offered on a stocked one [TA-280 asc-289 X-Boot]', () => {
+    const offers = (deck: number) => {
+      const r = step(boardKeepingEmptyDeck(
+        player({ active: inPlay('A-act', ['asc-289']), deck: fillerDeck('A', deck) }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'useAbility'
+        && (a as unknown as { ability?: string }).ability === 'X-Boot');
+    };
+    expect(offers(4)).withContext('control: stocked deck -> offered').toBe(true);
+    expect(offers(0)).withContext('empty deck -> withheld (#13, B.29 rule 1)').toBe(false);
+  });
+
+  it('a look-at-the-top Item is withheld on an EMPTY deck and offered on a stocked one [TA-280 ssp-175 Dusk Ball]', () => {
+    const offers = (deck: number) => {
+      const r = step(boardKeepingEmptyDeck(
+        player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-ball', printing: 'ssp-175' }], deck: fillerDeck('A', deck) }),
+        player({ active: inPlay('B-act', [RALTS]) }),
+      ), []);
+      return (r.pending?.legalActions ?? []).some(a => a.type === 'playItem'
+        && (a as unknown as { card?: string }).card === 'A-ball');
+    };
+    expect(offers(4)).withContext('control: stocked deck -> offered').toBe(true);
+    expect(offers(0)).withContext('empty deck -> withheld (B.41: the look provably does nothing)').toBe(false);
+  });
+
+  it('CONTROL — a Supporter that RESTOCKS the deck from the hand before drawing is NOT gated by the text rule [TA-280 / TA-349 pre-175 Lacey]', () => {
+    // Lacey at deck 0 with a 6-card hand: "shuffle your hand into your deck, then draw 4" — the
+    // deck-0 answer is B.41's arithmetic (offered iff a card would stay in the deck), which lives in
+    // the card (TA-349). The text gate must step aside for a restock-first effect.
+    const r = step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'A-lacey', printing: 'pre-175' }, ...en(WATER, 6, 'Ah')], deck: fillerDeck('A', 0) }),
+      player({ active: inPlay('B-act', [RALTS]) }),
+    ), []);
+    expect((r.pending?.legalActions ?? []).some(a => a.type === 'playSupporter'
+      && (a as unknown as { card?: string }).card === 'A-lacey')).toBe(true);
+  });
+
   it('Distorted Future is withheld when the cycle provably returns the hand (opp deck = 0, hand <= 3) [TA-338 wht-043]', () => {
     // B.41 addendum 2026-08-31 (cycle cell): opp deck empty + hand <= draw count -> the shuffled-in
     // cards are drawn straight back; both counts public; withhold (modern line, #2306/#2042).
