@@ -33,9 +33,6 @@ export class BlendEnergyWLFM extends EnergyCard {
         return state;
       }
 
-      // ONE unit of Energy that can be any of blendedEnergies ("only 1 Energy at a time"): push a single
-      // COLORLESS placeholder, NOT one unit per type. StateUtils.checkEnoughEnergy reads the flexible
-      // types from `blendedEnergies`; flattening [W,L,F,M] here counted one Blend as four Energy.
       effect.energyMap.push({
         card: this,
         provides: [CardType.WATER, CardType.LIGHTNING, CardType.FIGHTING, CardType.METAL]

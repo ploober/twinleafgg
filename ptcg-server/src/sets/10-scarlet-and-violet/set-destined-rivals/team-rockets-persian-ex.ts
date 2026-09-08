@@ -28,18 +28,18 @@ export class TeamRocketsPersianex extends PokemonCard {
   public cardType: CardType[] = [C];
   public hp: number = 260;
   public weakness = [{ type: F }];
-  public retreat = [C];
+  public retreat = [C, C];
 
   public attacks = [
     {
-      name: 'Haughty Orders',
+      name: 'Haughty Order',
       cost: [C, C],
       damage: 0,
       copycatAttack: true,
       text: 'Your opponent reveals the top 10 cards of their deck. You may choose an attack from a Pokemon you find there and use it as this attack. Your opponent shuffles the revealed cards back into their deck.',
     },
     {
-      name: 'Slash and Cash',
+      name: 'Cruel Slash',
       cost: [C, C, C],
       damage: 140,
       text: "Your opponent's Active Pokemon is now Confused.",
