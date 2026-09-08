@@ -142,6 +142,19 @@ export class Store implements StoreLike {
   constructor(private handler: StoreHandler) { }
 
   public dispatch(action: Action, clientRoleId?: number): State {
+    return this.dispatchWithRollback(action, clientRoleId, true);
+  }
+
+  /**
+   * Dispatch on an isolated probe board whose state is discarded on ANY throw. The caller must
+   * clone the real board first and must never reuse a failed probe. Only this dispatch omits its
+   * rollback snapshot; handlers calling ordinary dispatch still get their own rollback protection.
+   */
+  public dispatchProbe(action: Action): State {
+    return this.dispatchWithRollback(action, undefined, false);
+  }
+
+  private dispatchWithRollback(action: Action, clientRoleId: number | undefined, rollback: boolean): State {
     let state = this.state;
 
     // Handle sandbox actions
@@ -201,7 +214,7 @@ export class Store implements StoreLike {
       throw new GameError(GameMessage.ACTION_IN_PROGRESS);
     }
 
-    state = this.reduce(state, action);
+    state = this.reduce(state, action, rollback);
 
     return state;
   }
@@ -397,12 +410,12 @@ export class Store implements StoreLike {
     this.state = new State();
   }
 
-  private reduce(state: State, action: Action): State {
+  private reduce(state: State, action: Action, rollback: boolean): State {
     // Rollback snapshot for an illegal action. StateLog entries are append-only and never mutated
     // after creation, so they're shared (not deep-cloned) — the backup's `logs` array keeps the
     // pre-action entries and drops any appended during a rolled-back action, without paying to clone
     // the (unbounded, per-turn-growing) log history on every action.
-    const stateBackup = deepClone(state, [Card, StateLog]);
+    const stateBackup: State | undefined = rollback ? deepClone(state, [Card, StateLog]) : undefined;
     this.promptItems.length = 0;
 
     try {
@@ -419,7 +432,7 @@ export class Store implements StoreLike {
       state = this.calculatePlayability(state);
     } catch (storeError) {
       // Illegal action
-      this.state = stateBackup;
+      if (stateBackup !== undefined) { this.state = stateBackup; }
       this.promptItems.length = 0;
       throw storeError;
     }

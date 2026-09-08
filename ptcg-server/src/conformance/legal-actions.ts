@@ -359,7 +359,7 @@ function attackProbeAccepts(state: State, player: Player, attackName: string): b
   probe.state = deepClone(state, [Card]);
   const cloned = probe.state.players[state.players.indexOf(player)];
   try {
-    probe.dispatch(new AttackGameAction(cloned.id, attackName));
+    probe.dispatchProbe(new AttackGameAction(cloned.id, attackName));
     return true;
   } catch (err) {
     return !(err instanceof GameError);
@@ -404,7 +404,7 @@ function evolveProbeAccepts(state: State, player: Player, card: PokemonCard, slo
     ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
     : { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: benchIndex };
   try {
-    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
+    probe.dispatchProbe(new PlayCardAction(cloned.id, handIndex, target));
     return true;
   } catch (err) {
     return !(err instanceof GameError);
@@ -434,7 +434,7 @@ function attachEnergyProbeAccepts(state: State, player: Player, card: EnergyCard
     ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
     : { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: benchIndex };
   try {
-    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
+    probe.dispatchProbe(new PlayCardAction(cloned.id, handIndex, target));
     return true;
   } catch (err) {
     return !(err instanceof GameError);
@@ -451,7 +451,7 @@ function trainerProbeAccepts(state: State, player: Player, card: TrainerCard): b
   const cloned = probe.state.players[state.players.indexOf(player)];
   const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
   try {
-    probe.dispatch(new PlayCardAction(cloned.id, handIndex, target));
+    probe.dispatchProbe(new PlayCardAction(cloned.id, handIndex, target));
     return true;
   } catch (err) {
     return !(err instanceof GameError);
@@ -542,7 +542,7 @@ function retreatProbeAccepts(state: State, player: Player, nativeSlot: number): 
   probe.state = deepClone(state, [Card]);
   const cloned = probe.state.players[state.players.indexOf(player)];
   try {
-    probe.dispatch(new RetreatGameAction(cloned.id, nativeSlot));
+    probe.dispatchProbe(new RetreatGameAction(cloned.id, nativeSlot));
     return true;
   } catch (err) {
     return !(err instanceof GameError);
@@ -579,7 +579,7 @@ function abilityProbeAccepts(state: State, player: Player, ability: string, sour
     return false;
   }
   try {
-    probe.dispatch(new UseAbilityGameAction(cloned.id, ability, target));
+    probe.dispatchProbe(new UseAbilityGameAction(cloned.id, ability, target));
     // Since engine b0cdfed96 ("More Animation Additions") an activated ability first raises a no-op
     // WaitPrompt (animation overlay); its real precondition — which may throw CANNOT_USE_POWER — runs
     // only AFTER that prompt. Drive the probe past any WaitPrompt so the precondition surfaces. A
@@ -677,7 +677,7 @@ function stadiumProbeAccepts(state: State, player: Player): boolean {
   const before = zoneFingerprint(probe.state);
   const logsBefore = probe.state.logs.length;
   try {
-    probe.dispatch(new UseStadiumGameAction(cloned.id));
+    probe.dispatchProbe(new UseStadiumGameAction(cloned.id));
     for (let guard = 0; guard < 32; guard++) {
       const pending = probe.state.prompts.find(p => p.result === undefined);
       if (pending === undefined) { break; }
