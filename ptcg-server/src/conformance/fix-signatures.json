@@ -6617,6 +6617,13 @@
     "deckTop.moveCardsTo(cards, chosen);"
    ],
    "note": "TA-386 (2026-09-07): the attach is mandatory when the window holds a Basic Energy (no decline), and the attach prompt runs over the chosen card only (no re-ask). Guarded by scenarios/ta386-asc-215-waitress-mandatory-attach-no-decline-no-re-ask.json."
+  },
+  {
+   "file": "set-twilight-masquerade/bug-catching-set.ts",
+   "signatures": [
+    "deckTop.moveTo(player.deck); // TA-387: the other cards are shuffled back on a decline too"
+   ],
+   "note": "TA-387 (2026-09-07): a decline still owes the shuffle of the seven looked-at cards (B.33 test 1); reverting returns without the ShuffleDeckPrompt. Guarded by scenarios/ta387-pre-102-bug-catching-set-decline-still-shuffles.json."
   }
  ]
 }

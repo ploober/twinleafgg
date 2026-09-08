@@ -62,9 +62,14 @@ function* playCard(
   );
 
   if (cards.length === 0) {
-    deckTop.moveTo(player.deck);
-
-    return state;
+    // TA-387 (2026-09-07): "Shuffle the other cards back into your deck" — on a DECLINE the other cards
+    // are all seven, so the shuffle is owed exactly as on the take path (B.33: the shuffle's object is
+    // non-empty). This used to return without shuffling, leaving the window in player-known order
+    // (rotomancer shuffles). The shuffle is externalized as the same system pending as below.
+    deckTop.moveTo(player.deck); // TA-387: the other cards are shuffled back on a decline too
+    return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+      player.deck.applyOrder(order);
+    });
   }
   // TA-265 residual / §B.34: the reveal must name the SOURCE zone (`deck`). The looked-at cards live
   // in the TEMPORARY `deckTop` list, which `locateCard` cannot see -- showing them from there reports
