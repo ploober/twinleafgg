@@ -77,7 +77,9 @@ export function deepClone(source: any, ignores: Function[] = [], refMap: Map<obj
     }
     const dest = Object.create(source);
     refMap.set(source, dest);
-    for (const key in source) {
+    // Clones inherit from their source, so for-in walks increasingly long prototype chains
+    // during nested probes, only to discard inherited fields. Enumerate owned fields directly.
+    for (const key of Object.keys(source)) {
       if (Object.prototype.hasOwnProperty.call(source, key)) {
         dest[key] = deepClone(source[key], ignores, refMap);
       }
