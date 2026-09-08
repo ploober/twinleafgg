@@ -124,7 +124,10 @@ export class Frosmoth extends PokemonCard {
       // Clamping `min`/`max` to what actually qualifies matters as much as the pool: with the Special
       // Energy wrongly excluded the lone basic left made `min = max = 1` collapse, so the move was
       // applied with NO prompt and the player never chose which Energy left.
-      const validTypes = [CardType.WATER, CardType.ANY, CardType.WLFM, CardType.GRW];
+      // Upstream 9e6e302fd deleted the WLFM/GRW/LPM/FDY/GRPD pseudo-CardTypes: a blend/unit Energy
+      // now reports its REAL types in `provides` and StateUtils treats a multi-type provides as one
+      // choosable unit, so [WATER, ANY] already matches a WLFM blend. Nothing to enumerate.
+      const validTypes = [CardType.WATER, CardType.ANY];
       const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);
       store.reduceEffect(state, checkEnergy);
       const providesValidType = new Set(

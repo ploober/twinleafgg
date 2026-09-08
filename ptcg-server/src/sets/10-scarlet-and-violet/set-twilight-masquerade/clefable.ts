@@ -1,71 +1,10 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
-import { Attack, ChooseAttackPrompt, GameLog, GameMessage, PokemonCard, State, StateUtils, StoreLike } from '../../../game';
-import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
+import { PokemonCard, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
-
-function* useMetronome(next: Function, store: StoreLike, state: State,
-  effect: AttackEffect): IterableIterator<State> {
-  const player = effect.player;
-  const opponent = StateUtils.getOpponent(state, player);
-  const pokemonCard = opponent.active.getPokemonCard();
-
-  if (pokemonCard === undefined || pokemonCard.attacks.length === 0) {
-    return state;
-  }
-
-  let selected: any;
-  yield store.prompt(state, new ChooseAttackPrompt(
-    player.id,
-    GameMessage.CHOOSE_ATTACK_TO_COPY,
-    [pokemonCard],
-    { allowCancel: false }
-  ), result => {
-    selected = result;
-    next();
-  });
-
-  const attack: Attack | null = selected;
-
-  if (attack === null) {
-    return state;
-  }
-
-  store.log(state, GameLog.LOG_PLAYER_COPIES_ATTACK, {
-    name: player.name,
-    attack: attack.name
-  });
-
-  // Perform attack
-  const attackEffect = new AttackEffect(player, opponent, attack);
-  attackEffect.source = player.active;
-  attackEffect.target = opponent.active;
-  state = store.reduceEffect(state, attackEffect);
-
-  if (store.hasPrompts()) {
-    yield store.waitPrompt(state, () => next());
-  }
-
-  if (attackEffect.damage > 0) {
-    const dealDamage = new DealDamageEffect(attackEffect, attackEffect.damage);
-    state = store.reduceEffect(state, dealDamage);
-  }
-
-  // TA-289: Metronome is an inline copy of COPY_OPPONENT_ACTIVE_ATTACK and carried the same gap —
-  // the copied attack's post-damage rider now lives on AFTER_ATTACK (family-A / TA-128), so the
-  // copy route must issue the AfterAttackEffect the direct route issues in game-effect.ts.
-  const afterAttackEffect = new AfterAttackEffect(player, opponent, attack, attackEffect);
-  state = store.reduceEffect(state, afterAttackEffect);
-
-  if (store.hasPrompts()) {
-    yield store.waitPrompt(state, () => next());
-  }
-
-  return state;
-}
-
+import { COPY_OPPONENT_ACTIVE_ATTACK_WITH_RETRY } from '../../../game/store/prefabs/copy-attack-prefabs';
 
 export class Clefable extends PokemonCard {
 
@@ -88,6 +27,7 @@ export class Clefable extends PokemonCard {
       name: 'Metronome',
       cost: [CardType.COLORLESS, CardType.COLORLESS],
       damage: 0,
+      copycatAttack: true,
       text: 'Choose 1 of your opponent\'s Active Pokemon\'s attacks and use it as this attack.'
     },
     {
@@ -111,8 +51,7 @@ export class Clefable extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const generator = useMetronome(() => generator.next(), store, state, effect);
-      return generator.next().value;
+      return COPY_OPPONENT_ACTIVE_ATTACK_WITH_RETRY(store, state, effect as AttackEffect);
     }
 
     return state;

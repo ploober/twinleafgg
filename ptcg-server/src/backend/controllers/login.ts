@@ -137,6 +137,8 @@ export class Login extends Controller {
       scansUrl: config.sets.scansUrl,
       avatarsUrl: config.backend.avatarsUrl,
       sleevesUrl: config.backend.sleevesUrl,
+      deckBoxesUrl: config.backend.deckBoxesUrl,
+      coinsUrl: config.backend.coinsUrl,
       avatarFileSize: config.backend.avatarFileSize,
       avatarMinSize: config.backend.avatarMinSize,
       avatarMaxSize: config.backend.avatarMaxSize,

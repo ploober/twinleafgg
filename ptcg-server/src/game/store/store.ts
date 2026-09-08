@@ -18,6 +18,7 @@ import {
   STAMP_ABILITY_LOCK_ACTIVATION,
   APPLY_ATTACK_EFFECT_ABILITY_LOCKS,
 } from './prefabs/ability-lock';
+import { resolveCopyAttackSessions } from './prefabs/copy-attack-delegation';
 import { GameError } from '../game-error';
 import { GameMessage, GameLog } from '../game-message';
 import { Prompt } from './prompts/prompt';
@@ -196,6 +197,7 @@ export class Store implements StoreLike {
     APPLY_ATTACK_EFFECT_ABILITY_LOCKS(state, effect);
 
     state = this.propagateEffect(state, effect);
+    state = resolveCopyAttackSessions(this, state, effect);
 
     const gs = state.gameSettings;
     if (gs?.sandboxMode) {

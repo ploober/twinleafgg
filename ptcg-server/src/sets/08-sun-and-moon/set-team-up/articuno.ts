@@ -60,7 +60,10 @@ export class Articuno extends PokemonCard {
       // static `provides` read omits it (F-026). Express the restriction as `blocked` (index list) rather
       // than `validCardTypes`, because the prompt's validate() AND the legalActions menu both filter
       // validCardTypes against the static `provides` array, which would drop the Splash Energy again.
-      const validTypes = [CardType.WATER, CardType.ANY, CardType.WLFM, CardType.GRW];
+      // Upstream 9e6e302fd deleted the WLFM/GRW/LPM/FDY/GRPD pseudo-CardTypes: a blend/unit Energy
+      // now reports its REAL types in `provides` and StateUtils treats a multi-type provides as one
+      // choosable unit, so [WATER, ANY] already matches a WLFM blend. Nothing to enumerate.
+      const validTypes = [CardType.WATER, CardType.ANY];
       const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);
       store.reduceEffect(state, checkEnergy);
       const providesValidType = new Set(
