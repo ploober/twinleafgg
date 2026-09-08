@@ -243,6 +243,7 @@ class Importer {
 
     ps.hand.forEach(ref => player.hand.cards.push(this.materialize(ref)));
     ps.deck.forEach(ref => player.deck.cards.push(this.materialize(ref)));
+    player.deck.zoneTag = 'deck'; // CF-61: piles moved out of this list are stamped deck-sourced
     ps.discard.forEach(ref => player.discard.cards.push(this.materialize(ref)));
     ps.lostZone.forEach(ref => player.lostzone.cards.push(this.materialize(ref)));
     // CF-42: round-trip the staging zone. Optional on ingest — boards authored before 0.5.0, and
@@ -471,7 +472,7 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
 }
 
 function projectPlayer(ctx: IidContext, player: Player, turn: number,
-    resolvingExtra: Card[] = []): PlayerState {
+    resolvingExtra: Card[] = [], deckTopExtra: Card[] = []): PlayerState {
   // Dedup the look-pile extras against themselves (one pile is referenced by both a ChooseCards and an
   // AttachEnergy prompt during Waitress, arriving twice). The cross-zone dedup — a pile card that is
   // actually still in some settled zone (Iris's Fighting Spirit selects from the deck; an opponent-peek
@@ -484,6 +485,18 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number,
     const iid = ctx.cardToIid.get(c);
     if (iid === undefined || resolvingSeen.has(iid)) { return false; }
     resolvingSeen.add(iid);
+    return true;
+  });
+  // CF-61 (pinned 2026-09-07, option 1): a detached pile whose cards came FROM this player's deck (a
+  // "look at the top/bottom N" window) projects at the TOP of `deck`, in pile order, ahead of the
+  // un-looked remainder — rotomancer's shape, and the printed text's (the cards are still deck cards
+  // until picked). `resolving` keeps the CF-42 meaning. Dedup within the pile here; the cross-zone
+  // prune (a pile card a fixupProjection re-homed, or one still in a settled zone) is global, below.
+  const deckTopSeen = new Set<string>();
+  const deckTopKept = deckTopExtra.filter(c => {
+    const iid = ctx.cardToIid.get(c);
+    if (iid === undefined || deckTopSeen.has(iid) || resolvingSeen.has(iid)) { return false; }
+    deckTopSeen.add(iid);
     return true;
   });
 
@@ -499,7 +512,7 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number,
       .filter(b => b.getPokemonCard() !== undefined)
       .map(b => projectPip(ctx, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
-    deck: player.deck.cards.map(c => cardRef(ctx, c)),
+    deck: [...deckTopKept, ...player.deck.cards].map(c => cardRef(ctx, c)),
     discard: player.discard.cards.map(c => cardRef(ctx, c)),
     lostZone: player.lostzone.cards.map(c => cardRef(ctx, c)),
     prizes,
@@ -603,21 +616,43 @@ function promptTempPile(prompt: Prompt<unknown>): CardList | undefined {
  * prompt's owning player; a pile card that still sits in a real zone (a prompt over the hand/discard)
  * is excluded, since it is already projected there.
  */
-function detachedResolvingCards(state: State): Card[][] {
-  // Collect every card referenced by an active prompt's temp pile, grouped by the prompt's owning
-  // player. NO settled-zone filter here: projectPlayer applies it against the SAME snapshot it
-  // projects (a card can be back in the deck while the prompt still references it), which is the only
-  // place the filter is guaranteed consistent with the projected zones.
-  const out: Card[][] = state.players.map(() => []);
-  if (state.prompts.length === 0) { return out; }
+function detachedResolvingCards(state: State): { resolving: Card[][]; deckTop: Card[][] } {
+  // Collect every card referenced by an active prompt's temp pile. NO settled-zone filter here:
+  // pruneResolvingDuplicates applies it against the SAME snapshot it projects (a card can be back in
+  // the deck while the prompt still references it), which is the only place the filter is guaranteed
+  // consistent with the projected zones.
+  //
+  // CF-61: a pile stamped `fromZoneTag === 'deck'` (CardList.moveTo/moveCardsTo out of a tagged deck)
+  // is a deck window and goes to `deckTop` of the deck's OWNER — resolved through `fromZoneRef` up the
+  // prototype chain (deepClone builds clones with Object.create(source), so a cloned deck's chain
+  // reaches the original) and falling back to the prompt's owner. Any other pile keeps the CF-42 home.
+  const resolving: Card[][] = state.players.map(() => []);
+  const deckTop: Card[][] = state.players.map(() => []);
+  if (state.prompts.length === 0) { return { resolving, deckTop }; }
+  const sameList = (a: object | undefined, b: object): boolean => {
+    for (let x: object | null = a ?? null; x !== null && x !== Object.prototype; x = Object.getPrototypeOf(x)) {
+      if (x === b) { return true; }
+    }
+    for (let y: object | null = b; y !== null && y !== Object.prototype; y = Object.getPrototypeOf(y)) {
+      if (y === a) { return true; }
+    }
+    return false;
+  };
   for (const prompt of state.prompts) {
     const pile = promptTempPile(prompt);
     if (pile === undefined) { continue; }
-    const owner = state.players.findIndex(p => p.id === prompt.playerId);
-    if (owner === -1) { continue; }
-    out[owner].push(...pile.cards);
+    const promptOwner = state.players.findIndex(p => p.id === prompt.playerId);
+    if (promptOwner === -1) { continue; }
+    if (pile.fromZoneTag === 'deck') {
+      const ref = (pile as unknown as { fromZoneRef?: object }).fromZoneRef;
+      let owner = state.players.findIndex(p => sameList(ref, p.deck));
+      if (owner === -1) { owner = promptOwner; }
+      deckTop[owner].push(...pile.cards);
+    } else {
+      resolving[promptOwner].push(...pile.cards);
+    }
   }
-  return out;
+  return { resolving, deckTop };
 }
 
 /**
@@ -631,17 +666,34 @@ function detachedResolvingCards(state: State): Card[][] {
  * Idempotent, so it runs at the end of projectState and again after the fixups in step().
  */
 export function pruneResolvingDuplicates(state: NeutralState): void {
-  const elsewhere = new Set<string>();
-  const add = (cards: { iid: string }[]) => cards.forEach(c => elsewhere.add(c.iid));
+  // CF-61: `deck` may now carry a projected look window (deck-sourced pile cards). Two guards, in
+  // order: (1) a deck entry whose iid sits in a NON-deck settled zone — a fixupProjection put a picked
+  // window card into the hand — yields to that zone; (2) `deck` is deduped by iid (the window copy and
+  // a re-homed copy of the same card, Waitress's "shuffle the rest back"). Then `resolving` yields to
+  // everything settled, deck included, exactly as before.
+  const settled = new Set<string>();
+  const add = (cards: { iid: string }[]) => cards.forEach(c => settled.add(c.iid));
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
     const p = state.players[who];
     for (const slot of [p.active, ...p.bench]) {
       if (slot) { add(slot.stack); add(slot.energy); add(slot.tools); }
     }
-    add(p.hand); add(p.deck); add(p.discard); add(p.lostZone);
-    p.prizes.forEach(pc => elsewhere.add(pc.iid));
+    add(p.hand); add(p.discard); add(p.lostZone);
+    p.prizes.forEach(pc => settled.add(pc.iid));
   }
-  if (state.stadium) { elsewhere.add(state.stadium.iid); }
+  if (state.stadium) { settled.add(state.stadium.iid); }
+  const elsewhere = new Set<string>(settled);
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const p = state.players[who];
+    const seen = new Set<string>();
+    p.deck = p.deck.filter(c => {
+      if (settled.has(c.iid) || seen.has(c.iid)) { return false; }
+      seen.add(c.iid);
+      return true;
+    });
+    add(p.deck);
+    p.deck.forEach(c => elsewhere.add(c.iid));
+  }
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
     const p = state.players[who];
     if (p.resolving && p.resolving.length > 0) {
@@ -662,8 +714,8 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),
     players: {
-      A: projectPlayer(ctx, state.players[0], state.turn, detached[0]),
-      B: projectPlayer(ctx, state.players[1], state.turn, detached[1]),
+      A: projectPlayer(ctx, state.players[0], state.turn, detached.resolving[0], detached.deckTop[0]),
+      B: projectPlayer(ctx, state.players[1], state.turn, detached.resolving[1], detached.deckTop[1]),
     },
     // CF-15: OMIT the key entirely when neither side has a record — the field is optional, not nullable,
     // so `playerLastAttack: undefined` would still add the property and fail an exact-shape assertion.

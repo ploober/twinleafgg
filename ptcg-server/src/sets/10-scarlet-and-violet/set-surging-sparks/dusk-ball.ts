@@ -38,8 +38,9 @@ export class DuskBall extends TrainerCard {
       const numCardsToMove = Math.min(7, deckSize);
       const startIndex = deckSize - numCardsToMove;
 
-      const cardsToMove = player.deck.cards.splice(startIndex, numCardsToMove);
-      temp.cards.push(...cardsToMove);
+      // CF-61: move through the CardList API (not a raw splice) so the pile is stamped deck-sourced and
+      // the conformance projection can show the window at the top of `deck` during the pause.
+      player.deck.moveCardsTo(player.deck.cards.slice(startIndex, startIndex + numCardsToMove), temp);
 
       return store.prompt(state, new ChooseCardsPrompt(
         player,

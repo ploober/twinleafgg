@@ -26,6 +26,27 @@ export class CardList {
 
   public markedAsNotSecret: boolean = false;
 
+  /**
+   * CF-61 (conformance projection; inert for gameplay). `zoneTag` names a SETTLED zone ('deck'), set by
+   * the conformance importer on each player's zones and never on a temp pile. `fromZoneTag` is stamped
+   * on a temp pile by moveTo/moveCardsTo with the tag of the settled zone its cards came from (propagated
+   * pile-to-pile), so the wire projection can put a "look at the top/bottom N of your deck" window back
+   * into `deck` at the top, in pile order, instead of `resolving`. A settled zone is never re-tagged.
+   * `fromZoneRef` (non-enumerable, so deepClone skips it) is the source list itself, for owner lookup.
+   */
+  public zoneTag?: string;
+
+  public fromZoneTag?: string;
+
+  private recordSource(destination: CardList): void {
+    if (destination.zoneTag !== undefined) { return; }
+    const tag = this.zoneTag ?? this.fromZoneTag;
+    if (tag === undefined) { return; }
+    destination.fromZoneTag = tag;
+    const ref = this.zoneTag !== undefined ? this : (this as unknown as { fromZoneRef?: CardList }).fromZoneRef;
+    Object.defineProperty(destination, 'fromZoneRef', { value: ref, enumerable: false, configurable: true, writable: true });
+  }
+
   public static fromList(names: string[]): CardList {
     const cardList = new CardList();
     const cardManager = CardManager.getInstance();
@@ -60,6 +81,7 @@ export class CardList {
   }
 
   public moveTo(destination: CardList, count?: number): void {
+    this.recordSource(destination);
     if (count === undefined) {
       count = this.cards.length;
     }
@@ -70,6 +92,7 @@ export class CardList {
   }
 
   public moveCardsTo(cards: Card[], destination: CardList): void {
+    this.recordSource(destination);
     // Defensive snapshot: callers frequently pass the live `this.cards` array itself (e.g.
     // `hand.moveCardsTo(hand.cards, discard)` to discard the whole hand). Splicing out of
     // `this.cards` while iterating that same array shrinks the loop bound as it goes, so only
