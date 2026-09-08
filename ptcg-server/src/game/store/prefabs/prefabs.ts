@@ -33,6 +33,7 @@ import {
 } from '../effects/attack-effects';
 import {
   CheckProvidedEnergyEffect,
+  CheckGustBlockEffect,
   CheckHpEffect,
   CheckPrizesDestinationEffect,
   AddSpecialConditionsPowerEffect,
@@ -2397,6 +2398,9 @@ export interface SwitchInOpponentBenchedPokemonOptions {
   blocked?: CardTarget[];
   onSwitched?: (target: PokemonCardList) => void;
   sourceEffect?: AttackEffect | AfterAttackEffect;
+  /** The Trainer performing the gust, threaded so a benched Pokemon can veto being switched in by it
+   *  (TA-388: Antique Sail Fossil's Protective Sail against an opponent Supporter). */
+  sourceCard?: Card;
 }
 
 /**
@@ -2409,10 +2413,31 @@ export function SWITCH_IN_OPPONENT_BENCHED_POKEMON(
   player: Player,
   options: SwitchInOpponentBenchedPokemonOptions = {},
 ): State {
-  const { allowCancel = false, blocked = [], onSwitched, sourceEffect } = options;
+  const { allowCancel = false, blocked = [], onSwitched, sourceEffect, sourceCard } = options;
   const opponent = StateUtils.getOpponent(state, player);
   const hasBenchedPokemon = opponent.bench.some((bench) => bench.cards.length > 0);
   if (!hasBenchedPokemon) {
+    return state;
+  }
+
+  // TA-388: a benched Pokemon may veto being switched in by this gust (Antique Sail Fossil's
+  // Protective Sail against an opponent Supporter). Default is "can be gusted", so this is inert for
+  // every card that does not answer the check. Merge the vetoes into the blocked list.
+  const blockedTargets: CardTarget[] = [...blocked];
+  opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, _card, target) => {
+    if (target.slot !== SlotType.BENCH || cardList.cards.length === 0) {
+      return;
+    }
+    const check = new CheckGustBlockEffect(player, cardList, sourceCard);
+    store.reduceEffect(state, check);
+    if (check.blocked) {
+      blockedTargets.push(target);
+    }
+  });
+
+  // If every benched Pokemon is protected, the gust has no legal target and does nothing.
+  const benchCount = opponent.bench.filter((b) => b.cards.length > 0).length;
+  if (blockedTargets.length >= benchCount) {
     return state;
   }
 
@@ -2423,7 +2448,7 @@ export function SWITCH_IN_OPPONENT_BENCHED_POKEMON(
       GameMessage.CHOOSE_POKEMON_TO_SWITCH,
       PlayerType.TOP_PLAYER,
       [SlotType.BENCH],
-      { min: 1, max: 1, allowCancel, blocked },
+      { min: 1, max: 1, allowCancel, blocked: blockedTargets },
     ),
     (selected) => {
       if (!selected || selected.length === 0) {

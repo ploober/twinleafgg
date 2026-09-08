@@ -2881,6 +2881,50 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(slimeVs(RALTS).state.players.B.active!.conditions).toEqual(['burned']);   // control
   });
 
+  it('Antique Sail Fossil\'s "Protective Sail" must not strand the opponent\'s played Supporter, and must veto a Supporter gust of itself [TA-388 por-069]', () => {
+    // "Whenever your opponent plays a Supporter card from their hand, prevent all effects of that card
+    // done to this Pokemon." The old code set effect.preventDefault on the whole TrainerEffect, which
+    // skips playTrainerReducer — the ONLY code that moves a played Supporter out of the hand — so EVERY
+    // Supporter the opponent plays was stranded in their hand with the slot still burned, while the
+    // Supporter's own effect resolved anyway (it runs in propagateEffect, before the short-circuit).
+    // Two-way divergence vs rotomancer (which is correct on both): twinleaf OVER-reached (stranded
+    // no-op Supporters) and UNDER-reached (failed to prevent a Boss's Orders gust of the fossil).
+    // Fix: the gust prefab asks each opponent benched Pokemon (CheckGustBlockEffect) whether it may be
+    // switched in; the Fossil vetoes when the source is an opponent Supporter — and the played Supporter
+    // now leaves the hand normally. asc-192 Lillie's Determination is the live-report witness; asc-183
+    // Boss's Orders is the in-pool gust.
+    const LILLIES = 'asc-192', BOSS = 'asc-183', SAIL = 'por-069', PONYTA = 'scr-019';
+    // Part 1: a no-op Supporter leaves the hand into the play zone (resolving), fossil or not.
+    const lillies = (fossil: string | null) => step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b1', [RALTS])],
+               hand: [{ iid: 'sup', printing: LILLIES }, ...en(WATER, 4, 'Ah')], deck: fillerDeck('A', 30),
+               discard: [{ iid: 'A-dc', printing: WATER }] }),
+      player({ active: inPlay('B-act', [RALTS]), bench: fossil ? [inPlay('B-fossil', [fossil])] : [inPlay('B-bn', [RALTS])] }),
+    ), [{ actor: 'A', type: 'playSupporter', card: 'sup' }]);
+    for (const fossil of [null, SAIL]) {
+      const A = lillies(fossil).state.players.A;
+      expect(A.hand.some(c => c.iid === 'sup')).withContext(`fossil=${fossil}`).toBe(false);
+      expect((A.resolving ?? []).some(c => c.iid === 'sup')).withContext(`fossil=${fossil}`).toBe(true);
+    }
+    // Part 2: Boss's Orders can gust a non-fossil bench Pokemon but never the fossil.
+    const boss = (bench: string[]) => step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b1', [RALTS])],
+               hand: [{ iid: 'boss', printing: BOSS }, ...en(WATER, 3, 'Ah')], deck: fillerDeck('A', 20) }),
+      player({ active: inPlay('B-act', [RALTS]), bench: bench.map((pr, i) => inPlay(`B-b${i}`, [pr])) }),
+    ), [{ actor: 'A', type: 'playSupporter', card: 'boss' }]);
+    // fossil is the only bench -> no legal gust target -> whiff, fossil stays benched.
+    const only = boss([SAIL]).state.players.B;
+    expect(only.active!.stack[only.active!.stack.length - 1].printing).toBe('sit-067');   // RALTS, unchanged
+    expect(only.bench.some(b => b.stack.some(c => c.printing === SAIL))).toBe(true);
+    // fossil beside a Ponyta -> the forced gust lands on Ponyta (single legal target), fossil untouched.
+    const beside = boss([SAIL, PONYTA]).state.players.B;
+    expect(beside.active!.stack[beside.active!.stack.length - 1].printing).toBe(PONYTA);
+    expect(beside.bench.some(b => b.stack.some(c => c.printing === SAIL))).toBe(true);
+    // control: no fossil -> a plain bench IS gusted.
+    const plain = boss([PONYTA]).state.players.B;
+    expect(plain.active!.stack[plain.active!.stack.length - 1].printing).toBe(PONYTA);
+  });
+
   it('Lacey / Lillie\'s Determination / Drasna are withheld when the recycle provably returns every card (own deck = 0, hand-1 <= draw) [TA-349 pre-175 asc-192 ssp-173]', () => {
     // B.41 addendum 2026-09-01 (the SELF-side cycle cell; RE-138 withdrawn, rotomancer right): with
     // the player's own deck EMPTY and every non-Supporter card in hand ≤ the draw count, "shuffle

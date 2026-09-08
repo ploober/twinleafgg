@@ -23,7 +23,8 @@ export enum CheckEffects {
   CHECK_TABLE_STATE_EFFECT = 'CHECK_TABLE_STATE_EFFECT',
   ADD_SPECIAL_CONDITIONS_EFFECT = 'ADD_SPECIAL_CONDITIONS_EFFECT',
   CHECK_PRIZES_DESTINATION_EFFECT = 'CHECK_PRIZES_DESTINATION_EFFECT',
-  CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT = 'CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT'
+  CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT = 'CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT',
+  CHECK_GUST_BLOCK_EFFECT = 'CHECK_GUST_BLOCK_EFFECT'
 }
 
 export class CheckPokemonPowersEffect implements Effect {
@@ -238,5 +239,28 @@ export class CheckSpecialConditionRemovalEffect implements Effect {
   constructor(player: Player, target: PokemonCardList) {
     this.player = player;
     this.target = target;
+  }
+}
+
+
+/**
+ * Query dispatched by SWITCH_IN_OPPONENT_BENCHED_POKEMON once per opponent benched Pokemon a gust
+ * would consider. Default: the Pokemon CAN be switched in. A protector sets `blocked = true` to keep
+ * itself off the switch menu (TA-388: Antique Sail Fossil's "Protective Sail" vetoes a gust from an
+ * opponent Supporter). `sourceCard` is the Trainer performing the gust when there is one (attack-driven
+ * gusts leave it undefined), so a supporter-scoped protection can gate on it.
+ */
+export class CheckGustBlockEffect implements Effect {
+  readonly type: string = CheckEffects.CHECK_GUST_BLOCK_EFFECT;
+  public preventDefault = false;
+  public player: Player;            // the player performing the gust
+  public target: PokemonCardList;   // the opponent's benched Pokemon under consideration
+  public sourceCard?: Card;         // the Trainer performing the gust, if any
+  public blocked = false;
+
+  constructor(player: Player, target: PokemonCardList, sourceCard?: Card) {
+    this.player = player;
+    this.target = target;
+    this.sourceCard = sourceCard;
   }
 }

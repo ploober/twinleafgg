@@ -6620,6 +6620,27 @@
         "  public retreat = [C, C];"
       ],
       "note": "Printed card data, canonical card-data/final dri-150/219: attacks 'Haughty Order' / 'Cruel Slash', retreat 2. Upstream carries 'Haughty Orders' / 'Slash and Cash' and retreat 1 and reverted all three in the 56865ad0d merge; caught by the rotomancer structural cross-check and the dump-vs-canonical compare."
+    },
+    {
+      "file": "set-perfect-order/antique-sail-fossil.ts",
+      "signatures": [
+        "if (effect instanceof CheckGustBlockEffect && effect.target.getPokemonCard() === this) {"
+      ],
+      "note": "TA-388 2026-09-08: Protective Sail must veto a Supporter gust of the Fossil (CheckGustBlockEffect), NOT preventDefault the whole TrainerEffect (which stranded every opponent Supporter in hand). A revert to the preventDefault form drops this line."
+    },
+    {
+      "file": "set-paldea-evolved/boss-orders.ts",
+      "signatures": [
+        "SWITCH_IN_OPPONENT_BENCHED_POKEMON(store, state, effect.player, { allowCancel: false, sourceCard: this });"
+      ],
+      "note": "TA-388 2026-09-08: Boss's Orders threads `sourceCard: this` so a benched Pokemon (Antique Sail Fossil) can veto being gusted by an opponent Supporter."
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "const check = new CheckGustBlockEffect(player, cardList, sourceCard);"
+      ],
+      "note": "TA-388 2026-09-08: SWITCH_IN_OPPONENT_BENCHED_POKEMON asks each opponent benched Pokemon whether it may be switched in (default allow), so Protective Sail can keep the Fossil off the gust menu."
     }
   ]
 }

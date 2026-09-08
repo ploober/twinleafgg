@@ -16,13 +16,12 @@ import {
   Player,
   CardTag,
 } from '../../../game';
-import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
+import { AddSpecialConditionsPowerEffect, CheckGustBlockEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { RetreatEffect } from '../../../game/store/effects/game-effects';
 import {
   PlayItemEffect,
   PlayPokemonEffect,
-  TrainerEffect,
 } from '../../../game/store/effects/play-card-effects';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { IS_ABILITY_BLOCKED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
@@ -128,32 +127,23 @@ export class AntiqueSailFossil extends TrainerCard {
       effect.preventDefault = true;
     }
 
-    // Block Supporter effects from opponent
-    if (
-      effect instanceof TrainerEffect &&
-      effect.trainerCard.trainerType === TrainerType.SUPPORTER
-    ) {
-      const cardList = StateUtils.findCardList(state, this);
-      const player = StateUtils.findOwner(state, cardList);
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // Only block if opponent is playing the supporter
-      if (effect.player !== opponent) {
-        return state;
+    // TA-388: "Whenever your opponent plays a Supporter card from their hand, prevent all effects of
+    // that card done to this Pokemon." The gust from an opponent Supporter (Boss's Orders) is such an
+    // effect. SWITCH_IN_OPPONENT_BENCHED_POKEMON asks each opponent benched Pokemon via
+    // CheckGustBlockEffect whether it may be switched in; this Fossil vetoes when the gust's source is
+    // an opponent Supporter and the ability is live. (The former implementation set preventDefault on
+    // the whole TrainerEffect, which aborted the play-resolution step that moves a played Supporter out
+    // of the hand — stranding EVERY Supporter in the opponent's hand while preventing none of their
+    // effects, since a card's own reduceEffect runs during propagateEffect before that short-circuit.)
+    if (effect instanceof CheckGustBlockEffect && effect.target.getPokemonCard() === this) {
+      const owner = StateUtils.findOwner(state, effect.target);
+      const src = effect.sourceCard;
+      const isOpponentSupporter = effect.player !== owner
+        && src instanceof TrainerCard
+        && src.trainerType === TrainerType.SUPPORTER;
+      if (isOpponentSupporter && !IS_ABILITY_BLOCKED(store, state, owner, this)) {
+        effect.blocked = true;
       }
-
-      // Check if this Pokemon is in play
-      if (!cardList || cardList.cards.length === 0) {
-        return state;
-      }
-
-      // Try to reduce PowerEffect, to check if something is blocking our ability
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
-        return state;
-      }
-
-      // Prevent the supporter effect
-      effect.preventDefault = true;
     }
 
     return state;
