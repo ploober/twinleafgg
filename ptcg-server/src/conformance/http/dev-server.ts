@@ -11,7 +11,10 @@ import { createConformanceApp } from './app';
  * The endpoints are stateless (each request replays from its own initialState), so the server
  * scales horizontally: CONFORMANCE_WORKERS=N forks N cluster workers sharing the port (node
  * round-robins connections). Default 1 (no cluster). Each worker loads the full card library.
+ * CONFORMANCE_QUIET=1 skips request logging and sends compact JSON for bulk fuzzing.
+ * Startup and worker-failure messages remain visible.
  */
+const quiet = process.env.CONFORMANCE_QUIET === '1';
 const workers = Number(process.env.CONFORMANCE_WORKERS) || 1;
 // ts-node's CJS interop: the cluster module IS the namespace object at runtime (old @types).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,44 +36,47 @@ if (workers > 1 && (clusterApi.isPrimary ?? clusterApi.isMaster)) {
 }
 
 function startServer(): void {
-const app = express();
+  const app = express();
 
-app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const start = Date.now();
-  let summary = '';
-  res.json = (body: unknown): express.Response => {
-    if (body && typeof body === 'object') {
-      const b = body as Record<string, unknown>;
-      summary = typeof b.status === 'string'
-        ? `status=${b.status}` +
+  // The normal Express JSON writer is compact; avoid installing the debug wrapper in quiet mode.
+  if (!quiet) {
+    app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const start = Date.now();
+      let summary = '';
+      res.json = (body: unknown): express.Response => {
+        if (body && typeof body === 'object') {
+          const b = body as Record<string, unknown>;
+          summary = typeof b.status === 'string'
+            ? `status=${b.status}` +
           (typeof b.applied === 'number' ? ` applied=${b.applied}` : '') +
           (b.reasonCode ? ` reasonCode=${String(b.reasonCode)}` : '') +
           (b.pending && typeof b.pending === 'object'
             ? ` pending.actor=${String((b.pending as Record<string, unknown>).actor)}`
             : '')
-        : typeof b.error === 'string'
-          ? `error=${b.error}` + (b.message ? `: ${String(b.message)}` : '')
-          : '';
-    }
-    // Always pretty-print (2-space indent) regardless of the endpoint.
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.send(JSON.stringify(body, null, 2));
-  };
-  res.on('finish', () => {
-    // eslint-disable-next-line no-console
-    console.log(`[conformance] ${req.method} ${req.url} -> ${res.statusCode} ${summary} (${Date.now() - start}ms)`);
-  });
-  next();
-});
+            : typeof b.error === 'string'
+              ? `error=${b.error}` + (b.message ? `: ${String(b.message)}` : '')
+              : '';
+        }
+        // Always pretty-print (2-space indent) regardless of the endpoint.
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return res.send(JSON.stringify(body, null, 2));
+      };
+      res.on('finish', () => {
+        // eslint-disable-next-line no-console
+        console.log(`[conformance] ${req.method} ${req.url} -> ${res.statusCode} ${summary} (${Date.now() - start}ms)`);
+      });
+      next();
+    });
+  }
 
-app.use(createConformanceApp());
+  app.use(createConformanceApp());
 
-const port = Number(process.env.CONFORMANCE_PORT) || 8090;
-app.listen(port, () => {
+  const port = Number(process.env.CONFORMANCE_PORT) || 8090;
+  app.listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`[conformance] DEV server listening on http://localhost:${port} — request logging ON`
+    console.log(`[conformance] DEV server listening on http://localhost:${port} — request logging ${quiet ? 'OFF (compact JSON)' : 'ON'}`
     + (workers > 1 ? ` (worker ${process.pid})` : ''));
-  // eslint-disable-next-line no-console
-  console.log('[conformance] routes: POST /v1/step  GET /v1/capabilities  POST /v1/normalize');
-});
+    // eslint-disable-next-line no-console
+    console.log('[conformance] routes: POST /v1/step  GET /v1/capabilities  POST /v1/normalize');
+  });
 }
