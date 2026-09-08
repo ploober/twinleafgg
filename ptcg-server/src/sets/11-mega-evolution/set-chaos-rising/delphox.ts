@@ -4,6 +4,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, StateUtils, PlayerType, ChooseCardsPrompt } from '../../../game';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { EnergyCard } from '../../../game/store/card/energy-card';
+import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { ABILITY_USED, WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 import { GameError } from '../../../game/game-error';
@@ -46,12 +47,17 @@ export class Delphox extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
-      if (player.active.getPokemonCard() !== this) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
-      }
+      // TA-385 (2026-09-07): the printed Ability has NO Active-Spot clause — "Once during your turn, you
+      // may discard a Basic [R] Energy card from your hand in order to use this Ability. Draw cards until
+      // you have 7" — and an Ability is usable from the Bench (#1). The Active gate that sat here
+      // withheld Flaring Magic on a Benched Delphox (the retreat path of the mep-074 seeds); rotomancer
+      // offers it. Removed.
       // TA-361: refuse a direct second use too (menu filtering alone lets a dispatched
       // useAbility through) — silvally.ts's POWER_ALREADY_USED pattern.
-      if (player.active.boardEffect.includes(BoardEffect.ABILITY_USED)) {
+      // Read THIS card's slot, not the Active's: ABILITY_USED marks the slot holding the card, and
+      // with the Active gate gone (TA-385) Delphox may be on the Bench.
+      const ownSlot = StateUtils.findCardList(state, this) as PokemonCardList;
+      if (ownSlot.boardEffect.includes(BoardEffect.ABILITY_USED)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
       // TA-372 (B.41 self-side, #2042): "discard a Basic [R] … Draw cards until you have 7" —

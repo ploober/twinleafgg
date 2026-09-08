@@ -6581,6 +6581,42 @@
     "  if (prizesAlreadyTaken || noPokemonInPlay) {"
    ],
    "note": "TA-382 / B.16 2026-09-07: the no-Pokemon-in-play loss takes the same pre-promotion exit as the prize-out win, so a wiped-out opponent loses BEFORE the survivor is asked to promote. Reverting reopens the survivor's pointless CHOOSE_NEW_ACTIVE_POKEMON on every mutual-KO wipe-out; guarded by scenarios/ta382-mutual-ko-wipeout-win-recognized-before-the-survivor-promotes.json."
+  },
+  {
+   "file": "set-chaos-rising/delphox.ts",
+   "signatures": [
+    "{ allowCancel: false, min: 1, max: 1, blocked }"
+   ],
+   "note": "TA-384 / B.49 (2026-09-07): Flaring Magic's cost discard is a ChooseCardsPrompt over the Basic [R] in hand (two candidates surface); reverting restores the `find` auto-pick. Guarded by scenarios/ta384-cri-013-flaring-magic-cost-pick-surfaces-over-two-basic-fire.json."
+  },
+  {
+   "file": "set-surging-sparks/dusk-ball.ts",
+   "signatures": [
+    "player.deck.moveCardsTo(player.deck.cards.slice(startIndex, startIndex + numCardsToMove), temp);"
+   ],
+   "note": "CF-61 (2026-09-07): the bottom-7 window moves through the CardList API so the pile is stamped deck-sourced and projects at the top of `deck`; a raw splice leaves it in `resolving`."
+  },
+  {
+   "file": "game/store/state/card-list.ts",
+   "signatures": [
+    "private recordSource(destination: CardList): void {"
+   ],
+   "note": "CF-61 (2026-09-07): moveTo/moveCardsTo stamp a temp pile with the settled zone its cards came from (zoneTag/fromZoneTag/fromZoneRef); inert for gameplay, read only by the conformance projection."
+  },
+  {
+   "file": "set-chaos-rising/delphox.ts",
+   "signatures": [
+    "const ownSlot = StateUtils.findCardList(state, this) as PokemonCardList;"
+   ],
+   "note": "TA-385 (2026-09-07): Flaring Magic usable from the Bench (no printed Active clause, #1); the once-per-turn gate reads THIS card's slot. Reverting restores the Active-only gate. Guarded by scenarios/ta385-mep-074-flaring-magic-usable-from-the-bench.json."
+  },
+  {
+   "file": "set-ascended-heroes/waitress.ts",
+   "signatures": [
+    "{ min: eligible > 0 ? 1 : 0, max: 1, allowCancel: false }",
+    "deckTop.moveCardsTo(cards, chosen);"
+   ],
+   "note": "TA-386 (2026-09-07): the attach is mandatory when the window holds a Basic Energy (no decline), and the attach prompt runs over the chosen card only (no re-ask). Guarded by scenarios/ta386-asc-215-waitress-mandatory-attach-no-decline-no-re-ask.json."
   }
  ]
 }
