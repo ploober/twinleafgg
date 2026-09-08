@@ -1,7 +1,7 @@
-import { BoardEffect, CardType, EnergyType, Stage } from '../../../game/store/card/card-types';
+import { BoardEffect, CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
-import { PokemonCard, StoreLike, State, StateUtils, PlayerType } from '../../../game';
+import { PokemonCard, StoreLike, State, StateUtils, PlayerType, ChooseCardsPrompt } from '../../../game';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { ABILITY_USED, WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -60,21 +60,46 @@ export class Delphox extends PokemonCard {
       if (player.hand.cards.length - 1 >= 7) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
-      const basicRInHand = player.hand.cards.find(
+      const basicRInHand = player.hand.cards.filter(
         (c) =>
           c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(R),
       );
-      if (!basicRInHand) {
+      if (basicRInHand.length === 0) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
-      // TA-361: "Once during your turn" — mark the slot used at the point of no return, or the
-      // Ability is re-offered AND a second use is accepted the same turn (TA-212's shape).
-      ABILITY_USED(player, this);
-      player.hand.moveCardTo(basicRInHand, player.discard);
-      const toDraw = Math.max(0, 7 - player.hand.cards.length);
-      if (toDraw > 0) {
-        DRAW_CARDS(store, state, player, toDraw);
-      }
+      // TA-384 / B.49 (2026-09-07): the cost is the PLAYER's pick. This used to `find` the first Basic
+      // [R] and discard it with no prompt — even over two candidates, and even when they were different
+      // printings of basic Fire. B.49 pins CF-14's collapse at exactly ONE candidate, counted by iid
+      // (CF-60: the iid is the identity; the two resolutions leave different iids in the hand and the
+      // wire distinguishes them), so two candidates surface a `discard` pick — rotomancer's shape on
+      // the fz-atk-cri-013 seed. The Flashing Draw (jtg-055) idiom: `allowCancel:false, min:1, max:1`
+      // — a cost is not declinable once the Ability is declared (B.30 rule 1) — and on ONE candidate the
+      // decomposer's CHOOSE_CARD_TO_DISCARD collapse keeps the atomic resolution.
+      const blocked: number[] = [];
+      player.hand.cards.forEach((c, i) => {
+        if (!basicRInHand.includes(c)) {
+          blocked.push(i);
+        }
+      });
+      state = store.prompt(state, new ChooseCardsPrompt(
+        player,
+        GameMessage.CHOOSE_CARD_TO_DISCARD,
+        player.hand,
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { allowCancel: false, min: 1, max: 1, blocked }
+      ), cards => {
+        if (cards === null || cards.length === 0) {
+          return state;
+        }
+        // TA-361: "Once during your turn" — mark the slot used at the point of no return, or the
+        // Ability is re-offered AND a second use is accepted the same turn (TA-212's shape).
+        ABILITY_USED(player, this);
+        cards.forEach(card => player.hand.moveCardTo(card, player.discard));
+        const toDraw = Math.max(0, 7 - player.hand.cards.length);
+        if (toDraw > 0) {
+          DRAW_CARDS(store, state, player, toDraw);
+        }
+      });
     }
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
