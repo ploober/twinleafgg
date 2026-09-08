@@ -6641,6 +6641,20 @@
         "const check = new CheckGustBlockEffect(player, cardList, sourceCard);"
       ],
       "note": "TA-388 2026-09-08: SWITCH_IN_OPPONENT_BENCHED_POKEMON asks each opponent benched Pokemon whether it may be switched in (default allow), so Protective Sail can keep the Fossil off the gust menu."
+    },
+    {
+      "file": "set-surging-sparks/lisias-appeal.ts",
+      "signatures": [
+        "sourceCard: this,   // TA-388: a benched Antique Sail Fossil vetoes this opponent-Supporter gust"
+      ],
+      "note": "TA-388 2026-09-08: Lisia's Appeal is the other in-pool opponent-Supporter gust; it threads sourceCard so Protective Sail can veto a gust of the Fossil, same as Boss's Orders."
+    },
+    {
+      "file": "game/store/effects/check-effects.ts",
+      "signatures": [
+        "export class CheckGustBlockEffect implements Effect {"
+      ],
+      "note": "TA-388 2026-09-08: the CheckGustBlockEffect veto query that lets Protective Sail keep the Fossil off an opponent-Supporter gust menu."
     }
   ]
 }

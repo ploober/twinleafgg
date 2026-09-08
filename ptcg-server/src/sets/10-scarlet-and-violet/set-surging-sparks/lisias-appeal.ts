@@ -64,6 +64,7 @@ export class LisiasAppeal extends TrainerCard {
       SWITCH_IN_OPPONENT_BENCHED_POKEMON(store, state, player, {
         allowCancel: false,
         blocked,
+        sourceCard: this,   // TA-388: a benched Antique Sail Fossil vetoes this opponent-Supporter gust
         onSwitched: () => {
           opponent.active.addSpecialCondition(SpecialCondition.CONFUSED);
         }
