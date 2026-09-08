@@ -71,6 +71,13 @@ const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
   hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit'
 });
 
+interface ComparedPair {
+  right: object;
+  depth: number;
+  next: ComparedPair | undefined;
+}
+type ComparedPairs = Map<object, ComparedPair>;
+
 /**
  * Did running a handler change the board?
  *
@@ -81,26 +88,41 @@ const LOG_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
  * which is the change we want to see — while the card object itself is the same reference on both
  * sides and must not be walked.
  *
- * Cycles terminate on the `seen` pair-set. Functions and undefined-vs-missing are treated as equal,
- * since neither is board state.
+ * Cycles and shared subgraphs use a depth-aware pair map; the existing depth cap is retained.
+ * A pair first reached near that cap is revisited if a later path has more depth budget.
+ * Non-null functions are ignored; missing and undefined values compare equally.
  */
-function boardDiffers(a: any, b: any, seen: Set<string> = new Set(), depth = 0): boolean {
+export function boardDiffers(a: any, b: any, seen: ComparedPairs = new Map(), depth = 0): boolean {
   if (a === b) { return false; }
   if (depth > 24) { return false; }
   if (a === null || b === null || a === undefined || b === undefined) { return a !== b; }
   if (typeof a === 'function' || typeof b === 'function') { return false; }
   if (typeof a !== 'object' || typeof b !== 'object') { return a !== b; }
-  // Shared-by-reference classes: identity is the whole comparison (see the note above).
   if (a instanceof Card || b instanceof Card) { return a !== b; }
   if (a instanceof StateLog || b instanceof StateLog) { return a !== b; }
-  if (Array.isArray(a) !== Array.isArray(b)) { return true; }
-  if (Array.isArray(a)) {
-    if (a.length !== b.length) { return true; }
-    return a.some((item, i) => boardDiffers(item, b[i], seen, depth + 1));
+  const array = Array.isArray(a);
+  if (array !== Array.isArray(b)) { return true; }
+  if (array && a.length !== b.length) { return true; }
+  const first = seen.get(a);
+  let pair = first;
+  while (pair !== undefined && pair.right !== b) { pair = pair.next; }
+  if (pair !== undefined) {
+    if (pair.depth <= depth) { return false; }
+    pair.depth = depth;
+  } else {
+    // Most left objects have a single partner. A short chain handles multiple partners without
+    // allocating a nested Map and hash table for every object in the board.
+    seen.set(a, { right: b, depth, next: first });
   }
-  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const key of keys) {
+  if (array) {
+    return (a as any[]).some((item, i) => boardDiffers(item, b[i], seen, depth + 1));
+  }
+  for (const key of Object.keys(a)) {
     if (boardDiffers(a[key], b[key], seen, depth + 1)) { return true; }
+  }
+  for (const key of Object.keys(b)) {
+    if (!Object.prototype.hasOwnProperty.call(a, key)
+      && boardDiffers(a[key], b[key], seen, depth + 1)) { return true; }
   }
   return false;
 }
