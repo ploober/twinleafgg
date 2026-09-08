@@ -52,6 +52,13 @@ import { SandboxModifyGameStateAction } from './actions/sandbox-modify-game-stat
 import { SandboxModifyCardAction } from './actions/sandbox-modify-card-action';
 import { SandboxModifyPokemonAction } from './actions/sandbox-modify-pokemon-action';
 
+// Keep these imports lazy to preserve the existing circular-dependency boundaries. Cache the
+// module objects, not their selected functions/results: exports and per-format overrides are
+// still read on every call, without resolving the module path in the effect hot loop.
+let playabilityPrefabs: typeof import('./prefabs/prefabs') | undefined;
+let pokemonCardModule: typeof import('./card/pokemon-card') | undefined;
+let cardEffectOverrides: typeof import('./card/card-effect-overrides') | undefined;
+
 interface PromptItem {
   ids: number[],
   then: (results: any) => void;
@@ -429,8 +436,8 @@ export class Store implements StoreLike {
     const waitItemsBefore = this.waitItems.length;
 
     try {
-      const { CAN_PLAY_CARD, CAN_USE_FROM_HAND_TO_BENCH_POWER } = require('./prefabs/prefabs');
-      const { PokemonCard } = require('./card/pokemon-card');
+      const { CAN_PLAY_CARD, CAN_USE_FROM_HAND_TO_BENCH_POWER } = playabilityPrefabs ?? (playabilityPrefabs = require('./prefabs/prefabs'));
+      const { PokemonCard } = pokemonCardModule ?? (pokemonCardModule = require('./card/pokemon-card'));
 
       for (const player of state.players) {
         // Clear previous playability
@@ -771,7 +778,7 @@ export class Store implements StoreLike {
     // Only try override for TrainerCard (for now)
     if ((card as any).trainerType !== undefined) {
       // Import here to avoid circular dependency at module level
-      const { getOverriddenReduceEffect } = require('./card/card-effect-overrides');
+      const { getOverriddenReduceEffect } = cardEffectOverrides ?? (cardEffectOverrides = require('./card/card-effect-overrides'));
       const format = (store as any)?.handler?.gameSettings?.format ?? 0;
       const override = getOverriddenReduceEffect(card, format);
       if (override) {
