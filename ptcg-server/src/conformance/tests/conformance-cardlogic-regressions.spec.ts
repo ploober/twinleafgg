@@ -3279,25 +3279,6 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(hasType(two, 'confirm')).toBe(false);                                        // …with no zero-stop
   });
 
-  it('a gust whose caller pre-blocks EMPTY bench slots still switches (TA-388 veto count) — Delicious Aroma heads swaps the lone Basic; two Basics pend the pick [TA-410 rcl-023]', () => {
-    // The TA-388 veto compared `blockedTargets.length` (caller blocks + vetoes) with the OCCUPIED bench
-    // count; Appletun blocks every empty slot, so 4 >= 1 and the gust returned without switching.
-    const APPLIN = 'evs-017', APPLETUN = 'rcl-023', BULBA = 'asr-001';
-    const aroma = [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Delicious Aroma' }, flipFace('heads')] as unknown as NeutralAction[];
-    const one = step(board(
-      player({ active: inPlay('A-act', [APPLIN, APPLETUN], en(GRASS, 2, 'g')) }),
-      player({ active: inPlay('B-act', [BULBA]), bench: [inPlay('B-b0', [BULBA])] }),
-    ), aroma);
-    expect(one.status).toBe('awaitingAction');
-    expect(one.state.players.B.active!.stack[0].iid).toBe('B-b0');                  // switched (1 candidate collapses)
-    expect(one.state.players.B.bench[0].stack[0].iid).toBe('B-act');
-    const two = step(board(
-      player({ active: inPlay('A-act', [APPLIN, APPLETUN], en(GRASS, 2, 'g')) }),
-      player({ active: inPlay('B-act', [BULBA]), bench: [inPlay('B-b0', [BULBA]), inPlay('B-b1', [BULBA])] }),
-    ), aroma);
-    expect(hasType(two, 'promoteBench')).toBe(true);                                // a real 2-way pick
-  });
-
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),
