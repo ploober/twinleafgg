@@ -80,7 +80,9 @@ export class Dewgong extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, max: 1, blockedFrom, blockedTo }
+        // TA-409 (B.46): the `may` is the activation — once Wash Out is used the move is owed, so the
+        // inner pick has no zero-stop; a lone [W]/single destination collapses per CF-14/CF-34.
+        { allowCancel: false, min: 1, max: 1, blockedFrom, blockedTo }
       ), transfers => {
         if (!transfers || transfers.length === 0) {
           return state;

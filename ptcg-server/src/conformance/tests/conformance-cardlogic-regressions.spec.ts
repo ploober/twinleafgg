@@ -3260,6 +3260,25 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(declined.state.players.A.hand.map(c => c.iid)).not.toContain('ea');  // and the Supporter has left the hand
   });
 
+  it('Wash Out, once used, owes the move: a lone Benched [W] collapses onto the Active with no zero-stop; two [W] offer a pick without a stop (B.46 / CF-14) [TA-409 por-019]', () => {
+    // `min: 0` on the MoveEnergyPrompt surfaced `confirm:false` after activation — the "may" is the
+    // activation (B.46); rotomancer auto-moves the single candidate.
+    const one = step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['por-019'], en(WATER, 1, 'w'))] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Wash Out' }] as unknown as NeutralAction[]);
+    expect(hasType(one, 'moveEnergy')).toBe(false);
+    expect(hasType(one, 'confirm')).toBe(false);
+    expect((one.state.players.A.active!.energy ?? []).length).toBe(1);                 // moved, atomically
+    expect((one.state.players.A.bench[0].energy ?? []).length).toBe(0);
+    const two = step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['por-019'], en(WATER, 2, 'w'))] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Wash Out' }] as unknown as NeutralAction[]);
+    expect(hasType(two, 'moveEnergy')).toBe(true);                                      // a real pick (which [W])
+    expect(hasType(two, 'confirm')).toBe(false);                                        // …with no zero-stop
+  });
+
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),

@@ -6765,6 +6765,12 @@
       "signatures": [
         "if (cards && cards.length > 0) {"
       ]
+    },
+    {
+      "file": "set-perfect-order/dewgong.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1, blockedFrom, blockedTo }"
+      ]
     }
   ]
 }
