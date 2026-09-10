@@ -84,12 +84,12 @@ export class EthansAdventure extends TrainerCard {
           { min: 0, max: 3, allowCancel: false, blocked },
         ),
         (cards) => {
-          if (!cards || cards.length === 0) {
-            return state;
+          // TA-408: a declined search is still a PERFORMED search — "Then, shuffle your deck" is owed
+          // on the zero-take path too (#2303 / §B.44), as on Bug-Catching Set (TA-387).
+          if (cards && cards.length > 0) {
+            SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
+            MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
           }
-
-          SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
-          MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
           SHUFFLE_DECK(store, state, player);
         },
       );

@@ -3244,6 +3244,22 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
   });
 
+  it('Ethan\'s Adventure still shuffles when the search is DECLINED at zero picks (#2303 / §B.44) [TA-408 dri-165]', () => {
+    // `if (!cards || cards.length === 0) return state;` sat ABOVE the SHUFFLE_DECK — a decline left the deck as it was
+    // (rotomancer pends the shuffle with the Supporter still resolving). TA-387 / TA-396a family: opened = performed.
+    const b = () => board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'ea', printing: 'dri-165' }],
+               deck: [{ iid: 'f0', printing: FIRE }, { iid: 'f1', printing: FIRE }, ...fillerDeck('A', 4)] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const play = { actor: 'A', type: 'playSupporter', card: 'ea' } as unknown as NeutralAction;
+    const decline = { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction;
+    expect(hasType(step(b(), [play]), 'confirm')).toBe(true);                    // the search is OPENED (a real 0..3 pick)
+    const declined = step(b(), [play, decline]);
+    expect(hasType(declined, 'shuffle')).toBe(true);                             // …so the shuffle is owed
+    expect(declined.state.players.A.hand.map(c => c.iid)).not.toContain('ea');  // and the Supporter has left the hand
+  });
+
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),

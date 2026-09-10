@@ -6759,6 +6759,12 @@
       "signatures": [
         ".find(zone => zone.cards.includes(effect.energyCard));"
       ]
+    },
+    {
+      "file": "set-destined-rivals/ethans-adventure.ts",
+      "signatures": [
+        "if (cards && cards.length > 0) {"
+      ]
     }
   ]
 }
