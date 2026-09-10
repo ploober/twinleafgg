@@ -1540,7 +1540,8 @@
         "const effMin = Math.min(min, eligible);",
         "const effMax = Math.min(max, eligible);",
         "export function ATTACK_SEARCH_WHIFFS(player: Player): boolean {",
-        "export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {"
+        "export function IS_POKEMON_PLAY_FROM_HAND(effect: { pokemonCard: { superType: SuperType } }): boolean {",
+        "const legalTargets = opponent.bench.filter((b, index) => b.cards.length > 0 && !blockedIndexes.has(index)).length;"
       ]
     },
     {
