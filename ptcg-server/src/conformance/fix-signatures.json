@@ -5663,7 +5663,8 @@
       "file": "set-chaos-rising/mega-greninja-ex.ts",
       "signatures": [
         "            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off",
-        "// TA-401 / B.46: using the Ability IS the decision; the discard that follows carries no"
+        "// TA-401 / B.46: using the Ability IS the decision; the discard that follows carries no",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
       ],
       "note": "TA-288 / §B.38 2026-08-19: the fix MOVES `effect.damage += 80` out of the prefab's onEnergyMoved callback, so the discriminating change is a relocation, not a new statement — the comment is the only line that exists post-fix and not pre-fix."
     },
@@ -6770,6 +6771,18 @@
       "file": "set-perfect-order/dewgong.ts",
       "signatures": [
         "{ allowCancel: false, min: 1, max: 1, blockedFrom, blockedTo }"
+      ]
+    },
+    {
+      "file": "set-pitch-black/annihilape.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1, operation: 'placeCounters' },"
+      ]
+    },
+    {
+      "file": "set-pitch-black/spiritomb.ts",
+      "signatures": [
+        "{ min: 2, max: 2, allowCancel: false, operation: 'placeCounters' },"
       ]
     }
   ]

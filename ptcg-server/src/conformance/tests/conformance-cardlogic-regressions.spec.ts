@@ -3279,6 +3279,23 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(hasType(two, 'confirm')).toBe(false);                                        // …with no zero-stop
   });
 
+  it('a pick that PLACES damage counters is lowered as `placeCounter`, not `choose` (CF-32 option A) — Mortal Shuriken, Ghostly Blow [TA-407 cri-022 pbl-041]', () => {
+    // The prompts never declared `operation: 'placeCounters'`, so the adapter fell back to `choose`
+    // while rotomancer offered `placeCounter` at the same node (TA-407).
+    const shuriken = step(board(
+      player({ active: inPlay('A-act', ['cri-022']), hand: [{ iid: 'w0', printing: WATER }] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Mortal Shuriken' }] as unknown as NeutralAction[]);
+    expect(hasType(shuriken, 'placeCounter')).toBe(true);
+    expect(hasType(shuriken, 'choose')).toBe(false);
+    const ape = step(board(
+      player({ active: inPlay('A-act', ['pbl-041'], [...en('sve-005', 2, 'p')]) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS]), inPlay('B-b1', [RALTS])] }),
+    ), [attack('A-act', 'Ghostly Blow')]);
+    expect(hasType(ape, 'placeCounter')).toBe(true);
+    expect(hasType(ape, 'choose')).toBe(false);
+  });
+
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),

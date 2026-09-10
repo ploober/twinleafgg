@@ -126,7 +126,8 @@ export class MegaGreninjaex extends PokemonCard {
               GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
               PlayerType.TOP_PLAYER,
               [SlotType.ACTIVE, SlotType.BENCH],
-              { min: 1, max: 1, allowCancel: false },
+              // TA-407 / CF-32: this pick PLACES counters, so the wire verb is `placeCounter`.
+              { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
             ),
             (selected) => {
               const targets = selected || [];

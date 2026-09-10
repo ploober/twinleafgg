@@ -54,7 +54,8 @@ export class Spiritomb extends PokemonCard {
           GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
           PlayerType.TOP_PLAYER,
           [SlotType.ACTIVE, SlotType.BENCH],
-          { min: 2, max: 2, allowCancel: false },
+          // TA-407 / CF-32: this pick PLACES counters, so the wire verb is `placeCounter`.
+          { min: 2, max: 2, allowCancel: false, operation: 'placeCounters' },
         ),
         (selected) => {
           const targets = selected || [];
