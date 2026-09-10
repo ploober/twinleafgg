@@ -70,6 +70,15 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
    */
   atomicResolvable: prompt => prompt.options.max === 1,
 
+  // TA-400 / CF-14 (2026-09-09): the STEP-level gate for a FORCED attach whose current step has exactly
+  // one legal (card, target) pair — Golden Flame asc-026 with one Basic [R] in hand, Overvolt Discharge
+  // ssp-059 with one Basic Energy in the discard and one [L] Pokemon. `max > 1` kept `atomicResolvable`
+  // off, so the sole pick surfaced as a 1-option pending while rotomancer attached it. The driver only
+  // consults this when the step offers no stop and one candidate; applying that candidate carries no
+  // decision, and `next` then decides whether anything further is offered (nothing left -> done).
+  // Keyed on forcedness (`allowCancel === false`), never on count alone (TA-190's lesson).
+  atomicStep: prompt => prompt.options.allowCancel === false,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

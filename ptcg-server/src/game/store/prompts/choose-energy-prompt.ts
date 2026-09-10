@@ -49,7 +49,8 @@ export class ChooseEnergyPrompt extends Prompt<EnergyMap[]> {
     if (result === null) {
       return this.options.allowCancel;
     }
-    if (!StateUtils.checkExactEnergy(result, this.cost)) {
+    // TA-398: a legal payment, not an exact one (#2127) — see StateUtils.checkLegalEnergyPayment.
+    if (!StateUtils.checkLegalEnergyPayment(result, this.cost)) {
       return false;
     }
     return true;

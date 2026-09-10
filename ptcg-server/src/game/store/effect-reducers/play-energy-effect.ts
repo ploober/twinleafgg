@@ -59,8 +59,19 @@ export function playEnergyReducer(store: StoreLike, state: State, effect: Effect
       card: effect.energyCard.name,
       pokemon: pokemonCard.name
     });
-    // Move card to main PokemonCardList first (so it's in the cards array)
-    effect.player.hand.moveCardTo(effect.energyCard, effect.target);
+    // Move card to main PokemonCardList first (so it's in the cards array).
+    // TA-406: the Energy is not always in the HAND — search-and-attach attacks (Fire Kagura dri-044)
+    // and Abilities attach straight from the deck or the discard, and `hand.moveCardTo` was a silent
+    // no-op for those, leaving the card in its source zone AND in `energies` (a duplicated card; the
+    // shuffle that followed still listed it). Move it from the zone that actually holds it; a card
+    // already lifted into a temporary list by its prefab is simply added to the target.
+    const sourceZone = [effect.player.hand, effect.player.deck, effect.player.discard, effect.player.lostzone]
+      .find(zone => zone.cards.includes(effect.energyCard));
+    if (sourceZone !== undefined) {
+      sourceZone.moveCardTo(effect.energyCard, effect.target);
+    } else if (!effect.target.cards.includes(effect.energyCard)) {
+      effect.target.cards.push(effect.energyCard);
+    }
     // Then also add it to the energies CardList
     if (!effect.target.energies.cards.includes(effect.energyCard)) {
       effect.target.energies.cards.push(effect.energyCard);

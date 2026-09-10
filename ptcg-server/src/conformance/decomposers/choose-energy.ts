@@ -46,9 +46,22 @@ function isMovePick(prompt: ChooseEnergyPrompt): boolean {
  * `allowCancel === false`, so comparing against the full offered set is the right test.
  */
 function forcedFullPick(prompt: ChooseEnergyPrompt): boolean {
-  return prompt.options.allowCancel === false
-    && prompt.energy.length > 0
-    && StateUtils.checkExactEnergy(prompt.energy, prompt.cost);
+  if (prompt.options.allowCancel !== false || prompt.energy.length === 0
+    || !StateUtils.checkLegalEnergyPayment(prompt.energy, prompt.cost)) {
+    return false;
+  }
+  // TA-398: legality is no longer "exact", so a legal full set does not by itself rule out a legal
+  // proper subset ({W, [G][G]} for a [C][C] cost is legal, and so is {[G][G]} alone). The full set is
+  // forced only when NO proper subset pays; it suffices to test the (n-1)-subsets: sufficiency is
+  // monotone, and a legal set holding more cards than the cost has units is minimal by definition,
+  // so any legal proper subset is contained in some legal (n-1)-subset.
+  for (let i = 0; i < prompt.energy.length; i++) {
+    const rest = prompt.energy.filter((_, j) => j !== i);
+    if (StateUtils.checkLegalEnergyPayment(rest, prompt.cost)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -88,7 +101,7 @@ function offerableIndices(prompt: ChooseEnergyPrompt, picked: number[]): Set<num
       if (mask & (1 << b)) { chosen.push(rest[b]); }
     }
     if (chosen.every(i => ok.has(i))) { continue; }
-    if (StateUtils.checkExactEnergy([...base, ...chosen.map(i => prompt.energy[i])], prompt.cost)) {
+    if (StateUtils.checkLegalEnergyPayment([...base, ...chosen.map(i => prompt.energy[i])], prompt.cost)) {
       for (const i of chosen) { ok.add(i); }
     }
   }
@@ -110,8 +123,10 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
   next(prompt, picks, ctx, state) {
     const picked = realPicks(picks).map(p => (p as { index: number }).index);
     const selected = picked.map(i => prompt.energy[i]);
-    // Complete as soon as the chosen energies pay the cost exactly (validate would otherwise reject).
-    if (StateUtils.checkExactEnergy(selected, prompt.cost)) {
+    // Complete as soon as the chosen energies LEGALLY pay the cost (TA-398 / #2127: sufficient, and
+    // either no more cards than the cost has units or every card necessary) — the same predicate
+    // `validate` applies, so a further card is never required once this holds.
+    if (StateUtils.checkLegalEnergyPayment(selected, prompt.cost)) {
       return null;
     }
 

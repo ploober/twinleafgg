@@ -98,13 +98,8 @@ export function playerTurnReducer(store: StoreLike, state: State, action: Action
       state = store.reduceEffect(state, useAttackEffect);
 
       state.lastAttack = attack;
-
-      if (!state.playerLastAttack) {
-        state.playerLastAttack = {};
-      }
-      if (pokemonCard) {
-        state.playerLastAttack[player.id] = { attack, sourceCard: pokemonCard, turn: state.turn };
-      }
+      // TA-399: `playerLastAttack` is written inside useAttack (game-effect.ts) once the attack has
+      // passed its Confusion / Smokescreen checks — a failed attempt is not a player's last attack.
 
       return state;
     }

@@ -77,7 +77,9 @@ export class Eelektrik extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Lightning Energy' },
-        { allowCancel: true, min: 1, max: 1 }
+        // TA-401 / B.46: activating Dynamotor is the decision; the attach carries no decline. With
+        // `allowCancel: true` one [L] in the discard and one Benched target surfaced as a pending.
+        { allowCancel: false, min: 1, max: 1 }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user

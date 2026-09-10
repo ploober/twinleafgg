@@ -5,8 +5,18 @@ export class ShuffleDeckPrompt extends Prompt<number[]> {
 
   readonly type: string = 'Shuffle deck';
 
-  constructor(playerId: number) {
+  /**
+   * TA-396(c): when set, only the BOTTOM `bottomCount` cards of the deck are being shuffled ("Shuffle
+   * the other cards and put them on the bottom of your deck" — Metal Maker tef-114); the rest of the
+   * deck keeps its order. A client may answer with a permutation of the whole deck (the arbiters do)
+   * or of just the segment; `SHUFFLE_BOTTOM_OF_DECK` applies either to the segment only. Undefined =
+   * the whole deck, exactly as before.
+   */
+  public bottomCount?: number;
+
+  constructor(playerId: number, options: { bottomCount?: number } = {}) {
     super(playerId);
+    this.bottomCount = options.bottomCount;
   }
 
   public validate(result: number[] | null, state: State): boolean {
@@ -17,7 +27,8 @@ export class ShuffleDeckPrompt extends Prompt<number[]> {
     if (player === undefined) {
       return false;
     }
-    if (result.length !== player.deck.cards.length) {
+    const segmentAnswer = this.bottomCount !== undefined && result.length === this.bottomCount;
+    if (result.length !== player.deck.cards.length && !segmentAnswer) {
       return false;
     }
     const s = result.slice();

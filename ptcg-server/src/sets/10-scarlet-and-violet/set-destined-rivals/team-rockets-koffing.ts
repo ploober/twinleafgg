@@ -54,11 +54,19 @@ export class TeamRocketsKoffing extends PokemonCard {
 
       const openSlots = player.bench.filter((b) => b.cards.length === 0);
 
-      if (player.deck.cards.length === 0 || openSlots.length === 0) {
+      // #2171's own carve-out: no Bench space -> no search at all (and so no shuffle).
+      if (openSlots.length === 0) {
         return state;
       }
 
       store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: this.name });
+
+      // TA-396(d): with Bench space the search is MANDATORY even over an empty deck (#2171: "you must
+      // search your deck and shuffle it afterwards"), and the shuffle it owes is still owed — the old
+      // early return skipped both. A 0-card shuffle is atomic on the wire (CF-11), so nothing pends.
+      if (player.deck.cards.length === 0) {
+        return SHUFFLE_DECK(store, state, player);
+      }
 
       // 🚨 NO CONFIRMATION PROMPT. Smog Signals is MANDATORY -- compendium #2171, on this exact
       // Ability: "The use of the Ability is not optional, so if you have bench space available you

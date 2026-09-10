@@ -52,6 +52,11 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     }
 
     player.deck.moveCardsTo(cards, player.hand);
+  } else {
+    // TA-397(b): on tails no search is performed, and "Shuffle your deck afterward" rides on the
+    // search having happened (§B.44, #2322/#2303) — no shuffle is owed. This base class serves
+    // por-080 (Perfect Order) and every other Poké Ball reprint.
+    return state;
   }
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order: any[]) => {

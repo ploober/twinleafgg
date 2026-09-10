@@ -462,7 +462,12 @@ function systemPending(game: ImportedGame, prompt: Prompt<any>): PendingDecision
   const legalActions: LegalAction[] = [];
   if (prompt.type === 'Shuffle deck') {
     const player = game.state.players.find(p => p.id === prompt.playerId);
-    const deck = (player ? player.deck.cards : [])
+    const cards = player ? player.deck.cards : [];
+    // TA-396(c): a bottom-segment shuffle advertises only the segment (rotomancer's shape for
+    // "shuffle the other cards and put them on the bottom": `deck` = the looked-at remainder).
+    const bottomCount = (prompt as { bottomCount?: number }).bottomCount;
+    const segment = bottomCount !== undefined ? cards.slice(Math.max(0, cards.length - bottomCount)) : cards;
+    const deck = segment
       .map(c => game.ctx.cardToIid.get(c))
       .filter((iid): iid is string => iid !== undefined);
     legalActions.push({ type: 'shuffle', deck });
@@ -507,6 +512,18 @@ function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, acti
   const orderIids: string[] | undefined = action.order;
   if (orderIids === undefined) {
     return []; // an empty permutation fails `prompt.validate` -> invalidAction at the call site
+  }
+  // TA-396(c): a bottom-segment shuffle's answer names only the segment; compose it with the identity
+  // on the untouched top so the engine receives one whole-deck permutation (its validate accepts both).
+  const bottomCount = (prompt as { bottomCount?: number }).bottomCount;
+  if (bottomCount !== undefined && orderIids.length === bottomCount && bottomCount < deck.length) {
+    const start = deck.length - bottomCount;
+    const identity = Array.from({ length: start }, (_, i) => i);
+    return [...identity, ...orderIids.map(iid => {
+      const card = game.ctx.iidToCard.get(iid);
+      const index = card ? deck.indexOf(card) : -1;
+      return index < start ? -1 : index;   // a non-segment iid is a malformed payload -> validate rejects
+    })];
   }
   return orderIids.map(iid => {
     const card = game.ctx.iidToCard.get(iid);
@@ -880,6 +897,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       );
       if (collapses) {
         accum.push(dec.toPick(prompt, { actor: sub.actor, ...forced[0] } as NeutralAction, game.ctx, game.state, accum));
+        continue;
+      }
+      // CF-14 addendum (2026-09-09): N-of-exactly-N — every remaining candidate is forced, so the whole
+      // set is applied at once (TA-286 Metallic Hammer's 3-of-3 discard; TA-401). Same `!canStopNow`
+      // guard; the decomposer decides from its own min/max whether the remaining picks equal the pool.
+      if (forced.length > 1 && !canStopNow && dec.collapseWholeSet?.(prompt, accum, game.state, forced.length) === true) {
+        for (const f of forced) {
+          accum.push(dec.toPick(prompt, { actor: sub.actor, ...f } as NeutralAction, game.ctx, game.state, accum));
+        }
         continue;
       }
       const nextAction = cursor.i < actions.length ? actions[cursor.i] : undefined;

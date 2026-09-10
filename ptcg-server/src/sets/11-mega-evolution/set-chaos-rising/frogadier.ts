@@ -24,7 +24,11 @@ function* useCallingJutsu(
     player.deck.cards.filter((c) => c.superType === SuperType.POKEMON).length,
   );
   if (max === 0) {
-    return state;
+    // TA-396(a): "Then, shuffle your deck" is owed even when the deck holds no Pokemon to find —
+    // compendium #2303: "Even though you are going to fail the search, you still have to shuffle".
+    return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+      player.deck.applyOrder(order);
+    });
   }
   let cards: Card[] = [];
   yield store.prompt(

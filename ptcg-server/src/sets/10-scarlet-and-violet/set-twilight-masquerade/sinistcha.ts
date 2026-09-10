@@ -63,23 +63,15 @@ export class Sinistcha extends PokemonCard {
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
         { min: 0, max: Math.min(totalGrassEnergy, 3), allowCancel: false }
       ), transfers => {
-
-        if (transfers === null) {
-          return;
-        }
-
-        for (const transfer of transfers) {
-          let totalDiscarded = 0;
-
+        // TA-392: "70 damage for each card you discarded in this way" — the multiplier was assigned
+        // INSIDE the transfer loop, so with zero cards chosen the printed base 70 was never zeroed and
+        // the attack dealt 70 for nothing (rotomancer: 0). Count first, then move.
+        const discarded = transfers || [];
+        for (const transfer of discarded) {
           const source = StateUtils.getTarget(state, player, transfer.from);
-          const target = player.discard;
-          source.moveCardTo(transfer.card, target);
-
-          totalDiscarded = transfers.length;
-
-          effect.damage = totalDiscarded * 70;
-
+          source.moveCardTo(transfer.card, player.discard);
         }
+        effect.damage = discarded.length * 70;
         return state;
       });
     }

@@ -1,4 +1,4 @@
-import { CardTarget, ChoosePokemonPrompt, GameError, GameMessage, PlayerType, SlotType, State, StoreLike } from '../../../game';
+import { CardTarget, ChoosePokemonPrompt, GameError, GameMessage, PlayerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CheckHpEffect } from '../../../game/store/effects/check-effects';
@@ -88,7 +88,10 @@ export class Inteleon extends PokemonCard {
         [SlotType.ACTIVE, SlotType.BENCH],
         { min: 1, max: 1, blocked: blockedTo }
       ), target => {
-        const damageEffect = new KnockOutEffect(player, target[0]);
+        // TA-391: `KnockOutEffect(player, …)` named the ATTACKER as the Knocked-Out Pokemon's owner, so
+        // choosing an OPPONENT's Pokemon sent its cards to the attacker's discard and handed the PRIZE
+        // to the opponent (the KO'd side). The owner is whoever owns the chosen slot.
+        const damageEffect = new KnockOutEffect(StateUtils.findOwner(state, target[0]), target[0]);
         store.reduceEffect(state, damageEffect);
       });
     }

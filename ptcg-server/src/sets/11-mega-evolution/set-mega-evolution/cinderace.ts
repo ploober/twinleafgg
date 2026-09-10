@@ -82,19 +82,17 @@ export class Cinderace extends PokemonCard {
         ),
         (transfers) => {
           transfers = transfers || [];
-          // cancelled by user
-          if (transfers.length === 0) {
-            SHUFFLE_DECK(store, state, player);
-            return state;
-          }
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);
             player.deck.moveCardTo(transfer.card, target);
           }
+          // TA-395: ONE shuffle, raised AFTER the attach has moved the cards. The zero-take branch
+          // used to shuffle here AND a second SHUFFLE_DECK ran unconditionally after the prompt, so a
+          // decline shuffled twice; the outer call also computed its choice-space before the attach.
+          SHUFFLE_DECK(store, state, player);
+          return state;
         },
       );
-
-      SHUFFLE_DECK(store, state, player);
     }
 
     return state;

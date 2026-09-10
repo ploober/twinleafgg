@@ -20,6 +20,18 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
   // excludes a genuine "discard up to N" (which carries an END_CHOICE stop) and a >=2-candidate choice.
   atomicResolvable: () => true,
 
+  // CF-14 addendum 2026-09-09 (TA-286 direct route / TA-401): a FORCED discard whose remaining pool is
+  // no larger than the picks it still requires ("discard 3 Energy" with exactly 3 attached) has no
+  // decision in any pick — rotomancer resolves the set atomically; we surfaced pick 1 and pick 2 and
+  // collapsed only the last. `forcedCount` is the driver's count of non-stop candidates at this step.
+  collapseWholeSet: (prompt, picks, _state, forcedCount) => {
+    if (prompt.options.allowCancel !== false) {
+      return false;
+    }
+    const remaining = prompt.options.min - realPicks(picks).length;
+    return remaining > 1 && forcedCount <= remaining;
+  },
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

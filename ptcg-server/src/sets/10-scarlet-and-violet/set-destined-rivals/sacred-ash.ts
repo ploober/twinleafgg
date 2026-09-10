@@ -40,7 +40,9 @@ function* playCard(next: Function, store: StoreLike, state: State,
     GameMessage.CHOOSE_CARD_TO_DECK,
     player.discard,
     { superType: SuperType.POKEMON },
-    { min: 1, max, allowCancel: true, blocked }
+    // TA-401 / #2301: a played Trainer's "up to 5" is 1..5 with no decline (playing the card was the
+    // decision); with `allowCancel: true` a lone Pokemon in the discard surfaced as a 1-option pending.
+    { min: 1, max, allowCancel: false, blocked }
   ), selected => {
     cards = selected || [];
     next();

@@ -5,6 +5,19 @@ import { CardList } from '../../game/store/state/card-list';
 import { LegalAction, NeutralState } from '../neutral-types';
 import { PromptDecomposer, WirePick, realPicks, buildPending } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
+import { GameMessage } from '../../game/game-message';
+
+/**
+ * TA-403 / CF-32: the wire verb names the OPERATION. `takePrize` is the KO/effect prize TAKE (the
+ * prompt's message says so: CHOOSE_PRIZE_CARD, or …_TO_DISCARD for a prize sent to the discard). Any
+ * other ChoosePrizePrompt — Crescent Purge's "turn 1 of your face-down Prize cards face up"
+ * (sfa-021, message CHOOSE_POKEMON) — takes nothing, and is lowered as `choose {target: prize iid}`.
+ * Whether that face-down pick should surface at all is CF-66's open question; the verb is ours.
+ */
+function isTakePick(prompt: ChoosePrizePrompt): boolean {
+  return prompt.message === GameMessage.CHOOSE_PRIZE_CARD
+    || prompt.message === GameMessage.CHOOSE_PRIZE_CARD_TO_DISCARD;
+}
 
 /**
  * ChoosePrizePrompt ('Choose prize'): take `options.count` prize piles after a knockout (or an effect
@@ -75,7 +88,11 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
       if (iid === undefined) {
         continue; // pile has no projectable card → not an offerable index
       }
-      legalActions.push({ type: 'takePrize', index: w });
+      if (isTakePick(prompt)) {
+        legalActions.push({ type: 'takePrize', index: w });
+      } else {
+        legalActions.push({ type: 'choose', target: iid });   // TA-403
+      }
     }
     if (legalActions.length === 0) {
       return null;
@@ -83,12 +100,25 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
     return buildPending(prompt, state, legalActions);
   },
 
-  toPick(prompt, action, _ctx, state, picks) {
+  toPick(prompt, action, ctx, state, picks) {
+    const remaining = remainingNativeIndexes(prompt, state, picks ?? []);
+    if (!isTakePick(prompt)) {
+      // TA-403: a non-take prize pick is `choose {target}` — resolve the iid to its pile.
+      if (action.type !== 'choose') {
+        throw new Error(`[conformance] ChoosePrize (non-take) expected 'choose', got '${action.type}'`);
+      }
+      const card = ctx.iidToCard.get((action as { target: string }).target);
+      const prizes = nonEmptyPrizes(prompt, state);
+      const native = remaining.find(i => card !== undefined && prizes[i].cards[0] === card);
+      if (native === undefined || new Set(prompt.options.blocked).has(native)) {
+        throw new Error(`[conformance] choose target '${(action as { target: string }).target}' is not a choosable prize pile`);
+      }
+      return { kind: 'prize', index: native };
+    }
     if (action.type !== 'takePrize') {
       throw new Error(`[conformance] ChoosePrize expected 'takePrize', got '${action.type}'`);
     }
     const wire = (action as { index: number }).index;
-    const remaining = remainingNativeIndexes(prompt, state, picks ?? []);
     if (!Number.isInteger(wire) || wire < 0 || wire >= remaining.length) {
       throw new Error(`[conformance] takePrize index ${wire} is not a takeable prize pile`);
     }

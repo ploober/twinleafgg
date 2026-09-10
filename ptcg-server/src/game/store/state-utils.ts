@@ -132,6 +132,26 @@ export class StateUtils {
   }
 
   /**
+   * TA-398 / compendium #2127, #652, #833: a cost (a Retreat Cost, or an Energy cost a card asks to be
+   * paid from attached Energy) is legally paid by a set of Energy that (a) provides the cost and
+   * (b) either holds no more CARDS than the cost has units — "you can discard a number of Energy cards
+   * equal to the total Retreat Cost" — or is minimal, every card necessary — "or you can discard until
+   * you've fulfilled the Energy requirement". Over-PROVIDING is legal (one Double Turbo for a [C]
+   * retreat; a [G][G] Wild Growth Energy completing a lone remaining [C]); over-COUNTING is not.
+   * `checkExactEnergy` accepted only minimal sets, so a multi-provider Energy that would complete a
+   * remaining cost with surplus was withheld from the pick (Meganium meg-010 under Wild Growth).
+   */
+  public static checkLegalEnergyPayment(energy: EnergyMap[], cost: CardType[]): boolean {
+    if (!StateUtils.checkEnoughEnergy(energy, cost)) {
+      return false;
+    }
+    if (energy.length <= cost.length) {
+      return true;
+    }
+    return StateUtils.checkExactEnergy(energy, cost);
+  }
+
+  /**
    * Returns true when every energy entry has the same provides array.
    * Used to skip the energy selection prompt when all options are interchangeable.
    */

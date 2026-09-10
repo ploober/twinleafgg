@@ -65,6 +65,44 @@ function promptBenchAndRetreat(store: StoreLike, state: State, player: Player): 
   });
 }
 
+/**
+ * TA-394: every legality check the `RetreatEffect` branch below performs BEFORE it moves anything,
+ * exported so an Ability that intercepts the retreat (Goodra "Slimy Sliding") can refuse an illegal or
+ * unpayable retreat exactly as the reducer would, instead of accepting an action the menu never offered
+ * and pending a coin flip on it. Pure queries only — safe to run before the reducer runs them again.
+ */
+export function assertRetreatLegal(store: StoreLike, state: State, effect: RetreatEffect): void {
+  const player = effect.player;
+
+  assertCanRetreat(player, state);
+
+  const target = player.bench[effect.benchIndex];
+  if (target === undefined || target.cards.length === 0) {
+    throw new GameError(GameMessage.INVALID_TARGET);
+  }
+
+  const sp = player.active.specialConditions;
+  if ((sp.includes(SpecialCondition.PARALYZED) || sp.includes(SpecialCondition.ASLEEP)) && !effect.ignoreStatusConditions) {
+    throw new GameError(GameMessage.BLOCKED_BY_SPECIAL_CONDITION);
+  }
+
+  if (player.retreatedTurn === state.turn) {
+    throw new GameError(GameMessage.RETREAT_ALREADY_USED);
+  }
+
+  const checkRetreatCost = new CheckRetreatCostEffect(player);
+  store.reduceEffect(state, checkRetreatCost);
+  if (checkRetreatCost.cost.length === 0) {
+    return;
+  }
+
+  const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+  store.reduceEffect(state, checkProvidedEnergy);
+  if (StateUtils.checkEnoughEnergy(checkProvidedEnergy.energyMap, checkRetreatCost.cost) === false) {
+    throw new GameError(GameMessage.NOT_ENOUGH_ENERGY);
+  }
+}
+
 export function retreatReducer(store: StoreLike, state: State, effect: Effect): State {
 
   /* Retreat start: validate + pay cost, then prompt for bench */
@@ -125,20 +163,8 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
   if (effect instanceof RetreatEffect) {
     const player = effect.player;
 
-    assertCanRetreat(player, state);
-
-    if (player.bench[effect.benchIndex].cards.length === 0) {
-      throw new GameError(GameMessage.INVALID_TARGET);
-    }
-
-    const sp = player.active.specialConditions;
-    if ((sp.includes(SpecialCondition.PARALYZED) || sp.includes(SpecialCondition.ASLEEP)) && !effect.ignoreStatusConditions) {
-      throw new GameError(GameMessage.BLOCKED_BY_SPECIAL_CONDITION);
-    }
-
-    if (player.retreatedTurn === state.turn) {
-      throw new GameError(GameMessage.RETREAT_ALREADY_USED);
-    }
+    // TA-394: the legality checks live in `assertRetreatLegal` (shared with intercepting Abilities).
+    assertRetreatLegal(store, state, effect);
 
     const checkRetreatCost = new CheckRetreatCostEffect(effect.player);
     state = store.reduceEffect(state, checkRetreatCost);
@@ -151,11 +177,6 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
 
     const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
     state = store.reduceEffect(state, checkProvidedEnergy);
-
-    const enoughEnergies = StateUtils.checkEnoughEnergy(checkProvidedEnergy.energyMap, checkRetreatCost.cost);
-    if (enoughEnergies === false) {
-      throw new GameError(GameMessage.NOT_ENOUGH_ENERGY);
-    }
 
     // Paying the retreat cost is always the player's choice (official clients prompt even when the
     // selection is forced) — no auto-pay shortcut, same principle as the prize-take fix.

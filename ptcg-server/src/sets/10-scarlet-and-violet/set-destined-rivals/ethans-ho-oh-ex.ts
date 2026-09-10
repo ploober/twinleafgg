@@ -117,6 +117,9 @@ export class EthansHoOhex extends PokemonCard {
         return state;
       }
 
+      const fireInHand = player.hand.cards.filter(c =>
+        c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Fire Energy').length;
+
       const blocked2: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
         if (!card.hasTag(CardTag.ETHANS)) {
@@ -133,7 +136,9 @@ export class EthansHoOhex extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-          { allowCancel: false, sameTarget: true, min: 0, max: 2, blockedTo: blocked2 },
+          // TA-400: #2301 — an Ability's "up to 2" is 1..2 while a Fire Energy is in hand (the floor
+          // clamps to the capacity; the hasEthansBenched guard above already provides the target).
+          { allowCancel: false, sameTarget: true, min: Math.min(1, fireInHand), max: 2, blockedTo: blocked2 },
         ),
         (transfers) => {
           transfers = transfers || [];

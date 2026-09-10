@@ -40,102 +40,53 @@ export class TeamRocketsGreatBall extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      const blocked: number[] = [];
+      // heads: an EVOLUTION Team Rocket Pokemon; tails: a BASIC Team Rocket Pokemon.
+      const blockedOnHeads: number[] = [];
+      const blockedOnTails: number[] = [];
       player.deck.cards.forEach((card, index) => {
-        if (
-          card instanceof PokemonCard &&
-          (card.stage === Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET))
-        ) {
-          blocked.push(index);
-        }
-      });
-
-      const blocked2: number[] = [];
-      player.deck.cards.forEach((card, index) => {
-        if (
-          card instanceof PokemonCard &&
-          (card.stage !== Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET))
-        ) {
-          blocked2.push(index);
+        if (card instanceof PokemonCard) {
+          if (card.stage === Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET)) {
+            blockedOnHeads.push(index);
+          }
+          if (card.stage !== Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET)) {
+            blockedOnTails.push(index);
+          }
         }
       });
 
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
+      // TA-396(b): the TAILS branch was missing entirely — the flip callback handled heads and fell
+      // through to `return state` on tails, so no Basic search happened and the owed "Then, shuffle
+      // your deck" never ran. Both faces search (with their own filter) and both shuffle, on a whiff
+      // too (#2303).
+      const search = (blocked: number[]): State => store.prompt(state, new ChooseCardsPrompt(
+        player,
+        GameMessage.CHOOSE_CARD_TO_HAND,
+        player.deck,
+        { superType: SuperType.POKEMON },
+        { min: 0, max: 1, allowCancel: false, blocked }
+      ), selectedCards => {
+        const cards: Card[] = selectedCards || [];
+        if (cards.length > 0) {
+          cards.forEach(card => {
+            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
+          });
+          state = store.prompt(state, new ShowCardsPrompt(
+            opponent.id,
+            GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+            cards), () => state);
+          MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
+        }
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+          player.deck.applyOrder(order);
+        });
+      });
+
       return COIN_FLIP_PROMPT(store, state, player, flipResult => {
-        if (flipResult) {
-          let cards: Card[] = [];
-          return store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_HAND,
-            player.deck,
-            { superType: SuperType.POKEMON },
-            { min: 0, max: 1, allowCancel: false, blocked }
-          ), selectedCards => {
-            cards = selectedCards || [];
-
-                // Operation canceled by the user
-                if (cards.length === 0) {
-                  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-                    player.deck.applyOrder(order);
-                  });
-                }
-
-                cards.forEach((card, index) => {
-                  store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, {
-                    name: player.name,
-                    card: card.name,
-                  });
-                });
-
-            if (cards.length > 0) {
-              state = store.prompt(state, new ShowCardsPrompt(
-                opponent.id,
-                GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-                cards), () => state);
-            }
-
-                // Operation canceled by the user
-                if (cards.length === 0) {
-                  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-                    player.deck.applyOrder(order);
-                  });
-                }
-
-                cards.forEach((card, index) => {
-                  store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, {
-                    name: player.name,
-                    card: card.name,
-                  });
-                });
-
-                if (cards.length > 0) {
-                  state = store.prompt(
-                    state,
-                    new ShowCardsPrompt(
-                      opponent.id,
-                      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-                      cards,
-                    ),
-                    () => state,
-                  );
-                }
-                cards.forEach((card) => {
-                  MOVE_CARDS(store, state, player.deck, player.hand, {
-                    cards: [card],
-                    sourceCard: this,
-                  });
-                });
-                return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-                  player.deck.applyOrder(order);
-                });
-              },
-            );
-          }
-          return state;
-        },
-      );
+        search(flipResult ? blockedOnHeads : blockedOnTails);
+      });
     }
     return state;
   }

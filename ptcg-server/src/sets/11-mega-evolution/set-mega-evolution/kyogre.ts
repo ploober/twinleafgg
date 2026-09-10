@@ -4,7 +4,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { SuperType } from '../../../game/store/card/card-types';
-import { MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
@@ -49,6 +49,11 @@ export class Kyogre extends PokemonCard {
       if (energiesInDiscard.length === 0) {
         return state;
       }
+
+      // TA-402 (TA-258 family, rulebook Step F / #649): the 20x lands BEFORE the "Then, shuffle
+      // those cards into your deck" rider pends — at the shuffle pause the defender already reads
+      // the damage on rotomancer; twinleaf deferred it past the shuffle.
+      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
 
       // slapping those energies back into the deck
       MOVE_CARDS(store, state, player.discard, player.deck, { cards: energiesInDiscard, sourceCard: this, sourceEffect: this.attacks[0] });

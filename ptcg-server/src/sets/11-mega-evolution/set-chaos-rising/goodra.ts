@@ -2,8 +2,8 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { RetreatEffect } from '../../../game/store/effects/game-effects';
+import { assertRetreatLegal } from '../../../game/store/effect-reducers/retreat-effect';
 import { PokemonCard, PlayerType, StateUtils, StoreLike, State } from '../../../game';
-import { GameError, GameMessage } from '../../../game';
 import {
   ADD_MARKER,
   COIN_FLIP_PROMPT,
@@ -57,10 +57,18 @@ export class Goodra extends PokemonCard {
         if (card === this) isGoodraInPlay = true;
       });
       if (isGoodraInPlay) {
+        // TA-394 (b): this intercept runs BEFORE the retreat reducer's legality checks, so a retreat the
+        // menu never offered (no Energy for the cost, already retreated this turn, Asleep/Paralyzed…) was
+        // accepted and pended a coin flip. Refuse it exactly as the reducer would, first.
+        assertRetreatLegal(store, state, effect);
         effect.preventDefault = true;
         return COIN_FLIP_PROMPT(store, state, player, (result) => {
           if (!result) {
-            throw new GameError(GameMessage.BLOCKED_BY_ABILITY);
+            // TA-394 (a): tails is a legal outcome, not an error — "Energy for its Retreat Cost is not
+            // discarded, and they don't switch Pokemon". It still uses up the turn's retreat even though
+            // nothing moved and nothing was paid (compendium #2348, Chaos Rising FAQ 2026-05-21).
+            player.retreatedTurn = state.turn;
+            return;
           }
           ADD_MARKER(GOODRA_SLIMY_SLIP_ALLOWED, player, this);
           effect.preventDefault = false;

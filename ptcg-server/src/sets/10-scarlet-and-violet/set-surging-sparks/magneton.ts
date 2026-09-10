@@ -65,11 +65,21 @@ export class Magneton extends PokemonCard {
       // Munkidori and Magneton should resolve the same way.
 
       const blocked2: CardTarget[] = [];
+      let lightningTargets = 0;
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
         if (!pokemonHasCardType(card, CardType.LIGHTNING)) {
           blocked2.push(target);
+        } else {
+          lightningTargets += 1;
         }
       });
+
+      // TA-400: #2301 makes a non-attack "up to 3" 1..3 — a STOP at zero picks is not offered while
+      // there is something to attach. The floor clamps to the capacity (the note above: an empty
+      // discard has no choice for it to bite on), so `min` is 1 exactly when a pick exists.
+      const basicInDiscard = player.discard.cards.filter(c =>
+        c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC).length;
+      const capacity = lightningTargets > 0 ? Math.min(3, basicInDiscard) : 0;
 
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
@@ -78,7 +88,7 @@ export class Magneton extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 0, max: 3, blockedTo: blocked2 },
+        { allowCancel: false, min: Math.min(1, capacity), max: 3, blockedTo: blocked2 },
       ), transfers => {
         transfers = transfers || [];
         // TA-214: the self-KO used to sit BELOW an `if (transfers.length === 0) { return state; }`

@@ -186,7 +186,8 @@
       "signatures": [
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, damageEffect);",
-        "and wrongly deals 20 instead of 0. [TA-22]"
+        "and wrongly deals 20 instead of 0. [TA-22]",
+        "// TA-402 (TA-258 family, rulebook Step F / #649): the 20x lands BEFORE the \"Then, shuffle"
       ]
     },
     {
@@ -751,7 +752,9 @@
       "signatures": [
         "const shuffle = (s: State): State =>",
         "{ min: 0, max: 1, allowCancel: false }",
-        "TA-145 / CF-32 may-gate: there is ONE decision here, not two"
+        "TA-145 / CF-32 may-gate: there is ONE decision here, not two",
+        "const count = Math.min(2, available);",
+        "{ min: count, max: count, allowCancel: false }"
       ]
     },
     {
@@ -759,7 +762,8 @@
       "signatures": [
         "const hasBench = player.bench.some(b => b.cards.length > 0);",
         "return SHUFFLE_DECK(store, state, player);",
-        "      // ORDER IS LOAD-BEARING: the DESTINATION test runs first."
+        "      // ORDER IS LOAD-BEARING: the DESTINATION test runs first.",
+        "// TA-395: ONE shuffle, raised AFTER the attach has moved the cards."
       ]
     },
     {
@@ -1559,7 +1563,8 @@
       "file": "game/store/effect-reducers/game-effect.ts",
       "signatures": [
         "const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);",
-        "const attackerPromotion = attackerWasKnockedOut ? null : choosePromotionPrompt(player);"
+        "const attackerPromotion = attackerWasKnockedOut ? null : choosePromotionPrompt(player);",
+        "state.playerLastAttack[player.id] = { attack, sourceCard: lastAttackSource, turn: state.turn };"
       ]
     },
     {
@@ -1603,7 +1608,7 @@
     {
       "file": "game/store/reducers/player-turn-reducer.ts",
       "signatures": [
-        "state.playerLastAttack[player.id] = { attack, sourceCard: pokemonCard, turn: state.turn };"
+        "// TA-399: `playerLastAttack` is written inside useAttack (game-effect.ts) once the attack has"
       ]
     },
     {
@@ -3392,7 +3397,9 @@
     {
       "file": "set-destined-rivals/stevens-skarmory.ts",
       "signatures": [
-        "// Printed damage is empty: all damage is dealt by the effect (50 to each of 2 chosen Pokémon // via DAMAGE_OPPONENT_POKEMON below). A non-zero field here would add a phantom 50 to the // Active on top of the effect's damage. Keep it 0."
+        "// Printed damage is empty: all damage is dealt by the effect (50 to each of 2 chosen Pokémon // via DAMAGE_OPPONENT_POKEMON below). A non-zero field here would add a phantom 50 to the // Active on top of the effect's damage. Keep it 0.",
+        "const count = Math.min(2, available);",
+        "{ min: count, max: count, allowCancel: false }"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base"
     },
@@ -4778,7 +4785,8 @@
     {
       "file": "game/store/effect-reducers/retreat-effect.ts",
       "signatures": [
-        "Paying the retreat cost is always the player's choice"
+        "Paying the retreat cost is always the player's choice",
+        "export function assertRetreatLegal(store: StoreLike, state: State, effect: RetreatEffect): void {"
       ],
       "note": "deletion-type fix (auto-pay shortcut removed) - the comment is the signature"
     },
@@ -4836,7 +4844,8 @@
     {
       "file": "game/store/prompts/shuffle-prompt.ts",
       "signatures": [
-        "s.sort((a, b) => a - b);"
+        "s.sort((a, b) => a - b);",
+        "public bottomCount?: number;"
       ],
       "note": "numeric comparator; default lexicographic sort rejected every shuffle of a deck > 10 cards"
     },
@@ -5261,7 +5270,8 @@
     {
       "file": "set-surging-sparks/magneton.ts",
       "signatures": [
-        "      // TA-214 (offer half), CLOSED 2026-08-06: an empty-discard throw used to live here, keeping"
+        "      // TA-214 (offer half), CLOSED 2026-08-06: an empty-discard throw used to live here, keeping",
+        "{ allowCancel: false, min: Math.min(1, capacity), max: 3, blockedTo: blocked2 },"
       ],
       "note": "TA-214 offer half - the empty-discard throw was REMOVED. Overvolt Discharge's mandated self-KO fires whatever the discard holds, so it is never used for no effect (#13). #2301's floor bounds what a player may CHOOSE and has no choice to bite on over an empty pool (#1011/#423: even a MANDATORY count degrades to as-many-as-you-can). Re-adding an emptiness guard reverts it, and would also have to explain why twm-095 Munkidori and this card should resolve the same way."
     },
@@ -5322,7 +5332,8 @@
     {
       "file": "set-black-bolt-white-flare/eelektrik.ts",
       "signatures": [
-        "you may attach a Basic [L] Energy card from your discard pile"
+        "you may attach a Basic [L] Energy card from your discard pile",
+        "// TA-401 / B.46: activating Dynamotor is the decision; the attach carries no decline. With"
       ]
     },
     {
@@ -5352,7 +5363,9 @@
     {
       "file": "set-surging-sparks/sylveon-ex.ts",
       "signatures": [
-        "// TA-231: this Bench check used to sit ABOVE the lockout and `return state` — so on the one"
+        "// TA-231: this Bench check used to sit ABOVE the lockout and `return state` — so on the one",
+        "const count = Math.min(2, benched);",
+        "{ min: count, max: count, allowCancel: false }"
       ]
     },
     {
@@ -5377,7 +5390,8 @@
     {
       "file": "set-destined-rivals/ethans-ho-oh-ex.ts",
       "signatures": [
-        "const hasEthansBenched = player.bench.some(b => {"
+        "const hasEthansBenched = player.bench.some(b => {",
+        "{ allowCancel: false, sameTarget: true, min: Math.min(1, fireInHand), max: 2, blockedTo: blocked2 },"
       ]
     },
     {
@@ -5648,7 +5662,8 @@
     {
       "file": "set-chaos-rising/mega-greninja-ex.ts",
       "signatures": [
-        "            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off"
+        "            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off",
+        "// TA-401 / B.46: using the Ability IS the decision; the discard that follows carries no"
       ],
       "note": "TA-288 / §B.38 2026-08-19: the fix MOVES `effect.damage += 80` out of the prefab's onEnergyMoved callback, so the discriminating change is a relocation, not a new statement — the comment is the only line that exists post-fix and not pre-fix."
     },
@@ -5771,7 +5786,9 @@
     {
       "file": "set-destined-rivals/team-rockets-koffing.ts",
       "signatures": [
-        "import { IS_ABILITY_BLOCKED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';"
+        "import { IS_ABILITY_BLOCKED, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';",
+        "// TA-396(d): with Bench space the search is MANDATORY even over an empty deck",
+        "return SHUFFLE_DECK(store, state, player);"
       ],
       "note": "TA-301 2026-08-21: Smog Signals is MANDATORY -- compendium #2171, on this exact Ability: \"The use of the Ability is not optional... you must search your deck and shuffle it afterwards. Of course you can voluntarily fail the deck search.\" The card was wrapping the whole Ability in a CONFIRMATION_PROMPT, adding a second opt-out the rules do not grant -- and DECLINING it skipped the mandated shuffle, leaving a known deck order in the player's favour. The fix is mostly a DELETION, which cannot itself be a signature, so the signature is the IMPORT line the deletion changed: re-introducing CONFIRMATION_PROMPT has to re-import it. The entitled opt-out already exists one level down as `min: 0` on the pick."
     },
@@ -5955,7 +5972,8 @@
     {
       "file": "set-mega-evolution/inteleon.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "new KnockOutEffect(StateUtils.findOwner(state, target[0]), target[0])"
       ],
       "absentSignatures": [],
       "note": "TA-316 (2026-08-26): Water Shot's 110 (Step F) must land before the discard-an-energy rider pends (0 vs roto 110 at the pending). Removing this call reverts the deferral."
@@ -5981,7 +5999,9 @@
     {
       "file": "set-surging-sparks/energy-search-pro.ts",
       "signatures": [
-        "    next();"
+        "    next();",
+        "// TA-393: \"put them into your hand\"",
+        "player.deck.moveCardsTo(cards, player.hand);"
       ],
       "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census."
     },
@@ -6029,7 +6049,8 @@
     {
       "file": "set-destined-rivals/sacred-ash.ts",
       "signatures": [
-        "if (pokemonInDiscard < 1) {"
+        "if (pokemonInDiscard < 1) {",
+        "{ min: 1, max, allowCancel: false, blocked }"
       ],
       "absentSignatures": [
         "if (pokemonInDiscard < 5) {"
@@ -6638,7 +6659,9 @@
     {
       "file": "game/store/prefabs/prefabs.ts",
       "signatures": [
-        "const check = new CheckGustBlockEffect(player, cardList, sourceCard);"
+        "const check = new CheckGustBlockEffect(player, cardList, sourceCard);",
+        "SHUFFLE_BOTTOM_OF_DECK(store, state, player, count);",
+        "topCards.cards = topCards.cards.filter(c => !attachedCards.has(c));"
       ],
       "note": "TA-388 2026-09-08: SWITCH_IN_OPPONENT_BENCHED_POKEMON asks each opponent benched Pokemon whether it may be switched in (default allow), so Protective Sail can keep the Fossil off the gust menu."
     },
@@ -6655,6 +6678,87 @@
         "export class CheckGustBlockEffect implements Effect {"
       ],
       "note": "TA-388 2026-09-08: the CheckGustBlockEffect veto query that lets Protective Sail keep the Fossil off an opponent-Supporter gust menu."
+    },
+    {
+      "file": "set-twilight-masquerade/sinistcha.ts",
+      "signatures": [
+        "effect.damage = discarded.length * 70;"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/iron-crown-ex.ts",
+      "signatures": [
+        "const count = Math.min(2, available);",
+        "{ min: count, max: count, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/ambipom.ts",
+      "signatures": [
+        "const count = Math.min(2, available);",
+        "{ min: count, max: count, allowCancel: false }"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/goodra.ts",
+      "signatures": [
+        "assertRetreatLegal(store, state, effect);",
+        "player.retreatedTurn = state.turn;"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/frogadier.ts",
+      "signatures": [
+        "// TA-396(a): \"Then, shuffle your deck\" is owed even when the deck holds no Pokemon to find"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-great-ball.ts",
+      "signatures": [
+        "search(flipResult ? blockedOnHeads : blockedOnTails);"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/shared-attack-prefabs.ts",
+      "signatures": [
+        "if (bugOutPokemon.length > 0) {"
+      ]
+    },
+    {
+      "file": "set-jungle/pokeball.ts",
+      "signatures": [
+        "// TA-397(b): on tails no search is performed"
+      ]
+    },
+    {
+      "file": "game/store/state-utils.ts",
+      "signatures": [
+        "public static checkLegalEnergyPayment(energy: EnergyMap[], cost: CardType[]): boolean {"
+      ]
+    },
+    {
+      "file": "game/store/prompts/choose-energy-prompt.ts",
+      "signatures": [
+        "if (!StateUtils.checkLegalEnergyPayment(result, this.cost)) {"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/feraligatr.ts",
+      "signatures": [
+        "store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/dustox.ts",
+      "signatures": [
+        "// TA-405: the Energy goes to the opponent's HAND"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/play-energy-effect.ts",
+      "signatures": [
+        ".find(zone => zone.cards.includes(effect.energyCard));"
+      ]
     }
   ]
 }

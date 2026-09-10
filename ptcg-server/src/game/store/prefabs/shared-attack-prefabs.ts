@@ -53,7 +53,8 @@ export function BUG_OUT(
   const opponent = StateUtils.getOpponent(state, player);
   const revealed = revealBottomDeckCards(player.deck, BUG_OUT_REVEAL_COUNT);
 
-  SHOW_CARDS_TO_PLAYER(store, state, player, revealed);
+  // TA-397(a): ONE reveal. Showing the same cards to each player separately emitted the `reveal`
+  // twice; a reveal is to the opponent (the player is looking at their own cards).
   SHOW_CARDS_TO_PLAYER(store, state, opponent, revealed);
 
   const bugOutPokemon = revealed.filter(card => hasAttackNamed(card, BUG_OUT_ATTACK_NAME));
@@ -64,6 +65,10 @@ export function BUG_OUT(
   revealed
     .filter(card => !bugOutPokemon.includes(card))
     .forEach(card => player.discard.cards.push(card));
-  SHUFFLE_DECK(store, state, player);
+  // TA-397(a): "shuffle any revealed Pokemon back into your deck" — the shuffle's object is the set
+  // of revealed Pokemon; with none revealed there is nothing to shuffle back (§B.33 row 2, #1979).
+  if (bugOutPokemon.length > 0) {
+    SHUFFLE_DECK(store, state, player);
+  }
 }
 

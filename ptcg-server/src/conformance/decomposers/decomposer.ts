@@ -78,6 +78,15 @@ export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
    * unaffected by construction rather than by testing.
    */
   atomicStep?(prompt: P, picks: WirePick[], state: State): boolean;
+  /**
+   * CF-14 addendum (2026-09-09, TA-286/TA-401): the WHOLE-SET sibling. When every remaining candidate
+   * MUST be taken — the decision cannot stop and the candidates left (`forcedCount`) are no more than
+   * the picks it still requires — there is no decision content in any of them, and the set is applied
+   * atomically (rotomancer resolves Metallic Hammer's 3-of-exactly-3 Metal discard in one step). The
+   * driver only consults this when the step offers no stop and more than one candidate; `atomicStep`
+   * / `atomicResolvable` keep the one-candidate case. Absent = today's behaviour.
+   */
+  collapseWholeSet?(prompt: P, picks: WirePick[], state: State, forcedCount: number): boolean;
   next(prompt: P, picks: WirePick[], ctx: IidContext, state: State): PendingDecision | null;
   toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State, picks?: WirePick[]): WirePick;
   assemble(prompt: P, picks: WirePick[]): unknown;

@@ -69,7 +69,13 @@ export class IronCrownex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const max = Math.min(2);
+      // TA-390: "2 of your opponent's Pokemon" is a FIXED count, not "up to 2" — `min: 1` offered a
+      // stop after the first target (halving the attack) and left the forced second pick surfaced.
+      // Pin min === max === min(2, available); the adapter collapses the forced set (CF-14, TA-317 idiom).
+      const opponent = StateUtils.getOpponent(state, player);
+      let available = 0;
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, () => { available++; });
+      const count = Math.min(2, available);
       state = store.prompt(
         state,
         new ChoosePokemonPrompt(
@@ -77,7 +83,7 @@ export class IronCrownex extends PokemonCard {
           GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
           PlayerType.TOP_PLAYER,
           [SlotType.ACTIVE, SlotType.BENCH],
-          { min: 1, max: max, allowCancel: false },
+          { min: count, max: count, allowCancel: false },
         ),
         (selected) => {
           const targets = selected || [];

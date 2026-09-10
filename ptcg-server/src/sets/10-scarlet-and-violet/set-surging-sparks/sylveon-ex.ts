@@ -74,12 +74,16 @@ export class Sylveonex extends PokemonCard {
         return state;
       }
 
+      // TA-390: "Choose 2 of your opponent's Benched Pokemon" is a FIXED count — `min: 1` offered a
+      // stop after the first pick. Pin min === max === min(2, benched) (TA-317 idiom).
+      const benched = opponent.bench.filter(b => b.cards.length > 0).length;
+      const count = Math.min(2, benched);
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH],
-        { min: 1, max: 2, allowCancel: false },
+        { min: count, max: count, allowCancel: false },
       ), selected => {
         const targets = selected || [];
 

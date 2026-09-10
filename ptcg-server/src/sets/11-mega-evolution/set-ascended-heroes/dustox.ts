@@ -79,9 +79,11 @@ export class Dustox extends PokemonCard {
       return COIN_FLIP_PROMPT(store, state, player, (result) => {
         if (result) {
           // If heads, select and move energy to opponent's hand
+          // TA-405: the Energy goes to the opponent's HAND — the prompt message names the destination
+          // (CF-8/CF-32: the wire verb follows it; CHOOSE_CARD_TO_DISCARD lowered this as `discard`).
           store.prompt(state, new ChooseCardsPrompt(
             player,
-            GameMessage.CHOOSE_CARD_TO_DISCARD,
+            GameMessage.CHOOSE_CARD_TO_HAND,
             opponent.active,
             { superType: SuperType.ENERGY },
             { min: 1, max: 1, allowCancel: false }

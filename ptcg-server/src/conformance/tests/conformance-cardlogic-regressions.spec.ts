@@ -305,11 +305,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
                      discard: [{ iid: 'A-x0', printing: RALTS }],
                      deck: [{ iid: 'A-d0', printing: WATER }, { iid: 'A-d1', printing: FIRE }] }),
             player({ active: inPlay('B-act', [RALTS]) })),
-      // playItem is ACCEPTED (the canPlay fix), then the single eligible Pokémon is moved to the deck
-      // (the move pick carries allowCancel, so it surfaces rather than auto-resolving), reaching the
-      // mandatory shuffle. Pre-fix the play was refused outright (`invalidAction`) with < 5 in discard.
-      [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-sa' },
-       { actor: 'A' as const, type: 'choose' as const, target: 'A-x0' }],
+      // playItem is ACCEPTED (the canPlay fix), then the single eligible Pokémon is moved to the deck,
+      // reaching the mandatory shuffle. Pre-fix the play was refused outright (`invalidAction`) with
+      // < 5 in discard. 2026-09-09 (TA-401): the move pick no longer carries a decline (a played
+      // Trainer's 1..5 is forced), so the lone candidate collapses and a recorded `choose` would be
+      // SURPLUS — the play alone reaches the shuffle.
+      [{ actor: 'A' as const, type: 'playItem' as const, card: 'A-sa' }],
     );
     expect(r.status).toBe('awaitingAction');
     expect(r.pending!.actor).toBe('system');
@@ -1593,9 +1594,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
         player({ active: inPlay('B-act', ['meg-181']),
           bench: [inPlay('B-b0', ['por-063']), inPlay('B-b1', ['asc-136'])],
           deck: [{ iid: 'B-d0', printing: 'sve-003' }, { iid: 'B-d1', printing: 'sve-003' }] })),
+      // 2026-09-09 (TA-390): "Choose 2" is pinned min === max === min(2, benched); with exactly two
+      // Benched the second pick is forced and collapses after the first, so a recorded second
+      // `choose` would be surplus (invalidAction) — one pick settles the set.
       [attack('A-act', 'Angelite'),
-       { actor: 'A', type: 'choose', target: 'B-b0' },
-       { actor: 'A', type: 'choose', target: 'B-b1' }]);
+       { actor: 'A', type: 'choose', target: 'B-b0' }]);
     expect(`ssp-086/shuffleCount:${count}`).toBe('ssp-086/shuffleCount:1');
   });
 
@@ -3058,6 +3061,320 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     ), [attack('A-act', 'Leafy Charge')]);
     expect(empty.state.players.B.active!.damage).toBe(20);
     expect((empty.events ?? []).some(e => (e as { kind: string }).kind === 'shuffled')).toBe(true);   // CF-11: the event at any deck size
+  });
+
+
+  // ---------------------------------------------------------------------------------------------
+  // 2026-09-09 fix batch: the 2026-09-08 full run's non-Strafe residue, TA-390 … TA-406 (see
+  // docs/twinleaf-findings/fix-ledger.md, same date). Every cell below is the in-process form of a
+  // corpus scenario that was driven live on both engines before and after the fix.
+  // ---------------------------------------------------------------------------------------------
+
+  const LIGHT2 = 'sve-004';
+  const flipFace = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+  const hasType = (r: ReturnType<typeof step>, t: string) => types(r).includes(t);
+
+  it('Bring Down accounts the KO to the chosen Pokemon\'s OWNER: an opponent\'s Pokemon goes to THEIR discard and the attacker takes the prize [TA-391 meg-142]', () => {
+    // "The Pokemon in play that has the least HP remaining, except for this Pokemon, is Knocked Out."
+    // `new KnockOutEffect(player, target)` named the attacker as the owner, so choosing B's Pokemon
+    // put its cards in A's discard and gave B the prize. B's lone 60-HP Ralts is the unique least-HP
+    // Pokemon here, so the pick collapses and the KO lands on B's side.
+    const r = step(board(
+      player({ active: inPlay('A-act', ['meg-142'], en(WATER, 1, 'a')), bench: [inPlay('A-b0', [TANKY])] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [attack('A-act', 'Bring Down')]);
+    expect(r.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(true);
+    expect(r.state.players.B.discard.some(c => c.printing === 'sit-067')).toBe(true);    // RALTS in B's discard
+    expect(r.state.players.A.discard.some(c => c.printing === 'sit-067')).toBe(false);
+    expect(r.pending?.actor).toBe('A');                                                    // A takes the prize
+    expect(hasType(r, 'takePrize')).toBe(true);
+    // control: the attacker's OWN least-HP Pokemon -> A's discard, B takes the prize.
+    const own = step(board(
+      player({ active: inPlay('A-act', ['meg-142'], en(WATER, 1, 'a')), bench: [inPlay('A-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [TANKY])] }),
+    ), [attack('A-act', 'Bring Down')]);
+    expect(own.state.players.A.discard.some(c => c.printing === 'sit-067')).toBe(true);
+    expect(own.pending?.actor).toBe('B');
+  });
+
+  it('Energy Search Pro puts the chosen Energy into the HAND before the shuffle (fork regression) [TA-393 ssp-176]', () => {
+    // A merge resolution of the TA-320 hunk dropped upstream's `player.deck.moveCardsTo(cards,
+    // player.hand)`: the Energy was revealed, then shuffled straight back into the deck.
+    const r = step(board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'esp', printing: 'ssp-176' }],
+               deck: [{ iid: 'g0', printing: GRASS }, { iid: 'f0', printing: FIRE }, ...fillerDeck('A', 4)] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'playItem', card: 'esp' }, { actor: 'A', type: 'choose', target: 'g0' },
+        { actor: 'A', type: 'confirm', value: false }] as unknown as NeutralAction[]);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.hand.some(c => c.iid === 'g0')).toBe(true);
+    expect(r.state.players.A.deck.some(c => c.iid === 'g0')).toBe(false);
+    const shuffle = (r.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
+    expect(shuffle).toBeDefined();
+    expect(shuffle!.deck).not.toContain('g0');
+  });
+
+  it('Spill the Tea deals 0 when no Energy is discarded (70 x 0) [TA-392 twm-022]', () => {
+    // `effect.damage = totalDiscarded * 70` sat INSIDE the transfer loop, so a zero-card pick left
+    // the printed base 70 in place.
+    const r = step(board(
+      player({ active: inPlay('A-act', ['twm-022'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Spill the Tea'), { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction]);
+    expect(r.state.players.B.active!.damage).toBe(0);
+    const one = step(board(
+      player({ active: inPlay('A-act', ['twm-022'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Spill the Tea'), { actor: 'A', type: 'discard', target: 'ae0' } as unknown as NeutralAction]);
+    expect(one.state.players.B.active!.damage).toBe(70);
+  });
+
+  it('a "2 of your opponent\'s Pokemon" target pick is a FIXED count: no stop after the first target, and the forced second collapses [TA-390 tef-081 dri-142 pfl-079 twm-106 ssp-086]', () => {
+    // `{ min: 1, max: 2 }` offered `confirm:false` after one target (declining halved the attack)
+    // and surfaced the forced second pick. With exactly two opposing Pokemon, one pick completes it.
+    const twin = step(board(
+      player({ active: inPlay('A-act', ['tef-081'], en(PSY, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', ['meg-181'])] }),
+    ), [attack('A-act', 'Twin Shotels')]);
+    expect(hasType(twin, 'choose')).toBe(true);
+    expect(hasType(twin, 'confirm')).toBe(false);
+    const done = step(board(
+      player({ active: inPlay('A-act', ['tef-081'], en(PSY, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', ['meg-181'])] }),
+    ), [attack('A-act', 'Twin Shotels'), { actor: 'A', type: 'choose', target: 'B-act' } as unknown as NeutralAction]);
+    expect(done.state.players.B.active!.damage).toBe(50);
+    expect(done.state.players.B.bench[0].damage).toBe(50);
+    // Sonic Double (dri-142) — the same idiom, direct prompt.
+    const sonic = step(board(
+      player({ active: inPlay('A-act', ['dri-142'], [...en(METAL, 2, 'm'), ...en(WATER, 1, 'w')]) }),
+      // the Bench defender is NOT a Tera Pokemon ex: a Benched Tera ex (TANKY, twm-064) takes no
+      // attack damage by rule, which read as a "missed" second target on the first draft of this cell.
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', ['meg-181'])] }),
+    ), [attack('A-act', 'Sonic Double'), { actor: 'A', type: 'choose', target: 'B-b0' } as unknown as NeutralAction]);
+    expect(sonic.state.players.B.active!.damage).toBe(50);
+    expect(sonic.state.players.B.bench[0].damage).toBe(50);
+  });
+
+  it('Slimy Sliding: tails is a legal outcome that uses up the retreat (#2348), heads pays the cost, and an unpayable retreat is refused before any flip [TA-394 cri-068]', () => {
+    // (a) `throw new GameError(BLOCKED_BY_ABILITY)` on tails made a printed outcome an invalid action;
+    // (b) the intercept ran before the reducer's legality checks, so a retreat with no Energy was
+    // accepted and pended a flip. B's Goodra is in play; A retreats.
+    const b = (energy: CardRef[]) => board(
+      player({ active: inPlay('A-act', [RALTS], energy), bench: [inPlay('A-b0', [TANKY])] }),
+      player({ active: inPlay('B-act', ['cri-068']) }),
+    );
+    const retreat = { actor: 'A', type: 'retreat', to: 0 } as unknown as NeutralAction;
+    const paused = step(b(en(WATER, 1, 'a')), [retreat]);
+    expect(hasType(paused, 'flip')).toBe(true);
+    const tails = step(b(en(WATER, 1, 'a')), [retreat, flipFace('tails')]);
+    expect(tails.status).toBe('awaitingAction');
+    expect(tails.state.players.A.active!.stack[0].printing).toBe('sit-067');   // no switch
+    expect(tails.state.players.A.active!.energy.length).toBe(1);               // no Energy discarded
+    expect(tails.state.players.A.flags.retreatedThisTurn).toBe(true);           // #2348: the retreat is spent
+    expect(hasType(tails, 'retreat')).toBe(false);
+    const heads = step(b(en(WATER, 1, 'a')), [retreat, flipFace('heads')]);
+    expect(hasType(heads, 'discard')).toBe(true);                               // the cost pick follows
+    const unpayable = step(b([]), [retreat]);
+    expect(unpayable.status).toBe('invalidAction');
+  });
+
+  it('Turbo Flare shuffles ONCE, after the attach, on a decline [TA-395 meg-028]', () => {
+    // SHUFFLE_DECK ran inside the zero-take branch of the attach callback AND unconditionally after
+    // the prompt — a decline produced two shuffle pendings / two `shuffled` events.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['meg-028'], en(FIRE, 1, 'a')), bench: [inPlay('A-b0', [RALTS])],
+               deck: [{ iid: 'f0', printing: FIRE }, { iid: 'f1', printing: FIRE }, ...fillerDeck('A', 3)] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const paused = step(b(), [attack('A-act', 'Turbo Flare'), { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction]);
+    const sh = (paused.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
+    expect(sh).toBeDefined();
+    const after = step(b(), [attack('A-act', 'Turbo Flare'), { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction,
+      { actor: 'system', type: 'shuffle', order: sh!.deck } as unknown as NeutralAction]);
+    expect(after.events.filter(e => e.kind === 'shuffled').length).toBe(1);
+    expect(hasType(after, 'shuffle')).toBe(false);                              // no second shuffle
+  });
+
+  it('a whiffed Summoning Jutsu still shuffles (#2303) [TA-396a cri-021]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['cri-021'], en(WATER, 1, 'a')), deck: fillerDeck('A', 5) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Summoning Jutsu')]);
+    expect(hasType(r, 'shuffle')).toBe(true);
+  });
+
+  it('Team Rocket\'s Great Ball has a TAILS branch: a Basic Team Rocket search, and the shuffle on a whiff [TA-396b asc-205]', () => {
+    // The flip callback handled only heads; tails fell through to `return state` — no search, no shuffle.
+    const b = () => board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'gb', printing: 'asc-205' }], deck: fillerDeck('A', 6) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const play = { actor: 'A', type: 'playItem', card: 'gb' } as unknown as NeutralAction;
+    expect(hasType(step(b(), [play, flipFace('tails')]), 'shuffle')).toBe(true);
+    expect(hasType(step(b(), [play, flipFace('heads')]), 'shuffle')).toBe(true);
+  });
+
+  it('Metal Maker shuffles the looked-at remainder as a bottom SEGMENT — the rest of the deck keeps its order [TA-396c tef-114]', () => {
+    // `remainderDestination: 'bottom'` pushed the four cards to the bottom in look order and never
+    // shuffled. Now the pending advertises just the segment (rotomancer's shape) and the answer
+    // permutes only those four.
+    const deck = Array.from({ length: 6 }, (_, i) => ({ iid: `d${i}`, printing: WATER }));
+    const b = () => board(
+      player({ active: inPlay('A-act', ['tef-114']), deck }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Metal Maker' } as unknown as NeutralAction;
+    const paused = step(b(), [use]);
+    const sh = (paused.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
+    expect(sh).toBeDefined();
+    expect(sh!.deck).toEqual(['d0', 'd1', 'd2', 'd3']);                          // the segment only
+    const after = step(b(), [use, { actor: 'system', type: 'shuffle', order: ['d3', 'd2', 'd1', 'd0'] } as unknown as NeutralAction]);
+    expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);
+  });
+
+  it('Smog Signals with Bench space still resolves (and shuffles) over an EMPTY deck (#2171) [TA-396d dri-125]', () => {
+    // `if (deck.length === 0 || openSlots.length === 0) return state;` skipped the mandated search and
+    // its shuffle at deck 0; only the bench-full half is #2171's carve-out. A's Koffing is hit by
+    // Riptide (2 [W] in B's discard = 40); the Ability fires from the AfterDamageEffect.
+    const r = step(boardKeepingEmptyDeck(
+      player({ active: inPlay('A-act', ['dri-125']), deck: [] }),
+      player({ active: inPlay('B-act', ['meg-034'], en(WATER, 1, 'b')), discard: en(WATER, 2, 'bd'), deck: fillerDeck('B', 4) }),
+    ), [{ actor: 'A', type: 'endTurn' }, { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Riptide' }] as unknown as NeutralAction[]);
+    expect(r.state.players.A.active!.damage).toBe(40);
+    expect(r.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
+  });
+
+  it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Bug Out')]);
+    expect(r.events.filter(e => e.kind === 'reveal').length).toBe(1);
+    expect(hasType(r, 'shuffle')).toBe(false);
+    expect(r.events.some(e => e.kind === 'shuffled')).toBe(false);
+    expect(r.state.players.A.discard.length).toBe(7);
+  });
+
+  it('Poke Ball does not shuffle on TAILS — no search was performed (§B.44) [TA-397b por-080]', () => {
+    // The Jungle base class serves por-080 and every other Poké Ball reprint.
+    const b = () => board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'pb', printing: 'por-080' }], deck: fillerDeck('A', 6) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const play = { actor: 'A', type: 'playItem', card: 'pb' } as unknown as NeutralAction;
+    const tails = step(b(), [play, flipFace('tails')]);
+    expect(hasType(tails, 'shuffle')).toBe(false);
+    expect(tails.events.some(e => e.kind === 'shuffled')).toBe(false);
+    expect(tails.state.players.A.discard.some(c => c.iid === 'pb')).toBe(true);
+    const heads = step(b(), [play, flipFace('heads')]);
+    expect(hasType(heads, 'shuffle') || hasType(heads, 'choose') || hasType(heads, 'confirm')).toBe(true);
+  });
+
+  it('a retreat cost may be OVER-provided but not over-counted (#2127): the second pick offers a [G][G] Wild Growth Energy after a [W] [TA-398 meg-010]', () => {
+    // `checkExactEnergy` rejected any set with a redundant card, so after one [W] toward [C][C] only
+    // the other [W] was offered; the two [G] under Wild Growth ([G][G] each) were withheld.
+    const r = step(board(
+      player({ active: inPlay('A-act', ['meg-010'], [...en(GRASS, 2, 'g'), ...en(WATER, 2, 'w')]), bench: [inPlay('A-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'we0' }] as unknown as NeutralAction[]);
+    const offered = (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'discard').map(a => (a as { target: string }).target).sort();
+    expect(offered).toEqual(['ge0', 'ge1', 'we1']);
+    // and paying with the [G][G] alone (over-providing by one unit) is accepted
+    const paid = step(board(
+      player({ active: inPlay('A-act', ['meg-010'], [...en(GRASS, 2, 'g'), ...en(WATER, 2, 'w')]), bench: [inPlay('A-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }] as unknown as NeutralAction[]);
+    expect(paid.status).toBe('awaitingAction');
+    expect(paid.state.players.A.active!.stack[0].printing).toBe('sit-067');
+  });
+
+  it('a Confused attack that fails its flip is NOT recorded as the player\'s last attack (#2087) [TA-399 twm-105]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['twm-105'], en(FIGHT, 4, 'a'), 0, ['confused']) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Gutsy Swing'), flipFace('tails')]);
+    expect(r.state.players.A.active!.damage).toBe(30);
+    expect(r.state.playerLastAttack?.A?.name).not.toBe('Gutsy Swing');
+    const ok = step(board(
+      player({ active: inPlay('A-act', ['twm-105'], en(FIGHT, 4, 'a'), 0, ['confused']) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Gutsy Swing'), flipFace('heads')]);
+    expect(ok.state.playerLastAttack?.A?.name).toBe('Gutsy Swing');
+  });
+
+  it('an Ability\'s "up to N" has a floor of 1 while there is anything to choose (#2301): Golden Flame attaches a lone Fire atomically [TA-400 asc-026 ssp-059]', () => {
+    const one = step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['asc-026'])], hand: en(FIRE, 1, 'h') }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Golden Flame' }] as unknown as NeutralAction[]);
+    expect(one.state.players.A.bench[0].energy.length).toBe(1);                 // attached, no pending
+    expect(one.state.players.A.hand.length).toBe(0);
+    const two = step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['asc-026'])], hand: en(FIRE, 2, 'h') }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Golden Flame' }] as unknown as NeutralAction[]);
+    expect(hasType(two, 'attachEnergy')).toBe(true);
+    expect(hasType(two, 'confirm')).toBe(false);                                // no stop at zero picks
+    // Overvolt Discharge: one Basic Energy in the discard, Magneton the only [L] -> attach, then KO.
+    const ov = step(board(
+      player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['ssp-059'])], discard: en(LIGHT2, 1, 'd') }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Overvolt Discharge' }] as unknown as NeutralAction[]);
+    expect(ov.events.some(e => e.kind === 'ko' && e.player === 'A')).toBe(true);
+    expect(ov.pending?.actor).toBe('B');
+  });
+
+  it('Sacred Ash with ONE Pokemon in the discard shuffles it in with no pick surfaced (1..5, #2301 / CF-14) [TA-401 dri-168]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'sa', printing: 'dri-168' }],
+               discard: [{ iid: 'dp', printing: 'sit-067' }], deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'playItem', card: 'sa' }] as unknown as NeutralAction[]);
+    expect(hasType(r, 'choose')).toBe(false);
+    expect(hasType(r, 'shuffle') || r.events.some(e => e.kind === 'shuffled')).toBe(true);
+    expect(r.state.players.A.deck.some(c => c.iid === 'dp')).toBe(true);
+  });
+
+  it('Riptide\'s 20x lands BEFORE the shuffle pause (Step F) [TA-402 meg-034]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['meg-034'], en(WATER, 1, 'a')), discard: en(WATER, 2, 'd'), deck: fillerDeck('A', 3) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Riptide')]);
+    expect(hasType(r, 'shuffle')).toBe(true);
+    expect(r.state.players.B.active!.damage).toBe(40);
+  });
+
+  it('Crescent Purge\'s face-up pick is lowered as `choose {prize iid}`, not `takePrize` [TA-403 sfa-021]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['sfa-021'], en(PSY, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Crescent Purge'), { actor: 'A', type: 'confirm', value: true } as unknown as NeutralAction]);
+    expect(hasType(r, 'takePrize')).toBe(false);
+    const picks = (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose').map(a => (a as { target: string }).target);
+    expect(picks.length).toBe(6);
+    expect(picks).toContain('A-pz0');
+    const after = step(board(
+      player({ active: inPlay('A-act', ['sfa-021'], en(PSY, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Crescent Purge'), { actor: 'A', type: 'confirm', value: true }, { actor: 'A', type: 'choose', target: 'A-pz0' }] as unknown as NeutralAction[]);
+    expect(after.state.players.A.prizes.length).toBe(6);
+    expect(after.state.players.A.prizes.filter(p => p.faceUp).length).toBe(1);
+  });
+
+  it('a deck-sourced attach MOVES the card out of the deck (no duplicate), so the following shuffle lists the real deck [TA-406 dri-044]', () => {
+    // AttachEnergyEffect's reducer did `hand.moveCardTo(...)` — a silent no-op for a deck-sourced
+    // Energy, which stayed in the deck AND joined `energies`; the shuffle pending listed it.
+    const r = step(board(
+      player({ active: inPlay('A-act', ['dri-044'], en(WATER, 1, 'a')),
+               deck: [{ iid: 'f0', printing: FIRE }, ...fillerDeck('A', 4)] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Fire Kagura'), { actor: 'A', type: 'attachEnergy', card: 'f0', target: 'A-act' } as unknown as NeutralAction]);
+    expect(r.state.players.A.active!.energy.some(c => c.iid === 'f0')).toBe(true);
+    expect(r.state.players.A.deck.some(c => c.iid === 'f0')).toBe(false);
+    const sh = (r.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
+    expect(sh).toBeDefined();
+    expect(sh!.deck).not.toContain('f0');
+    expect(sh!.deck.length).toBe(4);
   });
 
 });

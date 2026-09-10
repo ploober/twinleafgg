@@ -51,6 +51,11 @@ function* playCard(
 
       SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
 
+      // TA-393: "put them into your hand" — this line is upstream's and was dropped when the TA-320
+      // hunk below was merge-resolved over it, so the chosen Energy was revealed and then shuffled
+      // straight back into the deck. The take must happen before the generator resumes to the shuffle.
+      player.deck.moveCardsTo(cards, player.hand);
+
     // TA-320: resume the generator so the trailing `return store.prompt(ShuffleDeckPrompt)` is
     // reached. Without this next() the generator stayed suspended at the choose yield and the owed
     // "Then, shuffle your deck" never fired — the deck was left unshuffled (rotomancer shuffled).

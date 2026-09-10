@@ -1559,6 +1559,27 @@ export function HAS_CARD_IN_DISCARD(
  * After order is applied, a silent WaitPrompt gates follow-up draws so the 3D
  * shuffle animation (triggered via Game arbiter socket emit) can finish.
  */
+/**
+ * TA-396(c): shuffle only the bottom `count` cards of the deck, leaving the rest in order. The prompt
+ * advertises the segment (`bottomCount`); the answer may be a permutation of the segment or of the whole
+ * deck (legacy arbiters) — either way only the segment moves.
+ */
+export function SHUFFLE_BOTTOM_OF_DECK(store: StoreLike, state: State, player: Player, count: number): State {
+  const n = Math.max(0, Math.min(count, player.deck.cards.length));
+  return store.prompt(state, new ShuffleDeckPrompt(player.id, { bottomCount: n }), (order) => {
+    const deck = player.deck.cards;
+    const start = deck.length - n;
+    const segment = order.length === n
+      ? order.map(i => start + i)          // segment-relative answer
+      : order.filter(i => i >= start);     // whole-deck answer: keep only the segment, in the answered order
+    if (segment.length !== n || new Set(segment).size !== n || segment.some(i => i < start || i >= deck.length)) {
+      return;
+    }
+    const bottom = segment.map(i => deck[i]);
+    player.deck.cards = [...deck.slice(0, start), ...bottom];
+  });
+}
+
 export function SHUFFLE_DECK(store: StoreLike, state: State, player: Player): State {
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
@@ -1933,8 +1954,13 @@ function moveRemainingTopDeckCards(
   }
 
   if (remainderDestination === 'bottom') {
+    // TA-396(c): both callers print "Shuffle the other/remaining cards and put them on the bottom of
+    // your deck" (Metal Maker tef-114, Delibird J-MEE) — the remainder was pushed to the bottom in the
+    // order it was looked at, never shuffled. Put it on the bottom, then shuffle THAT segment.
+    const count = topCards.cards.length;
     player.deck.cards.push(...topCards.cards);
     topCards.cards = [];
+    SHUFFLE_BOTTOM_OF_DECK(store, state, player, count);
     return;
   }
 
@@ -2166,6 +2192,10 @@ export function LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY(
         const attachEnergyEffect = new AttachEnergyEffect(player, energyCard, target);
         store.reduceEffect(state, attachEnergyEffect);
       }
+      // TA-406: the attached Energy came out of the temporary look pile, which the reducer cannot
+      // see; drop it from the pile so the remainder move below cannot put it back into the deck.
+      const attachedCards = new Set(transfers.map(t => t.card));
+      topCards.cards = topCards.cards.filter(c => !attachedCards.has(c));
 
       moveRemainingTopDeckCards(store, state, player, topCards, remainderDestination);
     },
