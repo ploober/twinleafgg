@@ -234,22 +234,6 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     }
   }
 
-  // TA-399: record the attack as the player's LAST ATTACK here — after the Smokescreen/Sand-Attack
-  // and Confusion checks — not at declaration (it used to be written in player-turn-reducer right
-  // after the dispatch, before the Confusion flip resolved). Compendium #2087: "A failed attack
-  // attempt while Confused does not count as an attack"; #851: the Confusion check comes before any
-  // choice the attack requires. A Copycat/Angelite-style reader must never see an attack that never
-  // happened.
-  if (effect instanceof UseAttackEffect) {
-    const lastAttackSource = attackingPokemon.getPokemonCard();
-    if (lastAttackSource !== undefined) {
-      if (!state.playerLastAttack) {
-        state.playerLastAttack = {};
-      }
-      state.playerLastAttack[player.id] = { attack, sourceCard: lastAttackSource, turn: state.turn };
-    }
-  }
-
   store.log(state, GameLog.LOG_PLAYER_USES_ATTACK, { name: player.name, attack: attack.name });
   state.phase = GamePhase.ATTACK;
 
@@ -280,6 +264,23 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
 
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
+    }
+  }
+
+  // TA-399: record the attack as the player's LAST ATTACK here — after the Smokescreen/Sand-Attack and
+  // Confusion checks AND after the attack's own effect has resolved. It used to be written in
+  // player-turn-reducer right after the dispatch, before the Confusion flip resolved (#2087: "A failed
+  // attack attempt while Confused does not count as an attack"; #851). The first correction wrote it
+  // just before the attack effect, which broke every card that reads the record DURING its own
+  // resolution to test "used this attack during your last turn" (Angelite's lockout, TA-231): it saw
+  // the current attack and never blocked. The record is the PREVIOUS attack until this one is done.
+  if (effect instanceof UseAttackEffect) {
+    const lastAttackSource = attackingPokemon.getPokemonCard();
+    if (lastAttackSource !== undefined) {
+      if (!state.playerLastAttack) {
+        state.playerLastAttack = {};
+      }
+      state.playerLastAttack[player.id] = { attack, sourceCard: lastAttackSource, turn: state.turn };
     }
   }
 

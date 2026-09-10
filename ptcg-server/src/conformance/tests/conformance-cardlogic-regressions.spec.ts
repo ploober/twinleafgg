@@ -3377,4 +3377,22 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(sh!.deck.length).toBe(4);
   });
 
+
+  it('the last-attack record is written AFTER the attack resolves, so Angelite\'s "used during your last turn" lockout still reads the previous turn [TA-399 / TA-231 ssp-086]', () => {
+    // The first TA-399 correction wrote playerLastAttack just BEFORE the attack effect; Sylveon ex's
+    // own check (`last.turn === state.turn - 2`) then saw the current attack and never blocked, and the
+    // offer gate (which dry-runs the attack) offered Angelite every turn. Rotomancer withholds it.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['ssp-086'], [...en(WATER, 1, 'w'), ...en(LIGHT2, 1, 'l'), ...en(PSY, 1, 'p')]) }),
+      player({ active: inPlay('B-act', [TANKY]) }),   // no Bench: Angelite whiffs but IS used
+    );
+    const after = step(b(), [attack('A-act', 'Angelite'), { actor: 'B', type: 'endTurn' }] as unknown as NeutralAction[]);
+    expect(after.state.playerLastAttack?.A?.name).toBe('Angelite');
+    expect(attacksOffered(after)).not.toContain('Angelite');                    // locked out on A's next turn
+    const again = step(b(), [attack('A-act', 'Angelite'), { actor: 'B', type: 'endTurn' }, attack('A-act', 'Angelite')] as unknown as NeutralAction[]);
+    expect(again.status).toBe('invalidAction');
+    // and a fresh board still offers it
+    expect(attacksOffered(step(b(), []))).toContain('Angelite');
+  });
+
 });
