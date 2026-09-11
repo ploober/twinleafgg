@@ -23,8 +23,8 @@ function markers(): PokemonMarkers {
 function flags(): PlayerFlags {
   return { supporterPlayedThisTurn: false, energyAttachedThisTurn: false, stadiumPlayedThisTurn: false, retreatedThisTurn: false, cardsPlayedThisTurn: 0, prizesTakenThisTurn: 0, prizesTakenLastTurn: 0, vstarUsed: false };
 }
-function inPlay(iid: string, energy: CardRef[] = []): PokemonInPlay {
-  return { stack: [{ iid, printing: BASIC }], energy, tools: [], damage: 0, conditions: [], markers: markers() };
+function inPlay(iid: string, energy: CardRef[] = [], tools: CardRef[] = []): PokemonInPlay {
+  return { stack: [{ iid, printing: BASIC }], energy, tools, damage: 0, conditions: [], markers: markers() };
 }
 function player(over: Partial<PlayerState> = {}): PlayerState {
   return { active: null, bench: [], hand: [], deck: [], discard: [], lostZone: [], prizes: [], flags: flags(), ...over };
@@ -33,7 +33,8 @@ function board(A: PlayerState, B: PlayerState): NeutralState {
   return { schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A', phase: 'main', outcome: 'ongoing', stadium: null, players: { A, B } };
 }
 // Names for every iid the diff touches: the Pokemon (fallback) and the Energy (queue key).
-const NAMES = new Map<string, string>([['a1', 'Pikachu'], ['a2', 'Raichu'], ['a1e0', 'Fire Energy']]);
+const NAMES = new Map<string, string>([['a1', 'Pikachu'], ['a2', 'Raichu'], ['a1e0', 'Fire Energy'], ['a1t0', 'Defiance Band']]);
+const TOOL = 'svi-169';
 const attached = (evs: NeutralEvent[]): NeutralEvent[] => evs.filter(e => e.kind === 'energyAttached');
 
 describe('TA-412 / CF-73 — energyAttached is derived from the state diff for effect attaches', () => {
@@ -60,5 +61,31 @@ describe('TA-412 / CF-73 — energyAttached is derived from the state diff for e
     const after = board(player({ active: inPlay('a1', []), bench: [inPlay('a2', [{ iid: 'a1e0', printing: FIRE }])] }), player());
     const evs = attached(deriveEvents(before, after, [], undefined, undefined, NAMES));
     expect(evs.length).toBe(0);
+  });
+});
+
+const toolAttached = (evs: NeutralEvent[]): NeutralEvent[] => evs.filter(e => e.kind === 'toolAttached');
+
+// TA-413 (CF-73, same class as TA-412): a Pokemon Tool pushed straight onto slot.tools by an effect
+// (Farfetch'd twm-132 Impromptu Carrier; Head Ringer, Klefki, Unown Q/E/G) bypasses
+// AttachPokemonToolEffect, the only reducer that logs LOG_PLAYER_PLAYS_TOOL. Derive toolAttached from
+// the state diff too. Mutation: delete the toolQ loop -> the first test here goes to 0 events.
+describe('TA-413 / CF-73 — toolAttached is derived from the state diff for effect tool-attaches', () => {
+
+  it('emits toolAttached for a Tool that appears in state with NO tool log (direct .tools.push)', () => {
+    const before = board(player({ active: inPlay('a1', [], []) }), player());
+    const after = board(player({ active: inPlay('a1', [], [{ iid: 'a1t0', printing: TOOL }]) }), player());
+    const evs = toolAttached(deriveEvents(before, after, [], undefined, undefined, NAMES));
+    expect(evs.length).toBe(1);
+    expect(evs[0]).toEqual({ kind: 'toolAttached', player: 'A', card: 'Defiance Band', pokemon: 'a1' });
+  });
+
+  it('does NOT double-emit toolAttached when the attach was already logged (normal playTool)', () => {
+    const before = board(player({ active: inPlay('a1', [], []) }), player());
+    const after = board(player({ active: inPlay('a1', [], [{ iid: 'a1t0', printing: TOOL }]) }), player());
+    const log: StateLog = { message: GameLog.LOG_PLAYER_PLAYS_TOOL, params: { name: 'A', card: 'Defiance Band', pokemon: 'Pikachu' } } as unknown as StateLog;
+    const evs = toolAttached(deriveEvents(before, after, [log], undefined, undefined, NAMES));
+    expect(evs.length).toBe(1);
+    expect(evs[0].pokemon).toBe('a1');
   });
 });
