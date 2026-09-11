@@ -136,6 +136,9 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
     }
 
     const move = isMovePick(prompt);
+    // CF-70 Phase 2: a relocation names where the Energy goes; the message is the card's declaration
+    // of the destination (the same key `isMovePick` reads). A cost payment is a discard to the pile.
+    const destination = prompt.message === GameMessage.CHOOSE_ENERGIES_TO_DECK ? 'deck' : 'hand';
     const used = new Set(picked);
     const offerable = offerableIndices(prompt, picked);
     const legalActions: LegalAction[] = [];
@@ -146,8 +149,8 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
       const iid = ctx.cardToIid.get(prompt.energy[i].card);
       if (iid !== undefined) {
         legalActions.push(move
-          ? { type: 'choose', target: iid }
-          : { type: 'discard', owner: playerIdToActor(state, prompt.playerId), target: iid });
+          ? { type: 'choose', target: iid, op: 'moveTo', destination }
+          : { type: 'discard', owner: playerIdToActor(state, prompt.playerId), target: iid, op: 'discard', destination: 'discardPile' });
       }
     }
     if (legalActions.length === 0) {

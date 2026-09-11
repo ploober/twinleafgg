@@ -3296,6 +3296,52 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(hasType(ape, 'choose')).toBe(false);
   });
 
+  it('CF-70 Phase 2: operation picks carry `op`/`amount`/`destination`; bare selections and structural pairs carry none [CF-70 cri-022 dri-023 ssp-056]', () => {
+    // The attributes are GATED on the wire (compared only where both engines emit them), so this cell
+    // is the only place the EMIT itself is asserted. Each row is one emitter class:
+    const acts = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []) as Array<Record<string, unknown>>;
+    // choose-pokemon, declared `operation: 'placeCounters'` → op only (no printed count on the prompt).
+    const shuriken = step(board(
+      player({ active: inPlay('A-act', ['cri-022']), hand: [{ iid: 'w0', printing: WATER }] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Mortal Shuriken' }] as unknown as NeutralAction[]);
+    const pc = acts(shuriken).filter(a => a.type === 'placeCounter');
+    expect(pc.length).toBeGreaterThan(0);
+    expect(pc.every(a => a.op === 'placeCounters' && a.amount === undefined && a.destination === undefined)).toBe(true);
+    // choose-cards discard (Mortal Shuriken's Basic [W] with TWO in hand → a real pick) → discard + discardPile.
+    const twoWater = step(board(
+      player({ active: inPlay('A-act', ['cri-022']), hand: [{ iid: 'w0', printing: WATER }, { iid: 'w1', printing: WATER }] }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Mortal Shuriken' }] as unknown as NeutralAction[]);
+    const dc = acts(twoWater).filter(a => a.type === 'discard');
+    expect(dc.length).toBe(2);
+    expect(dc.every(a => a.op === 'discard' && a.destination === 'discardPile')).toBe(true);
+    // put-damage `dealDamage` (Oil Salvo: "choose 1 … 6 times, do 20 damage to it") → dealDamage + the printed 20.
+    const oil = step(board(
+      player({ active: inPlay('A-act', ['dri-023'], en(GRASS, 1, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [attack('A-act', 'Oil Salvo')]);
+    const dd = acts(oil).filter(a => a.type === 'choose');
+    expect(dd.length).toBe(2);
+    expect(dd.every(a => a.op === 'dealDamage' && a.amount === 20)).toBe(true);
+    // choose-energy relocation (Icicle Loop: "Put an Energy attached to this Pokémon into your hand") → moveTo + hand.
+    const loop = step(board(
+      player({ active: inPlay('A-act', ['ssp-056'], en(WATER, 3, 'w')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Icicle Loop')]);
+    const mv = acts(loop).filter(a => a.type === 'choose');
+    expect(mv.length).toBe(3);
+    expect(mv.every(a => a.op === 'moveTo' && a.destination === 'hand')).toBe(true);
+    // Structural pair types emit NOTHING (the moveEnergy correction, 604e96a2): Wash Out's move.
+    const wash = step(board(
+      player({ active: inPlay('A-act', ['por-019'], en(WATER, 1, 'w')), bench: [inPlay('A-b0', [RALTS], en(WATER, 2, 'x'))] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Wash Out' }] as unknown as NeutralAction[]);
+    const me = acts(wash).filter(a => a.type === 'moveEnergy');
+    expect(me.length).toBeGreaterThan(0);
+    expect(me.every(a => a.op === undefined && a.destination === undefined)).toBe(true);
+  });
+
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),

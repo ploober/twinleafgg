@@ -128,7 +128,12 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
       if ((placedByTarget.get(k) ?? 0) >= entry.damage) {
         continue;
       }
-      legalActions.push({ type: verb, target: pokemonTargetToIid(state, player, ctx, entry.target) });
+      // CF-70 Phase 2: `dealDamage` picks carry the printed per-pick damage (`damageMultiple` IS the
+      // card's literal X); a counter DISTRIBUTION pick emits `op` alone — its per-pick unit is not a
+      // printed count, so `amount` rides uncompared (migration plan §2a).
+      legalActions.push(verb === 'choose'
+        ? { type: verb, target: pokemonTargetToIid(state, player, ctx, entry.target), op: 'dealDamage', amount: unit }
+        : { type: verb, target: pokemonTargetToIid(state, player, ctx, entry.target), op: 'placeCounters' });
     }
     // CF-4: partial placement ("up to N counters") means min=0 — the explicit stop is
     // advertised from the first pending, not only once a counter has been placed.

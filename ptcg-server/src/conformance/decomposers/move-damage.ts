@@ -137,7 +137,7 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
         .filter(t => targetKey(t) !== sourceKey)
         .filter(t => !(prompt.options.singleDestinationTarget && firstTo !== undefined && targetKey(t) !== firstTo));
       for (const dest of dests) {
-        legalActions.push({ type: 'placeCounter', target: pokemonTargetToIid(state, player, ctx, dest) });
+        legalActions.push({ type: 'placeCounter', target: pokemonTargetToIid(state, player, ctx, dest), op: 'placeCounters' }); // CF-70
       }
     }
 

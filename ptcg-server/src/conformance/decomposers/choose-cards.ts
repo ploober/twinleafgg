@@ -328,7 +328,10 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
           // player only if the card is not in the import-origin map.
           const cardOwnerIdx = ctx.cardOwner.get(card);
           const ownerId = cardOwnerIdx !== undefined ? state.players[cardOwnerIdx].id : prompt.player.id;
-          legalActions.push({ type: 'discard', owner: playerIdToActor(state, ownerId), target: iid } as LegalAction);
+          legalActions.push({
+            type: 'discard', owner: playerIdToActor(state, ownerId), target: iid,
+            op: 'discard', destination: 'discardPile', // CF-70 Phase 2
+          } as LegalAction);
         } else {
           legalActions.push({ type: 'choose', target: iid });
         }

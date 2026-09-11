@@ -134,8 +134,14 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
 
     // Contract: these verbs carry `target` only (the iid is globally unique — owner is
     // redundant, and the action table specs `owner` for `discard` alone).
+    // CF-70 Phase 2: the declared operation also rides as `op`. `amount` is NOT emitted here — this
+    // prompt never carries the printed count (the card applies it after the pick), and a guessed
+    // amount would be compared once the other engine emits one. Bare selections emit nothing (`select`
+    // is the default).
+    const op = prompt.options.operation === 'placeCounters' ? 'placeCounters'
+      : prompt.options.operation === 'dealDamage' ? 'dealDamage' : undefined;
     const legalActions: LegalAction[] = candidates.map(t => (
-      { type: verb, target: pokemonTargetToIid(state, player, ctx, t) }
+      { type: verb, target: pokemonTargetToIid(state, player, ctx, t), ...(op ? { op } : {}) }
     ));
     if (rp.length >= min && max > min) {
       legalActions.push(END_CHOICE);

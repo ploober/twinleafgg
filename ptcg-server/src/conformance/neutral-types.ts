@@ -570,12 +570,29 @@ export type ResponseStatus = 'awaitingAction' | 'gameOver' | 'invalidAction';
  * aggregate prompt these are the single picks the open decision ranges over (Phase-1 legalActions,
  * impl §4.6); for a system pending, the shuffle/flip candidates.
  */
+/**
+ * CF-70 decision attributes (openapi 0.7.0, Phase 2 emit 2026-09-10). The OPERATION a pick performs,
+ * factored out of `type`: a new mechanic is a new `op`/`destination` value rather than a new verb.
+ * All optional; the harness compares them GATED (only where both engines carry a non-default value),
+ * so emitting them cannot manufacture a divergence against an engine that has not migrated.
+ * `amount` is the PRINTED quantity applied by ONE pick — emitted only when the adapter can read a
+ * literal off the prompt (a `dealDamage` unit), never when a card computes it or when the prompt
+ * distributes counters "in any way you like" (rides uncompared, migration plan §2a).
+ */
+export type DecisionOp = 'select' | 'placeCounters' | 'dealDamage' | 'discard' | 'moveTo' | 'heal' | 'attach' | 'reveal' | 'switch';
+export type DecisionDestination = 'discardPile' | 'lostZone' | 'deck' | 'deckBottom' | 'hand' | 'bench' | 'active' | 'prizes';
+export interface DecisionAttrs {
+  op?: DecisionOp;
+  amount?: number;
+  destination?: DecisionDestination;
+}
+
 export type LegalAction =
   // Single picks inside a decomposed prompt (M2) and the system seam (M3).
-  | { type: 'choose'; target: string; owner?: NeutralPlayerId; name?: string }
-  | { type: 'placeCounter'; target: string }
+  | ({ type: 'choose'; target: string; owner?: NeutralPlayerId; name?: string } & DecisionAttrs)
+  | ({ type: 'placeCounter'; target: string } & DecisionAttrs)
   | { type: 'promoteBench'; target: string }
-  | { type: 'discard'; target: string; owner?: NeutralPlayerId }
+  | ({ type: 'discard'; target: string; owner?: NeutralPlayerId } & DecisionAttrs)
   // CF-34: in-play → in-play Energy relocation; one template per legal (card, destination) pair.
   | { type: 'moveEnergy'; card: string; source: string; target: string }
   | { type: 'takePrize'; index: number }

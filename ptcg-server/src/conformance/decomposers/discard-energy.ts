@@ -69,7 +69,7 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
         }
         const iid = ctx.cardToIid.get(card);
         if (iid !== undefined) {
-          legalActions.push({ type: 'discard', owner, target: iid });
+          legalActions.push({ type: 'discard', owner, target: iid, op: 'discard', destination: 'discardPile' }); // CF-70
         }
       }
     }
