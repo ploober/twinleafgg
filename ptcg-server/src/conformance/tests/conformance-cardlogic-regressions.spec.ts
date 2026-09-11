@@ -3342,6 +3342,32 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(me.every(a => a.op === undefined && a.destination === undefined)).toBe(true);
   });
 
+  it('a pause INSIDE an attack projects the DECLARED attack as playerLastAttack, with its declaration turn; the engine record stays after-resolution [CF-65 sub-shape 3 scr-058 meg-104]', () => {
+    // 579 of the 2026-09-11 full run's rows: at any rider pick / confirm / flip / shuffle raised by an
+    // attack, the projection still showed the PREVIOUS attack (TA-399 writes after resolution) while
+    // rotomancer showed the just-declared one. Copy sessions included (the record there is the copied attack).
+    const seek = step(board(
+      player({ active: inPlay('A-act', ['scr-058'], [...en(PSY, 1, 'p'), ...en(METAL, 3, 'm')]), deck: [{ iid: 'Ad0', printing: 'cri-061' }, ...fillerDeck('A', 3)] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Seek Inspiration'), { actor: 'A', type: 'choose', target: 'Ad0', name: 'Metallic Hammer' }] as unknown as NeutralAction[]);
+    expect(hasType(seek, 'confirm')).toBe(true);                       // Metallic Hammer's optional discard is pending
+    expect(seek.state.playerLastAttack?.A).toEqual({ source: 'scr-058', name: 'Seek Inspiration', turn: 3 });
+    // A coin-flip pause inside a flip-until-tails attack, with a PREVIOUS record to overwrite.
+    const combo = step(board(
+      player({ active: inPlay('A-act', ['meg-104'], en(WATER, 3, 'w')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Rapid-Fire Combo'), flipFace('tails'), { actor: 'B', type: 'endTurn' }, attack('A-act', 'Rapid-Fire Combo')] as unknown as NeutralAction[]);
+    expect(hasType(combo, 'flip')).toBe(true);
+    expect(combo.state.playerLastAttack?.A).toEqual({ source: 'meg-104', name: 'Rapid-Fire Combo', turn: 5 });
+    // Quiescent control: once the attack has resolved the engine's own record is what is projected.
+    const done = step(board(
+      player({ active: inPlay('A-act', ['meg-104'], en(WATER, 3, 'w')) }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [attack('A-act', 'Rapid-Fire Combo'), flipFace('tails')]);
+    expect(done.state.activePlayer).toBe('B');
+    expect(done.state.playerLastAttack?.A).toEqual({ source: 'meg-104', name: 'Rapid-Fire Combo', turn: 3 });
+  });
+
   it('Bug Out reveals ONCE and does not shuffle when no Pokemon was revealed (§B.33 row 2) [TA-397a pbl-009]', () => {
     const r = step(board(
       player({ active: inPlay('A-act', ['pbl-009'], en(FIRE, 3, 'a')), deck: fillerDeck('A', 10) }),

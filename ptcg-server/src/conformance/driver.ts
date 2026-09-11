@@ -16,6 +16,7 @@ import { ImportedGame, importState, projectState, actorIndex, basicIidDisplayNam
 import { atOnceWireSpec } from './at-once';
 import { deriveEvents, TurnCarry } from './events';
 import { playerIdToActor } from './iid-targets';
+import { toPrinting } from './printing';
 import { classify, decomposerFor, realPicks, WirePick } from './decomposers';
 import { topLevelMenu, handPlayVerbFor } from './legal-actions';
 import { mapRejection } from './rejection-codes';
@@ -1022,6 +1023,22 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // TA-373: snapshot pre-action card zones so a reveal fired inside this action's effect reports
       // each card's SOURCE zone, not the zone a mid-effect search moved it into.
       actionStartZones = snapshotCardZones(game.state);
+      // CF-65 sub-shape 3: a new top-level action closes whatever attack was in flight; a `declareAttack`
+      // opens one (see `InFlightAttack`). Resolution failures are the dispatch's to report, not this note's.
+      game.inFlightAttack = undefined;
+      if (action.type === 'declareAttack') {
+        const da = action as DeclareAttackAction;
+        try {
+          const player = game.state.players[actorIndex(da.actor)];
+          const card = resolveSourcePokemon(game, player, da.source, 'declareAttack.source').getPokemonCard();
+          if (card !== undefined) {
+            game.inFlightAttack = {
+              playerIndex: actorIndex(da.actor), name: da.name, sourceCard: card,
+              turn: game.state.turn, eventsBefore: events.length,
+            };
+          }
+        } catch { /* an unresolvable source: dispatchDeclareAttack rejects it below */ }
+      }
       dispatchAndCollect(() => dispatchAction(game, action));
       continue;
     }
@@ -1082,6 +1099,25 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   // into a settled zone, leaving it in both. Drop the resolving copy — the settled zone wins. Runs
   // after every fixup so the wire state never duplicates an iid. (G-44 look-pile projection.)
   pruneResolvingDuplicates(state);
+  // CF-65 sub-shape 3 (2026-09-11): while an attack is in flight and the response pauses inside it, project
+  // the DECLARED attack (with its declaration turn) as the attacker's last attack — the engine's record is
+  // written only after resolution (TA-399), so it still names the previous attack at every rider pick,
+  // confirm, coin flip and shuffle raised by the attack. Gated on this replay having emitted `attackUsed`
+  // for that player since the declaration: an attack still ahead of its Confusion/Smokescreen check has
+  // not been used, and rotomancer records nothing there either. A completed attack is unaffected (the
+  // engine's record already equals this), and so is a rejected one (no pending).
+  const inFlight = game.inFlightAttack;
+  if (pending !== null && inFlight !== undefined) {
+    const actor: NeutralPlayerId = inFlight.playerIndex === 0 ? 'A' : 'B';
+    const used = events.slice(inFlight.eventsBefore)
+      .some(e => e.kind === 'attackUsed' && (e as { player?: string }).player === actor);
+    if (used) {
+      state.playerLastAttack = {
+        ...(state.playerLastAttack ?? {}),
+        [actor]: { source: toPrinting(inFlight.sourceCard), name: inFlight.name, turn: inFlight.turn },
+      };
+    }
+  }
   if (rejection !== undefined) {
     // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
     // The cursor advances past an action before dispatch, so `applied` is the offending action's index.

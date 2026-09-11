@@ -61,11 +61,30 @@ export interface IidContext {
   firstPlayer: NeutralPlayerId;
 }
 
+/**
+ * CF-65 sub-shape 3 (2026-09-11): the attack a top-level `declareAttack` put in flight, remembered by the
+ * driver for as long as that dispatch is the current one. The ENGINE writes `playerLastAttack` only after
+ * the attack resolves (TA-399 — its mid-resolution readers need the previous record), so at any pending
+ * raised inside the attack the record still shows the previous attack; the PROJECTION overrides it with
+ * this (the attack the response's own `attackUsed` event already names), which is what rotomancer projects
+ * and what a reader at that node wants. `turn` is captured at declaration — a checkup pending after the
+ * turn boundary must not stamp the next turn.
+ */
+export interface InFlightAttack {
+  playerIndex: number;
+  name: string;
+  sourceCard: Card;
+  turn: number;
+  /** `events.length` when the attack was dispatched — only an `attackUsed` after this point counts. */
+  eventsBefore: number;
+}
+
 export interface ImportedGame {
   store: Store;
   handler: ConformanceStoreHandler;
   state: State;
   ctx: IidContext;
+  inFlightAttack?: InFlightAttack;
 }
 
 // ── A/B <-> twinleaf player index convention ──────────────────────────────
