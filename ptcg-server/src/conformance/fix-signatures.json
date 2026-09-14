@@ -8363,14 +8363,20 @@
       "signatures": [
         "if (AFTER_ATTACK(effect, 1, this)) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0290"
+      ]
     },
     {
       "file": "set-phantasmal-flames/duraludon.ts",
       "signatures": [
         "if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0290"
+      ]
     }
   ]
 }
