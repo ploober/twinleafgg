@@ -8297,6 +8297,80 @@
         "{ min: 2, max: 2, allowCancel: false, operation: 'placeCounters' },"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "set-ascended-heroes/raichu.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 1, this)) {"
+      ],
+      "note": "TA-417 (2026-09-14): Strong Volt / Bulky Bump / Hyper Beam: the discard rider hooks AFTER_ATTACK, so the printed damage lands before the pick",
+      "fixes": [
+        "FX-0290"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/vikavolt.ts",
+      "signatures": [
+        "const hasLightningBench = player.bench.some((bench, index) => {"
+      ],
+      "note": "TA-418 (2026-09-14): Volt Switch: no confirm (the text has no 'may'), the switch whiffs with no Benched [L] and is mandatory (type-filtered) ",
+      "fixes": [
+        "FX-0291"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/joltik.ts",
+      "signatures": [
+        "// player stops (#2301: an attack's \"up to X\" is 0..X) or both caps are met."
+      ],
+      "note": "TA-419 (2026-09-14): Jolting Charge: differentTypes dropped — maxPerType 2 alone is the printed 'up to 2 [G] and up to 2 [L] in any way you l",
+      "fixes": [
+        "FX-0292"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/tinkatuff.ts",
+      "signatures": [
+        "GameMessage.WANT_TO_USE_ABILITY,"
+      ],
+      "note": "TA-420 (2026-09-14): Haphazard Hammer / Cast-Off Shell: the printed 'you may use this Ability' confirm precedes the flip / search",
+      "fixes": [
+        "FX-0293"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "const lastAttackSource = copycatCard;"
+      ],
+      "note": "TA-421 (2026-09-14): playerLastAttack's source card is captured at DECLARATION — a self-discarding attacker no longer drops the record",
+      "fixes": [
+        "FX-0294"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/morpeko.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 0, max: 2 }"
+      ],
+      "note": "TA-422 (2026-09-14): Pick and Stick: min 1 -> 0 — an attack's 'up to 2' is 0..2 (#2301), so a one-candidate discard no longer collapses atomi",
+      "fixes": [
+        "FX-0295"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/coalossal.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 1, this)) {"
+      ],
+      "state": "guarding"
+    },
+    {
+      "file": "set-phantasmal-flames/duraludon.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {"
+      ],
+      "state": "guarding"
     }
   ]
 }
