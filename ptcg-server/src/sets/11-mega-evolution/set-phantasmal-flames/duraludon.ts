@@ -3,7 +3,7 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 
 export class Duraludon extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -28,8 +28,9 @@ export class Duraludon extends PokemonCard {
   public fullName: string = 'Duraludon PFL';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Hyper Beam
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Hyper Beam — TA-417 (SD-1 / Step F): the discard rider is written AFTER the damage, so it is
+    // hooked on AFTER_ATTACK; on WAS_ATTACK_USED the pick paused the attack with the 70 unapplied.
+    if (AFTER_ATTACK(effect, 0, this)) {
       DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
     }
 

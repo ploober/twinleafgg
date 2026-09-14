@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
-import { GameMessage, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import { ConfirmPrompt, GameMessage, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ABILITY_USED, COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, JUST_EVOLVED, REMOVE_MARKER_AT_END_OF_TURN } from '../../../game/store/prefabs/prefabs';
@@ -56,26 +56,37 @@ export class Tinkatuff extends PokemonCard {
       if (!hasEnergy) {
         return state;
       }
-      // Mark ability as used
-      player.marker.addMarker(this.RUSTLING_WIND_MARKER, this);
-      // Flip coin
-      return COIN_FLIP_PROMPT(store, state, player, (result) => {
-        if (result) {
-          // If heads, select and move energy to opponent's discard
-          store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_DISCARD,
-            opponent.active,
-            { superType: SuperType.ENERGY },
-            { min: 1, max: 1, allowCancel: false }
-          ), selected => {
-            if (selected && selected.length > 0) {
-              const energyCard = selected[0];
-              opponent.active.moveCardTo(energyCard, opponent.discard);
-            }
-          });
-          ABILITY_USED(player, this);
+      // TA-420: the printed "you may use this Ability" is a DECISION, and it comes before the flip
+      // (a flip is not a decision) — the coin was flipped without ever offering the decline.
+      return store.prompt(state, new ConfirmPrompt(
+        player.id,
+        GameMessage.WANT_TO_USE_ABILITY,
+      ), wantToUse => {
+        if (!wantToUse) {
+          return state;
         }
+        // Mark ability as used
+        player.marker.addMarker(this.RUSTLING_WIND_MARKER, this);
+        // Flip coin
+        COIN_FLIP_PROMPT(store, state, player, (result) => {
+          if (result) {
+            // If heads, select and move energy to opponent's discard
+            store.prompt(state, new ChooseCardsPrompt(
+              player,
+              GameMessage.CHOOSE_CARD_TO_DISCARD,
+              opponent.active,
+              { superType: SuperType.ENERGY },
+              { min: 1, max: 1, allowCancel: false }
+            ), selected => {
+              if (selected && selected.length > 0) {
+                const energyCard = selected[0];
+                opponent.active.moveCardTo(energyCard, opponent.discard);
+              }
+            });
+            ABILITY_USED(player, this);
+          }
+          return state;
+        });
         return state;
       });
     }

@@ -275,7 +275,15 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
   // resolution to test "used this attack during your last turn" (Angelite's lockout, TA-231): it saw
   // the current attack and never blocked. The record is the PREVIOUS attack until this one is done.
   if (effect instanceof UseAttackEffect) {
-    const lastAttackSource = attackingPokemon.getPokemonCard();
+    // TA-421: the SOURCE of the record is the card that DECLARED the attack (`copycatCard`, read
+    // above before the attack effect ran), not whatever the attacking slot holds now. An attack that
+    // discards its own attacker (Shattering Speed sfa-015) empties the slot — and the post-KO promote
+    // SWAPS the list references (`switchPokemon`), leaving `attackingPokemon` pointing at an empty
+    // bench list — so re-reading the slot here dropped the record entirely. The record is the
+    // PLAYER's and survives the source leaving play (CF-65; effects that end on leaving the Active
+    // Spot are explicitly worded, #6929). The WRITE POINT stays here, after the Confusion/Smokescreen
+    // checks and the attack's own resolution (TA-399/TA-231) — only the card capture moves earlier.
+    const lastAttackSource = copycatCard;
     if (lastAttackSource !== undefined) {
       if (!state.playerLastAttack) {
         state.playerLastAttack = {};

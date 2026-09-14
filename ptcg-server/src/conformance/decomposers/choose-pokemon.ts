@@ -116,6 +116,27 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
     return candidates.length <= min;
   },
 
+  /**
+   * TA-416 (CF-14 addendum 2026-09-09): an N-of-exactly-N TARGET pick — "does 50 damage to 2 of your
+   * opponent's Pokémon" with exactly 2 in play (Twin Shotels `tef-191`, Dual Bolt `dri-069`, Sonic
+   * Double `dri-142`, Dual Tail `pfl-079`, Split Bomb `asc-061`, Mirage Barrage `twm-106`, Trifrost
+   * `sfa-047` at two, …) — has no decision in ANY pick: every valid selection is "all the candidates",
+   * in an order the decision does not distinguish. The B.17 `atomicResolvable` gate above already
+   * states that test, but the driver consults it only when ONE candidate remains, so the FIRST pick
+   * stayed surfaced (TA-390's fix recorded that as matching rotomancer 2.38; 2.46 collapses the whole
+   * set, per the addendum). Mirrors discard-energy's `collapseWholeSet` (TA-286/TA-401): a forced
+   * prompt (no cancel), more than one pick still required, and a pool no larger than the requirement.
+   * The post-KO replacement cannot reach here (it is a max-1 pick) and a genuine "up to N" carries an
+   * endChoice that the driver's `!canStopNow` guard already refuses.
+   */
+  collapseWholeSet: (prompt, picks, _state, forcedCount) => {
+    if (prompt.options.allowCancel !== false) {
+      return false;
+    }
+    const remaining = prompt.options.min - realPicks(picks).length;
+    return remaining > 1 && forcedCount <= remaining;
+  },
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;

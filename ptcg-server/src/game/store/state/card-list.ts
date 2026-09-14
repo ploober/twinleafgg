@@ -47,6 +47,33 @@ export class CardList {
     Object.defineProperty(destination, 'fromZoneRef', { value: ref, enumerable: false, configurable: true, writable: true });
   }
 
+  /**
+   * CF-61 residual (2026-09-14): per-CARD deck provenance, for DETACHED piles no active prompt
+   * references. The LIST-level `fromZoneTag` above lets the projection route a prompt-referenced
+   * look window back into `deck`, but a closure-local pile (Grimsley's Move's un-looked remainder
+   * during its shuffle; Crobat's / Dialga's staging piles at their shuffle pauses) surfaces only as
+   * ORPHAN CARDS — the list itself is unreachable from State. So each card that leaves the deck (or
+   * a deck-stamped pile) for an untagged list records the ORDER it left; the projection uses it to
+   * put deck-sourced orphans back into `deck` in the original relative order (rotomancer's shape —
+   * see projectOrphans). Kept when the card re-enters the settled deck mid-effect (the restage half
+   * of Grimsley's Move, so the window and the remainder sort back into one sequence); cleared by a
+   * resolved shuffle (`applyOrder` — order provenance is dead) and by `moveToTopOfDestination` into
+   * a settled zone. A card already stamped keeps its first seq (the earliest removal is the one that
+   * matches the surviving deck order). WeakMap on the shared Card instances; inert for gameplay.
+   */
+  public static readonly deckStamp = new WeakMap<Card, number>();
+  private static deckStampSeq = 0;
+
+  private stampMovedCards(cards: Card[], destination: CardList): void {
+    if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
+    if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }
+    for (const c of cards) {
+      if (!CardList.deckStamp.has(c)) {
+        CardList.deckStamp.set(c, CardList.deckStampSeq++);
+      }
+    }
+  }
+
   public static fromList(names: string[]): CardList {
     const cardList = new CardList();
     const cardManager = CardManager.getInstance();
@@ -78,6 +105,8 @@ export class CardList {
     for (let i = 0; i < order.length; i++) {
       this.cards[i] = copy[order[i]];
     }
+    // CF-61 residual: a resolved shuffle/order invalidates removal-order provenance for these cards.
+    this.cards.forEach(c => CardList.deckStamp.delete(c));
   }
 
   public moveTo(destination: CardList, count?: number): void {
@@ -88,6 +117,7 @@ export class CardList {
 
     count = Math.min(count, this.cards.length);
     const cards = this.cards.splice(0, count);
+    this.stampMovedCards(cards, destination);
     destination.cards.push(...cards);
   }
 
@@ -99,10 +129,12 @@ export class CardList {
     // every other card is moved (a 6-card list moves 3 and keeps 3). Iterate over a copy when
     // the input aliases our backing array — non-aliased callers are unaffected. (Amarys PRE.)
     const toMove = cards === this.cards ? cards.slice() : cards;
+    const moved: Card[] = [];   // CF-61 residual: stamped once, after the loop settles what moved
     for (let i = 0; i < toMove.length; i++) {
       let index = this.cards.indexOf(toMove[i]);
       if (index !== -1) {
         const card = this.cards.splice(index, 1);
+        moved.push(card[0]);
         // If this is a PokemonCardList with the energies property, remove the card from energies
         if ('energies' in this) {
           const pokemonList = this as any;
@@ -130,6 +162,7 @@ export class CardList {
         index = (this as any).tools.indexOf(toMove[i]);
         if (index !== -1) {
           const card = (this as any).tools.splice(index, 1);
+          moved.push(card[0]);
           destination.cards.push(card[0]);
           // If destination is a PokemonCardList and card is an energy card (not a Pokemon), add to energies.cards
           if ('energies' in destination) {
@@ -145,6 +178,7 @@ export class CardList {
         }
       }
     }
+    this.stampMovedCards(moved, destination);   // CF-61 residual
   }
 
   public moveCardTo(card: Card, destination: CardList): void {
@@ -152,6 +186,11 @@ export class CardList {
   }
 
   public moveToTopOfDestination(destination: CardList): void {
+    if (destination.zoneTag !== undefined) {
+      // CF-61 residual: landing on top of a settled zone in a chosen order ends the provenance
+      // (Snack Seek's decline, an OrderCardsPrompt restack) — the stamp must not outlive the pause.
+      this.cards.forEach(c => CardList.deckStamp.delete(c));
+    }
     destination.cards = [...this.cards, ...destination.cards];
   }
 

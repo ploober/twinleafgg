@@ -3,7 +3,7 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { FLIP_A_COIN_IF_HEADS_DEAL_MORE_DAMAGE } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Raichu extends PokemonCard {
@@ -41,8 +41,9 @@ export class Raichu extends PokemonCard {
       FLIP_A_COIN_IF_HEADS_DEAL_MORE_DAMAGE(store, state, effect, 50);
     }
 
-    // Strong Volt
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Strong Volt — TA-417 (SD-1 / Step F): the discard rider is written AFTER the damage, so it is
+    // hooked on AFTER_ATTACK; on WAS_ATTACK_USED the pick paused the attack with the 150 unapplied.
+    if (AFTER_ATTACK(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1, CardType.LIGHTNING);
     }
 

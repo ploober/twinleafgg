@@ -40,10 +40,14 @@ export class Joltik extends PokemonCard {
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
         {
+          // TA-419: `differentTypes: true` capped the search at ONE card of each type — after the
+          // first [G] attach every other [G] was excluded, and with no [L] left the search closed
+          // straight to the shuffle. "up to 2 Basic [G] and up to 2 Basic [L] in any way you like"
+          // is exactly `maxPerType: 2` over the two valid types; the loop stays open until the
+          // player stops (#2301: an attack's "up to X" is 0..X) or both caps are met.
           allowCancel: true,
           min: 0,
           max: 4,
-          differentTypes: true,
           validCardTypes: [CardType.GRASS, CardType.LIGHTNING],
           maxPerType: 2
         },

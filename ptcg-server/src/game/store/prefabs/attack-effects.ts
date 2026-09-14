@@ -779,10 +779,12 @@ export function DISCARD_CARDS_FROM_OPPONENTS_ACTIVE_POKEMON(
 export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   store: StoreLike,
   state: State,
-  effect: AttackEffect,
+  effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too (TA-417)
   allowedEnergyTypes?: CardType[],
   count = 1,
 ) {
+  // The DiscardCardsEffect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
+  const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
@@ -816,7 +818,7 @@ export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   ), selected => {
     const cards = selected || [];
     if (cards.length > 0) {
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
+      const discardEnergy = new DiscardCardsEffect(base, cards);
       discardEnergy.target = opponent.active;
       store.reduceEffect(state, discardEnergy);
     }

@@ -1,8 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, Stage } from '../../../game/store/card/card-types';
-import { ConfirmPrompt, GameMessage, State, StoreLike } from '../../../game';
+import { CardTarget, GameMessage, PlayerType, SlotType, State, StoreLike } from '../../../game';
+import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 
 export class Vikavolt extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -33,17 +35,43 @@ export class Vikavolt extends PokemonCard {
   public fullName: string = 'Vikavolt ASC';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Volt Switch
+    // Volt Switch — TA-418: the text has no "may", so no confirm is offered. With no Benched
+    // Lightning Pokémon the switch whiffs silently (an offer that can do nothing is not surfaced,
+    // §B.27); with candidates the pick is mandatory — restricted to Lightning (the old prompt let
+    // ANY benched Pokémon in), and a lone candidate collapses under CF-14. Idiom: Heliolisk TEU.
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
-      state = store.prompt(state, new ConfirmPrompt(
-        effect.player.id,
-        GameMessage.WANT_TO_SWITCH_POKEMON,
-      ), wantToUse => {
-        if (wantToUse) {
-          SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
+
+      const blocked: CardTarget[] = [];
+      player.bench.forEach((bench, index) => {
+        if (bench.cards.length === 0) {
+          blocked.push({ player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index });
+          return;
+        }
+        const checkType = new CheckPokemonTypeEffect(bench);
+        store.reduceEffect(state, checkType);
+        if (!checkType.cardTypes.includes(CardType.LIGHTNING)) {
+          blocked.push({ player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index });
         }
       });
+
+      const hasLightningBench = player.bench.some((bench, index) => {
+        return bench.cards.length > 0 && !blocked.some(b => b.index === index);
+      });
+
+      if (hasLightningBench) {
+        store.prompt(state, new ChoosePokemonPrompt(
+          player.id,
+          GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH],
+          { allowCancel: false, blocked }
+        ), selected => {
+          if (selected && selected.length > 0) {
+            player.switchPokemon(selected[0], store, state);
+          }
+        });
+      }
     }
 
     return state;

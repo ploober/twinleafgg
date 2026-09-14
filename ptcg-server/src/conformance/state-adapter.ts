@@ -772,12 +772,43 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
     p.prizes.forEach(pc => seen.add(pc.iid));
   }
   if (state.stadium) { seen.add(state.stadium.iid); }
+  // CF-61 residual (2026-09-14): an orphan whose card carries a DECK stamp (CardList.deckStamp — it
+  // left the settled deck for a closure-local pile) is a deck-look window, not mid-resolution limbo:
+  // it rejoins its owner's `deck`, and the zone is re-ordered by the removal-order stamps so the
+  // projection restores the ORIGINAL relative order — rotomancer's shape on every driven board
+  // (Grimsley's Move pfl-090, Nighttime Maneuvers cri-051, Time Manipulation ssp-135): the deck
+  // reads as if the look never physically moved anything. Stamped cards sort ascending (earliest
+  // removal first = closest to the top), never-stamped members keep their engine order after them.
+  // Engaged per player ONLY when a deck-stamped orphan exists, so an ordinary board's deck is
+  // projected exactly as the engine holds it.
+  const deckOrphans: Record<NeutralPlayerId, Array<{ iid: string; card: Card }>> = { A: [], B: [] };
   for (const [iid, card] of ctx.iidToCard) {
     if (seen.has(iid)) { continue; }
     const ownerIndex = ctx.cardOwner.get(card);
     const who: NeutralPlayerId = ownerIndex === 1 ? 'B' : 'A';
+    if (CardList.deckStamp.has(card)) {
+      deckOrphans[who].push({ iid, card });
+      seen.add(iid);
+      continue;
+    }
     const p = state.players[who];
     p.resolving = [...(p.resolving ?? []), { iid, printing: toPrinting(card) }];
     seen.add(iid);
+  }
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const orphans = deckOrphans[who];
+    if (orphans.length === 0) { continue; }
+    const p = state.players[who];
+    const seqOf = (iid: string): number | undefined => {
+      const card = ctx.iidToCard.get(iid);
+      return card === undefined ? undefined : CardList.deckStamp.get(card);
+    };
+    const entries = [
+      ...p.deck.map(ref => ({ ref, seq: seqOf(ref.iid) })),
+      ...orphans.map(o => ({ ref: { iid: o.iid, printing: toPrinting(o.card) }, seq: CardList.deckStamp.get(o.card) })),
+    ];
+    const stamped = entries.filter(e => e.seq !== undefined).sort((a, b) => a.seq! - b.seq!);
+    const unstamped = entries.filter(e => e.seq === undefined);
+    p.deck = [...stamped.map(e => e.ref), ...unstamped.map(e => e.ref)];
   }
 }

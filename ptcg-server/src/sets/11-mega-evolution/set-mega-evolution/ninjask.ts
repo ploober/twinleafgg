@@ -1,4 +1,4 @@
-import { PowerType, State, StoreLike } from '../../../game';
+import { ConfirmPrompt, GameMessage, PowerType, State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -35,7 +35,18 @@ export class Ninjask extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (JUST_EVOLVED(effect, this)) {
-      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, effect.player, { name: 'Shedinja' }, { min: 0, max: 1 });
+      // TA-420: "you may search your deck for Shedinja" — the decision comes first; the search (and
+      // its shuffle) ran unconditionally, never offering the decline. The deck is hidden, so the
+      // offer stands even when no Shedinja is there (fail-to-find is legal).
+      const player = effect.player;
+      state = store.prompt(state, new ConfirmPrompt(
+        player.id,
+        GameMessage.WANT_TO_USE_ABILITY,
+      ), wantToUse => {
+        if (wantToUse) {
+          SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, player, { name: 'Shedinja' }, { min: 0, max: 1 });
+        }
+      });
     }
 
     if (AFTER_ATTACK(effect, 0, this)) {

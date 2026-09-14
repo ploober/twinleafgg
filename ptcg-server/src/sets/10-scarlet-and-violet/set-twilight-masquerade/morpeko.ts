@@ -125,7 +125,10 @@ export class Morpeko extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 1, max: 2 }
+        // TA-422: an attack's "up to 2" is 0..2 (#2301) — `min: 1` made the pick mandatory, so a
+        // ONE-candidate discard collapsed atomically (attach + end turn) while rotomancer still asks.
+        // With min: 0 the decline is offered from the first pick and nothing about the board is forced.
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user
