@@ -47,6 +47,11 @@ export class Chesnaught extends PokemonCard {
       if (
         effect.damage > 0 &&
         targetOwner !== effect.player &&
+        // "If this Pokémon is in the Active Spot" — Needly Armor only retaliates from the Active
+        // Spot (even if it is KO'd by the hit; the KO is resolved after AfterDamageEffect, so
+        // `active` still points at Chesnaught here). A benched Chesnaught sniped by e.g. Regieleki's
+        // Targeted Bolt must NOT place counters on the attacker. TA-fix (twinleaf bug-report burndown).
+        targetOwner.active === effect.target &&
         state.phase === GamePhase.ATTACK &&
         effect.attackEffect
       ) {

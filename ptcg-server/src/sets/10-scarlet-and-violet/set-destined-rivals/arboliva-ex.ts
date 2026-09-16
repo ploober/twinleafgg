@@ -115,6 +115,14 @@ export class Arbolivaex extends PokemonCard {
       );
     }
 
+    // Aroma Shot (attack index 1): "This Pokémon recovers from all Special Conditions." The 160
+    // damage is applied by the framework from the attack definition; only the recovery needs an
+    // explicit branch. Was unimplemented — a Confused Arboliva that flipped heads and hit stayed
+    // Confused. TA-fix (twinleaf bug-report burndown, report 1481733371368308746).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
+      effect.player.active.specialConditions = [];
+    }
+
     return state;
   }
 }
