@@ -8379,7 +8379,7 @@
       ]
     },
     {
-      "file": "sets/11-mega-evolution/set-chaos-rising/chesnaught.ts",
+      "file": "set-chaos-rising/chesnaught.ts",
       "signatures": [
         "targetOwner.active === effect.target &&"
       ],
@@ -8389,7 +8389,7 @@
       ]
     },
     {
-      "file": "sets/10-scarlet-and-violet/set-destined-rivals/arboliva-ex.ts",
+      "file": "set-destined-rivals/arboliva-ex.ts",
       "signatures": [
         "effect.player.active.specialConditions = [];"
       ],
@@ -8399,7 +8399,7 @@
       ]
     },
     {
-      "file": "sets/11-mega-evolution/set-pitch-black/gwynn.ts",
+      "file": "set-pitch-black/gwynn.ts",
       "signatures": [
         "if (selectableCount < 1) {"
       ],
