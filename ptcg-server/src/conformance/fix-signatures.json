@@ -8377,6 +8377,36 @@
       "fixes": [
         "FX-0290"
       ]
+    },
+    {
+      "file": "sets/11-mega-evolution/set-chaos-rising/chesnaught.ts",
+      "signatures": [
+        "targetOwner.active === effect.target &&"
+      ],
+      "note": "TA-425 (2026-09-15): Chesnaught cri-7 Needly Armor: gate on the Active Spot — a benched Chesnaught no longer retaliates when sniped",
+      "fixes": [
+        "FX-0297"
+      ]
+    },
+    {
+      "file": "sets/10-scarlet-and-violet/set-destined-rivals/arboliva-ex.ts",
+      "signatures": [
+        "effect.player.active.specialConditions = [];"
+      ],
+      "note": "TA-426 (2026-09-15): Arboliva ex dri-23 Aroma Shot: implement 'recovers from all Special Conditions'",
+      "fixes": [
+        "FX-0298"
+      ]
+    },
+    {
+      "file": "sets/11-mega-evolution/set-pitch-black/gwynn.ts",
+      "signatures": [
+        "if (selectableCount < 1) {"
+      ],
+      "note": "TA-427 (2026-09-15): Gwynn pbl-78: 'Discard up to 2 ...' allows playing with 1 discardable Pokemon (discard 1, draw 3)",
+      "fixes": [
+        "FX-0299"
+      ]
     }
   ]
 }
