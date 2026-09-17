@@ -503,10 +503,21 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
 
   // Handle KOs first
   const pokemonsToDiscard = findKoPokemons(store, state);
-  for (const pokemonToDiscard of pokemonsToDiscard) {
-    const owner = state.players[pokemonToDiscard.playerNum];
-    const knockOutEffect = new KnockOutEffect(owner, pokemonToDiscard.cardList);
+  // CF-38 KO window: every KO in this sweep is simultaneous, so their REACTIONS are one batch across
+  // victims — one candidate per (reactor, victim), the victim on the wire as `subject`. Fewer than two
+  // reactors: a no-op, and the per-victim dispatch below behaves exactly as it always has.
+  const knockOutEffects = pokemonsToDiscard.map(p => {
+    const knockOutEffect = new KnockOutEffect(state.players[p.playerNum], p.cardList);
     knockOutEffect.viaCheckState = true;
+    return knockOutEffect;
+  });
+  state = store.resolveKnockOutReactions(state, knockOutEffects);
+  if (store.hasPrompts()) {
+    yield store.waitPrompt(state, () => next());
+  }
+  for (let i = 0; i < pokemonsToDiscard.length; i++) {
+    const pokemonToDiscard = pokemonsToDiscard[i];
+    const knockOutEffect = knockOutEffects[i];
     state = store.reduceEffect(state, knockOutEffect);
 
     if (store.hasPrompts()) {

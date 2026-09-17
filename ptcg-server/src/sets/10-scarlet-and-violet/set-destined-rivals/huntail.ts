@@ -1,9 +1,8 @@
-import { Card, GamePhase, PlayerType, PowerType, State, StoreLike, pokemonHasCardTypeOptional } from '../../../game';
+import { GamePhase, PlayerType, PowerType, State, StoreLike, pokemonHasCardTypeOptional } from '../../../game';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import { BetweenTurnsEffect } from '../../../game/store/effects/game-phase-effects';
 import { CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Huntail extends PokemonCard {
@@ -36,10 +35,17 @@ export class Huntail extends PokemonCard {
   public name: string = 'Huntail';
   public fullName: string = 'Huntail DRI';
 
-  public readonly DIVER_CATCH_MARKER = 'DIVER_CATCH_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Diver Catch
+    // Diver's Catch — ONE firing PER Knocked Out [W] Pokémon (the printed "that Pokémon"), asked AT the
+    // KO, not between turns (TA-432). Before this, the KO handler only MARKED the Energy and a between-
+    // turns handler raised one confirm for every victim at once and rescued the cards from the discard —
+    // two per-Pokémon "you may"s folded into one all-or-nothing decision, offered after the opponent's
+    // Prize picks. As a candidate of the CF-38 KO batch (`Store.resolveKnockOutReactions`) this runs
+    // BEFORE the core KO, so the answer lands while the victim is still in play and the Energy goes to
+    // hand INSTEAD OF the discard pile; on the single-reactor legacy path the core KO has already
+    // discarded it by the time the answer arrives, so the rescue is by card identity wherever the cards
+    // now sit. Either way it is this victim's Energy and nobody else's.
     if (effect instanceof KnockOutEffect) {
       const player = effect.player;
 
@@ -59,30 +65,21 @@ export class Huntail extends PokemonCard {
       if (!isThisInPlay) { return state; }
 
       const target = effect.target;
-      const cards = target.cards.filter(card => card.superType === SuperType.ENERGY && card.energyType === EnergyType.BASIC && card.name === 'Water Energy');
-      cards.forEach(card => {
-        player.marker.addMarker(this.DIVER_CATCH_MARKER, card);
-      });
-    }
+      const rescued = target.cards.filter(card => card.superType === SuperType.ENERGY && card.energyType === EnergyType.BASIC && card.name === 'Water Energy');
+      if (rescued.length === 0) { return state; }
 
-    if (effect instanceof BetweenTurnsEffect && effect.player.marker.hasMarker(this.DIVER_CATCH_MARKER)) {
-      state.players.forEach(player => {
-
-        if (!player.marker.hasMarker(this.DIVER_CATCH_MARKER)) {
+      CONFIRMATION_PROMPT(store, state, player, result => {
+        if (!result) {
           return;
         }
-
-        CONFIRMATION_PROMPT(store, state, player, result => {
-          if (result) {
-
-            const rescued: Card[] = player.marker.markers
-              .filter(m => m.name === this.DIVER_CATCH_MARKER && m.source !== undefined)
-              .map(m => m.source!);
-
-            MOVE_CARDS(store, state, player.discard, player.hand, { cards: rescued });
-            player.marker.removeMarker(this.DIVER_CATCH_MARKER);
-          }
-        });
+        const stillAttached = rescued.filter(c => target.cards.includes(c));
+        const inDiscard = rescued.filter(c => player.discard.cards.includes(c));
+        if (stillAttached.length > 0) {
+          MOVE_CARDS(store, state, target, player.hand, { cards: stillAttached });
+        }
+        if (inDiscard.length > 0) {
+          MOVE_CARDS(store, state, player.discard, player.hand, { cards: inDiscard });
+        }
       });
     }
 

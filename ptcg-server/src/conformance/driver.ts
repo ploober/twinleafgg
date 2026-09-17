@@ -396,7 +396,8 @@ const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
   // disambiguates two effects on ONE card. All three are identity. `ability` is absent on every
   // `cardTextEffect` candidate, and the comparison below skips a field the OFFER leaves undefined,
   // so including it costs nothing there and buys strictness where the offer does carry it.
-  resolveNext: ['source', 'kind', 'ability'],
+  // `subject` (v0.7.2) is the fourth: the KO'd victim that instantiated this occurrence.
+  resolveNext: ['source', 'kind', 'ability', 'subject'],
   flip: ['face'],
 };
 

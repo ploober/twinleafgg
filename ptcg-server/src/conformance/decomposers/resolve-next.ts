@@ -29,6 +29,7 @@ export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
       return null; // one pick completes this decision; the engine raises the next one itself
     }
     const legalActions: LegalAction[] = [];
+    const seen = new Map<string, string>();
     for (const candidate of prompt.candidates) {
       const source = ctx.cardToIid.get(candidate.card);
       if (source === undefined) {
@@ -37,9 +38,30 @@ export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
         // so this is a hard error rather than a silent drop.
         throw new Error(`[conformance] ResolveNext candidate has no iid: ${candidate.card.fullName}`);
       }
-      legalActions.push(candidate.ability === undefined
+      // CF-38 (v0.7.2): the occurrence half — the KO'd subject's basic iid. A candidate that carries a
+      // subject with no iid is the same hard error as a source with none.
+      const subject = candidate.subject === undefined ? undefined : ctx.cardToIid.get(candidate.subject);
+      if (candidate.subject !== undefined && subject === undefined) {
+        throw new Error(`[conformance] ResolveNext subject has no iid: ${candidate.subject.fullName}`);
+      }
+      const action: Extract<LegalAction, { type: 'resolveNext' }> = candidate.ability === undefined
         ? { type: 'resolveNext', kind: 'cardTextEffect', source }
-        : { type: 'resolveNext', kind: 'abilityEffect', source, ability: candidate.ability });
+        : { type: 'resolveNext', kind: 'abilityEffect', source, ability: candidate.ability };
+      if (subject !== undefined) {
+        action.subject = subject;
+      }
+      // UNIQUENESS (the invariant CF-38 actually needs): the identity tuple must be pairwise distinct
+      // across the candidate set, or the decision cannot be answered. Two identical rows would let
+      // `toPick` below select the FIRST silently — a wrong answer wearing a green board, which is worse
+      // than rotomancer's refusal. Fail loudly instead.
+      const key = `${action.kind}|${action.source}|${action.ability ?? ''}|${action.subject ?? ''}`;
+      if (seen.has(key)) {
+        throw new Error('[conformance] CF-38 uniqueness: two simultaneous-effect candidates share the identity tuple '
+          + `(kind=${action.kind}, source=${action.source}, ability=${action.ability ?? 'absent'}, subject=${action.subject ?? 'absent'}) `
+          + '— the decision cannot be answered');
+      }
+      seen.set(key, candidate.card.fullName);
+      legalActions.push(action);
     }
     if (legalActions.length === 0) {
       return null;
@@ -59,11 +81,17 @@ export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
       // `ability` disambiguates two effects on ONE card, so it is matched, not ignored — and its
       // ABSENCE is matched too: a `cardTextEffect` answer must not select an `abilityEffect`
       // candidate that happens to sit on the same card.
-      return (c.ability ?? undefined) === (a.ability ?? undefined);
+      if ((c.ability ?? undefined) !== (a.ability ?? undefined)) {
+        return false;
+      }
+      // CF-38 (v0.7.2): `subject` is matched EXACTLY, absence included — an answer naming no subject
+      // must not select an occurrence that carries one, and vice versa.
+      const subject = c.subject === undefined ? undefined : ctx.cardToIid.get(c.subject);
+      return subject === (a.subject ?? undefined);
     });
     if (index < 0) {
       throw new Error(`[conformance] resolveNext names no candidate in this batch: `
-        + `source=${a.source} kind=${a.kind} ability=${a.ability ?? '(absent)'}`);
+        + `source=${a.source} kind=${a.kind} ability=${a.ability ?? '(absent)'} subject=${a.subject ?? '(absent)'}`);
     }
     return { kind: 'option', index };
   },

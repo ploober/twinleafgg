@@ -12,7 +12,7 @@ import { ChangeAvatarAction } from './actions/change-avatar-action';
 import { Effect } from './effects/effect';
 import { PlayPokemonEffect } from './effects/play-card-effects';
 import { CheckAttackCostEffect, CheckPokemonPowersEffect, CheckRetreatCostEffect } from './effects/check-effects';
-import { MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect } from './effects/game-effects';
+import { KnockOutEffect, MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect } from './effects/game-effects';
 import {
   CLEAR_ABILITY_LOCK_ACTIVATION,
   STAMP_ABILITY_LOCK_ACTIVATION,
@@ -30,6 +30,7 @@ import { StoreHandler } from './store-handler';
 import { StoreLike } from './store-like';
 import { generateId, deepClone } from '../../utils/utils';
 import { ResolveNextPrompt, ResolveNextCandidate } from './prompts/resolve-next-prompt';
+import { CardList } from './state/card-list';
 import { attackReducer } from './effect-reducers/attack-effect';
 import { playCardReducer } from './reducers/play-card-reducer';
 import { playEnergyReducer } from './effect-reducers/play-energy-effect';
@@ -127,6 +128,46 @@ export function boardDiffers(a: any, b: any, seen: ComparedPairs = new Map(), de
   return false;
 }
 
+
+/**
+ * One candidate of a simultaneous batch: the card whose handler runs, the effect it runs against, and —
+ * for an event-instantiated reaction — the SUBJECT the event named (CF-38 `subject`). The after-damage
+ * batch shares one effect across its actors; the KO batch gives each actor its own victim's effect.
+ */
+interface SimultaneousActor {
+  card: Card;
+  effect: Effect;
+  subject?: Card;
+}
+
+/**
+ * CF-38 KO window: does a probe's result differ in anything the WIRE projects — zone contents, damage,
+ * Special Conditions, Tools, the Stadium — as opposed to engine-private markers and flags? Unlike
+ * `boardDiffers` (which counts any change, and is right for the 14 after-damage responders), this is the
+ * actor test for the KO window, where ~131 handlers exist and many only STAMP A MARKER ("if any of your
+ * Pokémon were Knocked Out during your opponent's last turn"). Counting those as actors would raise
+ * ordering decisions with no rules content — boundary (a) in reverse. Card objects are shared between a
+ * state and its probe clone (`deepClone` ignores `Card`), so zone contents compare by reference.
+ */
+export function wireVisibleBoardDiffers(a: State, b: State): boolean {
+  const same = (p: Card[], q: Card[]) => p.length === q.length && p.every((c, i) => c === q[i]);
+  if (a.players.length !== b.players.length) { return true; }
+  for (let i = 0; i < a.players.length; i++) {
+    const x = a.players[i], y = b.players[i];
+    const zones: Array<[CardList, CardList]> = [[x.hand, y.hand], [x.deck, y.deck], [x.discard, y.discard], [x.lostzone, y.lostzone], [x.stadium, y.stadium]];
+    if (zones.some(([za, zb]) => !same(za.cards, zb.cards))) { return true; }
+    if (x.prizes.length !== y.prizes.length || x.prizes.some((pz, j) => !same(pz.cards, y.prizes[j].cards))) { return true; }
+    const sa = [x.active, ...x.bench], sb = [y.active, ...y.bench];
+    if (sa.length !== sb.length) { return true; }
+    for (let j = 0; j < sa.length; j++) {
+      if (!same(sa[j].cards, sb[j].cards) || !same(sa[j].tools, sb[j].tools) || sa[j].damage !== sb[j].damage
+        || sa[j].specialConditions.slice().sort().join() !== sb[j].specialConditions.slice().sort().join()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 export class Store implements StoreLike {
 
@@ -589,7 +630,13 @@ export class Store implements StoreLike {
       return this.resolveSimultaneous(state, effect, batchable);
     }
 
+    // CF-38 KO window: a reactor already resolved by the sweep-level batch (`resolveKnockOutReactions`)
+    // must not fire a second time when this victim's KnockOutEffect is dispatched for real.
+    const alreadyResolved = effect instanceof KnockOutEffect ? effect.resolvedReactors : [];
     batchable.forEach(c => {
+      if (alreadyResolved.includes(c)) {
+        return;
+      }
       state = this.callReduceEffect(c, this, state, effect);
     });
     return state;
@@ -644,30 +691,83 @@ export class Store implements StoreLike {
     }
 
     const nonActors = cards.filter(c => !actors.includes(c));
-    state = this.askResolveNext(state, effect, actors, owners[0] as Player);
+    state = this.askResolveNext(state, actors.map(card => ({ card, effect })), owners[0] as Player);
     // Handlers the probe judged inert still get their turn, after the batch. They are no-ops by
     // construction; running them preserves the old path's guarantee that every card sees the effect.
     nonActors.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
     return state;
   }
 
+  /**
+   * CF-38 KO WINDOW (reopened on rotomancer's N-0209, 2026-09-16). Every Pokémon Knocked Out in one
+   * checkState sweep is Knocked Out at the same time, so their REACTIONS are one simultaneous batch —
+   * across victims — and one source may react once PER victim: `dri-055` Diver's Catch ("… put all Basic
+   * [W] Energy attached to THAT Pokémon into your hand") fires twice when a spread attack Knocks Out two
+   * of its Water Pokémon. A candidate is therefore a (reactor, victim) pair, and the wire names the
+   * victim as `subject` (openapi v0.7.2) — the only field on which the two firings differ.
+   *
+   * Same discipline as `resolveSimultaneous`: fewer than two actors, or actors spanning both players
+   * (#146's un-adjudicated split-trigger window), fall through untouched and the sweep's per-victim
+   * dispatch behaves exactly as before. With a real batch, each actor is stamped on its victim's effect
+   * so `propagateEffect` skips it when that effect is dispatched for real — the core KO (discard, prize
+   * accounting) still runs there, AFTER the reactions. That ordering is what lets an "instead of the
+   * discard pile" clause act on the Pokémon while it is still in play.
+   *
+   * The actor test is `wireVisibleBoardDiffers`, not `boardDiffers`: the KO window has ~131 handlers and
+   * many only stamp a marker; a marker is not an effect the player orders.
+   */
+  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State {
+    if (effects.length === 0) {
+      return state;
+    }
+    const inPlay: Card[] = [];
+    for (const player of state.players) {
+      for (const slot of [player.active, ...player.bench]) {
+        slot.cards.forEach(c => inPlay.push(c));
+        slot.tools.forEach(t => inPlay.push(t));
+      }
+    }
+    const actors: SimultaneousActor[] = [];
+    for (const effect of effects) {
+      const subject = effect.target.getPokemons()[0];
+      for (const card of inPlay) {
+        const probe = this.probe(card, state, effect);
+        if (probe !== null && (probe.raised || wireVisibleBoardDiffers(state, probe.after))) {
+          actors.push({ card, effect, subject });
+        }
+      }
+    }
+    if (actors.length < 2) {
+      return state;
+    }
+    const owners = actors.map(a => this.ownerOfEffect(state, a.card));
+    if (owners.some(o => o === undefined || o !== owners[0])) {
+      return state;
+    }
+    for (const a of actors) {
+      (a.effect as KnockOutEffect).resolvedReactors.push(a.card);
+    }
+    return this.askResolveNext(state, actors, owners[0] as Player);
+  }
+
   /** One pending per pick, re-asked with the remainder (CF-38: not a single permutation). */
-  private askResolveNext(state: State, effect: Effect, remaining: Card[], owner: Player): State {
+  private askResolveNext(state: State, remaining: SimultaneousActor[], owner: Player): State {
     if (remaining.length === 0) {
       return state;
     }
     if (remaining.length === 1) {
-      return this.callReduceEffect(remaining[0], this, state, effect);
+      return this.callReduceEffect(remaining[0].card, this, state, remaining[0].effect);
     }
-    const candidates: ResolveNextCandidate[] = remaining.map(c => ({
-      card: c,
-      ability: this.abilityNameOf(c),
+    const candidates: ResolveNextCandidate[] = remaining.map(a => ({
+      card: a.card,
+      ability: this.abilityNameOf(a.card),
+      subject: a.subject,
     }));
     return this.prompt(state, new ResolveNextPrompt(owner.id, candidates), choice => {
       const index = (typeof choice === 'number' && choice >= 0 && choice < remaining.length) ? choice : 0;
       const picked = remaining[index];
       const rest = remaining.filter((_, i) => i !== index);
-      state = this.runThenContinue(state, effect, picked, rest, owner);
+      state = this.runThenContinue(state, picked, rest, owner);
     });
   }
 
@@ -695,16 +795,16 @@ export class Store implements StoreLike {
    * not when its first prompt has been posted.
    */
   private runThenContinue(
-    state: State, effect: Effect, picked: Card, rest: Card[], owner: Player,
+    state: State, picked: SimultaneousActor, rest: SimultaneousActor[], owner: Player,
   ): State {
     const promptsBefore = this.promptItems.length;
-    state = this.callReduceEffect(picked, this, state, effect);
+    state = this.callReduceEffect(picked.card, this, state, picked.effect);
     if (this.promptItems.length > promptsBefore) {
       return this.waitPrompt(state, () => {
-        state = this.askResolveNext(state, effect, rest, owner);
+        state = this.askResolveNext(state, rest, owner);
       });
     }
-    return this.askResolveNext(state, effect, rest, owner);
+    return this.askResolveNext(state, rest, owner);
   }
 
   /**
@@ -723,6 +823,16 @@ export class Store implements StoreLike {
    * references pointing at the same objects.
    */
   private probeWouldAct(card: Card, state: State, effect: Effect): boolean {
+    const probe = this.probe(card, state, effect);
+    return probe !== null && (probe.raised || boardDiffers(state, probe.after));
+  }
+
+  /**
+   * Run one handler against a throwaway clone and report whether it raised a prompt and what board it
+   * left — the two actor signals. `null` when the handler threw (declining). Split out of
+   * `probeWouldAct` so the KO window can apply a narrower diff to `after` (see `wireVisibleBoardDiffers`).
+   */
+  private probe(card: Card, state: State, effect: Effect): { raised: boolean; after: State } | null {
     const refMap = new Map<object, object>();
     // 🚨 IDENTITY THAT LIVES ON A CARD MUST SURVIVE THE CLONE, AND `Card` IN THE IGNORE LIST IS NOT
     // ENOUGH TO GIVE IT THAT. `deepClone` treats a `Card` as opaque and never walks into it, so
@@ -769,7 +879,7 @@ export class Store implements StoreLike {
     } catch {
       // A handler that throws is doing what several of them do to decline (the `ToolEffect` stub in
       // `handy-fan.ts` is caught by the CARD, but a lock can throw past it). Not acting.
-      return false;
+      return null;
     } finally {
       raised = this.probeRaisedPrompt;
       this.probing = wasProbing;
@@ -777,7 +887,7 @@ export class Store implements StoreLike {
       this.promptItems.length = promptItemsBefore;
       this.logId = logIdBefore;
     }
-    return raised || boardDiffers(state, after);
+    return { raised, after };
   }
 
   /** The player who owns the card an effect comes from — a Tool's owner is the Pokemon's owner. */

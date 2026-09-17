@@ -459,6 +459,13 @@ export interface ResolveNextAction {
   kind: 'abilityEffect' | 'cardTextEffect';
   source: string;
   ability?: string;
+  /**
+   * CF-38 reopened (N-0209) / openapi v0.7.2: the OCCURRENCE half of the identity — the basic iid of the
+   * Pokémon the instantiating event named (a KO's victim). One source may react once per victim, and
+   * those firings share `kind`/`source`/`ability`; `subject` is what tells them apart. Present on every
+   * event-instantiated candidate the engine batches (the KO window); matched exactly inbound.
+   */
+  subject?: string;
 }
 
 // ── System actions (the `system` actor — design §5) ────────────────────────
@@ -598,7 +605,7 @@ export type LegalAction =
   | { type: 'takePrize'; index: number }
   | { type: 'confirm'; value: boolean }
   | { type: 'selectOption'; option: number; label?: string }
-  | { type: 'resolveNext'; kind: 'abilityEffect' | 'cardTextEffect'; source: string; ability?: string }
+  | { type: 'resolveNext'; kind: 'abilityEffect' | 'cardTextEffect'; source: string; ability?: string; subject?: string }
   // `endChoice` is the INTERNAL variable-count terminator only — it is never emitted on the wire
   // (the contract has no such Action; completion is signalled by the next non-pick action, R1). The
   // wire transform (`toWirePending`) strips it; decomposers still append it to mark "stop allowed".

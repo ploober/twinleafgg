@@ -16,6 +16,14 @@ export interface ResolveNextCandidate {
   card: Card;
   /** The Ability's name when the effect is a named Ability; undefined for printed rules text. */
   ability?: string;
+  /**
+   * CF-38 (reopened on N-0209, openapi v0.7.2): the OCCURRENCE half of the identity — the basic card of
+   * the Pokémon the instantiating event named (a KO's victim). One source reacts once PER victim
+   * (`dri-055` Diver's Catch: "… attached to THAT Pokémon"), and two such firings share card + ability;
+   * only the subject tells them apart on the wire (`subject`). Absent on a candidate with no
+   * instantiating subject (the after-damage batch today).
+   */
+  subject?: Card;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { Action } from './actions/action';
 import { Effect } from './effects/effect';
+import { KnockOutEffect } from './effects/game-effects';
 import { Prompt } from './prompts/prompt';
 import { State } from './state/state';
 import { StateLogParam } from './state/state-log';
@@ -9,6 +10,9 @@ export interface StoreLike {
   dispatch(action: Action): void;
 
   reduceEffect(state: State, effect: Effect): State;
+
+  /** CF-38 KO window: resolve the simultaneous reactions to every KO of one sweep before the KOs themselves. */
+  resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State;
 
   log(state: State, message: GameLog, params?: StateLogParam, client?: number): void;
 

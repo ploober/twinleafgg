@@ -231,6 +231,9 @@ export class KnockOutEffect implements Effect {
    * dispatched directly by a card effect ("Knock Out each of your opponent's Pokemon …")
    * leaves this false, so the core handler records the owed prize for the next sweep. */
   public viaCheckState: boolean = false;
+  /** CF-38 KO window: reactors already resolved by the sweep-level batch (`Store.resolveKnockOutReactions`),
+   * which `propagateEffect` skips when this effect is dispatched for real so no reaction fires twice. */
+  public resolvedReactors: Card[] = [];
 
   constructor(player: Player, target: PokemonCardList) {
     this.player = player;
