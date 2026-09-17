@@ -6786,7 +6786,7 @@
         "      return this.resolveSimultaneous(state, effect, batchable);",
         "    if (this.probing) {",
         "    const wasProbing = this.probing;",
-        "    return raised || boardDiffers(state, after);",
+        "    return probe !== null && (probe.raised || boardDiffers(state, probe.after));",
         "      refMap.set(attackOfEffect, attackOfEffect);",
         "      return this.waitPrompt(state, () => {"
       ],
@@ -8446,6 +8446,27 @@
       "note": "TA-429 (2026-09-16): Varoom sfa-043 printed text — the missing space before the parenthetical; card data only",
       "fixes": [
         "FX-0300"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "    return probe !== null && (probe.raised || boardDiffers(state, probe.after));",
+        "  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State {"
+      ],
+      "note": "TA-432 (2026-09-17): CF-38 KO window (reopened on N-0209) / TA-432: KO reactions batched ACROSS victims with per-occurrence candidates carryi",
+      "fixes": [
+        "FX-0303"
+      ]
+    },
+    {
+      "file": "game/store/store-like.ts",
+      "signatures": [
+        "  resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State;"
+      ],
+      "note": "TA-432 / CF-38 KO window (2026-09-17): StoreLike.resolveKnockOutReactions — the sweep-level KO reaction batch entry point",
+      "fixes": [
+        "FX-0303"
       ]
     }
   ]

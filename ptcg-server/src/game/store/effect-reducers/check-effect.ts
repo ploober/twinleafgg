@@ -511,9 +511,13 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
     knockOutEffect.viaCheckState = true;
     return knockOutEffect;
   });
-  state = store.resolveKnockOutReactions(state, knockOutEffects);
-  if (store.hasPrompts()) {
-    yield store.waitPrompt(state, () => next());
+  if (knockOutEffects.length > 0) {
+    // Only when there IS a KO: a sweep with none must not start waiting on a prompt some earlier step
+    // left pending (a retreat's Energy choice, say) — that would be a new sequencing, not a batch.
+    state = store.resolveKnockOutReactions(state, knockOutEffects);
+    if (store.hasPrompts()) {
+      yield store.waitPrompt(state, () => next());
+    }
   }
   for (let i = 0; i < pokemonsToDiscard.length; i++) {
     const pokemonToDiscard = pokemonsToDiscard[i];
