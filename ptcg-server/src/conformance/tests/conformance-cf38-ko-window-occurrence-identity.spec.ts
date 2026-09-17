@@ -63,7 +63,7 @@ const huntailWith = (feebas: number) => player({
 });
 const attack: NeutralAction = { actor: 'A', type: 'declareAttack', source: 'a0', name: 'Spinning Tail' };
 const pick = (subject: string): NeutralAction =>
-  ({ actor: 'B', type: 'resolveNext', kind: 'abilityEffect', source: 'b1', ability: "Diver's Catch", subject } as unknown as NeutralAction);
+  ({ actor: 'B', type: 'resolveNext', kind: 'abilityEffect', source: 'b0', ability: "Diver's Catch", subject } as unknown as NeutralAction);
 const confirm = (value: boolean): NeutralAction => ({ actor: 'B', type: 'confirm', value });
 type Offer = { type: string; kind?: string; source?: string; ability?: string; subject?: string; actor?: string };
 const offers = (r: ReturnType<typeof step>): Offer[] => (r.pending?.legalActions ?? []) as unknown as Offer[];
@@ -78,7 +78,7 @@ describe('CF-38 KO window — one source, two occurrences, told apart by `subjec
     expect(r.pending!.actor).toBe('B');
     for (const c of o) {
       expect(c.kind).toBe('abilityEffect');
-      expect(c.source).toBe('b1');
+      expect(c.source).toBe('b0'); // the Pokémon-in-play (stack basic), as useAbility spells it — TA-433
       expect(c.ability).toBe("Diver's Catch");
     }
     expect(o.map(x => x.subject).sort()).toEqual(['bb0', 'bb1']);

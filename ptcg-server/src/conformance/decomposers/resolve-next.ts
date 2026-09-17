@@ -1,4 +1,7 @@
 import { ResolveNextPrompt } from '../../game/store/prompts/resolve-next-prompt';
+import { Card } from '../../game/store/card/card';
+import { State } from '../../game/store/state/state';
+import { SuperType } from '../../game/store/card/card-types';
 import { LegalAction, ResolveNextAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, buildPending } from './decomposer';
 
@@ -21,6 +24,29 @@ import { PromptDecomposer, realPicks, buildPending } from './decomposer';
  * the Tool's own iid, not the Pokemon it is attached to — so two copies on one bearer stay distinct.
  * `ability` is REQUIRED for `abilityEffect` and MUST BE ABSENT for `cardTextEffect`.
  */
+/**
+ * The wire `source` of a candidate. For an Ability printed on a Pokémon that is IN PLAY this is the
+ * Pokémon-in-play — the stack's BASIC iid (CF-60), exactly as `useAbility.source` spells it
+ * (driver.ts: "bottom Pokemon, which is the iid the ability menu emits") — NOT the evolution card the
+ * Ability happens to be printed on. Until 2026-09-17 this decomposer used the card's own iid, which
+ * coincides for a Basic (`por-017`, every TA-292 board) and diverges on an evolved stack: Huntail
+ * `dri-055` over Clamperl emitted `b1` where sim emits `b0` (TA-433). A Tool or Energy candidate
+ * keeps its own card iid — two copies on one bearer must stay distinct (CF-38 `cardTextEffect`).
+ */
+function sourceIid(card: Card, ctx: { cardToIid: Map<Card, string> }, state: State): string | undefined {
+  if (card.superType === SuperType.POKEMON) {
+    for (const player of state.players) {
+      for (const slot of [player.active, ...player.bench]) {
+        if (slot.cards.includes(card)) {
+          const basic = slot.getPokemons()[0];
+          return ctx.cardToIid.get(basic ?? card);
+        }
+      }
+    }
+  }
+  return ctx.cardToIid.get(card);
+}
+
 export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
   type: 'ResolveNext',
 
@@ -31,7 +57,7 @@ export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
     const legalActions: LegalAction[] = [];
     const seen = new Map<string, string>();
     for (const candidate of prompt.candidates) {
-      const source = ctx.cardToIid.get(candidate.card);
+      const source = sourceIid(candidate.card, ctx, state);
       if (source === undefined) {
         // A candidate with no iid cannot be named on the wire, and emitting a partial menu would
         // let a client answer a decision it could not see in full. Surfacing nothing is wrong too,
@@ -75,7 +101,7 @@ export const resolveNextDecomposer: PromptDecomposer<ResolveNextPrompt> = {
     }
     const a = action as ResolveNextAction;
     const index = prompt.candidates.findIndex(c => {
-      if (ctx.cardToIid.get(c.card) !== a.source) {
+      if (sourceIid(c.card, ctx, _state) !== a.source) {
         return false;
       }
       // `ability` disambiguates two effects on ONE card, so it is matched, not ignored — and its
