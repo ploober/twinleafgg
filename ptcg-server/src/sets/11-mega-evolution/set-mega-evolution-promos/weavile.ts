@@ -17,7 +17,7 @@ export class Weavile extends PokemonCard {
     cost: [D, D],
     damage: 20,
     damageCalculation: '+',
-    text: 'If this Pokémon has 50 HP or less remaining, this attack does 170 more damage.',
+    text: 'If this Pokémon\'s remaining HP is 50 or less, this attack does 170 more damage.',
   },
   {
     name: 'Cut',

@@ -29,7 +29,7 @@ export class Torterraex extends PokemonCard {
       cost: [CardType.GRASS],
       damage: 30,
       damageCalculation: 'x',
-      text: 'This attack does 30 damage for each [G] Pokémon you have in play.',
+      text: 'This attack does 30 damage for each of your [G] Pokémon in play.',
     },
     {
       name: 'Jungle Hammer',

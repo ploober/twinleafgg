@@ -42,7 +42,7 @@ export class IronCrownex extends PokemonCard {
       name: 'Cobalt Command',
       powerType: PowerType.ABILITY,
       exemptFromInitialize: true,
-      text: "Your Future Pokémon's attacks, except any Iron Crown ex, do 20 more damage to your opponent's Active Pokémon (before applying Weakness and Resistance).",
+      text: "Attacks used by your Future Pokémon, except any Iron Crown ex, do 20 more damage to your opponent's Active Pokémon (before applying Weakness and Resistance).",
     },
   ];
 

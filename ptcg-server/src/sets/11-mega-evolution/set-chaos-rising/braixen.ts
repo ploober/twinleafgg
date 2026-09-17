@@ -17,7 +17,7 @@ export class Braixen extends PokemonCard {
       name: 'Flamethrower',
       cost: [R, R],
       damage: 80,
-      text: 'Discard an Energy attached to this Pokémon.',
+      text: 'Discard an Energy from this Pokémon.',
     },
   ];
 

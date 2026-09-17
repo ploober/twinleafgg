@@ -22,7 +22,7 @@ export class Frosmoth extends PokemonCard {
     name: 'Alluring Wings',
     useWhenInPlay: true,
     powerType: PowerType.ABILITY,
-    text: 'Once during your turn, if this Pokémon is in your Active Spot, you may use this Ability. Each player draws a card.'
+    text: 'Once during your turn, if this Pokémon is in the Active Spot, you may use this Ability. Each player draws a card.'
   }];
 
   public attacks = [{

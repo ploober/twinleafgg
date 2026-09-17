@@ -25,7 +25,7 @@ export class Raichu extends PokemonCard {
     name: 'Strong Volt',
     cost: [L, L, C],
     damage: 150,
-    text: 'Discard a Lightning Energy from this Pokémon.'
+    text: 'Discard a [L] Energy from this Pokémon.'
   }];
 
   public regulationMark = 'J';

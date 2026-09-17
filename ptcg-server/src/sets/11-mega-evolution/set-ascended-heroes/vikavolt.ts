@@ -18,7 +18,7 @@ export class Vikavolt extends PokemonCard {
     name: 'Volt Switch',
     cost: [L],
     damage: 90,
-    text: 'Switch this Pokémon with 1 of your Benched Lightning Pokémon.'
+    text: 'Switch this Pokémon with 1 of your Benched [L] Pokémon.'
   },
   {
     name: 'Sparking Strike',

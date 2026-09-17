@@ -31,7 +31,7 @@ export class Donphan extends PokemonCard {
       name: 'Smashing Headbutt',
       cost: [F, C, C, C],
       damage: 180,
-      text: 'Discard 2 Energy attached to this Pokémon.',
+      text: 'Discard 2 Energy from this Pokémon.',
     },
   ];
 

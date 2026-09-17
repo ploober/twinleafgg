@@ -29,7 +29,7 @@ export class HoOh extends PokemonCard {
       name: 'Bright Wing',
       cost: [R, R, R],
       damage: 130,
-      text: 'Discard a [R] Energy attached to this Pokémon.',
+      text: 'Discard a [R] Energy from this Pokémon.',
     },
   ];
 
