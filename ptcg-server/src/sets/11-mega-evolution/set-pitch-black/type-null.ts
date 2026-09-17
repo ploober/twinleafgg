@@ -4,7 +4,7 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 export class TypeNull extends PokemonCard {
   public stage: Stage = Stage.BASIC;
   public cardType: CardType[] = [C];
-  public hp: number = 70;
+  public hp: number = 110;
   public weakness = [{ type: F }];
   public retreat = [C, C];
 
