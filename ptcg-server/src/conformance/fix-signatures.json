@@ -8437,6 +8437,16 @@
       "fixes": [
         "FX-0302"
       ]
+    },
+    {
+      "file": "set-shrouded-fable/varoom.ts",
+      "signatures": [
+        "takes 30 less damage from attacks (after applying Weakness and Resistance)."
+      ],
+      "note": "TA-429 (2026-09-16): Varoom sfa-043 printed text — the missing space before the parenthetical; card data only",
+      "fixes": [
+        "FX-0300"
+      ]
     }
   ]
 }
