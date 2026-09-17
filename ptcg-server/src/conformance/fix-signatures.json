@@ -8407,6 +8407,36 @@
       "fixes": [
         "FX-0299"
       ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/emboar.ts",
+      "signatures": [
+        "you may attach a Basic [R] Energy card from your hand to 1 of your Pokémon."
+      ],
+      "note": "TA-429 (2026-09-16): TA-429: printed text set to canonical wording on 12 in-pool printings (Frosmoth, Raichu, Vikavolt, Ho-Oh, Braixen, Donph",
+      "fixes": [
+        "FX-0300"
+      ]
+    },
+    {
+      "file": "set-pitch-black/type-null.ts",
+      "signatures": [
+        "public hp: number = 110;"
+      ],
+      "note": "TA-430 (2026-09-16): TA-430: Type: Null pbl-069 HP 70 -> 110",
+      "fixes": [
+        "FX-0301"
+      ]
+    },
+    {
+      "file": "set-perfect-order/spritzee.ts",
+      "signatures": [
+        "text: \"Heal 30 damage from 1 of your Pokémon.\","
+      ],
+      "note": "TA-431 (2026-09-16): TA-431: Spritzee por-035 Sweet Scent printed text restored (was an empty string; heal already implemented)",
+      "fixes": [
+        "FX-0302"
+      ]
     }
   ]
 }
