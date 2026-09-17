@@ -26,7 +26,7 @@ export class Spritzee extends PokemonCard {
       name: "Sweet Scent",
       cost: [C],
       damage: 0,
-      text: "",
+      text: "Heal 30 damage from 1 of your Pokémon.",
     },
     {
       name: "Ram",
