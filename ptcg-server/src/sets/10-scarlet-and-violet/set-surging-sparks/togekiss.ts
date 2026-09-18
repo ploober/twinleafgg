@@ -1,4 +1,4 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils, PowerType, GamePhase } from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { IS_ABILITY_BLOCKED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
@@ -44,10 +44,15 @@ export class Togekiss extends PokemonCard {
         return state;
       }
 
-      // Do not activate between turns, or when it's not opponents turn.
-      if (state.phase !== GamePhase.ATTACK || state.players[state.activePlayer] !== attacker) {
-        return state;
-      }
+      // TA-437: Wonder Kiss has NO turn condition in its text (#2043: "The KO can be during either
+      // player's turn or during Pokemon Checkup, and it doesn't have to be from an attack"). The old
+      // `phase !== ATTACK || activePlayer !== attacker` gate wrongly withheld the flip on a KO of the
+      // opponent's Active during the opponent's OWN turn (a self-KO, a reaction-counter KO, or a Checkup
+      // Poison/Burn KO). The only conditions are the printed "opponent's Active … Knocked Out" (checked
+      // above via `effect.target === effect.player.active`) and this card being in play.
+      // NOTE (TA-440, still open): this ability double-flips for one KO because a re-entrant checkState
+      // re-dispatches the still-undiscarded victim after the flip resolves, and the per-KO dedup marker
+      // does not survive the prompt pause. That is a store-level re-entrancy fix, tracked separately.
 
       // Try to reduce PowerEffect, to check if something is blocking our ability
       if (IS_ABILITY_BLOCKED(store, state, attacker, this)) {

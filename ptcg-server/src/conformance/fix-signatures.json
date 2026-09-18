@@ -8486,6 +8486,14 @@
    ],
    "state": "guarding",
    "note": "TA-436 (2026-09-18): 'different types' set on the ChooseCardsPrompt so the second-pick legal menu excludes the type already taken (matches validate)."
+  },
+  {
+   "file": "set-surging-sparks/togekiss.ts",
+   "signatures": [
+    "// TA-437: Wonder Kiss has NO turn condition in its text (#2043: \"The KO can be during either"
+   ],
+   "state": "guarding",
+   "note": "TA-437 (2026-09-18): dropped the ATTACK-phase/owner-turn gate so Wonder Kiss fires on any KO of the opponent's Active (#2043). TA-440 double-flip deferred (store-level checkState re-entrancy)."
   }
  ]
 }
