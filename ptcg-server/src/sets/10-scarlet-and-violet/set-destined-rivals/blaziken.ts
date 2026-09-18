@@ -1,6 +1,6 @@
-import { PokemonCard, Stage, CardType, State, StoreLike } from '../../../game';
+import { PokemonCard, Stage, CardType, State, StoreLike, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON } from '../../../game/store/prefabs/attack-effects';
+import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
 
@@ -36,11 +36,41 @@ export class Blaziken extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // TA-79: apply the 120 base damage to the Active before the discard + Bench-snipe riders
-      // (rulebook step F / #543/#649). The Bench 120 is a literal, independent of effect.damage.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
-      DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
-      THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON(120, effect, store, state);
+      const player = effect.player;
+      const opponent = StateUtils.getOpponent(state, player);
+      const benchTargets = opponent.bench.filter(b => b.cards.length > 0);
+
+      // TA-79: the 120 base damage lands on the Active before the discard rider (rulebook step F /
+      // #543/#649); the Bench 120 is a literal, independent of effect.damage.
+      const applyDamageAndDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
+        s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);
+        if (benchTarget) {
+          const bench = new PutDamageEffect(effect, 120);
+          bench.target = benchTarget;
+          s = store.reduceEffect(s, bench);
+        }
+        DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, s, effect, 2);
+        return s;
+      };
+
+      if (benchTargets.length === 0) {
+        return applyDamageAndDiscard(state);
+      }
+
+      // TA-434: the Bench target is a Step-D choice — "you would make that choice now" — so it is pended
+      // FIRST, before any damage or the discard. At that pending the Active is still at 0 (rotomancer's
+      // shape); the base damage and discard follow once the target is chosen.
+      return store.prompt(state, new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+        PlayerType.TOP_PLAYER,
+        [SlotType.BENCH],
+        { min: 1, max: 1, allowCancel: false }
+      ), selected => {
+        if (selected && selected.length > 0) {
+          applyDamageAndDiscard(state, selected[0]);
+        }
+      });
     }
 
     return state;

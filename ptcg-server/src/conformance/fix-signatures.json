@@ -71,10 +71,11 @@
   {
    "file": "set-destined-rivals/blaziken.ts",
    "signatures": [
-    "name: 'Inferno Kick Flurry',",
-    "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+    "s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);",
+    "// TA-434: the Bench target is a Step-D choice — \"you would make that choice now\" — so it is pended"
    ],
-   "state": "guarding"
+   "state": "guarding",
+   "note": "| TA-434 (2026-09-18): Bench choice pended first (Step D); TA-79 base-damage-before-discard preserved inside applyDamageAndDiscard."
   },
   {
    "file": "set-destined-rivals/dwebble.ts",

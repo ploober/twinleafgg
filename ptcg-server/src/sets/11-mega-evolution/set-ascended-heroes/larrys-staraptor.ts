@@ -68,22 +68,16 @@ export class LarrysStaraptor extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Rulebook attack step F / compendium #649: place the main 150 on the Defending Pokémon
-      // BEFORE the Energy-discard prompt pauses the game (and before the optional bench-damage
-      // rider). Without this the discard prompt surfaced with the Active still at 0. Same
-      // damage-before-post-damage-effect pattern as TA-44.
-      const damageEffect = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, damageEffect);
-      effect.damage = 0;
+      const benchTargets = opponent.bench.filter((b) => b.cards.length > 0);
 
-      // Discard 2 Energy
-      const energyCount = player.active.cards.filter(
-        (card) => card.superType === SuperType.ENERGY,
-      ).length;
-
-      if (energyCount >= 2) {
-        state = store.prompt(
-          state,
+      // Discard 2 Energy from the Active. Rulebook step F / #649: the base 150 lands before this rider.
+      const discardTwo = (s: State): State => {
+        const energyCount = player.active.cards.filter((c) => c.superType === SuperType.ENERGY).length;
+        if (energyCount < 2) {
+          return s;
+        }
+        return store.prompt(
+          s,
           new DiscardEnergyPrompt(
             player.id,
             GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
@@ -94,35 +88,48 @@ export class LarrysStaraptor extends PokemonCard {
           ),
           (transfers) => {
             transfers = transfers || [];
-            if (transfers.length > 0) {
-              for (const transfer of transfers) {
-                const source = StateUtils.getTarget(state, player, transfer.from);
-                source.moveCardTo(transfer.card, player.discard);
-              }
+            for (const transfer of transfers) {
+              const source = StateUtils.getTarget(state, player, transfer.from);
+              source.moveCardTo(transfer.card, player.discard);
             }
+          },
+        );
+      };
 
-            // Deal 50 damage to benched Pokemon
-            if (opponent.bench.some((b) => b.cards.length > 0)) {
-              return store.prompt(
-                state,
-                new ChoosePokemonPrompt(
-                  player.id,
-                  GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-                  PlayerType.TOP_PLAYER,
-                  [SlotType.BENCH],
-                  { allowCancel: false, min: 1, max: 1 },
-                ),
-                (targets) => {
-                  targets = targets || [];
-                  if (targets.length > 0) {
-                    const dealDamage = new DealDamageEffect(effect, 50);
-                    dealDamage.target = targets[0];
-                    dealDamage.attackEffect.ignoreWeakness = true;
-                    dealDamage.attackEffect.ignoreResistance = true;
-                    return store.reduceEffect(state, dealDamage);
-                  }
-                },
-              );
+      const applyBaseBenchDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
+        // Base 150 to the Active (step F), then the 50 Bench snipe (no Weakness/Resistance), then the discard.
+        const damageEffect = new DealDamageEffect(effect, effect.damage);
+        s = store.reduceEffect(s, damageEffect);
+        effect.damage = 0;
+        if (benchTarget) {
+          const dealDamage = new DealDamageEffect(effect, 50);
+          dealDamage.target = benchTarget;
+          dealDamage.attackEffect.ignoreWeakness = true;
+          dealDamage.attackEffect.ignoreResistance = true;
+          s = store.reduceEffect(s, dealDamage);
+        }
+        return discardTwo(s);
+      };
+
+      if (benchTargets.length === 0) {
+        state = applyBaseBenchDiscard(state);
+      } else {
+        // TA-434: the Bench target is a Step-D choice ("you would make that choice now"), so it is pended
+        // FIRST — before the base damage and the discard. At that pending the Active is still at 0
+        // (rotomancer's shape); the base damage, Bench snipe, and discard follow the choice.
+        state = store.prompt(
+          state,
+          new ChoosePokemonPrompt(
+            player.id,
+            GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+            PlayerType.TOP_PLAYER,
+            [SlotType.BENCH],
+            { allowCancel: false, min: 1, max: 1 },
+          ),
+          (targets) => {
+            targets = targets || [];
+            if (targets.length > 0) {
+              applyBaseBenchDiscard(state, targets[0]);
             }
           },
         );
