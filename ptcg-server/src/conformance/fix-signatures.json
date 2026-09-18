@@ -69,15 +69,6 @@
    "state": "guarding"
   },
   {
-   "file": "set-destined-rivals/blaziken.ts",
-   "signatures": [
-    "s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);",
-    "// TA-434: the Bench target is a Step-D choice — \"you would make that choice now\" — so it is pended"
-   ],
-   "state": "guarding",
-   "note": "| TA-434 (2026-09-18): Bench choice pended first (Step D); TA-79 base-damage-before-discard preserved inside applyDamageAndDiscard."
-  },
-  {
    "file": "set-destined-rivals/dwebble.ts",
    "signatures": [
     "{ min: 0, max: 1, allowCancel: true }",
@@ -8486,7 +8477,10 @@
     "{ min: 0, max: 2, allowCancel: false, differentTypes: true }"
    ],
    "state": "guarding",
-   "note": "TA-436 (2026-09-18): 'different types' set on the ChooseCardsPrompt so the second-pick legal menu excludes the type already taken (matches validate)."
+   "fixes": [
+    "FX-0306"
+   ],
+   "note": "TA-436 (2026-09-18): 'different types' set on the ChooseCardsPrompt so the second-pick menu excludes the type already taken."
   },
   {
    "file": "set-surging-sparks/togekiss.ts",
@@ -8494,7 +8488,22 @@
     "// TA-437: Wonder Kiss has NO turn condition in its text (#2043: \"The KO can be during either"
    ],
    "state": "guarding",
-   "note": "TA-437 (2026-09-18): dropped the ATTACK-phase/owner-turn gate so Wonder Kiss fires on any KO of the opponent's Active (#2043). TA-440 double-flip deferred (store-level checkState re-entrancy)."
+   "fixes": [
+    "FX-0307"
+   ],
+   "note": "TA-437 (2026-09-18): dropped the ATTACK-phase/owner-turn gate; Wonder Kiss fires on any KO of the opponent's Active (#2043)."
+  },
+  {
+   "file": "set-destined-rivals/blaziken.ts",
+   "signatures": [
+    "s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);",
+    "// TA-434: the Bench target is a Step-D choice — \"you would make that choice now\" — so it is pended"
+   ],
+   "state": "guarding",
+   "fixes": [
+    "FX-0308"
+   ],
+   "note": "TA-434 (2026-09-18): Bench choice pended first (Step D); also guards TA-79 base-damage-before-discard."
   }
  ]
 }
