@@ -33,22 +33,51 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
     prompt.message === GameMessage.CHOOSE_ATTACK_TO_DISABLE ||
     prompt.message === GameMessage.CHOOSE_ATTACK_TO_COPY,
 
+  // CF-71 / B.55 (pinned 2026-09-18): the (attack × Pokémon) selection is SEQUENTIAL — first the
+  // Pokémon (a `choose {target}`), then that Pokémon's attack (a `choose {name}`) — not one joint menu
+  // over every pair. This is the adapter's whole change; `ChooseAttackPrompt` (one flat list of
+  // `{pokemon, attack}`) and the UI (which already renders Pokémon-then-attack) are untouched.
+  // Decoupled from CF-63 (B.55). Each step's single-candidate collapse is handled by the driver's
+  // CF-14 path via `atomicResolvable` (true for both uses): a lone Pokémon collapses to its attack menu,
+  // a lone attack executes atomically. Two real picks accumulate as `attack` WirePicks — the first with
+  // `attack:''` (Pokémon chosen, attack pending), the second naming the attack; `assemble` reads the
+  // completed one.
   next(prompt, picks, ctx, state) {
-    if (realPicks(picks).length >= 1) {
-      return null; // single-select: one attack chosen
+    const rp = realPicks(picks) as Array<{ index: number; attack: string }>;
+    if (rp.length >= 2) {
+      return null; // Pokémon (step 1) and attack (step 2) both chosen
     }
-
     const blocked = new Set(prompt.options.blocked.map(b => `${b.index}:${b.attack}`));
-    const legalActions: LegalAction[] = [];
-    for (let i = 0; i < prompt.cards.length; i++) {
-      const iid = ctx.cardToIid.get(prompt.cards[i]);
-      if (iid === undefined) {
-        continue;
-      }
-      for (const attack of prompt.cards[i].attacks) {
-        if (blocked.has(`${i}:${attack.name}`)) {
+
+    if (rp.length === 0) {
+      // Step 1 — choose the Pokémon whose attack is copied/disabled.
+      const legalActions: LegalAction[] = [];
+      for (let i = 0; i < prompt.cards.length; i++) {
+        const iid = ctx.cardToIid.get(prompt.cards[i]);
+        if (iid === undefined) {
           continue;
         }
+        const hasUnblocked = prompt.cards[i].attacks.some(a => !blocked.has(`${i}:${a.name}`));
+        if (hasUnblocked) {
+          legalActions.push({ type: 'choose', target: iid });
+        }
+      }
+      if (legalActions.length === 0) {
+        return null;
+      }
+      return buildPending(prompt, state, legalActions);
+    }
+
+    // Step 2 — choose the attack of the Pokémon picked in step 1. `choose` always carries the target
+    // (the picked Pokémon's iid — constant across these options); the attack is named via `name`.
+    const i = rp[0].index;
+    const iid = ctx.cardToIid.get(prompt.cards[i]);
+    const legalActions: LegalAction[] = [];
+    for (const attack of prompt.cards[i].attacks) {
+      if (blocked.has(`${i}:${attack.name}`)) {
+        continue;
+      }
+      if (iid !== undefined) {
         legalActions.push({ type: 'choose', target: iid, name: attack.name });
       }
     }
@@ -58,29 +87,37 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
     return buildPending(prompt, state, legalActions);
   },
 
-  toPick(prompt, action, ctx) {
-    // ChooseAttack maps onto the generic `choose`; the attack is named via the contract-valid `name`
-    // field (target = the card iid in the prompt's list).
+  toPick(prompt, action, ctx, _state, picks = []) {
+    // ChooseAttack maps onto the generic `choose`; step 1 names the Pokémon via `target` (the card iid
+    // in the prompt's list), step 2 names its attack via the contract-valid `name` field.
     if (action.type !== 'choose') {
       throw new Error(`[conformance] ChooseAttack expected 'choose', got '${action.type}'`);
     }
-    const source = action.target as string;
-    const name = action.name as string;
-    const index = prompt.cards.findIndex(c => ctx.cardToIid.get(c) === source);
-    if (index === -1) {
-      throw new Error(`[conformance] choose target '${source}' is not in the prompt's card list`);
+    const rp = realPicks(picks) as Array<{ index: number; attack: string }>;
+    if (rp.length === 0) {
+      // Step 1 — the Pokémon.
+      const source = action.target as string;
+      const index = prompt.cards.findIndex(c => ctx.cardToIid.get(c) === source);
+      if (index === -1) {
+        throw new Error(`[conformance] choose target '${source}' is not in the prompt's card list`);
+      }
+      return { kind: 'attack', index, attack: '' };
     }
+    // Step 2 — the attack, on the Pokémon picked in step 1.
+    const index = rp[0].index;
+    const name = action.name as string;
     if (!prompt.cards[index].attacks.some(a => a.name === name)) {
-      throw new Error(`[conformance] choose target '${source}' has no attack '${name}'`);
+      throw new Error(`[conformance] chosen Pokémon has no attack '${name}'`);
     }
     return { kind: 'attack', index, attack: name };
   },
 
   assemble(_prompt, picks): { index: number; attack: string } | null {
     const rp = realPicks(picks) as Array<{ index: number; attack: string }>;
-    if (rp.length === 0) {
+    const completed = rp.find(p => p.attack !== '');
+    if (completed === undefined) {
       return null; // no attack chosen → decode treats null as cancel
     }
-    return { index: rp[0].index, attack: rp[0].attack };
+    return { index: completed.index, attack: completed.attack };
   },
 };
