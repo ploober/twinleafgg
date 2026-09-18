@@ -24,7 +24,9 @@ import { Card } from '../../game/store/card/card';
  * Mutation guards: (1) drop the sweep-level batch → test 1 sees no resolveNext; (2) drop `subject` from
  * the candidate → test 1's two candidates collide and test 4's guard throws on the real board;
  * (3) resolve in list order instead of the pick → tests 2a/2b reach the same hand; (4) revert huntail.ts
- * to the between-turns rescue → test 3 sees takePrize before the confirm.
+ * to the between-turns rescue → test 3 sees takePrize before the confirm; (5) TA-442 — revert the KO-window
+ * decider to the reactions' owner (`owners[0]`) → test 1 sees `pending.actor === 'B'` (B.52 makes it the
+ * current player A during a turn; the Checkup branch hands it to the next player).
  */
 
 const WATER = 'sve-003', DARK = 'sve-007';
@@ -62,8 +64,10 @@ const huntailWith = (feebas: number) => player({
   bench: Array.from({ length: feebas }, (_, i) => pip([{ iid: `bb${i}`, printing: FEEBAS }], [{ iid: `be${i}`, printing: WATER }])),
 });
 const attack: NeutralAction = { actor: 'A', type: 'declareAttack', source: 'a0', name: 'Spinning Tail' };
+// B.52 / TA-442: the KO-window ORDER is chosen by the CURRENT player (A, whose turn it is) — not by
+// Huntail's owner. The per-reaction "you may" confirm still belongs to B, Huntail's controller.
 const pick = (subject: string): NeutralAction =>
-  ({ actor: 'B', type: 'resolveNext', kind: 'abilityEffect', source: 'b0', ability: "Diver's Catch", subject } as unknown as NeutralAction);
+  ({ actor: 'A', type: 'resolveNext', kind: 'abilityEffect', source: 'b0', ability: "Diver's Catch", subject } as unknown as NeutralAction);
 const confirm = (value: boolean): NeutralAction => ({ actor: 'B', type: 'confirm', value });
 type Offer = { type: string; kind?: string; source?: string; ability?: string; subject?: string; actor?: string };
 const offers = (r: ReturnType<typeof step>): Offer[] => (r.pending?.legalActions ?? []) as unknown as Offer[];
@@ -75,7 +79,9 @@ describe('CF-38 KO window — one source, two occurrences, told apart by `subjec
     const r = step(board(arbok(), huntailWith(2)), [attack]);
     const o = offers(r);
     expect(o.map(x => x.type)).toEqual(['resolveNext', 'resolveNext']);
-    expect(r.pending!.actor).toBe('B');
+    // B.52 / TA-442: the current player (A) orders the KO-window batch, not the reactions' owner (B).
+    // Reverting the decider to `owners[0]` re-reds this line.
+    expect(r.pending!.actor).toBe('A');
     for (const c of o) {
       expect(c.kind).toBe('abilityEffect');
       expect(c.source).toBe('b0'); // the Pokémon-in-play (stack basic), as useAbility spells it — TA-433

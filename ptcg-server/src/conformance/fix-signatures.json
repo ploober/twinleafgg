@@ -8460,6 +8460,16 @@
       ]
     },
     {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "    const koWindowDecider = state.phase === GamePhase.BETWEEN_TURNS"
+      ],
+      "note": "TA-442 (2026-09-18): the KO-window resolveNext is ordered by the CURRENT player during a turn (next player at Checkup), not the reactions' owner (B.52 supersedes FX-0303's owner-decides). Reverting this line to owners[0] re-reds the CF-38 KO-window spec's actor assertion.",
+      "fixes": [
+        "FX-0305"
+      ]
+    },
+    {
       "file": "game/store/store-like.ts",
       "signatures": [
         "  resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State;"

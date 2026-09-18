@@ -740,14 +740,20 @@ export class Store implements StoreLike {
     if (actors.length < 2) {
       return state;
     }
-    const owners = actors.map(a => this.ownerOfEffect(state, a.card));
-    if (owners.some(o => o === undefined || o !== owners[0])) {
-      return state;
-    }
+    // B.52 (the February 2026 official rule, vendored): at a Knock Out DURING A TURN the CURRENT player
+    // orders the batch; at Pokémon Checkup (BETWEEN_TURNS) the player whose turn is NEXT orders it —
+    // regardless of who OWNS the reactions. This supersedes FX-0303's owner-decides (B.40's decider
+    // half) for the KO window, and lifts the same-owner gate: a mixed-owner KO batch is one decider's
+    // to order. The owner rule stays on the AfterDamage batch (`resolveSimultaneous`, #1874); the
+    // next-player rule (#2302) is the Checkup branch below. "Whose turn is next" is `1 - activePlayer`
+    // (see `turnNextOrder` in check-effect): an attack ends the turn, so the KO's own turn is over.
+    const koWindowDecider = state.phase === GamePhase.BETWEEN_TURNS
+      ? state.players[1 - state.activePlayer]
+      : state.players[state.activePlayer];
     for (const a of actors) {
       (a.effect as KnockOutEffect).resolvedReactors.push(a.card);
     }
-    return this.askResolveNext(state, actors, owners[0] as Player);
+    return this.askResolveNext(state, actors, koWindowDecider);
   }
 
   /** One pending per pick, re-asked with the remainder (CF-38: not a single permutation). */
