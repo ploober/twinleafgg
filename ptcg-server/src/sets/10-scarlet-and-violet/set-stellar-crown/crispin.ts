@@ -55,7 +55,11 @@ export class Crispin extends TrainerCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { min: 0, max: 2, allowCancel: false }
+        // TA-436: 'of different types' — set on the prompt so BOTH the engine's validate AND the
+        // conformance legal-menu enumeration exclude a second Energy of a type already taken. Without
+        // it the menu advertised the duplicate type and the validate then refused the pick, so the
+        // advertised menu and the validator disagreed (CF-52's 'an engine rejected its own legalAction').
+        { min: 0, max: 2, allowCancel: false, differentTypes: true }
       ), selected => {
         const cards = selected || [];
         if (cards.length > 1) {
