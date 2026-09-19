@@ -110,6 +110,15 @@ export function RESOLVE_COIN_FLIP_EFFECT(store: StoreLike, state: State, effect:
   const flipHandler = (store as any).handler;
   const player = effect.player;
   let result: boolean;
+  // TA-440: a PROBE must not consume the driver's scripted-flip cursor (nor an arbiter draw). The
+  // probe's state is a throwaway clone, but the cursor is not cloned — so a probed handler that
+  // flipped ate the face the REAL dispatch then needed, and the real dispatch fell through to a
+  // pausing CoinFlipPrompt: one KO, two flips on the wire. Raising the prompt here is exactly the
+  // probe's own "this handler would act" signal (`Store.prompt` refuses to enqueue while probing and
+  // never runs the continuation), so declining costs the probe nothing.
+  if (store.isProbing()) {
+    return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), () => { });
+  }
   if (typeof flipHandler?.tryScriptedFlip === 'function') {
     const scripted = flipHandler.tryScriptedFlip();
     if (scripted === undefined) {

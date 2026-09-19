@@ -1,8 +1,10 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, GamePhase, CardList, AttachEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
+import { StoreLike, State, StateUtils, GamePhase, CardList, AttachEnergyPrompt, GameMessage, PlayerType, SlotType, CardTarget } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { BeginTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { IS_TOOL_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 
@@ -27,7 +29,42 @@ export class HeavyBaton extends TrainerCard {
 
   public readonly HEAVY_BATON_MARKER = 'HEAVY_BATON_MARKER';
 
+  /**
+   * TA-170 / #1992. "is in the Active Spot … and is Knocked Out by damage from an attack" is read at
+   * the moment the damage LANDS, not at the deferred Knock Out check — *"even though you don't check
+   * for a KO until the attack is completed, the criteria for using Heavy Baton has been met, so it can
+   * be used."* So the criterion is ARMED here and READ at the KnockOutEffect: a holder damaged while
+   * Active and then pushed to the Bench by the same attack still qualifies, and a holder that was on
+   * the Bench when the damage landed never does.
+   */
+  public readonly HEAVY_BATON_ARMED_MARKER = 'HEAVY_BATON_ARMED_MARKER';
+
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+
+    // Arm the position criterion at damage time (see HEAVY_BATON_ARMED_MARKER).
+    if (effect instanceof PutDamageEffect && effect.target.tools.includes(this) && effect.damage > 0) {
+      const player = StateUtils.findOwner(state, effect.target);
+      const opponent = StateUtils.getOpponent(state, player);
+      if (state.phase === GamePhase.ATTACK
+        && state.players[state.activePlayer] === opponent
+        && effect.target === player.active) {
+        // On the PLAYER, not the slot: the criterion is a historical fact about this attack, and a
+        // slot's own markers are wiped when the Pokemon leaves the Active Spot — which is exactly what
+        // #1992's board does between the damage and the Knock Out (measured: armed, then empty at the
+        // read). The marker's SOURCE is this Tool instance, so it names its own holder.
+        player.marker.addMarker(this.HEAVY_BATON_ARMED_MARKER, this);
+      }
+    }
+
+    // The criterion is about ONE attack, so it must not outlive the turn it was armed in — but it must
+    // survive to the KO window, and `EndTurnEffect` does NOT: an attack ends the turn and only THEN does
+    // `checkState` open the KO window (measured — clearing there wiped the marker before every read).
+    // The next turn's start is the first boundary strictly after this turn's KO window and Checkup.
+    if (effect instanceof BeginTurnEffect) {
+      for (const player of state.players) {
+        player.marker.removeMarker(this.HEAVY_BATON_ARMED_MARKER, this);
+      }
+    }
 
     if (effect instanceof KnockOutEffect && effect.target.tools.includes(this)) {
       const player = effect.player;
@@ -45,8 +82,13 @@ export class HeavyBaton extends TrainerCard {
         return state;
       }
 
-      // Check if this tool is attached to the active Pokemon
-      if (!active.tools.includes(this)) {
+      // TA-170: "is in the Active Spot", read at the moment the damage landed. Before TA-441 deferred
+      // the KO discard past the open prompt, this branch read POSITION NOT AT ALL — its only saving
+      // grace was that the holder and its Energy were already in the discard by the time the prompt was
+      // answered, which left the destination set empty on every board where the criterion was unmet.
+      // With the discard correctly ordered after the reactions that accident is gone, so the criterion
+      // has to be checked for real.
+      if (!player.marker.hasMarker(this.HEAVY_BATON_ARMED_MARKER, this)) {
         return state;
       }
 
@@ -63,13 +105,31 @@ export class HeavyBaton extends TrainerCard {
         return state;
       }
 
-      // TA-170 face C. The destination is "your Benched Pokemon", so with an EMPTY Bench there is no
-      // legal destination and the effect can achieve nothing — #925 ("you cannot ... do what the card
-      // is supposed to do at that moment"). This guard is also what makes the `min: 1` below safe:
-      // a floor of 1 with no reachable destination is the TA-178 unanswerable-prompt shape, so the
-      // two changes are a pair and must not be split.
-      const hasBench = player.bench.some(b => b.cards.length > 0);
-      if (!hasBench) {
+      // TA-170 face C. The destination is "your Benched Pokemon", so with no legal destination the
+      // effect can achieve nothing — #925 ("you cannot ... do what the card is supposed to do at that
+      // moment"). This guard is also what makes the `min: 1` below safe: a floor of 1 with no reachable
+      // destination is the TA-178 unanswerable-prompt shape, so the two changes are a pair and must not
+      // be split.
+      //
+      // TA-441: the HOLDER ITSELF is not a destination. A Pokemon pushed to the Bench by the attack
+      // that Knocked it out occupies a Bench slot at this step, and the Energy is being moved FROM it
+      // — "to your Benched Pokemon" cannot mean back onto the card it is already attached to. This was
+      // invisible while the KO discard ran before the prompt (the holder was simply not on the board
+      // any more); with the discard deferred it is the difference between the one-Bencher push row
+      // offering nothing, as #1992's own reading requires, and offering a self-move.
+      const blockedTo: CardTarget[] = [];
+      let destinations = 0;
+      player.bench.forEach((b, index) => {
+        if (b.cards.length === 0) {
+          return;
+        }
+        if (b === active) {
+          blockedTo.push({ player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index });
+          return;
+        }
+        destinations += 1;
+      });
+      if (destinations === 0) {
         return state;
       }
 
@@ -96,7 +156,7 @@ export class HeavyBaton extends TrainerCard {
         // final clause licenses 0 only for the phrases "any amount"/"any number"; this card says
         // "up to 3", so the floor is 1. Confirmed live 2026-08-03: rotomancer offers no decline here.
         // `allowCancel` goes with it — cancelling is the decline by another name.
-        { allowCancel: false, min: 1, max: 3, sameTarget: true }
+        { allowCancel: false, min: 1, max: 3, sameTarget: true, blockedTo }
       ), transfers => {
         transfers = transfers || [];
         active.marker.removeMarker(this.HEAVY_BATON_MARKER);

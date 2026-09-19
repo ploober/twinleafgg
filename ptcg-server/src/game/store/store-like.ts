@@ -20,6 +20,14 @@ export interface StoreLike {
 
   hasPrompts(): boolean;
 
+  /**
+   * True while a candidate handler is being PROBED on a throwaway clone (`resolveSimultaneous` /
+   * `resolveKnockOutReactions`). A handler — or a prefab it calls — that consumes a resource living
+   * OUTSIDE the cloned state (scripted randomness, an arbiter draw) must not do so while probing:
+   * the clone is discarded, the consumption is not. See TA-440.
+   */
+  isProbing(): boolean;
+
   prompt<T>(
     state: State, prompt: Prompt<T>,
     then: (result: T) => void): State;

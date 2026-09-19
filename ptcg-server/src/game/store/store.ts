@@ -444,6 +444,16 @@ export class Store implements StoreLike {
     return this.promptItems.length > 0;
   }
 
+  /**
+   * TA-440. True while `probe()` is running a handler on a throwaway clone. A prefab that reaches
+   * OUTSIDE the cloned state for a resource — the conformance driver's scripted-flip cursor, an
+   * arbiter's random draw — must consult this and decline, because the clone is thrown away but the
+   * consumption is not: the probe would eat the flip the real dispatch then needs.
+   */
+  public isProbing(): boolean {
+    return this.probing;
+  }
+
   public cleanup(): void {
     this.promptItems = [];
     this.waitItems = [];
@@ -742,9 +752,18 @@ export class Store implements StoreLike {
         }
       }
     }
-    if (actors.length < 2) {
+    if (actors.length === 0) {
       return state;
     }
+    // TA-441 (#2089 "All effects have to be resolved before resolving KO's"). A SINGLE reactor has no
+    // order to choose, but it still has to act BEFORE the victim leaves play: run it here, in the
+    // window, rather than leaving it to the sweep's per-victim dispatch. There the handler's prompt is
+    // merely ENQUEUED (`Store.prompt` returns immediately) and the core KO — discard of the Pokemon and
+    // everything attached — runs synchronously right after it, so the decision was answered with the
+    // victim already in the discard pile and an empty Active Spot. Stamping the reactor below makes
+    // `propagateEffect` skip it on that dispatch, so it fires exactly once. No prompt is raised for a
+    // lone actor (`askResolveNext` calls the handler directly at length 1), so this adds a decision to
+    // no board — it only moves one that already existed to the correct side of the discard.
     // B.52 (the February 2026 official rule, vendored): at a Knock Out DURING A TURN the CURRENT player
     // orders the batch; at Pokémon Checkup (BETWEEN_TURNS) the player whose turn is NEXT orders it —
     // regardless of who OWNS the reactions. This supersedes FX-0303's owner-decides (B.40's decider
