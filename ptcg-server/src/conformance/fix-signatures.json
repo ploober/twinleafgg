@@ -5855,18 +5855,6 @@
       "state": "guarding"
     },
     {
-      "file": "set-burning-shadows/wishful-baton.ts",
-      "signatures": [
-        "const from = active.cards.includes(transfer.card) ? active : player.discard;",
-        "{ allowCancel: true, min: 0, max: 3, sameTarget: true, blockedTo }"
-      ],
-      "note": "TA-441 follow-on (2026-09-19): the Baton must move the Energy FROM WHEREVER IT IS. The callback read `player.discard` unconditionally, which was correct only while the Knock Out discard preceded the prompt; once the KO window was ordered properly the decision resolved to nothing and the Energy went to the discard with its bearer. `blockedTo` keeps the dying holder — which occupies a Bench slot at this step — out of its own destination set.",
-      "fixes": [
-        "FX-0318"
-      ],
-      "state": "guarding"
-    },
-    {
       "file": "set-temporal-forces/heavy-baton.ts",
       "signatures": [
         "if (destinations === 0) {",

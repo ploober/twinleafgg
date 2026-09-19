@@ -6,7 +6,7 @@ import { State, GamePhase } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
-import { CardTarget, PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
+import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { StateUtils } from '../../../game/store/state-utils';
 import { IS_TOOL_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { CardList } from '../../../game/store/state/card-list';
@@ -64,18 +64,7 @@ export class WishfulBaton extends TrainerCard {
       // Add marker, do not invoke this effect for other wishful batons
       active.marker.addMarker(this.WISHFUL_BATON_MARKER, this);
 
-      // TA-441: the HOLDER ITSELF is not a destination. "to 1 of your Benched Pokemon" cannot mean the
-      // card the Energy is already attached to, and a holder Knocked Out ON the Bench — or pushed there
-      // by the attack that Knocked it out — occupies a Bench slot at this step. That was invisible
-      // while the KO discard ran before the prompt (the holder was simply off the board by then).
-      const blockedTo: CardTarget[] = [];
-      player.bench.forEach((b, index) => {
-        if (b === active) {
-          blockedTo.push({ player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index });
-        }
-      });
-
-      // Make copy of the basic energy cards, because the prompt reads a detached list
+      // Make copy of the basic energy cards, because they will be transferred to discard shortly
       const energyToAttach = new CardList();
       energyToAttach.cards = basicEnergyCards.slice();
 
@@ -86,23 +75,14 @@ export class WishfulBaton extends TrainerCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: true, min: 0, max: 3, sameTarget: true, blockedTo }
+        { allowCancel: true, min: 0, max: 3, sameTarget: true }
       ), transfers => {
         transfers = transfers || [];
         active.marker.removeMarker(this.WISHFUL_BATON_MARKER);
 
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          // TA-441: move the Energy FROM WHEREVER IT IS. This read `player.discard` unconditionally,
-          // which was written for an engine that discarded the Knocked Out Pokemon and everything
-          // attached to it BEFORE this prompt was answered ("they will be transferred to discard
-          // shortly"). With the KO window correctly ordered the Energy is still attached to the dying
-          // holder when the player answers, so the discard read moved nothing at all and the Energy
-          // then went to the discard with its bearer — the decision was offered and silently dropped.
-          // Measured by the targeted re-fuzz, not by the suite: every guard on this card asserts the
-          // OFFER and none of them drives the pick.
-          const from = active.cards.includes(transfer.card) ? active : player.discard;
-          MOVE_CARDS(store, state, from, target, { cards: [transfer.card] });
+          MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card] });
         }
       });
     }
