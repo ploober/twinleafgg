@@ -1845,8 +1845,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // "up to X" is 1..max, NOT exactly-max. Perrin reveals up to 2 Pokemon to the deck, then "search
     // your deck for up to that many Pokemon". The search prompt declared { min: minMax, max: minMax },
     // so with 2 revealed the range collapsed to 2..2 and forced the player to take BOTH -- there was
-    // no way to take just 1. Fix: min:1 (max stays minMax). (rotomancer mirrors the opposite error --
-    // it offers a 0-take here -- which is RE-134, adjudicated roto-side.) Erika's Bellsprout asc-004
+    // no way to take just 1. TA-319 fixed that with min:1 (max stays minMax). TA-423/A.9 (2026-09-14)
+    // then RELAXED it to min:0: a category search of a SECRET zone is whiffable to 0, so the 0-take
+    // (confirm{false}) is offered from the start too. (rotomancer offered the 0-take all along --
+    // RE-134 was WITHDRAWN on A.9; its report was correct.) Erika's Bellsprout asc-004
     // is the Pokemon; both hand copies are revealed so minMax = 2.
     const bd = () => {
       const A = player({
@@ -1863,11 +1865,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       { actor: 'A' as const, type: 'choose' as const, target: 'A-bell2' },
     ];
 
-    // (a) the search surfaces with a mandatory FIRST pick: min:1 offers no stop at 0 picks.
+    // (a) TA-423/A.9: the secret deck search is whiffable to 0, so it surfaces BOTH the picks and the
+    //     0-take stop (confirm{false}) from the start. (Pre-TA-423 this asserted min:1 -> no confirm.)
     const rSearch0 = step(bd(), [play, ...toDeck]);
     expect(rSearch0.status).toBe('awaitingAction');
     expect(types(rSearch0)).toContain('choose');
-    expect(types(rSearch0)).not.toContain('confirm');            // min-1 floor: cannot take 0
+    expect(types(rSearch0)).toContain('confirm');                // TA-423: min:0 offers the 0-take (whiffable secret search)
     const searchPicks = (rSearch0.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose');
     expect(searchPicks.length).toBeGreaterThanOrEqual(2);        // 3 in deck + 2 just revealed
 

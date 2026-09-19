@@ -6987,12 +6987,14 @@
         "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  player.hand.moveCardsTo(cards, player.deck);",
         "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);",
         "'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.'",
-        "{ min: 1, max: minMax, allowCancel: false }"
+        "    { min: 0, max: minMax, allowCancel: false }"
       ],
       "fixes": [
-        "FX-0276"
+        "FX-0276",
+        "FX-0311"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-265/TA-319/TA-423: reveal-before-move (source zone) + secret deck-search whiffable to 0 (min:0, A.9 supersedes TA-319 min:1)"
     },
     {
       "file": "set-destined-rivals/team-rockets-ariana.ts",
@@ -8515,16 +8517,6 @@
         "FX-0310"
       ],
       "state": "guarding"
-    },
-    {
-      "file": "sets/10-scarlet-and-violet/set-twilight-masquerade/perrin.ts",
-      "signatures": [
-        "    { min: 0, max: minMax, allowCancel: false }"
-      ],
-      "note": "TA-423 (2026-09-18): TA-423: Perrin's secret deck search is whiffable to 0 (min:0), not min:1 (A.9)",
-      "fixes": [
-        "FX-0311"
-      ]
     }
   ]
 }
