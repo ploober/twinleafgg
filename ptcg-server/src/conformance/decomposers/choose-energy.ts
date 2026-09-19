@@ -2,7 +2,7 @@ import { ChooseEnergyPrompt } from '../../game/store/prompts/choose-energy-promp
 import { GameMessage } from '../../game/game-message';
 import { StateUtils } from '../../game/store/state-utils';
 import { LegalAction } from '../neutral-types';
-import { PromptDecomposer, realPicks, buildPending } from './decomposer';
+import { PromptDecomposer, realPicks, buildPending, END_CHOICE, hasDone } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
 
 /**
@@ -121,12 +121,48 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
   type: 'Choose energy',
 
   next(prompt, picks, ctx, state) {
+    // TA-439: once the driver has synthesized the explicit stop (END_CHOICE → `confirm{false}`) the
+    // decision is over — assemble the picks so far. Without this the retreat over-payment pending
+    // below would re-offer on the stop and loop.
+    if (hasDone(picks)) {
+      return null;
+    }
     const picked = realPicks(picks).map(p => (p as { index: number }).index);
     const selected = picked.map(i => prompt.energy[i]);
     // Complete as soon as the chosen energies LEGALLY pay the cost (TA-398 / #2127: sufficient, and
     // either no more cards than the cost has units or every card necessary) — the same predicate
     // `validate` applies, so a further card is never required once this holds.
     if (StateUtils.checkLegalEnergyPayment(selected, prompt.cost)) {
+      // TA-439 / §B.53-family #2127 (CF-4 shape): paying a RETREAT cost, the player MAY discard
+      // additional Energy up to the cost's card count — a Retreat Cost of 2 paid by ONE 2-unit Energy
+      // (Wild Growth, Double Turbo, Jet Energy) may still discard a second card. Once the cost is
+      // legally paid but fewer cards than the cost length have been discarded, offer the remaining
+      // attached Energy plus an explicit stop (END_CHOICE → `confirm{false}`), and complete only at the
+      // card-count cap. Every unpicked Energy is a legal extension here: sufficiency already holds and
+      // adding one keeps the card count ≤ the cost length (`checkLegalEnergyPayment`). Scoped to the
+      // retreat message — an exact-count relocation (isMovePick) or an attack-cost discard has no
+      // over-payment option and still completes at sufficiency, so their wire shape is unchanged.
+      if (prompt.message === GameMessage.CHOOSE_ENERGY_TO_PAY_RETREAT_COST
+        && picked.length < prompt.cost.length) {
+        const alreadyPicked = new Set(picked);
+        const overpay: LegalAction[] = [];
+        for (let i = 0; i < prompt.energy.length; i++) {
+          if (alreadyPicked.has(i)) {
+            continue;
+          }
+          const iid = ctx.cardToIid.get(prompt.energy[i].card);
+          if (iid !== undefined) {
+            overpay.push({
+              type: 'discard', owner: playerIdToActor(state, prompt.playerId), target: iid,
+              op: 'discard', destination: 'discardPile',
+            });
+          }
+        }
+        if (overpay.length > 0) {
+          overpay.push(END_CHOICE);
+          return buildPending(prompt, state, overpay);
+        }
+      }
       return null;
     }
 
