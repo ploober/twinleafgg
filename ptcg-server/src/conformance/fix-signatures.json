@@ -8517,6 +8517,16 @@
         "FX-0310"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "conformance/decomposers/choose-energy.ts",
+      "signatures": [
+        "overpay.push(END_CHOICE);"
+      ],
+      "note": "TA-439 (2026-09-18): TA-439: retreat paid by a multi-unit Energy offers the optional extra discard (#2127)",
+      "fixes": [
+        "FX-0313"
+      ]
     }
   ]
 }
