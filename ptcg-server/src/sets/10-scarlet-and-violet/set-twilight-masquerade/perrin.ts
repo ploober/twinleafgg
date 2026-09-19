@@ -64,16 +64,19 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   const minMax = cards.length;
 
-  // TA-319 / compendium #2301: "search your deck for up to that many Pokemon" is a Trainer effect,
-  // so the count is 1..that-many (min 1), NOT exactly-that-many. `min: minMax` forced the player to
-  // take all `minMax` and offered no way to take just 1 when >=2 were revealed. `max` stays `minMax`.
-  // (rotomancer's mirror defect -- it lets you take 0 here -- is RE-134, adjudicated roto-side.)
+  // TA-423 / A.9 (2026-09-14): "search your deck for up to that many Pokemon" is a category search of
+  // a SECRET zone, so it is always whiffable to 0 -- deck contents are technically unknown, so the
+  // player may decline to find even when a Pokemon is present (Meta-Ruling / Roll Call / Computer
+  // Search carve-out). Hence `min: 0`. #2301's Trainer min-1 binds only the PUBLIC hand-reveal above
+  // (that prompt stays `min: 1`), NOT this secret deck search. `max` stays `minMax`.
+  // (History: TA-319 first set this `min: minMax -> min: 1`; A.9 relaxed it further to `min: 0` and
+  //  overturned RE-134 -- rotomancer's confirm{false} 0-take here is the CORRECT fail-to-find.)
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.deck,
     { superType: SuperType.POKEMON },
-    { min: 1, max: minMax, allowCancel: false }
+    { min: 0, max: minMax, allowCancel: false }
   ), selected => {
     cards = selected || [];
     next();
