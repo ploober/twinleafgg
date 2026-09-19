@@ -8515,6 +8515,16 @@
         "FX-0310"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "sets/10-scarlet-and-violet/set-twilight-masquerade/perrin.ts",
+      "signatures": [
+        "    { min: 0, max: minMax, allowCancel: false }"
+      ],
+      "note": "TA-423 (2026-09-18): TA-423: Perrin's secret deck search is whiffable to 0 (min:0), not min:1 (A.9)",
+      "fixes": [
+        "FX-0311"
+      ]
     }
   ]
 }
