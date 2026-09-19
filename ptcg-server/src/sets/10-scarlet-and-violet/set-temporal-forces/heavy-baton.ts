@@ -163,7 +163,16 @@ export class HeavyBaton extends TrainerCard {
 
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card] });
+          // TA-441: move the Energy FROM WHEREVER IT IS. This read `player.discard` unconditionally,
+          // which was written for an engine that discarded the Knocked Out Pokemon and everything
+          // attached to it BEFORE this prompt was answered ("they will be transferred to discard
+          // shortly"). With the KO window correctly ordered the Energy is still attached to the dying
+          // holder when the player answers, so the discard read moved nothing at all and the Energy
+          // then went to the discard with its bearer — the decision was offered and silently dropped.
+          // Measured by the targeted re-fuzz, not by the suite: every guard on this card asserts the
+          // OFFER and none of them drives the pick.
+          const from = active.cards.includes(transfer.card) ? active : player.discard;
+          MOVE_CARDS(store, state, from, target, { cards: [transfer.card] });
         }
       });
     }
