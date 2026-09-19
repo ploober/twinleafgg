@@ -122,7 +122,13 @@ export class Raichu extends PokemonCard {
           transfers = transfers || [];
           effect.target.marker.removeMarker(this.ELECTRICAL_GROUNDING_MARKER);
           for (const transfer of transfers) {
-            player.discard.moveCardTo(transfer.card, thisCardList);
+            // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+            // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+            // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+            // attached to the dying holder when the player answers: the discard read matched
+            // nothing and the decision resolved to nothing.
+            const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;
+            from.moveCardTo(transfer.card, thisCardList);
           }
         }
       );

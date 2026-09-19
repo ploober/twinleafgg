@@ -69,9 +69,14 @@ export class Veluza extends PokemonCard {
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {
+          // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+          // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+          // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+          // attached to the dying holder when the player answers: the discard read matched
+          // nothing and the decision resolved to nothing.
+          const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;
           const target = StateUtils.getTarget(state, player, transfer.to);
-          // Move the card from the discard pile to the target (to avoid duplication)
-          state = MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card] });
+          state = MOVE_CARDS(store, state, from, target, { cards: [transfer.card] });
         }
       });
     }

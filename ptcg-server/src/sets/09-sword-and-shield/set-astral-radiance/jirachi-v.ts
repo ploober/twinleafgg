@@ -142,7 +142,13 @@ export class JirachiV extends PokemonCard {
           target.marker.removeMarker(this.WISH_CONNECTOR_MARKER, this);
           for (const transfer of transfers) {
             const t = StateUtils.getTarget(state, player, transfer.to);
-            player.discard.moveCardTo(transfer.card, t);
+            // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+            // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+            // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+            // attached to the dying holder when the player answers: the discard read matched
+            // nothing and the decision resolved to nothing.
+            const from = target.cards.includes(transfer.card) ? target : player.discard;
+            from.moveCardTo(transfer.card, t);
           }
         },
       );

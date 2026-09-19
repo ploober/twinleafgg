@@ -111,8 +111,14 @@ export class Miraidon extends PokemonCard {
               if (moved >= 2) {
                 break;
               }
+              // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+              // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+              // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+              // attached to the dying holder when the player answers: the discard read matched
+              // nothing and the decision resolved to nothing.
+              const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;
               const target = StateUtils.getTarget(state, player, transfer.to);
-              state = MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card] });
+              state = MOVE_CARDS(store, state, from, target, { cards: [transfer.card] });
               moved += 1;
             }
           },

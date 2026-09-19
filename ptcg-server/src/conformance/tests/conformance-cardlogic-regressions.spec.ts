@@ -3687,4 +3687,31 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(att.state.players.A.active!.energy.some(c => c.iid === 'A-d0')).toBe(true);
   });
 
+  it('Miraidon "Photon Cord" actually MOVES the Energy onto the Bencher [TA-445 pbl-028]', () => {
+    // The KO-window rescue family. Before TA-441/FX-0315 the core Knock Out discarded the victim and
+    // everything attached to it BEFORE this prompt was answered, so the callback's
+    // `MOVE_CARDS(store, state, player.discard, target, …)` read the list the Energy really sat in.
+    // With the window correctly ordered the Energy is still ATTACHED when the player answers, the
+    // discard read matched nothing, and the decision resolved to NOTHING — offered, accepted, and the
+    // Energy went to the discard with its bearer. Measured 2026-09-19 against pristine upstream
+    // (`52d4b0162`), which lands it, and against rotomancer `6bd26a6d5`, which lands it.
+    // This guard drives the OUTCOME; every offer-only assertion stayed green over the defect.
+    const b = () => {
+      const st = board(
+        player({ active: inPlay('A-act', ['pbl-028'], en(LIGHT, 1, 'a'), 90), bench: [inPlay('A-b', [RALTS])] }),
+        player({ active: inPlay('B-act', ['asc-062'], en(LIGHT, 1, 'b')) }),
+      );
+      st.activePlayer = 'B';   // the Knock Out must come from the OPPONENT's attack
+      return st;
+    };
+    const koAttack = { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Pouncing Trap' } as unknown as NeutralAction;
+    const ko = step(b(), [koAttack]);
+    expect(hasType(ko, 'moveEnergy')).toBe(true);          // the rescue is offered…
+    const moved = step(b(), [koAttack,
+      { actor: 'A', type: 'moveEnergy', card: 'ae0', source: 'A-act', target: 'A-b' } as unknown as NeutralAction]);
+    // …and it MOVES: on the Bencher, not in the discard with its bearer.
+    expect(moved.state.players.A.bench[0].energy.map(c => c.iid)).toEqual(['ae0']);
+    expect(moved.state.players.A.discard.some(c => c.iid === 'ae0')).toBe(false);
+  });
+
 });
