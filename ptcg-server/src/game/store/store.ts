@@ -691,7 +691,12 @@ export class Store implements StoreLike {
     }
 
     const nonActors = cards.filter(c => !actors.includes(c));
-    state = this.askResolveNext(state, actors.map(card => ({ card, effect })), owners[0] as Player);
+    // CF-75: the AfterDamage batch shares one effect (one damaged Pokemon), so every reaction is ABOUT
+    // that Pokemon — carry it as `subject` (openapi v0.7.3 REQUIRES `subject` on every resolveNext
+    // candidate), exactly as the KO window sets it per victim. Without it the wire candidates are
+    // subject-less and rotomancer rejects the replayed order-pick (invalidAction).
+    const subject = (effect as AfterDamageEffect).target.getPokemons()[0];
+    state = this.askResolveNext(state, actors.map(card => ({ card, effect, subject })), owners[0] as Player);
     // Handlers the probe judged inert still get their turn, after the batch. They are no-ops by
     // construction; running them preserves the old path's guarantee that every card sees the effect.
     nonActors.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
