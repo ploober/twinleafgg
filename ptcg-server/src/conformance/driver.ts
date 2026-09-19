@@ -852,6 +852,14 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             throw new Error(`[conformance] decomposed result failed validate for prompt '${prompt.type}'`);
           }
         }
+        // TA-443: refresh the reveal source-zone snapshot to the zone each card sits in NOW, just
+        // before this decomposed prompt resolves and its callback fires. TA-373's line-1026 snapshot
+        // is taken at the START of a top-level action; a reveal caused by a LATER `choose`/`confirm`
+        // (e.g. Perrin: reveal a Pokemon hand->deck in action 1, then search it back in action 2)
+        // would otherwise read the stale pre-action zone (`hand`) instead of its current one (`deck`).
+        // The cards have not moved yet at this point (the dispatch below is what runs the card code),
+        // so this still reports the SOURCE zone a within-resolution search relocates from (TA-373 intact).
+        actionStartZones = snapshotCardZones(game.state);
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
         accum = [];
         continue; // the callback may have raised the next prompt
