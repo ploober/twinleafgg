@@ -8601,6 +8601,66 @@
       "fixes": [
         "FX-0318"
       ]
+    },
+    {
+      "file": "set-pitch-black/miraidon.ts",
+      "signatures": [
+        "const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;"
+      ],
+      "note": "TA-445 (2026-09-19): The KO-window rescue family moves the Energy from where it actually IS: six more cards that read `player.discard`, corre",
+      "fixes": [
+        "FX-0319"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/veluza.ts",
+      "signatures": [
+        "const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;"
+      ],
+      "note": "OOP-79 (2026-09-19): the KO-window rescue must move the Energy FROM WHEREVER IT IS; the `player.discard` read was correct only under the ordering TA-441 removed",
+      "fixes": [
+        "FX-0319"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/raichu.ts",
+      "signatures": [
+        "const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;"
+      ],
+      "note": "OOP-80 (2026-09-19): the KO-window rescue must move the Energy FROM WHEREVER IT IS; the `player.discard` read was correct only under the ordering TA-441 removed",
+      "fixes": [
+        "FX-0319"
+      ]
+    },
+    {
+      "file": "set-battle-styles/kingdra.ts",
+      "signatures": [
+        "const from = active.cards.includes(transfer.card) ? active : player.discard;"
+      ],
+      "note": "OOP-81 (2026-09-19): the KO-window rescue must move the Energy FROM WHEREVER IT IS; the `player.discard` read was correct only under the ordering TA-441 removed",
+      "fixes": [
+        "FX-0319"
+      ]
+    },
+    {
+      "file": "set-astral-radiance/jirachi-v.ts",
+      "signatures": [
+        "const from = target.cards.includes(transfer.card) ? target : player.discard;"
+      ],
+      "note": "OOP-82 (2026-09-19): the KO-window rescue must move the Energy FROM WHEREVER IT IS; the `player.discard` read was correct only under the ordering TA-441 removed",
+      "fixes": [
+        "FX-0319"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/exp-share.ts",
+      "signatures": [
+        "const from = active.cards.includes(transfer.card) ? active : player.discard;"
+      ],
+      "note": "OOP-83 (2026-09-19): the KO-window rescue must move the Energy FROM WHEREVER IT IS; the `player.discard` read was correct only under the ordering TA-441 removed",
+      "fixes": [
+        "FX-0319"
+      ]
     }
   ]
 }
