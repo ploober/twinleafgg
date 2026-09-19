@@ -5855,10 +5855,23 @@
       "state": "guarding"
     },
     {
+      "file": "set-burning-shadows/wishful-baton.ts",
+      "signatures": [
+        "const from = active.cards.includes(transfer.card) ? active : player.discard;",
+        "{ allowCancel: true, min: 0, max: 3, sameTarget: true, blockedTo }"
+      ],
+      "note": "TA-441 follow-on (2026-09-19): the Baton must move the Energy FROM WHEREVER IT IS. The callback read `player.discard` unconditionally, which was correct only while the Knock Out discard preceded the prompt; once the KO window was ordered properly the decision resolved to nothing and the Energy went to the discard with its bearer. `blockedTo` keeps the dying holder — which occupies a Bench slot at this step — out of its own destination set.",
+      "fixes": [
+        "FX-0318"
+      ],
+      "state": "guarding"
+    },
+    {
       "file": "set-temporal-forces/heavy-baton.ts",
       "signatures": [
         "if (destinations === 0) {",
-        "{ allowCancel: false, min: 1, max: 3, sameTarget: true, blockedTo }"
+        "{ allowCancel: false, min: 1, max: 3, sameTarget: true, blockedTo }",
+        "const from = active.cards.includes(transfer.card) ? active : player.discard;"
       ],
       "note": "TA-170 face C: #2301 floors a Tool's 'up to 3' at 1; the empty-destination guard (#925) is what makes that floor satisfiable. Both lines are load-bearing -- reverting either alone regresses. RE-SPELLED 2026-09-19 (TA-441): the guard was `player.bench.some(b => b.cards.length > 0)` and the options carried no `blockedTo`; once the KO discard stopped preceding the prompt, the dying holder itself occupies a Bench slot at this step, so 'has a Bench' had to become 'has a Bench destination that is not the holder'. Same law, new spelling.",
       "fixes": [
