@@ -2,19 +2,12 @@
   "_comment": "Anti-revert manifest (auto-seeded from ledgered src/sets fix commits, extended 2026-08-01 to the src/game ENGINE tier (entries prefixed `game/` resolve as paths relative to src/; a reverted prefab or reducer breaks a whole card family at once, so the engine tier matters more per entry than the card tier), then maintained by hand). The conformance suite asserts every signature line is still present in its file. A merge that reverts a fix drops the line and fails the spec loudly — the exact silent-revert failure mode that the 2026-07-06 set-reorg merge caused. When you intentionally refactor a fix, update its signature here. REMEDIATION: when the guard fails after a merge, run `python3 src/conformance/tools/reapply-reverted-fixes.py` (dry run) then `--apply` — it restores each reverted file from the newest commit that still carried its signatures, then re-verify with `tsc --noEmit` + the suite and commit (reference the merge SHA).",
   "fixes": [
     {
-      "file": "game/store/state/state.ts",
-      "signatures": [
-        "public deferAfterDamage: boolean = false;"
-      ],
-      "state": "guarding",
-      "note": "CF-74 / B.53: the damage-response deferral flag. Reverting the fix drops it."
-    },
-    {
       "file": "game/store/effect-reducers/game-effect.ts",
       "signatures": [
         "const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);"
       ],
       "state": "guarding",
+      "fixes": ["FX-0314"],
       "note": "CF-74 / B.53: the attack pipeline drains the deferred AfterDamage window after AfterAttackEffect."
     },
     {
@@ -8542,6 +8535,16 @@
       "note": "TA-439 (2026-09-18): TA-439: retreat paid by a multi-unit Energy offers the optional extra discard (#2127)",
       "fixes": [
         "FX-0313"
+      ]
+    },
+    {
+      "file": "game/store/state/state.ts",
+      "signatures": [
+        "public deferAfterDamage: boolean = false;"
+      ],
+      "note": "CF-74 (2026-09-19): CF-74: twinleaf drains the damage-response window AFTER AfterAttackEffect (B.53 / #2172)",
+      "fixes": [
+        "FX-0314"
       ]
     }
   ]
