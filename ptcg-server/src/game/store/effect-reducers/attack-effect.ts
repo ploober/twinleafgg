@@ -60,7 +60,13 @@ function applyPutDamage(store: StoreLike, state: State, effect: PutDamageEffect)
 
     const afterDamageEffect = new AfterDamageEffect(effect.attackEffect, damage);
     afterDamageEffect.target = effect.target;
-    store.reduceEffect(state, afterDamageEffect);
+    // CF-74 / §B.53: during an attack the damage-response window is deferred to after AfterAttackEffect
+    // (queued here, drained by the attack pipeline). Outside an attack the flag is off and it fires now.
+    if (state.deferAfterDamage) {
+      state.pendingAfterDamage.push(afterDamageEffect);
+    } else {
+      store.reduceEffect(state, afterDamageEffect);
+    }
   }
 
   if (effect.attackEffect && effect.attackEffect.player && (effect.attackEffect.player.active as any).pendingAttackTargets) {
@@ -311,7 +317,13 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
 
       const afterDamageEffect = new AfterDamageEffect(effect.attackEffect, damage);
       afterDamageEffect.target = effect.target;
-      store.reduceEffect(state, afterDamageEffect);
+      // CF-74 / §B.53: same deferral as applyPutDamage — the KOEffect damage path defers its
+      // damage-response window to after AfterAttackEffect when an attack pipeline has armed the flag.
+      if (state.deferAfterDamage) {
+        state.pendingAfterDamage.push(afterDamageEffect);
+      } else {
+        store.reduceEffect(state, afterDamageEffect);
+      }
     }
   }
 

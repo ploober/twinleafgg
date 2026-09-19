@@ -338,6 +338,13 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
   // Session hook after propagateEffect runs source as .call(copycat).
   state = store.reduceEffect(state, attackEffect);
 
+  // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack too
+  // (see game-effect.ts useAttack for the rationale). This synchronous variant drains without yielding;
+  // its caller pumps any prompts a response opens, as it already does for AfterAttackEffect here.
+  const prevDefer = state.deferAfterDamage;
+  const drainStart = state.pendingAfterDamage.length;
+  state.deferAfterDamage = true;
+
   const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);
   state = store.reduceEffect(state, beforeDoingDamageEffect);
 
@@ -352,6 +359,12 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
     // the AttackEffect's source/target. Upstream's 3-arg call drops it. TA-289 is the copy route.
     const afterAttackEffect = new AfterAttackEffect(player, opponent, clonedAttack, attackEffect);
     state = store.reduceEffect(state, afterAttackEffect);
+  }
+
+  state.deferAfterDamage = prevDefer;
+  const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
+  for (const afterDamageEffect of deferredAfterDamage) {
+    state = store.reduceEffect(state, afterDamageEffect);
   }
 
   return state;
@@ -404,6 +417,12 @@ export function* runDelegatedCopiedAttackGenerator(
     yield store.waitPrompt(state, () => next());
   }
 
+  // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack (see
+  // game-effect.ts useAttack). Nesting-safe via drainStart/prevDefer.
+  const prevDefer = state.deferAfterDamage;
+  const drainStart = state.pendingAfterDamage.length;
+  state.deferAfterDamage = true;
+
   const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);
   state = store.reduceEffect(state, beforeDoingDamageEffect);
 
@@ -427,6 +446,15 @@ export function* runDelegatedCopiedAttackGenerator(
     const afterAttackEffect = new AfterAttackEffect(player, opponent, clonedAttack, attackEffect);
     state = store.reduceEffect(state, afterAttackEffect);
 
+    if (store.hasPrompts()) {
+      yield store.waitPrompt(state, () => next());
+    }
+  }
+
+  state.deferAfterDamage = prevDefer;
+  const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
+  for (const afterDamageEffect of deferredAfterDamage) {
+    state = store.reduceEffect(state, afterDamageEffect);
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }

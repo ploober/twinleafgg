@@ -337,6 +337,17 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
   // --- End Attack Animation Trigger ---
 
   if (!delegateFrom) {
+    // CF-74 / §B.53: arm the damage-response deferral for THIS attack. Damage dealt by the attack
+    // (and by its AfterAttackEffect) queues each "when damaged by an attack" AfterDamageEffect on
+    // `state.pendingAfterDamage` instead of resolving it mid-damage; the queue is drained below, after
+    // AfterAttackEffect and before the Knock Out check. Rulebook order: damage → the attack's own
+    // effects (e.g. Strafe's "you may switch") → damage-response Abilities (Shell Spikes) → KO
+    // (Advanced Rulebook II E-03, #2172). `drainStart`/`prevDefer` make it nesting-safe: a copied
+    // attack re-entering an attack pipeline drains only what it queued and restores the outer flag.
+    const prevDefer = state.deferAfterDamage;
+    const drainStart = state.pendingAfterDamage.length;
+    state.deferAfterDamage = true;
+
     const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);
     state = store.reduceEffect(state, beforeDoingDamageEffect);
 
@@ -354,6 +365,19 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
 
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
+    }
+
+    // Drain the deferred damage-response window. Each queued AfterDamageEffect is dispatched exactly
+    // as it would have been mid-damage, so its `resolveSimultaneous` batch (B.40 / TA-292 ordering)
+    // moves intact. Restore the flag first so any sub-damage a response deals (e.g. Shell Trap's
+    // retaliation) fires its own AfterDamage immediately, exactly as before.
+    state.deferAfterDamage = prevDefer;
+    const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
+    for (const afterDamageEffect of deferredAfterDamage) {
+      state = store.reduceEffect(state, afterDamageEffect);
+      if (store.hasPrompts()) {
+        yield store.waitPrompt(state, () => next());
+      }
     }
   }
 
