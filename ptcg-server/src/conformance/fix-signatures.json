@@ -7,7 +7,9 @@
         "const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);"
       ],
       "state": "guarding",
-      "fixes": ["FX-0314"],
+      "fixes": [
+        "FX-0314"
+      ],
       "note": "CF-74 / B.53: the attack pipeline drains the deferred AfterDamage window after AfterAttackEffect."
     },
     {
@@ -5855,10 +5857,10 @@
     {
       "file": "set-temporal-forces/heavy-baton.ts",
       "signatures": [
-        "const hasBench = player.bench.some(b => b.cards.length > 0);",
-        "{ allowCancel: false, min: 1, max: 3, sameTarget: true }"
+        "if (destinations === 0) {",
+        "{ allowCancel: false, min: 1, max: 3, sameTarget: true, blockedTo }"
       ],
-      "note": "TA-170 face C: #2301 floors a Tool's 'up to 3' at 1; the bench guard (#925) is what makes that floor satisfiable. Both lines are load-bearing -- reverting either alone regresses.",
+      "note": "TA-170 face C: #2301 floors a Tool's 'up to 3' at 1; the empty-destination guard (#925) is what makes that floor satisfiable. Both lines are load-bearing -- reverting either alone regresses. RE-SPELLED 2026-09-19 (TA-441): the guard was `player.bench.some(b => b.cards.length > 0)` and the options carried no `blockedTo`; once the KO discard stopped preceding the prompt, the dying holder itself occupies a Bench slot at this step, so 'has a Bench' had to become 'has a Bench destination that is not the holder'. Same law, new spelling.",
       "fixes": [
         "FX-0092"
       ],
@@ -8545,6 +8547,46 @@
       "note": "CF-74 (2026-09-19): CF-74: twinleaf drains the damage-response window AFTER AfterAttackEffect (B.53 / #2172)",
       "fixes": [
         "FX-0314"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "if (actors.length === 0) {"
+      ],
+      "note": "TA-441 (2026-09-19): TA-441: KO reactions resolve BEFORE the victim and its attached cards are discarded, on the single-actor path too (#2089",
+      "fixes": [
+        "FX-0315"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-coin-reflip.ts",
+      "signatures": [
+        "if (store.isProbing()) {"
+      ],
+      "note": "TA-440 (2026-09-19): TA-440: the KO-window PROBE no longer consumes the driver's scripted coin flip — one Knock Out, one flip (#2083)",
+      "fixes": [
+        "FX-0316"
+      ]
+    },
+    {
+      "file": "set-journey-together/maractus.ts",
+      "signatures": [
+        "if (effect instanceof KnockOutEffect && effect.target.cards.includes(this)) {"
+      ],
+      "note": "TA-438 (2026-09-19): TA-438: Exploding Needles resolves in the KO window, and names the Pokemon that ATTACKED rather than whoever is Active t",
+      "fixes": [
+        "FX-0317"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/heavy-baton.ts",
+      "signatures": [
+        "player.marker.addMarker(this.HEAVY_BATON_ARMED_MARKER, this);"
+      ],
+      "note": "TA-170 (2026-09-19): TA-170 face A: the Heavy Baton decision is raised with the holder still in play (moveEnergy, not attachEnergy out of the",
+      "fixes": [
+        "FX-0318"
       ]
     }
   ]
