@@ -8671,6 +8671,36 @@
       "fixes": [
         "FX-0320"
       ]
+    },
+    {
+      "file": "set-surging-sparks/meowstic.ts",
+      "signatures": [
+        "player.marker.addMarker(this.BECKONING_TAIL_MARKER, this);"
+      ],
+      "note": "TA-447, TA-448, TA-449 (2026-09-19): Meowstic, Phantump and Larrys Komala enforce \"Once during your turn\": the once-per-turn is committed at the ANNOUNCEMENT",
+      "fixes": [
+        "FX-0321"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/phantump.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false, blocked },"
+      ],
+      "note": "TA-447, TA-448, TA-449 (2026-09-19): Meowstic, Phantump and Larrys Komala enforce \"Once during your turn\": the once-per-turn is committed at the ANNOUNCEMENT",
+      "fixes": [
+        "FX-0321"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-komala.ts",
+      "signatures": [
+        "{ allowCancel: false, min: 1, max: 1 },"
+      ],
+      "note": "TA-447, TA-448, TA-449 (2026-09-19): Meowstic, Phantump and Larrys Komala enforce \"Once during your turn\": the once-per-turn is committed at the ANNOUNCEMENT",
+      "fixes": [
+        "FX-0321"
+      ]
     }
   ]
 }
