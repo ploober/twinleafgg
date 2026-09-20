@@ -712,8 +712,22 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
   };
 
   const out: string[] = [];
+  // TA-459 / B.58 (stack membership): a once-per-turn use is remembered BY NAME on the in-play Pokémon
+  // (usePower / ABILITY_USED push it; #798: the evolved Pokémon still remembers), so a label belongs
+  // to EVERY card in the stack whose printed once-per-turn power is in that memory — the Trevenant
+  // stack still carries [Spiteful Evolution]. Keyed on the stack's own powers so a replacement that
+  // arrived in the same slot (Palafin ex after Zero to Hero, #1589) carries nothing.
+  for (const card of slot.getPokemons()) {
+    for (const power of card.powers) {
+      if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
+      if (/once during your turn/i.test(power.text ?? '') && slot.abilitiesUsedThisTurn.includes(power.name) && !out.includes(power.name)) {
+        out.push(power.name);
+      }
+    }
+  }
   for (const power of pokemon.powers) {
     if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
+    if (out.includes(power.name)) { continue; }
     if (power.useWhenInPlay !== true) {
       // TA-455 (CF-77): a TRIGGERED once-per-turn Ability ("when you play this Pokemon…", "when this
       // Pokemon moves…") has no useAbility to dry-run, so its label is read from the ABILITY_USED slot

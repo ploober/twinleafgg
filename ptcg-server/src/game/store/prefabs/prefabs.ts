@@ -194,6 +194,13 @@ export function ABILITY_USED(player: Player, card: PokemonCard) {
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
     if (cardList.getPokemonCard() === card) {
       cardList.addBoardEffect(BoardEffect.ABILITY_USED);
+      // TA-459 / B.58: remember the use BY NAME on the Pokémon (survives evolution, #798) — the card's
+      // printed once-per-turn powers; every in-pool card that calls this has exactly one.
+      for (const power of card.powers) {
+        if (/once during your turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {
+          cardList.abilitiesUsedThisTurn.push(power.name);
+        }
+      }
     }
   });
 }

@@ -4215,4 +4215,39 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     });
   }
 
+  // ── TA-459 / B.58: stack membership — the label survives evolution and devolution (#798) ─────────
+  it('TA-459 Spiteful Evolution: the Trevenant stack keeps the label; devolved back, Phantump still cannot use it [TA-459 cri-038]', () => {
+    const b = () => board(
+      player({ active: inPlay('a1', ['cri-038']), hand: [{ iid: 'h0', printing: 'cri-039' }, { iid: 'tp', printing: 'meg-128' }], deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('b1', ['twm-187']), deck: fillerDeck('B', 4) }),
+    );
+    const use = act({ type: 'useAbility', source: 'a1', ability: 'Spiteful Evolution' });
+    const evolved = step(b(), [use, act({ type: 'choose', target: 'h0' })]);
+    expect(evolved.state.players.A.active!.stack.map(c => c.printing)).toEqual(['cri-038', 'cri-039']);
+    expect(usedLabels(evolved)).withContext('the evolved Pokémon remembers (#798)').toEqual(['Spiteful Evolution']);
+    // Strange Timepiece devolves it the same turn: the memory is still there and the re-use is refused
+    const devolved = step(b(), [use, act({ type: 'choose', target: 'h0' }), act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' })]);
+    expect(devolved.status).toBe('awaitingAction');
+    expect(devolved.state.players.A.active!.stack.map(c => c.printing)).toEqual(['cri-038']);
+    expect(usedLabels(devolved)).toEqual(['Spiteful Evolution']);
+    const again = step(b(), [use, act({ type: 'choose', target: 'h0' }), act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' }), use]);
+    expect(again.status).toBe('invalidAction');
+  });
+
+  it('TA-459 Evolutionary Guidance: evolving from hand into Mega Dragonite ex keeps the label and its own Sky Transport stays usable [TA-459 asc-151]', () => {
+    const b = () => board(
+      player({ active: inPlay('a1', ['asc-150', 'asc-151'], en(GRASS, 1, 'g')), bench: [inPlay('a2', [RALTS]), inPlay('a3', [RALTS])], hand: [{ iid: 'h0', printing: 'asc-152' }], deck: [{ iid: 'ev', printing: 'asc-152' }, ...fillerDeck('A', 3)] }),
+      player({ active: inPlay('b1', ['twm-187']), deck: fillerDeck('B', 4) }),
+    );
+    const guidance = [act({ type: 'useAbility', source: 'a1', ability: 'Evolutionary Guidance' }), act({ type: 'choose', target: 'ev' })];
+    const shuffled = driveToMain(b(), guidance);
+    const evolved = step(b(), [...shuffled, act({ type: 'evolve', card: 'h0', target: 'a1' })]);
+    expect(evolved.state.players.A.active!.stack.map(c => c.printing)).toEqual(['asc-150', 'asc-151', 'asc-152']);
+    expect(usedLabels(evolved)).withContext('the use travels with the stack').toEqual(['Evolutionary Guidance']);
+    expect(types(evolved)).withContext('a DIFFERENT Ability on the evolved form is not blocked').toContain('useAbility');
+    const transported = step(b(), [...shuffled, act({ type: 'evolve', card: 'h0', target: 'a1' }), act({ type: 'useAbility', source: 'a1', ability: 'Sky Transport' }), act({ type: 'promoteBench', target: 'a2' })]);
+    expect(transported.status).toBe('awaitingAction');
+    expect(usedLabels(transported, 'A', 0).sort()).toEqual(['Evolutionary Guidance', 'Sky Transport']);
+  });
+
 });

@@ -374,7 +374,9 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     state.deferAfterDamage = prevDefer;
     const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
     for (const afterDamageEffect of deferredAfterDamage) {
-      state = store.reduceEffect(state, afterDamageEffect);
+      // TA-459: a response that afflicts "the Attacking Pokémon" finds it possibly already on the Bench
+      // (Strafe resolved first, per B.53) — Special Conditions cannot follow it there (#891).
+      state = reduceDeferredAfterDamage(store, state, afterDamageEffect);
       if (store.hasPrompts()) {
         yield store.waitPrompt(state, () => next());
       }
@@ -571,6 +573,14 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
     const slot = StateUtils.findCardList(state, card);
     if (slot instanceof PokemonCardList) {
       slot.addBoardEffect(BoardEffect.ABILITY_USED);
+      // TA-459 / B.58: the use is remembered BY NAME on the in-play Pokémon and survives evolution and
+      // devolution (#798 — the evolved Pokémon "still remembers that it has already used up its
+      // once-per-turn Ability"). The slot flag is coarse (cleared on evolution so the evolved form's
+      // own Ability stays usable); this list is what refuses the same Ability after a same-turn
+      // devolve and what the wire label reads (abilitiesUsedLabels). Cleared at the turn end.
+      if (!slot.abilitiesUsedThisTurn.includes(power.name)) {
+        slot.abilitiesUsedThisTurn.push(power.name);
+      }
     }
   }
   return state;
