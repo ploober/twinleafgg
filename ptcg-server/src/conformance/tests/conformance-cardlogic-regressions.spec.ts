@@ -4109,31 +4109,31 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
   const A = (over: Partial<PlayerState>) => player({ deck: fillerDeck('A', 5), ...over });
   const act = (a: Record<string, unknown>): NeutralAction => ({ actor: 'A', ...a }) as unknown as NeutralAction;
   const confirm = (value: boolean) => act({ type: 'confirm', value });
-  interface Trig { printing: string; ability: string; board: NeutralState; prefix: NeutralAction[]; mainTop?: string }
+  interface Trig { label: string; printing: string; ability: string; board: NeutralState; prefix: NeutralAction[]; mainTop?: string }
   const TRIGGERS: Trig[] = [
-    { printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
+    { label: '[TA-455 dri-003]', printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
       prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })] },
-    { printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
+    { label: '[TA-455 cri-064]', printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
       prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })] },
-    { printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }], deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+    { label: '[TA-455 twm-060]', printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }], deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
       prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })], mainTop: 'twm-061' },
-    { printing: 'meg-097', ability: 'Haphazard Hammer', board: board(A({ active: inPlay('a1', ['meg-096']), hand: [{ iid: 'h0', printing: 'meg-097' }] }), oppWithEnergy()),
+    { label: '[TA-455 meg-097]', printing: 'meg-097', ability: 'Haphazard Hammer', board: board(A({ active: inPlay('a1', ['meg-096']), hand: [{ iid: 'h0', printing: 'meg-097' }] }), oppWithEnergy()),
       prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
-    { printing: 'por-062', ability: 'Last-Ditch Catch', board: board(A({ active: inPlay('a1', ['twm-118']), hand: [{ iid: 'h0', printing: 'por-062' }], deck: [{ iid: 'sup', printing: 'ssp-178' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+    { label: '[TA-455 por-062]', printing: 'por-062', ability: 'Last-Ditch Catch', board: board(A({ active: inPlay('a1', ['twm-118']), hand: [{ iid: 'h0', printing: 'por-062' }], deck: [{ iid: 'sup', printing: 'ssp-178' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
       prefix: [act({ type: 'benchBasic', card: 'h0' })] },
-    { printing: 'pbl-020', ability: 'Enriching Melody', board: board(A({ active: inPlay('a1', ['pbl-018', 'pbl-019'], [], 30), hand: [{ iid: 'h0', printing: 'pbl-020' }] }), oppWithEnergy()),
+    { label: '[TA-455 pbl-020]', printing: 'pbl-020', ability: 'Enriching Melody', board: board(A({ active: inPlay('a1', ['pbl-018', 'pbl-019'], [], 30), hand: [{ iid: 'h0', printing: 'pbl-020' }] }), oppWithEnergy()),
       prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
-    { printing: 'pfl-053', ability: 'Sandy Flapping', board: board(A({ active: inPlay('a1', ['pfl-051', 'pfl-052']), hand: [{ iid: 'h0', printing: 'pfl-053' }] }), oppWithEnergy()),
+    { label: '[TA-455 pfl-053]', printing: 'pfl-053', ability: 'Sandy Flapping', board: board(A({ active: inPlay('a1', ['pfl-051', 'pfl-052']), hand: [{ iid: 'h0', printing: 'pfl-053' }] }), oppWithEnergy()),
       prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
-    { printing: 'scr-115', ability: 'Jewel Seeker', board: board(A({ active: inPlay('a1', ['scr-114']), bench: [inPlay('a2', ['scr-128'])], hand: [{ iid: 'h0', printing: 'scr-115' }], deck: [{ iid: 'sw1', printing: SWITCH }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+    { label: '[TA-455 scr-115]', printing: 'scr-115', ability: 'Jewel Seeker', board: board(A({ active: inPlay('a1', ['scr-114']), bench: [inPlay('a2', ['scr-128'])], hand: [{ iid: 'h0', printing: 'scr-115' }], deck: [{ iid: 'sw1', printing: SWITCH }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
       prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
-    { printing: 'tef-025', ability: 'Rapid Vernier', board: board(A({ active: inPlay('a1', ['twm-118'], en('sve-001', 1, 'a1')), bench: [inPlay('a2', ['twm-118'], en('sve-001', 1, 'a2'))], hand: [{ iid: 'h0', printing: 'tef-025' }] }), oppWithEnergy()),
+    { label: '[TA-455 tef-025]', printing: 'tef-025', ability: 'Rapid Vernier', board: board(A({ active: inPlay('a1', ['twm-118'], en('sve-001', 1, 'a1')), bench: [inPlay('a2', ['twm-118'], en('sve-001', 1, 'a2'))], hand: [{ iid: 'h0', printing: 'tef-025' }] }), oppWithEnergy()),
       prefix: [act({ type: 'benchBasic', card: 'h0' })] },
-    { printing: 'asc-012', ability: 'Multiplying Cocoon', board: board(A({ active: inPlay('a1', ['asc-011']), hand: [{ iid: 'h0', printing: 'asc-012' }], deck: [{ iid: 'cas', printing: 'asc-014' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+    { label: '[TA-455 asc-012]', printing: 'asc-012', ability: 'Multiplying Cocoon', board: board(A({ active: inPlay('a1', ['asc-011']), hand: [{ iid: 'h0', printing: 'asc-012' }], deck: [{ iid: 'cas', printing: 'asc-014' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
       prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
   ];
   for (const t of TRIGGERS) {
-    it(`TA-455 ${t.ability}: no label before the "may" is answered or on a decline; the label at the first pending after the accept and at main [TA-455 ${t.printing}]`, () => {
+    it(`TA-455 ${t.ability}: no label before the "may" is answered or on a decline; the label at the first pending after the accept and at main ${t.label}`, () => {
       const open = step(t.board, t.prefix);
       expect(open.status).withContext('trigger pending').toBe('awaitingAction');
       expect(types(open)).withContext('the "may" is a decision').toContain('confirm');
@@ -4165,13 +4165,13 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     act({ type: 'playItem', card: 'sw3' }), act({ type: 'promoteBench', target: c }),
   ];
   const switches = [{ iid: 'sw1', printing: SWITCH }, { iid: 'sw2', printing: SWITCH }, { iid: 'sw3', printing: SWITCH }];
-  const RETRIGGER: Array<{ printing: string; ability: string; board: NeutralState; script: NeutralAction[] }> = [
-    { printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
-    { printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
-    { printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: switches, deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+  const RETRIGGER: Array<{ label: string; printing: string; ability: string; board: NeutralState; script: NeutralAction[] }> = [
+    { label: '[TA-457 dri-003]', printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+    { label: '[TA-457 cri-064]', printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+    { label: '[TA-457 twm-060]', printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: switches, deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
   ];
   for (const t of RETRIGGER) {
-    it(`TA-457 ${t.ability}: declined on the first move, offered again when the Pokémon moves again this turn [TA-457 ${t.printing}]`, () => {
+    it(`TA-457 ${t.ability}: declined on the first move, offered again when the Pokémon moves again this turn ${t.label}`, () => {
       const first = step(t.board, t.script.slice(0, 2));
       expect(types(first)).withContext('offered on the first move').toContain('confirm');
       const again = step(t.board, t.script);
