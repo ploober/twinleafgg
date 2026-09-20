@@ -14,6 +14,7 @@ import {
 import { Player } from '../state/player';
 import { GamePhase, State } from '../state/state';
 import { StoreLike } from '../store-like';
+import { reduceDeferredAfterDamage } from '../effect-reducers/after-damage-drain';
 import { PlayerType } from '../actions/play-card-action';
 
 export function cloneAttack(attack: Attack): Attack {
@@ -364,7 +365,7 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
   state.deferAfterDamage = prevDefer;
   const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
   for (const afterDamageEffect of deferredAfterDamage) {
-    state = store.reduceEffect(state, afterDamageEffect);
+    state = reduceDeferredAfterDamage(store, state, afterDamageEffect);   // TA-460
   }
 
   return state;
@@ -454,7 +455,7 @@ export function* runDelegatedCopiedAttackGenerator(
   state.deferAfterDamage = prevDefer;
   const deferredAfterDamage = state.pendingAfterDamage.splice(drainStart);
   for (const afterDamageEffect of deferredAfterDamage) {
-    state = store.reduceEffect(state, afterDamageEffect);
+    state = reduceDeferredAfterDamage(store, state, afterDamageEffect);   // TA-460
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }
