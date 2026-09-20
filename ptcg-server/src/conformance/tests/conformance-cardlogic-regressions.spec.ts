@@ -3733,4 +3733,76 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(moved.state.players.A.discard.some(c => c.iid === 'ae0')).toBe(false);
   });
 
+
+  // ── Once-per-turn ENFORCEMENT census, 2026-09-19 (TA-447 / TA-448 / TA-449) ────────────────────
+  // Three in-pool cards whose "Once during your turn" was unenforced: a once-per-turn marker CHECKED
+  // but never SET (meowstic), or set inside the body callback BELOW a non-empty-pick guard on a
+  // declinable prompt so that DECLINING refunded the use (phantump, larrys-komala). Each drove a second
+  // use in one turn on our build AND on pristine upstream `52d4b0162` (upstream defects); rotomancer
+  // refuses the second use on all three. The cells drive the SECOND use / the refund path where the
+  // card allows it — a green offer is not the effect (a-guard-on-the-offer-has-not-tested-the-effect).
+
+  it('Meowstic "Beckoning Tail" refuses a SECOND use in the same turn [TA-447 ssp-085]', () => {
+    // BECKONING_TAIL_MARKER was checked but never added: two toys in hand bought two switches.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['ssp-084', 'ssp-085']),
+               hand: [{ iid: 'A-h0', printing: 'ssp-166' }, { iid: 'A-h1', printing: 'ssp-166' }] }),
+      player({ active: inPlay('B-act', ['meg-109']), bench: [inPlay('B-b0', ['meg-109']), inPlay('B-b1', ['meg-109'])] }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Beckoning Tail' } as unknown as NeutralAction;
+    const toy = { actor: 'A', type: 'discard', owner: 'A', target: 'A-h0', op: 'discard', destination: 'discardPile' } as unknown as NeutralAction;
+    const sw = { actor: 'A', type: 'promoteBench', target: 'B-b0' } as unknown as NeutralAction;
+    const first = step(b(), [use, toy, sw]);
+    expect(first.status).toBe('awaitingAction');                                   // one use resolved…
+    expect(first.state.players.B.active!.stack[0].iid).toBe('B-b0');               // …and it switched
+    const second = step(b(), [use, toy, sw, use]);
+    expect(second.status).toBe('invalidAction');                                   // the second use is refused
+    expect(second.state.players.A.hand.length).toBe(1);                            // only ONE toy was spent
+  });
+
+  it('Phantump "Spiteful Evolution" commits the once-per-turn at the ANNOUNCEMENT: no decline offered, marker set before the pick [TA-448 cri-038]', () => {
+    // The commit sat inside the pick callback below `selected.length === 0 → return`, on a
+    // min:0/allowCancel:true prompt: confirm{false} refunded the use. After the pick the Pokemon IS
+    // Trevenant and the Ability is gone, so a second-use drive is impossible here; the guard is the
+    // OFFER (no decline) plus the enforcement OPERAND at the pending (assert-the-operand-at-the-
+    // decision-point): the once-per-turn marker is already on the player while the pick is open.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['cri-038']),
+               hand: [{ iid: 'A-h0', printing: 'cri-039' }, { iid: 'A-h1', printing: 'cri-039' }] }),
+      player({ active: inPlay('B-act', ['meg-109']) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Spiteful Evolution' } as unknown as NeutralAction;
+    const open = step(b(), [use]);
+    expect(open.status).toBe('awaitingAction');
+    expect(hasType(open, 'choose')).toBe(true);
+    expect(hasType(open, 'confirm')).toBe(false);                                  // the pick is mandatory
+    const game = importState(b());
+    replay(game, [use]);
+    const phantump = game.state.players[0].active.getPokemonCard()!;
+    expect(game.state.players[0].marker.hasMarker('ENVIOUS_EVOLUTION_MARKER', phantump)).toBe(true);
+    const done = step(b(), [use, { actor: 'A', type: 'choose', target: 'A-h0' } as unknown as NeutralAction]);
+    expect(done.state.players.A.active!.stack.map(c => c.printing)).toEqual(['cri-038', 'cri-039']);
+    expect(done.state.players.A.active!.damage).toBe(20);
+  });
+
+  it("Larry's Komala \"Lethargic Charge\" offers no decline and refuses a SECOND use in the same turn [TA-449 asc-175]", () => {
+    // Commit sat under `transfers.length > 0` on an allowCancel:true/min:0 attach: confirm{false}
+    // refunded the use (rotomancer never offered the decline).
+    const b = () => board(
+      player({ active: inPlay('A-act', ['asc-163']), bench: [inPlay('A-b', ['asc-175'])],
+               hand: [{ iid: 'A-h0', printing: 'sve-002' }, { iid: 'A-h1', printing: 'sve-002' }] }),
+      player({ active: inPlay('B-act', ['meg-109']) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-b', ability: 'Lethargic Charge' } as unknown as NeutralAction;
+    const open = step(b(), [use]);
+    expect(hasType(open, 'attachEnergy')).toBe(true);
+    expect(hasType(open, 'confirm')).toBe(false);                                  // the attach is mandatory
+    const attach = { actor: 'A', type: 'attachEnergy', card: 'A-h0', target: 'A-act' } as unknown as NeutralAction;
+    const once = step(b(), [use, attach]);
+    expect(once.state.players.A.active!.energy.map(c => c.iid)).toEqual(['A-h0']);
+    const twice = step(b(), [use, attach, use]);
+    expect(twice.status).toBe('invalidAction');                                    // the second use is refused
+    expect(twice.state.players.A.active!.energy.length).toBe(1);
+  });
+
 });

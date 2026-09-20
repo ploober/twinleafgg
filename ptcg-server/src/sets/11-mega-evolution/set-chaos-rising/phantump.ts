@@ -81,6 +81,15 @@ export class Phantump extends PokemonCard {
         }
       });
 
+      // TA-448: the once-per-turn used to be committed INSIDE the pick callback, below the
+      // `selected.length === 0` bail-out, on a `min: 0 / allowCancel: true` prompt -- so declining the
+      // pick REFUNDED the use and a second Spiteful Evolution in the same turn was accepted (driven
+      // 2026-09-19; rotomancer commits on the decline). The printed "may" is on USING the Ability
+      // (B.30 rule 3 / TA-221): with an evolution in hand the use is committed at the announcement
+      // and the pick is mandatory (#116). Commit here, after the guards, before the body pends.
+      USE_ABILITY_ONCE_PER_TURN(player, this.ENVIOUS_EVOLUTION_MARKER, this);
+      ABILITY_USED(player, this);
+
       return store.prompt(
         state,
         new ChooseCardsPrompt(
@@ -88,14 +97,11 @@ export class Phantump extends PokemonCard {
           GameMessage.CHOOSE_CARD_TO_EVOLVE,
           player.hand,
           { superType: SuperType.POKEMON },
-          { min: 0, max: 1, allowCancel: true, blocked },
+          { min: 1, max: 1, allowCancel: false, blocked },
         ),
         (cards) => {
           const selected = cards || [];
           if (selected.length === 0) return state;
-
-          USE_ABILITY_ONCE_PER_TURN(player, this.ENVIOUS_EVOLUTION_MARKER, this);
-          ABILITY_USED(player, this);
 
           const evolutionCard = selected[0];
           player.hand.moveCardTo(evolutionCard, cardList);

@@ -89,6 +89,16 @@ export class LarrysKomala extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-449: the once-per-turn used to be committed INSIDE the attach callback under
+      // `transfers.length > 0` on an `allowCancel: true / min: 0` prompt -- so the post-announcement
+      // decline twinleaf offered REFUNDED the use and a second Lethargic Charge in the same turn was
+      // accepted (driven 2026-09-19; rotomancer offers no decline at all). The printed "may" is on
+      // USING the Ability (B.30 rule 3 / TA-221): with an Energy in hand and a Larry's Active the use
+      // is committed at the announcement and the attach is mandatory (#116). Commit here, before the
+      // body pends; the prompt is now min:1 / allowCancel:false so the pick can collapse (CF-14).
+      player.marker.addMarker(this.LETHARGIC_CHARGE_MARKER, this);
+      ABILITY_USED(player, this);
+
       return store.prompt(
         state,
         new AttachEnergyPrompt(
@@ -98,17 +108,13 @@ export class LarrysKomala extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.ACTIVE],
           { superType: SuperType.ENERGY },
-          { allowCancel: true, min: 0, max: 1 },
+          { allowCancel: false, min: 1, max: 1 },
         ),
         (transfers) => {
           transfers = transfers || [];
-          if (transfers.length > 0) {
-            for (const transfer of transfers) {
-              const target = StateUtils.getTarget(state, player, transfer.to);
-              player.hand.moveCardTo(transfer.card, target);
-            }
-            player.marker.addMarker(this.LETHARGIC_CHARGE_MARKER, this);
-            ABILITY_USED(player, this);
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            player.hand.moveCardTo(transfer.card, target);
           }
         },
       );

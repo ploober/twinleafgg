@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Meowstic extends PokemonCard {
 
@@ -87,6 +87,15 @@ export class Meowstic extends PokemonCard {
       if (player.marker.hasMarker(this.BECKONING_TAIL_MARKER, this)) {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
+
+      // The marker above was checked but NEVER SET, so "Once during your turn" was unenforced: driven
+      // 2026-09-19, a second Beckoning Tail in the same turn was accepted (second toy discarded, second
+      // switch) on our build AND on pristine upstream 52d4b0162; rotomancer refuses it
+      // (ONCE_PER_TURN_EXHAUSTED). Set it at the announcement, once the guards above have passed and
+      // before the body pends -- both prompts are allowCancel:false, so the use is committed here
+      // (A-02 step 1; B.57). ABILITY_USED mirrors the other once-per-turn cards' board glow.
+      player.marker.addMarker(this.BECKONING_TAIL_MARKER, this);
+      ABILITY_USED(player, this);
 
       store.prompt(state, new ChooseCardsPrompt(
         player,
