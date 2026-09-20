@@ -4077,4 +4077,21 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     }
   });
 
+  it('TA-454 Morpeko "Snack Seek": the label survives every pending of the turn — still up at the attack cost pick two actions later [TA-454 twm-072]', () => {
+    // ta422 reproducer: after the use (+ confirm) twinleaf read [Snack Seek] at main, then [] once
+    // Pick and Stick pended its attach — the dry-run useAbility is refused for phase reasons inside an
+    // attack, so the counterfactual could not see the flag. The flag is read directly now.
+    const b = () => board(
+      player({ active: inPlay('a1', ['twm-072'], en('sve-004', 1, 'a1')), deck: fillerDeck('A', 3), discard: en(WATER, 2, 'A-x') }),
+      player({ active: inPlay('b1', ['twm-187']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Snack Seek' } as unknown as NeutralAction;
+    const script = [use, { actor: 'A', type: 'confirm', value: true }, attack('a1', 'Pick and Stick')] as unknown as NeutralAction[];
+    const r = step(b(), script);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.turn).toBe(step(b(), [use]).state.turn);                     // same turn
+    expect(r.pending?.descriptor).not.toMatch(/^main/);                        // the attack's pick is pending
+    expect(usedLabels(r)).toEqual(['Snack Seek']);
+  });
+
 });

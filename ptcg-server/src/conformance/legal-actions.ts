@@ -715,6 +715,15 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
   for (const power of pokemon.powers) {
     if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
     if (power.useWhenInPlay !== true) { continue; }
+    // TA-454: since TA-452 (the reducer refuses the flag) and TA-453 (usePower sets it at the
+    // announcement) the ABILITY_USED slot flag IS the once-per-turn state for every power printed
+    // "Once during your turn" — read it directly. The counterfactual probe below is refused for
+    // PHASE reasons while an attack is resolving (Morpeko twm-072 read [Snack Seek] at its own pick and
+    // [] at the attack cost pick two actions later), so it stays for marker-keyed cards only.
+    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {
+      out.push(power.name);
+      continue;
+    }
     const now = outcome(power.name, []);
     if (now.accepted) { continue; } // a re-use would be accepted: NOT used, whatever was announced
     const differs = (o: ProbeOutcome): boolean => o.accepted || o.reason !== now.reason;
