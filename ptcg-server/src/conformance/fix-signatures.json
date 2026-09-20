@@ -8951,6 +8951,16 @@
       "fixes": [
         "FX-0328"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/after-damage-drain.ts",
+      "signatures": [
+        "export function reduceDeferredAfterDamage(store: StoreLike, state: State, effect: Effect): State {"
+      ],
+      "note": "TA-460 (2026-09-20): TA-460: the CF-74 drain undoes a Special Condition a damage response placed on an attacker that already left the Active ",
+      "fixes": [
+        "FX-0329"
+      ]
     }
   ]
 }
