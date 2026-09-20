@@ -20,6 +20,7 @@ import { Attack, PowerType } from '../game/store/card/pokemon-types';
 import { State, GamePhase } from '../game/store/state/state';
 import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
+import { Marker } from '../game/store/state/card-marker';
 import { StateUtils } from '../game/store/state-utils';
 import { StoreLike } from '../game/store/store-like';
 import {
@@ -559,10 +560,24 @@ function retreatProbeAccepts(state: State, player: Player, nativeSlot: number): 
  * flip with no provider installed) gets the benefit of the doubt and the move is offered.
  */
 function abilityProbeAccepts(state: State, player: Player, ability: string, sourceCard: PokemonCard): boolean {
+  return abilityProbeOutcome(state, player, ability, sourceCard).accepted;
+}
+
+/** What one probed `useAbility` would do: accepted (the engine would run it), or the GameError it throws. */
+interface ProbeOutcome { accepted: boolean; reason?: string }
+
+/**
+ * The probe behind `abilityProbeAccepts`, with the OUTCOME kept: `prepare` edits the throwaway clone
+ * before the dispatch (drop an open prompt, clear a marker) so a caller can ask the counterfactual
+ * "would it be accepted if X were not so?" — `abilitiesUsedLabels` (G-59) needs exactly that.
+ */
+function abilityProbeOutcome(state: State, player: Player, ability: string, sourceCard: PokemonCard,
+  prepare?: (cloned: State) => void): ProbeOutcome {
   const handler = new ConformanceStoreHandler();
   const probe = new Store(handler);
   handler.setStore(probe);
   probe.state = deepClone(state, [Card]);
+  if (prepare !== undefined) { prepare(probe.state); }
   const cloned = probe.state.players[state.players.indexOf(player)];
   let target: CardTarget | undefined;
   if (cloned.active.cards.includes(sourceCard)) {
@@ -576,7 +591,7 @@ function abilityProbeAccepts(state: State, player: Player, ability: string, sour
     }
   }
   if (target === undefined) {
-    return false;
+    return { accepted: false, reason: 'not in play' };
   }
   try {
     probe.dispatchProbe(new UseAbilityGameAction(cloned.id, ability, target));
@@ -586,16 +601,96 @@ function abilityProbeAccepts(state: State, player: Player, ability: string, sour
     // genuine decision prompt (e.g. MoveDamagePrompt) means the ability IS usable → accept.
     for (let guard = 0; guard < 32; guard++) {
       const pending = probe.state.prompts.find(p => p.result === undefined);
-      if (pending === undefined) { return true; }
-      if (pending.type !== 'WaitPrompt') { return true; }
+      if (pending === undefined) { return { accepted: true }; }
+      if (pending.type !== 'WaitPrompt') { return { accepted: true }; }
       // Resolve with a non-undefined value: reducePrompt only fires the continuation when the result
       // is !== undefined (WaitPrompt is Prompt<void> — its `then` ignores the value).
       probe.dispatch(new ResolvePromptAction(pending.id, true));
     }
-    return true;
+    return { accepted: true };
   } catch (err) {
-    return !(err instanceof GameError);
+    // A GameError is the engine's refusal; anything else gets the benefit of the doubt (as before).
+    return err instanceof GameError ? { accepted: false, reason: String(err.message) } : { accepted: true };
   }
+}
+
+/** One piece of once-per-turn state a Pokemon's Ability use may have left behind (see abilitiesUsedLabels). */
+type OncePerTurnItem =
+  | { kind: 'board' }                                            // BoardEffect.ABILITY_USED on the slot
+  | { kind: 'ingested' }                                         // slot.abilitiesUsedThisTurn (imported labels)
+  | { kind: 'marker'; holder: (s: State) => Marker; name: string }; // a marker SOURCED by this Pokemon
+
+/**
+ * G-59 — the once-per-turn Ability labels this Pokemon has fired this turn, DERIVED FROM ENFORCEMENT.
+ *
+ * A label is emitted for an activated Ability iff (1) the engine would REFUSE a `useAbility` for it
+ * right now (the same dry-run the menu uses), and (2) that refusal rests on once-per-turn state the
+ * use left behind: clearing that state on a throwaway clone changes the probe's outcome (accepted, or
+ * a different refusal — a card whose inert-guard fires only once its marker is out of the way still
+ * counts as "used"). twinleaf has no uniform use-up signal — 318 of 651 once-per-turn cards flag
+ * `ABILITY_USED`, the rest a player/slot marker sourced by the card, under half a dozen spellings and
+ * with a card-dependent commit point — so the label is computed from what the engine DOES, never from
+ * "the announcement happened": a card that checks a marker it never sets (Charizard teu-014, OOP-84)
+ * projects `[]` while it is re-offered, which is the truth the wire must carry (a projected "used"
+ * label must mean the engine would refuse a re-use). The clearing is tried all-at-once and then one
+ * item at a time, so a card whose ability ALSO needs one of its own markers as a precondition
+ * (Fezandipiti ex sfa-038 Flip the Script needs OPPONENT_KNOCKOUT_MARKER) is not mis-read as unused.
+ *
+ * At a pending state the clone's open prompt is dropped before the dispatch, so mid-body the label
+ * reads whatever twinleaf's own commit point says for that card (reservation- or completion-time);
+ * B.57 adjudicates that timing on the honest reading, not on a hook that fires for every card.
+ *
+ * Known under-report (documented, not hidden): a card that throws the SAME GameMessage for "already
+ * used" and "nothing to do" whose body precondition is gone after the use reads `[]`.
+ */
+export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonCardList): string[] {
+  const pokemon = slot.getPokemonCard();
+  if (pokemon === undefined) { return []; }
+  const pi = state.players.indexOf(player);
+  const bi = player.bench.indexOf(slot);
+  if (pi < 0 || (bi < 0 && slot !== player.active)) { return []; }
+  const slotOf = (s: State): PokemonCardList => (bi >= 0 ? s.players[pi].bench[bi] : s.players[pi].active);
+
+  const items: OncePerTurnItem[] = [];
+  if (slot.boardEffect.includes(BoardEffect.ABILITY_USED)) { items.push({ kind: 'board' }); }
+  if (slot.abilitiesUsedThisTurn.length > 0) { items.push({ kind: 'ingested' }); }
+  state.players.forEach((p, pIdx) => {
+    const holders: Array<[Marker, (s: State) => Marker]> = [
+      [p.marker, s => s.players[pIdx].marker],
+      [p.active.marker, s => s.players[pIdx].active.marker],
+      ...p.bench.map((b, i): [Marker, (s: State) => Marker] => [b.marker, s => s.players[pIdx].bench[i].marker]),
+    ];
+    for (const [m, holder] of holders) {
+      for (const item of m.markers) {
+        if (item.source === pokemon) { items.push({ kind: 'marker', holder, name: item.name }); }
+      }
+    }
+  });
+  if (items.length === 0) { return []; } // nothing a use could have left behind → nothing to attribute
+
+  const clear = (s: State, which: OncePerTurnItem[]): void => {
+    for (const it of which) {
+      if (it.kind === 'board') { slotOf(s).removeBoardEffect(BoardEffect.ABILITY_USED); }
+      else if (it.kind === 'ingested') { slotOf(s).abilitiesUsedThisTurn = []; }
+      else { it.holder(s).removeMarker(it.name, pokemon); }
+    }
+  };
+  const dropPending = (s: State): void => { s.prompts = s.prompts.filter(p => p.result !== undefined); };
+  const outcome = (ability: string, which: OncePerTurnItem[]): ProbeOutcome =>
+    abilityProbeOutcome(state, player, ability, pokemon, s => { dropPending(s); clear(s, which); });
+
+  const out: string[] = [];
+  for (const power of pokemon.powers) {
+    if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
+    if (power.useWhenInPlay !== true) { continue; }
+    const now = outcome(power.name, []);
+    if (now.accepted) { continue; } // a re-use would be accepted: NOT used, whatever was announced
+    const differs = (o: ProbeOutcome): boolean => o.accepted || o.reason !== now.reason;
+    if (differs(outcome(power.name, items)) || items.some(it => differs(outcome(power.name, [it])))) {
+      out.push(power.name);
+    }
+  }
+  return out;
 }
 
 function abilityMenu(store: StoreLike, state: State, player: Player, ctx: IidContext): LegalAction[] {

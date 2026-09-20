@@ -3805,4 +3805,131 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(twice.state.players.A.active!.energy.length).toBe(1);
   });
 
+  // ── G-59: abilitiesUsedThisTurn is DERIVED from enforcement (2026-09-19) ─────────────────────────
+  // The projected label means "the engine would refuse a re-use now, because of state the use left
+  // behind" (legal-actions.ts abilitiesUsedLabels). It is NOT recorded at the announcement: the first
+  // cut did that and made charizard read as used while a third Roaring Resolve was accepted. These
+  // cells pin the predicate from both sides — a used-and-enforced card reads its label, an
+  // unenforced card reads [] — and the round trip / turn boundary. Timing is whatever the card's own
+  // commit point is (B.57 adjudicates that later, on this honest reading).
+  const usedLabels = (r: ReturnType<typeof step>, side: 'A' | 'B' = 'A', bench?: number): string[] =>
+    (bench === undefined ? r.state.players[side].active! : r.state.players[side].bench[bench]).markers.abilitiesUsedThisTurn;
+  /** Follow legalActions[0] until the main menu (endTurn offered) or the script stops. */
+  const driveToMain = (b: NeutralState, acts: NeutralAction[]): NeutralAction[] => {
+    for (let i = 0; i < 12; i++) {
+      const r = step(b, acts);
+      if (r.status !== 'awaitingAction' || !r.pending) { return acts; }
+      const las = r.pending.legalActions as unknown as Array<Record<string, unknown>>;
+      if (las.some(a => a.type === 'endTurn') || las.length === 0) { return acts; }
+      const la = las[0];
+      const next = la.type === 'shuffle' ? { actor: 'system', type: 'shuffle', order: la.deck ?? la.order ?? [] } : la;
+      acts = [...acts, next as unknown as NeutralAction];
+    }
+    return acts;
+  };
+
+  it('G-59 Gumshoos "Evidence Gathering" (commits inside the pick callback): [] at the pick, the label after it, and a second use refused [meg-110]', () => {
+    const b = () => board(
+      player({ active: inPlay('A-act', ['meg-109', 'meg-110']),
+               hand: [{ iid: 'A-h0', printing: WATER }, { iid: 'A-h1', printing: PSY }], deck: fillerDeck('A', 6) }),
+      player({ active: inPlay('B-act', ['dri-064']) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Evidence Gathering' } as unknown as NeutralAction;
+    const open = step(b(), [use]);
+    expect(open.status).toBe('awaitingAction');
+    expect(hasType(open, 'choose')).toBe(true);
+    expect(usedLabels(open)).toEqual([]);                          // twinleaf commits AFTER the pick: honest mid-body reading
+    const done = step(b(), driveToMain(b(), [use]));
+    expect(usedLabels(done)).toEqual(['Evidence Gathering']);      // …and the label appears once it has
+    const again = step(b(), [...driveToMain(b(), [use]), use]);
+    expect(again.status).toBe('invalidAction');                    // which is exactly what the label claims
+  });
+
+  it('G-59 positive control: Charizard "Roaring Resolve" (OOP-84, marker checked but never set) reads [] after a use AND accepts a second [teu-014]', () => {
+    // The projection must NOT say "used" for a card the engine would re-run. When OOP-84 is fixed
+    // upstream this cell flips to the Gumshoos shape — update it then, not before.
+    const b = () => board(
+      player({ active: inPlay('A-act', ['teu-011', 'teu-013', 'teu-014']), deck: en(FIRE, 8, 'A-d') }),
+      player({ active: inPlay('B-act', ['dri-064']) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Roaring Resolve' } as unknown as NeutralAction;
+    const once = driveToMain(b(), [use]);
+    const r1 = step(b(), once);
+    expect(r1.status).toBe('awaitingAction');
+    expect(r1.state.players.A.active!.damage).toBe(20);
+    expect(usedLabels(r1)).toEqual([]);                            // the engine would run it again, so it is not "used"
+    const r2 = step(b(), [...once, use]);
+    expect(r2.status).toBe('awaitingAction');                      // …and it does (the OOP-84 defect, unfixed here)
+  });
+
+  it('G-59 Meowstic "Beckoning Tail" (commits at the announcement since FX-0321): the label is up while the discard pick is open and after it [ssp-085]', () => {
+    const b = () => board(
+      player({ active: inPlay('A-act', ['ssp-084', 'ssp-085']),
+               hand: [{ iid: 'A-h0', printing: 'ssp-166' }, { iid: 'A-h1', printing: 'ssp-166' }] }),
+      player({ active: inPlay('B-act', ['meg-109']), bench: [inPlay('B-b0', ['meg-109'])] }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Beckoning Tail' } as unknown as NeutralAction;
+    const toy = { actor: 'A', type: 'discard', owner: 'A', target: 'A-h0', op: 'discard', destination: 'discardPile' } as unknown as NeutralAction;
+    const sw = { actor: 'A', type: 'promoteBench', target: 'B-b0' } as unknown as NeutralAction;
+    expect(usedLabels(step(b(), []))).toEqual([]);
+    expect(usedLabels(step(b(), [use]))).toEqual(['Beckoning Tail']);           // mid-body: reservation-commit card
+    expect(usedLabels(step(b(), [use, toy, sw]))).toEqual(['Beckoning Tail']);  // after completion
+  });
+
+  it('G-59 Munkidori "Adrena-Brain" refuses a re-use with CANNOT_USE_POWER (not POWER_ALREADY_USED): the label is message-independent [twm-095]', () => {
+    // 60 damage on the bench so a 30-counter move leaves the card NOT inert afterwards.
+    const b = (benchDamage: number) => board(
+      player({ active: inPlay('A-act', ['twm-095'], [{ iid: 'A-e0', printing: 'sve-007' }]), bench: [inPlay('A-b0', ['twm-095'], [], benchDamage)] }),
+      player({ active: inPlay('B-act', ['meg-109']) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Adrena-Brain' } as unknown as NeutralAction;
+    // twinleaf inlines the move as chooses (CF-32); following legalActions[0] moves 30 to B's Active.
+    const moved = driveToMain(b(60), [use]);
+    const r = step(b(60), moved);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.B.active!.damage).toBe(30);
+    expect(r.state.players.A.bench[0].damage).toBe(30);           // still damaged: the card is not inert
+    expect(usedLabels(r)).toEqual(['Adrena-Brain']);
+    expect(step(b(60), [...moved, use]).status).toBe('invalidAction');
+    // Documented under-report: with NO damaged Pokemon left, the card throws the SAME CANNOT_USE_POWER
+    // for "already used" and "nothing to move", so the counterfactual cannot tell them apart → [].
+    const drained = driveToMain(b(30), [use]);
+    const r0 = step(b(30), drained);
+    expect(r0.state.players.A.bench[0].damage).toBe(0);
+    expect(step(b(30), [...drained, use]).status).toBe('invalidAction');
+    expect(usedLabels(r0)).toEqual([]);
+  });
+
+  it('G-59 round trip: an ingested label is enforced (second use refused) and projected back unchanged', () => {
+    const pre = board(
+      player({ active: inPlay('A-act', ['ssp-084', 'ssp-085']), hand: [{ iid: 'A-h0', printing: 'ssp-166' }] }),
+      player({ active: inPlay('B-act', ['meg-109']), bench: [inPlay('B-b0', ['meg-109'])] }),
+    );
+    pre.players.A.active!.markers.abilitiesUsedThisTurn = ['Beckoning Tail'];
+    expect(usedLabels(step(pre, []))).toEqual(['Beckoning Tail']);
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Beckoning Tail' } as unknown as NeutralAction;
+    expect(step(pre, [use]).status).toBe('invalidAction');
+    expect(types(step(pre, []))).not.toContain('useAbility');
+  });
+
+  it('G-59 turn boundary: the label is gone on the opponent\'s turn and the Ability is usable again next turn', () => {
+    const b = () => board(
+      player({ active: inPlay('A-act', ['meg-109', 'meg-110']),
+               hand: [{ iid: 'A-h0', printing: WATER }], deck: fillerDeck('A', 6) }),
+      player({ active: inPlay('B-act', ['dri-064']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Evidence Gathering' } as unknown as NeutralAction;
+    const endA = { actor: 'A', type: 'endTurn' } as unknown as NeutralAction;
+    const endB = { actor: 'B', type: 'endTurn' } as unknown as NeutralAction;
+    const used = driveToMain(b(), [use]);
+    expect(usedLabels(step(b(), used))).toEqual(['Evidence Gathering']);
+    const bTurn = step(b(), [...used, endA]);
+    expect(bTurn.state.activePlayer).toBe('B');
+    expect(usedLabels(bTurn)).toEqual([]);
+    const nextA = step(b(), [...used, endA, endB]);
+    expect(nextA.state.activePlayer).toBe('A');
+    expect(usedLabels(nextA)).toEqual([]);
+    expect(step(b(), [...used, endA, endB, use]).status).toBe('awaitingAction');
+  });
+
 });

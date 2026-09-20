@@ -159,7 +159,7 @@ describe('Tier 1 — deferred-default fields stay at their documented defaults (
     expect(projectGame(game).players.B.active!.markers.damageTakenThisTurn).toBe(0);
   });
 
-  it('abilitiesUsedThisTurn stays [] after using a once-per-turn ability (engine has only an ABILITY_USED flag)', () => {
+  it('abilitiesUsedThisTurn carries the label after a once-per-turn ability whose re-use the engine refuses (G-59, derived from enforcement)', () => {
     const game = check(
       board(
         player({ active: pip('A-act', ALAKAZAM) }),
@@ -173,7 +173,7 @@ describe('Tier 1 — deferred-default fields stay at their documented defaults (
         { actor: 'A', type: 'placeCounter', target: 'B-b0' },
       ],
     );
-    expect(projectGame(game).players.A.active!.markers.abilitiesUsedThisTurn).toEqual([]);
+    expect(projectGame(game).players.A.active!.markers.abilitiesUsedThisTurn).toEqual(['Painful Spoons']);
   });
 
   it('cardsPlayedThisTurn stays 0 after playing several cards (no per-turn counter on Player)', () => {

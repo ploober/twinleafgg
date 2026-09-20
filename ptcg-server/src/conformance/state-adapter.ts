@@ -20,6 +20,7 @@ import {
 // milestone; for the headless adapter it is the same CardManager singleton either way.
 import { getCardByName, getCardBySetAndNumber, ensureCardsRegistered } from '../sets/tests/test-helpers';
 import { toPrinting, isFullName, printingCandidates } from './printing';
+import { abilitiesUsedLabels } from './legal-actions';
 
 /**
  * Resolve a wire `printing` to a fresh twinleaf Card. The conformance form is a set-number
@@ -421,7 +422,7 @@ function cardRef(ctx: IidContext, card: Card): CardRef {
   return { iid, printing: toPrinting(card) };
 }
 
-function projectPip(ctx: IidContext, slot: PokemonCardList, player: Player, turn: number): PokemonInPlay {
+function projectPip(ctx: IidContext, state: State, slot: PokemonCardList, player: Player, turn: number): PokemonInPlay {
   const conditions = slot.specialConditions.map(conditionToToken);
   // CF-16: project the real "moved to Active this turn" marker. The runtime tracks membership in
   // `player.movedToActiveThisTurn` (cleared at turn start), so a member moved THIS turn → emit `turn`;
@@ -434,9 +435,12 @@ function projectPip(ctx: IidContext, slot: PokemonCardList, player: Player, turn
     // damageTakenThisTurn is not tracked per-Pokemon-per-turn by twinleaf yet — deferred to a later
     // milestone (impl doc §4.7). M0 round-trips it at this documented default.
     damageTakenThisTurn: 0,
-    // G-59: once-per-turn activated Ability labels this Pokemon fired this turn, recorded at
-    // reservation-time (B.57 / A-02 step 1). A copy — the wire must not mutate engine state.
-    abilitiesUsedThisTurn: [...slot.abilitiesUsedThisTurn],
+    // G-59: once-per-turn activated Ability labels this Pokemon has fired this turn, DERIVED from
+    // enforcement (legal-actions.ts abilitiesUsedLabels): a label iff the engine would refuse a re-use
+    // now and that refusal rests on state the use left behind. Not "the announcement happened" — a card
+    // that never sets the marker it checks (OOP-84 charizard) reads [] while it is re-offered, and an
+    // ingested label is honoured by usePower so a round trip keeps it.
+    abilitiesUsedThisTurn: abilitiesUsedLabels(state, player, slot),
     cannotAttackNextTurn: slot.cannotAttackNextTurn,
   };
   // An "attach this card to 1 of your Pokémon" Trainer (PlusPower bs-084, Weakness Guard aq-141,
@@ -496,7 +500,7 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
   };
 }
 
-function projectPlayer(ctx: IidContext, player: Player, turn: number,
+function projectPlayer(ctx: IidContext, state: State, player: Player, turn: number,
     resolvingExtra: Card[] = [], deckTopExtra: Card[] = []): PlayerState {
   // Dedup the look-pile extras against themselves (one pile is referenced by both a ChooseCards and an
   // AttachEnergy prompt during Waitress, arriving twice). The cross-zone dedup — a pile card that is
@@ -532,10 +536,10 @@ function projectPlayer(ctx: IidContext, player: Player, turn: number,
     prizes.push({ ...cardRef(ctx, card), faceUp: prize.faceUpPrize });
   }
   return {
-    active: player.active.getPokemonCard() ? projectPip(ctx, player.active, player, turn) : null,
+    active: player.active.getPokemonCard() ? projectPip(ctx, state, player.active, player, turn) : null,
     bench: player.bench
       .filter(b => b.getPokemonCard() !== undefined)
-      .map(b => projectPip(ctx, b, player, turn)),
+      .map(b => projectPip(ctx, state, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
     deck: [...deckTopKept, ...player.deck.cards].map(c => cardRef(ctx, c)),
     discard: player.discard.cards.map(c => cardRef(ctx, c)),
@@ -739,8 +743,8 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),
     players: {
-      A: projectPlayer(ctx, state.players[0], state.turn, detached.resolving[0], detached.deckTop[0]),
-      B: projectPlayer(ctx, state.players[1], state.turn, detached.resolving[1], detached.deckTop[1]),
+      A: projectPlayer(ctx, state, state.players[0], state.turn, detached.resolving[0], detached.deckTop[0]),
+      B: projectPlayer(ctx, state, state.players[1], state.turn, detached.resolving[1], detached.deckTop[1]),
     },
     // CF-15: OMIT the key entirely when neither side has a record — the field is optional, not nullable,
     // so `playerLastAttack: undefined` would still add the property and fail an exact-shape assertion.

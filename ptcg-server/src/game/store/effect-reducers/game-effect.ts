@@ -520,6 +520,15 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   const power = effect.power;
   const card = effect.card;
 
+  // G-59: an imported (wire-ingested) once-per-turn label is enforced here, so a state round-tripped
+  // through the conformance adapter cannot re-fire an Ability the export said had already fired. The
+  // engine's own per-card markers stay the enforcement for a use made in THIS process; this list only
+  // carries what the wire brought in (PokemonCardList.abilitiesUsedThisTurn), cleared at the turn end.
+  const usedList = StateUtils.findCardList(state, card);
+  if (usedList instanceof PokemonCardList && usedList.abilitiesUsedThisTurn.includes(power.name)) {
+    throw new GameError(GameMessage.POWER_ALREADY_USED);
+  }
+
   // Reject locked powers before animation / owner side effects.
   assertActivatedPowerNotLocked(store, state, player, card, power);
 
