@@ -528,6 +528,18 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   if (usedList instanceof PokemonCardList && usedList.abilitiesUsedThisTurn.includes(power.name)) {
     throw new GameError(GameMessage.POWER_ALREADY_USED);
   }
+  // TA-452: `BoardEffect.ABILITY_USED` — the flag ABILITY_USED(player, card) sets when a once-per-turn
+  // Ability is used (cleared at EndTurnEffect and on evolution) — was honoured only by the MENUS
+  // (the client's and the conformance adapter's abilityMenu), never by the reducer. A card whose only
+  // once-per-turn state is this flag (Pidove tef-133 Emergency Evolution; 168 such cards outside the
+  // pool) accepted a second use in the same turn from any caller that bypasses the menu — the
+  // conformance driver does, so the wire let the Ability fire twice. The flag means exactly "an Ability
+  // on this Pokémon has been used this turn" (the menu's reading), so refuse here, before the card's
+  // own preconditions, with the message every marker-keeping card uses. No in-pool card carries two
+  // activated Abilities (census 2026-09-19), so the slot-level flag cannot block a sibling Ability.
+  if (usedList instanceof PokemonCardList && usedList.boardEffect.includes(BoardEffect.ABILITY_USED)) {
+    throw new GameError(GameMessage.POWER_ALREADY_USED);
+  }
 
   // Reject locked powers before animation / owner side effects.
   assertActivatedPowerNotLocked(store, state, player, card, power);

@@ -3891,13 +3891,15 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r.state.players.A.bench[0].damage).toBe(30);           // still damaged: the card is not inert
     expect(usedLabels(r)).toEqual(['Adrena-Brain']);
     expect(step(b(60), [...moved, use]).status).toBe('invalidAction');
-    // Documented under-report: with NO damaged Pokemon left, the card throws the SAME CANNOT_USE_POWER
-    // for "already used" and "nothing to move", so the counterfactual cannot tell them apart → [].
+    // Was the documented under-report: with NO damaged Pokemon left the card throws the SAME
+    // CANNOT_USE_POWER for "already used" and "nothing to move", so the counterfactual read []. Since
+    // TA-452 the reducer refuses the ABILITY_USED slot with POWER_ALREADY_USED BEFORE the card's own
+    // guards, so clearing the flag changes the message and the label derives even when drained.
     const drained = driveToMain(b(30), [use]);
     const r0 = step(b(30), drained);
     expect(r0.state.players.A.bench[0].damage).toBe(0);
     expect(step(b(30), [...drained, use]).status).toBe('invalidAction');
-    expect(usedLabels(r0)).toEqual([]);
+    expect(usedLabels(r0)).toEqual(['Adrena-Brain']);
   });
 
   it('G-59 round trip: an ingested label is enforced (second use refused) and projected back unchanged', () => {
@@ -3956,6 +3958,83 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r.state.players.B.hand.length).toBe(4);                               // turn draw + 3
     expect(usedLabels(r, 'B', 0)).toEqual(['Flip the Script']);
     expect(step(b(), [...script, script[3]]).status).toBe('invalidAction');
+  });
+
+  // ── B.57 Phase 4 residue (2026-09-19): what the first honest differential on the field found ─────
+  // TA-452: the ABILITY_USED board flag was a menu-only signal — the reducer took a second use.
+  // TA-450: a source-qualified marker guard against a sourceless add never matched.
+  // TA-451: a marker kept on the card object itself was outside the probe's holders.
+  // Each cell asserts the same three things: the use resolves, the label derives, a second use is refused.
+  const useTwice = (b: () => NeutralState, use: NeutralAction) => {
+    const once = driveToMain(b(), [use]);
+    const r1 = step(b(), once);
+    expect(r1.status).toBe('awaitingAction');
+    const r2 = step(b(), [...once, use]);
+    return { r1, r2 };
+  };
+
+  it('TA-452 Pidove "Emergency Evolution" (only ABILITY_USED, no marker): a whiffed search is a USE — the label derives and a second use is refused by the reducer [tef-133]', () => {
+    // Compendium #127: "since you searched your deck the ability is used up for the turn". The deck has
+    // no Unfezant, so the search whiffs and only the shuffle happens; before TA-452 the reducer accepted
+    // the second use (7/7 on the ta212 row) because only the menus read the flag.
+    const b = () => board(
+      player({ active: inPlay('a0', ['tef-133'], [], 40), deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Emergency Evolution' } as unknown as NeutralAction;
+    const { r1, r2 } = useTwice(b, use);
+    expect(r1.state.players.A.active!.stack.map(c => c.printing)).toEqual(['tef-133']);   // whiffed: still Pidove
+    expect(usedLabels(r1)).toEqual(['Emergency Evolution']);
+    expect(r2.status).toBe('invalidAction');
+  });
+
+  it('TA-450 Aromatisse "Scent Collection": the marker is now added with the source the guard checks — label derives, second use refused [por-036]', () => {
+    const b = () => board(
+      player({ active: inPlay('a0', ['por-035', 'por-036']), deck: [...en('sve-005', 2, 'A-p'), ...fillerDeck('A', 2)] }),
+      player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Scent Collection' } as unknown as NeutralAction;
+    const { r1, r2 } = useTwice(b, use);
+    expect(r1.state.players.A.hand.length).toBeGreaterThan(0);                 // the search found Psychic Energy
+    expect(usedLabels(r1)).toEqual(['Scent Collection']);
+    expect(r2.status).toBe('invalidAction');
+  });
+
+  it('TA-450 Talonflame "Sky Hunt": same shape — label derives after the flip, second use refused [por-014]', () => {
+    const b = () => board(
+      player({ active: inPlay('a0', ['por-013', 'por-014']), deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('b1', ['meg-100']), hand: fillerDeck('B-h', 3), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Sky Hunt' } as unknown as NeutralAction;
+    const { r1, r2 } = useTwice(b, use);
+    expect(usedLabels(r1)).toEqual(['Sky Hunt']);
+    expect(r2.status).toBe('invalidAction');
+  });
+
+  it('TA-451 Quaquaval "Up-Tempo" keeps its marker on the card object (this.marker): the label derives and the probe leaves the real marker in place [ssp-052]', () => {
+    const b = () => board(
+      player({ active: inPlay('a0', ['ssp-052']), hand: fillerDeck('A-h', 3), deck: fillerDeck('A', 5) }),
+      player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Up-Tempo' } as unknown as NeutralAction;
+    const { r1, r2 } = useTwice(b, use);
+    expect(r1.state.players.A.hand.length).toBe(5);
+    expect(usedLabels(r1)).toEqual(['Up-Tempo']);
+    // Projecting twice must not change the answer: the probe restores the card's own marker.
+    expect(usedLabels(step(b(), driveToMain(b(), [use])))).toEqual(['Up-Tempo']);
+    expect(r2.status).toBe('invalidAction');
+  });
+
+  it('G-59 Volcanion ex "Scalding Steam" refuses a re-use with POWER_ALREADY_USED (was CANNOT_USE_POWER, the inert message): the label derives although the target is already Burned [jtg-031]', () => {
+    const b = () => board(
+      player({ active: inPlay('a0', ['jtg-031']), deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Scalding Steam' } as unknown as NeutralAction;
+    const { r1, r2 } = useTwice(b, use);
+    expect(r1.state.players.B.active!.conditions).toContain('burned');
+    expect(usedLabels(r1)).toEqual(['Scalding Steam']);
+    expect(r2.status).toBe('invalidAction');
   });
 
 });

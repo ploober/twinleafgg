@@ -72,7 +72,9 @@ export class Volcanionex extends PokemonCard {
       }
 
       if (player.marker.hasMarker(this.SCORCHING_STEAM, this)) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
+        // G-59: "already used" must not share a message with "nothing to do" (the target is already
+        // Burned after the use) — the wire label is derived from which refusal the engine gives.
+        throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
       // TA-210 / B.27: an already-Burned Active cannot be made Burned, so the action cannot be

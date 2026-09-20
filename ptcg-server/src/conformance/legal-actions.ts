@@ -619,7 +619,8 @@ type OncePerTurnItem =
   | { kind: 'board' }                                            // BoardEffect.ABILITY_USED on the slot
   | { kind: 'ingested' }                                         // slot.abilitiesUsedThisTurn (imported labels)
   | { kind: 'marker'; holder: (s: State) => Marker; name: string } // a marker SOURCED by this Pokemon
-  | { kind: 'flag'; name: string };                              // a bespoke per-turn `used…` boolean on the owner
+  | { kind: 'flag'; name: string }
+  | { kind: 'cardmarker'; name: string };                       // a marker the card keeps on ITSELF (this.marker)                              // a bespoke per-turn `used…` boolean on the owner
 
 /**
  * Player carries a dozen bespoke once-per-turn booleans that predate the marker prefabs
@@ -681,6 +682,12 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
     }
   });
   for (const name of bespokeUsedFlags(player)) { items.push({ kind: 'flag', name }); }
+  // TA-451: a card can keep its once-per-turn marker on ITSELF (`this.marker`, Quaquaval ssp-052
+  // Up-Tempo). The card object is shared between the state and the probe clone (deepClone skips
+  // Card), so clearing it is done on the live object and restored after every probe — see `outcome`.
+  for (const item of pokemon.marker.markers) {
+    if (item.source === pokemon) { items.push({ kind: 'cardmarker', name: item.name }); }
+  }
   if (items.length === 0) { return []; } // nothing a use could have left behind → nothing to attribute
 
   const clear = (s: State, which: OncePerTurnItem[]): void => {
@@ -688,12 +695,21 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
       if (it.kind === 'board') { slotOf(s).removeBoardEffect(BoardEffect.ABILITY_USED); }
       else if (it.kind === 'ingested') { slotOf(s).abilitiesUsedThisTurn = []; }
       else if (it.kind === 'flag') { (s.players[pi] as unknown as Record<string, unknown>)[it.name] = false; }
+      else if (it.kind === 'cardmarker') { pokemon.marker.removeMarker(it.name, pokemon); }
       else { it.holder(s).removeMarker(it.name, pokemon); }
     }
   };
   const dropPending = (s: State): void => { s.prompts = s.prompts.filter(p => p.result !== undefined); };
-  const outcome = (ability: string, which: OncePerTurnItem[]): ProbeOutcome =>
-    abilityProbeOutcome(state, player, ability, pokemon, s => { dropPending(s); clear(s, which); });
+  const outcome = (ability: string, which: OncePerTurnItem[]): ProbeOutcome => {
+    // The card object's own markers live outside the clone: snapshot and restore around the probe so
+    // neither the clearing nor anything the dry run adds leaks into the real state (TA-440's rule).
+    const saved = pokemon.marker.markers.slice();
+    try {
+      return abilityProbeOutcome(state, player, ability, pokemon, s => { dropPending(s); clear(s, which); });
+    } finally {
+      pokemon.marker.markers = saved;
+    }
+  };
 
   const out: string[] = [];
   for (const power of pokemon.powers) {

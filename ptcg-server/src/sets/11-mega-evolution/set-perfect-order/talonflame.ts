@@ -60,7 +60,11 @@ export class Talonflame extends PokemonCard {
       }
 
       ABILITY_USED(player, this);
-      player.marker.addMarkerToState(this.SKY_HUNT_MARKER);
+      // TA-450: the guard above asks for a marker SOURCED by this card (`hasMarker(name, this)`), but
+      // `addMarkerToState` records the marker with no source, so the guard never matched and the
+      // Ability was usable any number of times per turn (the menu hid it via ABILITY_USED; the reducer
+      // took it). Same spelling as the end-of-turn removal, which is also source-qualified.
+      player.marker.addMarker(this.SKY_HUNT_MARKER, this);
 
       const coinFlipEffect = new CoinFlipEffect(player, (result: boolean) => {
         if (result === true && opponent.hand.cards.length > 0) {

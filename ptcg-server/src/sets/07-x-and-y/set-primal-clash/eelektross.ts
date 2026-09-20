@@ -9,7 +9,7 @@ import { EnergyCard } from '../../../game/store/card/energy-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED, IS_ABILITY_BLOCKED, ABILITY_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, WAS_POWER_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Eelektross extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -93,7 +93,8 @@ export class Eelektross extends PokemonCard {
             const source = StateUtils.getTarget(state, player, transfer.from);
             source.moveCardTo(transfer.card, player.active);
           }
-          ABILITY_USED(player, this);
+          // TA-452: "As often as you like" — the stray ABILITY_USED call marked the slot used after one use (the
+          // menus hid the Ability; the reducer now refuses the flag too), against the printed text; removed.
         }
       });
     }

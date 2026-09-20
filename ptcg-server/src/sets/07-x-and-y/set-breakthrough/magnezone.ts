@@ -7,8 +7,7 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { PowerType, StoreLike, State, GameError, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {
-  WAS_ATTACK_USED, WAS_POWER_USED, IS_ABILITY_BLOCKED, ABILITY_USED,
-  AS_OFTEN_AS_YOU_LIKE_ATTACH_BASIC_TYPE_ENERGY_FROM_HAND
+  WAS_ATTACK_USED, WAS_POWER_USED, IS_ABILITY_BLOCKED, AS_OFTEN_AS_YOU_LIKE_ATTACH_BASIC_TYPE_ENERGY_FROM_HAND
 } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
@@ -53,8 +52,9 @@ export class Magnezone extends PokemonCard {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
       }
 
-      ABILITY_USED(player, this);
+      // TA-452: "As often as you like" — the stray ABILITY_USED call marked the slot used after one use (the
 
+      // menus hid the Ability; the reducer now refuses the flag too), against the printed text; removed.
       return AS_OFTEN_AS_YOU_LIKE_ATTACH_BASIC_TYPE_ENERGY_FROM_HAND(
         store,
         state,

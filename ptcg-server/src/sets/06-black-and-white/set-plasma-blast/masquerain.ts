@@ -11,7 +11,6 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {
-  ABILITY_USED,
   IS_ABILITY_BLOCKED,
   WAS_POWER_USED,
 } from '../../../game/store/prefabs/prefabs';
@@ -70,8 +69,9 @@ export class Masquerain extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      ABILITY_USED(player, this);
+      // TA-452: "As often as you like" — the stray ABILITY_USED call marked the slot used after one use (the
 
+      // menus hid the Ability; the reducer now refuses the flag too), against the printed text; removed.
       return store.prompt(
         state,
         new ChoosePokemonPrompt(

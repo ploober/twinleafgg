@@ -6,7 +6,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { PowerType, StoreLike, State, GameMessage, GameError, PlayerType, SlotType, ChoosePokemonPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_POWER_USED, IS_ABILITY_BLOCKED, ABILITY_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_POWER_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Mothim extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -62,8 +62,9 @@ export class Mothim extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      ABILITY_USED(player, this);
+      // TA-452: "As often as you like" — the stray ABILITY_USED call marked the slot used after one use (the
 
+      // menus hid the Ability; the reducer now refuses the flag too), against the printed text; removed.
       // Choose a Wormadam with damage
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
