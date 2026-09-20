@@ -3828,7 +3828,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     return acts;
   };
 
-  it('G-59 Gumshoos "Evidence Gathering" (commits inside the pick callback): [] at the pick, the label after it, and a second use refused [meg-110]', () => {
+  it('G-59 Gumshoos "Evidence Gathering" (the card commits inside its pick callback): since TA-453 the label is up AT the pick (B.57 reservation-time), after it, and a second use is refused [meg-110]', () => {
     const b = () => board(
       player({ active: inPlay('A-act', ['meg-109', 'meg-110']),
                hand: [{ iid: 'A-h0', printing: WATER }, { iid: 'A-h1', printing: PSY }], deck: fillerDeck('A', 6) }),
@@ -3838,16 +3838,37 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     const open = step(b(), [use]);
     expect(open.status).toBe('awaitingAction');
     expect(hasType(open, 'choose')).toBe(true);
-    expect(usedLabels(open)).toEqual([]);                          // twinleaf commits AFTER the pick: honest mid-body reading
+    expect(usedLabels(open)).toEqual(['Evidence Gathering']);      // TA-453 / B.57 (a): the announcement is the use — up at the pick
     const done = step(b(), driveToMain(b(), [use]));
     expect(usedLabels(done)).toEqual(['Evidence Gathering']);      // …and the label appears once it has
     const again = step(b(), [...driveToMain(b(), [use]), use]);
     expect(again.status).toBe('invalidAction');                    // which is exactly what the label claims
   });
 
-  it('G-59 positive control: Charizard "Roaring Resolve" (OOP-84, marker checked but never set) reads [] after a use AND accepts a second [teu-014]', () => {
-    // The projection must NOT say "used" for a card the engine would re-run. When OOP-84 is fixed
-    // upstream this cell flips to the Gumshoos shape — update it then, not before.
+  it('G-59 positive control: Azumarill ex "Bubble Gathering" (as often as you like — no once-per-turn wording, no flag) reads [] after a use AND accepts a second [asc-084]', () => {
+    // The projection must NOT say "used" for a card the engine would re-run. Until 2026-09-20 this
+    // control was Charizard teu-014 (OOP-84, a marker checked but never set); the TA-453 choke point
+    // flags every "Once during your turn" activated power at the announcement, which closed OOP-84 as a
+    // side effect and would have made that control read as used for the RIGHT reason. A repeatable
+    // Ability is the honest control now: no wording, no flag, the engine re-runs it, so the derivation
+    // must read [] no matter how many times it was announced.
+    const b = () => board(
+      player({ active: inPlay('a0', ['asc-083', 'asc-084']), bench: [inPlay('a1', ['meg-109'], en(WATER, 2, 'a1'))], deck: fillerDeck('A', 4) }),
+      player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'a0', ability: 'Bubble Gathering' } as unknown as NeutralAction;
+    const once = driveToMain(b(), [use]);
+    const r1 = step(b(), once);
+    expect(r1.status).toBe('awaitingAction');
+    expect(r1.state.players.A.active!.energy.length).toBe(1);        // one Energy moved
+    expect(usedLabels(r1)).toEqual([]);                              // the engine would run it again, so it is not "used"
+    const r2 = step(b(), [...once, use]);
+    expect(r2.status).toBe('awaitingAction');                        // …and it does
+  });
+
+  it('OOP-84 Charizard "Roaring Resolve" (a marker checked but never set) is enforced by the TA-453 choke point: the label derives and a second use is refused [teu-014]', () => {
+    // Was the G-59 positive control (read [] and accepted a third use). The text says "Once during your
+    // turn", so usePower now flags the slot at the announcement without any edit to the card file.
     const b = () => board(
       player({ active: inPlay('A-act', ['teu-011', 'teu-013', 'teu-014']), deck: en(FIRE, 8, 'A-d') }),
       player({ active: inPlay('B-act', ['dri-064']) }),
@@ -3857,9 +3878,8 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     const r1 = step(b(), once);
     expect(r1.status).toBe('awaitingAction');
     expect(r1.state.players.A.active!.damage).toBe(20);
-    expect(usedLabels(r1)).toEqual([]);                            // the engine would run it again, so it is not "used"
-    const r2 = step(b(), [...once, use]);
-    expect(r2.status).toBe('awaitingAction');                      // …and it does (the OOP-84 defect, unfixed here)
+    expect(usedLabels(r1)).toEqual(['Roaring Resolve']);
+    expect(step(b(), [...once, use]).status).toBe('invalidAction');
   });
 
   it('G-59 Meowstic "Beckoning Tail" (commits at the announcement since FX-0321): the label is up while the discard pick is open and after it [ssp-085]', () => {
@@ -4035,6 +4055,26 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r1.state.players.B.active!.conditions).toContain('burned');
     expect(usedLabels(r1)).toEqual(['Scalding Steam']);
     expect(r2.status).toBe('invalidAction');
+  });
+
+  it('TA-453 / B.57 (a): a once-per-turn activated Ability is used at the ANNOUNCEMENT — the label is up while the body is still pending, on cards that commit in their pick callback [TA-453 jtg-079 cri-013 dri-020]', () => {
+    // Three of the 15 driven cards (results/20260920 census): Mamoswine ex (search pick pending),
+    // Delphox (discard-cost pick pending), TR Spidops (attach-from-discard pick pending). Before the
+    // usePower choke point all three read [] at the pick; a state exported there re-offered the Ability.
+    const cases: Array<[NeutralState, string]> = [
+      [board(player({ active: inPlay('a0', ['jtg-079']), deck: [...fillerDeck('A-p', 2).map(c => ({ ...c, printing: 'meg-109' })), ...fillerDeck('A', 2)] }),
+             player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) })), 'Mammoth Hauler'],
+      [board(player({ active: inPlay('a0', ['cri-011', 'cri-012', 'cri-013']), hand: en(FIRE, 2, 'A-h'), deck: fillerDeck('A', 8) }),
+             player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) })), 'Flaring Magic'],
+      [board(player({ active: inPlay('a0', ['dri-019', 'dri-020']), discard: en('sve-003', 2, 'A-x'), deck: fillerDeck('A', 4) }),
+             player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) })), 'Charging Up'],
+    ];
+    for (const [b, ability] of cases) {
+      const r = step(b, [{ actor: 'A', type: 'useAbility', source: 'a0', ability } as unknown as NeutralAction]);
+      expect(r.status).withContext(ability).toBe('awaitingAction');
+      expect(r.pending?.descriptor).withContext(ability).not.toMatch(/^main/);           // the body IS pending
+      expect(usedLabels(r)).withContext(ability).toEqual([ability]);                      // …and the use is already counted
+    }
   });
 
 });

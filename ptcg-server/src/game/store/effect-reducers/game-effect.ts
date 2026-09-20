@@ -559,6 +559,20 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   // Validation errors (e.g. POWER_ALREADY_USED) are raised here; store.reducePrompt cleans up
   // any open prompts when those errors propagate.
   state = store.reduceEffect(state, new PowerEffect(player, power, card, effect.benchTarget));
+  // TA-453 / B.57 (a): "Once during your turn" is used at the ANNOUNCEMENT. The card's PowerEffect has
+  // returned without throwing — its preconditions passed and its body is either done or pending a
+  // prompt — so the use is counted NOW, not when the pick callback runs (15 in-pool cards committed
+  // there and read [] on the wire at their pick; a state exported at that pick re-offered the Ability
+  // on re-import). One text-keyed line instead of 28 card edits: the flag is the same one the menus,
+  // the TA-452 reducer check and the G-59 label derivation already read; cards that set it (or a
+  // marker) themselves are unaffected (addBoardEffect dedups). Text-keyed like the TA-280 empty-deck
+  // gate: powers without the once-per-turn wording (as often as you like) are not touched.
+  if (/once during your turn/i.test(power.text ?? '')) {
+    const slot = StateUtils.findCardList(state, card);
+    if (slot instanceof PokemonCardList) {
+      slot.addBoardEffect(BoardEffect.ABILITY_USED);
+    }
+  }
   return state;
 }
 
