@@ -618,7 +618,21 @@ function abilityProbeOutcome(state: State, player: Player, ability: string, sour
 type OncePerTurnItem =
   | { kind: 'board' }                                            // BoardEffect.ABILITY_USED on the slot
   | { kind: 'ingested' }                                         // slot.abilitiesUsedThisTurn (imported labels)
-  | { kind: 'marker'; holder: (s: State) => Marker; name: string }; // a marker SOURCED by this Pokemon
+  | { kind: 'marker'; holder: (s: State) => Marker; name: string } // a marker SOURCED by this Pokemon
+  | { kind: 'flag'; name: string };                              // a bespoke per-turn `used…` boolean on the owner
+
+/**
+ * Player carries a dozen bespoke once-per-turn booleans that predate the marker prefabs
+ * (`usedTableTurner`, `usedMinusCharge`, `usedLunarCycle`, …): a card sets one instead of a marker
+ * and reads it back as its own once-per-turn gate. They are once-per-turn state a use leaves behind,
+ * so the derivation clears them too. The two per-GAME flags are excluded: clearing `usedVSTAR` /
+ * `usedGX` would make a VSTAR Power read as "used this turn" on every later turn of the game.
+ */
+const PER_GAME_USED_FLAGS = new Set(['usedGX', 'usedVSTAR']);
+function bespokeUsedFlags(player: Player): string[] {
+  return Object.keys(player).filter(k =>
+    k.startsWith('used') && !PER_GAME_USED_FLAGS.has(k) && (player as unknown as Record<string, unknown>)[k] === true);
+}
 
 /**
  * G-59 — the once-per-turn Ability labels this Pokemon has fired this turn, DERIVED FROM ENFORCEMENT.
@@ -666,12 +680,14 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
       }
     }
   });
+  for (const name of bespokeUsedFlags(player)) { items.push({ kind: 'flag', name }); }
   if (items.length === 0) { return []; } // nothing a use could have left behind → nothing to attribute
 
   const clear = (s: State, which: OncePerTurnItem[]): void => {
     for (const it of which) {
       if (it.kind === 'board') { slotOf(s).removeBoardEffect(BoardEffect.ABILITY_USED); }
       else if (it.kind === 'ingested') { slotOf(s).abilitiesUsedThisTurn = []; }
+      else if (it.kind === 'flag') { (s.players[pi] as unknown as Record<string, unknown>)[it.name] = false; }
       else { it.holder(s).removeMarker(it.name, pokemon); }
     }
   };

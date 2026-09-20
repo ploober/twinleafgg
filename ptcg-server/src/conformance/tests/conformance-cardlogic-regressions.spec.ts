@@ -3932,4 +3932,30 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(step(b(), [...used, endA, endB, use]).status).toBe('awaitingAction');
   });
 
+  it('G-59 Fezandipiti ex "Flip the Script" enforces through a bespoke Player.usedTableTurner flag (no marker): the label still derives [sfa-038]', () => {
+    // Its once-per-turn gate is a boolean on Player, not a marker or the ABILITY_USED flag (which it
+    // also sets, but the engine never reads). The derivation clears bespoke `used…` per-turn flags too;
+    // the per-GAME usedGX/usedVSTAR are excluded. Board mirrors scenario 1337600107868327987.
+    const b = () => {
+      const st = board(
+        player({ active: inPlay('a1', ['svi-081'], en('sve-004', 3, 'a1')), bench: [inPlay('a2', ['pre-004'])], deck: fillerDeck('A', 10) }),
+        player({ active: inPlay('b1', ['pre-004'], [], 20), bench: [inPlay('b2', ['sfa-038']), inPlay('b3', ['asr-060'])], deck: fillerDeck('B', 10) }),
+      );
+      st.turn = 5;
+      return st;
+    };
+    const script = [
+      attack('a1', 'Photon Blaster'),
+      { actor: 'A', type: 'takePrize', index: 0 },
+      { actor: 'B', type: 'promoteBench', target: 'b3' },
+      { actor: 'B', type: 'useAbility', source: 'b2', ability: 'Flip the Script' },
+    ] as unknown as NeutralAction[];
+    const r = step(b(), script);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.activePlayer).toBe('B');
+    expect(r.state.players.B.hand.length).toBe(4);                               // turn draw + 3
+    expect(usedLabels(r, 'B', 0)).toEqual(['Flip the Script']);
+    expect(step(b(), [...script, script[3]]).status).toBe('invalidAction');
+  });
+
 });
