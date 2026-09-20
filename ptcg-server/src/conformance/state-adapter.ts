@@ -195,6 +195,10 @@ class Importer {
     }
     slot.pokemonPlayedTurn = pip.markers.playedOnTurn;
     slot.cannotAttackNextTurn = pip.markers.cannotAttackNextTurn;
+    // G-59: restore once-per-turn Ability-use labels so a round-tripped state keeps once-per-turn
+    // Ability state (the re-import hole: without this an ingested state would re-offer a fired
+    // once-per-turn Ability). Enforcement is per-card, so this is projection parity, not a gate.
+    slot.abilitiesUsedThisTurn = [...pip.markers.abilitiesUsedThisTurn];
 
     for (const ref of pip.energy) {
       const energy = this.materialize(ref);
@@ -427,10 +431,12 @@ function projectPip(ctx: IidContext, slot: PokemonCardList, player: Player, turn
   const markers: PokemonMarkers = {
     playedOnTurn: slot.pokemonPlayedTurn,
     movedToActiveOnTurn,
-    // The following are not tracked per-Pokemon-per-turn by twinleaf yet — deferred to a later
-    // milestone (impl doc §4.7). M0 round-trips them at these documented defaults.
+    // damageTakenThisTurn is not tracked per-Pokemon-per-turn by twinleaf yet — deferred to a later
+    // milestone (impl doc §4.7). M0 round-trips it at this documented default.
     damageTakenThisTurn: 0,
-    abilitiesUsedThisTurn: [],
+    // G-59: once-per-turn activated Ability labels this Pokemon fired this turn, recorded at
+    // reservation-time (B.57 / A-02 step 1). A copy — the wire must not mutate engine state.
+    abilitiesUsedThisTurn: [...slot.abilitiesUsedThisTurn],
     cannotAttackNextTurn: slot.cannotAttackNextTurn,
   };
   // An "attach this card to 1 of your Pokémon" Trainer (PlusPower bs-084, Weakness Guard aq-141,

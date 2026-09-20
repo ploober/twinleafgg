@@ -80,6 +80,13 @@ export class PokemonCardList extends CardList {
   public stadium: Card | undefined;
   public isActivatingCard: boolean = false;
   public attacksThisTurn?: number;
+  // Labels of once-per-turn activated Abilities this slot's Pokemon has already fired THIS turn --
+  // the wire's PokemonInPlay.markers.abilitiesUsedThisTurn (G-59). Scaffolding only for now: nothing
+  // records into it yet. The recording rule is deliberately NOT "after the guard passed" -- a label
+  // must mean the engine would REJECT a re-use, otherwise a card whose once-per-turn marker is never
+  // set (charizard TEU-14 Roaring Resolve, driven 3x in one turn 2026-09-19) projects as used while
+  // still re-offered. Reset at the turn boundary alongside attacksThisTurn; ingested on import.
+  public abilitiesUsedThisTurn: string[] = [];
   public showAllStageAbilities: boolean = false;
   public triggerEvolutionAnimation: boolean = false;
   public showBasicAnimation: boolean = false;

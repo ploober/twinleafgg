@@ -523,6 +523,11 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
       if (cardList.cannotBeHealedNextTurn) {
         cardList.cannotBeHealedNextTurn = false;
       }
+      // G-59: clear the once-per-turn Ability-use labels for the ending player's Pokemon (mirrors
+      // attacksThisTurn). "This turn" is over, so next turn's projection starts empty.
+      if (cardList.abilitiesUsedThisTurn.length > 0) {
+        cardList.abilitiesUsedThisTurn = [];
+      }
     });
 
     // Gastro Acid: no Abilities until end of attacker's next turn (2 EndTurns of attacker)
