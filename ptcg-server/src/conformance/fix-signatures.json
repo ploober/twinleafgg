@@ -8781,6 +8781,16 @@
       "fixes": [
         "FX-0322"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "  if (/once during your turn/i.test(power.text ?? '')) {"
+      ],
+      "note": "TA-453 (2026-09-20): usePower flags the slot ABILITY_USED after the card PowerEffect returns without throwing when the power text says \"Once ",
+      "fixes": [
+        "FX-0323"
+      ]
     }
   ]
 }
