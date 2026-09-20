@@ -1,10 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
-import { State, StoreLike } from '../../../game';
+import { GameMessage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, CONFIRMATION_PROMPT, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH } from '../../../game/store/prefabs/prefabs';
 
 export class Silcoon extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -55,10 +55,17 @@ export class Silcoon extends PokemonCard {
         }
       });
 
-      // Search deck for Silcoon or Cascoon and put onto Bench
-      SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(
-        store, state, player, {}, { min: 0, max: 1, blocked }
-      );
+      // The printed "you may use this Ability" is a DECISION (TA-420's rule): offer the decline
+      // before the search — a search that finds nothing is still a completed use (#127).
+      CONFIRMATION_PROMPT(store, state, player, (wantToUse) => {
+        if (!wantToUse) {
+          return;
+        }
+        ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
+        SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(
+          store, state, player, {}, { min: 0, max: 1, blocked }
+        );
+      }, GameMessage.WANT_TO_USE_ABILITY);
     }
 
     return state;
