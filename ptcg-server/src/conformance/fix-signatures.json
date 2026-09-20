@@ -8701,6 +8701,86 @@
       "fixes": [
         "FX-0321"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "  if (usedList instanceof PokemonCardList && usedList.boardEffect.includes(BoardEffect.ABILITY_USED)) {"
+      ],
+      "note": "TA-452, TA-450, TA-451 (2026-09-20): usePower refuses a slot carrying BoardEffect.ABILITY_USED (POWER_ALREADY_USED, before the card guards); Aromatisse/Talon",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-plasma-blast/masquerain.ts",
+      "signatures": [
+        "      // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-breakpoint/golduck-break.ts",
+      "signatures": [
+        "            // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-breakthrough/magnezone.ts",
+      "signatures": [
+        "      // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-fates-collide/mothim.ts",
+      "signatures": [
+        "      // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-flashfire/dusknoir.ts",
+      "signatures": [
+        "      // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-flashfire/goodra.ts",
+      "signatures": [
+        "      // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
+    },
+    {
+      "file": "set-primal-clash/eelektross.ts",
+      "signatures": [
+        "          // TA-452: \"As often as you like\" — the stray ABILITY_USED call marked the slot used after one use (the"
+      ],
+      "note": "TA-452 (2026-09-20): stray ABILITY_USED call removed from an \"as often as you like\" Ability so the reducer choke point does not refuse its second use",
+      "fixes": [
+        "FX-0322"
+      ]
     }
   ]
 }
