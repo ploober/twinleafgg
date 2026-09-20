@@ -3973,7 +3973,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     return { r1, r2 };
   };
 
-  it('TA-452 Pidove "Emergency Evolution" (only ABILITY_USED, no marker): a whiffed search is a USE — the label derives and a second use is refused by the reducer [tef-133]', () => {
+  it('TA-452 Pidove "Emergency Evolution" (only ABILITY_USED, no marker): a whiffed search is a USE — the label derives and a second use is refused by the reducer [TA-452 tef-133]', () => {
     // Compendium #127: "since you searched your deck the ability is used up for the turn". The deck has
     // no Unfezant, so the search whiffs and only the shuffle happens; before TA-452 the reducer accepted
     // the second use (7/7 on the ta212 row) because only the menus read the flag.
@@ -3988,7 +3988,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r2.status).toBe('invalidAction');
   });
 
-  it('TA-450 Aromatisse "Scent Collection": the marker is now added with the source the guard checks — label derives, second use refused [por-036]', () => {
+  it('TA-450 Aromatisse "Scent Collection": the marker is now added with the source the guard checks — label derives, second use refused [TA-450 por-036]', () => {
     const b = () => board(
       player({ active: inPlay('a0', ['por-035', 'por-036']), deck: [...en('sve-005', 2, 'A-p'), ...fillerDeck('A', 2)] }),
       player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
@@ -4000,7 +4000,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r2.status).toBe('invalidAction');
   });
 
-  it('TA-450 Talonflame "Sky Hunt": same shape — label derives after the flip, second use refused [por-014]', () => {
+  it('TA-450 Talonflame "Sky Hunt": same shape — label derives after the flip, second use refused [TA-450 por-014]', () => {
     const b = () => board(
       player({ active: inPlay('a0', ['por-013', 'por-014']), deck: fillerDeck('A', 4) }),
       player({ active: inPlay('b1', ['meg-100']), hand: fillerDeck('B-h', 3), deck: fillerDeck('B', 4) }),
@@ -4011,7 +4011,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r2.status).toBe('invalidAction');
   });
 
-  it('TA-451 Quaquaval "Up-Tempo" keeps its marker on the card object (this.marker): the label derives and the probe leaves the real marker in place [ssp-052]', () => {
+  it('TA-451 Quaquaval "Up-Tempo" keeps its marker on the card object (this.marker): the label derives and the probe leaves the real marker in place [TA-451 ssp-052]', () => {
     const b = () => board(
       player({ active: inPlay('a0', ['ssp-052']), hand: fillerDeck('A-h', 3), deck: fillerDeck('A', 5) }),
       player({ active: inPlay('b1', ['meg-100']), deck: fillerDeck('B', 4) }),
