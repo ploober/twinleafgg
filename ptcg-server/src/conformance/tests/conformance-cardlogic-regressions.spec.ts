@@ -2494,6 +2494,33 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(B.deck.map(c => c.iid)).toEqual(['B-h1', 'B-h0']);
   });
 
+  it('Vivillon "Grand Wing" SHUFFLES the opponent\'s hand before bottoming it — a system shuffle over exactly those cards, then the draw of 4 [TA-458 por-009]', () => {
+    // TA-379's sibling: the Ability shuffled the hand with an inline PRNG (no external order,
+    // no pending; the card sat in EXCLUDED_RANDOM_CARDS), bottomed it and drew 4 at once. The
+    // shuffle-reach synth control read twinleaf shuffled=False against rotomancer shuffled=True.
+    const b = board(
+      player({ active: inPlay('A-act', ['por-007', 'por-008', 'por-009']), deck: en(WATER, 4, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]),
+               hand: [{ iid: 'B-h0', printing: FIRE }, { iid: 'B-h1', printing: WATER }, { iid: 'B-h2', printing: PSY }],
+               deck: [{ iid: 'B-d0', printing: METAL }, { iid: 'B-d1', printing: GRASS }] }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Grand Wing' } as unknown as NeutralAction;
+    const r1 = step(b, [use]);
+    expect(r1.status).toBe('awaitingAction');
+    const p = r1.pending as unknown as { actor: string; legalActions: { type: string; deck?: string[] }[] } | null;
+    expect(p?.actor).withContext('the hand-to-bottom shuffle is externalized').toBe('system');
+    const shuffle = p?.legalActions?.[0];
+    expect(shuffle?.type).toBe('shuffle');
+    expect([...(shuffle?.deck ?? [])].sort()).withContext('exactly the moved hand cards are permuted').toEqual(['B-h0', 'B-h1', 'B-h2']);
+    const r2 = step(b, [use, { actor: 'system', type: 'shuffle', order: ['B-h2', 'B-h1', 'B-h0'] } as unknown as NeutralAction]);
+    expect(r2.status).toBe('awaitingAction');
+    const B = r2.state!.players.B;
+    // B drew 4: the untouched deck (d0, d1) then the first two bottomed cards (h2, h1); h0 remains
+    expect(B.hand.map(c => c.iid).sort()).toEqual(['B-d0', 'B-d1', 'B-h1', 'B-h2']);
+    expect(B.deck.map(c => c.iid)).toEqual(['B-h0']);
+    expect(r2.state!.players.A.active!.markers.abilitiesUsedThisTurn).toEqual(['Grand Wing']);
+  });
+
   // TA-280 — the empty-deck gate at the OFFER, once, from the printed text (B.27/B.29 rule 1/B.41), instead
   // of a hand-written throw per card file. Each cell carries its own stocked-deck positive control.
   it('a deck-search Ability is withheld on an EMPTY deck and offered on a stocked one [TA-280 asc-289 X-Boot]', () => {

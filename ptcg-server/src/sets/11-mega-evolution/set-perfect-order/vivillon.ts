@@ -1,9 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameError, GameMessage, StateUtils, CardList, PowerType, Player } from '../../../game';
+import { StoreLike, State, GameError, GameMessage, StateUtils, CardList, PowerType, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { ABILITY_USED, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, DRAW_CARDS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Vivillon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -56,17 +56,23 @@ export class Vivillon extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      // Shuffle the opponent's hand
-      this.shufflePlayerHand(opponent);
-
-      const deckBottom = new CardList();
-      opponent.hand.moveTo(deckBottom);
-      deckBottom.moveTo(opponent.deck);
-      opponent.deck.moveTo(opponent.hand, 4);
-
       ABILITY_USED(player, this);
       player.marker.addMarker(this.BIG_WINGS_MARKER, this);
-      return state;
+
+      // TA-458 (TA-379's sibling): "shuffles their hand and puts it on the bottom" — the old code
+      // shuffled the hand with an inline PRNG (no external order could ever be supplied, and
+      // the card sat in EXCLUDED_RANDOM_CARDS), bottomed it and drew at once. Externalize it the
+      // TA-370/TA-379 way: stage the hand INTO the (emptied) deck so the adapter's ShuffleDeckPrompt
+      // advertises exactly those cards, restack the untouched deck on top inside the callback, and
+      // only THEN draw.
+      const rest = new CardList();
+      opponent.deck.moveTo(rest);
+      opponent.hand.moveTo(opponent.deck);
+      return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+        opponent.deck.applyOrder(order);
+        rest.moveToTopOfDestination(opponent.deck);
+        DRAW_CARDS(store, state, opponent, Math.min(4, opponent.deck.cards.length));
+      });
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
@@ -83,13 +89,4 @@ export class Vivillon extends PokemonCard {
     return state;
   }
 
-  shufflePlayerHand(player: Player): void {
-    const hand = player.hand.cards;
-
-    // Shuffle the hand using the Fisher-Yates shuffle algorithm
-    for (let i = hand.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [hand[i], hand[j]] = [hand[j], hand[i]];
-    }
-  }
 }

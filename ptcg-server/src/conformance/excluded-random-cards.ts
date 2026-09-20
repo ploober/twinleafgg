@@ -87,7 +87,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Trevenant V EVS",
   "Umbreon Star P5",
   "Umbreon ex PRE",
-  "Vivillon M3",
   "Watchog PLS",
   "Whismur PLS",
   "Wonder Platinum DPt-P",
