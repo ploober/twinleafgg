@@ -3458,13 +3458,20 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'we0' }] as unknown as NeutralAction[]);
     const offered = (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'discard').map(a => (a as { target: string }).target).sort();
     expect(offered).toEqual(['ge0', 'ge1', 'we1']);
-    // and paying with the [G][G] alone (over-providing by one unit) is accepted
-    const paid = step(board(
+    // and paying with the [G][G] alone (over-providing by one unit) is accepted. Since TA-439 (#2127:
+    // "either 1 or 2 Double Turbo Energy") sufficiency does NOT close the pick: the remaining Energy is
+    // offered as an OPTIONAL extra discard plus a stop (confirm:false), and the stop completes the retreat.
+    const paidBoard = () => board(
       player({ active: inPlay('A-act', ['meg-010'], [...en(GRASS, 2, 'g'), ...en(WATER, 2, 'w')]), bench: [inPlay('A-b0', [RALTS])] }),
       player({ active: inPlay('B-act', [TANKY]) }),
-    ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }] as unknown as NeutralAction[]);
+    );
+    const paid = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }] as unknown as NeutralAction[]);
     expect(paid.status).toBe('awaitingAction');
-    expect(paid.state.players.A.active!.stack[0].printing).toBe('sit-067');
+    expect(types(paid)).withContext('the stop is offered once the cost is covered (TA-439)').toContain('confirm');
+    const done = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }, { actor: 'A', type: 'confirm', value: false }] as unknown as NeutralAction[]);
+    expect(done.status).toBe('awaitingAction');
+    expect(done.state.players.A.active!.stack[0].printing).toBe('sit-067');
+    expect(done.state.players.A.discard.map(c => c.iid)).toEqual(['ge0']);        // one card paid a two-unit cost
   });
 
   it('a Confused attack that fails its flip is NOT recorded as the player\'s last attack (#2087) [TA-399 twm-105]', () => {

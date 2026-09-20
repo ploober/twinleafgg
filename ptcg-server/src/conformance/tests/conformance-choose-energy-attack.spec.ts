@@ -56,8 +56,10 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.actor).toBe('A');
     expect(res.pending!.descriptor).toContain('Choose energy');
-    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'discard', owner: 'A', target: 'e0' });
-    expect(res.pending!.legalActions).toContain({ actor: 'A', type: 'discard', owner: 'A', target: 'e1' });
+    // CF-70 Phase 2 (9919bf837) added the decision attributes op/amount/destination to operation picks;
+    // the cell pins the identifying fields and lets those ride along.
+    expect(res.pending!.legalActions).toContain(jasmine.objectContaining({ actor: 'A', type: 'discard', owner: 'A', target: 'e0' }));
+    expect(res.pending!.legalActions).toContain(jasmine.objectContaining({ actor: 'A', type: 'discard', owner: 'A', target: 'e1' }));
   });
 
   it('pays the cost with the chosen energy and completes the retreat', () => {
