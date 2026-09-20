@@ -65,8 +65,9 @@ export class Tinkatuff extends PokemonCard {
         if (!wantToUse) {
           return state;
         }
-        // Mark ability as used
+        // Mark ability as used — at the accepted "may", whatever the coin says (TA-455 / CF-77)
         player.marker.addMarker(this.RUSTLING_WIND_MARKER, this);
+        ABILITY_USED(player, this);
         // Flip coin
         COIN_FLIP_PROMPT(store, state, player, (result) => {
           if (result) {
@@ -83,7 +84,6 @@ export class Tinkatuff extends PokemonCard {
                 opponent.active.moveCardTo(energyCard, opponent.discard);
               }
             });
-            ABILITY_USED(player, this);
           }
           return state;
         });

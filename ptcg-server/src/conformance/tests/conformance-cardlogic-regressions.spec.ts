@@ -4094,4 +4094,91 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(usedLabels(r)).toEqual(['Snack Seek']);
   });
 
+  // ── TA-455: TRIGGERED once-per-turn labels (CF-77) ───────────────────────────────────────────────
+  // A triggered Ability has no useAbility to dry-run, so its label is read from the ABILITY_USED slot
+  // flag the card sets when its "you may" is ACCEPTED. Pinned from both sides on every in-pool
+  // triggered once-per-turn printing (drive census 2026-09-20): nothing before the answer, nothing on
+  // a decline, the label at the first pending after the accept and still at main.
+  const SWITCH = 'meg-130';
+  const labelsOf = (r: ReturnType<typeof step>, top: string): string[] | undefined => {
+    const slots = [r.state.players.A.active, ...r.state.players.A.bench];
+    const s = slots.find(x => x !== null && x.stack[x.stack.length - 1].printing === top);
+    return s?.markers.abilitiesUsedThisTurn;
+  };
+  const oppWithEnergy = () => player({ active: inPlay('b1', ['twm-187'], en('sve-001', 1, 'b1')), deck: fillerDeck('B', 4) });
+  const A = (over: Partial<PlayerState>) => player({ deck: fillerDeck('A', 5), ...over });
+  const act = (a: Record<string, unknown>): NeutralAction => ({ actor: 'A', ...a }) as unknown as NeutralAction;
+  const confirm = (value: boolean) => act({ type: 'confirm', value });
+  interface Trig { printing: string; ability: string; board: NeutralState; prefix: NeutralAction[]; mainTop?: string }
+  const TRIGGERS: Trig[] = [
+    { printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
+      prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })] },
+    { printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: [{ iid: 'sw1', printing: SWITCH }] }), oppWithEnergy()),
+      prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })] },
+    { printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: [{ iid: 'sw1', printing: SWITCH }], deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+      prefix: [act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: 'a2' })], mainTop: 'twm-061' },
+    { printing: 'meg-097', ability: 'Haphazard Hammer', board: board(A({ active: inPlay('a1', ['meg-096']), hand: [{ iid: 'h0', printing: 'meg-097' }] }), oppWithEnergy()),
+      prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
+    { printing: 'por-062', ability: 'Last-Ditch Catch', board: board(A({ active: inPlay('a1', ['twm-118']), hand: [{ iid: 'h0', printing: 'por-062' }], deck: [{ iid: 'sup', printing: 'ssp-178' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+      prefix: [act({ type: 'benchBasic', card: 'h0' })] },
+    { printing: 'pbl-020', ability: 'Enriching Melody', board: board(A({ active: inPlay('a1', ['pbl-018', 'pbl-019'], [], 30), hand: [{ iid: 'h0', printing: 'pbl-020' }] }), oppWithEnergy()),
+      prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
+    { printing: 'pfl-053', ability: 'Sandy Flapping', board: board(A({ active: inPlay('a1', ['pfl-051', 'pfl-052']), hand: [{ iid: 'h0', printing: 'pfl-053' }] }), oppWithEnergy()),
+      prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
+    { printing: 'scr-115', ability: 'Jewel Seeker', board: board(A({ active: inPlay('a1', ['scr-114']), bench: [inPlay('a2', ['scr-128'])], hand: [{ iid: 'h0', printing: 'scr-115' }], deck: [{ iid: 'sw1', printing: SWITCH }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+      prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
+    { printing: 'tef-025', ability: 'Rapid Vernier', board: board(A({ active: inPlay('a1', ['twm-118'], en('sve-001', 1, 'a1')), bench: [inPlay('a2', ['twm-118'], en('sve-001', 1, 'a2'))], hand: [{ iid: 'h0', printing: 'tef-025' }] }), oppWithEnergy()),
+      prefix: [act({ type: 'benchBasic', card: 'h0' })] },
+    { printing: 'asc-012', ability: 'Multiplying Cocoon', board: board(A({ active: inPlay('a1', ['asc-011']), hand: [{ iid: 'h0', printing: 'asc-012' }], deck: [{ iid: 'cas', printing: 'asc-014' }, ...fillerDeck('A', 4)] }), oppWithEnergy()),
+      prefix: [act({ type: 'evolve', card: 'h0', target: 'a1' })] },
+  ];
+  for (const t of TRIGGERS) {
+    it(`TA-455 ${t.ability}: no label before the "may" is answered or on a decline; the label at the first pending after the accept and at main [TA-455 ${t.printing}]`, () => {
+      const open = step(t.board, t.prefix);
+      expect(open.status).withContext('trigger pending').toBe('awaitingAction');
+      expect(types(open)).withContext('the "may" is a decision').toContain('confirm');
+      expect(labelsOf(open, t.printing)).withContext('before the answer').toEqual([]);
+      const declined = step(t.board, [...t.prefix, confirm(false)]);
+      expect(labelsOf(declined, t.printing)).withContext('declined').toEqual([]);
+      const accepted = step(t.board, [...t.prefix, confirm(true)]);
+      expect(accepted.status).toBe('awaitingAction');
+      expect(labelsOf(accepted, t.printing)).withContext('first pending after the accept').toEqual([t.ability]);
+      const main = step(t.board, driveToMain(t.board, [...t.prefix, confirm(true)]));
+      expect(main.status).toBe('awaitingAction');
+      if (t.mainTop === undefined) {
+        expect(labelsOf(main, t.printing)).withContext('at main').toEqual([t.ability]);
+      } else {
+        // Palafin: the user LEFT the slot (shuffled into the deck; Palafin ex took its place). The
+        // replacement carries no label on twinleaf — where a label lives once its user is gone is
+        // CF-79 (open); rotomancer reads ['Zero to Hero'] on the Palafin ex.
+        expect(labelsOf(main, t.mainTop)).withContext('the replacement at main').toEqual([]);
+      }
+    });
+  }
+
+  // ── TA-457: a DECLINED trigger is not a use (compendium #43, Burning Road) ────────────────────────
+  // Buzzing Boost / Metal Road / Zero to Hero marked the player on a decline too, so a second move in
+  // the same turn was never offered the Ability again.
+  const three = (a: string, b: string, c: string): NeutralAction[] => [
+    act({ type: 'playItem', card: 'sw1' }), act({ type: 'promoteBench', target: a }), confirm(false),
+    act({ type: 'playItem', card: 'sw2' }), act({ type: 'promoteBench', target: b }),
+    act({ type: 'playItem', card: 'sw3' }), act({ type: 'promoteBench', target: c }),
+  ];
+  const switches = [{ iid: 'sw1', printing: SWITCH }, { iid: 'sw2', printing: SWITCH }, { iid: 'sw3', printing: SWITCH }];
+  const RETRIGGER: Array<{ printing: string; ability: string; board: NeutralState; script: NeutralAction[] }> = [
+    { printing: 'dri-003', ability: 'Buzzing Boost', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['dri-002', 'dri-003']), inPlay('a3', ['twm-118'])], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+    { printing: 'cri-064', ability: 'Metal Road', board: board(A({ active: inPlay('a1', ['twm-118']), bench: [inPlay('a2', ['cri-064']), inPlay('a3', ['twm-118'], en(METAL, 1, 'a3'))], hand: switches }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+    { printing: 'twm-060', ability: 'Zero to Hero', board: board(A({ active: inPlay('a1', ['twm-059', 'twm-060']), bench: [inPlay('a2', ['twm-118']), inPlay('a3', ['twm-118'])], hand: switches, deck: [{ iid: 'pex', printing: 'twm-061' }, ...fillerDeck('A', 4)] }), oppWithEnergy()), script: three('a2', 'a1', 'a2') },
+  ];
+  for (const t of RETRIGGER) {
+    it(`TA-457 ${t.ability}: declined on the first move, offered again when the Pokémon moves again this turn [TA-457 ${t.printing}]`, () => {
+      const first = step(t.board, t.script.slice(0, 2));
+      expect(types(first)).withContext('offered on the first move').toContain('confirm');
+      const again = step(t.board, t.script);
+      expect(again.status).toBe('awaitingAction');
+      expect(types(again)).withContext('offered again after the decline').toContain('confirm');
+      expect(labelsOf(again, t.printing)).toEqual([]);
+    });
+  }
+
 });

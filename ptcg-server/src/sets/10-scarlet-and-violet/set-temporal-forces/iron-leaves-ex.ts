@@ -16,7 +16,7 @@ import {
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class IronLeavesex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -80,6 +80,7 @@ export class IronLeavesex extends PokemonCard {
             const benchIndex = player.bench.indexOf(cardList as PokemonCardList);
 
             player.switchPokemon(player.bench[benchIndex], store, state);
+            ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit (after the switch: the flag lives on the slot)
 
             const blockedFrom: CardTarget[] = [];
             const blockedTo: CardTarget[] = [];

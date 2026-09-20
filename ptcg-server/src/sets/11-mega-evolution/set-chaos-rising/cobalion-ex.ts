@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, ConfirmPrompt, GameMessage, CardTarget, PlayerType, EnergyCard, MoveEnergyPrompt, SlotType, SuperType, StateUtils } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
 import { MovedToActiveEffect, PowerEffect } from "../../../game/store/effects/game-effects";
-import { REMOVE_MARKER_AT_END_OF_TURN, MOVED_TO_ACTIVE_THIS_TURN, WAS_ATTACK_USED, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN } from "../../../game/store/prefabs/prefabs";
+import { ABILITY_USED, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED } from "../../../game/store/prefabs/prefabs";
 
 export class Cobalionex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -54,7 +54,7 @@ export class Cobalionex extends PokemonCard {
         new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY),
         (wantToUse) => {
           if (!wantToUse) {
-            player.marker.addMarker(this.METAL_ROAD_MARKER, this);
+            // TA-457: a declined trigger is not a use (compendium #43, Burning Road).
             return;
           }
 
@@ -73,6 +73,7 @@ export class Cobalionex extends PokemonCard {
           } catch {
             return state;
           }
+          ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
 
           const blockedFrom: CardTarget[] = [];
           const blockedTo: CardTarget[] = [];

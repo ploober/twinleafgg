@@ -19,6 +19,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
+import { ABILITY_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Noctowl extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -121,6 +122,7 @@ export class Noctowl extends PokemonCard {
           new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_USE_ABILITY),
           (wantToUse) => {
             if (wantToUse) {
+              ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
               state = store.prompt(
                 state,
                 new ChooseCardsPrompt(

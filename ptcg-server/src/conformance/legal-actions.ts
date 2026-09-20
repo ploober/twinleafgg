@@ -714,7 +714,19 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
   const out: string[] = [];
   for (const power of pokemon.powers) {
     if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
-    if (power.useWhenInPlay !== true) { continue; }
+    if (power.useWhenInPlay !== true) {
+      // TA-455 (CF-77): a TRIGGERED once-per-turn Ability ("when you play this Pokemon…", "when this
+      // Pokemon moves…") has no useAbility to dry-run, so its label is read from the ABILITY_USED slot
+      // flag the card sets when its "you may" is ACCEPTED (the commit; nothing before the answer —
+      // RE-167's mirror). Never from a marker: three cards mark the player on a DECLINE as well
+      // (TA-457), and a declined trigger is not a use (compendium #43, Burning Road). A from-hand
+      // activation (Klinklang scr-101 Emergency Rotation, useFromHand) sets no state and is not
+      // derived here.
+      if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {
+        out.push(power.name);
+      }
+      continue;
+    }
     // TA-454: since TA-452 (the reducer refuses the flag) and TA-453 (usePower sets it at the
     // announcement) the ABILITY_USED slot flag IS the once-per-turn state for every power printed
     // "Once during your turn" — read it directly. The counterfactual probe below is refused for

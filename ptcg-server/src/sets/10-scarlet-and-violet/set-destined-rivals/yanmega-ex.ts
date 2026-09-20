@@ -4,7 +4,7 @@ import { StoreLike, State, PlayerType, SlotType, PowerType, ConfirmPrompt, Attac
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
 import { MovedToActiveEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Yanmegaex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -61,7 +61,8 @@ export class Yanmegaex extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (!wantToUse) {
-          player.marker.addMarker(this.BUZZ_BOOST_MARKER, this);
+          // TA-457: a declined trigger is not a use — Buzzing Boost may still be used if this Pokemon
+          // moves to the Active Spot again this turn (compendium #43, Burning Road).
           return;
         }
 
@@ -77,6 +78,7 @@ export class Yanmegaex extends PokemonCard {
         }
 
         player.marker.addMarker(this.BUZZ_BOOST_MARKER, this);
+        ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit — the label rests on this flag
 
         state = store.prompt(state, new AttachEnergyPrompt(
           player.id,

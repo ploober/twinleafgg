@@ -6,7 +6,7 @@ import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-
 import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { SHUFFLE_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_DECK } from '../../../game/store/prefabs/attack-effects';
 
 export class Primarina extends PokemonCard {
@@ -57,6 +57,7 @@ export class Primarina extends PokemonCard {
           if (!wantToUse) {
             return;
           }
+          ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
           store.prompt(
             state,
             new ChoosePokemonPrompt(

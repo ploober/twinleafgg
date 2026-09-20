@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardType, PowerType, State, StoreLike, StateUtils, ConfirmPrompt, GameLog, GameMessage, PlayerType, Card, ChooseCardsPrompt, ShuffleDeckPrompt, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { MovedFromActiveToBenchEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import { MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN } from '../../../game/store/prefabs/prefabs';
 
 export class Palafin extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -62,11 +62,12 @@ export class Palafin extends PokemonCard {
         player.id,
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
-        player.marker.addMarker(this.ABILITY_USED_MARKER, this);
-
         if (!wantToUse) {
+          // TA-457: a declined trigger is not a use (compendium #43, Burning Road).
           return;
         }
+        player.marker.addMarker(this.ABILITY_USED_MARKER, this);
+        ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
 
         player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
           if (cardList.getPokemonCard() === this) {

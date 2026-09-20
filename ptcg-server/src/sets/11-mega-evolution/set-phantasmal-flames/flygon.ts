@@ -5,7 +5,7 @@ import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { GamePhase } from '../../../game/store/state/state';
-import { DISCARD_TOP_X_OF_OPPONENTS_DECK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, DISCARD_TOP_X_OF_OPPONENTS_DECK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class Flygon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -65,6 +65,7 @@ export class Flygon extends PokemonCard {
       ), wantToUse => {
         if (wantToUse) {
           player.marker.addMarker(this.SANDY_FLAPPING_MARKER, this);
+          ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
           discardOpponentTop2(player);
         }
       });
