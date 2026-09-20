@@ -78,7 +78,11 @@ function indexBySuffix(dir: string): Map<string, string[]> {
 }
 
 /** Is this entry an engine (src/game) entry rather than a card (src/sets) one? */
-const isGameEntry = (file: string): boolean => file.startsWith('game/');
+// An entry under src/game OR src/conformance names an exact src-relative path (the adapter is engine
+// code for this purpose); only card-file entries resolve by suffix under src/sets. The locator used to
+// send `conformance/...` entries to the sets index, where they resolved to 0 files and every such
+// guard (choose-energy.ts, legal-actions.ts) failed for a reason unrelated to its fix.
+const isGameEntry = (file: string): boolean => file.startsWith('game/') || file.startsWith('conformance/');
 
 describe('Conformance — fix-signature anti-revert guard', () => {
   const manifest: Manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8'));
