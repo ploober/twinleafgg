@@ -8823,16 +8823,6 @@
       ]
     },
     {
-      "file": "set-destined-rivals/yanmega-ex.ts",
-      "signatures": [
-        "        ABILITY_USED(player, this); // TA-455: the accepted \"may\" is the commit — the label rests on this flag"
-      ],
-      "note": "TA-455 / TA-457 (2026-09-20): a triggered once-per-turn Ability flags ABILITY_USED at the accepted \"may\" (the derivation reads the flag for powers without useWhenInPlay); the decline no longer marks (#43 Burning Road).",
-      "fixes": [
-        "FX-0325"
-      ]
-    },
-    {
       "file": "conformance/legal-actions.ts",
       "signatures": [
         "      // TA-455 (CF-77): a TRIGGERED once-per-turn Ability (\"when you play this Pokemon…\", \"when this"
@@ -8840,16 +8830,6 @@
       "note": "TA-455 (2026-09-20): abilitiesUsedLabels derives a triggered power's label from the ABILITY_USED slot flag (no useAbility to dry-run; never from a marker).",
       "fixes": [
         "FX-0325"
-      ]
-    },
-    {
-      "file": "set-ascended-heroes/silcoon.ts",
-      "signatures": [
-        "      }, GameMessage.WANT_TO_USE_ABILITY);"
-      ],
-      "note": "TA-456 (2026-09-20): Silcoon Multiplying Cocoon offers the printed \"you may\" before the search.",
-      "fixes": [
-        "FX-0326"
       ]
     },
     {
@@ -8920,6 +8900,16 @@
       "note": "TA-455 (2026-09-20): flags ABILITY_USED at the accepted \"may\" so the triggered label is derivable (TA-457 for the move-triggers: no marker on the decline).",
       "fixes": [
         "FX-0325"
+      ]
+    },
+    {
+      "file": "set-perfect-order/vivillon.ts",
+      "signatures": [
+        "      return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {"
+      ],
+      "note": "TA-458 (2026-09-20): Vivillon por-009 Grand Wing externalizes the hand shuffle as a ShuffleDeckPrompt over exactly the bottomed cards (TA-370",
+      "fixes": [
+        "FX-0327"
       ]
     }
   ]
