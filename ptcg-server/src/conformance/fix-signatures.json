@@ -8661,6 +8661,16 @@
       "fixes": [
         "FX-0319"
       ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "const legalTargets = opponent.bench.filter((b, index) => b.cards.length > 0 && !blockedIndexes.has(index)).length;"
+      ],
+      "note": "TA-410 (2026-09-19): The TA-388 gust veto counts OCCUPIED bench slots outside the blocked set, so a caller that pre-blocks EMPTY slots no lon",
+      "fixes": [
+        "FX-0320"
+      ]
     }
   ]
 }
