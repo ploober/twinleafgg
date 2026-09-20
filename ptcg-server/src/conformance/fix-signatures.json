@@ -8911,6 +8911,46 @@
       "fixes": [
         "FX-0327"
       ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "signatures": [
+        "  for (const card of slot.getPokemons()) {"
+      ],
+      "note": "TA-459 (2026-09-20): once-per-turn uses are remembered BY NAME on the in-play Pokemon (usePower / ABILITY_USED push into PokemonCardList.abil",
+      "fixes": [
+        "FX-0328"
+      ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "signatures": [
+        "  for (const card of slot.getPokemons()) {"
+      ],
+      "note": "TA-459 / B.58 (2026-09-20): abilitiesUsedLabels labels every stack card whose printed once-per-turn power is in the slot's by-name memory (stack membership).",
+      "fixes": [
+        "FX-0328"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "      if (!slot.abilitiesUsedThisTurn.includes(power.name)) {"
+      ],
+      "note": "TA-459 / B.58 (2026-09-20): usePower remembers the once-per-turn use BY NAME on the slot (survives evolution, #798).",
+      "fixes": [
+        "FX-0328"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "        if (/once during your turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {"
+      ],
+      "note": "TA-459 / B.58 (2026-09-20): ABILITY_USED remembers the triggered use BY NAME on the slot.",
+      "fixes": [
+        "FX-0328"
+      ]
     }
   ]
 }
