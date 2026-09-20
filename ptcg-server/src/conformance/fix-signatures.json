@@ -8791,6 +8791,16 @@
       "fixes": [
         "FX-0323"
       ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "signatures": [
+        "    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {"
+      ],
+      "note": "TA-454 (2026-09-20): abilitiesUsedLabels reads the ABILITY_USED slot flag directly for a power printed \"Once during your turn\" (the flag is a",
+      "fixes": [
+        "FX-0324"
+      ]
     }
   ]
 }
