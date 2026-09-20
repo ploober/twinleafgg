@@ -2466,8 +2466,14 @@ export function SWITCH_IN_OPPONENT_BENCHED_POKEMON(
   });
 
   // If every benched Pokemon is protected, the gust has no legal target and does nothing.
-  const benchCount = opponent.bench.filter((b) => b.cards.length > 0).length;
-  if (blockedTargets.length >= benchCount) {
+  // TA-410: count only OCCUPIED slots that are blocked — callers routinely pre-block empty bench
+  // slots too (Delicious Aroma, Boss-style filters), and counting those made a gust with one or two
+  // legal targets silently do nothing (fork regression from the TA-388 veto, 2026-09-10).
+  const blockedIndexes = new Set(
+    blockedTargets.filter((tg) => tg.player === PlayerType.TOP_PLAYER && tg.slot === SlotType.BENCH).map((tg) => tg.index),
+  );
+  const legalTargets = opponent.bench.filter((b, index) => b.cards.length > 0 && !blockedIndexes.has(index)).length;
+  if (legalTargets === 0) {
     return state;
   }
 
