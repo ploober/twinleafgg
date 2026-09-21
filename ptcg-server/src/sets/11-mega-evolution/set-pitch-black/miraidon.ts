@@ -84,6 +84,13 @@ export class Miraidon extends PokemonCard {
           .map((c, idx) => (this.isEligibleBasicLightningEnergy(c) ? -1 : idx))
           .filter((idx) => idx >= 0);
 
+        // TA-446: Photon Cord is an Ability's "up to 2", so #2301 floors it at 1 — no decline at zero —
+        // whenever a move is actually possible (an eligible Energy AND a Benched Pokémon to receive it).
+        // With nothing to move, the floor stays 0 (the effect provably does nothing; do not deadlock).
+        const eligibleCount = activeCopy.cards.length - blocked.length;
+        const benchCount = player.bench.filter((b) => b.cards.length > 0).length;
+        const minMove = eligibleCount > 0 && benchCount > 0 ? 1 : 0;
+
         return store.prompt(
           state,
           new AttachEnergyPrompt(
@@ -97,7 +104,7 @@ export class Miraidon extends PokemonCard {
               blocked,
               validCardTypes: [CardType.LIGHTNING, CardType.ANY],
               allowCancel: false,
-              min: 0,
+              min: minMove,
               max: 2,
             },
           ),

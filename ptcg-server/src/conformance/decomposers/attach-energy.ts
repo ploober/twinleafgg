@@ -77,7 +77,16 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   // consults this when the step offers no stop and one candidate; applying that candidate carries no
   // decision, and `next` then decides whether anything further is offered (nothing left -> done).
   // Keyed on forcedness (`allowCancel === false`), never on count alone (TA-190's lesson).
-  atomicStep: prompt => prompt.options.allowCancel === false,
+  //
+  // TA-446 (2026-09-21): this fires only for a genuine zone-ATTACH (ssp-059 discard, asc-026 hand),
+  // NEVER for an in-play RELOCATION (CF-34 `moveEnergy`). A forced max>1 relocation — Photon Cord
+  // pbl-028's "move up to 2 [L] from this Pokemon to a Benched Pokemon" with one eligible Energy — is
+  // SURFACED by rotomancer (`effect.moveEnergy (A)`), not auto-applied, so collapsing it here manufactured
+  // a divergence once #2301 floored the min at 1. The sibling move-energy decomposer already collapses a
+  // relocation only at `max === 1` (its `atomicResolvable`); align the two by excluding relocations here.
+  atomicStep: (prompt, _picks, state) =>
+    prompt.options.allowCancel === false
+    && !prompt.cardList.cards.some(c => c.superType === SuperType.ENERGY && findPokemonSlot(state, c) !== undefined),
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
