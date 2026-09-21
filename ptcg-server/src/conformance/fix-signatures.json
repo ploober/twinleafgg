@@ -8961,6 +8961,26 @@
       "fixes": [
         "FX-0329"
       ]
+    },
+    {
+      "file": "set-surging-sparks/tyme.ts",
+      "signatures": [
+        "if (player.deck.cards.length === 0 && opponent.deck.cards.length === 0) {"
+      ],
+      "note": "TA-461 (2026-09-21): TA-461: Tyme ssp-190 is not playable with both decks empty — a Supporter played for no effect",
+      "fixes": [
+        "FX-0330"
+      ]
+    },
+    {
+      "file": "set-pitch-black/miraidon.ts",
+      "signatures": [
+        "const minMove = eligibleCount > 0 && benchCount > 0 ? 1 : 0;"
+      ],
+      "note": "TA-446 (2026-09-21): TA-446: Photon Cord pbl-028 floors a non-attack \"up to X\" at 1 — no decline at zero",
+      "fixes": [
+        "FX-0331"
+      ]
     }
   ]
 }
