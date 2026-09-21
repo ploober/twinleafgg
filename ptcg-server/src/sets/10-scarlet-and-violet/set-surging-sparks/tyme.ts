@@ -19,6 +19,13 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
   });
   if (!isPokemonInHand) { throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD); }
 
+  // TA-461: Tyme's only game-state effect is a draw — by the opponent on a correct guess, by you on a
+  // wrong one. With BOTH decks empty no branch can draw, so the card would be played for no effect
+  // (#924/#925/#1042). The name/guess/reveal is information, not an effect on the game state.
+  if (player.deck.cards.length === 0 && opponent.deck.cards.length === 0) {
+    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+  }
+
   player.hand.moveCardTo(effect.trainerCard, player.supporter);
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
@@ -107,6 +114,11 @@ export class Tyme extends TrainerCard {
     }
     const hasPokemon = player.hand.cards.some(c => c instanceof PokemonCard);
     if (!hasPokemon) {
+      return false;
+    }
+    // TA-461: refuse when neither player can draw (both decks empty) — a Trainer for no effect (#924).
+    const opponent = StateUtils.getOpponent(state, player);
+    if (player.deck.cards.length === 0 && opponent.deck.cards.length === 0) {
       return false;
     }
     return true;
