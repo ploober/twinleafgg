@@ -783,7 +783,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             // boundary, and dispatchAndCollect appends everything that derives from it. Pushing
             // after would place `shuffled` behind the `draw` it causally precedes, which is a
             // `shuffled ≺ draw` violation the engine never committed. See the sibling site below.
-            events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
+            // B.66 / TA-462: zone-qualified — declared by the card on ShuffleDeckPrompt (defaults to 'deck').
+          events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId),
+            zone: (prompt as unknown as { zone: 'deck' | 'hand' | 'prizes' }).zone });
             dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
             continue;
           }
@@ -807,7 +809,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           // `shuffled` last and reported `draw ≺ shuffled` for a deck the engine had in fact
           // already shuffled — a false `order` divergence (ssp-162 Amulet of Hope). The shuffle
           // causally precedes everything the dispatch triggers, so it belongs before it.
-          events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId) });
+          // B.66 / TA-462: zone-qualified — declared by the card on ShuffleDeckPrompt (defaults to 'deck').
+          events.push({ kind: 'shuffled', player: playerIdToActor(game.state, prompt.playerId),
+            zone: (prompt as unknown as { zone: 'deck' | 'hand' | 'prizes' }).zone });
           dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, perm)));
           continue;
         }

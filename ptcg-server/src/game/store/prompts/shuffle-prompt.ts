@@ -14,9 +14,21 @@ export class ShuffleDeckPrompt extends Prompt<number[]> {
    */
   public bottomCount?: number;
 
-  constructor(playerId: number, options: { bottomCount?: number } = {}) {
+  /**
+   * B.66 / TA-462 (2026-09-27): WHICH pile this prompt shuffles, declared by the card. The wire's
+   * `shuffled` event is zone-qualified — `deck` means the deck's resting order is randomised (the only
+   * case `shuffled ≺ draw` applies to); `hand` is a hand-to-bottom ("shuffles their hand and puts it on
+   * the bottom", Grand Wing por-009 / Special Red Card cri-082), which TA-379/TA-458 externalize by
+   * staging the hand INTO the emptied deck and raising THIS prompt on it — so the driver cannot tell
+   * the pile from the prompt alone, and the card must say. Defaults to `deck`. A `bottomCount` segment
+   * shuffle stays `deck` for now (a `deckBottom` value is an owner refinement, not pinned).
+   */
+  public zone: 'deck' | 'hand' | 'prizes';
+
+  constructor(playerId: number, options: { bottomCount?: number; zone?: 'deck' | 'hand' | 'prizes' } = {}) {
     super(playerId);
     this.bottomCount = options.bottomCount;
+    this.zone = options.zone ?? 'deck';
   }
 
   public validate(result: number[] | null, state: State): boolean {

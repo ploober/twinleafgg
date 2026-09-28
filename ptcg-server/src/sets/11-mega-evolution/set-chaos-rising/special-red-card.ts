@@ -56,7 +56,9 @@ export class SpecialRedCard extends TrainerCard {
         const rest = new CardList();
         opponent.deck.moveTo(rest);
         opponent.hand.moveTo(opponent.deck);
-        return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+        // TA-462 / B.66: the pile is the HAND (a hand-to-bottom), not the deck — declare it so the
+        // adapter's `shuffled` carries zone:'hand' and the deck-randomised property is not asserted.
+        return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand' }), order => {
           opponent.deck.applyOrder(order);
           rest.moveToTopOfDestination(opponent.deck);
           DRAW_CARDS(store, state, opponent, Math.min(3, opponent.deck.cards.length));

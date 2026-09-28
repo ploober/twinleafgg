@@ -543,7 +543,7 @@ export type NeutralEvent =
   | { kind: 'healed'; player: NeutralPlayerId; target: string; hp: number }
   | { kind: 'turnStarted'; player: NeutralPlayerId }
   | { kind: 'turnEnded'; player: NeutralPlayerId }
-  | { kind: 'shuffled'; player: NeutralPlayerId }
+  | { kind: 'shuffled'; player: NeutralPlayerId; zone: 'deck' | 'hand' | 'prizes' }
   // `winner` folds the retired `matchEnded` (null on a tie); `cause` folds the retired `deckedOut`
   // ({prizesTaken|deckOut|noPokemonInPlay|tie}). outcome stays the compared field; winner/cause ride
   // observed until rotomancer also populates them.
