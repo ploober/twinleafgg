@@ -43,6 +43,9 @@ export interface CapabilitiesResponse {
    * missed the TA-309 card fix entirely). Both, or neither answers the question.
    */
   build: string;
+  /** CF-84: optional contract features this adapter implements. `setup` = the pre-deal
+   *  `initialState` and the setup walk (`driver.ts` `startSetup`). */
+  features: string[];
 }
 
 const ENGINE_NAME = 'twinleaf';
@@ -139,5 +142,6 @@ export function buildCapabilities(): CapabilitiesResponse {
     schemaVersion: SCHEMA_VERSION,
     sets,
     conventions: CONVENTIONS,
+    features: ['setup'],
   };
 }

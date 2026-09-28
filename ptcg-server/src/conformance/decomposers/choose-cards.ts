@@ -332,6 +332,12 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
             type: 'discard', owner: playerIdToActor(state, ownerId), target: iid,
             op: 'discard', destination: 'discardPile', // CF-70 Phase 2
           } as LegalAction);
+        } else if (prompt.message === GameMessage.CHOOSE_STARTING_POKEMONS) {
+          // CF-84: setup placement. The engine puts pick 0 in the Active Spot and the rest on the Bench
+          // (setup-reducer putStartingPokemonsAndPrizes); the compensation pass (allowExtraBenchPlacement)
+          // reuses this message with the Active already placed, so every pick there is a Bench pick.
+          const toActive = rp.length === 0 && prompt.player.active.cards.length === 0;
+          legalActions.push({ type: 'choose', target: iid, op: 'moveTo', destination: toActive ? 'active' : 'bench' } as LegalAction);
         } else {
           legalActions.push({ type: 'choose', target: iid });
         }

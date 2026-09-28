@@ -4,8 +4,10 @@ import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { State, GameWinner } from '../game/store/state/state';
+import { setupGame } from '../game/store/reducers/setup-reducer';
 import { Prompt } from '../game/store/prompts/prompt';
 import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
+import { ShowMulliganPrompt } from '../game/store/prompts/show-mulligan-prompt';
 import { PlayCardAction, PlayerType, SlotType, CardTarget } from '../game/store/actions/play-card-action';
 import {
   AttackAction, PassTurnAction, RetreatAction as RetreatGameAction,
@@ -750,6 +752,16 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             events.push(revealEvent);
           }
         }
+        // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
+        // SETUP_PLAYER_NO_BASIC, and the opponent's). Emit one `mulliganRevealed` per hand, from the owner's
+        // view only, so a mulligan is counted once.
+        if (prompt.type === 'Show mulligan' && (prompt as ShowMulliganPrompt).message === GameMessage.SETUP_PLAYER_NO_BASIC) {
+          const owner = playerIdToActor(game.state, prompt.playerId);
+          for (const hand of (prompt as ShowMulliganPrompt).hands) {
+            const iids = hand.map(c => game.ctx.cardToIid.get(c)).filter((x): x is string => x !== undefined).sort();
+            events.push({ kind: 'mulliganRevealed', player: owner, hand: iids });
+          }
+        }
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, true)));
         continue;
       }
@@ -1087,8 +1099,23 @@ export function projectGame(game: ImportedGame): NeutralState {
  * quiescent boundary. `legalActions` population is Phase-1 (decomposer/system); the top-level menu
  * is M5.
  */
+/**
+ * CF-84: a pre-deal import starts the ENGINE'S OWN setup — the exported `setupGame` generator, driven
+ * exactly as sudden death re-enters it (check-effect.ts). Its first prompt is the who-goes-first coin flip
+ * (or, when a WhoBeginsEffect claims the first turn, the opening shuffles); every later setup decision
+ * surfaces through runLoop's ordinary prompt handling, so the setup walk is replayed statelessly like any
+ * other log.
+ */
+function startSetup(game: ImportedGame): void {
+  const generator: IterableIterator<State> = setupGame(() => generator.next(), game.store, game.state);
+  generator.next();
+}
+
 export function step(initial: NeutralState, actions: NeutralAction[]): StepResponse {
   const game = importState(initial);
+  if (initial.phase === 'setup') {
+    startSetup(game); // validated as the pre-deal state by handlers.ts
+  }
   const { events, pending, applied, rejection, midPrompt } = runLoop(game, actions);
   const state = projectGame(game);
   if (midPrompt !== undefined) {

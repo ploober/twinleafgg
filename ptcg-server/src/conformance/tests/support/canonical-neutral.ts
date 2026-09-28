@@ -52,7 +52,7 @@ interface CanonPlayer {
 export interface CanonicalNeutral {
   turn: number;
   activePlayer: NeutralPlayerId;
-  firstPlayer: NeutralPlayerId;
+  firstPlayer: NeutralPlayerId | null; // CF-84: null during setup before the goFirst decision
   phase: string;
   outcome: string;
   stadium: { printing: string; owner: NeutralPlayerId } | null;

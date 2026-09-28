@@ -7,6 +7,9 @@ import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { CardList } from '../game/store/state/card-list';
 import { StateUtils } from '../game/store/state-utils';
 import { Prompt } from '../game/store/prompts/prompt';
+import { ShuffleDeckPrompt } from '../game/store/prompts/shuffle-prompt';
+import { ConfirmPrompt } from '../game/store/prompts/confirm-prompt';
+import { GameMessage } from '../game/game-message';
 import { Store } from '../game/store/store';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
@@ -58,8 +61,9 @@ export interface IidContext {
    *  iid maps above. */
   cardOwner: Map<Card, number>;
   /** The game-constant first player, echoed from `initialState.firstPlayer`. twinleaf's engine `State`
-   *  has no first-player field (setup is out of scope), so it is carried here and projected verbatim. */
-  firstPlayer: NeutralPlayerId;
+   *  has no first-player field, so it is carried here and projected verbatim. CF-84: `null` when the
+   *  game was imported pre-deal — the engine's setup then decides it and `projectFirstPlayer` derives it. */
+  firstPlayer: NeutralPlayerId | null;
 }
 
 /**
@@ -216,7 +220,7 @@ class Importer {
     }
   }
 
-  buildPlayer(index: number, ps: PlayerState, turn: number): Player {
+  buildPlayer(index: number, ps: PlayerState, turn: number, preDeal = false): Player {
     this.owner = index; // every card materialized below is owned by this player
     const player = new Player();
     player.id = index + 1;
@@ -282,6 +286,16 @@ class Importer {
       list.cards.push(this.materialize(ref));
       return list;
     });
+    if (preDeal) {
+      // CF-84: mirror the engine's createPlayer (setup-reducer.ts) — 6 EMPTY secret Prize slots that
+      // putStartingPokemonsAndPrizes fills from the deck top. (Pre-Release's 4 is a format delta, out of scope.)
+      player.prizes = [];
+      for (let i = 0; i < 6; i++) {
+        const list = new CardList();
+        list.isSecret = true;
+        player.prizes.push(list);
+      }
+    }
 
     // Per-turn / per-game flags -> twinleaf counters (each engine maps its bookkeeping; design §6.2).
     player.energyPlayedTurn = ps.flags.energyAttachedThisTurn ? turn : 0;
@@ -378,8 +392,9 @@ export function importState(initial: NeutralState): ImportedGame {
   state.activePlayer = actorIndex(initial.activePlayer);
   state.winner = OUTCOME_IMPORT[initial.outcome];
 
-  const playerA = importer.buildPlayer(0, initial.players.A, initial.turn);
-  const playerB = importer.buildPlayer(1, initial.players.B, initial.turn);
+  const preDeal = initial.phase === 'setup'; // CF-84: validated as the pre-deal state by handlers.ts
+  const playerA = importer.buildPlayer(0, initial.players.A, initial.turn, preDeal);
+  const playerB = importer.buildPlayer(1, initial.players.B, initial.turn, preDeal);
   state.players = [playerA, playerB];
 
   if (initial.stadium) {
@@ -467,6 +482,11 @@ function projectPip(ctx: IidContext, state: State, slot: PokemonCardList, player
   };
   if (conditions.includes('poisoned') && slot.poisonDamage !== 10) {
     pip.poisonDamagePerTurn = slot.poisonDamage;
+  }
+  // CF-84: setup places Pokémon face down (setup-reducer sets isSecret) until the reveal. Only
+  // emitted while true, so every non-setup board projects exactly as before.
+  if (state.phase === GamePhase.SETUP && slot.isSecret) {
+    pip.faceDown = true;
   }
   return pip;
 }
@@ -731,6 +751,24 @@ export function pruneResolvingDuplicates(state: NeutralState): void {
   }
 }
 
+/**
+ * CF-84. A normal import echoes `initialState.firstPlayer`. After a PRE-DEAL import the engine's setup
+ * decides it and records only `state.activePlayer` (setup-reducer: the GO_FIRST confirm, or a
+ * WhoBeginsEffect claim) — and A is also the pre-decision default, so "decided" is read from the prompt
+ * trail (resolved prompts stay in `state.prompts`): the first setup ShuffleDeckPrompt is raised only
+ * after the decision, on both paths. Once setup is over, turn parity names the first player.
+ */
+function projectFirstPlayer(state: State, ctx: IidContext): NeutralPlayerId | null {
+  if (ctx.firstPlayer !== null) { return ctx.firstPlayer; }
+  if (state.phase !== GamePhase.SETUP) {
+    const firstIndex = state.turn % 2 === 1 ? state.activePlayer : 1 - state.activePlayer;
+    return indexToPlayerId(firstIndex);
+  }
+  const decided = state.prompts.some(p => p instanceof ShuffleDeckPrompt
+    || (p instanceof ConfirmPrompt && p.message === GameMessage.GO_FIRST && p.result !== undefined));
+  return decided ? indexToPlayerId(state.activePlayer) : null;
+}
+
 export function projectState(state: State, ctx: IidContext): NeutralState {
   const lastAttack = projectPlayerLastAttack(state); // CF-15
   const detached = detachedResolvingCards(state);
@@ -738,7 +776,7 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     schemaVersion: SCHEMA_VERSION,
     turn: state.turn,
     activePlayer: indexToPlayerId(state.activePlayer),
-    firstPlayer: ctx.firstPlayer, // game constant, echoed from initialState (engine State has no such field)
+    firstPlayer: projectFirstPlayer(state, ctx), // echoed from initialState, or derived after a pre-deal import (CF-84)
     phase: PHASE_PROJECT[state.phase] ?? 'main',
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),

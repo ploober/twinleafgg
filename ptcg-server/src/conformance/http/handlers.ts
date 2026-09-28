@@ -61,7 +61,31 @@ export function handleStep(body: unknown): StepResponse {
     throw new BadRequestError('`actions` is required and must be an array');
   }
   const { initialState, actions } = body as unknown as StepRequestBody;
+  if (initialState.phase === 'setup') {
+    assertPreDeal(initialState);
+  }
   return step(initialState, actions);
+}
+
+/**
+ * CF-84: the ONLY `phase: setup` initialState is the pre-deal state — `turn: 0`, `firstPlayer: null`,
+ * and for each player an empty board, hand, prizes, discard, Lost Zone and staging zone, with `deck` the
+ * ordered deck list. Mid-setup positions are reached by replaying actions from it, never imported.
+ */
+function assertPreDeal(s: StepRequestBody['initialState']): void {
+  const bad = (why: string) => { throw new BadRequestError(`phase "setup" initialState must be the pre-deal state (CF-84): ${why}`); };
+  if (s.turn !== 0) { bad('turn must be 0'); }
+  if (s.firstPlayer !== null) { bad('firstPlayer must be null'); }
+  if (s.stadium) { bad('stadium must be null'); }
+  for (const id of ['A', 'B'] as const) {
+    const p = s.players?.[id];
+    if (!p) { bad(`players.${id} is required`); }
+    if (p.active) { bad(`players.${id}.active must be null`); }
+    for (const zone of ['bench', 'hand', 'prizes', 'discard', 'lostZone', 'resolving'] as const) {
+      if ((p[zone] ?? []).length > 0) { bad(`players.${id}.${zone} must be empty`); }
+    }
+    if (!Array.isArray(p.deck) || p.deck.length === 0) { bad(`players.${id}.deck must list the deck`); }
+  }
 }
 
 /** The `GET /v1/capabilities` payload. */

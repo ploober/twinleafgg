@@ -1,5 +1,6 @@
 import { ConfirmPrompt } from '../../game/store/prompts/confirm-prompt';
 import { LegalAction } from '../neutral-types';
+import { GameMessage } from '../../game/game-message';
 import { PromptDecomposer, realPicks, buildPending } from './decomposer';
 
 /**
@@ -15,9 +16,11 @@ export const confirmDecomposer: PromptDecomposer<ConfirmPrompt> = {
     if (realPicks(picks).length >= 1) {
       return null; // single yes/no answer chosen
     }
+    // CF-84: the setup flip winner's go-first choice is tagged so it cannot be mistaken for a "you may".
+    const goFirst = prompt.message === GameMessage.GO_FIRST ? { op: 'goFirst' as const } : {};
     const legalActions: LegalAction[] = [
-      { type: 'confirm', value: true },
-      { type: 'confirm', value: false },
+      { type: 'confirm', value: true, ...goFirst },
+      { type: 'confirm', value: false, ...goFirst },
     ];
     return buildPending(prompt, state, legalActions);
   },

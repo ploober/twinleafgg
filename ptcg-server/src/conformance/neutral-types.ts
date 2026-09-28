@@ -124,6 +124,8 @@ export interface PokemonInPlay {
   /** Present only when raised above the default 10 by an effect. */
   poisonDamagePerTurn?: number;
   markers: PokemonMarkers;
+  /** CF-84: true only during setup, from placement until the reveal. Omitted (= false) otherwise. */
+  faceDown?: boolean;
 }
 
 /** Rules-observable per-turn / per-game gates (not raw engine bookkeeping). */
@@ -225,8 +227,9 @@ export interface NeutralState {
   /** Turn counter — drives "this/last turn" and first-turn rules. */
   turn: number;
   activePlayer: NeutralPlayerId;
-  /** Who took the game's first turn (first-turn restrictions key on this). */
-  firstPlayer: NeutralPlayerId;
+  /** Who took the game's first turn (first-turn restrictions key on this). CF-84: `null` only during
+   *  setup, before the goFirst decision resolves; projected from the engine from then on. */
+  firstPlayer: NeutralPlayerId | null;
   phase: Phase;
   outcome: Outcome;
   stadium: StadiumRef | null;
@@ -538,6 +541,7 @@ export type NeutralEvent =
   | { kind: 'draw'; player: NeutralPlayerId; count: number }
   | { kind: 'damaged'; player: NeutralPlayerId; target: string; hp: number } // target = basic iid (CF-60); hp = net HP this step
   | { kind: 'ko'; player: NeutralPlayerId; target: string }                  // target = basic iid (CF-60)
+  | { kind: 'mulliganRevealed'; player: NeutralPlayerId; hand: string[] }     // CF-84: one per mulligan, the revealed iids
   // `healed` (event-vocabulary standardization 2026-09-02): the inverse of `damaged` — hp removed from
   // `target` (basic iid, CF-60). Compared summed per (player,target) per step, exactly like `damaged`.
   | { kind: 'healed'; player: NeutralPlayerId; target: string; hp: number }
@@ -586,7 +590,7 @@ export type ResponseStatus = 'awaitingAction' | 'gameOver' | 'invalidAction';
  * literal off the prompt (a `dealDamage` unit), never when a card computes it or when the prompt
  * distributes counters "in any way you like" (rides uncompared, migration plan §2a).
  */
-export type DecisionOp = 'select' | 'placeCounters' | 'dealDamage' | 'discard' | 'moveTo' | 'heal' | 'attach' | 'reveal' | 'switch';
+export type DecisionOp = 'select' | 'placeCounters' | 'dealDamage' | 'discard' | 'moveTo' | 'heal' | 'attach' | 'reveal' | 'switch' | 'goFirst';
 export type DecisionDestination = 'discardPile' | 'lostZone' | 'deck' | 'deckBottom' | 'hand' | 'bench' | 'active' | 'prizes';
 export interface DecisionAttrs {
   op?: DecisionOp;
