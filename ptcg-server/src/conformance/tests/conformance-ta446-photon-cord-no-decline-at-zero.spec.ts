@@ -71,22 +71,27 @@ function board(withBench: boolean): NeutralState {
 }
 
 const attack: NeutralAction = { actor: 'B', type: 'declareAttack', source: 'b1', name: 'Pouncing Trap' };
-const move: NeutralAction = { actor: 'A', type: 'moveEnergy', card: 'a1e0', target: 'a2', source: 'a1' } as NeutralAction;
+// The explicit A:moveEnergy this spec once sent is no longer needed: the forced move is applied atomically (TA-463).
 
 describe('TA-446 Photon Cord pbl-028 floors a non-attack "up to X" at 1 (no decline at zero)', () => {
-  it('the KO window offers moveEnergy but NOT confirm{value:false}', () => {
+  // TA-463 / CF-14 (2026-09-28): with exactly one eligible [L] and one Benched Pokémon the floored move is
+  // FORCED (min 1 = max 1 in effect), so the driver applies it atomically — the assertion is the EFFECT, never
+  // a surfaced pending (cf14-assert-effect-not-pending; FX-0331's relocation exclusion, which surfaced it to
+  // agree with rotomancer's RE-60-shape non-conformance, is reverted). Under a min:0 mutation the prompt
+  // regains its decline, is no longer forced, and SURFACES — the Energy then does NOT land after the attack
+  // alone, which is what keeps this the min-floor guard.
+  it('the floored move is forced and applied: after the KO-ing attack alone the [L] is on the Benched Pokémon', () => {
     const r = step(board(true), [attack]);
-    const la = r.pending?.legalActions ?? [];
-    expect(la.some(a => (a as { type: string }).type === 'moveEnergy')).toBe(true);
-    expect(la.some(a => (a as { type: string }).type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(false);
-  });
-
-  it('control — moving the one eligible Energy still works (lands on the Benched Pokémon)', () => {
-    const r = step(board(true), [attack, move]);
-    const benched = r.state.players.A.bench.filter(p => p !== null) as PokemonInPlay[];
-    const receiver = benched.find(p => p.stack[p.stack.length - 1].printing === BRUTE_BONNET);
+    const all = [r.state.players.A.active, ...r.state.players.A.bench].filter(p => p !== null) as PokemonInPlay[];
+    const receiver = all.find(p => p.stack[p.stack.length - 1].printing === BRUTE_BONNET);
     expect(receiver).toBeDefined();
     expect(receiver!.energy.map(e => e.printing)).toContain(LIGHTNING);
+  });
+
+  it('no decline was ever on offer: the pending after the attack is not a confirm{value:false}', () => {
+    const r = step(board(true), [attack]);
+    const la = r.pending?.legalActions ?? [];
+    expect(la.some(a => (a as { type: string }).type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(false);
   });
 
   it('feasibility — with NO Benched Pokémon the KO resolves without forcing an impossible move', () => {

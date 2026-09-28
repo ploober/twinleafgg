@@ -78,15 +78,15 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   // decision, and `next` then decides whether anything further is offered (nothing left -> done).
   // Keyed on forcedness (`allowCancel === false`), never on count alone (TA-190's lesson).
   //
-  // TA-446 (2026-09-21): this fires only for a genuine zone-ATTACH (ssp-059 discard, asc-026 hand),
-  // NEVER for an in-play RELOCATION (CF-34 `moveEnergy`). A forced max>1 relocation — Photon Cord
-  // pbl-028's "move up to 2 [L] from this Pokemon to a Benched Pokemon" with one eligible Energy — is
-  // SURFACED by rotomancer (`effect.moveEnergy (A)`), not auto-applied, so collapsing it here manufactured
-  // a divergence once #2301 floored the min at 1. The sibling move-energy decomposer already collapses a
-  // relocation only at `max === 1` (its `atomicResolvable`); align the two by excluding relocations here.
-  atomicStep: (prompt, _picks, state) =>
-    prompt.options.allowCancel === false
-    && !prompt.cardList.cards.some(c => c.superType === SuperType.ENERGY && findPokemonSlot(state, c) !== undefined),
+  // TA-463 / CF-14 (2026-09-28): FX-0331 (2026-09-21) had excluded every in-play RELOCATION from this gate
+  // so that Photon Cord pbl-028 ("move up to 2 [L] ... to 1 of your Benched Pokemon", one eligible Energy,
+  // one bencher) would agree with rotomancer, which SURFACES that forced single move. That surfacing is
+  // rotomancer's own CF-14 non-conformance (RE-174, the RE-60 shape), not a convention to match — and the
+  // exclusion bought agreement on Photon Cord at the price of correctness on Heavy Baton tef-151, where
+  // rotomancer DOES apply the forced relocation: the lone pick was surfaced as a 1-option moveEnergy with
+  // the KO unresolved, the only FAIL of the 2026-09-28 scenario suite. A forced single relocation has no
+  // decision content and collapses exactly like a forced single attach (TA-400). Correctness, not agreement.
+  atomicStep: prompt => prompt.options.allowCancel === false,
 
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
