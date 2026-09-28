@@ -8991,6 +8991,16 @@
       "fixes": [
         "FX-0332"
       ]
+    },
+    {
+      "file": "conformance/decomposers/attach-energy.ts",
+      "signatures": [
+        "atomicStep: prompt => prompt.options.allowCancel === false,"
+      ],
+      "note": "TA-463 (2026-09-27): TA-463: restore the CF-14 forced-step collapse for in-play relocations — revert FX-0331's attach-energy atomicStep exclu",
+      "fixes": [
+        "FX-0333"
+      ]
     }
   ]
 }
