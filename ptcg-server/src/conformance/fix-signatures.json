@@ -8981,6 +8981,16 @@
       "fixes": [
         "FX-0331"
       ]
+    },
+    {
+      "file": "game/store/prompts/shuffle-prompt.ts",
+      "signatures": [
+        "this.zone = options.zone ?? 'deck';"
+      ],
+      "note": "TA-462 (2026-09-27): twinleaf declares the shuffled pile: ShuffleDeckPrompt gains options.zone (default deck); Grand Wing por-009 + Special R",
+      "fixes": [
+        "FX-0332"
+      ]
     }
   ]
 }
