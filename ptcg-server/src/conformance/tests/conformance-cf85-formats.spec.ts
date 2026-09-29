@@ -70,7 +70,7 @@ describe('CF-85 formats', () => {
     expect(handleCards('bs', 'standard').cards.length).toBeLessThan(handleCapabilities().sets['bs']);
   });
 
-  it('TA-469: the corrected regulation marks put the right printings in Standard', () => {
+  it('the corrected regulation marks put the right printings in Standard [TA-469 scr-134]', () => {
     const std = (set: string) => handleCards(set, 'standard').cards.map(c => c.printing);
     // printed H (twinleaf had G): Standard-legal
     for (const [set, p] of [['scr', 'scr-134'], ['scr', 'scr-080'], ['scr', 'scr-161'], ['sfa', 'sfa-043'], ['twm', 'twm-006']]) {
