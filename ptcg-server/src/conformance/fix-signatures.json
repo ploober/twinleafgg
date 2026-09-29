@@ -9001,6 +9001,56 @@
       "fixes": [
         "FX-0333"
       ]
+    },
+    {
+      "file": "set-stellar-crown/deluxe-bomb.ts",
+      "signatures": [
+        "  public regulationMark = 'H';"
+      ],
+      "note": "TA-469 (2026-09-28): TA-469: correct regulation marks on five in-pool printings — scr-089 Garganacl ex G; scr-134 Deluxe Bomb, scr-080/161 Me",
+      "fixes": [
+        "FX-0334"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/garganacl-ex.ts",
+      "signatures": [
+        "  public regulationMark = 'G';"
+      ],
+      "note": "TA-469 (2026-09-28): regulation mark corrected to the printed one",
+      "fixes": [
+        "FX-0334"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/medicham-ex.ts",
+      "signatures": [
+        "  public regulationMark = 'H';"
+      ],
+      "note": "TA-469 (2026-09-28): regulation mark corrected to the printed one",
+      "fixes": [
+        "FX-0334"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/varoom.ts",
+      "signatures": [
+        "  public regulationMark = 'H';"
+      ],
+      "note": "TA-469 (2026-09-28): regulation mark corrected to the printed one",
+      "fixes": [
+        "FX-0334"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/sunkern.ts",
+      "signatures": [
+        "  public regulationMark = 'H';"
+      ],
+      "note": "TA-469 (2026-09-28): regulation mark corrected to the printed one",
+      "fixes": [
+        "FX-0334"
+      ]
     }
   ]
 }
