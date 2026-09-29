@@ -35,7 +35,7 @@ export class Archaludonex extends PokemonCard {
     {
       name: 'Assemble Alloy',
       powerType: PowerType.ABILITY,
-      text: 'When you play this Pokémon from your hand to evolve 1 of your Pokemon during your turn, you may attach 2 Basic [M] Energy from your discard pile to your [M] Pokémon in any way you like.',
+      text: 'When you play this Pokémon from your hand to evolve 1 of your Pokemon during your turn, you may attach up to 2 Basic [M] Energy cards from your discard pile to your [M] Pokémon in any way you like.',
     },
   ];
 
@@ -95,7 +95,7 @@ export class Archaludonex extends PokemonCard {
                 PlayerType.BOTTOM_PLAYER,
                 [SlotType.ACTIVE, SlotType.BENCH],
                 { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Metal Energy' },
-                { allowCancel: false, min: 0, max: 2, blockedTo: blocked2 },
+                { allowCancel: false, min: 1, max: 2, blockedTo: blocked2 }, // TA-468: the accepted may floors "up to 2" at 1 (B.18, #2301)
               ),
               (transfers) => {
                 transfers = transfers || [];
