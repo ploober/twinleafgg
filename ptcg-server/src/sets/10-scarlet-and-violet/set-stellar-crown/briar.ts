@@ -19,6 +19,8 @@ export class Briar extends TrainerCard {
 During this turn, if your opponent's Active Pokémon is Knocked Out by damage from an attack used by your Tera Pokémon, take 1 more Prize card.`;
 
   public extraPrizes = false;
+  // TA-477: "during this turn" - the extra Prize is owed only on the turn Briar was played.
+  public extraPrizesTurn = -1;
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -49,6 +51,7 @@ During this turn, if your opponent's Active Pokémon is Knocked Out by damage fr
       }
 
       this.extraPrizes = true;
+      this.extraPrizesTurn = state.turn;
       return state;
     }
 
@@ -64,7 +67,7 @@ During this turn, if your opponent's Active Pokémon is Knocked Out by damage fr
       // Check if the knocked out Pokémon belongs to the opponent and if extra prize should be taken
       if (effect.target === player.active) {
         const attackingPokemon = opponent.active;
-        if (attackingPokemon.isTera() && this.extraPrizes) {
+        if (attackingPokemon.isTera() && this.extraPrizes && this.extraPrizesTurn === state.turn) {
           if (effect.prizeCount > 0) {
             effect.prizeCount += 1;
           }
