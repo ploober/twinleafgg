@@ -67,6 +67,8 @@ export function initNextTurn(store: StoreLike, state: State): State {
     // was credited to an already-rotated counter and lingered a full turn.
     player.prizesTakenLastTurn = player.prizesTakenThisTurn;
     player.prizesTakenThisTurn = 0;
+    // TA-471: "played a Supporter this turn" holds through the KO window and checkup.
+    player.supporterTurn = 0;
   }
 
   if (state.phase === GamePhase.BETWEEN_TURNS) {
@@ -549,12 +551,13 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
     // Clear attack-sourced play locks after the locked player's turn(s)
     player.tickPlayLocksAtEndOfTurn();
 
-    player.supporterTurn = 0;
     player.active.attacksThisTurn = 0;
 
-    // NOTE: the prizesTaken tally rotation happens in `initNextTurn`, atomic
-    // with the turn advance — an attack-KO's prize prompts resolve after this
-    // handler, so rotating here would credit the take to the wrong turn.
+    // NOTE: the prizesTaken tally rotation AND the supporterTurn reset happen in
+    // `initNextTurn`, atomic with the turn advance — an attack-KO's prize prompts
+    // resolve after this handler, and that KO window is still this turn (TA-471:
+    // zeroing supporterTurn here projected "no Supporter played this turn" while
+    // the attacking player was still taking Prizes).
 
     if (player === undefined) {
       throw new GameError(GameMessage.NOT_YOUR_TURN);
