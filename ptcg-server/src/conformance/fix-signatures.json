@@ -994,7 +994,10 @@
         "const hasEnergy = effect.opponent.active.cards.some(c => c.superType === SuperType.ENERGY);",
         "const target = StateUtils.getTarget(state, effect.player, transfers[0].from);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0134"
+      ]
     },
     {
       "file": "set-destined-rivals/ethans-pinsir.ts",
@@ -3749,7 +3752,10 @@
         "// TA-134: this was index 1 (\"Pitch-Black Fangs\"). \"Flip 2 coins\" belongs to attack 0, \"Double // Hit\" — the off-by-one silently gave Double Hit its flat base 40 on every flip outcome AND made // the plain 100-damage Pitch-Black Fangs raise two coin flips it never asks for."
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0129"
+      ]
     },
     {
       "file": "set-destined-rivals/annihilape.ts",
@@ -4096,7 +4102,10 @@
         "public evolvesFrom = \"Team Rocket's Nidoran♀\";"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0126"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-nidorino.ts",
@@ -4774,7 +4783,10 @@
         "// \"If your opponent's Active Pokémon is an Evolution Pokémon, this attack does 140 more damage, // AND discard all Energy from this Pokémon.\" Both riders share the SAME condition — a non-Basic // (Evolution) opponent Active. Pre-fix the discard ran unconditionally (TA-137), contradicting"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0126"
+      ]
     },
     {
       "file": "set-twilight-masquerade/illumise.ts",
@@ -4843,7 +4855,10 @@
         "PlayerType, StateUtils"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0126"
+      ]
     },
     {
       "file": "set-ascended-heroes/erikas-tangela.ts",
@@ -5249,7 +5264,10 @@
         "// \"Discard ANY AMOUNT of [R] Energy\" — zero is a legal amount, so min is 0 (TA-136): the // player may decline, dealing 0 damage. { min: 0, max: totalEnergy, allowCancel: false, blockedFrom, blockedMap }"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0126"
+      ]
     },
     {
       "file": "set-phantasmal-flames/reshiram.ts",
