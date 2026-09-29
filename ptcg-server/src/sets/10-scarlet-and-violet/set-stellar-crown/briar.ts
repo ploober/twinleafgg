@@ -1,4 +1,4 @@
-import { GameError, GameMessage, GamePhase, Player, State, StateUtils, StoreLike, TrainerCard, TrainerType, PokemonCard } from '../../../game';
+import { GameError, GameMessage, GamePhase, Player, State, StateUtils, StoreLike, TrainerCard, TrainerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
@@ -24,11 +24,8 @@ During this turn, if your opponent's Active Pokémon is Knocked Out by damage fr
     if (player.supporterTurn > 0) {
       return false;
     }
-    const hasPokemon = player.discard.cards.some(c => c instanceof PokemonCard);
-    if (!hasPokemon) {
-      return false;
-    }
-    return true;
+    // TA-476: the only printed play condition is the opponent's 2 remaining Prizes (no discard requirement).
+    return StateUtils.getOpponent(state, player).getPrizeLeft() === 2;
   }
 
 
