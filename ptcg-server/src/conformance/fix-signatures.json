@@ -62,14 +62,20 @@
         "{ allowCancel: false, min: 0, max: 2 }",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-ascended-heroes/registeel-ex.ts",
       "signatures": [
         "{ allowCancel: false, min: 0, max: 2 }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-black-bolt-white-flare/reshiram-ex.ts",
@@ -77,7 +83,10 @@
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, damageEffect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-destined-rivals/dwebble.ts",
@@ -125,7 +134,10 @@
         "effect.player.active.damageReductionNextTurn = 50;",
         "name: 'Evil Incineration',"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-murkrow.ts",
@@ -134,7 +146,10 @@
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
         "return SHUFFLE_DECK(store, state, player);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-pupitar.ts",
@@ -223,7 +238,10 @@
         "and wrongly deals 20 instead of 0. [TA-22]",
         "// TA-402 (TA-258 family, rulebook Step F / #649): the 20x lands BEFORE the \"Then, shuffle"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-mega-evolution/mega-absol-ex.ts",
@@ -231,7 +249,10 @@
         "const dealDamage = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, dealDamage);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-mega-evolution/steelix.ts",
@@ -247,7 +268,10 @@
         "const dealDamage = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, dealDamage);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-phantasmal-flames/haunter.ts",
@@ -287,7 +311,10 @@
         "const hasDuskullInDiscard = player.discard.cards.some(c => {",
         "if (!hasDuskullInDiscard || max === 0) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-shrouded-fable/iron-moth.ts",
@@ -320,7 +347,8 @@
       ],
       "note": "TA-306 is a MOVE, not an addition: the `if (!opponent.active.cards.some(... ENERGY))` guard exists in BOTH the buggy and the fixed file, only at a different depth, so no substring of the guard itself can tell them apart ([[a-deletion-cannot-be-a-signature]]). The TA-306 comment line is the marker that only exists post-fix; do not delete it without replacing this signature. goldeen.ts additionally gains the damage-first block, which IS new code.",
       "fixes": [
-        "FX-0062"
+        "FX-0062",
+        "FX-0189"
       ],
       "state": "guarding"
     },
@@ -340,14 +368,20 @@
         "const dealDamage = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, dealDamage);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-stellar-crown/slowpoke.ts",
       "signatures": [
         "const hasPokemonInDiscard = player.discard.cards.some(c => c.superType === SuperType.POKEMON);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-stellar-crown/toedscool.ts",
@@ -385,7 +419,10 @@
         "&& playerLastAttackInfo?.turn === state.turn - 2) {",
         "if (originalCard && originalCard !== this"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-surging-sparks/pikachu-ex.ts",
@@ -393,7 +430,10 @@
         "const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);",
         "const damageEffect = new DealDamageEffect(effect, effect.damage);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-surging-sparks/slakoth.ts",
@@ -448,7 +488,10 @@
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
         "state = store.reduceEffect(state, damageEffect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-temporal-forces/minccino.ts",
@@ -464,7 +507,10 @@
         "player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {",
         "const damageEffect = new DealDamageEffect(effect, effect.damage);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-temporal-forces/zeraora.ts",
@@ -488,7 +534,10 @@
         "if (stadiumCard) {",
         "const dealDamage = new DealDamageEffect(effect, 10);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-twilight-masquerade/walking-wake.ts",
@@ -504,7 +553,10 @@
         "const hasBench = opponent.bench.some(b => b.cards.length > 0);",
         "GameMessage.CHOOSE_ENERGIES_TO_DECK,"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0189"
+      ]
     },
     {
       "file": "set-black-bolt-white-flare/gothorita.ts",
@@ -3008,8 +3060,11 @@
       "signatures": [
         "public cardType: CardType[] = [P];"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | ATTESTED link FX-0205: twinleaf 1e1e708da (FX-0205 codemod) changed Pumpkaboo XY cardType G -> P; upstream 7a35128f0 (CardType[] refactor) rewrote the line to CardType[] = [P]; upstream 41382b814 now carries [P] (absorbed)",
+      "state": "guarding",
+      "fixes": [
+        "FX-0205"
+      ]
     },
     {
       "file": "set-burning-shadows/tapu-bulu-gx.ts",
