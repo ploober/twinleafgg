@@ -9051,6 +9051,26 @@
       "fixes": [
         "FX-0334"
       ]
+    },
+    {
+      "file": "conformance/decomposers/move-energy.ts",
+      "signatures": [
+        "  atomicStep: prompt => prompt.options.allowCancel === false,"
+      ],
+      "note": "TA-467 (2026-09-28): TA-467: move-energy gets the step-level atomicStep gate (CF-14) — N's Plan blk-083's forced single 'up to 2' move (one E",
+      "fixes": [
+        "FX-0335"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/archaludon-ex.ts",
+      "signatures": [
+        "                { allowCancel: false, min: 1, max: 2, blockedTo: blocked2 }, // TA-468: the accepted may floors \"up to 2\" at 1 (B.18, #2301)"
+      ],
+      "note": "TA-468 (2026-09-28): TA-468: Assemble Alloy ssp-130 — the accepted may floors 'up to 2' at 1 (B.18, #2301): AttachEnergyPrompt min 0 -> 1; ab",
+      "fixes": [
+        "FX-0336"
+      ]
     }
   ]
 }
