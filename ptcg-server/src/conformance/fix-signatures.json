@@ -9071,6 +9071,36 @@
       "fixes": [
         "FX-0336"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-phase-effect.ts",
+      "signatures": [
+        "    // TA-471: \"played a Supporter this turn\" holds through the KO window and checkup."
+      ],
+      "note": "TA-471 (2026-09-29): TA-471: supporterTurn resets in initNextTurn (the turn advance), not the EndTurnEffect handler - 'played a Supporter thi",
+      "fixes": [
+        "FX-0337"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/briar.ts",
+      "signatures": [
+        "    return StateUtils.getOpponent(state, player).getPrizeLeft() === 2;"
+      ],
+      "note": "TA-476 (2026-09-29): TA-476: Briar scr-132 canPlay is the printed condition (opponent at exactly 2 Prizes); the unprinted discard-Pokemon req",
+      "fixes": [
+        "FX-0338"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/briar.ts",
+      "signatures": [
+        "        if (attackingPokemon.isTera() && this.extraPrizes && this.extraPrizesTurn === state.turn) {"
+      ],
+      "note": "TA-477 (2026-09-29): TA-477: Briar scr-132's extra Prize is keyed to the turn it was played (extraPrizesTurn === state.turn) - a KO-less Bria",
+      "fixes": [
+        "FX-0339"
+      ]
     }
   ]
 }
