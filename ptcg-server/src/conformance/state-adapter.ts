@@ -526,6 +526,24 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
   };
 }
 
+/**
+ * CF-86 (B.68, pinned 2026-09-29): the deck's cards in their projected order while a BOTTOM-SEGMENT
+ * shuffle is open ("Shuffle the other cards and put them on the bottom of your deck" — Metal Maker
+ * tef-114, Delibird J-MEE). The engine (SHUFFLE_BOTTOM_OF_DECK) pushes the remainder onto the bottom
+ * and THEN raises the shuffle, so at the open ShuffleDeckPrompt the segment already sits at the bottom.
+ * The printed text shuffles first and puts on the bottom second: until the shuffle is answered the pile
+ * has not been put anywhere, so it projects where it came from — the top of the deck, in pile order —
+ * exactly as CF-61 places any deck-sourced pile mid-effect (rotomancer's shape). Projection only: the
+ * engine's own order is untouched, and a resolved prompt (result set) projects the deck as it stands.
+ */
+function deckInFlight(state: State, player: Player): Card[] {
+  const cards = player.deck.cards;
+  const open = state.prompts.find(p => p instanceof ShuffleDeckPrompt && p.playerId === player.id
+    && p.result === undefined && (p.bottomCount ?? 0) > 0) as ShuffleDeckPrompt | undefined;
+  const n = open ? Math.min(open.bottomCount as number, cards.length) : 0;
+  return n > 0 && n < cards.length ? [...cards.slice(cards.length - n), ...cards.slice(0, cards.length - n)] : cards;
+}
+
 function projectPlayer(ctx: IidContext, state: State, player: Player, turn: number,
     resolvingExtra: Card[] = [], deckTopExtra: Card[] = []): PlayerState {
   // Dedup the look-pile extras against themselves (one pile is referenced by both a ChooseCards and an
@@ -567,7 +585,7 @@ function projectPlayer(ctx: IidContext, state: State, player: Player, turn: numb
       .filter(b => b.getPokemonCard() !== undefined)
       .map(b => projectPip(ctx, state, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
-    deck: [...deckTopKept, ...player.deck.cards].map(c => cardRef(ctx, c)),
+    deck: [...deckTopKept, ...deckInFlight(state, player)].map(c => cardRef(ctx, c)),
     discard: player.discard.cards.map(c => cardRef(ctx, c)),
     lostZone: player.lostzone.cards.map(c => cardRef(ctx, c)),
     prizes,

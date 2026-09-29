@@ -3268,6 +3268,21 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);
   });
 
+  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder projects at the TOP of the deck, in pile order [CF-86 / B.68 tef-114]', () => {
+    // The engine bottoms the remainder and THEN raises the shuffle; the printed text shuffles first and
+    // puts on the bottom second, so until the answer the pile has not moved (CF-61 source zone).
+    const deck = Array.from({ length: 6 }, (_, i) => ({ iid: `d${i}`, printing: WATER }));
+    const b = () => board(
+      player({ active: inPlay('A-act', ['tef-114']), deck }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Metal Maker' } as unknown as NeutralAction;
+    const paused = step(b(), [use]);
+    expect(paused.state.players.A.deck.map(c => c.iid)).toEqual(['d0', 'd1', 'd2', 'd3', 'd4', 'd5']);
+    const after = step(b(), [use, { actor: 'system', type: 'shuffle', order: ['d3', 'd2', 'd1', 'd0'] } as unknown as NeutralAction]);
+    expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);   // at rest: bottomed
+  });
+
   it('Smog Signals with Bench space still resolves (and shuffles) over an EMPTY deck (#2171) [TA-396d dri-125]', () => {
     // `if (deck.length === 0 || openSlots.length === 0) return state;` skipped the mandated search and
     // its shuffle at deck 0; only the bench-full half is #2171's carve-out. A's Koffing is hit by
