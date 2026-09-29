@@ -13,15 +13,15 @@ import { getValidFormats } from '../backend/controllers/decks';
  * dates, regulation marks, the Expanded ban list, the any-printing reprint rule), not a second copy of it —
  * the point is to test what twinleaf believes, so the adapter must not substitute a belief of its own.
  *
- * Rules: twinleaf models no rule difference between Standard and Expanded for the SV-era mechanics the pool
- * exercises, so a format changes the card pool claim and the echo, and nothing in play.
+ * Formats (CF-85, contract 0.10.0): `standard` (today's rotation) and `unlimited` (every card, under the engine's
+ * ordinary rules — `expanded` was unpinned). A format changes the card-pool claim and the echo, nothing in play.
  */
-export const SERVED_FORMATS = ['standard', 'expanded'] as const;
+export const SERVED_FORMATS = ['standard', 'unlimited'] as const;
 export type ServedFormat = typeof SERVED_FORMATS[number];
 
 const ENGINE_FORMAT: Record<ServedFormat, Format> = {
   standard: Format.STANDARD,
-  expanded: Format.EXPANDED,
+  unlimited: Format.UNLIMITED,
 };
 
 /** A format the engine does not advertise. Maps to HTTP 400 on both endpoints (CF-85). */

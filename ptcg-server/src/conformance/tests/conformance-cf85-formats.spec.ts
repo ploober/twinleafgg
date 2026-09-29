@@ -11,7 +11,7 @@ import { NeutralState, PlayerState, PlayerFlags, PokemonInPlay, CardRef, SCHEMA_
  *
  * Mutation guard: drop the echo and the two echo cells fail; drop `resolveFormat` from the step handler and the
  * refusal cell fails; drop the legality filter from `buildCardsForSet` and the Standard/Expanded split cell
- * fails (tef-140 is regulation mark G: Expanded, not Standard).
+ * fails (tef-140 is regulation mark G: Unlimited, not Standard).
  */
 
 const RALTS = 'sit-067';
@@ -40,11 +40,11 @@ function board(format?: string): NeutralState {
 
 describe('CF-85 formats', () => {
   it('declares the formats it serves', () => {
-    expect(handleCapabilities().formats).toEqual(['standard', 'expanded']);
+    expect(handleCapabilities().formats).toEqual(['standard', 'unlimited']);
   });
 
   it('echoes the board format in the response state', () => {
-    expect(step(board('expanded'), []).state.format).toBe('expanded');
+    expect(step(board('unlimited'), []).state.format).toBe('unlimited');
     expect(step(board('standard'), []).state.format).toBe('standard');
   });
 
@@ -58,11 +58,15 @@ describe('CF-85 formats', () => {
     expect(() => handleCards('tef', 'glc')).toThrowError(UnsupportedFormatError);
   });
 
-  it('lists per-format legality: a regulation-mark G card is Expanded, not Standard', () => {
+  it('lists per-format legality: a regulation-mark G card is Unlimited, not Standard', () => {
     const std = handleCards('tef', 'standard').cards.map(c => c.printing);
-    const exp = handleCards('tef', 'expanded').cards.map(c => c.printing);
-    expect(exp).toContain('tef-140');
+    const unl = handleCards('tef', 'unlimited').cards.map(c => c.printing);
+    expect(unl).toContain('tef-140');
     expect(std).not.toContain('tef-140');
-    expect(std.length).toBeLessThan(exp.length);
+    expect(std.length).toBeLessThan(unl.length);
+    // Unlimited is every implemented card; Standard is a strict subset (Base Set keeps only Basic Energy and the
+    // Trainers twinleaf's any-printing list treats as reprints — a claim the legality check judges, not this spec).
+    expect(handleCards('bs', 'unlimited').cards.length).toBe(handleCapabilities().sets['bs']);
+    expect(handleCards('bs', 'standard').cards.length).toBeLessThan(handleCapabilities().sets['bs']);
   });
 });
