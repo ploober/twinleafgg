@@ -8,7 +8,7 @@ import { StateUtils } from '../../../game/store/state-utils';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
 
 export class DeluxeBomb extends TrainerCard {
-  public regulationMark = 'G';
+  public regulationMark = 'H';
   protected _tags = [CardTag.ACE_SPEC];
   public trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'SCR';

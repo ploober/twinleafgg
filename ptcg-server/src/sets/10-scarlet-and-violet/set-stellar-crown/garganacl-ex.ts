@@ -31,7 +31,7 @@ export class Garganaclex extends PokemonCard {
     text: 'During your opponent\'s next turn, this Pokémon takes 60 less damage from attacks (after applying Weakness and Resistance).'
   }];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
   public set: string = 'SCR';
   public setNumber: string = '89';
   public cardImage: string = 'assets/cardback.png';

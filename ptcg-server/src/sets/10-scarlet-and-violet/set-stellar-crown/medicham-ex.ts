@@ -10,7 +10,7 @@ import { CheckHpEffect } from '../../../game/store/effects/check-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Medichamex extends PokemonCard {
-  public regulationMark = 'G';
+  public regulationMark = 'H';
 
   protected _tags = [CardTag.POKEMON_ex];
 

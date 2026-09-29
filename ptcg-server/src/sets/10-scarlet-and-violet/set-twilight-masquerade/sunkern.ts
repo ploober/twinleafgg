@@ -22,7 +22,7 @@ export class Sunkern extends PokemonCard {
 
   public set: string = 'TWM';
 
-  public regulationMark = 'G';
+  public regulationMark = 'H';
 
   public cardImage: string = 'assets/cardback.png';
   public fullName: string = 'Sunkern TWM';
