@@ -74,6 +74,14 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
    */
   atomicResolvable: prompt => prompt.options.max === 1,
 
+  // TA-467 / CF-14 (2026-09-28): the STEP-level gate, as attach-energy has had since TA-400/TA-463. A
+  // multi-transfer prompt (`max > 1`) whose CURRENT step has exactly one legal (card, destination) pair and
+  // offers no stop has no decision content — N's Plan blk-083 ("move up to 2", floored at 1 by #2301) with one
+  // Basic Energy on one bencher surfaced a 1-option moveEnergy while rotomancer (since RE-174) applies it. The
+  // driver only consults this when the step has one candidate and `!canStopNow`; `next` then decides whether
+  // anything further is offered. Keyed on forcedness (`allowCancel === false`), never on count alone (TA-190).
+  atomicStep: prompt => prompt.options.allowCancel === false,
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;
