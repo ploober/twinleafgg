@@ -1,7 +1,7 @@
 import { step } from '../driver';
 import { handleStep, handleCards, handleCapabilities } from '../http/handlers';
 import { UnsupportedFormatError } from '../formats';
-import { NeutralState, PlayerState, PlayerFlags, CardRef, SCHEMA_VERSION } from '../neutral-types';
+import { NeutralState, PlayerState, PlayerFlags, PokemonInPlay, CardRef, SCHEMA_VERSION } from '../neutral-types';
 
 /**
  * CF-85 — format on the wire. twinleaf declares `formats: [standard, expanded]`, accepts a board's `format`
@@ -14,21 +14,27 @@ import { NeutralState, PlayerState, PlayerFlags, CardRef, SCHEMA_VERSION } from 
  * fails (tef-140 is regulation mark G: Expanded, not Standard).
  */
 
+const RALTS = 'sit-067';
 const GRASS = 'sve-001';
 function flags(): PlayerFlags {
   return { supporterPlayedThisTurn: false, energyAttachedThisTurn: false, stadiumPlayedThisTurn: false, retreatedThisTurn: false, cardsPlayedThisTurn: 0, prizesTakenThisTurn: 0, prizesTakenLastTurn: 0, vstarUsed: false };
 }
-function deck(tag: string): CardRef[] {
-  return Array.from({ length: 20 }, (_, i) => ({ iid: `${tag}${i}`, printing: i === 0 ? 'sit-060' : GRASS }));
+function mon(iid: string): PokemonInPlay {
+  return {
+    stack: [{ iid, printing: RALTS }], energy: [], tools: [], damage: 0, conditions: [],
+    markers: { playedOnTurn: 1, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false },
+  };
 }
-function player(d: CardRef[]): PlayerState {
-  return { active: null, bench: [], hand: [], deck: d, discard: [], lostZone: [], prizes: [], flags: flags() };
+function player(tag: string): PlayerState {
+  const deck: CardRef[] = Array.from({ length: 10 }, (_, i) => ({ iid: `${tag}d${i}`, printing: GRASS }));
+  return { active: mon(`${tag}a`), bench: [], hand: [], deck, discard: [], lostZone: [], prizes: [], flags: flags() };
 }
+/** An ordinary quiescent main-phase board (no setup walk: twinleaf-main shares this spec and has none). */
 function board(format?: string): NeutralState {
   return {
-    schemaVersion: SCHEMA_VERSION, ...(format === undefined ? {} : { format }), turn: 0, activePlayer: 'A',
-    firstPlayer: null, phase: 'setup', outcome: 'ongoing', stadium: null,
-    players: { A: player(deck('a')), B: player(deck('b')) },
+    schemaVersion: SCHEMA_VERSION, ...(format === undefined ? {} : { format }), turn: 2, activePlayer: 'A',
+    firstPlayer: 'A', phase: 'main', outcome: 'ongoing', stadium: null,
+    players: { A: player('a'), B: player('b') },
   };
 }
 
