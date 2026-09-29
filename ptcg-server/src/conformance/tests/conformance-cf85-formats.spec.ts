@@ -69,4 +69,14 @@ describe('CF-85 formats', () => {
     expect(handleCards('bs', 'unlimited').cards.length).toBe(handleCapabilities().sets['bs']);
     expect(handleCards('bs', 'standard').cards.length).toBeLessThan(handleCapabilities().sets['bs']);
   });
+
+  it('TA-469: the corrected regulation marks put the right printings in Standard', () => {
+    const std = (set: string) => handleCards(set, 'standard').cards.map(c => c.printing);
+    // printed H (twinleaf had G): Standard-legal
+    for (const [set, p] of [['scr', 'scr-134'], ['scr', 'scr-080'], ['scr', 'scr-161'], ['sfa', 'sfa-043'], ['twm', 'twm-006']]) {
+      expect(std(set)).withContext(p).toContain(p);
+    }
+    // printed G (twinleaf had H; image-verified 'G SCR EN 089/142'): not Standard
+    expect(std('scr')).not.toContain('scr-089');
+  });
 });
