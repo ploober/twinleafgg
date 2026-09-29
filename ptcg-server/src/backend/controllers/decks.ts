@@ -1275,7 +1275,7 @@ export function getValidFormatsForCardList(cardNames: string[]): number[] {
 }
 
 // --- getValidFormats ---
-function getValidFormats(card: any, allCards?: any[]): number[] {
+export function getValidFormats(card: any, allCards?: any[]): number[] {
   const formats = [Format.UNLIMITED];
   [
     Format.ETERNAL,

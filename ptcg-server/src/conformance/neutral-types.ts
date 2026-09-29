@@ -224,6 +224,8 @@ export interface StadiumRef extends CardRef {
  */
 export interface NeutralState {
   schemaVersion: string;
+  /** CF-85: the format this game is played in (one of `capabilities.formats`); echoed in every response state. */
+  format?: string;
   /** Turn counter — drives "this/last turn" and first-turn rules. */
   turn: number;
   activePlayer: NeutralPlayerId;

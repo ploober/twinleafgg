@@ -2,6 +2,7 @@ import { catalogCards, isNondeterministic } from './capabilities';
 import { projectCard } from './card-projection';
 import { toPrinting } from './printing';
 import { NeutralCard, NeutralCardList } from './neutral-types';
+import { isLegalIn, ServedFormat } from './formats';
 
 /**
  * A `GET /v1/cards/{setCode}` request for a set this engine implements no cards in. The HTTP binding
@@ -58,10 +59,36 @@ function cardsBySet(): Map<string, NeutralCardList> {
  * capabilities, so the two are guaranteed consistent. Throws `UnknownSetError` when the set has no
  * implemented cards.
  */
-export function buildCardsForSet(setCode: string): NeutralCardList {
+export function buildCardsForSet(setCode: string, format?: ServedFormat): NeutralCardList {
   const list = cardsBySet().get(setCode.toLowerCase());
   if (list === undefined) {
     throw new UnknownSetError(`no implemented cards in set "${setCode.toLowerCase()}"`);
   }
-  return list;
+  // No format = the whole implemented catalog for the set (what `capabilities.sets` counts). The HTTP
+  // endpoint always passes one (CF-85), so the wire only ever serves a per-format legality claim.
+  return format === undefined ? list : legalIn(list, format);
+}
+
+const legalCache = new Map<string, NeutralCardList>();
+
+/**
+ * CF-85: the set's cards that twinleaf's own deck validator calls legal in `format` — the engine's legality
+ * CLAIM, which the harness verifies. A set with none answers an empty list (200), not a 404: the set is
+ * implemented, just not legal in this format.
+ */
+function legalIn(list: NeutralCardList, format: ServedFormat): NeutralCardList {
+  const key = `${format}:${list.setCode}`;
+  const hit = legalCache.get(key);
+  if (hit !== undefined) {
+    return hit;
+  }
+  const legal = new Set<string>();
+  for (const card of catalogCards()) {
+    if (card.set.toLowerCase() === list.setCode && isLegalIn(card, format)) {
+      legal.add(toPrinting(card));
+    }
+  }
+  const out = { setCode: list.setCode, cards: list.cards.filter(c => legal.has(c.printing)) };
+  legalCache.set(key, out);
+  return out;
 }

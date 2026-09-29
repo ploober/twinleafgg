@@ -1,4 +1,5 @@
 import { Card } from '../game/store/card/card';
+import { resolveFormat } from './formats';
 import { PokemonCard } from '../game/store/card/pokemon-card';
 import { SpecialCondition, SuperType } from '../game/store/card/card-types';
 import { State, GamePhase, GameWinner } from '../game/store/state/state';
@@ -64,6 +65,8 @@ export interface IidContext {
    *  has no first-player field, so it is carried here and projected verbatim. CF-84: `null` when the
    *  game was imported pre-deal — the engine's setup then decides it and `projectFirstPlayer` derives it. */
   firstPlayer: NeutralPlayerId | null;
+  /** CF-85: the board's format, echoed verbatim in every projected state. */
+  format: string;
 }
 
 /**
@@ -379,7 +382,10 @@ function ingestPlayerLastAttack(state: State, initial: NeutralState): void {
 export function importState(initial: NeutralState): ImportedGame {
   ensurePrintingsLoaded(collectPrintings(initial));
 
-  const ctx: IidContext = { iidToCard: new Map(), cardToIid: new Map(), cardOwner: new Map(), firstPlayer: initial.firstPlayer };
+  const ctx: IidContext = {
+    iidToCard: new Map(), cardToIid: new Map(), cardOwner: new Map(), firstPlayer: initial.firstPlayer,
+    format: resolveFormat(initial.format), // validated by handlers.ts; absent = the CF-85 rollout bridge
+  };
   const importer = new Importer(ctx);
 
   const handler = new ConformanceStoreHandler();
@@ -774,6 +780,7 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
   const detached = detachedResolvingCards(state);
   const out: NeutralState = {
     schemaVersion: SCHEMA_VERSION,
+    format: ctx.format, // CF-85: echoed from initialState
     turn: state.turn,
     activePlayer: indexToPlayerId(state.activePlayer),
     firstPlayer: projectFirstPlayer(state, ctx), // echoed from initialState, or derived after a pre-deal import (CF-84)

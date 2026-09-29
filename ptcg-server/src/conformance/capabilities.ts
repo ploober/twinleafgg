@@ -5,6 +5,7 @@ import { SCHEMA_VERSION } from './neutral-types';
 import { EXCLUDED_RANDOM_CARDS } from './excluded-random-cards';
 import { toPrinting } from './printing';
 import { CONVENTIONS, Conventions } from './conventions';
+import { SERVED_FORMATS } from './formats';
 
 /**
  * The `GET /v1/capabilities` payload (OpenAPI `Capabilities`): engine identity + the sets it
@@ -46,6 +47,8 @@ export interface CapabilitiesResponse {
   /** CF-84: optional contract features this adapter implements. `setup` = the pre-deal
    *  `initialState` and the setup walk (`driver.ts` `startSetup`). */
   features: string[];
+  /** CF-85: the IDs of the formats this engine serves. */
+  formats: string[];
 }
 
 const ENGINE_NAME = 'twinleaf';
@@ -143,5 +146,6 @@ export function buildCapabilities(): CapabilitiesResponse {
     sets,
     conventions: CONVENTIONS,
     features: ['setup'],
+    formats: [...SERVED_FORMATS],
   };
 }

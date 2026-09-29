@@ -124,7 +124,7 @@ export function synthCtx(state: State): IidContext {
       cardOwner.set(card, idx);
     }
   });
-  return { iidToCard, cardToIid, cardOwner, firstPlayer: 'A' };
+  return { iidToCard, cardToIid, cardOwner, firstPlayer: 'A', format: 'standard' };
 }
 
 // ── snapshot ──

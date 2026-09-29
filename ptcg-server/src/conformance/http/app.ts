@@ -2,6 +2,7 @@ import * as express from 'express';
 import { json } from 'body-parser';
 import { handleStep, handleCapabilities, handleCards, BadRequestError, UnsupportedSchemaVersionError } from './handlers';
 import { UnknownSetError } from '../cards';
+import { UnsupportedFormatError } from '../formats';
 
 /**
  * A standalone Express app for the conformance API (design §5, M6): a pure function of the request
@@ -24,7 +25,7 @@ export function createConformanceApp(): express.Application {
     try {
       res.json(handleStep(req.body));
     } catch (err) {
-      if (err instanceof BadRequestError) {
+      if (err instanceof BadRequestError || err instanceof UnsupportedFormatError) {
         res.status(400).json({ error: 'malformedRequest', message: err.message });
       } else if (err instanceof UnsupportedSchemaVersionError) {
         res.status(400).json({ error: 'unsupportedSchemaVersion', message: err.message });
@@ -41,9 +42,11 @@ export function createConformanceApp(): express.Application {
 
   app.get('/v1/cards/:setCode', (req: express.Request, res: express.Response) => {
     try {
-      res.json(handleCards(req.params.setCode));
+      res.json(handleCards(req.params.setCode, req.query.format));
     } catch (err) {
-      if (err instanceof UnknownSetError) {
+      if (err instanceof UnsupportedFormatError) {
+        res.status(400).json({ error: 'unsupportedFormat', message: err.message });
+      } else if (err instanceof UnknownSetError) {
         res.status(404).json({ error: 'unknownSet', message: err.message });
       } else {
         const message = err instanceof Error ? err.message : String(err);

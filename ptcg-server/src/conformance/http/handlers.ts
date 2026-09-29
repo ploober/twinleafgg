@@ -1,4 +1,5 @@
 import { step } from '../driver';
+import { resolveFormat } from '../formats';
 import { StepResponse, NeutralState, NeutralAction, NeutralCardList, SCHEMA_VERSION } from '../neutral-types';
 import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
 import { buildCardsForSet } from '../cards';
@@ -61,6 +62,7 @@ export function handleStep(body: unknown): StepResponse {
     throw new BadRequestError('`actions` is required and must be an array');
   }
   const { initialState, actions } = body as unknown as StepRequestBody;
+  resolveFormat(initialState.format); // CF-85: an unadvertised format is a malformed request (400)
   if (initialState.phase === 'setup') {
     assertPreDeal(initialState);
   }
@@ -94,6 +96,6 @@ export function handleCapabilities(): CapabilitiesResponse {
 }
 
 /** The `GET /v1/cards/{setCode}` payload. Throws `UnknownSetError` (→ 404) for an unimplemented set. */
-export function handleCards(setCode: string): NeutralCardList {
-  return buildCardsForSet(setCode);
+export function handleCards(setCode: string, format?: unknown): NeutralCardList {
+  return buildCardsForSet(setCode, resolveFormat(format));
 }

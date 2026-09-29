@@ -81,6 +81,7 @@ describe('Conformance M0 — import/project + attach energy', () => {
 
     const initial: NeutralState = {
       schemaVersion: SCHEMA_VERSION,
+      format: 'standard', // CF-85: every board carries its format, and the projection echoes it
       turn: 3,
       activePlayer: 'A',
       firstPlayer: 'A',

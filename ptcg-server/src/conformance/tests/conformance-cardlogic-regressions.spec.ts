@@ -3757,12 +3757,13 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
       st.activePlayer = 'B';   // the Knock Out must come from the OPPONENT's attack
       return st;
     };
+    // One [L] and one Bencher: the rescue has exactly ONE resolution, so since TA-463 (the forced-step
+    // collapse restored; rotomancer agrees since RE-174) it is APPLIED, not offered (CF-14). The guard
+    // therefore asserts the effect after the attack alone: no lone moveEnergy pending, and the Energy on
+    // the Bencher, not in the discard with its bearer.
     const koAttack = { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Pouncing Trap' } as unknown as NeutralAction;
-    const ko = step(b(), [koAttack]);
-    expect(hasType(ko, 'moveEnergy')).toBe(true);          // the rescue is offered…
-    const moved = step(b(), [koAttack,
-      { actor: 'A', type: 'moveEnergy', card: 'ae0', source: 'A-act', target: 'A-b' } as unknown as NeutralAction]);
-    // …and it MOVES: on the Bencher, not in the discard with its bearer.
+    const moved = step(b(), [koAttack]);
+    expect(hasType(moved, 'moveEnergy')).toBe(false);
     expect(moved.state.players.A.bench[0].energy.map(c => c.iid)).toEqual(['ae0']);
     expect(moved.state.players.A.discard.some(c => c.iid === 'ae0')).toBe(false);
   });
