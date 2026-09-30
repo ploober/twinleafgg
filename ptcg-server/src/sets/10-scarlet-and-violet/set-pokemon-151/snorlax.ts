@@ -23,7 +23,7 @@ function* useVoraciousness(next: Function, store: StoreLike, state: State, self:
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.discard,
     {},
-    { min: 0, max: 2, allowCancel: false, blocked }
+    { min: 1, max: 2, allowCancel: false, blocked }
   ), selected => {
     cards = selected || [];
     next();

@@ -13,7 +13,7 @@ import { PowerType,
   GameMessage,
   PlayerType,
   SlotType,
-  GameError, pokemonHasCardType } from '../../../game';
+  GameError, pokemonHasCardType, CardTarget } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { EnergyCard } from '../../../game/store/card/energy-card';
@@ -61,29 +61,20 @@ export class Gardevoirex extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // const blocked: CardTarget[] = [];
-      // player.bench.forEach((card, index) => {
-      //   if (card instanceof PokemonCard && !pokemonHasCardType(card, CardType.PSYCHIC)) {
-      //     blocked.push();
-      //   }
-      // });
-
-      // player.active.cards.forEach((card, index) => {
-      //   if (card instanceof PokemonCard && !pokemonHasCardType(card, CardType.PSYCHIC)) {
-      //     blocked.push();
-      //   }
-      // });
-
       // TA-487: needs a Basic [P] Energy in the discard pile and a [P] Pokémon that 2 damage counters would not
       // Knock Out; otherwise nothing can be attached (B.29 rule 1).
       const hasEnergy = player.discard.cards.some(c => c instanceof EnergyCard
         && c.energyType === EnergyType.BASIC && c.name === 'Psychic Energy');
       let hasRecipient = false;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card) => {
+      // TA-488: every other Pokémon is blocked as a recipient, so a single legal one collapses (CF-14).
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
         const checkHpEffect = new CheckHpEffect(player, list);
         store.reduceEffect(state, checkHpEffect);
         if (pokemonHasCardType(card, CardType.PSYCHIC) && list.damage + 20 < checkHpEffect.hp) {
           hasRecipient = true;
+        } else {
+          blockedTo.push(target);
         }
       });
       if (!hasEnergy || !hasRecipient) {
@@ -99,7 +90,7 @@ export class Gardevoirex extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH, SlotType.ACTIVE],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Psychic Energy' },
-          { allowCancel: true, min: 0 },
+          { allowCancel: false, min: 1, max: 1, blockedTo },
         ),
         (transfers) => {
           transfers = transfers || [];
@@ -113,8 +104,8 @@ export class Gardevoirex extends PokemonCard {
             store.reduceEffect(state, checkHpEffect);
 
             if (
-              target.cards[0] instanceof PokemonCard &&
-              !pokemonHasCardType(target.cards[0], CardType.PSYCHIC)
+              target.getPokemonCard() instanceof PokemonCard &&
+              !pokemonHasCardType(target.getPokemonCard()!, CardType.PSYCHIC)
             ) {
               throw new GameError(GameMessage.CAN_ONLY_ATTACH_TO_PSYCHIC);
             }

@@ -94,7 +94,7 @@ export class Armarouge extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, blockedMap, blockedTo: blockedTargets }
+        { allowCancel: false, min: 1, max: 1, blockedMap, blockedTo: blockedTargets }
       ), transfers => {
         if (transfers && transfers.length > 0) {
           for (const transfer of transfers) {
