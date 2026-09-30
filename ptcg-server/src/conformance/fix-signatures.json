@@ -9213,6 +9213,16 @@
       "fixes": [
         "FX-0342"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/chi-yu-ex.ts",
+      "signatures": [
+        "    if (AFTER_ATTACK(effect, 1, this)) {"
+      ],
+      "note": "TA-472, TA-478 (2026-09-29): TA-472/TA-478: Chi-Yu ex pal-040 Flame Surge - rider AFTER_ATTACK (damage first); recipients chosen first (up to 3 Bench",
+      "fixes": [
+        "FX-0344"
+      ]
     }
   ]
 }
