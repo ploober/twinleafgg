@@ -11,6 +11,9 @@ import { NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, P
  * Incidental on the same board (TA-480): Lunatone and Solrock were offered as evolve targets although neither
  * has a Stage 1 — the candidate pool is the Basics a known Stage 1 evolves from (#2030).
  *
+ * TA-481: "that player may search their deck" over a hidden deck — the player may voluntarily fail to find
+ * (CF-32 / TA-145 shape): the search is min 0, the decline is the zero-take, and the deck is still shuffled.
+ *
  * Mutation guard: drop the IS_STADIUM_EFFECT_BLOCKED filter in grand-tree.ts and the New Moon cell goes red;
  * the no-Solrock control pins that the Stadium still works when New Moon is inactive.
  */
@@ -65,6 +68,16 @@ describe('TA-479 Grand Tree cannot evolve a New Moon-protected Basic', () => {
     const r = step(board(false), [useStadium, { actor: 'A', type: 'choose', target: 'ad0' } as unknown as NeutralAction]);
     expect(r.status).not.toBe('invalidAction');
     expect(stageOf(r, 'bb1')).toEqual([CHARMANDER, CHARMELEON]);
+  });
+
+  it('the Stage 1 search may fail to find: a decline takes zero and still shuffles [TA-481 scr-136]', () => {
+    const decline = { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction;
+    const offered = step(board(false), [useStadium]);
+    expect(JSON.stringify((offered as any).pending)).toContain('"value":false');
+    const r = step(board(false), [useStadium, decline]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(stageOf(r, 'bb1')).toEqual([CHARMANDER]);
+    expect(JSON.stringify((r as any).pending)).toContain('shuffle');
   });
 
   it('control, no Solrock: only Charmander is an evolve target - Lunatone has no Stage 1 [TA-480 scr-136]', () => {

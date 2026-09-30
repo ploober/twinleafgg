@@ -118,7 +118,7 @@ function* useStadium(
       GameMessage.CHOOSE_CARD_TO_EVOLVE,
       player.deck,
       { superType: SuperType.POKEMON, stage: Stage.STAGE_1, evolvesFrom: pokemonCard.name },
-      { min: 1, max: 1, allowCancel: true, blocked },
+      { min: 0, max: 1, allowCancel: false, blocked },
     ),
     (selected) => {
       cards = selected || [];
@@ -158,7 +158,7 @@ function* useStadium(
         GameMessage.CHOOSE_CARD_TO_EVOLVE,
         player.deck,
         { superType: SuperType.POKEMON, stage: Stage.STAGE_2, evolvesFrom: evolution.name },
-        { min: 1, max: 1, allowCancel: true, blocked: blockedStage2 },
+        { min: 0, max: 1, allowCancel: false, blocked: blockedStage2 },
       ),
       (selected) => {
         stage2Cards = selected || [];
