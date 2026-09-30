@@ -9553,6 +9553,16 @@
       "fixes": [
         "FX-0357"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "function handIndexOf(player: Player, card: Card, _role: string, _actor: string): number {"
+      ],
+      "note": "TA-492 (2026-09-30): TA-492: handIndexOf throws GameError INVALID_TARGET (HTTP 200 + invalidAction) for a card that is not in the hand, like ",
+      "fixes": [
+        "FX-0358"
+      ]
     }
   ]
 }
