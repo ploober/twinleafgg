@@ -9,13 +9,13 @@ export class Pawniard extends PokemonCard {
   public retreat = [C];
 
   public attacks = [{
-    name: 'Stampede',
+    name: 'Scratch',
     cost: [C],
     damage: 10,
     text: ''
   },
   {
-    name: 'Ram',
+    name: 'Pierce',
     cost: [D, C],
     damage: 20,
     text: ''

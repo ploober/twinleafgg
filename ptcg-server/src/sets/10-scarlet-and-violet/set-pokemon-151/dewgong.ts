@@ -13,7 +13,7 @@ export class Dewgong extends PokemonCard {
   public retreat = [C, C];
 
   public attacks = [{
-    name: 'Dual Splash ',
+    name: 'Dual Splash',
     cost: [W, C],
     damage: 0,
     text: 'This attack does 50 damage to 2 of your opponent\'s Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'

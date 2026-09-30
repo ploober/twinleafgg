@@ -16,7 +16,7 @@ export class Machoke extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Mountain RAMMING',
+      name: 'Mountain Ramming',
       cost: [CardType.FIGHTING, CardType.FIGHTING],
       damage: 50,
       text: 'Discard the top card of your opponent\'s deck.'
