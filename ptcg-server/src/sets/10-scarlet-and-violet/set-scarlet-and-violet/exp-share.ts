@@ -6,6 +6,8 @@ import { State, GamePhase } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
+import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
+import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PlayerType, SlotType, CardTarget } from '../../../game/store/actions/play-card-action';
 import { StateUtils } from '../../../game/store/state-utils';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
@@ -48,56 +50,54 @@ export class ExpShare extends TrainerCard {
         return state;
       }
 
-      if (active.marker.hasMarker(this.EXP_SHARE_MARKER)) {
-        return state;
-      }
-
-      let expShareCount = 0;
+      // TA-475 / CF-32: each Exp. Share is its own trigger with a count-1 "you may" (no inherent zero), so it
+      // asks a standalone confirm{true,false} and, on yes, moves exactly 1 basic Energy to ITS OWN holder (a single
+      // candidate collapses, CF-14). The old single allowCancel:true prompt pooled every holder and hid the decline.
+      let holder: PokemonCardList | undefined;
       const blockedTo: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-        if (cardList === effect.target) {
-          return;
-        }
-        if (cardList.tools.length > 0 && cardList.tools[0] instanceof ExpShare) {
-          expShareCount++;
+        if (cardList !== effect.target && cardList.tools.includes(this)) {
+          holder = cardList;
         } else {
           blockedTo.push(target);
         }
       });
-
-      if (expShareCount === 0) {
+      const receiver = holder;
+      if (receiver === undefined || receiver === player.active) {
         return state;
       }
 
-      // Add marker, do not invoke this effect for other exp. share
-      active.marker.addMarker(this.EXP_SHARE_MARKER, this);
+      const hasBasicEnergy = active.cards.some(c => c instanceof EnergyCard && c.energyType === EnergyType.BASIC);
+      if (!hasBasicEnergy) {
+        return state;
+      }
 
-      // Make copy of the active pokemon cards,
-      // because they will be transfered to discard shortly
-      const activeCopy = new PokemonCardList();
-      activeCopy.cards = player.active.cards.slice();
-
-      state = store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        activeCopy,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: true, min: 1, max: expShareCount, differentTargets: true, blockedTo }
-      ), transfers => {
-        transfers = transfers || [];
-        active.marker.removeMarker(this.EXP_SHARE_MARKER);
-        for (const transfer of transfers) {
-          // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
-          // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
-          // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
-          // attached to the dying holder when the player answers: the discard read matched
-          // nothing and the decision resolved to nothing.
-          const from = active.cards.includes(transfer.card) ? active : player.discard;
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          from.moveCardTo(transfer.card, target);
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
+        if (!wantToUse) {
+          return state;
         }
+        // Make copy of the active pokemon cards, because they will be transfered to discard shortly
+        const activeCopy = new PokemonCardList();
+        activeCopy.cards = active.cards.slice();
+        return store.prompt(state, new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_TO_BENCH,
+          activeCopy,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { allowCancel: false, min: 1, max: 1, blockedTo }
+        ), transfers => {
+          for (const transfer of transfers || []) {
+            // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+            // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+            // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+            // attached to the dying holder when the player answers: the discard read matched
+            // nothing and the decision resolved to nothing.
+            const from = active.cards.includes(transfer.card) ? active : player.discard;
+            from.moveCardTo(transfer.card, receiver);
+          }
+        });
       });
     }
 
