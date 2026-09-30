@@ -24,7 +24,7 @@ export class Pikachuex2 extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Shocking Fever',
+      name: 'Zip-Zap Frenzy',
       cost: [L],
       damage: 0,
       text: 'You may attach as many Basic Energy cards from your hand to your Pokémon in any way you like.',

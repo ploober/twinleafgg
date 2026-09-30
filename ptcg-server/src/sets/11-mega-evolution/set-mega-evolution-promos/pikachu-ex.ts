@@ -20,7 +20,7 @@ export class Pikachuex extends PokemonCard {
 
   public attacks = [
     {
-      name: 'Pika Pika Parade',
+      name: 'Pika-Pika Parade',
       cost: [C],
       damage: 0,
       text: 'Search your deck for as many Basic Pokémon as you like and put them onto your Bench. Then, shuffle your deck.',
