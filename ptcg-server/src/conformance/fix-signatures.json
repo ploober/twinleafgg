@@ -408,8 +408,7 @@
     {
       "file": "set-surging-sparks/gholdengo.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "player.active.moveTo(player.deck);"
+        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
       ],
       "state": "guarding"
     },
@@ -1873,7 +1872,7 @@
     {
       "file": "set-destined-rivals/cetitan-ex.ts",
       "signatures": [
-        "effect.target = undefined;"
+        "BLOCK_TRAINER_TARGET(effect);   // clears the target (+ preventDefault) — the same protocol, upstream's name"
       ],
       "state": "guarding"
     },
@@ -4641,7 +4640,7 @@
     {
       "file": "set-surging-sparks/cyclizar-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';",
+        "if (AFTER_ATTACK(effect, 1, this)) {",
         "if (player.deck.cards.length === 0) {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
@@ -4802,7 +4801,7 @@
     {
       "file": "set-twilight-masquerade/blissey-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';",
+        "if (AFTER_ATTACK(effect, 0, this)) {",
         "if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
@@ -4867,9 +4866,9 @@
     {
       "file": "set-twilight-masquerade/poliwrath.ts",
       "signatures": [
-        "import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP } from '../../../game/store/prefabs/attack-effects'; import { AFTER_ATTACK, CONFIRMATION_PROMPT, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';"
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP(store, state, effect);"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base; 2026-09-29 merge: re-pointed — upstream 41382b814 adopted the AFTER_ATTACK gate itself, the sleep call is the ours-only line",
       "state": "guarding"
     },
     {
@@ -5689,8 +5688,7 @@
     {
       "file": "game/store/prompts/choose-cards-prompt.ts",
       "signatures": [
-        "it MUTATES the real deck/discard order (game state)",
-        "return matchesCardFilter(card, this.filter);"
+        "it MUTATES the real deck/discard order (game state)"
       ],
       "note": "deletion-type fix (display sort removed) - the comment is the signature",
       "state": "guarding"
@@ -7023,7 +7021,7 @@
     {
       "file": "set-scarlet-and-violet/ultra-ball.ts",
       "signatures": [
-        "), () => {\n        player.deck.moveCardsTo(selected, player.hand);"
+        "), () => {\n        MOVE_CARDS(store, state, player.deck, player.hand, { cards: selected, sourceCard: self });"
       ],
       "fixes": [
         "FX-0064"
@@ -7064,7 +7062,7 @@
     {
       "file": "set-scarlet-and-violet/energy-search.ts",
       "signatures": [
-        "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);"
+        "    ), () => next());\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });"
       ],
       "fixes": [
         "FX-0276"
@@ -7081,8 +7079,8 @@
     {
       "file": "set-twilight-masquerade/perrin.ts",
       "signatures": [
-        "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  player.hand.moveCardsTo(cards, player.deck);",
-        "    ), () => next());\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);",
+        "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: effect.trainerCard });",
+        "    ), () => next());\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });",
         "'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.'",
         "    { min: 0, max: minMax, allowCancel: false }"
       ],
@@ -7277,8 +7275,7 @@
       "file": "set-surging-sparks/energy-search-pro.ts",
       "signatures": [
         "    next();",
-        "// TA-393: \"put them into your hand\"",
-        "player.deck.moveCardsTo(cards, player.hand);"
+        "// TA-393: \"put them into your hand\""
       ],
       "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census.",
       "fixes": [
@@ -9174,6 +9171,17 @@
       "fixes": [
         "FX-0339"
       ]
+    },
+    {
+      "file": "game/store/prompts/prompt-card-filter.ts",
+      "signatures": [
+        "// TA-335 (fork): any other ARRAY-valued filter field matches by containment, as cardType/tags do."
+      ],
+      "note": "2026-09-29 merge: upstream 41382b814 replaced every prompt/CardList matcher with matchesPromptFilter (its own TA-335 fix for cardType/tags). Our generic array-containment branch is carried into it so both matchers agree; card-filter.ts delegates cardType/tags to it.",
+      "fixes": [
+        "FX-0042"
+      ],
+      "state": "ours-only"
     }
   ]
 }

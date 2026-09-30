@@ -4,8 +4,9 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { Card, ChooseCardsPrompt, GameLog, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import { Card, ChooseCardsPrompt, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DeliveryBox extends TrainerCard {
 
@@ -28,7 +29,6 @@ export class DeliveryBox extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
@@ -54,10 +54,7 @@ export class DeliveryBox extends TrainerCard {
         // reads the revealed card's zone at show time. Moving first reported `from: 'hand'` for
         // cards disclosed out of the deck, so the move now runs inside the show's continuation.
         const takeIntoHand = () => {
-          player.deck.moveCardsTo(cards, player.hand);
-          cards.forEach((card) => {
-            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-          });
+          MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
         };
 
         if (cards.length > 0) {

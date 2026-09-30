@@ -3,7 +3,7 @@ import { CardTag, CardType, EnergyType, Stage, SuperType } from '../../../game/s
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
-import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Cinderace extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -84,7 +84,7 @@ export class Cinderace extends PokemonCard {
           transfers = transfers || [];
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);
-            player.deck.moveCardTo(transfer.card, target);
+            MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: this });
           }
           // TA-395: ONE shuffle, raised AFTER the attach has moved the cards. The zero-take branch
           // used to shuffle here AND a second SHUFFLE_DECK ran unconditionally after the prompt, so a

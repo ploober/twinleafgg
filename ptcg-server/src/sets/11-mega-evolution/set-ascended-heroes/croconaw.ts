@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardType, StoreLike, State, DiscardEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import {AFTER_ATTACK, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Croconaw extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -51,7 +51,7 @@ export class Croconaw extends PokemonCard {
               // every sibling opponent-discard card does; resolving against `effect.opponent` flips it back
               // to the attacker's own Active, so `moveCardTo` finds nothing and the Energy is never discarded.
               const target = StateUtils.getTarget(state, effect.player, transfers[0].from);
-              target.moveCardTo(transfers[0].card, effect.opponent.discard);
+              MOVE_CARDS(store, state, target, effect.opponent.discard, { cards: [transfers[0].card], sourceCard: this });
             }
           });
         }

@@ -4,7 +4,7 @@ import { Card, StoreLike, State, PlayerType, GameMessage, SlotType, ChoosePokemo
 import { Effect } from '../../../game/store/effects/effect';
 import { HealTargetEffect, PutCountersEffect } from '../../../game/store/effects/attack-effects';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Sinistchaex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];

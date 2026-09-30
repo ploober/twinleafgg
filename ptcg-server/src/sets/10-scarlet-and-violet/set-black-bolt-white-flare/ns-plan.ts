@@ -48,7 +48,6 @@ export class NsPlan extends TrainerCard {
     return this.hasBenchedEnergy(player);
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const player = effect.player;
@@ -65,7 +64,7 @@ export class NsPlan extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 

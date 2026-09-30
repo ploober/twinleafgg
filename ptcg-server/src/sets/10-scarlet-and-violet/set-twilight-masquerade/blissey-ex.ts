@@ -1,12 +1,30 @@
-import { BoardEffect, CardTag, CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
+import {
+  BoardEffect,
+  CardTag,
+  CardType,
+  EnergyType,
+  Stage,
+  SuperType,
+} from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { ConfirmPrompt, EnergyCard, GameError, GameMessage, MoveEnergyPrompt, PlayerType, PokemonCard, PowerType, SlotType, StateUtils } from '../../../game';
+import {
+  ConfirmPrompt,
+  EnergyCard,
+  GameError,
+  GameMessage,
+  MoveEnergyPrompt,
+  PlayerType,
+  PokemonCard,
+  PowerType,
+  SlotType,
+  StateUtils,
+} from '../../../game';
 
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { AFTER_ATTACK, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Blisseyex extends PokemonCard {
 
@@ -106,7 +124,7 @@ export class Blisseyex extends PokemonCard {
 
           const source = StateUtils.getTarget(state, player, transfer.from);
           const target = StateUtils.getTarget(state, player, transfer.to);
-          source.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
         }
 
         return state;
@@ -146,7 +164,7 @@ export class Blisseyex extends PokemonCard {
             if (player.deck.cards.length === 0) {
               break;
             }
-            player.deck.moveTo(player.hand, 1);
+            MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
           }
         }
 

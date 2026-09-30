@@ -12,10 +12,11 @@ import {
   PlayerType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { TrainerTargetEffect } from '../../../game/store/effects/play-card-effects';
 import {
+  BLOCK_TRAINER_TARGET,
   DISCARD_A_STADIUM_CARD_IN_PLAY,
   IS_ABILITY_BLOCKED,
+  IS_TRAINER_TARGET,
   WAS_ATTACK_USED,
 } from '../../../game/store/prefabs/prefabs';
 
@@ -51,7 +52,7 @@ export class Cetitanex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Snow Cover
-    if (effect instanceof TrainerTargetEffect && effect.target?.cards.includes(this)) {
+    if (IS_TRAINER_TARGET(effect, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
@@ -74,7 +75,7 @@ export class Cetitanex extends PokemonCard {
       // TrainerTargetEffect dispatcher reads (`if (targetCard.target)`). Setting
       // `preventDefault` here did nothing: the store's central preventDefault check only
       // stops REDUCERS, and the switch is performed by the dispatching card's own callback.
-      effect.target = undefined;
+      BLOCK_TRAINER_TARGET(effect);   // clears the target (+ preventDefault) — the same protocol, upstream's name
     }
 
     // Crushing Press

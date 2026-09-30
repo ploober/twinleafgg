@@ -8,7 +8,7 @@ import { PowerType, StoreLike, State, StateUtils, GameMessage, PlayerType, SlotT
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import { WAS_ATTACK_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 import { GamePhase } from '../../../game/store/state/state';
 import { CardList } from '../../../game/store/state/card-list';

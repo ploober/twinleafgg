@@ -11,7 +11,7 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class IronThorns extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -82,7 +82,7 @@ export class IronThorns extends PokemonCard {
         top5), () => {
 
         const deckTop = new CardList();
-        player.deck.moveTo(deckTop, 5);
+        MOVE_CARDS(store, state, player.deck, deckTop, { count: 5, sourceCard: this });
 
         // Discard the revealed Future cards; shuffle the rest back into the deck.
         const toDiscard = deckTop.cards.filter(c =>
@@ -95,7 +95,7 @@ export class IronThorns extends PokemonCard {
         // reds only the empty-DECK cell and never reaches the all-Future-with-stocked-deck path.
         // rotomancer suppresses here.
         const otherCards = deckTop.cards.length;
-        deckTop.moveTo(player.deck, deckTop.cards.length);
+        MOVE_CARDS(store, state, deckTop, player.deck, { count: deckTop.cards.length, sourceCard: this });
 
         if (otherCards === 0) {
           return state;

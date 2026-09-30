@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, MoveEnergyPrompt, GameMessage, PlayerType, SlotType, SuperType, StateUtils, GameError, CardTarget } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_POWER_USED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class Azumarillex extends PokemonCard {
@@ -88,7 +88,7 @@ export class Azumarillex extends PokemonCard {
           }
           const source = StateUtils.getTarget(state, player, transfer.from);
           const target = StateUtils.getTarget(state, player, transfer.to);
-          source.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
         }
       });
     }

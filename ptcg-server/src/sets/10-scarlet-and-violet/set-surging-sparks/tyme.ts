@@ -8,6 +8,7 @@ import { State } from '../../../game/store/state/state';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { CardList, ChooseCardsPrompt, Player, PokemonCard, SelectPrompt, ShowCardsPrompt } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -26,7 +27,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -58,7 +59,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
       if (card instanceof PokemonCard) {
         pokemonName = card.name;
         pokemonHP = card.hp;
-        player.hand.moveCardTo(card, selectedPokemon);
+        MOVE_CARDS(store, state, player.hand, selectedPokemon, { cards: [card], sourceCard: self });
       }
     });
 
@@ -73,26 +74,23 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
     ), choice => {
       const option = options[choice];
 
-      store.log(state, GameLog.LOG_PLAYER_CHOOSES, { name: opponent.name, string: '' + option.value });
-
       store.prompt(state, new ShowCardsPrompt(
         opponent.id,
         GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
         selectedPokemon.cards
       ), () => {
         if (option.value === pokemonHP) {
-          opponent.deck.moveTo(opponent.hand, 4);
-          selectedPokemon.moveTo(player.hand);
+          MOVE_CARDS(store, state, opponent.deck, opponent.hand, { count: 4, sourceCard: self });
+          MOVE_CARDS(store, state, selectedPokemon, player.hand, { sourceCard: self });
         } else {
-          player.deck.moveTo(player.hand, 4);
-          selectedPokemon.moveTo(player.hand);
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 4, sourceCard: self });
+          MOVE_CARDS(store, state, selectedPokemon, player.hand, { sourceCard: self });
         }
       });
 
-      player.supporter.moveTo(player.discard);
+      MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: self });
     });
   });
-
 
 }
 
@@ -123,7 +121,6 @@ export class Tyme extends TrainerCard {
     }
     return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

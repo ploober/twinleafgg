@@ -6,6 +6,7 @@ import { StoreLike } from '../../game/store/store-like';
 import { TrainerCard } from '../../game/store/card/trainer-card';
 import { TrainerType } from '../../game/store/card/card-types';
 import { ShuffleDeckPrompt, ChoosePokemonPrompt, PlayerType, SlotType, GameError } from '../../game';
+import { MOVE_POKEMON_OFF_BOARD } from '../../game/store/prefabs/prefabs';
 
 export class MrFuji extends TrainerCard {
 
@@ -42,9 +43,10 @@ export class MrFuji extends TrainerCard {
       ), selected => {
         const target = selected[0];
 
-        target.moveTo(player.deck);
-        target.clearEffects();
-
+        MOVE_POKEMON_OFF_BOARD(store, state, target, {
+          pokemonDestination: player.deck,
+          sourceCard: this,
+        });
 
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);

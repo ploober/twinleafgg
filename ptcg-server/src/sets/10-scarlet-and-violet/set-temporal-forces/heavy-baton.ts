@@ -7,7 +7,6 @@ import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { BeginTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { IS_TOOL_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-
 export class HeavyBaton extends TrainerCard {
 
   public regulationMark = 'H';

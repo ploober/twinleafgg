@@ -9,7 +9,7 @@ import { GameError, PlayerType, PokemonCard, PowerType, ShowCardsPrompt, Shuffle
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Tatsugiri extends PokemonCard {
 
@@ -79,7 +79,7 @@ export class Tatsugiri extends PokemonCard {
       }
 
       const deckTop = new CardList();
-      player.deck.moveTo(deckTop, 6);
+      MOVE_CARDS(store, state, player.deck, deckTop, { count: 6, sourceCard: this });
       const opponent = StateUtils.getOpponent(state, player);
 
       return store.prompt(state, new ChooseCardsPrompt(
@@ -98,7 +98,7 @@ export class Tatsugiri extends PokemonCard {
           }
         });
 
-        deckTop.moveCardsTo(selected, player.hand);
+        MOVE_CARDS(store, state, deckTop, player.hand, { cards: selected, sourceCard: this });
 
         // TA-251 / B.33: "Shuffle THE OTHER cards back into your deck" is a SEPARATE, unconditional
         // printed instruction — the up-to-6 looked-at cards minus the taken Supporter. The reveal
@@ -108,7 +108,7 @@ export class Tatsugiri extends PokemonCard {
         // "other cards" (#1979) — so key on the OBJECT going back, not on whether a Supporter was
         // taken. otherCards is counted BEFORE moving the remainder back to the deck.
         const otherCards = deckTop.cards.length;
-        deckTop.moveTo(player.deck);
+        MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
 
         const shuffleBack = (): State => {
           if (otherCards === 0) {

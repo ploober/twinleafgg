@@ -4,7 +4,7 @@ import { StoreLike, State, StateUtils } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class HisuianGrowlithe extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -44,7 +44,7 @@ export class HisuianGrowlithe extends PokemonCard {
       if (stadiumCard) {
         const cardList = StateUtils.findCardList(state, stadiumCard);
         const player = StateUtils.findOwner(state, cardList);
-        cardList.moveTo(player.discard);
+        MOVE_CARDS(store, state, cardList, player.discard, { sourceCard: this });
       }
       return state;
     }

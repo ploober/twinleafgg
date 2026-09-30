@@ -1,24 +1,10 @@
-import {
-  PokemonCard,
-  Stage,
-  CardType,
-  CardTag,
-  StoreLike,
-  State,
-  GameMessage,
-  StateUtils,
-  CardList,
-  SuperType,
-  ShowCardsPrompt,
-} from '../../../game';
+import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, GameMessage, StateUtils, CardList, SuperType, ShowCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import {
-  ADD_CONFUSION_TO_PLAYER_ACTIVE,
+import {ADD_CONFUSION_TO_PLAYER_ACTIVE,
   AFTER_ATTACK,
   SHUFFLE_DECK,
-  WAS_ATTACK_USED,
-} from '../../../game/store/prefabs/prefabs';
+  WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { COPY_ATTACK_FROM_POKEMON_LIST } from '../../../game/store/prefabs/copy-attack-prefabs';
 
 export class TeamRocketsPersianex extends PokemonCard {
@@ -60,7 +46,7 @@ export class TeamRocketsPersianex extends PokemonCard {
 
       // TA-131: declarable even if the opponent's deck is empty (rulebook p.20) — the reveal whiffs.
       const opponentTop10 = new CardList();
-      opponent.deck.moveTo(opponentTop10, Math.min(10, opponent.deck.cards.length));
+      MOVE_CARDS(store, state, opponent.deck, opponentTop10, { count: Math.min(10, opponent.deck.cards.length), sourceCard: this });
       const toppedPokemon = opponentTop10.cards.filter(
         (card) => card.superType === SuperType.POKEMON,
       ) as PokemonCard[];
@@ -83,7 +69,7 @@ export class TeamRocketsPersianex extends PokemonCard {
           // put-back. NOTE: zero CANDIDATES is not zero CARDS — revealing ten cards none of which has
           // a copyable attack still puts ten back, so that board DOES shuffle.
           const putBack = opponentTop10.cards.length;
-          opponentTop10.moveTo(opponent.deck);
+          MOVE_CARDS(store, state, opponentTop10, opponent.deck, { sourceCard: this });
           if (putBack > 0) {
             SHUFFLE_DECK(store, state, opponent);
           }

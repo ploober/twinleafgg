@@ -4,7 +4,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 import { StateUtils, StoreLike, State } from '../../../game';
-import { IS_SPECIAL_ENERGY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import {IS_SPECIAL_ENERGY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class NitroFireEnergy extends EnergyCard {
   public provides: CardType[] = [CardType.FIRE];

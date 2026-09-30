@@ -4,7 +4,8 @@ import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { CardList, ChooseCardsPrompt, GameLog, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import { CardList, ChooseCardsPrompt, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DuskBall extends TrainerCard {
 
@@ -21,7 +22,6 @@ export class DuskBall extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
@@ -54,19 +54,15 @@ export class DuskBall extends TrainerCard {
           // No Pokemon chosen, shuffle all back
           // TA-378: no self-discard here either — the shuffle below is still owed; the generic cleanup
           // discards the Item after it (#919). (The per-card loop moved the whole pile each pass.)
-          temp.moveTo(player.deck);
+          MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
         }
 
         if (chosenCards.length > 0) {
           // Move chosen Pokemon to hand
           const pokemon = chosenCards[0];
-          temp.moveCardTo(pokemon, player.hand);
-          temp.moveTo(player.deck);
+          MOVE_CARDS(store, state, temp, player.hand, { cards: [pokemon], sourceCard: this });
+          MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
           // TA-378: self-discard removed — the generic finalizeTrainerCleanup discards after the last prompt.
-
-          chosenCards.forEach((card, index) => {
-            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-          });
 
           if (chosenCards.length > 0) {
             state = store.prompt(state, new ShowCardsPrompt(

@@ -15,7 +15,7 @@ import { PlayerType } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useBurningCharge(next: Function, store: StoreLike, state: State,
   effect: AttackEffect | AfterAttackEffect): IterableIterator<State> {
@@ -62,7 +62,7 @@ function* useBurningCharge(next: Function, store: StoreLike, state: State,
           return;
         }
         const target = targets[0];
-        player.deck.moveCardsTo(cards, target);
+        MOVE_CARDS(store, state, player.deck, target, { cards: cards, sourceCard: player.active.getPokemonCard()! });
         next();
       },
     );

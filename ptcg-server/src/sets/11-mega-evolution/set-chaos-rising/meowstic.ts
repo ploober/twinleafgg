@@ -1,7 +1,7 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, StateUtils } from '../../../game';
-import { AFTER_ATTACK, CONFIRMATION_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 import { SuperType } from '../../../game/store/card/card-types';
 import { GameMessage } from '../../../game/game-message';
@@ -87,7 +87,7 @@ export class Meowstic extends PokemonCard {
                 // "the opponent's side as seen by the attacker"; passing `opponent` flips it twice and
                 // lands the Energy on the ATTACKER's bench, i.e. the attacker STEALS it.
                 const target = StateUtils.getTarget(state, player, t.to);
-                opponent.active.moveCardTo(t.card, target);
+                MOVE_CARDS(store, state, opponent.active, target, { cards: [t.card], sourceCard: this });
               }
             },
           );

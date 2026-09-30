@@ -1,11 +1,10 @@
 import { AttachEnergyPrompt, GameMessage, PlayerType, PowerType, SlotType, State, StateUtils, StoreLike, pokemonHasCardType } from '../../../game';
-import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
+import { CardType, Stage, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { TrainerTargetEffect } from '../../../game/store/effects/play-card-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED, BLOCK_TRAINER_TARGET, IS_TRAINER_TARGET, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Articuno extends PokemonCard {
 
@@ -94,12 +93,12 @@ export class Articuno extends PokemonCard {
         transfers = transfers || [];
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          player.active.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
         }
       });
     }
 
-    if (effect instanceof TrainerTargetEffect) {
+    if (IS_TRAINER_TARGET(effect, { trainerType: TrainerType.SUPPORTER })) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
@@ -107,13 +106,11 @@ export class Articuno extends PokemonCard {
         return state;
       }
 
-      if (effect.target) {
-        const pokemonCard = effect.target.getPokemonCard && effect.target.getPokemonCard();
-        if (pokemonCard) {
-          const isWater = pokemonHasCardType(pokemonCard, CardType.WATER);
-          if (isWater && opponent.bench.some(b => b === effect.target)) {
-            effect.preventDefault = true;
-          }
+      const pokemonCard = effect.target.getPokemonCard && effect.target.getPokemonCard();
+      if (pokemonCard) {
+        const isWater = pokemonHasCardType(pokemonCard, CardType.WATER);
+        if (isWater && opponent.bench.some(b => b === effect.target)) {
+          BLOCK_TRAINER_TARGET(effect);
         }
       }
     }

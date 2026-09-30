@@ -4,8 +4,8 @@ import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
-import { GameError, GameLog, GameMessage, SelectPrompt, StateUtils } from '../../../game';
-import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
+import { GameError, GameMessage, SelectPrompt, StateUtils } from '../../../game';
+import { DRAW_CARDS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Dan extends TrainerCard {
   public trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -32,7 +32,7 @@ export class Dan extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
 
       DRAW_CARDS(store, state, player, 2);
 
@@ -58,9 +58,6 @@ export class Dan extends TrainerCard {
         // variable time
         const playerChosenValue = results[0];
         const opponentChosenValue = results[1];
-        // outputting what both players chose
-        store.log(state, GameLog.LOG_PLAYER_CHOOSES, { name: player.name, string: options[playerChosenValue].message });
-        store.log(state, GameLog.LOG_PLAYER_CHOOSES, { name: opponent.name, string: options[opponentChosenValue].message });
         // if they tie, restart it
         if (playerChosenValue === opponentChosenValue) { return this.reduceEffect(store, state, effect); }
 
@@ -71,7 +68,6 @@ export class Dan extends TrainerCard {
           DRAW_CARDS(store, state, player, 2);
         }
       });
-
 
     }
 

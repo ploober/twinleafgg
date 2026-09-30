@@ -4,7 +4,9 @@ import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { CardList, GameMessage, ShuffleDeckPrompt, ChooseCardsPrompt, ShowCardsPrompt, GameLog, StateUtils } from '../../../game';
+import { CardList, GameMessage, ShuffleDeckPrompt, ChooseCardsPrompt, ShowCardsPrompt, StateUtils } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+
 export class EnergyLoto extends TrainerCard {
 
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -35,7 +37,7 @@ export class EnergyLoto extends TrainerCard {
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      player.deck.moveTo(temp, 7);
+      MOVE_CARDS(store, state, player.deck, temp, { count: 7, sourceCard: this });
 
       return store.prompt(state, new ChooseCardsPrompt(
         player,
@@ -48,9 +50,7 @@ export class EnergyLoto extends TrainerCard {
         if (chosenCards && chosenCards.length > 0) {
           // Move chosen Energy to hand and reveal it to opponent
           const energyCard = chosenCards[0];
-          temp.moveCardTo(energyCard, player.hand);
-
-          store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: energyCard.name });
+          MOVE_CARDS(store, state, temp, player.hand, { cards: [energyCard], sourceCard: this });
 
           state = store.prompt(state, new ShowCardsPrompt(
             opponent.id,
@@ -59,7 +59,7 @@ export class EnergyLoto extends TrainerCard {
         }
 
         // Shuffle remaining cards back into deck
-        temp.moveTo(player.deck);
+        MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
 
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);

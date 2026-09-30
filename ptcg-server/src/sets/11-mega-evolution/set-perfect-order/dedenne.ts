@@ -3,7 +3,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, AttachEnergyPrompt, PlayerType, SlotType, GameMessage, CoinFlipPrompt, pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Dedenne extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -86,7 +86,7 @@ export class Dedenne extends PokemonCard {
         transfers = transfers || [];
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          player.discard.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card], sourceCard: this });
         }
       });
     }

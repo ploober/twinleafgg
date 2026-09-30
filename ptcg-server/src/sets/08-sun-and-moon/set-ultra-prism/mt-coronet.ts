@@ -1,6 +1,6 @@
 import { Card, ChooseCardsPrompt, EnergyCard, ShowCardsPrompt, ShuffleDeckPrompt } from '../../../game';
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -9,6 +9,7 @@ import { DiscardToHandEffect } from '../../../game/store/effects/play-card-effec
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useStadium(next: Function, store: StoreLike, state: State, effect: UseStadiumEffect): IterableIterator<State> {
   const player = effect.player;
@@ -53,11 +54,7 @@ function* useStadium(next: Function, store: StoreLike, state: State, effect: Use
     }
 
     cards.forEach((card, index) => {
-      player.discard.moveCardTo(card, player.hand);
-    });
-
-    cards.forEach((card, index) => {
-      store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
+      MOVE_CARDS(store, state, player.discard, player.hand, { cards: [card], sourceCard: effect.stadium });
     });
 
     return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
@@ -94,7 +91,7 @@ export class MtCoronet extends TrainerCard {
 
       if (discardEffect.preventDefault) {
         // If prevented, just discard the card and return
-        player.supporter.moveCardTo(effect.stadium, player.discard);
+        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [effect.stadium], sourceCard: this });
         return state;
       }
 

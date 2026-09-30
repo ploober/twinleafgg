@@ -18,7 +18,7 @@ import {
   PutDamageEffect,
 } from '../../../game/store/effects/attack-effects';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Tatsugiriex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -104,7 +104,7 @@ export class Tatsugiriex extends PokemonCard {
       const maxPokemons = openSlots.length;
 
       const deckTop = new CardList();
-      player.deck.moveTo(deckTop, 10);
+      MOVE_CARDS(store, state, player.deck, deckTop, { count: 10, sourceCard: this });
 
       let cards: Card[] = [];
       return store.prompt(state, new ChooseCardsPrompt(
@@ -117,11 +117,11 @@ export class Tatsugiriex extends PokemonCard {
         cards = selectedCards || [];
 
         cards.forEach((card, index) => {
-          deckTop.moveCardTo(card, openSlots[index]);
+          MOVE_CARDS(store, state, deckTop, openSlots[index], { cards: [card], sourceCard: this });
           openSlots[index].pokemonPlayedTurn = state.turn;
         });
         const putBack = deckTop.cards.length;
-        deckTop.moveTo(player.deck);
+        MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
         if (putBack === 0) {
           return state;   // nothing returned to the deck → no shuffle (TA-166, #2377)
         }

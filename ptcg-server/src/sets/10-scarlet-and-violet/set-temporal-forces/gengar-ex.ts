@@ -3,7 +3,7 @@ import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/ca
 import { StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, PowerType, AttachEnergyPrompt } from '../../../game';
 import { Effect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
-import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gengarex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -86,7 +86,7 @@ export class Gengarex extends PokemonCard {
               // TA-147: resolve the destination in the PROMPT's frame (`player`), not `opponent` --
               // the prompt is built player.id + TOP_PLAYER, so a second flip steals the Energy.
               const target = StateUtils.getTarget(state, player, transfer.to);
-              opponent.active.moveCardTo(transfer.card, target);
+              MOVE_CARDS(store, state, opponent.active, target, { cards: [transfer.card], sourceCard: this });
             }
           });
         }

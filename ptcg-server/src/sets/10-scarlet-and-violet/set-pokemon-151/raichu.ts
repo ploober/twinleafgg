@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { AttachEnergyPrompt, Card, CardTarget, EnergyCard, GameMessage, GamePhase, PlayerType, PokemonCardList, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { IS_ABILITY_BLOCKED, THIS_POKEMON_DOES_DAMAGE_TO_ITSELF, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {IS_ABILITY_BLOCKED, THIS_POKEMON_DOES_DAMAGE_TO_ITSELF, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 
 export class Raichu extends PokemonCard {

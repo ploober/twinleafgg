@@ -7,6 +7,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { Player, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Caretaker extends TrainerCard {
 
@@ -37,7 +38,6 @@ export class Caretaker extends TrainerCard {
     return true;
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const player = effect.player;
@@ -52,11 +52,11 @@ export class Caretaker extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      player.deck.moveTo(player.hand, 2);
+      MOVE_CARDS(store, state, player.deck, player.hand, { count: 2, sourceCard: this });
 
       const stadiumCard = StateUtils.getStadiumCard(state);
       if (stadiumCard !== undefined && stadiumCard.name === 'Community Center') {
@@ -64,13 +64,13 @@ export class Caretaker extends TrainerCard {
         // Caretaker back and then shuffle (was a bare moveTo that left the deck order intact — the
         // card's shuffle never fired; TA-329/F-030). Mirrors the ShuffleDeckPrompt pattern every
         // sibling "shuffle X into your deck" card uses (Unfair Stamp, Spikemuth Gym).
-        player.supporter.moveTo(player.deck);
+        MOVE_CARDS(store, state, player.supporter, player.deck, { sourceCard: this });
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);
           return state;
         });
       } else {
-        player.supporter.moveTo(player.discard);
+        MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
       }
 
       return state;

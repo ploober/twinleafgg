@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { CardList, GameMessage, OrderCardsPrompt, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import {AFTER_ATTACK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gothorita extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -47,7 +47,7 @@ export class Gothorita extends PokemonCard {
       }
 
       const deckTop = new CardList();
-      opponent.deck.moveTo(deckTop, 5);
+      MOVE_CARDS(store, state, opponent.deck, deckTop, { count: 5, sourceCard: this });
 
       return store.prompt(state, new OrderCardsPrompt(
         player.id,

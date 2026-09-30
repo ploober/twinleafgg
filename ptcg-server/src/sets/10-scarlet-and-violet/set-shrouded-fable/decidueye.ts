@@ -4,7 +4,7 @@ import { StoreLike, State, GameMessage, ChooseCardsPrompt } from '../../../game'
 import { Effect } from '../../../game/store/effects/effect';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Decidueye extends PokemonCard {
 
@@ -46,7 +46,7 @@ export class Decidueye extends PokemonCard {
         if (player.deck.cards.length === 0) {
           break;
         }
-        player.deck.moveTo(player.hand, 1);
+        MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
       }
     }
 
@@ -72,7 +72,7 @@ export class Decidueye extends PokemonCard {
         { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
-        player.hand.moveCardsTo(cards, player.discard);
+        MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: this });
         return state;
       });
     }

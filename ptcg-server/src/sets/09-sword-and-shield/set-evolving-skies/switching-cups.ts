@@ -8,6 +8,7 @@ import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { CardList } from '../../..';
+import {MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -36,7 +37,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   // goes to the hand and the chosen hand card becomes the new top of the deck (a conservation-safe
   // swap). The old code stranded the top card in a local list and lost it (re-fuzz x71 conservation).
   const deckTop = new CardList();
-  player.deck.moveTo(deckTop, 1);
+  MOVE_CARDS(store, state, player.deck, deckTop, { count: 1, sourceCard: effect.trainerCard });
 
   const chosen = new CardList();
   player.hand.moveCardTo(cards[0], chosen);
@@ -63,7 +64,6 @@ export class SwitchingCups extends TrainerCard {
 
   public text: string =
     'Switch a card from your hand with the top card of your deck.';
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

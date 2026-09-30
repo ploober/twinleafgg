@@ -1,5 +1,5 @@
 import { GameError, PokemonCard } from '../../../game';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Card } from '../../../game/store/card/card';
 import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
@@ -30,7 +30,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -62,10 +62,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
-
   MOVE_CARDS(store, state, player.discard, player.hand, { cards, sourceCard: self });
 
   if (cards.length > 0) {
@@ -93,7 +89,6 @@ export class Klara extends TrainerCard {
 
 • Put up to 2 Pokémon from your discard pile into your hand.
 • Put up to 2 basic Energy cards from your discard pile into your hand.`;
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

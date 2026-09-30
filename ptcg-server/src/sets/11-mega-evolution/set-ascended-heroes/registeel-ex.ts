@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Registeelex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -68,7 +68,7 @@ export class Registeelex extends PokemonCard {
 
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);
-            player.discard.moveCardTo(transfer.card, target);
+            MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card], sourceCard: this });
           }
         },
       );

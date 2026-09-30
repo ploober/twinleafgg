@@ -10,7 +10,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { EnergyCard, Player, StateUtils } from '../../../game';
-import { SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
+import {SHOW_CARDS_TO_PLAYER, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(
   next: Function,
@@ -54,7 +54,7 @@ function* playCard(
       // TA-393: "put them into your hand" — this line is upstream's and was dropped when the TA-320
       // hunk below was merge-resolved over it, so the chosen Energy was revealed and then shuffled
       // straight back into the deck. The take must happen before the generator resumes to the shuffle.
-      player.deck.moveCardsTo(cards, player.hand);
+      MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
 
     // TA-320: resume the generator so the trailing `return store.prompt(ShuffleDeckPrompt)` is
     // reached. Without this next() the generator stayed suspended at the choose yield and the owed

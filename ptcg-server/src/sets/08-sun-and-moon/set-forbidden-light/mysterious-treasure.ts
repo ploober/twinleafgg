@@ -1,6 +1,6 @@
 import { CardList, PokemonCard, pokemonHasCardType } from '../../../game';
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Card } from '../../../game/store/card/card';
 import { CardType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
@@ -12,6 +12,7 @@ import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: MysteriousTreasure, effect: TrainerEffect): IterableIterator<State> {
@@ -38,7 +39,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
 
   // prepare card list without Junk Arm
   const handTemp = new CardList();
@@ -53,10 +54,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
   ), selected => {
     cards = selected || [];
 
-    cards.forEach((card, index) => {
-      store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD_FROM_HAND, { name: player.name, card: card.name });
-    });
-
     next();
   });
 
@@ -65,7 +62,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     return state;
   }
 
-  player.hand.moveCardsTo(cards, player.discard);
+  MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: self });
 
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
@@ -79,7 +76,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  player.deck.moveCardsTo(cards, player.hand);
+  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
 
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
@@ -88,8 +85,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
       cards
     ), () => next());
   }
-
-
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
     player.deck.applyOrder(order);

@@ -2,7 +2,7 @@ import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/s
 import { BoardEffect, CardType, GameError, GameMessage, PlayerType, PokemonCard, PowerType, Stage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect, TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { ADD_MARKER, HAS_MARKER, REMOVE_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { ADD_MARKER, HAS_MARKER, REMOVE_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Crobat extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -70,7 +70,7 @@ export class Crobat extends PokemonCard {
           if (player.deck.cards.length === 0) {
             break;
           }
-          player.deck.moveTo(player.hand, 1);
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
         }
         //Mark the Pokémon to indicate that the ability has already been used.
         ADD_MARKER(this.SHADOWY_ENVOY_MARKER, player, this);

@@ -3,7 +3,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StateUtils, GameMessage, DiscardEnergyPrompt, PlayerType, SlotType, SuperType } from '../../../game';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class MegaCameruptEx extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -77,7 +77,7 @@ export class MegaCameruptEx extends PokemonCard {
             }
             for (const transfer of transfers) {
               const source = StateUtils.getTarget(state, player, transfer.from);
-              source.moveCardTo(transfer.card, player.discard);
+              MOVE_CARDS(store, state, source, player.discard, { cards: [transfer.card], sourceCard: this });
             }
           },
         );

@@ -2,7 +2,7 @@ import { PokemonCard, Stage, CardType, State, StoreLike, GameMessage, PowerType,
 import { Effect } from '../../../game/store/effects/effect';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { ABILITY_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import {ABILITY_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Quaquaval extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -74,7 +74,7 @@ export class Quaquaval extends PokemonCard {
 
         this.marker.addMarker(this.UP_TEMPO_MARKER, this);
         player.marker.addMarker(this.UP_TEMPO_MARKER, this);
-        player.hand.moveCardsTo(cards, player.deck);
+        MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: this });
 
         // TA-217: this loop had no deck term. Once the deck runs dry `moveTo` moves nothing, the
         // hand never reaches 5 and the loop spins forever -- a genuine infinite loop, not merely a
@@ -92,7 +92,7 @@ export class Quaquaval extends PokemonCard {
         // empty deck, and both reach `winB` the moment A's next turn begins. Compendium #481
         // (Heart Wink) says the same at card level; TA-210 settled the same shape for meg-104.
         while (player.hand.cards.length < 5 && player.deck.cards.length > 0) {
-          player.deck.moveTo(player.hand, 1);
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
         }
       });
     }

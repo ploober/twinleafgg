@@ -4,7 +4,7 @@ import { StoreLike, State, StateUtils, PlayerType, GameMessage, SlotType, Discar
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Sinistcha extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;

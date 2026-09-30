@@ -1,6 +1,6 @@
 import { Effect } from '../../../game/store/effects/effect';
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
@@ -70,9 +70,6 @@ export class TeamRocketsGreatBall extends TrainerCard {
       ), selectedCards => {
         const cards: Card[] = selectedCards || [];
         if (cards.length > 0) {
-          cards.forEach(card => {
-            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-          });
           state = store.prompt(state, new ShowCardsPrompt(
             opponent.id,
             GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,

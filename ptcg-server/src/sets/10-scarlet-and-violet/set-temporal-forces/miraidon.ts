@@ -1,13 +1,12 @@
 /* eslint-disable indent */
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { CardTag } from '../../../game/store/card/card-types';
+import { Stage, CardType, EnergyType, SuperType, CardTag } from '../../../game/store/card/card-types';
 import { AttachEnergyPrompt, CardTarget, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
-import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Miraidon extends PokemonCard {
@@ -96,7 +95,7 @@ export class Miraidon extends PokemonCard {
 
           if (target.cards[0].hasTag(CardTag.FUTURE)) {
 
-            player.deck.moveCardTo(transfer.card, target);
+            MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: this });
           }
         }
 

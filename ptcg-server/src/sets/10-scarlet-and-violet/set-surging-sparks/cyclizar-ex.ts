@@ -15,7 +15,7 @@ import {
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Cyclizarex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
@@ -102,7 +102,7 @@ export class Cyclizarex extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (wantToUse) {
-          player.deck.moveTo(player.hand, 5);
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 5, sourceCard: this });
         }
       });
     }

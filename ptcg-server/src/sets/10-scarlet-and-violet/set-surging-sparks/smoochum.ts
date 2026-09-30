@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttachEnergyPrompt, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, StateUtils } from '../../../game';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Smoochum extends PokemonCard {
 
@@ -62,7 +62,7 @@ export class Smoochum extends PokemonCard {
         transfers = transfers || [];
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          player.deck.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: this });
         }
       });
 

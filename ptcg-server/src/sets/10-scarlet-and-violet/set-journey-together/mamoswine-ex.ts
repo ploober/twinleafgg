@@ -1,11 +1,28 @@
-import { ChooseCardsPrompt, GameError, GameMessage, PlayerType, PowerType, ShowCardsPrompt, ShuffleDeckPrompt, State, StateUtils, StoreLike } from '../../../game';
-import { BoardEffect, CardTag, CardType, Stage, SuperType } from '../../../game/store/card/card-types';
+import {
+  ChooseCardsPrompt,
+  GameError,
+  GameMessage,
+  PlayerType,
+  PowerType,
+  ShowCardsPrompt,
+  ShuffleDeckPrompt,
+  State,
+  StateUtils,
+  StoreLike,
+} from '../../../game';
+import {
+  BoardEffect,
+  CardTag,
+  CardType,
+  Stage,
+  SuperType,
+} from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED, BLOCK_IF_DECK_EMPTY } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, WAS_POWER_USED, BLOCK_IF_DECK_EMPTY, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Mamoswineex extends PokemonCard {
 
@@ -76,7 +93,7 @@ export class Mamoswineex extends PokemonCard {
         { superType: SuperType.POKEMON },
         { min: 0, max: 1, allowCancel: false }
       ), cards => {
-        player.deck.moveCardsTo(cards, player.hand);
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
 
         if (cards.length > 0) {
           state = store.prompt(state, new ShowCardsPrompt(

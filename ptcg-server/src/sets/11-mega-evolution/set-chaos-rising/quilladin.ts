@@ -9,7 +9,7 @@ import {
   ShuffleDeckPrompt,
 } from '../../../game';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Quilladin extends PokemonCard {
@@ -82,7 +82,7 @@ export class Quilladin extends PokemonCard {
         (selected) => {
           const cards = selected || [];
           if (cards.length > 0) {
-            player.deck.moveCardTo(cards[0], player.active);
+            MOVE_CARDS(store, state, player.deck, player.active, { cards: [cards[0]], sourceCard: this });
           }
           // "Then, shuffle your deck." follows the performed search whether or not it found (#2303,
           // B.44's wording test) — TA-351.

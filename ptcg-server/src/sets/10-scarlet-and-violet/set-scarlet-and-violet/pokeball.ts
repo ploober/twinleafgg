@@ -1,7 +1,7 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 
@@ -10,7 +10,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils, ShowCardsPrompt, GameError, Player } from '../../../game';
 
-import { COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import {COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -43,10 +43,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       });
 
     if (cards.length > 0) {
-      player.discard.moveCardsTo(cards, player.deck);
-      cards.forEach((card, index) => {
-        store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-      });
+      MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: effect.trainerCard });
       if (cards.length > 0) {
         state = store.prompt(state, new ShowCardsPrompt(
           opponent.id,
@@ -55,7 +52,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       }
     }
 
-    player.deck.moveCardsTo(cards, player.hand);
+    MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
   }
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order: any[]) => {

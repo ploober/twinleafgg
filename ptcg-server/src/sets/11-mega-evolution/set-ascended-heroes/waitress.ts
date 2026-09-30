@@ -1,7 +1,7 @@
 import { TrainerCard, TrainerType, StoreLike, State, GameError, GameMessage, CardList, ChooseCardsPrompt, SuperType, EnergyType, AttachEnergyPrompt, PlayerType, SlotType, StateUtils, Player } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
 export class Waitress extends TrainerCard {
@@ -24,7 +24,6 @@ export class Waitress extends TrainerCard {
     return true;
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_TRAINER_USED(effect, this)) {
       const player = effect.player;
@@ -34,7 +33,7 @@ export class Waitress extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
       effect.preventDefault = true;
 
       if (player.deck.cards.length === 0) {
@@ -43,7 +42,7 @@ export class Waitress extends TrainerCard {
 
       const deckTop = new CardList();
       const cardsToLook = Math.min(6, player.deck.cards.length);
-      player.deck.moveTo(deckTop, cardsToLook);
+      MOVE_CARDS(store, state, player.deck, deckTop, { count: cardsToLook, sourceCard: this });
 
       // TA-386 (2026-09-07): "attach a Basic Energy card you find there" carries no "may" and no
       // "up to" — when the looked-at window holds a Basic Energy the attach is MANDATORY, and the
@@ -86,13 +85,13 @@ export class Waitress extends TrainerCard {
             }
             // Put remaining cards back into deck
             chosen.moveTo(player.deck);
-            deckTop.moveTo(player.deck);
+            MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
             SHUFFLE_DECK(store, state, player);
 
           });
         } else {
           // No energy selected, put all cards back
-          deckTop.moveTo(player.deck);
+          MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
           SHUFFLE_DECK(store, state, player);
 
         }

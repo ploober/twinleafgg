@@ -89,7 +89,9 @@ export function catalogCards(): Card[] {
     return catalogCardsCache;
   }
   loadAllSets();
-  catalogCardsCache = CardManager.getInstance().getAllCards();
+  // Upstream 41382b814 registers `set-test` (TEST-001 "Test Pokemon", a developer debug card with
+  // no printed counterpart) in the live card pool. It is not a printing, so it is not catalogued.
+  catalogCardsCache = CardManager.getInstance().getAllCards().filter(c => c.set !== 'TEST');
   return catalogCardsCache;
 }
 

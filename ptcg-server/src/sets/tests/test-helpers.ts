@@ -1139,7 +1139,7 @@ function buildPokemonSlot(slot: PokemonCardList, config: PokemonSlotConfig): voi
     }
   }
 
-  // Attach tools
+  // Attach tools — production keeps tools only in tools[] (stripped from cards on attach)
   if (config.tools) {
     for (const toolName of config.tools) {
       const tool = getCardByName(toolName);

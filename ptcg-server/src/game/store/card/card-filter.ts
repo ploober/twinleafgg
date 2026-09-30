@@ -1,4 +1,5 @@
 import { Card } from './card';
+import { matchesPromptFilter } from '../prompts/prompt-card-filter';
 
 /**
  * Match a card against a `Partial<Card>`-style filter (the shape every ChooseCardsPrompt, CardList
@@ -20,6 +21,12 @@ export function matchesCardFilter(card: Card, filter: object): boolean {
   for (const key in filter) {
     if (!Object.prototype.hasOwnProperty.call(filter, key)) { continue; }
     const expected: any = (filter as any)[key];
+    // Upstream 41382b814's matcher owns cardType (scalar or array; Energy by `provides`) and tags
+    // (runtime `hasTag`) — a strict superset of the containment rule below for those two keys.
+    if (key === 'cardType' || key === 'tags') {
+      if (!matchesPromptFilter(card as any, { [key]: expected })) { return false; }
+      continue;
+    }
     const value: any = (card as any)[key];
     if (Array.isArray(expected)) {
       if (!Array.isArray(value)) { return false; }

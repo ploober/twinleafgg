@@ -1,10 +1,10 @@
 import { GameError, PokemonCardList } from '../../../game';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { Stage, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { SupporterEffect, TrainerEffect, TrainerTargetEffect } from '../../../game/store/effects/play-card-effects';
+import { SupporterEffect, TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
@@ -49,17 +49,8 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
         return;
       }
 
-      const targetCard = new TrainerTargetEffect(player, effect.trainerCard, targets[0]);
-      targetCard.target = targets[0];
-      store.reduceEffect(state, targetCard);
-      if (targetCard.target) {
-        opponent.switchPokemon(targetCard.target);
-      } else {
-        // If no target, effect ends
-        return state;
-      }
+      opponent.switchPokemon(targets[0]);
 
-      store.log(state, GameLog.LOG_PLAYER_SWITCHES_POKEMON_TO_ACTIVE, { name: player.name, card: targets[0].getPokemonCard()!.name });
 
       next();
 
@@ -102,7 +93,6 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
         player.active.clearEffects();
         player.switchPokemon(target[0]);
 
-        store.log(state, GameLog.LOG_PLAYER_SWITCHES_POKEMON_TO_ACTIVE, { name: player.name, card: target[0].getPokemonCard()!.name });
         return state;
       });
     });

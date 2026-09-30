@@ -12,6 +12,7 @@ import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardList, EnergyCard, Player, pokemonHasCardType } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(
   next: Function,
@@ -24,7 +25,7 @@ function* playCard(
   const opponent = StateUtils.getOpponent(state, player);
   let cards: Card[] = [];
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -44,7 +45,7 @@ function* playCard(
   const maxGrassPokemonOrEnergyCount = Math.min(grassPokemonOrEnergyCount, 2);
 
   const deckTop = new CardList();
-  player.deck.moveTo(deckTop, 7);
+  MOVE_CARDS(store, state, player.deck, deckTop, { count: 7, sourceCard: self });
 
   yield store.prompt(
     state,
@@ -76,7 +77,7 @@ function* playCard(
   // `from: 'unknown'`, not `from: 'deck'` -- so the whole window goes back to the deck FIRST, the
   // reveal is raised while the chosen cards are genuinely in the deck, and only then do they move to
   // the hand. Net state is unchanged: the deck is shuffled at the end of the effect either way.
-  deckTop.moveTo(player.deck);
+  MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: self });
 
   if (cards.length > 0) {
     yield store.prompt(
@@ -107,7 +108,6 @@ export class BugCatchingSet extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {

@@ -1,9 +1,9 @@
-import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils, PlayerType, CardTag } from '../../../game';
-import { ApplyWeaknessEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { PokemonCard, Stage, CardType, StoreLike, State, CardTag } from '../../../game';
+import { ApplyWeaknessEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealEffect } from '../../../game/store/effects/game-effects';
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { PREVENT_DAMAGE } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class IronMoth extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -24,7 +24,7 @@ export class IronMoth extends PokemonCard {
       name: 'Anachronism Repulsor',
       cost: [CardType.FIRE, CardType.FIRE, CardType.COLORLESS],
       damage: 120,
-      text: 'During your next turn, prevent all damage done to this Pokémon by attacks from Ancient Pokémon.',
+      text: "During your opponent's next turn, prevent all damage done to this Pokémon by attacks from Ancient Pokémon.",
     },
   ];
   public regulationMark = 'H';
@@ -33,9 +33,6 @@ export class IronMoth extends PokemonCard {
   public fullName: string = 'Iron Moth SFA';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '9';
-
-  public readonly WILD_REJECTOR_MARKER: string = 'WILD_REJECTOR_MARKER';
-  public readonly CLEAR_WILD_REJECTOR_MARKER: string = 'CLEAR_WILD_REJECTOR_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
@@ -55,35 +52,7 @@ export class IronMoth extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      player.active.marker.addMarker(this.WILD_REJECTOR_MARKER, this);
-      opponent.marker.addMarker(this.CLEAR_WILD_REJECTOR_MARKER, this);
-      return state;
-    }
-
-    if (
-      effect instanceof PutDamageEffect &&
-      effect.target.marker.hasMarker(this.WILD_REJECTOR_MARKER)
-    ) {
-      const card = effect.source.getPokemonCard();
-      const ancientPokemon = card && card.hasTag(CardTag.ANCIENT);
-
-      if (ancientPokemon) {
-        effect.preventDefault = true;
-      }
-
-      return state;
-    }
-
-    if (effect instanceof EndTurnEffect) {
-      if (effect.player.marker.hasMarker(this.CLEAR_WILD_REJECTOR_MARKER, this)) {
-        effect.player.marker.removeMarker(this.CLEAR_WILD_REJECTOR_MARKER, this);
-        const opponent = StateUtils.getOpponent(state, effect.player);
-        opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
-          cardList.marker.removeMarker(this.WILD_REJECTOR_MARKER, this);
-        });
-      }
+      PREVENT_DAMAGE(store, state, effect, this, { sourceTags: [CardTag.ANCIENT] });
     }
 
     return state;

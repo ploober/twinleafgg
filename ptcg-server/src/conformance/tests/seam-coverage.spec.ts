@@ -92,6 +92,10 @@ const ALLOW_UNMAPPED = new Set<string>([
   'LOG_PLAYER_NO_ACTIVE_POKEMON', // consumed by events.ts as gameOver.cause=noPokemonInPlay (KO transient)
   'LOG_PLAYER_NO_CARDS_IN_DECK',  // consumed by events.ts as gameOver.cause=deckOut (folded deckedOut)
   'LOG_PLAYER_NO_PRIZE_CARD',     // prize-state narration
+  // Upstream 41382b814 auto-log (prefabs/auto-log.ts logResolvedPrompt): narration of a RESOLVED
+  // prompt. The choice is the wire action itself, and the discard's zone change is diffed from state.
+  'LOG_PLAYER_CHOOSES',
+  'LOG_PLAYER_DISCARDS_CARD_FROM_HAND',
 ]);
 // LOG_PLAYER_PLAYS_STADIUM is now MAPPED to `stadiumPlayed` (event-vocabulary standardization), so it
 // left this allow-list; LOG_PLAYER_HEALS_POKEMON is consumed by events.ts as the `healed` event.

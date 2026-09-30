@@ -4,8 +4,10 @@ import { StoreLike } from '../../game/store/store-like';
 import { State } from '../../game/store/state/state';
 import { Effect } from '../../game/store/effects/effect';
 import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-prompt';
-import { TrainerEffect, TrainerTargetEffect } from '../../game/store/effects/play-card-effects';
+import { TrainerEffect } from '../../game/store/effects/play-card-effects';
 import { PlayerType, SlotType, StateUtils, GameError, GameMessage } from '../../game';
+import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
+
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
@@ -15,7 +17,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -26,20 +28,13 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     [SlotType.BENCH],
     { allowCancel: false }
   ), result => {
-    const cardList = result[0];
-
+    const cardList = result && result[0];
     if (cardList) {
-      const targetCard = new TrainerTargetEffect(player, effect.trainerCard, cardList);
-      targetCard.target = cardList;
-      store.reduceEffect(state, targetCard);
-      if (targetCard.target) {
-        opponent.switchPokemon(targetCard.target);
-      }
+      opponent.switchPokemon(cardList);
     }
     return state;
   });
 }
-
 
 export class GustOfWind extends TrainerCard {
 

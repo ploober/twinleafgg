@@ -90,6 +90,13 @@ import {
 } from './deck-shuffle-animation';
 import { CAN_PLAY_TRAINER_CARD } from './trainer-prefabs';
 
+export {
+  IS_TRAINER_TARGET,
+  BLOCK_TRAINER_TARGET,
+  TRAINER_TARGET_BLOCKED,
+  WAS_TRAINER_TARGET_BLOCKED,
+} from './trainer-target';
+
 // =============================================================================
 // Effect type guards / turn hooks
 // =============================================================================
@@ -1829,12 +1836,6 @@ export function SEARCH_DECK_FOR_CARDS_TO_HAND(
     (selected) => {
       const cards = selected || [];
       if (Object.keys(filter).length > 0) {
-        cards.forEach((card) => {
-          store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, {
-            name: player.name,
-            card: card.name,
-          });
-        });
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
       }
       MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard, sourceEffect });
@@ -1877,14 +1878,7 @@ export function SEARCH_DISCARD_PILE_FOR_CARDS_TO_HAND(
       });
       state = store.reduceEffect(state, moveEffect);
 
-      // Only log and show cards if the move wasn't prevented
       if (!moveEffect.preventDefault) {
-        cards.forEach((card) => {
-          store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, {
-            name: player.name,
-            card: card.name,
-          });
-        });
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
       }
 
@@ -1924,6 +1918,69 @@ export function MOVE_CARDS(
   } = {},
 ): State {
   return store.reduceEffect(state, new MoveCardsEffect(source, destination, options));
+}
+
+/**
+ * Move a Pokémon (and its attachments) off a board slot.
+ * When `attachedDestination` differs from `pokemonDestination`, attachments go to
+ * the attached destination first, then Pokémon move to their destination.
+ * Slot cleanup (damage, markers, tools array, etc.) is handled by MoveCardsEffect
+ * when the slot is vacated — callers should not manually clearEffects/damage=0.
+ */
+export function MOVE_POKEMON_OFF_BOARD(
+  store: StoreLike,
+  state: State,
+  slot: PokemonCardList,
+  options: {
+    pokemonDestination: CardList;
+    attachedDestination?: CardList;
+    sourceCard?: Card;
+    sourceEffect?: any;
+  },
+): State {
+  const pokemonDestination = options.pokemonDestination;
+  const attachedDestination = options.attachedDestination ?? pokemonDestination;
+  const sourceCard = options.sourceCard;
+  const sourceEffect = options.sourceEffect;
+
+  // Same destination: full-stack move handles tools + slot reset in the engine.
+  if (attachedDestination === pokemonDestination) {
+    return MOVE_CARDS(store, state, slot, pokemonDestination, { sourceCard, sourceEffect });
+  }
+
+  const pokemons = slot.getPokemons();
+  const tools = [...slot.tools];
+  const otherCards = slot.cards.filter(
+    card =>
+      !(card instanceof PokemonCard) &&
+      !pokemons.includes(card as PokemonCard) &&
+      !tools.includes(card),
+  );
+
+  // Attachments first so vacating via Pokémon move does not orphan them.
+  if (otherCards.length > 0) {
+    state = MOVE_CARDS(store, state, slot, attachedDestination, {
+      cards: otherCards,
+      sourceCard,
+      sourceEffect,
+    });
+  }
+  for (const tool of tools) {
+    state = MOVE_CARDS(store, state, slot, attachedDestination, {
+      cards: [tool],
+      sourceCard,
+      sourceEffect,
+    });
+  }
+  if (pokemons.length > 0) {
+    state = MOVE_CARDS(store, state, slot, pokemonDestination, {
+      cards: pokemons,
+      sourceCard,
+      sourceEffect,
+    });
+  }
+
+  return state;
 }
 
 export function MOVE_CARDS_TO_HAND(store: StoreLike, state: State, player: Player, cards: Card[]) {

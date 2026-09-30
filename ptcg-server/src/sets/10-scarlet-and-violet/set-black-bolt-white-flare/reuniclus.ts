@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { GameMessage } from '../../../game/game-message';
 import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, PokemonCardList, ShuffleDeckPrompt, SlotType } from '../../../game';
-import { WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useCellularAwakening(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
@@ -106,7 +106,7 @@ function* useCellularAwakening(next: Function, store: StoreLike, state: State,
     const evolution = cards[0] as PokemonCard;
 
     // Evolve Pokemon
-    player.deck.moveCardTo(evolution, target);
+    MOVE_CARDS(store, state, player.deck, target, { cards: [evolution], sourceCard: effect.source.getPokemonCard()! });
     target.clearEffects();
     target.pokemonPlayedTurn = state.turn;
   }
@@ -115,7 +115,6 @@ function* useCellularAwakening(next: Function, store: StoreLike, state: State,
     player.deck.applyOrder(order);
   });
 }
-
 
 export class Reuniclus extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;

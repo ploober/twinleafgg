@@ -5,7 +5,7 @@ import { State } from '../../game/store/state/state';
 import { Effect } from '../../game/store/effects/effect';
 import { TrainerEffect } from '../../game/store/effects/play-card-effects';
 import { GameError } from '../../game/game-error';
-import { GameLog, GameMessage } from '../../game/game-message';
+import { GameMessage } from '../../game/game-message';
 import { Card } from '../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { CardList } from '../../game/store/state/card-list';
@@ -13,7 +13,6 @@ import { ShowCardsPrompt } from '../../game/store/prompts/show-cards-prompt';
 import { StateUtils } from '../../game/store/state-utils';
 import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
 import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
-
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: FieryFlint, effect: TrainerEffect): IterableIterator<State> {
@@ -32,7 +31,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
 
   // prepare card list without Junk Arm
   const handTemp = new CardList();
@@ -68,10 +67,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
   });
 
   MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
 
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(

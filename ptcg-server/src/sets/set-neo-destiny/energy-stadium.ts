@@ -1,12 +1,12 @@
 import { Card, ChooseCardsPrompt, EnergyCard } from '../../game';
 import { GameError } from '../../game/game-error';
-import { GameLog, GameMessage } from '../../game/game-message';
+import { GameMessage } from '../../game/game-message';
 import { EnergyType, SuperType, TrainerType } from '../../game/store/card/card-types';
 import { TrainerCard } from '../../game/store/card/trainer-card';
 import { Effect } from '../../game/store/effects/effect';
 import { UseStadiumEffect } from '../../game/store/effects/game-effects';
 import { DiscardToHandEffect } from '../../game/store/effects/play-card-effects';
-import { COIN_FLIP_PROMPT, SHOW_CARDS_TO_PLAYER } from '../../game/store/prefabs/prefabs';
+import {COIN_FLIP_PROMPT, SHOW_CARDS_TO_PLAYER, MOVE_CARDS } from '../../game/store/prefabs/prefabs';
 import { StateUtils } from '../../game/store/state-utils';
 import { State } from '../../game/store/state/state';
 import { StoreLike } from '../../game/store/store-like';
@@ -34,7 +34,7 @@ export class EnergyStadium extends TrainerCard {
 
       if (discardEffect.preventDefault) {
         // If prevented, just discard the card and return
-        player.supporter.moveCardTo(effect.stadium, player.discard);
+        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [effect.stadium], sourceCard: this });
         return state;
       }
 
@@ -77,12 +77,9 @@ export class EnergyStadium extends TrainerCard {
             }
 
             cards.forEach((card, index) => {
-              player.discard.moveCardTo(card, player.hand);
+              MOVE_CARDS(store, state, player.discard, player.hand, { cards: [card], sourceCard: this });
             });
 
-            cards.forEach((card, index) => {
-              store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-            });
           });
         }
       });

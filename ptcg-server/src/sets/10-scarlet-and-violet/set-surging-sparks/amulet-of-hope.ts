@@ -8,6 +8,7 @@ import { BetweenTurnsEffect } from '../../../game/store/effects/game-phase-effec
 import { Card } from '../../../game/store/card/card';
 import { ChooseCardsPrompt, GameLog, GameMessage, ShuffleDeckPrompt } from '../../../game';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class AmuletofHope extends TrainerCard {
 
@@ -81,7 +82,7 @@ export class AmuletofHope extends TrainerCard {
           { min: 1, max: 3, allowCancel: false }
         ), selected => {
           cards = selected || [];
-          player.deck.moveCardsTo(cards, player.hand);
+          MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
         });
 
         store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

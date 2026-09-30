@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { Card, ChooseCardsPrompt, EnergyCard, GameMessage, StateUtils } from '../../..';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { WAS_ATTACK_USED, SHUFFLE_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_THEN_DRAW, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Victini extends PokemonCard {
 
@@ -93,7 +93,7 @@ export class Victini extends PokemonCard {
           ), selected => {
             cards = selected;
           });
-          oppActive.moveCardsTo(cards, opponent.discard);
+          MOVE_CARDS(store, state, oppActive, opponent.discard, { cards: cards, sourceCard: this });
         }
       });
     }

@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt, GameMessage, Player } from '../../../game';
-import { DRAW_CARDS_UNTIL_CARDS_IN_HAND } from '../../../game/store/prefabs/prefabs';
+import {DRAW_CARDS_UNTIL_CARDS_IN_HAND, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class IrisFightingSpirit extends TrainerCard {
 
@@ -44,7 +44,6 @@ export class IrisFightingSpirit extends TrainerCard {
     return true;
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
 
@@ -74,7 +73,7 @@ export class IrisFightingSpirit extends TrainerCard {
         if (cards.length === 0) {
           return; // unreachable with min:1 — kept as a defensive guard
         }
-        player.hand.moveCardsTo(cards, player.discard);
+        MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: this });
         if (player.hand.cards.length >= 6) {
           return;
         }

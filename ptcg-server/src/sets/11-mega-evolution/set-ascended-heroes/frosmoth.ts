@@ -7,7 +7,7 @@ import { PowerType } from '../../../game/store/card/pokemon-types';
 import { EndTurnEffect, AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { DRAW_CARDS, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Frosmoth extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -159,7 +159,7 @@ export class Frosmoth extends PokemonCard {
         transfers = transfers || [];
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          player.active.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
         }
       });
     }

@@ -4,7 +4,7 @@ import { Effect } from "../../../game/store/effects/effect";
 import { PowerEffect, RetreatEffect } from "../../../game/store/effects/game-effects";
 import { CheckAttackCostEffect, AddSpecialConditionsPowerEffect } from "../../../game/store/effects/check-effects";
 import { PlayItemEffect, PlayPokemonEffect } from "../../../game/store/effects/play-card-effects";
-import { WAS_POWER_USED } from "../../../game/store/prefabs/prefabs";
+import {WAS_POWER_USED, MOVE_CARDS } from "../../../game/store/prefabs/prefabs";
 
 export class AntiqueRootFossil extends TrainerCard {
   public trainerType = TrainerType.ITEM;
@@ -70,7 +70,7 @@ export class AntiqueRootFossil extends TrainerCard {
         effect: 'Antique Root Fossil',
       });
       const cardList = StateUtils.findCardList(state, this);
-      cardList.moveCardTo(this, player.discard);
+      MOVE_CARDS(store, state, cardList, player.discard, { cards: [this], sourceCard: this });
     }
 
     // Play as Pokemon

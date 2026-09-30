@@ -1,5 +1,5 @@
 import { GameError, SelectPrompt } from '../../../game';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Card } from '../../../game/store/card/card';
 import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
@@ -25,7 +25,6 @@ export class EnergyRecycleSystem extends TrainerCard {
     • Put a basic Energy card from your discard pile into your hand.
     • Shuffle 3 basic Energy cards from your discard pile into your deck.`;
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
@@ -47,7 +46,7 @@ export class EnergyRecycleSystem extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
 
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
@@ -67,9 +66,6 @@ export class EnergyRecycleSystem extends TrainerCard {
               { min: Math.min(basicEnergyInDiscard, 3), max: 3, allowCancel: false, blocked }
             ), selected => {
               cards = selected || [];
-              cards.forEach((card, index) => {
-                store.log(state, GameLog.LOG_PLAYER_RETURNS_TO_DECK_FROM_DISCARD, { name: player.name, card: card.name });
-              });
 
               MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: this });
 
@@ -92,10 +88,6 @@ export class EnergyRecycleSystem extends TrainerCard {
               { min: 1, max: 1, allowCancel: false, blocked }
             ), selected => {
               cards = selected || [];
-
-              cards.forEach((card, index) => {
-                store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-              });
 
               MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: this });
 

@@ -1,5 +1,5 @@
 import { GameError } from '../../../game';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Card } from '../../../game/store/card/card';
 import { CardType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
@@ -11,6 +11,7 @@ import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: Lance, effect: TrainerEffect): IterableIterator<State> {
@@ -24,7 +25,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
 
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
@@ -37,10 +38,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
     next();
   });
 
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
-
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
       opponent.id,
@@ -49,8 +46,8 @@ function* playCard(next: Function, store: StoreLike, state: State,
     ), () => next());
   }
 
-  player.deck.moveCardsTo(cards, player.hand);
-  player.supporter.moveCardTo(self, player.discard);
+  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
+  MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [self], sourceCard: self });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
     player.deck.applyOrder(order);

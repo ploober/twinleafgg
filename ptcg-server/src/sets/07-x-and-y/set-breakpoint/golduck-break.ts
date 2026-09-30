@@ -24,11 +24,7 @@ import {
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import {
-  WAS_POWER_USED,
-  IS_ABILITY_BLOCKED,
-  BREAK_RULE,
-} from '../../../game/store/prefabs/prefabs';
+import { WAS_POWER_USED, IS_ABILITY_BLOCKED, BREAK_RULE, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class GolduckBreak extends PokemonCard {
   protected _tags = [CardTag.BREAK];
@@ -95,7 +91,7 @@ export class GolduckBreak extends PokemonCard {
             for (const transfer of transfers) {
               const source = StateUtils.getTarget(state, player, transfer.from);
               const target = StateUtils.getTarget(state, player, transfer.to);
-              source.moveCardTo(transfer.card, target);
+              MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
             }
             // TA-452: "As often as you like" — the stray ABILITY_USED call marked the slot used after one use (the
             // menus hid the Ability; the reducer now refuses the flag too), against the printed text; removed.

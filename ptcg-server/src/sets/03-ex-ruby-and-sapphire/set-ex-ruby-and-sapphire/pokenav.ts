@@ -3,9 +3,9 @@ import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
-import { CardList, GameMessage, ChooseCardsPrompt, GameLog, StateUtils, GameError, PokemonCard, EnergyCard, OrderCardsPrompt } from '../../../game';
+import { CardList, GameMessage, ChooseCardsPrompt, StateUtils, GameError, PokemonCard, EnergyCard, OrderCardsPrompt } from '../../../game';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
-import { SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
+import { SHOW_CARDS_TO_PLAYER, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PokeNav extends TrainerCard {
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -32,7 +32,7 @@ export class PokeNav extends TrainerCard {
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      player.deck.moveTo(temp, 3);
+      MOVE_CARDS(store, state, player.deck, temp, { count: 3, sourceCard: this });
 
       const blocked: number[] = [];
       temp.cards.forEach((c, index) => {
@@ -54,11 +54,8 @@ export class PokeNav extends TrainerCard {
         if (chosenCards.length > 0) {
           // Move chosen card to hand
           const chosen = chosenCards[0];
-          temp.moveCardTo(chosen, player.hand);
+          MOVE_CARDS(store, state, temp, player.hand, { cards: [chosen], sourceCard: this });
           SHOW_CARDS_TO_PLAYER(store, state, opponent, chosenCards);
-          chosenCards.forEach((card, index) => {
-            store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-          });
         }
 
         // Create a CardList of the remaining cards (excluding the chosen card)
@@ -83,7 +80,7 @@ export class PokeNav extends TrainerCard {
           remaining.moveToTopOfDestination(player.deck);
         });
 
-        player.supporter.moveCardTo(this, player.discard);
+        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
       });
     }
     return state;

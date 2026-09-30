@@ -2,10 +2,8 @@ import { TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { StateUtils, StoreLike, State, Player } from '../../../game';
-import { GameError, GameMessage } from '../../../game';
+import { StateUtils, StoreLike, State, Player, GameError, GameMessage, ShuffleDeckPrompt } from '../../../game';
 import { CardList } from '../../../game/store/state/card-list';
-import { ShuffleDeckPrompt } from '../../../game';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SpecialRedCard extends TrainerCard {
@@ -36,7 +34,6 @@ export class SpecialRedCard extends TrainerCard {
     }
     return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {

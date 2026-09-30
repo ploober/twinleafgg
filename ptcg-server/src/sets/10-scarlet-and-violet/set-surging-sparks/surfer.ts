@@ -6,6 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Surfer extends TrainerCard {
 
@@ -26,7 +27,6 @@ export class Surfer extends TrainerCard {
   public text: string =
     'Switch your Active Pokémon with 1 of your Benched Pokémon. If you do, draw cards until you have 5 cards in your hand.';
 
-
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
       return false;
@@ -39,7 +39,6 @@ export class Surfer extends TrainerCard {
     return player.bench.some(b => b.cards.length > 0);
   }
 
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
 
@@ -51,7 +50,7 @@ export class Surfer extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
@@ -94,7 +93,7 @@ export class Surfer extends TrainerCard {
           if (player.deck.cards.length === 0) {
             break;
           }
-          player.deck.moveTo(player.hand, 1);
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
         }
 
         return state;
@@ -103,7 +102,5 @@ export class Surfer extends TrainerCard {
     }
     return state;
   }
-
-
 
 }

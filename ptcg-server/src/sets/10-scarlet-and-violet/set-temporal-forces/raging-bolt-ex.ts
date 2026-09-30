@@ -4,7 +4,7 @@ import { StoreLike, State, SlotType } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { DISCARD_UP_TO_X_ENERGY_FROM_YOUR_POKEMON } from '../../../game/store/prefabs/costs';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class RagingBoltex extends PokemonCard {
   public regulationMark = 'H';
@@ -55,8 +55,8 @@ export class RagingBoltex extends PokemonCard {
       // TA-104: "Discard your hand and draw 6 cards" is declarable even with an empty deck — you discard
       // your hand and draw as many as you can (0). Do NOT throw CANNOT_PLAY_THIS_CARD (that omitted the
       // attack from legalActions; rotomancer correctly offers it). moveTo clamps the draw to deck size.
-      player.hand.moveTo(player.discard);
-      player.deck.moveTo(player.hand, 6);
+      MOVE_CARDS(store, state, player.hand, player.discard, { sourceCard: this });
+      MOVE_CARDS(store, state, player.deck, player.hand, { count: 6, sourceCard: this });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

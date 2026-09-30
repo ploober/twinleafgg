@@ -3,7 +3,7 @@ import { Stage, CardType, SuperType } from '../../../game/store/card/card-types'
 import { StoreLike, State, GameMessage, StateUtils, Card, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { AFTER_ATTACK, CONFIRMATION_PROMPT, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, CONFIRMATION_PROMPT, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Unfezant extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -79,7 +79,7 @@ export class Unfezant extends PokemonCard {
             { min: Math.min(2, available), max: 2, allowCancel: false },
           ), selected => {
             cards = selected || [];
-            opponent.active.moveCardsTo(cards, opponent.hand);
+            MOVE_CARDS(store, state, opponent.active, opponent.hand, { cards: cards, sourceCard: this });
           });
         }
       });

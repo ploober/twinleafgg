@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, Card, ChooseCardsPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
@@ -58,7 +58,7 @@ function* useExplosiveAwakening(
 
   if (cards.length > 0) {
     // Evolve Pokemon
-    player.deck.moveCardsTo(cards, player.active);
+    MOVE_CARDS(store, state, player.deck, player.active, { cards: cards, sourceCard: effect.source.getPokemonCard()! });
     player.active.clearEffects();
     player.active.pokemonPlayedTurn = state.turn;
   }

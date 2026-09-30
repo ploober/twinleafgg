@@ -10,8 +10,9 @@ import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prom
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { PokemonCard, Player } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: Dawn, effect: TrainerEffect): IterableIterator<State> {
@@ -25,7 +26,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -76,11 +77,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     ), () => next());
   }
 
-  player.deck.moveCardsTo(cards, player.hand);
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
+  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
     player.deck.applyOrder(order);
@@ -104,7 +101,6 @@ export class Dawn extends TrainerCard {
     }
     return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
 import { Card, ChooseCardsPrompt, EnergyCard, GameError, GameMessage, ShuffleDeckPrompt, State, StoreLike } from '../../../game';
 import { AttackEffect, Effect } from '../../../game/store/effects/game-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useColorfulCatch(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
@@ -33,7 +33,7 @@ function* useColorfulCatch(next: Function, store: StoreLike, state: State, effec
       }
     }
 
-    player.deck.moveCardsTo(cards, player.hand);
+    MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.source.getPokemonCard()! });
     next();
   });
 
@@ -67,7 +67,6 @@ export class Eevee extends PokemonCard {
   public fullName: string = 'Eevee SFA';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '50';
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

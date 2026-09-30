@@ -1,5 +1,5 @@
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { SuperType, TrainerType } from '../../../game/store/card/card-types';
@@ -8,6 +8,7 @@ import { Card, ChooseCardsPrompt, ShowCardsPrompt, ShuffleDeckPrompt } from '../
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useStadium(next: Function, store: StoreLike, state: State, effect: UseStadiumEffect): IterableIterator<State> {
   const player = effect.player;
@@ -37,11 +38,7 @@ function* useStadium(next: Function, store: StoreLike, state: State, effect: Use
       }
 
       cards.forEach((card, index) => {
-        player.deck.moveCardTo(card, player.hand);
-      });
-
-      cards.forEach((card, index) => {
-        store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: effect.stadium });
       });
 
       if (cards.length > 0) {

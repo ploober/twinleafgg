@@ -21,7 +21,7 @@ import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Laprasex extends PokemonCard {
   public cardType: CardType[] = [CardType.WATER];

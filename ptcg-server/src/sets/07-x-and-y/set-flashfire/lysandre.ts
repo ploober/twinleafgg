@@ -6,6 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { SupporterEffect, TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { PlayerType, SlotType, StateUtils, GameError, GameMessage } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -21,7 +22,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -40,7 +41,10 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     [SlotType.BENCH],
     { allowCancel: false }
   ), result => {
-    const cardList = result[0];
+    const cardList = result && result[0];
+    if (!cardList) {
+      return state;
+    }
 
     if (cardList.isStage(Stage.BASIC)) {
       try {

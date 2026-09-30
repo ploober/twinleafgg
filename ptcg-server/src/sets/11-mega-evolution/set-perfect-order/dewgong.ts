@@ -4,7 +4,7 @@ import { StoreLike, State, GameError, GameMessage, StateUtils, MoveEnergyPrompt,
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { CardTarget } from '../../../game';
-import { WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Dewgong extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -103,7 +103,7 @@ export class Dewgong extends PokemonCard {
           // Move the energy through the SLOT: PokemonCardList.moveCardTo prunes the source's `cards`
           // AND `energies`, and registers an Energy in the target's `energies`. Moving via the
           // `energies` sub-list alone left the card in `source.cards` as a phantom (TA-376).
-          source.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
           if (!target.energies.cards.includes(transfer.card)) {
             target.energies.cards.push(transfer.card);
           }

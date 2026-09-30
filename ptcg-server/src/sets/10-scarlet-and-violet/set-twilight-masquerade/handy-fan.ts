@@ -8,7 +8,6 @@ import { StateUtils } from '../../../game/store/state-utils';
 import { AttachEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
 
-
 export class HandyFan extends TrainerCard {
   public regulationMark = 'H';
   public trainerType: TrainerType = TrainerType.TOOL;

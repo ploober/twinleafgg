@@ -4,7 +4,7 @@ import { Card, ChooseCardsPrompt, ShuffleDeckPrompt } from '../../../game';
 import { StoreLike, State, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
+import { SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gimmighoul extends PokemonCard {
 
@@ -72,7 +72,7 @@ export class Gimmighoul extends PokemonCard {
 
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
 
-        player.deck.moveCardsTo(cards, player.hand);
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
       });
 
       return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

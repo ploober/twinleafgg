@@ -4,9 +4,11 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { StoreLike, State, StateUtils, PokemonCard, Card, GameError } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+
 function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
@@ -34,11 +36,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     next();
   });
 
-  player.deck.moveCardsTo(cards, player.hand);
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-  });
+  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
 
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(

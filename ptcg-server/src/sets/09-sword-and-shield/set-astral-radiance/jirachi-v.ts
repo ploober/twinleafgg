@@ -15,11 +15,9 @@ import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-pr
 import { PlayerType, SlotType, CardTarget } from '../../../game/store/actions/play-card-action';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import {
-  WAS_ATTACK_USED,
+import {WAS_ATTACK_USED,
   ADD_SLEEP_TO_PLAYER_ACTIVE,
-  IS_ABILITY_BLOCKED,
-} from '../../../game/store/prefabs/prefabs';
+  IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_ASLEEP } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 

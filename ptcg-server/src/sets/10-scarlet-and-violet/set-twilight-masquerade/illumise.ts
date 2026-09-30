@@ -2,8 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, ShuffleDeckPrompt, ChoosePokemonPrompt, PlayerType, SlotType, GameError, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
-
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Illumise extends PokemonCard {
 

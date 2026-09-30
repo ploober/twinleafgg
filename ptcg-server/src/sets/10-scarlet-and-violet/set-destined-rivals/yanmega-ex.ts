@@ -1,10 +1,25 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType, SlotType, PowerType, ConfirmPrompt, AttachEnergyPrompt, StateUtils } from '../../../game';
+import {
+  Stage,
+  CardType,
+  CardTag,
+  SuperType,
+  EnergyType,
+} from '../../../game/store/card/card-types';
+import {
+  StoreLike,
+  State,
+  PlayerType,
+  SlotType,
+  PowerType,
+  ConfirmPrompt,
+  AttachEnergyPrompt,
+  StateUtils,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
 import { MovedToActiveEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import { ABILITY_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Yanmegaex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -97,7 +112,7 @@ export class Yanmegaex extends PokemonCard {
 
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);
-            player.deck.moveCardTo(transfer.card, target);
+            MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: this });
             SHUFFLE_DECK(store, state, player);
           }
         });
@@ -121,7 +136,7 @@ export class Yanmegaex extends PokemonCard {
         transfers = transfers || [];
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          player.active.moveCardTo(transfer.card, target);
+          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
         }
       });
     }

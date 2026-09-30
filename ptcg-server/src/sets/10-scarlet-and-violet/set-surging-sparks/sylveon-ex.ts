@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { ChoosePokemonPrompt, GameError, GameMessage, PlayerType, ShuffleDeckPrompt, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { DEFENDING_POKEMON_DOES_LESS_DAMAGE } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Sylveonex extends PokemonCard {
@@ -92,9 +92,7 @@ export class Sylveonex extends PokemonCard {
         // Benched emitted TWO `shuffled` events where rotomancer emits ONE (a multiset-count
         // divergence, twinleaf wrong). Move every chosen Pokemon to the deck first, then shuffle once.
         targets.forEach(target => {
-          target.clearEffects();
-          target.damage = 0;
-          target.moveTo(opponent.deck);
+          MOVE_CARDS(store, state, target, opponent.deck, { sourceCard: this });
         });
 
         if (targets.length === 0) {

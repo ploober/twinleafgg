@@ -1,5 +1,5 @@
 import { Card } from '../../../game/store/card/card';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
@@ -37,7 +37,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -78,7 +78,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
   // Pass max counts to prompt options
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
-    GameMessage.CHOOSE_ONE_ITEM_AND_ONE_TOOL_TO_HAND,
+    GameMessage.CHOOSE_CARD_TO_DECK,
     player.discard,
     {},
     { min: 1, max: count, allowCancel: false, blocked, maxPokemons, maxTools, maxStadiums, maxEnergies, maxBasicEnergies, maxSpecialEnergies }
@@ -88,11 +88,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
   });
 
   MOVE_CARDS(store, state, player.discard, player.deck, { cards, sourceCard: self });
-
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_RETURNS_TO_DECK_FROM_DISCARD, { name: player.name, card: card.name });
-  });
 
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(

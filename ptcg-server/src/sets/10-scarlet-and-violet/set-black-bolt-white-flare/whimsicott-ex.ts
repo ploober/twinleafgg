@@ -20,7 +20,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* useEnergyGift(
   next: Function,
@@ -53,7 +53,7 @@ function* useEnergyGift(
     transfers = transfers || [];
     for (const transfer of transfers) {
       const target = StateUtils.getTarget(state, player, transfer.to);
-      player.deck.moveCardTo(transfer.card, target);
+      MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: effect.source.getPokemonCard()! });
     }
     // TA-331: resume the generator ONCE after the (possibly empty) attach loop so the trailing
     // `return store.prompt(ShuffleDeckPrompt)` fires even on a ZERO-take. The prior `next()` sat

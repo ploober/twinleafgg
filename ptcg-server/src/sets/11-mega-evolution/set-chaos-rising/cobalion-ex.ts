@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, PowerType, StoreLike, State, ConfirmPrompt, GameMessage, CardTarget, PlayerType, EnergyCard, MoveEnergyPrompt, SlotType, SuperType, StateUtils } from "../../../game";
 import { Effect } from "../../../game/store/effects/effect";
 import { MovedToActiveEffect, PowerEffect } from "../../../game/store/effects/game-effects";
-import { ABILITY_USED, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED } from "../../../game/store/prefabs/prefabs";
+import { ABILITY_USED, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED, MOVE_CARDS } from "../../../game/store/prefabs/prefabs";
 
 export class Cobalionex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -132,7 +132,7 @@ export class Cobalionex extends PokemonCard {
               const target = player.active;
               for (const transfer of transfers) {
                 const source = StateUtils.getTarget(state, player, transfer.from);
-                source.moveCardTo(transfer.card, target);
+                MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
               }
             },
           );

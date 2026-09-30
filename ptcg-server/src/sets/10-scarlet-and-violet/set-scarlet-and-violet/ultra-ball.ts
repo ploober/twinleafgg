@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { GameError } from '../../../game/game-error';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { CardList } from '../../../game/store/state/card-list';
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
@@ -56,8 +56,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
         GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
         selected
       ), () => {
-        player.deck.moveCardsTo(selected, player.hand);
-        store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: selected[0].name });
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards: selected, sourceCard: self });
         next();
       });
     } else {

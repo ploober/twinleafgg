@@ -21,12 +21,10 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
-import {
-  ABILITY_USED,
+import {ABILITY_USED,
   ADD_MARKER,
   DRAW_CARDS_UNTIL_CARDS_IN_HAND,
-  WAS_POWER_USED,
-} from '../../../game/store/prefabs/prefabs';
+  WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class IonosKilowattrel extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;

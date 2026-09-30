@@ -1,14 +1,7 @@
-import {
-  PokemonCard,
-  Stage,
-  CardType,
-  StoreLike,
-  State,
-  StateUtils,
-} from '../../../game';
+import { PokemonCard, Stage, CardType, StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Comfey extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -45,8 +38,8 @@ export class Comfey extends PokemonCard {
 
       // TA-131: declarable even if a deck can't supply the full draw (rulebook p.20). "Each player
       // draws 3" — moveTo caps at the deck size, so an empty deck simply draws zero.
-      player.deck.moveTo(player.hand, 3);
-      opponent.deck.moveTo(opponent.hand, 3);
+      MOVE_CARDS(store, state, player.deck, player.hand, { count: 3, sourceCard: this });
+      MOVE_CARDS(store, state, opponent.deck, opponent.hand, { count: 3, sourceCard: this });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

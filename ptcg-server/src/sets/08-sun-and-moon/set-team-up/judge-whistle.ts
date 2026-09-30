@@ -1,10 +1,11 @@
-import { Card, ChooseCardsPrompt, GameError, GameLog, GameMessage, SelectPrompt, ShuffleDeckPrompt } from '../../../game';
+import { Card, ChooseCardsPrompt, GameError, GameMessage, SelectPrompt, ShuffleDeckPrompt } from '../../../game';
 import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class JudgeWhistle extends TrainerCard {
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -38,11 +39,11 @@ export class JudgeWhistle extends TrainerCard {
 
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
 
       // if there's no judge, just draw
       if (!isJudgeInDiscard) {
-        player.deck.moveTo(player.hand, 1);
+        MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
 
       }
 
@@ -67,18 +68,13 @@ export class JudgeWhistle extends TrainerCard {
 
               store.prompt(state, new ChooseCardsPrompt(
                 player,
-                GameMessage.CHOOSE_CARD_TO_DECK,
+                GameMessage.CHOOSE_CARD_TO_HAND,
                 player.discard,
                 { superType: SuperType.TRAINER, trainerType: TrainerType.SUPPORTER },
                 { min: 1, max: 1, allowCancel: false, blocked }
               ), selected => {
                 cards = selected || [];
-                cards.forEach((card, index) => {
-                  store.log(state, GameLog.LOG_PLAYER_RETURNS_CARD_TO_HAND, { name: player.name, card: card.name });
-                });
-
-                player.discard.moveCardsTo(cards, player.hand);
-
+                MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: this });
 
                 return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
                   player.deck.applyOrder(order);
@@ -89,7 +85,7 @@ export class JudgeWhistle extends TrainerCard {
           {
             message: GameMessage.DRAW,
             action: () => {
-              player.deck.moveTo(player.hand, 1);
+              MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
 
             }
 

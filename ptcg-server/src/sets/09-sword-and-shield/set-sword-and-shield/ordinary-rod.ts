@@ -1,5 +1,5 @@
 import { Card } from '../../../game/store/card/card';
-import { GameLog, GameMessage } from '../../../game/game-message';
+import { GameMessage } from '../../../game/game-message';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType, EnergyType, SuperType } from '../../../game/store/card/card-types';
@@ -11,6 +11,7 @@ import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prom
 import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { GameError, PokemonCard } from '../../../game';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State, self: OrdinaryRod, effect: TrainerEffect): IterableIterator<State> {
   const player = effect.player;
@@ -23,7 +24,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Ordinar
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  player.hand.moveCardTo(effect.trainerCard, player.supporter);
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -55,12 +56,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Ordinar
     next();
   });
 
-  player.discard.moveCardsTo(cards, player.deck);
-
-
-  cards.forEach((card, index) => {
-    store.log(state, GameLog.LOG_PLAYER_RETURNS_TO_DECK_FROM_DISCARD, { name: player.name, card: card.name });
-  });
+  MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: self });
 
   if (cards.length > 0) {
     yield store.prompt(state, new ShowCardsPrompt(
@@ -90,7 +86,6 @@ export class OrdinaryRod extends TrainerCard {
 
   • Shuffle up to 2 Pokémon from your discard pile into your deck.
   • Shuffle up to 2 basic Energy cards from your discard pile into your deck.`;
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 

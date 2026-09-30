@@ -1,9 +1,9 @@
-import { Card, ChooseCardsPrompt, GameError, GameLog, GameMessage, Player, PokemonCard, ShowCardsPrompt, ShuffleDeckPrompt, State, StateUtils, StoreLike } from '../../../game';
+import { Card, ChooseCardsPrompt, GameError, GameMessage, Player, PokemonCard, ShowCardsPrompt, ShuffleDeckPrompt, State, StateUtils, StoreLike } from '../../../game';
 import { Stage, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Clavell extends TrainerCard {
 
@@ -55,7 +55,7 @@ export class Clavell extends TrainerCard {
         }
       });
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
@@ -70,12 +70,8 @@ export class Clavell extends TrainerCard {
       ), selectedCards => {
         cards = selectedCards || [];
 
-        cards.forEach((card, index) => {
-          store.log(state, GameLog.LOG_PLAYER_PUTS_CARD_IN_HAND, { name: player.name, card: card.name });
-        });
-
-        player.deck.moveCardsTo(cards, player.hand);
-        player.supporter.moveCardTo(this, player.discard);
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
+        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
 
         state = store.prompt(state, new ShowCardsPrompt(
           opponent.id,
