@@ -18,7 +18,7 @@ export class SnorlaxDoll extends TrainerCard {
   public evolvesFromBase: string[] = [];
   public pokemonType = PokemonType.NORMAL;
   public evolvesFrom = '';
-  public cardTag = [CardTag.PLAY_DURING_SETUP];
+  protected _tags = [CardTag.PLAY_DURING_SETUP];
   public tools = [];
   public evolvesTo = [];
   public evolvesToStage = [];
