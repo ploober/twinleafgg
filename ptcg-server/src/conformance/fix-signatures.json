@@ -9283,6 +9283,16 @@
       "fixes": [
         "FX-0350"
       ]
+    },
+    {
+      "file": "set-mega-evolution-promos/pikachu-ex-2.ts",
+      "signatures": [
+        "      name: 'Zip-Zap Frenzy',"
+      ],
+      "note": "TA-485 (2026-09-29): TA-485: Pikachu ex mep-107 / mep-109 attack names match the printed cards (Pika-Pika Parade, Zip-Zap Frenzy)",
+      "fixes": [
+        "FX-0351"
+      ]
     }
   ]
 }
