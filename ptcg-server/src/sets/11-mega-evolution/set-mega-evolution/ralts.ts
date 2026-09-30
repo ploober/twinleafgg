@@ -15,6 +15,8 @@ export class Ralts extends PokemonCard {
 
   public weakness = [{ type: CardType.DARK }];
 
+  public resistance = [{ type: CardType.FIGHTING, value: -30 }];
+
   public retreat = [CardType.COLORLESS];
 
   public attacks = [

@@ -25,6 +25,7 @@ export class Jellicentex extends PokemonCard {
   public cardType: CardType[] = [P];
   public hp: number = 270;
   public weakness = [{ type: D }];
+  public resistance = [{ type: F, value: -30 }];
   public retreat = [C, C, C];
 
   public powers = [

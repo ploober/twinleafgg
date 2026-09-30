@@ -11,10 +11,11 @@ export class Moltres extends PokemonCard {
   public cardType: CardType[] = [CardType.FIRE];
   public hp: number = 120;
   public weakness = [{ type: CardType.LIGHTNING }];
+  public resistance = [{ type: CardType.FIGHTING, value: -30 }];
   public retreat = [CardType.COLORLESS, CardType.COLORLESS];
 
   public powers = [{
-    name: 'Flare FLoat',
+    name: 'Flare Float',
     powerType: PowerType.ABILITY,
     text: ' If this Pokémon has any [R] Energy attached, it has no Retreat Cost. '
   }];

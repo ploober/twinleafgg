@@ -17,7 +17,7 @@ export class Latios extends PokemonCard {
 
   public weakness = [{ type: CardType.DARK }];
 
-  public resistance = [{ type: CardType.FIGHTING, value: -20 }];
+  public resistance = [{ type: CardType.FIGHTING, value: -30 }];
 
   public retreat = [CardType.COLORLESS];
 

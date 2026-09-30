@@ -15,7 +15,7 @@ export class Dragonite extends PokemonCard {
   public evolvesFrom = 'Dragonair';
   public cardType: CardType[] = [CardType.DRAGON];
   public hp: number = 180;
-  public weakness = [{ type: CardType.FAIRY }];
+  public weakness = [];
   public resistance = [];
   public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
 

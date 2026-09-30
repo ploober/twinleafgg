@@ -12,7 +12,7 @@ export class Yveltal extends PokemonCard {
   public cardType: CardType[] = [D];
   public hp: number = 120;
   public weakness = [{ type: L }];
-  public resistance = [{ type: F, value: -20 }];
+  public resistance = [{ type: F, value: -30 }];
   public retreat = [C];
 
   public attacks = [

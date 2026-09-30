@@ -14,7 +14,7 @@ export class Slowpoke extends PokemonCard {
   public retreat = [C, C];
 
   public powers = [{
-    name: 'Aloof Face',
+    name: 'Dopey Face',
     powerType: PowerType.ABILITY,
     text: 'This Pokemon can\'t be Confused.'
   }];

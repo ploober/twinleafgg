@@ -10,7 +10,6 @@ export class Minun extends PokemonCard {
   public cardType: CardType[] = [CardType.LIGHTNING];
   public hp: number = 70;
   public weakness = [{ type: CardType.FIGHTING }];
-  public resistance = [{ type: CardType.METAL, value: -20 }];
   public retreat = [CardType.COLORLESS];
 
   public powers = [{

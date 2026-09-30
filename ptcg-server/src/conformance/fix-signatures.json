@@ -5374,9 +5374,9 @@
     {
       "file": "set-pitch-black/mega-slowbro-ex.ts",
       "signatures": [
-        "public cardType: CardType[] = [F]; public hp: number = 310; public weakness = [{ type: G }];"
+        "public cardType: CardType[] = [P]; public hp: number = 330; public weakness = [{ type: D }];"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-09-30 re-recorded (TA-489): the bulk-registered line held the pre-fix wrong data (Fighting / 310 HP / Grass weakness); printed = Psychic / 330 / Darkness, retreat 3",
       "state": "guarding"
     },
     {

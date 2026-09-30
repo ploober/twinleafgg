@@ -21,7 +21,7 @@ export class Morpeko extends PokemonCard {
   public retreat = [CardType.COLORLESS];
 
   public powers = [{
-    name: 'In A Hungry Hurry',
+    name: 'In a Hungry Hurry',
     powerType: PowerType.ABILITY,
     text: 'If this Pokemon has no Energy attached to it, this Pokemon has ' +
       'no Retreat Cost.'
