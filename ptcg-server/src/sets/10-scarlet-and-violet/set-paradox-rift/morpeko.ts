@@ -6,7 +6,7 @@ import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckRetreatCostEffect, CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { AttachEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils } from '../../../game';
-import {IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {IS_ABILITY_BLOCKED, AFTER_ATTACK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Morpeko extends PokemonCard {
 
@@ -69,7 +69,8 @@ export class Morpeko extends PokemonCard {
       }
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-490: the move runs AFTER_ATTACK, so the 70 damage lands first (#649 / #543).
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const hasBench = player.bench.some(b => b.cards.length > 0);
 
@@ -79,12 +80,21 @@ export class Morpeko extends PokemonCard {
 
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
       state = store.reduceEffect(state, checkProvidedEnergy);
-      const energy = player.active.cards.filter(card => {
+      // TA-490: `blocked` holds indices into the source list (it held card ids, so the collapsed move failed validate).
+      const blocked: number[] = [];
+      let dark = 0;
+      player.active.cards.forEach((card, index) => {
         const em = checkProvidedEnergy.energyMap.find(e => e.card === card);
-        if (!em) return true;
-        const providesDark = em.provides.includes(CardType.DARK) || em.provides.includes(CardType.ANY);
-        return !providesDark;
+        if (em && (em.provides.includes(CardType.DARK) || em.provides.includes(CardType.ANY))) {
+          dark++;
+        } else {
+          blocked.push(index);
+        }
       });
+      const count = Math.min(2, dark);
+      if (count === 0) {
+        return state;
+      }
 
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
@@ -93,7 +103,7 @@ export class Morpeko extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 2, max: 2, sameTarget: true, blocked: energy.map(card => card.id) }
+        { allowCancel: false, min: count, max: count, sameTarget: true, blocked }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {
