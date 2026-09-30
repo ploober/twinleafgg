@@ -51,11 +51,9 @@ function legal(r: ReturnType<typeof step>): string[] {
 }
 
 describe('TA-490 Morpeko Energizer Wheel', () => {
-  // The first pick is still surfaced (an all-2-of-2 move to the only bencher is forced as a whole; that collapse is
-  // the adapter's TA-491); this cell pins that the move is accepted and completes, which 500'd before.
+  // The all-2-of-2 move to the only bencher collapses (TA-491); this cell pins that it completes, which 500'd before.
   it('two [D] and one Benched Pokemon: the move completes with both [D] on the Bench [TA-490 par-121]', () => {
-    const pick = { actor: 'A', type: 'moveEnergy', card: 'a1e0', source: 'a1', target: 'a2' } as unknown as NeutralAction;
-    const r = step(board([DARK, DARK], 1), [wheel, pick]);
+    const r = step(board([DARK, DARK], 1), [wheel]);
     expect(r.status).toBe('awaitingAction');
     expect(r.state.players.A.bench[0].energy.map(e => e.iid).sort()).toEqual(['a1e0', 'a1e1']);
   });

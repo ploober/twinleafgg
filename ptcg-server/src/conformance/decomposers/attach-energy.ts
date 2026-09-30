@@ -88,6 +88,19 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   // decision content and collapses exactly like a forced single attach (TA-400). Correctness, not agreement.
   atomicStep: prompt => prompt.options.allowCancel === false,
 
+  // TA-491 / CF-14 addendum: an N-of-exactly-N forced attach or relocation — Energizer Wheel par-121 moving
+  // its two [D] to the only bencher — has no decision in any pick; the first pick was surfaced while
+  // rotomancer applied the set. Candidates are (card, target) pairs, so `forcedCount <= remaining` also
+  // means each card has exactly one target (a second target would put the pair count above the cards
+  // still to move). Mirrors discard-energy / choose-pokemon.
+  collapseWholeSet: (prompt, picks, _state, forcedCount) => {
+    if (prompt.options.allowCancel !== false) {
+      return false;
+    }
+    const remaining = prompt.options.min - realPicks(picks).length;
+    return remaining > 1 && forcedCount <= remaining;
+  },
+
   next(prompt, picks, ctx, state) {
     if (hasDone(picks)) {
       return null;
