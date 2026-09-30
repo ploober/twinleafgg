@@ -9189,7 +9189,30 @@
         "public fullName: string = 'Druddigon FLF';"
       ],
       "note": "2026-09-29 merge: upstream 1e90af6ca gave FLF-70 fullName 'Druddigon BRS' (duplicate of BRS-113) -> defineSet threw mid-set and 186 BRS printings were never registered. Restored FLF-70's pre-split fullName.",
-      "state": "ours-only"
+      "state": "ours-only",
+      "fixes": [
+        "FX-0343"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/grand-tree.ts",
+      "signatures": [
+        "      || IS_STADIUM_EFFECT_BLOCKED(store, state, player, list, effect.stadium as TrainerCard)) {"
+      ],
+      "note": "TA-479, TA-480 (2026-09-29): TA-479/TA-480: Grand Tree scr-136 targets only Basics a Stage 1 evolves from whose Stadium effects are not prevented (Ne",
+      "fixes": [
+        "FX-0341"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/grand-tree.ts",
+      "signatures": [
+        "      { min: 0, max: 1, allowCancel: false, blocked },"
+      ],
+      "note": "TA-481 (2026-09-29): TA-481: Grand Tree scr-136's Stage 1 / Stage 2 deck searches are min 0 - the player may fail to find (CF-32/TA-145 shape",
+      "fixes": [
+        "FX-0342"
+      ]
     }
   ]
 }
