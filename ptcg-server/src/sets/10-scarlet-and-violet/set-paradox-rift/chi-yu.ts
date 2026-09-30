@@ -1,4 +1,4 @@
-import { AttachEnergyPrompt, EnergyCard, GameError, GameMessage, PlayerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
+import { AttachEnergyPrompt, EnergyCard, GameMessage, PlayerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -41,8 +41,9 @@ export class ChiYu extends PokemonCard {
           && c.energyType === EnergyType.BASIC
           && (c as EnergyCard).provides.includes(CardType.FIRE);
       });
+      // TA-493: with no Basic [R] Energy in the discard the attack is still usable and does nothing (#352, #1962).
       if (!hasEnergyInDiscard) {
-        throw new GameError(GameMessage.CANNOT_USE_ATTACK);
+        return state;
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(
@@ -52,7 +53,7 @@ export class ChiYu extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-        { allowCancel: false, min: 1, max: 2 }
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user

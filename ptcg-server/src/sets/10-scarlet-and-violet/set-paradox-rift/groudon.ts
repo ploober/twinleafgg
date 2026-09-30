@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, AttachEnergyPrompt, EnergyCard, GameError, PlayerType, SlotType, StateUtils } from '../../../game';
+import { StoreLike, State, GameMessage, AttachEnergyPrompt, EnergyCard, PlayerType, SlotType, StateUtils } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
@@ -58,8 +58,9 @@ export class Groudon extends PokemonCard {
           && c.energyType === EnergyType.BASIC
           && c.provides.includes(CardType.FIGHTING);
       });
+      // TA-493: with no Basic [F] Energy in hand the attack is still usable and the attach does nothing (#352, #1962).
       if (!hasEnergyInHand) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
+        return state;
       }
 
       state = store.prompt(state, new AttachEnergyPrompt(

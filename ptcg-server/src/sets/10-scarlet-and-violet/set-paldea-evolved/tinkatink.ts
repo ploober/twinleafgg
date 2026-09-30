@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, TrainerType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, TrainerCard, GameError, GameMessage, Card, ChooseCardsPrompt } from '../../../game';
+import { StoreLike, State, TrainerCard, GameMessage, Card, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -8,16 +8,14 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 function* useScrapPickup(next: Function, store: StoreLike, state: State, self: Tinkatink, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-493: an attack whose cost is met can be used; with no Item card in the discard pile it does nothing
+  // (#352, #1962). This body used to be an Item card's (preventDefault + moving this card from the hand).
   const hasItem = player.discard.cards.some(c => {
     return c instanceof TrainerCard && c.trainerType === TrainerType.ITEM;
   });
-
   if (!hasItem) {
-    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    return state;
   }
-
-  // We will discard this card after prompt confirmation
-  effect.preventDefault = true;
 
   let cards: Card[] = [];
   yield store.prompt(state, new ChooseCardsPrompt(
@@ -25,17 +23,13 @@ function* useScrapPickup(next: Function, store: StoreLike, state: State, self: T
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.discard,
     { superType: SuperType.TRAINER, trainerType: TrainerType.ITEM },
-    { min: 1, max: 1, allowCancel: true }
+    { min: 1, max: 1, allowCancel: false }
   ), selected => {
     cards = selected || [];
     next();
   });
 
-  if (cards.length > 0) {
-    MOVE_CARDS(store, state, player.hand, player.discard, { cards: [self], sourceCard: self });
-    MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: self });
-  }
-
+  MOVE_CARDS(store, state, player.discard, player.hand, { cards, sourceCard: self });
   return state;
 }
 
