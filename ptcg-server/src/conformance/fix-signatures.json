@@ -9303,6 +9303,56 @@
       "fixes": [
         "FX-0351"
       ]
+    },
+    {
+      "file": "set-scarlet-and-violet/pawniard.ts",
+      "signatures": [
+        "    name: 'Scratch',"
+      ],
+      "note": "TA-486 (2026-09-29): TA-486: attack names match the printed cards - Call for Family (mew-016/paf-196, par-087), Mountain Ramming (mew-067), D",
+      "fixes": [
+        "FX-0352"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/pidgey.ts",
+      "signatures": [
+        "      name: 'Call for Family',"
+      ],
+      "note": "TA-486 (2026-09-29): attack name matches the printed card",
+      "fixes": [
+        "FX-0352"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/gimmighoul.ts",
+      "signatures": [
+        "      name: 'Call for Family',"
+      ],
+      "note": "TA-486 (2026-09-29): attack name matches the printed card",
+      "fixes": [
+        "FX-0352"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/machoke.ts",
+      "signatures": [
+        "      name: 'Mountain Ramming',"
+      ],
+      "note": "TA-486 (2026-09-29): attack name matches the printed card",
+      "fixes": [
+        "FX-0352"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/dewgong.ts",
+      "signatures": [
+        "    name: 'Dual Splash',"
+      ],
+      "note": "TA-486 (2026-09-29): attack name matches the printed card",
+      "fixes": [
+        "FX-0352"
+      ]
     }
   ]
 }
