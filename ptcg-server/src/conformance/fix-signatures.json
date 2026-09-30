@@ -9383,6 +9383,36 @@
       "fixes": [
         "FX-0353"
       ]
+    },
+    {
+      "file": "set-pokemon-151/snorlax.ts",
+      "signatures": [
+        "    { min: 1, max: 2, allowCancel: false, blocked }"
+      ],
+      "note": "TA-488 (2026-09-30): TA-488: Voraciousness / Fire Off / Psychic Embrace resolve their printed count once used - min 1 (Fire Off and Psychic E",
+      "fixes": [
+        "FX-0354"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/armarouge.ts",
+      "signatures": [
+        "        { allowCancel: false, min: 1, max: 1, blockedMap, blockedTo: blockedTargets }"
+      ],
+      "note": "TA-488 (2026-09-30): a used Ability resolves its printed count",
+      "fixes": [
+        "FX-0354"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/gardevoir-ex.ts",
+      "signatures": [
+        "          { allowCancel: false, min: 1, max: 1, blockedTo },"
+      ],
+      "note": "TA-488 (2026-09-30): a used Ability resolves its printed count",
+      "fixes": [
+        "FX-0354"
+      ]
     }
   ]
 }
