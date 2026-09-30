@@ -106,4 +106,13 @@ describe('up-to floor / count-1 may (TA-473, TA-474, OOP-91)', () => {
     expect(legal(r).length).toBeGreaterThan(0);
     expect(legal(r)).not.toContain('A:confirm:false');
   });
+
+  it('Poppy moves from ONE Pokemon to ANOTHER: the second Energy keeps the first move\'s source and target [TA-483 obf-193]', () => {
+    const b = poppyBoard([mon('a1', 'twm-118', [WATER]), mon('a2', 'twm-118')]);
+    b.players.A.active.energy.push({ iid: 'a0e1', printing: LIGHTNING });
+    const first = act({ actor: 'A', type: 'moveEnergy', source: 'a0', card: 'a0e0', target: 'a1' });
+    const r = step(b, [poppy, first]);
+    expect(legal(r)).toEqual(['A:confirm:false', 'A:moveEnergy:a0e1:a1']);
+    expect(energyOn(r, 'a1')).toEqual(['a1e0', 'a0e0']);
+  });
 });
