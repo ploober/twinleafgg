@@ -9353,6 +9353,36 @@
       "fixes": [
         "FX-0352"
       ]
+    },
+    {
+      "file": "set-pokemon-151/snorlax.ts",
+      "signatures": [
+        "      if (!effect.player.discard.cards.some(c => c.name === 'Leftovers'))"
+      ],
+      "note": "TA-487 (2026-09-30): TA-487: Voraciousness / Fire Off / Psychic Embrace throw CANNOT_USE_POWER when the printed operand is empty (no Leftover",
+      "fixes": [
+        "FX-0353"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/armarouge.ts",
+      "signatures": [
+        "      if (!fireOnBench) {"
+      ],
+      "note": "TA-487 (2026-09-30): the printed operand gates the Ability (B.29 rule 1)",
+      "fixes": [
+        "FX-0353"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/gardevoir-ex.ts",
+      "signatures": [
+        "      if (!hasEnergy || !hasRecipient) {"
+      ],
+      "note": "TA-487 (2026-09-30): the printed operand gates the Ability (B.29 rule 1)",
+      "fixes": [
+        "FX-0353"
+      ]
     }
   ]
 }
