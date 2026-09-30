@@ -46,6 +46,20 @@ describe('OOP-92 Snorlax Doll can be placed during setup', () => {
     expect(starters(deck('a', [DROWZEE, DOLL, ...fill(18)]))).toEqual(['a0', 'a1']);
   });
 
+  it('placed as the starting Active, the Doll is IN PLAY as a Pokemon (getPokemons knows it) [OOP-92 par-175]', () => {
+    const a = deck('a', [DOLL, DROWZEE, ...fill(18)]);
+    const actions: NeutralAction[] = [flip('heads'), confirm('A', true), shuffle(a), shuffle(B),
+      { actor: 'A', type: 'choose', target: 'a0' } as NeutralAction, confirm('A', false)];
+    let r = step(preDeal(a, B), actions);
+    for (let i = 0; i < 6 && r.state.phase === 'setup' && r.pending; i++) {
+      const next = r.pending.legalActions.find(x => x.type === 'choose') || r.pending.legalActions[0];
+      actions.push(next as NeutralAction);
+      r = step(preDeal(a, B), actions);
+    }
+    expect(r.state.phase).toBe('main');
+    expect(r.state.players.A.active?.stack.map(c => c.printing)).toEqual([DOLL]);
+  });
+
   it('control: without the Doll only the Basic is offered [OOP-92 par-175]', () => {
     expect(starters(deck('a', [DROWZEE, GRASS, ...fill(18)]))).toEqual(['a0']);
   });

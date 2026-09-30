@@ -265,6 +265,9 @@ export class PokemonCardList extends CardList {
         result.push(card as PokemonCard);
       } else if (card.name === 'Clefairy Doll') {
         result.push(card as PokemonCard);
+      } else if (card.name === 'Snorlax Doll') {
+        // OOP-92: put into play during setup "as if it were a 120-HP Basic [C] Pokemon"
+        result.push(card as PokemonCard);
       } else if (card.name === 'Rare Fossil') {
         result.push(card as PokemonCard);
       } else if (card.name === 'Robo Substitute') {
