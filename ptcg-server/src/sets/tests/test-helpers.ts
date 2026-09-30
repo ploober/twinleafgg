@@ -346,6 +346,16 @@ try {
 } catch {
   engineCardMatcher = undefined;
 }
+if (engineCardMatcher === undefined) {
+  // Upstream 41382b814 ships its own matcher (prompt-card-filter.ts) and wires every prompt/CardList
+  // filter through it — a checkout without card-filter.ts (pristine) delegates to that one instead.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    engineCardMatcher = require('../../game/store/prompts/prompt-card-filter').matchesPromptFilter;
+  } catch {
+    engineCardMatcher = undefined;
+  }
+}
 
 export function cardMatchesPartialFilter(card: Card, filter: Partial<Card>): boolean {
   if (engineCardMatcher !== undefined) { return engineCardMatcher(card, filter); }
