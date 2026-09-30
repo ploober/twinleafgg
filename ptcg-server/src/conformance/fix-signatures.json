@@ -9182,6 +9182,14 @@
         "FX-0042"
       ],
       "state": "ours-only"
+    },
+    {
+      "file": "set-flashfire/druddigon.ts",
+      "signatures": [
+        "public fullName: string = 'Druddigon FLF';"
+      ],
+      "note": "2026-09-29 merge: upstream 1e90af6ca gave FLF-70 fullName 'Druddigon BRS' (duplicate of BRS-113) -> defineSet threw mid-set and 186 BRS printings were never registered. Restored FLF-70's pre-split fullName.",
+      "state": "ours-only"
     }
   ]
 }
