@@ -9464,11 +9464,13 @@
     {
       "file": "set-paradox-rift/morpeko.ts",
       "signatures": [
-        "name: 'In a Hungry Hurry',"
+        "name: 'In a Hungry Hurry',",
+        "      if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census) | TA-490 (2026-09-30): TA-490: Morpeko Energizer Wheel - blocked from source-list indices (not card ids), the move runs AFTER_ATTACK (after the",
       "fixes": [
-        "FX-0355"
+        "FX-0355",
+        "FX-0356"
       ]
     },
     {
