@@ -9223,6 +9223,66 @@
       "fixes": [
         "FX-0344"
       ]
+    },
+    {
+      "file": "set-pokemon-151/raichu.ts",
+      "signatures": [
+        "      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {"
+      ],
+      "note": "TA-473 (2026-09-29): TA-473: Raichu mew-026 Electrical Grounding - the count-1 'you may move a [L] Energy' is a standalone confirm{true,false",
+      "fixes": [
+        "FX-0345"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/veluza.ts",
+      "signatures": [
+        "      const minMove = waterCount > 0 && benchCount > 0 ? 1 : 0;"
+      ],
+      "note": "TA-474 (2026-09-29): TA-474: Veluza par-054 Fillet Memento floors 'up to 2' at 1 while a [W] Energy and a bencher exist (B.18 / #2301, the mi",
+      "fixes": [
+        "FX-0346"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/poppy.ts",
+      "signatures": [
+        "        { min: 1, max: 1, allowCancel: false }"
+      ],
+      "note": "OOP-91, TA-483 (2026-09-29): OOP-91 + TA-483: Poppy obf-193 - first move exactly 1 (Trainer 'up to 2' floors at 1, #2301), optional second pinned to ",
+      "fixes": [
+        "FX-0347"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/exp-share.ts",
+      "signatures": [
+        "      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {"
+      ],
+      "note": "TA-475 (2026-09-29): TA-475: Exp. Share svi-174 - each Exp. Share asks a standalone confirm (CF-32 count-1 may) and moves exactly 1 basic Ene",
+      "fixes": [
+        "FX-0348"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/snorlax-doll.ts",
+      "signatures": [
+        "  protected _tags = [CardTag.PLAY_DURING_SETUP];"
+      ],
+      "note": "OOP-92 (2026-09-29): OOP-92: Snorlax Doll par-175 declares _tags (not cardTag), so PLAY_DURING_SETUP is seen and the Doll is offered during s",
+      "fixes": [
+        "FX-0349"
+      ]
+    },
+    {
+      "file": "game/store/state/pokemon-card-list.ts",
+      "signatures": [
+        "      } else if (card.name === 'Snorlax Doll') {"
+      ],
+      "note": "OOP-92 (2026-09-29): OOP-92 (engine half): getPokemons lists Snorlax Doll, so a Doll placed during setup is a Pokémon in play instead of an e",
+      "fixes": [
+        "FX-0350"
+      ]
     }
   ]
 }
