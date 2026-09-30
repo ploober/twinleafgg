@@ -80,7 +80,9 @@ export class Poppy extends TrainerCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { min: 0, max: 2, allowCancel: false }
+        // OOP-91 / B.18 (#2301): a Trainer's "move up to 2" is 1..2; canPlay guarantees an Energy and a second
+        // Pokemon, so a move is always possible here.
+        { min: 1, max: 2, allowCancel: false }
       ), transfers => {
         if (transfers === null) {
           return;

@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
-import { AttachEnergyPrompt, Card, CardTarget, EnergyCard, GameMessage, GamePhase, PlayerType, PokemonCardList, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
+import { AttachEnergyPrompt, Card, CardTarget, ConfirmPrompt, EnergyCard, GameMessage, GamePhase, PlayerType, PokemonCardList, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {IS_ABILITY_BLOCKED, THIS_POKEMON_DOES_DAMAGE_TO_ITSELF, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
@@ -107,31 +107,39 @@ export class Raichu extends PokemonCard {
         }
       });
 
-      return store.prompt(
-        state,
-        new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_TO_BENCH,
-          targetCopy,
-          PlayerType.BOTTOM_PLAYER,
-          thisCardList === player.active ? [SlotType.ACTIVE] : [SlotType.BENCH],
-          { superType: SuperType.ENERGY },
-          { blocked, blockedTo, validCardTypes: [CardType.LIGHTNING, CardType.ANY], allowCancel: false, min: 0, max: 1 }
-        ),
-        transfers => {
-          transfers = transfers || [];
+      // TA-473 / CF-32: "you may move a [L] Energy" has no inherent zero, so the may-gate is the only decline and
+      // stands alone as confirm{true,false}; on yes the move is exactly 1 (a single candidate collapses, CF-14).
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
+        if (!wantToUse) {
           effect.target.marker.removeMarker(this.ELECTRICAL_GROUNDING_MARKER);
-          for (const transfer of transfers) {
-            // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
-            // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
-            // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
-            // attached to the dying holder when the player answers: the discard read matched
-            // nothing and the decision resolved to nothing.
-            const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;
-            from.moveCardTo(transfer.card, thisCardList);
-          }
+          return state;
         }
-      );
+        return store.prompt(
+          state,
+          new AttachEnergyPrompt(
+            player.id,
+            GameMessage.ATTACH_ENERGY_TO_BENCH,
+            targetCopy,
+            PlayerType.BOTTOM_PLAYER,
+            thisCardList === player.active ? [SlotType.ACTIVE] : [SlotType.BENCH],
+            { superType: SuperType.ENERGY },
+            { blocked, blockedTo, validCardTypes: [CardType.LIGHTNING, CardType.ANY], allowCancel: false, min: 1, max: 1 }
+          ),
+          transfers => {
+            transfers = transfers || [];
+            effect.target.marker.removeMarker(this.ELECTRICAL_GROUNDING_MARKER);
+            for (const transfer of transfers) {
+              // TA-445: move the Energy FROM WHEREVER IT IS. This read `player.discard`
+              // unconditionally, which was correct only while the Knock Out discard ran BEFORE this
+              // prompt was answered. TA-441 ordered the KO window properly, so the Energy is still
+              // attached to the dying holder when the player answers: the discard read matched
+              // nothing and the decision resolved to nothing.
+              const from = effect.target.cards.includes(transfer.card) ? effect.target : player.discard;
+              from.moveCardTo(transfer.card, thisCardList);
+            }
+          }
+        );
+      });
     }
 
     // Thunder

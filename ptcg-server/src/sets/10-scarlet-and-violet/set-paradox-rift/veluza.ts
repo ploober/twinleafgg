@@ -1,4 +1,4 @@
-import { AttachEnergyPrompt, GameMessage, PlayerType, PokemonCardList, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
+import { AttachEnergyPrompt, EnergyCard, GameMessage, PlayerType, PokemonCardList, PowerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
@@ -58,6 +58,13 @@ export class Veluza extends PokemonCard {
       const activeCopy = new PokemonCardList();
       activeCopy.cards = effect.target.cards.slice();
 
+      // TA-474 / B.18 (#2301): an Ability's "move up to 2" is 1..2 -- no decline while a [W] Energy and a
+      // bencher exist; with nothing to move the floor stays 0 (the miraidon.ts minMove pattern, TA-446).
+      const waterCount = activeCopy.cards.filter(c => c instanceof EnergyCard
+        && c.provides.some(t => t === CardType.WATER || t === CardType.ANY)).length;
+      const benchCount = player.bench.filter(b => b.cards.length > 0).length;
+      const minMove = waterCount > 0 && benchCount > 0 ? 1 : 0;
+
       return store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
@@ -65,7 +72,7 @@ export class Veluza extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, max: 2, validCardTypes: [CardType.WATER, CardType.ANY] }
+        { allowCancel: false, min: minMove, max: 2, validCardTypes: [CardType.WATER, CardType.ANY] }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {
