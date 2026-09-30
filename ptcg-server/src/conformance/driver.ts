@@ -57,10 +57,12 @@ function lookupCard(game: ImportedGame, iid: string, role: string): Card {
   return card;
 }
 
-function handIndexOf(player: Player, card: Card, role: string, actor: string): number {
+function handIndexOf(player: Player, card: Card, _role: string, _actor: string): number {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) {
-    throw new Error(`[conformance] ${role} is not in ${actor}'s hand`);
+    // TA-492 / CF-52: a real card that is not in the hand (discarded, attached, still in the deck) makes the
+    // action illegal — HTTP 200 + invalidAction, as for an unknown iid in lookupCard — never an adapter fault.
+    throw new GameError(GameMessage.INVALID_TARGET);
   }
   return handIndex;
 }
