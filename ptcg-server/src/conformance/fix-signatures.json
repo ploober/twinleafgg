@@ -9563,6 +9563,36 @@
       "fixes": [
         "FX-0358"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/tinkatink.ts",
+      "signatures": [
+        "  // TA-493: an attack whose cost is met can be used; with no Item card in the discard pile it does nothing"
+      ],
+      "note": "TA-493 (2026-09-30): TA-493: Scrap Pickup / Swelling Power / Flare Bringer return without effect on an empty operand instead of throwing; Scr",
+      "fixes": [
+        "FX-0359"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/groudon.ts",
+      "signatures": [
+        "      // TA-493: with no Basic [F] Energy in hand the attack is still usable and the attach does nothing (#352, #1962)."
+      ],
+      "note": "TA-493 (2026-09-30): an attack is usable with an empty operand",
+      "fixes": [
+        "FX-0359"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/chi-yu.ts",
+      "signatures": [
+        "      // TA-493: with no Basic [R] Energy in the discard the attack is still usable and does nothing (#352, #1962)."
+      ],
+      "note": "TA-493 (2026-09-30): an attack is usable with an empty operand",
+      "fixes": [
+        "FX-0359"
+      ]
     }
   ]
 }
