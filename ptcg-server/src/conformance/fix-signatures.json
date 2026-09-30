@@ -5374,10 +5374,14 @@
     {
       "file": "set-pitch-black/mega-slowbro-ex.ts",
       "signatures": [
-        "public cardType: CardType[] = [P]; public hp: number = 330; public weakness = [{ type: D }];"
+        "public cardType: CardType[] = [P]; public hp: number = 330; public weakness = [{ type: D }];",
+        "public retreat = [C, C, C];"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-09-30 re-recorded (TA-489): the bulk-registered line held the pre-fix wrong data (Fighting / 310 HP / Grass weakness); printed = Psychic / 330 / Darkness, retreat 3",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0355"
+      ]
     },
     {
       "file": "sets/check-card-data-3way.ts",
@@ -9412,6 +9416,130 @@
       "note": "TA-488 (2026-09-30): a used Ability resolves its printed count",
       "fixes": [
         "FX-0354"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/ralts.ts",
+      "signatures": [
+        "  public resistance = [{ type: CardType.FIGHTING, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): TA-489: printed data on 20 in-pool printings (Mega Slowbro ex stats; Fighting -30 resistances; Minun/Dragonite extras re",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/jellicent-ex.ts",
+      "signatures": [
+        "public resistance = [{ type: F, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/latios.ts",
+      "signatures": [
+        "public resistance = [{ type: CardType.FIGHTING, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/minun.ts",
+      "signatures": [
+        "public weakness = [{ type: CardType.FIGHTING }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ],
+      "absentSignatures": [
+        "public resistance = [{ type: CardType.METAL, value: -20 }];"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/morpeko.ts",
+      "signatures": [
+        "name: 'In a Hungry Hurry',"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/alakazam-ex.ts",
+      "signatures": [
+        "public resistance = [{ type: F, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/dragonite.ts",
+      "signatures": [
+        "public weakness = [];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/moltres.ts",
+      "signatures": [
+        "public resistance = [{ type: CardType.FIGHTING, value: -30 }];",
+        "name: 'Flare Float',"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-prismatic-evolution/espeon-ex.ts",
+      "signatures": [
+        "public resistance = [{ type: F, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/yveltal.ts",
+      "signatures": [
+        "public resistance = [{ type: F, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-mega-evolution-promos/slowpoke.ts",
+      "signatures": [
+        "name: 'Dopey Face',"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/kirlia.ts",
+      "signatures": [
+        "public resistance = [{ type: F, value: -30 }];"
+      ],
+      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "fixes": [
+        "FX-0355"
       ]
     }
   ]
