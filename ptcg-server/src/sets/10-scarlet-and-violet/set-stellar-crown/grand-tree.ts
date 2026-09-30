@@ -20,6 +20,7 @@ import {
 import { UseStadiumEffect } from '../../../game/store/effects/game-effects';
 import { CheckPokemonPlayedTurnEffect } from '../../../game/store/effects/check-effects';
 import {SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-effect';
 
 function* useStadium(
   next: Function,
@@ -39,15 +40,20 @@ function* useStadium(
     return c instanceof PokemonCard && c.stage !== Stage.BASIC;
   }) as PokemonCard[];
 
-  // Build possible evolution card names
+  // TA-479 / TA-480: a target is a Basic, not put into play this turn, that a known Stage 1 evolves from
+  // (#2030: a known valid evolution path is required), and whose Stadium effects are not prevented (New Moon,
+  // B.70: a protected Basic is out of reach). With no target left the use is refused.
   const evolutionNames: string[] = [];
+  const blocked2: CardTarget[] = [];
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
     const playedTurnEffect = new CheckPokemonPlayedTurnEffect(player, list);
     store.reduceEffect(state, playedTurnEffect);
-    if (card.stage !== Stage.BASIC || playedTurnEffect.pokemonPlayedTurn === state.turn) {
+    const valid = evolutions.filter((e) => e.stage === Stage.STAGE_1 && e.evolvesFrom === card.name);
+    if (card.stage !== Stage.BASIC || playedTurnEffect.pokemonPlayedTurn === state.turn || valid.length === 0
+      || IS_STADIUM_EFFECT_BLOCKED(store, state, player, list, effect.stadium as TrainerCard)) {
+      blocked2.push(target);
       return;
     }
-    const valid = evolutions.filter((e) => e.evolvesFrom === card.name);
     valid.forEach((c) => {
       if (!evolutionNames.includes(c.name)) {
         evolutionNames.push(c.name);
@@ -59,19 +65,6 @@ function* useStadium(
   if (evolutionNames.length === 0) {
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
-
-  const blocked2: CardTarget[] = [];
-  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-    if (card.stage !== Stage.BASIC) {
-      blocked2.push(target);
-      return;
-    }
-    const playedTurnEffect = new CheckPokemonPlayedTurnEffect(player, list);
-    store.reduceEffect(state, playedTurnEffect);
-    if (playedTurnEffect.pokemonPlayedTurn === state.turn) {
-      blocked2.push(target);
-    }
-  });
 
   let targets: PokemonCardList[] = [];
   yield store.prompt(
