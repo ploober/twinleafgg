@@ -9293,6 +9293,16 @@
       "fixes": [
         "FX-0351"
       ]
+    },
+    {
+      "file": "set-mega-evolution-promos/pikachu-ex.ts",
+      "signatures": [
+        "      name: 'Pika-Pika Parade',"
+      ],
+      "note": "TA-485 (2026-09-29): mep-107 attack name matches the printed card (was 'Pika Pika Parade')",
+      "fixes": [
+        "FX-0351"
+      ]
     }
   ]
 }
