@@ -18,7 +18,10 @@ export class SnorlaxDoll extends TrainerCard {
   public evolvesFromBase: string[] = [];
   public pokemonType = PokemonType.NORMAL;
   public evolvesFrom = '';
+  // OOP-92: Card.tags reads _tags - that is what the setup reducer sees. cardTag stays only because this class mimics
+  // PokemonCard's shape (it is compared against getPokemonCard()).
   protected _tags = [CardTag.PLAY_DURING_SETUP];
+  public cardTag = [CardTag.PLAY_DURING_SETUP];
   public tools = [];
   public evolvesTo = [];
   public evolvesToStage = [];

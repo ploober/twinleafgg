@@ -63,7 +63,7 @@ describe('TA-472 / TA-478 Chi-Yu ex Flame Surge', () => {
   it('the 100 base damage is dealt before the first rider decision [TA-472 pal-040]', () => {
     const r = step(board(), [attack]);
     expect(r.status).toBe('awaitingAction');
-    expect(r.state.players.B.active.damage).toBe(100);
+    expect(r.state.players.B.active!.damage).toBe(100);
   });
 
   it('the first rider decision is the recipient pick: choose a Benched Pokemon or stop [TA-478 pal-040]', () => {
