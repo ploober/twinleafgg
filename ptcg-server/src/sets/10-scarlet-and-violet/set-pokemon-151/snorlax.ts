@@ -99,6 +99,10 @@ export class Snorlax extends PokemonCard {
       if (effect.player.marker.hasMarker(this.ABILITY_USED_MARKER, this))
         throw new GameError(GameMessage.POWER_ALREADY_USED);
 
+      // TA-487: no Leftovers in the discard pile = nothing to put into the hand (B.29 rule 1).
+      if (!effect.player.discard.cards.some(c => c.name === 'Leftovers'))
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+
       const generator = useVoraciousness(() => generator.next(), store, state, this, effect);
       return generator.next().value;
     }

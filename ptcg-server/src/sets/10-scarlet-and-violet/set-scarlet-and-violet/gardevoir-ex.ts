@@ -16,6 +16,7 @@ import { PowerType,
   GameError, pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
+import { EnergyCard } from '../../../game/store/card/energy-card';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 import { RemoveSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckHpEffect } from '../../../game/store/effects/check-effects';
@@ -72,6 +73,22 @@ export class Gardevoirex extends PokemonCard {
       //     blocked.push();
       //   }
       // });
+
+      // TA-487: needs a Basic [P] Energy in the discard pile and a [P] Pokémon that 2 damage counters would not
+      // Knock Out; otherwise nothing can be attached (B.29 rule 1).
+      const hasEnergy = player.discard.cards.some(c => c instanceof EnergyCard
+        && c.energyType === EnergyType.BASIC && c.name === 'Psychic Energy');
+      let hasRecipient = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card) => {
+        const checkHpEffect = new CheckHpEffect(player, list);
+        store.reduceEffect(state, checkHpEffect);
+        if (pokemonHasCardType(card, CardType.PSYCHIC) && list.damage + 20 < checkHpEffect.hp) {
+          hasRecipient = true;
+        }
+      });
+      if (!hasEnergy || !hasRecipient) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
 
       state = store.prompt(
         state,

@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, SpecialCondition } from '../../../game/store/card/card-types';
-import { StoreLike, State, PowerType, StateUtils, CardTarget, PlayerType, MoveEnergyPrompt, SlotType } from '../../../game';
+import { StoreLike, State, PowerType, StateUtils, CardTarget, PlayerType, MoveEnergyPrompt, SlotType, GameError } from '../../../game';
 import { GameMessage } from '../../../game/game-message';
 
 import { Effect } from '../../../game/store/effects/effect';
@@ -53,6 +53,7 @@ export class Armarouge extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
       const blockedMap: { source: CardTarget, blocked: number[] }[] = [];
+      let fireOnBench = false;
 
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
         const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, cardList);
@@ -65,6 +66,8 @@ export class Armarouge extends PokemonCard {
             if (index !== -1) {
               blockedIndices.add(index);
             }
+          } else if (target.slot === SlotType.BENCH) {
+            fireOnBench = true;
           }
         });
 
@@ -72,6 +75,11 @@ export class Armarouge extends PokemonCard {
           blockedMap.push({ source: target, blocked: target.slot === SlotType.ACTIVE ? Array.from({ length: cardList.cards.length }, (_, i) => i) : Array.from(blockedIndices) });
         }
       });
+
+      // TA-487: the source is a Benched Pokémon with a [R] Energy; none means nothing can be moved (B.29 rule 1).
+      if (!fireOnBench) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
 
       const blockedTargets: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
