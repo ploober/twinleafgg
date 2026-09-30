@@ -9543,6 +9543,16 @@
       "fixes": [
         "FX-0355"
       ]
+    },
+    {
+      "file": "conformance/decomposers/attach-energy.ts",
+      "signatures": [
+        "  collapseWholeSet: (prompt, picks, _state, forcedCount) => {"
+      ],
+      "note": "TA-491 (2026-09-30): TA-491: the attach-energy decomposer collapses a forced N-of-exactly-N attach or relocation as a whole set (collapseWhol",
+      "fixes": [
+        "FX-0357"
+      ]
     }
   ]
 }
