@@ -68,12 +68,18 @@ export class Pikachuex extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
-      // "Discard 3 Energy from this Pokémon." When 3 or fewer Energy are attached,
-      // every attached Energy must go — there is no which-choice, so apply the
+      // "Discard 3 Energy from this Pokémon." When the attached cards PROVIDE 3 or fewer
+      // Energy, every one of them must go — there is no which-choice, so apply the
       // discard atomically with no prompt (CF-8 forced-discard boundary: a discard
-      // whose count >= the available pool is a non-decision). Only with 4+ attached
-      // is it a genuine "which 3" choice that surfaces the discard picks.
-      if (checkProvidedEnergy.energyMap.length <= 3) {
+      // whose count >= the available pool is a non-decision). Otherwise it is a genuine
+      // "which 3" choice that surfaces the discard picks.
+      //
+      // TA-560 (2026-10-01): counted in Energy, not cards. TA-40 counted CARDS, so 3 cards
+      // providing 4 Energy (Counter Energy provides 2 while its owner is behind on Prize
+      // cards) were all discarded with no choice, although compendium #833 makes discarding
+      // a 2-Energy card plus one other a legal "Discard 3 Energy" that keeps a card.
+      const providedEnergy = checkProvidedEnergy.energyMap.reduce((n, e) => n + e.provides.length, 0);
+      if (providedEnergy <= 3) {
         const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
         const discardEnergy = new DiscardCardsEffect(effect, cards);
         discardEnergy.target = player.active;

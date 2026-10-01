@@ -1230,6 +1230,33 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).not.toContain('takePrize');          // and no second pick
   });
 
+  it('Topaz Bolt with 3 cards providing 4 Energy still lets the player keep a card [TA-560 ssp-057]', () => {
+    // "Discard 3 Energy from this Pokémon." TA-40 (FX-0168) made the discard atomic when 3 or fewer CARDS are
+    // attached, reasoning that count >= pool is a non-decision. That holds only when each card provides 1 Energy.
+    // Counter Energy provides 2 while its owner has more Prize cards remaining than the opponent, so Grass +
+    // Lightning + Counter = 3 cards, 4 Energy, and compendium #833 ("you can select 1 Energy of each Double
+    // Colorless Energy to discard both of them") makes both {Counter, one basic} and all three legal discards.
+    // The shortcut threw all three away with no choice. A (6 Prize cards) is behind B (3).
+    const bPrizes = Array.from({ length: 3 }, (_, i) => ({ iid: `B-pz${i}`, printing: WATER, faceUp: false }));
+    const r = step(board(
+      player({ active: inPlay('A-act', ['ssp-057'], [{ iid: 'A-g', printing: GRASS }, { iid: 'A-l', printing: 'sve-004' }, { iid: 'A-c', printing: 'cin-100' }]) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])], prizes: bPrizes }),
+    ), [attack('A-act', 'Topaz Bolt')]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.A.active?.energy.length).toBe(3);   // nothing discarded yet: the choice is open
+    expect(r.pending?.actor).toBe('A');
+    expect(types(r)).not.toContain('takePrize');
+  });
+
+  it('Topaz Bolt with 3 single-Energy cards still discards all 3 at once [TA-560 control / TA-40]', () => {
+    const r = step(board(
+      player({ active: inPlay('A-act', ['ssp-057'], [{ iid: 'A-g', printing: GRASS }, { iid: 'A-l', printing: 'sve-004' }, { iid: 'A-m', printing: METAL }]) }),
+      player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
+    ), [attack('A-act', 'Topaz Bolt')]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.A.active?.energy.length ?? 0).toBe(0);
+  });
+
   it('Weezing "Let\'s Have a Blast" KO of the Attacking Pokémon awards exactly 1 Prize [TA-559 mew-110]', () => {
     // "If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent's
     // Pokémon, flip a coin. If heads, the Attacking Pokémon is Knocked Out." The card built a KnockOutEffect
