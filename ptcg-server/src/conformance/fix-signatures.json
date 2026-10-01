@@ -9711,6 +9711,46 @@
       "fixes": [
         "FX-0359"
       ]
+    },
+    {
+      "file": "set-temporal-forces/iron-jugulis.ts",
+      "signatures": [
+        "import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';"
+      ],
+      "note": "TA-558 (2026-10-01): Iron Jugulis tef-139 Automated Combat places its 3 counters as an Ability (PlaceDamageCountersEffect), not through the a",
+      "fixes": [
+        "FX-0360"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/weezing.ts",
+      "signatures": [
+        "ko.viaCheckState = true;"
+      ],
+      "note": "TA-559 (2026-10-01): Weezing mew-110 Let's Have a Blast pays the Attacking Pokémon's Prize cards once: the card's KO no longer also lands on ",
+      "fixes": [
+        "FX-0361"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/pikachu-ex.ts",
+      "signatures": [
+        "const providedEnergy = checkProvidedEnergy.energyMap.reduce((n, e) => n + e.provides.length, 0);"
+      ],
+      "note": "TA-560 (2026-10-01): Pikachu ex ssp-057 Topaz Bolt: the atomic discard counts Energy provided, not cards attached [TA-560]",
+      "fixes": [
+        "FX-0362"
+      ]
+    },
+    {
+      "file": "game/store/state/rules.ts",
+      "signatures": [
+        "public tiebreakerGame = true;"
+      ],
+      "note": "TA-561 (2026-10-01): Equal win conditions start a tiebreaker game in real games again (Rules.tiebreakerGame, default true); conformance games",
+      "fixes": [
+        "FX-0363"
+      ]
     }
   ]
 }
