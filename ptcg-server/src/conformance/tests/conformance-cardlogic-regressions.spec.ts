@@ -1230,6 +1230,43 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(r)).not.toContain('takePrize');          // and no second pick
   });
 
+  it('Weezing "Let\'s Have a Blast" KO of the Attacking Pokémon awards exactly 1 Prize [TA-559 mew-110]', () => {
+    // "If this Pokémon is in the Active Spot and is Knocked Out by damage from an attack from your opponent's
+    // Pokémon, flip a coin. If heads, the Attacking Pokémon is Knocked Out." The card built a KnockOutEffect
+    // (which our CF-7 accumulator, state.pendingDirectKoPrizes, already pays) AND called TAKE_X_PRIZES, so a
+    // 1-Prize attacker paid 2: the identical card-local double FX-0078 deferred while mew was out of pool.
+    // Weezing (110 HP) carries 100 damage; Tandemaus "Play Rough" 10 (tails) Knocks it Out. Every card here is in
+    // rotomancer's pool; driven on rotomancer 3471bb4a4 the order is: B takes 1, A takes 1, B promotes, A
+    // promotes, B ends on 5. Pre-fix twinleaf matched it and then opened a SECOND pick for B after the promotions.
+    const start = () => board(
+      player({ active: inPlay('A-act', ['ssp-157'], en(WATER, 1, 'a')), bench: [inPlay('A-b0', ['mew-109'])] }),
+      player({ active: inPlay('B-act', ['mew-109', 'mew-110'], [], 100), bench: [inPlay('B-b0', ['mew-109'])] }),
+    );
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const take = (who: 'A' | 'B') => ({ actor: who, type: 'takePrize' as const, index: 0 });
+    const promote = (who: 'A' | 'B', target: string) => ({ actor: who, type: 'promoteBench' as const, target });
+    const r = step(start(), [attack('A-act', 'Play Rough'), flip('tails'), flip('heads'),
+      take('B'), take('A'), promote('B', 'B-b0'), promote('A', 'A-b0')]);
+    expect(r.status).not.toBe('invalidAction');            // every step of the script was accepted
+    expect(r.state.players.A.prizes.length).toBe(5);       // A took 1 for Weezing
+    expect(r.state.players.B.prizes.length).toBe(5);       // B took 1 for Tandemaus - pre-fix a 2nd pick followed
+    expect(r.pending?.actor === 'B' && types(r).includes('takePrize')).toBe(false);
+  });
+
+  it('Weezing "Let\'s Have a Blast" on TAILS knocks nothing out and awards nothing [TA-559 control]', () => {
+    const start = () => board(
+      player({ active: inPlay('A-act', ['ssp-157'], en(WATER, 1, 'a')), bench: [inPlay('A-b0', ['mew-109'])] }),
+      player({ active: inPlay('B-act', ['mew-109', 'mew-110'], [], 100), bench: [inPlay('B-b0', ['mew-109'])] }),
+    );
+    const flip = (face: 'heads' | 'tails') => ({ actor: 'system' as const, type: 'flip' as const, face });
+    const r = step(start(), [attack('A-act', 'Play Rough'), flip('tails'), flip('tails'),
+      { actor: 'A' as const, type: 'takePrize' as const, index: 0 }]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.A.prizes.length).toBe(5);
+    expect(r.state.players.B.prizes.length).toBe(6);
+    expect(r.state.players.A.active?.stack[0].iid).toBe('A-act');
+  });
+
   it('Iono\'s Electrode "Thump-Thump Boom" KOs on HEADS, not tails [TA-241 jtg-048]', () => {
     // "…Flip a coin. If heads, your opponent's Active Pokémon is Knocked Out." The callback branched
     // on `!result`, so the KO fired on TAILS and was withheld on heads — exactly inverted.

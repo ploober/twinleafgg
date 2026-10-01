@@ -58,6 +58,14 @@ export class Weezing extends PokemonCard {
         }
         // Ability-triggered KO — not attack-sourced, so KnockOutEffect is used directly
         const ko = new KnockOutEffect(opponent, opponent.active);
+        // TA-559 (2026-10-01): this card pays the Prize cards itself, at once (TAKE_X_PRIZES below), so the
+        // engine's direct-KO accumulator (state.pendingDirectKoPrizes, CF-7) must not record this KO as well -
+        // it did, and the owner took the Attacking Pokemon's Prize cards twice. The accumulator's only test is
+        // `viaCheckState`. Paying here rather than through the accumulator keeps the order rotomancer drives on
+        // the same board: the owner takes this Prize before the attacker takes Weezing's, both before either
+        // player promotes (#2026: prizes are taken before the replacement Active is chosen); the accumulator
+        // drains at the NEXT sweep, after the promotions.
+        ko.viaCheckState = true;
         store.reduceEffect(state, ko);
         return TAKE_X_PRIZES(store, state, player, ko.prizeCount);
       });
