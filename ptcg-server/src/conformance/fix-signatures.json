@@ -148,7 +148,8 @@
       ],
       "state": "guarding",
       "fixes": [
-        "FX-0189"
+        "FX-0189",
+        "FX-0209"
       ]
     },
     {
@@ -295,7 +296,10 @@
         "text: 'This attack does 50 damage for each Energy attached to this Pokémon.'",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0209"
+      ]
     },
     {
       "file": "set-shrouded-fable/decidueye.ts",
@@ -587,21 +591,30 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-ascended-heroes/tapu-koko.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-black-bolt-white-flare/servine.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-destined-rivals/dipplin.ts",
@@ -609,14 +622,20 @@
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
         "GameMessage.CHOOSE_ENERGIES_TO_HAND,"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-destined-rivals/ethans-cyndaquil.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-destined-rivals/cynthias-feebas.ts",
@@ -632,14 +651,20 @@
         "getTarget(state, player, transfer.to)",
         "const opponentActiveHasEnergy"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-destined-rivals/marnies-scraggy.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-journey-together/shelmet.ts",
@@ -654,70 +679,100 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-journey-together/larvitar.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-journey-together/salamence-ex.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-mega-evolution/mega-camerupt-ex.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-perfect-order/luxray.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-perfect-order/dedenne.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-perfect-order/probopass.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-temporal-forces/litten.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-temporal-forces/metagross.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-stellar-crown/salazzle.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-shrouded-fable/joltik.ts",
@@ -731,7 +786,10 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-surging-sparks/flittle.ts",
@@ -745,21 +803,30 @@
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-twilight-masquerade/monferno.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-twilight-masquerade/frogadier.ts",
       "signatures": [
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0206"
+      ]
     },
     {
       "file": "set-twilight-masquerade/scream-tail-ex.ts",
@@ -775,14 +842,20 @@
         "the empty-deck check MOVED below",
         "A recipient exists, so the search runs"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0207"
+      ]
     },
     {
       "file": "set-perfect-order/clefairy.ts",
       "signatures": [
         "(TA-80)\n        return state;"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0208"
+      ]
     },
     {
       "file": "set-journey-together/ns-purrloin.ts",
@@ -790,7 +863,10 @@
         "if (WAS_ATTACK_USED(effect, 0, this)) {",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0209"
+      ]
     },
     {
       "file": "set-twilight-masquerade/greninja-ex.ts",
@@ -798,7 +874,10 @@
         "if (WAS_ATTACK_USED(effect, 0, this)) {",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0209"
+      ]
     },
     {
       "file": "set-twilight-masquerade/luxray-ex.ts",
@@ -806,7 +885,10 @@
         "if (WAS_ATTACK_USED(effect, 0, this)) {",
         "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0209"
+      ]
     },
     {
       "file": "set-prismatic-evolution/glaceon-ex.ts",
@@ -814,7 +896,10 @@
         "opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {",
         "if (eligible === 0) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0210"
+      ]
     },
     {
       "file": "set-mega-evolution/marshadow.ts",
@@ -822,7 +907,10 @@
         "&& state.phase === GamePhase.ATTACK) {",
         "const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0211"
+      ]
     },
     {
       "file": "set-ascended-heroes/chikorita.ts",
@@ -840,7 +928,10 @@
       "signatures": [
         "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0214"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-hypno.ts",
@@ -940,7 +1031,10 @@
       "signatures": [
         "min:1, not min:0"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0220"
+      ]
     },
     {
       "file": "set-twilight-masquerade/greninja-ex.ts",
@@ -961,7 +1055,10 @@
         "      // ORDER IS LOAD-BEARING: the DESTINATION test runs first.",
         "// TA-395: ONE shuffle, raised AFTER the attach has moved the cards."
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0229"
+      ]
     },
     {
       "file": "set-surging-sparks/vivillion.ts",
@@ -970,14 +1067,20 @@
         "return SHUFFLE_DECK(store, state, player);",
         "if (!player.bench.some(b => b.cards.length > 0)) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0229"
+      ]
     },
     {
       "file": "set-temporal-forces/reuniclus.ts",
       "signatures": [
         "the look/bench prefab already no-ops safely"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0229"
+      ]
     },
     {
       "file": "set-shrouded-fable/slither-wing.ts",
@@ -991,14 +1094,20 @@
       "signatures": [
         "is declarable even with an empty deck"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0227"
+      ]
     },
     {
       "file": "set-journey-together/larvitar.ts",
       "signatures": [
         "{ min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0228"
+      ]
     },
     {
       "file": "set-silver-tempest/radiant-alakazam.ts",
@@ -1931,7 +2040,10 @@
         "effect.damage = Math.max(0, effect.damage - attacker.attacksDamageReductionNextTurn);",
         "// TA-240: do NOT award here."
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0212"
+      ]
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -1950,7 +2062,10 @@
         "&& cardList.attackCostIncreaseNextTurnAttackerId === player.id) {"
       ],
       "note": "The previously-registered line is also upstream's. These two are unique to our version and name the damage/cost-reduction owner scoping this file carries.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0212"
+      ]
     },
     {
       "file": "game/store/state/pokemon-card-list.ts",
@@ -6573,7 +6688,10 @@
         "&& cardList.attackCostIncreaseNextTurnAttackerId === player.id) {"
       ],
       "note": "The previously-registered line is also upstream's. These two are unique to our version and name the damage/cost-reduction owner scoping this file carries.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0212"
+      ]
     },
     {
       "file": "set-journey-together/ionos-electrode.ts",
