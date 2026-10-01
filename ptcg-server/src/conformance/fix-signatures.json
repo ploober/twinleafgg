@@ -5377,7 +5377,7 @@
         "public cardType: CardType[] = [P]; public hp: number = 330; public weakness = [{ type: D }];",
         "public retreat = [C, C, C];"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-09-30 re-recorded (TA-489): the bulk-registered line held the pre-fix wrong data (Fighting / 310 HP / Grass weakness); printed = Psychic / 330 / Darkness, retreat 3",
+      "note": "TA-489 (2026-09-30): Mega Slowbro ex pbl-031 was Fighting, 310 HP, Grass weakness, retreat 2; printed Psychic, 330 HP, Darkness weakness, retreat 3. This entry was bulk-registered 2026-08-01 and guarded the WRONG values; re-recorded to the printed ones.",
       "state": "guarding",
       "fixes": [
         "FX-0355"
@@ -9363,7 +9363,7 @@
       "signatures": [
         "      if (!effect.player.discard.cards.some(c => c.name === 'Leftovers'))"
       ],
-      "note": "TA-487 (2026-09-30): TA-487: Voraciousness / Fire Off / Psychic Embrace throw CANNOT_USE_POWER when the printed operand is empty (no Leftover",
+      "note": "TA-487 (2026-09-30): Voraciousness was offered and usable with no Leftovers in the discard pile (it opened an empty min-0 prompt). Now throws CANNOT_USE_POWER, so it is not offered (B.29 rule 1, #2306).",
       "fixes": [
         "FX-0353"
       ]
@@ -9373,7 +9373,7 @@
       "signatures": [
         "      if (!fireOnBench) {"
       ],
-      "note": "TA-487 (2026-09-30): the printed operand gates the Ability (B.29 rule 1)",
+      "note": "TA-487 (2026-09-30): Fire Off was offered and usable with no [R] Energy on any Benched Pokemon. Now throws CANNOT_USE_POWER, so it is not offered (B.29 rule 1).",
       "fixes": [
         "FX-0353"
       ]
@@ -9383,7 +9383,7 @@
       "signatures": [
         "      if (!hasEnergy || !hasRecipient) {"
       ],
-      "note": "TA-487 (2026-09-30): the printed operand gates the Ability (B.29 rule 1)",
+      "note": "TA-487 (2026-09-30): Psychic Embrace was offered with no Basic [P] Energy in the discard pile, or with no [P] Pokemon that 2 damage counters would not Knock Out. Now throws CANNOT_USE_POWER, so it is not offered (B.29 rule 1).",
       "fixes": [
         "FX-0353"
       ]
@@ -9393,7 +9393,7 @@
       "signatures": [
         "    { min: 1, max: 2, allowCancel: false, blocked }"
       ],
-      "note": "TA-488 (2026-09-30): TA-488: Voraciousness / Fire Off / Psychic Embrace resolve their printed count once used - min 1 (Fire Off and Psychic E",
+      "note": "TA-488 (2026-09-30): once used, Voraciousness asked with min 0 (a free decline) and did not collapse a single Leftovers. An Ability's 'up to 2' is 1..2 (#2301): now min 1.",
       "fixes": [
         "FX-0354"
       ]
@@ -9403,7 +9403,7 @@
       "signatures": [
         "        { allowCancel: false, min: 1, max: 1, blockedMap, blockedTo: blockedTargets }"
       ],
-      "note": "TA-488 (2026-09-30): a used Ability resolves its printed count",
+      "note": "TA-488 (2026-09-30): once used, Fire Off asked with min 0 and no max, so it could decline or move several Energy in one use. 'Move a [R] Energy' is exactly 1: now min 1, max 1.",
       "fixes": [
         "FX-0354"
       ]
@@ -9413,7 +9413,7 @@
       "signatures": [
         "          { allowCancel: false, min: 1, max: 1, blockedTo },"
       ],
-      "note": "TA-488 (2026-09-30): a used Ability resolves its printed count",
+      "note": "TA-488 (2026-09-30): once used, Psychic Embrace offered a decline and listed non-[P] Pokemon (and ones 2 counters would Knock Out) as recipients, then refused them. Now min 1, max 1, blockedTo; the callback reads the Pokemon's own type, not the bottom card's.",
       "fixes": [
         "FX-0354"
       ]
@@ -9423,7 +9423,7 @@
       "signatures": [
         "  public resistance = [{ type: CardType.FIGHTING, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): TA-489: printed data on 20 in-pool printings (Mega Slowbro ex stats; Fighting -30 resistances; Minun/Dragonite extras re",
+      "note": "TA-489 (2026-09-30): Ralts meg-058 (and asc-087, a subclass) lacked its printed Fighting -30 resistance.",
       "fixes": [
         "FX-0355"
       ]
@@ -9433,7 +9433,7 @@
       "signatures": [
         "public resistance = [{ type: F, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Jellicent ex wht-045 (and wht-160/168, subclasses) lacked its printed Fighting -30 resistance.",
       "fixes": [
         "FX-0355"
       ]
@@ -9443,7 +9443,7 @@
       "signatures": [
         "public resistance = [{ type: CardType.FIGHTING, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Latios par-073 had Fighting -20 resistance; printed -30.",
       "fixes": [
         "FX-0355"
       ]
@@ -9453,7 +9453,7 @@
       "signatures": [
         "public weakness = [{ type: CardType.FIGHTING }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Minun par-061 had an unprinted Metal -20 resistance (removed; the absent line is the guard).",
       "fixes": [
         "FX-0355"
       ],
@@ -9467,7 +9467,7 @@
         "name: 'In a Hungry Hurry',",
         "      if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census) | TA-490 (2026-09-30): TA-490: Morpeko Energizer Wheel - blocked from source-list indices (not card ids), the move runs AFTER_ATTACK (after the",
+      "note": "TA-489 (2026-09-30): Morpeko par-121/par-206's Ability was named 'In A Hungry Hurry'; printed 'In a Hungry Hurry'. | TA-490 (2026-09-30): Energizer Wheel built `blocked` from card ids where AttachEnergyPrompt reads source-list indices, so a forced move failed the prompt's validate (HTTP 500) and non-[D] Energy could be moved; and the move ran before the 70 damage. Now indices, AFTER_ATTACK, and min(2, [D] available).",
       "fixes": [
         "FX-0355",
         "FX-0356"
@@ -9478,7 +9478,7 @@
       "signatures": [
         "public resistance = [{ type: F, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Alakazam ex mew-065 lacked its printed Fighting -30 resistance.",
       "fixes": [
         "FX-0355"
       ]
@@ -9488,7 +9488,7 @@
       "signatures": [
         "public weakness = [];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Dragonite mew-149 had an unprinted Fairy weakness (the card has none).",
       "fixes": [
         "FX-0355"
       ]
@@ -9499,7 +9499,7 @@
         "public resistance = [{ type: CardType.FIGHTING, value: -30 }];",
         "name: 'Flare Float',"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Moltres mew-146 lacked its printed Fighting -30 resistance, and its Ability was named 'Flare FLoat' (printed 'Flare Float').",
       "fixes": [
         "FX-0355"
       ]
@@ -9509,7 +9509,7 @@
       "signatures": [
         "public resistance = [{ type: F, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Espeon ex pre-034 (and pre-155, svp-175, subclasses) had Fighting -20 resistance; printed -30.",
       "fixes": [
         "FX-0355"
       ]
@@ -9519,7 +9519,7 @@
       "signatures": [
         "public resistance = [{ type: F, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Yveltal sfa-035 had Fighting -20 resistance; printed -30.",
       "fixes": [
         "FX-0355"
       ]
@@ -9529,7 +9529,7 @@
       "signatures": [
         "name: 'Dopey Face',"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Slowpoke mep-086's Ability was named 'Aloof Face'; printed 'Dopey Face'.",
       "fixes": [
         "FX-0355"
       ]
@@ -9539,7 +9539,7 @@
       "signatures": [
         "public resistance = [{ type: F, value: -30 }];"
       ],
-      "note": "TA-489 (2026-09-30): printed card data (served-catalog census)",
+      "note": "TA-489 (2026-09-30): Kirlia meg-059 (and asc-088, a subclass) lacked its printed Fighting -30 resistance.",
       "fixes": [
         "FX-0355"
       ]
@@ -9549,7 +9549,7 @@
       "signatures": [
         "  collapseWholeSet: (prompt, picks, _state, forcedCount) => {"
       ],
-      "note": "TA-491 (2026-09-30): TA-491: the attach-energy decomposer collapses a forced N-of-exactly-N attach or relocation as a whole set (collapseWhol",
+      "note": "TA-491 (2026-09-30): a forced N-of-exactly-N attach or relocation (Energizer Wheel moving both [D] to the only Benched Pokemon) surfaced its first pick instead of being applied at once. Now collapseWholeSet (CF-14 addendum).",
       "fixes": [
         "FX-0357"
       ]
@@ -9559,7 +9559,7 @@
       "signatures": [
         "function handIndexOf(player: Player, card: Card, _role: string, _actor: string): number {"
       ],
-      "note": "TA-492 (2026-09-30): TA-492: handIndexOf throws GameError INVALID_TARGET (HTTP 200 + invalidAction) for a card that is not in the hand, like ",
+      "note": "TA-492 (2026-09-30): an action naming a card that is not in the actor's hand (discarded, attached) faulted with HTTP 500 engineFault. Now invalidAction INVALID_TARGET (CF-52), like lookupCard's unknown iid.",
       "fixes": [
         "FX-0358"
       ]
@@ -9569,7 +9569,7 @@
       "signatures": [
         "  // TA-493: an attack whose cost is met can be used; with no Item card in the discard pile it does nothing"
       ],
-      "note": "TA-493 (2026-09-30): TA-493: Scrap Pickup / Swelling Power / Flare Bringer return without effect on an empty operand instead of throwing; Scr",
+      "note": "TA-493 (2026-09-30): Scrap Pickup was withheld with no Item in the discard pile (the handler threw), and its body was an Item card's (preventDefault on the attack, moving Tinkatink from the hand to the discard). Now usable, does nothing on an empty discard, and is an attack body (#352, #1962).",
       "fixes": [
         "FX-0359"
       ]
@@ -9579,7 +9579,7 @@
       "signatures": [
         "      // TA-493: with no Basic [F] Energy in hand the attack is still usable and the attach does nothing (#352, #1962)."
       ],
-      "note": "TA-493 (2026-09-30): an attack is usable with an empty operand",
+      "note": "TA-493 (2026-09-30): Swelling Power was withheld with no Basic [F] Energy in hand (the handler threw). Now usable, and does nothing (#352, #1962).",
       "fixes": [
         "FX-0359"
       ]
@@ -9589,7 +9589,7 @@
       "signatures": [
         "      // TA-493: with no Basic [R] Energy in the discard the attack is still usable and does nothing (#352, #1962)."
       ],
-      "note": "TA-493 (2026-09-30): an attack is usable with an empty operand",
+      "note": "TA-493 (2026-09-30): Flare Bringer was withheld with no Basic [R] Energy in the discard pile (the handler threw), and floored the attack's 'up to 2' at 1. Now usable, does nothing on an empty discard, and is 0..2 (#2301).",
       "fixes": [
         "FX-0359"
       ]
