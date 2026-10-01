@@ -37,3 +37,47 @@ describe('Iron Jugulis TEF — Automated Combat places 3 counters, not 6 (reacti
     expect(getDamage(game.state, 0, 'active')).toBe(30);
   });
 });
+
+// Regression of the TA-195 fix (2026-10-01, from the plain-description backfill's side observations). TA-195 routed the
+// punish through `new PutDamageEffect(effect.attackEffect, 30)` with the ATTACKER as target. That is the attack-damage
+// path, and with the attacker as both source and target it applies the attacker's OWN attack-damage modifiers to
+// the counters: "this Pokémon's attacks do N less damage", "this Pokémon takes N less damage from attacks", and
+// "prevent all damage done to this Pokémon by attacks". Damage counters placed by an Ability are not damage from an
+// attack (rulebook: counters are placed, not dealt; Weakness, Resistance and attack-damage effects do not apply), so
+// none of these may change the 3 counters. Each case sets the field the corresponding card effect sets.
+describe('Iron Jugulis TEF — Automated Combat counters ignore the attacker\'s attack-damage modifiers', () => {
+  const board = () => setupGame({
+    turn: 2,
+    player1: {
+      active: { card: 'Sandy Shocks TEF', energy: ['Fighting Energy SVE', 'Fighting Energy SVE'] },
+      deck: padDeck(10),
+    },
+    player2: {
+      active: { card: 'Iron Jugulis TEF' },
+      deck: padDeck(10),
+    },
+  });
+
+  it('"this Pokémon\'s attacks do 10 less damage" on the attacker does not shrink the 3 counters', () => {
+    const game = board();
+    // Power Gem lands 30 on Iron Jugulis after its Resistance; 10 less leaves 20, so the Ability still triggers
+    game.state.players[0].active.attacksDamageReductionNextTurn = 10;
+    useAttack(game.store, game.state, 0, 'Power Gem');
+    expect(getDamage(game.state, 1, 'active')).toBe(20);
+    expect(getDamage(game.state, 0, 'active')).toBe(30);
+  });
+
+  it('"this Pokémon takes 30 less damage from attacks" on the attacker does not shrink the 3 counters', () => {
+    const game = board();
+    game.state.players[0].active.damageReductionNextTurn = 30;
+    useAttack(game.store, game.state, 0, 'Power Gem');
+    expect(getDamage(game.state, 0, 'active')).toBe(30);
+  });
+
+  it('"prevent all damage done to this Pokémon by attacks" on the attacker does not stop the 3 counters', () => {
+    const game = board();
+    game.state.players[0].active.preventDamageNextTurn = {};
+    useAttack(game.store, game.state, 0, 'Power Gem');
+    expect(getDamage(game.state, 0, 'active')).toBe(30);
+  });
+});

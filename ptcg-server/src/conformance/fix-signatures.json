@@ -6209,9 +6209,9 @@
     {
       "file": "set-temporal-forces/iron-jugulis.ts",
       "signatures": [
-        "const punish = new PutDamageEffect(effect.attackEffect, 30);"
+        "const punish = new PlaceDamageCountersEffect(targetPlayer, effect.source, 30, this);"
       ],
-      "note": "TA-195 — the punish must go through PutDamageEffect so it is LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`",
+      "note": "TA-195 - the punish must be LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`. TA-558 (2026-10-01): it was placed through PutDamageEffect, the attack-damage path, so the attacker's own attack-damage modifiers shrank or cancelled the 3 counters; now the Ability counter placement (logged, no attack modifier). Signature re-pointed from the PutDamageEffect line, which TA-558 replaced.",
       "fixes": [
         "FX-0083"
       ],
