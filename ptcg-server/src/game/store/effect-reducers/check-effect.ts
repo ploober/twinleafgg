@@ -397,15 +397,15 @@ export function checkWinner(store: StoreLike, state: State, onComplete?: () => v
     }
   }
 
-  // Both players meet an EQUAL NUMBER of win conditions → the game is a TIE per the base rulebook.
-  // Sudden death is a Play!-Pokémon TOURNAMENT tiebreaker overlay, not a base-game rule: it re-setups
-  // the whole game (resets decks/prizes, re-shuffles, re-flips for first player), which the
-  // differential contract cannot model and which native rotomancer — the conformance oracle — never
-  // does; twinleaf's auto-sudden-death left the game projecting `ongoing` with both boards empty
-  // (e.g. Revavroom ex "Shattering Speed" KOing the last defender while self-discarding the last
-  // attacker). Sudden death stays reachable only inside an already-sudden-death (sandbox-initiated)
-  // game. That case is UNAFFECTED by TA-296: both players end with no Active and no Bench, so the
-  // counts are 1 and 1 and this branch still takes it.
+  // Both players meet an EQUAL NUMBER of win conditions. Rulebook ("What if both players win at the same time?"):
+  // "If this happens, play a tiebreaker game." That is the BASE rulebook, not a tournament overlay.
+  //
+  // TA-561 (2026-10-01): TA-76 had made this a DRAW in every game, because the tiebreaker re-setup (decks and
+  // Prize cards reset, re-shuffle, re-flip) left the conformance projection reading `ongoing` with both boards
+  // empty, and native rotomancer ends the game `tie`. The contract is right to score the tied game as `tie`: the
+  // tiebreaker is a NEW game, outside any scenario. But that is a property of the contract, not of the game, so it
+  // is now a rule the conformance importer sets (`Rules.tiebreakerGame = false`); every real game plays the
+  // tiebreaker, as upstream does. Inside an already-tiebreaker game an equal count starts another, as before.
   //
   // TA-296 — the guard used to be `points[0] > 0 && points[1] > 0`, which short-circuited to DRAW
   // whenever BOTH sides had any points, WITHOUT EVER COMPARING THEM. The comparison that decides
@@ -420,7 +420,9 @@ export function checkWinner(store: StoreLike, state: State, onComplete?: () => v
   // Restated by #1832's tail ("they would lose due to 2 win conditions vs. only 1!") and #2036.
   // A tie needs an EQUAL count, never merely a mutual one.
   if (points[0] > 0 && points[0] === points[1]) {
-    return state.isSuddenDeath ? initiateSuddenDeath(store, state) : endGame(store, state, GameWinner.DRAW);
+    return state.isSuddenDeath || state.rules.tiebreakerGame
+      ? initiateSuddenDeath(store, state)
+      : endGame(store, state, GameWinner.DRAW);
   }
 
   if (points[0] + points[1] === 0) {

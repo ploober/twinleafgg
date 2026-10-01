@@ -397,6 +397,9 @@ export function importState(initial: NeutralState): ImportedGame {
   state.turn = initial.turn;
   state.activePlayer = actorIndex(initial.activePlayer);
   state.winner = OUTCOME_IMPORT[initial.outcome];
+  // TA-561: the contract scores a tied game as outcome `tie`; the rulebook's tiebreaker game that follows is a new
+  // game outside any scenario, so a conformance game ends at the tie instead of starting it (real games play it).
+  state.rules.tiebreakerGame = false;
 
   const preDeal = initial.phase === 'setup'; // CF-84: validated as the pre-deal state by handlers.ts
   const playerA = importer.buildPlayer(0, initial.players.A, initial.turn, preDeal);

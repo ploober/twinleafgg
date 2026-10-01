@@ -677,9 +677,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
 
   it('Revavroom ex "Shattering Speed" ends in a TIE when both boards empty simultaneously [TA-76 sfa-015]', () => {
     // "Discard this Pokémon and all attached cards." 250 dmg KOs the last defender while the self-discard
-    // clears the last attacker → both players Pokémon-less at the same checkup. Base rulebook = TIE, and
-    // native rotomancer ends gameOver/tie. Pre-fix twinleaf auto-triggered SUDDEN DEATH (a full re-setup:
-    // decks/prizes reset, re-shuffle) which the differential reads as `ongoing` with both boards empty.
+    // clears the last attacker → both players Pokémon-less at the same checkup. The CONTRACT scores the tied
+    // game as gameOver/tie (native rotomancer agrees); the rulebook's tiebreaker game that follows is a new game
+    // outside any scenario. Pre-fix twinleaf started it inside the scenario (a full re-setup: decks/prizes reset,
+    // re-shuffle), which the differential read as `ongoing` with both boards empty. TA-561: a real game DOES play
+    // the tiebreaker ("If this happens, play a tiebreaker game."); the conformance importer sets
+    // Rules.tiebreakerGame = false, which is what this cell exercises.
     // Active stacks: Varoom → Revavroom ex vs a lone Ralts (70 HP); neither has a Bench.
     const start = board(
       player({ active: inPlay('A-act', ['sfa-043', 'sfa-015'], en(METAL, 3, 'a')) }),
