@@ -23,6 +23,13 @@
  * Each value below was measured against the live card corpus, not guessed.
  */
 export interface Conventions {
+  /**
+   * CF-87 / B.72 (contract 0.11.0, required): the board BETWEEN the picks of one open multi-pick
+   * decision. Twinleaf answers a multi-select prompt one pick at a time through the decomposers while
+   * the engine prompt stays open, and the prompt applies its result only when it resolves, so the board
+   * stays the one the decision opened on until the last pick.
+   */
+  multiPickProjection: 'appliedPerPick' | 'deferredUntilComplete';
   /** How an energy type is written inside attack/ability/rules TEXT. */
   textEnergyNotation: 'bracket-code' | 'brace-code' | 'bracket-spelled' | 'word';
   /** Glyph for a damage multiplier in `attack.damage` (`30x` vs `30×`). */
@@ -48,6 +55,9 @@ export interface Conventions {
 }
 
 export const CONVENTIONS: Conventions = {
+  // Measured (B.72, class-D re-drive 2026-09-30): Jet Cyclone, Strange Hacking, Fillet Memento and Solar
+  // Transfer all show the pre-decision board until the last pick. The harness holds us to it.
+  multiPickProjection: 'deferredUntilComplete',
   // Measured: 2655 `[G]`-style refs in card text, 0 `{G}`, 0 `[Grass]`, 0 bareword.
   textEnergyNotation: 'bracket-code',
   // Measured: 994 attacks use ASCII `x` (`30x`), 0 use `×`.

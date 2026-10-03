@@ -16,7 +16,7 @@ import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
   SCHEMA_VERSION, NeutralState, NeutralPlayerId, PlayerState, PlayerFlags,
   PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, ConditionToken, Phase, Outcome, StadiumRef,
-  PlayerLastAttacks
+  PlayerLastAttacks, ResolvingRef
 } from './neutral-types';
 
 // M0 reuses the test harness's set-loading/registration machinery (the impl doc's
@@ -438,6 +438,23 @@ function projectOutcome(winner: GameWinner): Outcome {
   }
 }
 
+/** G-63: a Trainer staged in player.supporter was played from the hand and goes to the discard, face up. */
+const PLAYED_TRAINER_TRANSIT = { origin: 'hand', destination: 'discardPile', face: 'up' } as const;
+
+/**
+ * G-63: a `resolving` entry for a card staged outside player.supporter (a prompt's temp pile, a
+ * closure-local orphan). Its transit fields come from the stamp the card's own text set
+ * (CardList.transit: Tyme's face-down Pokémon). With no stamp the adapter cannot name the card's
+ * provenance, so the fields are omitted, and the harness reports that as a contract gap (it is required
+ * on the wire) rather than accepting a guess.
+ */
+function resolvingRef(ctx: IidContext, card: Card): ResolvingRef {
+  const stamp = CardList.transit.get(card);
+  return stamp === undefined
+    ? cardRef(ctx, card)
+    : { ...cardRef(ctx, card), ...stamp } as ResolvingRef;
+}
+
 function cardRef(ctx: IidContext, card: Card): CardRef {
   const iid = ctx.cardToIid.get(card);
   if (iid === undefined) {
@@ -607,7 +624,13 @@ function projectPlayer(ctx: IidContext, state: State, player: Player, turn: numb
     // over it. Those cards are IN PLAY, not gone — `resolvingExtra` carries them (from the active
     // prompt's temp pile, see detachedResolvingCards) so single-engine conservation holds through the
     // pause instead of reading N cards as vanished.
-    resolving: [...player.supporter.cards, ...resolvingExtraKept].map(c => cardRef(ctx, c)),
+    //
+    // G-63 (0.11.0): each entry carries origin / destination / face. A card in player.supporter is a
+    // Trainer PLAYED from the hand, going to the discard when its effect completes (#916/#919), face up.
+    resolving: [
+      ...player.supporter.cards.map(c => ({ ...cardRef(ctx, c), ...PLAYED_TRAINER_TRANSIT })),
+      ...resolvingExtraKept.map(c => resolvingRef(ctx, c)),
+    ],
     flags: projectFlags(player, turn),
   };
 }
@@ -868,7 +891,9 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
       continue;
     }
     const p = state.players[who];
-    p.resolving = [...(p.resolving ?? []), { iid, printing: toPrinting(card) }];
+    const stamp = CardList.transit.get(card); // G-63: Tyme's face-down Pokémon is a closure-local orphan
+    p.resolving = [...(p.resolving ?? []),
+      stamp === undefined ? { iid, printing: toPrinting(card) } : { iid, printing: toPrinting(card), ...stamp } as ResolvingRef];
     seen.add(iid);
   }
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {

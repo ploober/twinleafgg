@@ -29,6 +29,19 @@ export interface CardRef {
   printing: string;
 }
 
+/**
+ * G-63 / B.68(4) (contract 0.11.0, `ResolvingCard`): a `resolving` entry carries where the card came from,
+ * where the text will put it when the effect completes, and its face. The projection always emits all
+ * three when it knows them; a staged card whose provenance the adapter cannot name omits them, which the
+ * harness reports as a contract gap rather than letting a guess stand in. OPTIONAL on the type because
+ * INGEST (boards authored by hand, quiescent, `resolving` empty) need not carry them.
+ */
+export interface ResolvingRef extends CardRef {
+  origin?: 'hand' | 'deck' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
+  destination?: 'hand' | 'deck' | 'deckBottom' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay' | 'undecided';
+  face?: 'up' | 'down';
+}
+
 export interface PrizeRef extends CardRef {
   faceUp: boolean;
 }
@@ -186,7 +199,7 @@ export interface PlayerState {
    * authored before 0.5.0 — and every board a human writes — need not carry it. The PROJECTION
    * always emits it; only INGEST tolerates its absence.
    */
-  resolving?: CardRef[];
+  resolving?: ResolvingRef[];
   flags: PlayerFlags;
 }
 

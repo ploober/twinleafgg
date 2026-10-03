@@ -62,6 +62,15 @@ export class CardList {
    * matches the surviving deck order). WeakMap on the shared Card instances; inert for gameplay.
    */
   public static readonly deckStamp = new WeakMap<Card, number>();
+
+  /**
+   * G-63 / B.68(4) (conformance projection; inert for gameplay). A card the TEXT puts outside the
+   * standard zones mid-effect ("put that Pokémon face down in front of you": Tyme) records where it came
+   * from, where the text will put it when the effect completes, and its face, so its wire `resolving`
+   * entry can say so. Set by the card that does it; read only by the projection, and only while the card
+   * sits in no projected zone (the moment it lands in one, that zone is where it is projected).
+   */
+  public static readonly transit = new WeakMap<Card, { origin: string; destination: string; face: 'up' | 'down' }>();
   private static deckStampSeq = 0;
 
   private stampMovedCards(cards: Card[], destination: CardList): void {
