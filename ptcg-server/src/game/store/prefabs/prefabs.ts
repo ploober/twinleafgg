@@ -1210,23 +1210,17 @@ export function TAKE_X_PRIZES(
     return state;
   }
 
-  // Taking all remaining prizes — auto-resolve so clients never get an unsolvable prompt
-  // (e.g. KO awards 2 prizes with only 1 left). checkState/checkWinner will end the game.
-  if (count >= prizeLeft) {
-    const prizes = player.prizes.filter((p) => p.cards.length > 0).slice(0, takeCount);
-    TAKE_SPECIFIC_PRIZES(store, state, player, prizes, takeOptions);
-    if (callback) {
-      callback(prizes);
-    }
-    return state;
-  }
-
+  // Taking a Prize is always the player's decision, even the last one (RE-3 / TA-5: prompt even forced — the
+  // shortcut TA-5 removed from the KO flow lived on here). The prompt asks for `takeCount`, so it is never
+  // unsolvable when more are owed than remain. The callback therefore always runs on the prompt's resolution,
+  // never synchronously inside the caller: a caller that yields this with `() => next()` re-entered its own
+  // running generator when the take was forced ("Generator is already running", TA-592).
   state = store.prompt(
     state,
     new ChoosePrizePrompt(player.id, GameMessage.CHOOSE_PRIZE_CARD, {
-      count: takeCount,
       allowCancel: false,
       ...promptOptions,
+      count: takeCount,
     }),
     (result) => {
       TAKE_SPECIFIC_PRIZES(store, state, player, result, takeOptions);

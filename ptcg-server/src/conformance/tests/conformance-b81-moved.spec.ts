@@ -319,12 +319,20 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
     expect(replays(initial, res)).toEqual([]);
   });
 
-  it('accepted, heads: A takes 1 more Prize (the last one) and the trace replays [TA-592]', () => {
+  it('accepted, heads: the extra Prize is a takePrize decision even when it is the last one, then A wins [TA-592]', () => {
+    // RE-3 / TA-5 (prompt even forced): taking the last Prize is a `takePrize` pending. TAKE_X_PRIZES auto-took
+    // it (count >= Prizes left) — the shortcut TA-5 removed from the KO flow — and its synchronous callback is
+    // what re-entered the generator.
     const initial = board();
-    const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads')]);
+    const paused = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads')]);
+    expect(paused.state.outcome).toBe('ongoing');
+    expect(paused.pending?.legalActions.map(a => (a as { type: string; index?: number }))).toEqual([{ actor: 'A', type: 'takePrize', index: 0 } as never]);
+    expect(paused.state.players.A.prizes.map(c => c.iid)).toEqual(['ap1']);
+    const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads'), TAKE]);
     expect(res.state.players.A.prizes).toEqual([]);
     expect(res.state.players.A.hand.map(c => c.iid)).toContain('ap1');
     expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
+    expect(res.state.outcome).toBe('winA');
     expect(replays(initial, res)).toEqual([]);
   });
 
