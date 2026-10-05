@@ -504,6 +504,19 @@ describe('B.81 / CF-18: reveals on the physical layer (TA-591)', () => {
     expect(reveals(res.events).map(r => r.owner)).toEqual(['B']);
   });
 
+  it('Haughty Order with nothing to copy: the ten revealed cards go back to the deck PUBLIC (both players saw them) [TA-605]', () => {
+    // The reveal is emitted at the first audience's ack; the cards go back at the second's, a repeat, one dispatch
+    // later. Mutation guard: mark the shown cards revealed only on a non-repeat and the return legs read `owner`.
+    const res = step(game(
+      player({ active: { stack: [{ iid: 'a1', printing: 'dri-150' }], energy: [{ iid: 'ae0', printing: GRASS }, { iid: 'ae1', printing: GRASS }],
+        tools: [], damage: 0, conditions: [], markers: markers() }, hand: [{ iid: 'ah0', printing: GRASS }], deck: cards('ad', 2), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), hand: [{ iid: 'bh0', printing: GRASS }], deck: cards('bd', 10), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'a1', name: 'Haughty Order' } as never]);
+    const back = moved(res.events).filter(e => e.origin.zone === 'transit' && e.destination.zone === 'deck');
+    expect(back.length).toBe(10);
+    expect(back.map(e => e.visibility)).toEqual(Array(10).fill('public'));
+  });
+
   it('Perrin twm-160 reveals a card from the hand and, after searching it back, again from the deck: TWO reveals [TA-591]', () => {
     // The same card twice in one action from DIFFERENT zones is two reveals; only a repeat from the same zone (one
     // show per audience) is one. Mutation guard: key the repeat on the card alone and this reds (one reveal).
@@ -574,5 +587,19 @@ describe('B.81 moved: a switch inside one dispatch is an ordering point (a cut)'
     expect(legs('a1t0')).toEqual(['active:a1:tool>bench:a1:tool', 'bench:a1:tool>A.discardPile']);
     expect(legs('a2')).toEqual(['bench:a2:pokemon>active:a2:pokemon']);
     expect(replays(initial, res)).toEqual([]);
+  });
+});
+
+describe('B.80 / B.81: a looked-at card is known to its owner only (Snack Seek twm-072)', () => {
+  // "Look at the top card of your deck. You may discard that card." The ConfirmCardsPrompt goes to its own player;
+  // nothing is revealed. The confirm-cards fix-up used to raise the lifted card to `public` while its own leg said
+  // `owner`. Mutation guard: set the fix-up's visibility back to 'public' and this reds.
+  it('at the confirm the looked card is in transit {deck, owner}, and its leg says owner [TA-606]', () => {
+    const res = step(game(
+      player({ active: basic('a1', 'twm-072'), deck: cards('ad', 4), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 4), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'useAbility', source: 'a1', ability: 'Snack Seek' } as never]);
+    expect(res.state.players.A.transit).toEqual([{ iid: 'ad0', printing: GRASS, origin: { zone: 'deck' }, visibility: 'owner' }]);
+    expect(moved(res.events).filter(e => e.card === 'ad0').map(e => e.visibility)).toEqual(['owner']);
   });
 });

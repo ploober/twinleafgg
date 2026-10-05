@@ -853,8 +853,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           if (revealEvent !== null && !repeat) {
             shown.forEach(c => revealedThisAction.add(`${from}|${c}`));
             events.push(revealEvent);
-            (revealEvent as { cards: string[] }).cards.forEach(c => revealedSince.add(c));
           }
+          // TA-605: a repeat is no new event, but the cards are still being shown: a card that moves at this ack
+          // (Haughty Order puts the ten back at the second audience's) is identifiable by both players.
+          shown.forEach(c => revealedSince.add(c));
         }
         // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
         // SETUP_PLAYER_NO_BASIC, and the opponent's). Emit one `mulliganRevealed` per hand, from the owner's

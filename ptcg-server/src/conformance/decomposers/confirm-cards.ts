@@ -45,16 +45,17 @@ export const confirmCardsDecomposer: PromptDecomposer<ConfirmCardsPrompt> = {
   },
 
   fixupProjection(prompt, _picks, ctx, _state, projected) {
-    // B.80: the revealed deck-top cards (Dig It Up, Trekking Shoes) are a card-local temp pile, already in
-    // their owner's `transit` via the detached-pile pass (origin deck). They USED to be re-homed to the deck
-    // top (TA-81). A ConfirmCards prompt SHOWS them, so their visibility is `public`, not the pass's
-    // default `owner`. A variant that confirms cards in place (a hand discard) finds nothing in transit.
+    // B.80: the looked-at deck-top cards (Dig It Up, Trekking Shoes, Snack Seek, Primordial Altar) are a card-local
+    // temp pile, already in their owner's `transit` via the detached-pile pass (origin deck). They USED to be
+    // re-homed to the deck top (TA-81). The prompt goes to its own player and every user prints "look at", not
+    // "reveal", so they are `owner` (TA-606; it read `public` while their own leg said `owner`). A variant that
+    // confirms cards in place (a hand discard) finds nothing in transit.
     for (const card of prompt.cards) {
       const iid = ctx.cardToIid.get(card);
       if (iid === undefined) { continue; }
       for (const who of ['A', 'B'] as const) {
         const t = (projected.players[who].transit ?? []).find(x => x.iid === iid);
-        if (t !== undefined) { t.visibility = 'public'; }
+        if (t !== undefined) { t.visibility = 'owner'; }
       }
     }
   },
