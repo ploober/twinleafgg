@@ -504,6 +504,17 @@ describe('B.81 / CF-18: reveals on the physical layer (TA-591)', () => {
     expect(reveals(res.events).map(r => r.owner)).toEqual(['B']);
   });
 
+  it('Perrin twm-160 reveals a card from the hand and, after searching it back, again from the deck: TWO reveals [TA-591]', () => {
+    // The same card twice in one action from DIFFERENT zones is two reveals; only a repeat from the same zone (one
+    // show per audience) is one. Mutation guard: key the repeat on the card alone and this reds (one reveal).
+    const res = step(game(
+      player({ active: basic('a1'), hand: [{ iid: 'ah4', printing: 'twm-160' }, { iid: 'ah1', printing: GRASS }, { iid: 'ah3', printing: BELLSPROUT }],
+        deck: cards('ad', 8), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'playSupporter', card: 'ah4' } as never, { actor: 'A', type: 'choose', target: 'ah3' } as never]);
+    expect(reveals(res.events).map(r => r.from)).toEqual(['hand', 'deck']);
+  });
+
   it('Last-Ditch Catch por-062 "reveal it, and put it into your hand": the searched card\'s leg is public [TA-591]', () => {
     // The prefab raises the show and moves the card in one callback; the reveal event is captured at the ack, one
     // dispatch later, so the leg read `owner`. Mutation guard: drop the open-show scan and this reds.
@@ -517,5 +528,26 @@ describe('B.81 / CF-18: reveals on the physical layer (TA-591)', () => {
     expect(legs.length).toBeGreaterThan(0);
     expect(legs[legs.length - 1].destination).toEqual({ zone: 'hand' });
     expect(legs[legs.length - 1].visibility).toBe('public');
+  });
+});
+
+describe('B.80 / B.81: Bug Catching Set pre-102 takes from the lifted window (TA-591)', () => {
+  // "Look at the top 7 cards of your deck. You may reveal up to 2 Grass Pokémon or Basic Grass Energy cards you
+  // find there and put them into your hand. Shuffle the other cards back into your deck." The card used to put the
+  // whole window back in the deck before the reveal (so it would read `from: deck`), parking every card at the deck
+  // bottom. Mutation guard: restore that staging and this reds (a deck:bottom stop; reveal from deck).
+  it('the chosen card goes window -> hand (revealed from transit); the others are shuffled in (`any`) [TA-591]', () => {
+    const initial = game(
+      player({ active: basic('a1'), hand: [{ iid: 'bcs', printing: 'pre-102' }],
+        deck: [{ iid: 'dg', printing: BELLSPROUT }, ...cards('ad', 8, FIRE)], prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    const res = step(initial, [{ actor: 'A', type: 'playItem', card: 'bcs' } as never, { actor: 'A', type: 'choose', target: 'dg' } as never]);
+    const dg = moved(res.events).filter(e => e.card === 'dg');
+    expect(dg.filter(e => e.destination.zone === 'deck')).toEqual([]);
+    expect(dg[dg.length - 1].destination).toEqual({ zone: 'hand' });
+    const reveal = res.events.filter(e => e.kind === 'reveal') as Array<{ from: string; cards: string[] }>;
+    expect(reveal.map(r => [r.from, r.cards])).toEqual([['transit', ['dg']]]);
+    const back = moved(res.events).filter(e => e.card === 'ad0').pop();
+    expect(back?.destination).toEqual({ zone: 'deck', position: 'any' });
   });
 });

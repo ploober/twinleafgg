@@ -824,10 +824,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // (WaitPrompt, Alert, non-cancelable Confirm cards) carry no observable and emit nothing.
         if (prompt.type === 'Show cards') {
           const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt, actionStartZones);
+          // A repeat is the same cards FROM THE SAME ZONE: Perrin twm-160 reveals a card from the hand, shuffles it in,
+          // searches it back and reveals it again from the deck — two reveals.
           const shown = revealEvent === null ? [] : (revealEvent as { cards: string[] }).cards;
-          const repeat = shown.length > 0 && shown.every(c => revealedThisAction.has(c));
+          const from = revealEvent === null ? '' : String((revealEvent as { from: unknown }).from);
+          const repeat = shown.length > 0 && shown.every(c => revealedThisAction.has(`${from}|${c}`));
           if (revealEvent !== null && !repeat) {
-            shown.forEach(c => revealedThisAction.add(c));
+            shown.forEach(c => revealedThisAction.add(`${from}|${c}`));
             events.push(revealEvent);
             (revealEvent as { cards: string[] }).cards.forEach(c => revealedSince.add(c));
           }

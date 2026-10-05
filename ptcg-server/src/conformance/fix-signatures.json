@@ -7194,7 +7194,7 @@
     {
       "file": "set-twilight-masquerade/bug-catching-set.ts",
       "signatures": [
-        "      () => next(),\n    );\n  }\n\n  player.deck.moveCardsTo(cards, player.hand);"
+        "      () => next(),\n    );\n  }\n\n  deckTop.moveCardsTo(cards, player.hand);"
       ],
       "state": "guarding"
     },

@@ -72,13 +72,10 @@ function* playCard(
       player.deck.applyOrder(order);
     });
   }
-  // TA-265 residual / §B.34: the reveal must name the SOURCE zone (`deck`). The looked-at cards live
-  // in the TEMPORARY `deckTop` list, which `locateCard` cannot see -- showing them from there reports
-  // `from: 'unknown'`, not `from: 'deck'` -- so the whole window goes back to the deck FIRST, the
-  // reveal is raised while the chosen cards are genuinely in the deck, and only then do they move to
-  // the hand. Net state is unchanged: the deck is shuffled at the end of the effect either way.
-  MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: self });
-
+  // B.80 / B.81 (amends the TA-265 residual / §B.34 staging): the looked-at window is LIFTED (in transit), and a
+  // card revealed out of it is revealed `from: transit`. The window used to go back into the deck first so the
+  // reveal would say `deck`; that parked every card at the deck bottom before the take. Reveal from the window,
+  // take the chosen cards from it, and only then return the others for the shuffle.
   if (cards.length > 0) {
     yield store.prompt(
       state,
@@ -87,7 +84,8 @@ function* playCard(
     );
   }
 
-  player.deck.moveCardsTo(cards, player.hand);
+  deckTop.moveCardsTo(cards, player.hand);
+  MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: self });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
