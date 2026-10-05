@@ -1,3 +1,4 @@
+import { SuperType } from '../card/card-types';
 import { getCardTarget } from "../../../simple-bot/simple-tactics/simple-tactics";
 import { GameError } from "../../game-error";
 import { GameMessage, GameLog } from "../../game-message";
@@ -470,6 +471,15 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     const target = effect.target;
     const cards = effect.cards;
     const owner = StateUtils.findOwner(state, target);
+    // B.82 (#1834, #2002, #2031): Energy of the attacker's own Pokémon that the attack chose before its damage stays
+    // attached through the damage and is discarded after it. The effect has been reduced (every card saw it now);
+    // only the move is queued on the in-flight attack, run right after the damage (game-effect useAttack).
+    const pre = state.preDamageAttack as AttackEffect | undefined;
+    if (pre !== undefined && pre === effect.attackEffect && owner === pre.player
+        && cards.length > 0 && cards.every(c => c.superType === SuperType.ENERGY)) {
+      pre.afterDamageMoves.push(() => { target.moveCardsTo(cards.filter(c => target.cards.includes(c)), owner.discard); });
+      return state;
+    }
     target.moveCardsTo(cards, owner.discard);
     return state;
   }

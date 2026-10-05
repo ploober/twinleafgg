@@ -306,11 +306,14 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
       skipAfterAttack: false,
     });
   } else {
+    const prevPreDamage = state.preDamageAttack;
+    state.preDamageAttack = attackEffect;   // B.82: until the damage step starts (below)
     state = store.reduceEffect(state, attackEffect);
 
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }
+    state.preDamageAttack = prevPreDamage;
   }
 
   // TA-399: record the attack as the player's LAST ATTACK here — after the Smokescreen/Sand-Attack and

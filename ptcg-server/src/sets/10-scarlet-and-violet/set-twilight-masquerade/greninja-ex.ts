@@ -1,4 +1,3 @@
-import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, Card, State, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, SlotType, ShuffleDeckPrompt, StateUtils } from '../../../game';
@@ -111,7 +110,6 @@ export class Greninjaex extends PokemonCard {
         state,
         energyPrompt,
         (energy) => {
-          CardList.chosen?.((energy || []).map((e) => e.card));
           // TA-390: "2 of your opponent's Pokemon" is a FIXED count, not "up to 2" — `min: 1` offered a
           // stop after the first target (halving the attack) and left the forced second pick surfaced.
           // Pin min === max === min(2, available); the adapter collapses the forced set (CF-14, TA-317 idiom).

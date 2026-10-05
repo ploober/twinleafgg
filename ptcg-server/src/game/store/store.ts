@@ -368,6 +368,15 @@ export class Store implements StoreLike {
         prompts[i].playerId = controllerId;
       }
 
+      // B.82: an Energy choice the attacker is asked before the attack's damage chooses cards that move after it
+      // (the DiscardCardsEffect reducer queues the move); the adapter leaves its picks attached as `chosen`.
+      const pre = state.preDamageAttack as { player?: { id: number } } | undefined;
+      const p = prompts[i] as Prompt<any> & { deferredMove?: boolean; message?: unknown };
+      if (pre?.player !== undefined && p.playerId === pre.player.id && p.message === GameMessage.CHOOSE_ENERGIES_TO_DISCARD
+          && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
+        p.deferredMove = true;
+      }
+
       state.prompts.push(prompts[i]);
       this.stampTrainerPrompt(prompts[i].id);
     }

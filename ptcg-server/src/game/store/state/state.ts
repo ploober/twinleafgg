@@ -65,6 +65,13 @@ export class State {
   public deferAfterDamage: boolean = false;
   public pendingAfterDamage: Effect[] = [];
 
+  /**
+   * B.82 (#1834, #2002, #2031): the AttackEffect whose damage step has not started yet. While it is set, a discard of
+   * the attacker's own Energy that the attack's text chose is queued on its `afterDamageMoves` (the cards stay
+   * attached through the damage), and an Energy choice the attacker is asked is marked `deferredMove`.
+   */
+  public preDamageAttack?: Effect;
+
   public isSuddenDeath?: boolean;
 
   public benchSizeChangeHandled: boolean = false;

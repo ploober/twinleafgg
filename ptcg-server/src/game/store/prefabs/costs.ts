@@ -7,7 +7,6 @@ import { CheckProvidedEnergyEffect } from '../effects/check-effects';
 import { AttackEffect } from '../effects/game-effects';
 import { AfterAttackEffect } from '../effects/game-phase-effects';
 import { PokemonCardList } from '../state/pokemon-card-list';
-import { CardList } from '../state/card-list';
 
 // =============================================================================
 // Internal helpers
@@ -150,7 +149,6 @@ export function DISCARD_UP_TO_X_ENERGY_FROM_YOUR_POKEMON(
       return state;
     }
     // B.82: the choice is made now; the damage counts the chosen cards where they are; they move after it.
-    CardList.chosen?.(transfers.map(t => t.card));
     effect.afterDamageMoves.push(() => { state = discardTransfersAsEffects(store, state, effect, transfers); });
     if (onDiscarded !== undefined) {
       onDiscarded(transfers);
@@ -230,7 +228,6 @@ export function DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
     }
 
     // B.82: the choice is made now; the damage counts the chosen cards where they are; they move after it.
-    CardList.chosen?.(transfers.map(t => t.card));
     effect.afterDamageMoves.push(() => { state = discardTransfersAsEffects(store, state, effect, transfers); });
     if (onDiscarded !== undefined) {
       onDiscarded(transfers);
@@ -302,7 +299,6 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
   state = store.prompt(state, prompt, energy => {
     const cards: Card[] = (energy || []).map(e => e.card);
     if (deferred) {
-      CardList.chosen?.(cards);
       (effect as AttackEffect).afterDamageMoves.push(() => discard(cards));
       return state;
     }

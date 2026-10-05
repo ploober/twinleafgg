@@ -755,20 +755,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     segment.start = now;
   };
 
-  // B.82 / CF-93: the cards an attack chose before its damage, recorded when the choice resolves (CardList.chosen,
-  // from the cost prefabs); emitted in the dispatch's events ahead of its legs (a chosen card's move comes later).
-  const chosenOps: NeutralEvent[] = [];
-  CardList.chosen = (cards: Card[]): void => {
-    for (const c of cards) {
-      const e = chosenEvent(game, c);
-      if (e !== undefined) { chosenOps.push(e); }
-    }
-  };
-
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
-    const beforeChosen = chosenOps.length;
     const beforeState = projectState(game.state, game.ctx);
     segment = { start: beforeState, legs: [] };
     // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
@@ -798,7 +787,6 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const draws = drawOps.splice(beforeDraws);
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
       draws));
-    events.push(...chosenOps.splice(beforeChosen));
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
     // TA-591: a card shown by a ShowCardsPrompt still open at the end of this dispatch was revealed by it — the
     // engine raises the show and moves the card in one callback (SEARCH_DECK_FOR_CARDS_TO_HAND: "reveal it, and put
@@ -855,7 +843,6 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
-    CardList.chosen = undefined;
   }
 
   function loop(): LoopResult {
@@ -1029,6 +1016,14 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             && !isDiscardPick(prompt) && prompt.options.isSecret !== true
             && (prompt.cards.zoneTag === 'deck' || prompt.cards.zoneTag === 'discard')) {
           completedSearches.push({ cards: result as Card[], source: prompt.cards });
+        }
+        // B.82 / CF-93: the picks of an attack's pre-damage Energy choice (the engine marked it deferredMove) are
+        // chosen, not moved: record them while they are still on the stack; their legs come after the damage.
+        if ((prompt as { deferredMove?: boolean }).deferredMove) {
+          for (const c of dec.pickedCards?.(prompt, accum, game.ctx, game.state) ?? []) {
+            const e = chosenEvent(game, c);
+            if (e !== undefined) { events.push(e); }
+          }
         }
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
         accum = [];

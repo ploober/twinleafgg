@@ -337,7 +337,10 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
 
   // Fan-out while copycat still has its printed attacks (no index leak).
   // Session hook after propagateEffect runs source as .call(copycat).
+  const prevPreDamage = state.preDamageAttack;
+  state.preDamageAttack = attackEffect;   // B.82
   state = store.reduceEffect(state, attackEffect);
+  state.preDamageAttack = prevPreDamage;
 
   // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack too
   // (see game-effect.ts useAttack for the rationale). This synchronous variant drains without yielding;
@@ -417,11 +420,14 @@ export function* runDelegatedCopiedAttackGenerator(
   const attackEffect = new AttackEffect(player, opponent, clonedAttack);
   attackEffect.source = sourceSlot ?? player.active;
 
+  const prevPreDamage = state.preDamageAttack;
+  state.preDamageAttack = attackEffect;   // B.82: until the damage step starts
   state = store.reduceEffect(state, attackEffect);
 
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());
   }
+  state.preDamageAttack = prevPreDamage;
 
   // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack (see
   // game-effect.ts useAttack). Nesting-safe via drainStart/prevDefer.

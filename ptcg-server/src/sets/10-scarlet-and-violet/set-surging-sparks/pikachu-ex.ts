@@ -1,4 +1,3 @@
-import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCard, CardTag, Stage, CardType, StoreLike, State, StateUtils, PowerType, Card, ChooseEnergyPrompt, GameMessage } from '../../../game';
 import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
@@ -98,7 +97,6 @@ export class Pikachuex extends PokemonCard {
       energyPrompt.deferredMove = true;
       state = store.prompt(state, energyPrompt, energy => {
         const cards: Card[] = (energy || []).map(e => e.card);
-        CardList.chosen?.(cards);
         discardAfterDamage(cards);
       });
     }
