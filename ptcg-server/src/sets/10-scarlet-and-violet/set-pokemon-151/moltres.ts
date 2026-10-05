@@ -71,10 +71,8 @@ export class Moltres extends PokemonCard {
       const opponent = StateUtils.getOpponent(state, player);
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
-      if (!hasBench) {
-        return state;
-      }
-
+      // TA-565: "Discard 2 [R] Energy from this Pokémon" is owed whether or not there is a Benched Pokémon to hit;
+      // only the 120 to the Bench is skipped when there is none.
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
@@ -90,6 +88,10 @@ export class Moltres extends PokemonCard {
         discardEnergy.target = player.active;
         store.reduceEffect(state, discardEnergy);
       });
+
+      if (!hasBench) {
+        return state;
+      }
 
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
