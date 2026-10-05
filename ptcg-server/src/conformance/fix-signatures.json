@@ -9809,6 +9809,16 @@
       "fixes": [
         "FX-0369"
       ]
+    },
+    {
+      "file": "set-temporal-forces/iron-thorns.ts",
+      "signatures": [
+        "      const futureCards = top5.filter(c => c.hasTag(CardTag.FUTURE));"
+      ],
+      "note": "TA-564 (2026-10-04): Iron Thorns tef-062 Destructo-Press counts and discards every revealed Future card, Future Trainers included [TA-564]",
+      "fixes": [
+        "FX-0370"
+      ]
     }
   ]
 }
