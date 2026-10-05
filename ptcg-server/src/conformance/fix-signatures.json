@@ -9751,6 +9751,41 @@
       "fixes": [
         "FX-0363"
       ]
+    },
+    {
+      "file": "set-pokemon-151/chansey.ts",
+      "signatures": [
+        "    const others = effect.prizes.filter(p => p !== prizeCard);",
+        "    const coinFlip = new CoinFlipEffect(player, heads => {"
+      ],
+      "note": "TA-592 (2026-10-04): Chansey mew-113 Lucky Bonus: accepting no longer faults (no yield + next() on a take that resolves synchronously), the o",
+      "fixes": [
+        "FX-0364",
+        "FX-0365"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "      const prompt = new ChoosePrizePrompt(group.playerId, group.message, { ...group.options, count: 1 });"
+      ],
+      "note": "TA-594, TA-592 (2026-10-04): Prizes are taken one at a time (compendium #809): one single-Prize prompt per Prize of a group; Chansey mew-113 counts i",
+      "fixes": [
+        "FX-0365"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "  // Taking a Prize is always the player's decision, even the last one (RE-3 / TA-5: prompt even forced — the"
+      ],
+      "absentSignatures": [
+        "  if (count >= prizeLeft) {"
+      ],
+      "note": "TA-595 (2026-10-04): TAKE_X_PRIZES always prompts for min(count, Prizes left), even for the last Prize; its callback runs on the prompt's res",
+      "fixes": [
+        "FX-0366"
+      ]
     }
   ]
 }
