@@ -1156,6 +1156,17 @@ describe('TA-584 / TA-585 / TA-589', () => {
     expect(r.some(a => a.type === 'choose')).toBe(true);
     expect(r.some(a => a.type === 'confirm' && a.value === false)).toBe(false);
   });
+  it('Great Haul Net stays in resolving until its shuffle completes (#919), then goes to the discard pile [TA-585]', () => {
+    const acts = [{ actor: 'A', type: 'playItem', card: 'ah4' } as never, { actor: 'A', type: 'choose', target: 'ax1' } as never,
+      { actor: 'A', type: 'choose', target: 'ax2' } as never];
+    const paused = step(HAUL, acts);
+    expect((paused.state.players.A.resolving ?? []).map(c => c.iid)).toEqual(['ah4']);
+    expect(paused.state.players.A.discard.map(c => c.iid)).not.toContain('ah4');
+    const deck = (paused.pending?.legalActions?.[0] as unknown as { deck?: string[] }).deck ?? [];
+    const done = step(HAUL, [...acts, { actor: 'system', type: 'shuffle', order: deck } as never]);
+    expect(done.state.players.A.discard.map(c => c.iid)).toContain('ah4');
+  });
+
   it('Celebratory Fanfare: not offered with nothing to heal [TA-589]', () => {
     expect(types(step(FANFARE, [])).some(a => a.type === 'useStadium')).toBe(false);
   });

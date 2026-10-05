@@ -58,10 +58,12 @@ function* playCard(
   if (cards.length > 0) {
     MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: effect.trainerCard });
   }
-  const cardList = StateUtils.findCardList(state, effect.trainerCard);
-  if (cardList) MOVE_CARDS(store, state, cardList, player.discard, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
+  // #919: the Item stays on the playing field until its effect — the shuffle included — is complete (TA-585 re-fuzz:
+  // it used to be discarded before the shuffle pending).
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
+    const cardList = StateUtils.findCardList(state, effect.trainerCard);
+    if (cardList) MOVE_CARDS(store, state, cardList, player.discard, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
   });
 }
 
