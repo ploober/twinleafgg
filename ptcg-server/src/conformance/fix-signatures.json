@@ -9879,6 +9879,36 @@
       "fixes": [
         "FX-0373"
       ]
+    },
+    {
+      "file": "set-chaos-rising/transformation-tome.ts",
+      "signatures": [
+        "    const hasBasicInPlay = [player.active, ...player.bench].some(l => l.getPokemonCard()?.stage === Stage.BASIC);"
+      ],
+      "note": "TA-567 (2026-10-04): Transformation Tome cri-083: needs a Basic on TOP in play (#925); both Tomes are on the field together; the switched-in ",
+      "fixes": [
+        "FX-0374"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/antique-cover-fossil.ts",
+      "signatures": [
+        "      if (effect.player === StateUtils.findOwner(state, effect.target)) {"
+      ],
+      "note": "TA-568 (2026-10-04): Antique Cover Fossil scr-129 Protective Cover prevents only the opponent's attack effects; its own player's Share heals ",
+      "fixes": [
+        "FX-0375"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/combee.ts",
+      "signatures": [
+        "        const damageEffect = new HealTargetEffect(effect, 20);   // TA-569: \"Heal 20 damage\""
+      ],
+      "note": "TA-569 (2026-10-04): Combee obf-008 Share heals 20 (printed), not 40 [TA-569]",
+      "fixes": [
+        "FX-0376"
+      ]
     }
   ]
 }

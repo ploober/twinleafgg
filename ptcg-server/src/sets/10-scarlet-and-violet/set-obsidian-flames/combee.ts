@@ -54,7 +54,7 @@ export class Combee extends PokemonCard {
         if (!targets || targets.length === 0) {
           return;
         }
-        const damageEffect = new HealTargetEffect(effect, 20)   // TA-569: "Heal 20 damage";
+        const damageEffect = new HealTargetEffect(effect, 20);   // TA-569: "Heal 20 damage"
         damageEffect.target = targets[0];
         store.reduceEffect(state, damageEffect);
       });
