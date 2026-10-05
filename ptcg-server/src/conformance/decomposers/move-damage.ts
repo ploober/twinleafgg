@@ -6,6 +6,7 @@ import {
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 import { StateUtils } from '../../game';
+import { adjustDamage } from '../transit-projection';
 
 const COUNTER = 10;
 
@@ -164,6 +165,20 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
       return { kind: 'counter', target: resolveAnyPokemonTarget(state, player, card) };
     }
     throw new Error(`[conformance] MoveDamage expected 'choose'/'placeCounter', got '${action.type}'`);
+  },
+
+  /** B.80: a `placeCounter` (destination) pick moves one counter from the last `choose`d source at once. */
+  fixupProjection(prompt, picks, ctx, state, projected) {
+    const player = promptPlayer(state, prompt.playerId);
+    let source: CardTarget | undefined;
+    for (const p of realPicks(picks) as Array<{ kind: string; target: CardTarget }>) {
+      if (p.kind === 'target') {
+        source = p.target;
+      } else if (p.kind === 'counter' && source !== undefined) {
+        adjustDamage(projected, pokemonTargetToIid(state, player, ctx, source), -10);
+        adjustDamage(projected, pokemonTargetToIid(state, player, ctx, p.target), 10);
+      }
+    }
   },
 
   assemble(_prompt, picks): DamageTransfer[] {

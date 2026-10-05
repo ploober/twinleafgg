@@ -30,16 +30,31 @@ export interface CardRef {
 }
 
 /**
- * G-63 / B.68(4) (contract 0.11.0, `ResolvingCard`): a `resolving` entry carries where the card came from,
- * where the text will put it when the effect completes, and its face. The projection always emits all
- * three when it knows them; a staged card whose provenance the adapter cannot name omits them, which the
- * harness reports as a contract gap rather than letting a guess stand in. OPTIONAL on the type because
- * INGEST (boards authored by hand, quiescent, `resolving` empty) need not carry them.
+ * CF-42 (contract 0.12.0, `ResolvingCard`, narrowed by B.80): a `resolving` entry is a Trainer PLAYED and on
+ * the playing field until "after everything is done" (#916). `destination` only for a Trainer whose own
+ * text sends it elsewhere than the discard (absent = discardPile).
  */
 export interface ResolvingRef extends CardRef {
-  origin?: 'hand' | 'deck' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
-  destination?: 'hand' | 'deck' | 'deckBottom' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay' | 'undecided';
-  face?: 'up' | 'down';
+  destination?: 'discardPile' | 'deck' | 'deckBottom' | 'hand' | 'lostZone';
+}
+
+export type TransitOrigin = 'hand' | 'deck' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
+export type TransitVisibility = 'public' | 'owner' | 'hidden';
+export type TransitDestination = 'hand' | 'deck' | 'deckBottom' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
+
+/**
+ * B.80 / CF-91 (contract 0.12.0, `TransitCard`): a card a player has lifted out of a zone and not yet placed
+ * — the searched Energy in the fingers before the recipient is chosen, the top five being looked at, a hand
+ * being shuffled before it goes to the bottom, Tyme's named Pokémon face down on the table. `origin` and
+ * `visibility` are required on the wire; a pile whose provenance the adapter cannot read omits `origin`,
+ * which the harness reports as a contract gap rather than letting a guess stand in. `destination` is
+ * optional: absent when an open decision still chooses it, or when the text fixes it but the adapter cannot
+ * read it.
+ */
+export interface TransitRef extends CardRef {
+  origin?: TransitOrigin;
+  visibility: TransitVisibility;
+  destination?: TransitDestination;
 }
 
 export interface PrizeRef extends CardRef {
@@ -200,6 +215,12 @@ export interface PlayerState {
    * always emits it; only INGEST tolerates its absence.
    */
   resolving?: ResolvingRef[];
+  /**
+   * B.80 / CF-91: the cards this player OWNS that someone has lifted out of a zone and not yet placed, in
+   * the order they are held. Emitted as `[]` at every quiescent boundary; OPTIONAL on the type so a
+   * hand-authored (quiescent) board need not carry it. Ingest refuses a non-empty one.
+   */
+  transit?: TransitRef[];
   flags: PlayerFlags;
 }
 

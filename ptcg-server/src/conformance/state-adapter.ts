@@ -16,8 +16,9 @@ import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
   SCHEMA_VERSION, NeutralState, NeutralPlayerId, PlayerState, PlayerFlags,
   PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, ConditionToken, Phase, Outcome, StadiumRef,
-  PlayerLastAttacks, ResolvingRef
+  PlayerLastAttacks, TransitRef
 } from './neutral-types';
+import { originOfTag } from './transit-projection';
 
 // M0 reuses the test harness's set-loading/registration machinery (the impl doc's
 // `ensureCardsRegistered`). A dedicated, non-test card-registry seam replaces this in a later
@@ -274,9 +275,22 @@ class Importer {
 
     ps.hand.forEach(ref => player.hand.cards.push(this.materialize(ref)));
     ps.deck.forEach(ref => player.deck.cards.push(this.materialize(ref)));
-    player.deck.zoneTag = 'deck'; // CF-61: piles moved out of this list are stamped deck-sourced
+    // Settled-zone tags (B.80): a temp pile moved out of a tagged list is stamped with the tag (CardList
+    // recordSource), so the projection can name a lifted card's `origin`. `deck` also drives the CF-61
+    // deck-stamp. A settled zone is never re-tagged.
+    player.deck.zoneTag = 'deck';
+    player.hand.zoneTag = 'hand';
+    player.discard.zoneTag = 'discard';
+    player.lostzone.zoneTag = 'lostZone';
+    player.active.zoneTag = 'inPlay';
+    player.bench.forEach(b => { b.zoneTag = 'inPlay'; });
     ps.discard.forEach(ref => player.discard.cards.push(this.materialize(ref)));
     ps.lostZone.forEach(ref => player.lostzone.cards.push(this.materialize(ref)));
+    // B.80: an initialState is a quiescent boundary, so nothing is in transit. A board that says otherwise
+    // is malformed; refuse it rather than guess where the cards should go.
+    if ((ps.transit ?? []).length > 0) {
+      throw new Error('[conformance] initialState.transit must be empty: a quiescent boundary has no card in transit (B.80)');
+    }
     // CF-42: round-trip the staging zone. Optional on ingest — boards authored before 0.5.0, and
     // every board a human writes, simply omit it. Without this, export->import would silently DROP a
     // staged Trainer and break card conservation across the round trip.
@@ -286,6 +300,7 @@ class Importer {
       const list = new CardList();
       list.isSecret = true;
       list.faceUpPrize = ref.faceUp;
+      list.zoneTag = 'prizes';
       list.cards.push(this.materialize(ref));
       return list;
     });
@@ -438,23 +453,6 @@ function projectOutcome(winner: GameWinner): Outcome {
   }
 }
 
-/** G-63: a Trainer staged in player.supporter was played from the hand and goes to the discard, face up. */
-const PLAYED_TRAINER_TRANSIT = { origin: 'hand', destination: 'discardPile', face: 'up' } as const;
-
-/**
- * G-63: a `resolving` entry for a card staged outside player.supporter (a prompt's temp pile, a
- * closure-local orphan). Its transit fields come from the stamp the card's own text set
- * (CardList.transit: Tyme's face-down Pokémon). With no stamp the adapter cannot name the card's
- * provenance, so the fields are omitted, and the harness reports that as a contract gap (it is required
- * on the wire) rather than accepting a guess.
- */
-function resolvingRef(ctx: IidContext, card: Card): ResolvingRef {
-  const stamp = CardList.transit.get(card);
-  return stamp === undefined
-    ? cardRef(ctx, card)
-    : { ...cardRef(ctx, card), ...stamp } as ResolvingRef;
-}
-
 function cardRef(ctx: IidContext, card: Card): CardRef {
   const iid = ctx.cardToIid.get(card);
   if (iid === undefined) {
@@ -556,42 +554,44 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
  * exactly as CF-61 places any deck-sourced pile mid-effect (rotomancer's shape). Projection only: the
  * engine's own order is untouched, and a resolved prompt (result set) projects the deck as it stands.
  */
-function deckInFlight(state: State, player: Player): Card[] {
+/**
+ * B.80 (amends CF-86 / B.63 / TA-396c): at an open ShuffleDeckPrompt over the BOTTOM `bottomCount` cards of
+ * the deck (a hand or a looked-at remainder that was put under the deck and is being shuffled), that
+ * segment is a sub-pile being shuffled face down: it is in TRANSIT (`origin` = the prompt's source zone,
+ * `destination: deckBottom`, `visibility: hidden`), not in the deck. The rest of the deck projects as it is.
+ * A whole-deck shuffle (no `bottomCount`) lifts nothing: the deck zone IS the face-down stack.
+ */
+function deckAndShuffleSegment(state: State, player: Player, ctx: IidContext): { deck: Card[]; inFlight: TransitRef[] } {
   const cards = player.deck.cards;
-  const open = state.prompts.find(p => p instanceof ShuffleDeckPrompt && p.playerId === player.id
-    && p.result === undefined && (p.bottomCount ?? 0) > 0) as ShuffleDeckPrompt | undefined;
+  const open = state.prompts.find(p => p.playerId === player.id && p.type.startsWith('Shuffle')
+    && p.result === undefined && ((p as unknown as { bottomCount?: number }).bottomCount ?? 0) > 0) as ShuffleDeckPrompt | undefined;
   const n = open ? Math.min(open.bottomCount as number, cards.length) : 0;
-  return n > 0 && n < cards.length ? [...cards.slice(cards.length - n), ...cards.slice(0, cards.length - n)] : cards;
+  if (n <= 0) {
+    return { deck: cards, inFlight: [] };
+  }
+  const origin = originOfTag((open as unknown as { zone?: string }).zone ?? 'deck');
+  const inFlight: TransitRef[] = cards.slice(cards.length - n).map(c => {
+    const t: TransitRef = { ...cardRef(ctx, c), visibility: 'hidden', destination: 'deckBottom' };
+    if (origin !== undefined) { t.origin = origin; }
+    return t;
+  });
+  return { deck: cards.slice(0, cards.length - n), inFlight };
 }
 
 function projectPlayer(ctx: IidContext, state: State, player: Player, turn: number,
-    resolvingExtra: Card[] = [], deckTopExtra: Card[] = []): PlayerState {
-  // Dedup the look-pile extras against themselves (one pile is referenced by both a ChooseCards and an
-  // AttachEnergy prompt during Waitress, arriving twice). The cross-zone dedup — a pile card that is
-  // actually still in some settled zone (Iris's Fighting Spirit selects from the deck; an opponent-peek
-  // pile holds the OTHER player's cards) or that a decomposer's fixupProjection re-homes — is applied
-  // GLOBALLY by pruneResolvingDuplicates, which sees every player's zones and runs both at the end of
-  // projectState and after the fixups in step(). A per-player filter here would miss the cross-player
-  // case, so it is deliberately not done.
-  const resolvingSeen = new Set<string>();
-  const resolvingExtraKept = resolvingExtra.filter(c => {
-    const iid = ctx.cardToIid.get(c);
-    if (iid === undefined || resolvingSeen.has(iid)) { return false; }
-    resolvingSeen.add(iid);
+    lifted: TransitRef[] = []): PlayerState {
+  // B.80: `lifted` is the transit pile the prompt-visible temp lists give this player (see
+  // detachedTransitCards), deduped by iid; the shuffle segment below joins it. The cross-zone prune (a pile
+  // card still in a settled zone — Iris selects in place; an opponent-peek pile) is GLOBAL, in
+  // pruneTransitDuplicates, which sees every player's zones; a per-player filter would miss the cross-player
+  // case, so it is deliberately not done here.
+  const seen = new Set<string>();
+  const liftedKept = lifted.filter(t => {
+    if (seen.has(t.iid)) { return false; }
+    seen.add(t.iid);
     return true;
   });
-  // CF-61 (pinned 2026-09-07, option 1): a detached pile whose cards came FROM this player's deck (a
-  // "look at the top/bottom N" window) projects at the TOP of `deck`, in pile order, ahead of the
-  // un-looked remainder — rotomancer's shape, and the printed text's (the cards are still deck cards
-  // until picked). `resolving` keeps the CF-42 meaning. Dedup within the pile here; the cross-zone
-  // prune (a pile card a fixupProjection re-homed, or one still in a settled zone) is global, below.
-  const deckTopSeen = new Set<string>();
-  const deckTopKept = deckTopExtra.filter(c => {
-    const iid = ctx.cardToIid.get(c);
-    if (iid === undefined || deckTopSeen.has(iid) || resolvingSeen.has(iid)) { return false; }
-    deckTopSeen.add(iid);
-    return true;
-  });
+  const { deck, inFlight } = deckAndShuffleSegment(state, player, ctx);
 
   const prizes: PrizeRef[] = [];
   for (const prize of player.prizes) {
@@ -605,32 +605,26 @@ function projectPlayer(ctx: IidContext, state: State, player: Player, turn: numb
       .filter(b => b.getPokemonCard() !== undefined)
       .map(b => projectPip(ctx, state, b, player, turn)),
     hand: player.hand.cards.map(c => cardRef(ctx, c)),
-    deck: [...deckTopKept, ...deckInFlight(state, player)].map(c => cardRef(ctx, c)),
+    deck: deck.map(c => cardRef(ctx, c)),
     discard: player.discard.cards.map(c => cardRef(ctx, c)),
     lostZone: player.lostzone.cards.map(c => cardRef(ctx, c)),
     prizes,
     // CF-42 — a Trainer mid-resolution is staged in player.supporter (play-trainer-effect.ts) until
-    // its effect finishes, and the API legitimately pauses there at an externalized flip/choose.
+    // its effect finishes, and the API legitimately pauses there at an externalized flip/choose. B.80
+    // narrowed the zone back to exactly this: played Trainers on the playing field (#916). Everything
+    // else the engine holds outside a settled zone is a LIFTED card and goes to `transit`.
     //
     // This USED to be folded into `discard` because the DTO had no zone for it. The fold kept card
     // conservation, but the projection asserted something #919 forbids, and because the projection
     // was the UNION of the two zones an engine that correctly DEFERS the discard and one that
     // WRONGLY discards early produced a byte-identical state — the harness could not detect a #919
     // violation in either engine, by construction. Schema 0.5.0 added the zone; this is it.
-    //
-    // CF-42 GENERALISED (G-44 root cause): a "look at the top N of your deck" effect (Waitress
-    // asc-215, Grimsley's Move pfl-090, Recon Directive asc-159 …) does `deck.moveTo(temp, N)` into a
-    // LOCAL CardList that no settled zone holds, then pauses at a ChooseCardsPrompt/AttachEnergyPrompt
-    // over it. Those cards are IN PLAY, not gone — `resolvingExtra` carries them (from the active
-    // prompt's temp pile, see detachedResolvingCards) so single-engine conservation holds through the
-    // pause instead of reading N cards as vanished.
-    //
-    // G-63 (0.11.0): each entry carries origin / destination / face. A card in player.supporter is a
-    // Trainer PLAYED from the hand, going to the discard when its effect completes (#916/#919), face up.
-    resolving: [
-      ...player.supporter.cards.map(c => ({ ...cardRef(ctx, c), ...PLAYED_TRAINER_TRANSIT })),
-      ...resolvingExtraKept.map(c => resolvingRef(ctx, c)),
-    ],
+    resolving: player.supporter.cards.map(c => cardRef(ctx, c)),
+    // B.80 / CF-91 — the cards this player owns that someone has lifted out of a zone and not yet placed:
+    // the prompt-visible temp piles (a "look at the top N" window, an opponent-peek pile, a reorder pile),
+    // then a bottom segment being shuffled. Decomposer fix-ups (step()) add the picks already made inside an
+    // open decision; projectOrphans adds closure-local piles no prompt references (Tyme's face-down Pokémon).
+    transit: [...liftedKept, ...inFlight],
     flags: projectFlags(player, turn),
   };
 }
@@ -709,25 +703,17 @@ function promptTempPile(prompt: Prompt<unknown>): CardList | undefined {
 }
 
 /**
- * Per-player-index cards that are staged in an active prompt's temp pile but held in NO settled zone
- * — the "look at top N" limbo (Waitress `deck.moveTo(temp, 6)` then a ChooseCardsPrompt over `temp`).
- * CF-42 generalised: they are in play, so they belong in `resolving`, not vanished. Attributed to the
- * prompt's owning player; a pile card that still sits in a real zone (a prompt over the hand/discard)
- * is excluded, since it is already projected there.
+ * Per-player-index cards that sit in an active prompt's temp pile — the "look at top N" window (Waitress
+ * `deck.moveTo(temp, 6)` then a ChooseCardsPrompt over `temp`), an opponent-peek pile, a reorder pile.
+ * B.80: those cards have been LIFTED out of a zone and belong in their OWNER's `transit`, with `origin` read
+ * from the pile's CardList.fromZoneTag (stamped by moveTo/moveCardsTo from the tagged settled zone) and
+ * `visibility: owner` (a look is known to the looker, not the opponent; a decomposer whose prompt is a
+ * public reveal raises it to `public` in its fix-up). No settled-zone filter here: pruneTransitDuplicates
+ * applies it against the SAME snapshot it projects, the only place the filter is guaranteed consistent.
  */
-function detachedResolvingCards(state: State): { resolving: Card[][]; deckTop: Card[][] } {
-  // Collect every card referenced by an active prompt's temp pile. NO settled-zone filter here:
-  // pruneResolvingDuplicates applies it against the SAME snapshot it projects (a card can be back in
-  // the deck while the prompt still references it), which is the only place the filter is guaranteed
-  // consistent with the projected zones.
-  //
-  // CF-61: a pile stamped `fromZoneTag === 'deck'` (CardList.moveTo/moveCardsTo out of a tagged deck)
-  // is a deck window and goes to `deckTop` of the deck's OWNER — resolved through `fromZoneRef` up the
-  // prototype chain (deepClone builds clones with Object.create(source), so a cloned deck's chain
-  // reaches the original) and falling back to the prompt's owner. Any other pile keeps the CF-42 home.
-  const resolving: Card[][] = state.players.map(() => []);
-  const deckTop: Card[][] = state.players.map(() => []);
-  if (state.prompts.length === 0) { return { resolving, deckTop }; }
+function detachedTransitCards(state: State, ctx: IidContext): TransitRef[][] {
+  const out: TransitRef[][] = state.players.map(() => []);
+  if (state.prompts.length === 0) { return out; }
   const sameList = (a: object | undefined, b: object): boolean => {
     for (let x: object | null = a ?? null; x !== null && x !== Object.prototype; x = Object.getPrototypeOf(x)) {
       if (x === b) { return true; }
@@ -742,16 +728,26 @@ function detachedResolvingCards(state: State): { resolving: Card[][]; deckTop: C
     if (pile === undefined) { continue; }
     const promptOwner = state.players.findIndex(p => p.id === prompt.playerId);
     if (promptOwner === -1) { continue; }
-    if (pile.fromZoneTag === 'deck') {
+    const origin = originOfTag(pile.fromZoneTag);
+    for (const card of pile.cards) {
+      // Owner = the player whose settled zone the pile came from (a deck window belongs to the deck's
+      // owner, resolved through fromZoneRef up the prototype chain), else the import-origin owner, else
+      // the prompt's owner.
+      let owner = -1;
       const ref = (pile as unknown as { fromZoneRef?: object }).fromZoneRef;
-      let owner = state.players.findIndex(p => sameList(ref, p.deck));
-      if (owner === -1) { owner = promptOwner; }
-      deckTop[owner].push(...pile.cards);
-    } else {
-      resolving[promptOwner].push(...pile.cards);
+      if (ref !== undefined) {
+        owner = state.players.findIndex(p => sameList(ref, p.deck) || sameList(ref, p.hand) || sameList(ref, p.discard)
+          || sameList(ref, p.lostzone) || p.prizes.some(z => sameList(ref, z)));
+      }
+      if (owner === -1) { owner = ctx.cardOwner.get(card) ?? promptOwner; }
+      const iid = ctx.cardToIid.get(card);
+      if (iid === undefined) { continue; }
+      const t: TransitRef = { iid, printing: toPrinting(card), visibility: 'owner' };
+      if (origin !== undefined) { t.origin = origin; }
+      out[owner].push(t);
     }
   }
-  return { resolving, deckTop };
+  return out;
 }
 
 /**
@@ -765,11 +761,9 @@ function detachedResolvingCards(state: State): { resolving: Card[][]; deckTop: C
  * Idempotent, so it runs at the end of projectState and again after the fixups in step().
  */
 export function pruneResolvingDuplicates(state: NeutralState): void {
-  // CF-61: `deck` may now carry a projected look window (deck-sourced pile cards). Two guards, in
-  // order: (1) a deck entry whose iid sits in a NON-deck settled zone — a fixupProjection put a picked
-  // window card into the hand — yields to that zone; (2) `deck` is deduped by iid (the window copy and
-  // a re-homed copy of the same card, Waitress's "shuffle the rest back"). Then `resolving` yields to
-  // everything settled, deck included, exactly as before.
+  // B.80: `transit` and `resolving` both yield to every settled zone (a pile card the prompt selects IN
+  // PLACE — Iris — is still in its zone; an opponent-peek pile holds the other player's cards), and each
+  // is deduped by iid. The settled zone is authoritative. Conservation holds: still projected once.
   const settled = new Set<string>();
   const add = (cards: { iid: string }[]) => cards.forEach(c => settled.add(c.iid));
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
@@ -781,7 +775,6 @@ export function pruneResolvingDuplicates(state: NeutralState): void {
     p.prizes.forEach(pc => settled.add(pc.iid));
   }
   if (state.stadium) { settled.add(state.stadium.iid); }
-  const elsewhere = new Set<string>(settled);
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
     const p = state.players[who];
     const seen = new Set<string>();
@@ -791,12 +784,22 @@ export function pruneResolvingDuplicates(state: NeutralState): void {
       return true;
     });
     add(p.deck);
-    p.deck.forEach(c => elsewhere.add(c.iid));
+  }
+  const inTransit = new Set<string>();
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    const p = state.players[who];
+    if (p.transit && p.transit.length > 0) {
+      p.transit = p.transit.filter(c => {
+        if (settled.has(c.iid) || inTransit.has(c.iid)) { return false; }
+        inTransit.add(c.iid);
+        return true;
+      });
+    }
   }
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
     const p = state.players[who];
     if (p.resolving && p.resolving.length > 0) {
-      p.resolving = p.resolving.filter(c => !elsewhere.has(c.iid));
+      p.resolving = p.resolving.filter(c => !settled.has(c.iid) && !inTransit.has(c.iid));
     }
   }
 }
@@ -821,7 +824,7 @@ function projectFirstPlayer(state: State, ctx: IidContext): NeutralPlayerId | nu
 
 export function projectState(state: State, ctx: IidContext): NeutralState {
   const lastAttack = projectPlayerLastAttack(state); // CF-15
-  const detached = detachedResolvingCards(state);
+  const detached = detachedTransitCards(state, ctx);
   const out: NeutralState = {
     schemaVersion: SCHEMA_VERSION,
     format: ctx.format, // CF-85: echoed from initialState
@@ -832,8 +835,8 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),
     players: {
-      A: projectPlayer(ctx, state, state.players[0], state.turn, detached.resolving[0], detached.deckTop[0]),
-      B: projectPlayer(ctx, state, state.players[1], state.turn, detached.resolving[1], detached.deckTop[1]),
+      A: projectPlayer(ctx, state, state.players[0], state.turn, detached[0]),
+      B: projectPlayer(ctx, state, state.players[1], state.turn, detached[1]),
     },
     // CF-15: OMIT the key entirely when neither side has a record — the field is optional, not nullable,
     // so `playerLastAttack: undefined` would still add the property and fail an exact-shape assertion.
@@ -867,49 +870,39 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
     for (const slot of [p.active, ...p.bench]) {
       if (slot) { add(slot.stack); add(slot.energy); add(slot.tools); }
     }
-    add(p.hand); add(p.deck); add(p.discard); add(p.lostZone); add(p.resolving ?? []);
+    add(p.hand); add(p.deck); add(p.discard); add(p.lostZone); add(p.resolving ?? []); add(p.transit ?? []);
     p.prizes.forEach(pc => seen.add(pc.iid));
   }
   if (state.stadium) { seen.add(state.stadium.iid); }
-  // CF-61 residual (2026-09-14): an orphan whose card carries a DECK stamp (CardList.deckStamp — it
-  // left the settled deck for a closure-local pile) is a deck-look window, not mid-resolution limbo:
-  // it rejoins its owner's `deck`, and the zone is re-ordered by the removal-order stamps so the
-  // projection restores the ORIGINAL relative order — rotomancer's shape on every driven board
-  // (Grimsley's Move pfl-090, Nighttime Maneuvers cri-051, Time Manipulation ssp-135): the deck
-  // reads as if the look never physically moved anything. Stamped cards sort ascending (earliest
-  // removal first = closest to the top), never-stamped members keep their engine order after them.
-  // Engaged per player ONLY when a deck-stamped orphan exists, so an ordinary board's deck is
-  // projected exactly as the engine holds it.
-  const deckOrphans: Record<NeutralPlayerId, Array<{ iid: string; card: Card }>> = { A: [], B: [] };
+  // B.80: an orphan is a card the engine holds in a closure-local pile no prompt references — a LIFTED card.
+  // It goes to its owner's `transit`. Its fields come from the stamp its own card text set (CardList.transit:
+  // Tyme's face-down Pokémon {hand, hand, owner}); else, for a card that left the settled deck (the CF-61
+  // deck-stamp), `origin: deck` with `visibility: owner` (a look), in the order the cards left the deck;
+  // else origin AND visibility are omitted — the adapter cannot read where the card came from or who sees
+  // it, and the harness reports that as a contract gap rather than letting a guess stand in (TA-590 census).
+  const stamped: Record<NeutralPlayerId, Array<{ t: TransitRef; seq: number }>> = { A: [], B: [] };
   for (const [iid, card] of ctx.iidToCard) {
     if (seen.has(iid)) { continue; }
     const ownerIndex = ctx.cardOwner.get(card);
     const who: NeutralPlayerId = ownerIndex === 1 ? 'B' : 'A';
-    if (CardList.deckStamp.has(card)) {
-      deckOrphans[who].push({ iid, card });
-      seen.add(iid);
-      continue;
-    }
     const p = state.players[who];
-    const stamp = CardList.transit.get(card); // G-63: Tyme's face-down Pokémon is a closure-local orphan
-    p.resolving = [...(p.resolving ?? []),
-      stamp === undefined ? { iid, printing: toPrinting(card) } : { iid, printing: toPrinting(card), ...stamp } as ResolvingRef];
+    const stamp = CardList.transit.get(card);
+    if (stamp !== undefined) {
+      const t: TransitRef = { iid, printing: toPrinting(card), visibility: stamp.visibility };
+      const origin = originOfTag(stamp.origin);
+      if (origin !== undefined) { t.origin = origin; }
+      if (stamp.destination !== undefined) { t.destination = stamp.destination as TransitRef['destination']; }
+      p.transit = [...(p.transit ?? []), t];
+    } else if (CardList.deckStamp.has(card)) {
+      stamped[who].push({ t: { iid, printing: toPrinting(card), origin: 'deck', visibility: 'owner' }, seq: CardList.deckStamp.get(card)! });
+    } else {
+      p.transit = [...(p.transit ?? []), { iid, printing: toPrinting(card) } as TransitRef];
+    }
     seen.add(iid);
   }
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
-    const orphans = deckOrphans[who];
-    if (orphans.length === 0) { continue; }
+    if (stamped[who].length === 0) { continue; }
     const p = state.players[who];
-    const seqOf = (iid: string): number | undefined => {
-      const card = ctx.iidToCard.get(iid);
-      return card === undefined ? undefined : CardList.deckStamp.get(card);
-    };
-    const entries = [
-      ...p.deck.map(ref => ({ ref, seq: seqOf(ref.iid) })),
-      ...orphans.map(o => ({ ref: { iid: o.iid, printing: toPrinting(o.card) }, seq: CardList.deckStamp.get(o.card) })),
-    ];
-    const stamped = entries.filter(e => e.seq !== undefined).sort((a, b) => a.seq! - b.seq!);
-    const unstamped = entries.filter(e => e.seq === undefined);
-    p.deck = [...stamped.map(e => e.ref), ...unstamped.map(e => e.ref)];
+    p.transit = [...(p.transit ?? []), ...stamped[who].sort((a, b) => a.seq - b.seq).map(e => e.t)];
   }
 }

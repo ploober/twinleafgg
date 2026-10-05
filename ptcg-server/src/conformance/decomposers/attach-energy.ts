@@ -2,13 +2,13 @@ import { AttachEnergyPrompt } from '../../game/store/prompts/attach-energy-promp
 import { EnergyCard } from '../../game/store/card/energy-card';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
-import { LegalAction, PokemonInPlay } from '../neutral-types';
+import { LegalAction } from '../neutral-types';
 import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot, playerIdToActor } from '../iid-targets';
-import { toPrinting } from '../printing';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot } from '../iid-targets';
+import { placeOnPokemon } from '../transit-projection';
 
 /**
  * AttachEnergyPrompt: one pick = {to, index} (energy index in cardList × target); raw = {to,index}[].
@@ -225,38 +225,20 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
     return (realPicks(picks) as Array<{ to: CardTarget; index: number }>).map(p => ({ to: p.to, index: p.index }));
   },
 
-  fixupProjection(prompt, _picks, ctx, state, projected) {
-    // "Look at the top N cards of your deck and attach any Energy you find there…" (Lapras ex "Larimar
-    // Rain", Blastoise, Rayquaza-GX, Max Elixir, Azumarill, …) pulls the looked-at cards into a
-    // card-local temp CardList and hands THAT to this prompt as its source. The temp is not a projected
-    // zone, so at the attach pause those cards vanish from the wire — a card-conservation hole (RA-5);
-    // native rotomancer keeps them in the deck. Mirror that: re-home any source card that is absent from
-    // EVERY zone of EITHER player back onto its OWNER's deck. Two corrections vs a naive prompt-owner
-    // restore: (1) presence is checked across BOTH players — a source that still lives in an opponent
-    // zone (Team Rocket's Zapdos "Jamming Wing" sources Energy from the OPPONENT's Active) is NOT
-    // homeless and must be left alone, else it is duplicated into the prompt owner's deck (a
-    // card-conservation break); (2) a genuinely homeless card is routed to ITS owner's deck (via the
-    // import-origin cardOwner map), not the prompt owner's. Idempotent for hand/discard-sourced attaches.
-    const present = new Set<string>();
-    const addPip = (pip: PokemonInPlay | null) => {
-      if (!pip) { return; }
-      pip.stack.forEach(c => present.add(c.iid));
-      pip.energy.forEach(c => present.add(c.iid));
-      pip.tools.forEach(c => present.add(c.iid));
-    };
-    for (const actor of ['A', 'B'] as const) {
-      const p = projected.players[actor];
-      [p.deck, p.hand, p.discard, p.lostZone].forEach(z => z.forEach(c => present.add(c.iid)));
-      p.prizes.forEach(pz => present.add(pz.iid));
-      addPip(p.active);
-      p.bench.forEach(addPip);
-    }
-    for (const card of prompt.cardList.cards) {
-      const iid = ctx.cardToIid.get(card);
-      const owner = ctx.cardOwner.get(card);
-      if (iid === undefined || owner === undefined || present.has(iid)) { continue; }
-      projected.players[playerIdToActor(state, state.players[owner].id)].deck.push({ iid, printing: toPrinting(card) });
-      present.add(iid);
+  fixupProjection(prompt, picks, ctx, state, projected) {
+    // B.80 / CF-91. The source pile ("look at the top N and attach any Energy you find there": Lapras ex
+    // Larimar Rain, Max Elixir, Heavy Baton) is a card-local temp CardList: those cards are LIFTED and the
+    // detached-pile pass (state-adapter detachedTransitCards) has already put them in their owner's transit
+    // with `origin: deck` — it USED to re-home them to the deck top (CF-61, RA-5), which B.80 overturned.
+    // Here: each `assign` pick already made PLACES its Energy on the chosen Pokémon (the player attaches
+    // it), out of transit / hand / discard, wherever the projection holds it.
+    const player = promptPlayer(state, prompt.playerId);
+    for (const p of realPicks(picks) as Array<{ to: CardTarget; index: number }>) {
+      const card = prompt.cardList.cards[p.index];
+      const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
+      if (iid === undefined) { continue; }
+      placeOnPokemon(projected, iid, pokemonTargetToIid(state, player, ctx, p.to));
     }
   },
+
 };

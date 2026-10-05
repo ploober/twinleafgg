@@ -7,6 +7,7 @@ import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, resolveAnyPokemonTarget, playerIdToActor } from '../iid-targets';
+import { placeInDiscard } from '../transit-projection';
 
 /** DiscardEnergyPrompt: one pick = {from, index} (energy in a source list); raw = {from,index}[]. */
 export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
@@ -99,6 +100,16 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
       throw new Error(`[conformance] discard target '${action.target}' not found in its Pokemon's cards`);
     }
     return { kind: 'discard', from, index };
+  },
+
+  /** B.80 / #916: a `discard` pick is in its owner's discard pile at once. */
+  fixupProjection(prompt, picks, ctx, state, projected) {
+    const player = promptPlayer(state, prompt.playerId);
+    for (const p of realPicks(picks) as Array<{ from: CardTarget; index: number }>) {
+      const card = StateUtils.getTarget(state, player, p.from).cards[p.index];
+      const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
+      if (iid !== undefined) { placeInDiscard(projected, iid); }
+    }
   },
 
   assemble(_prompt, picks): Array<{ from: CardTarget; index: number }> {

@@ -140,14 +140,15 @@ describe('Conformance M0 — import/project + attach energy', () => {
     // different wire, and anything keyed on presence split them. Same board, different wire is
     // exactly the `resolving` argument — it applies to a scalar no differently than to an array.
     //
-    // So the projection ADDS both fields to a hand-authored board that need not carry either, and
-    // ingest tolerates the absence of both.
+    // So the projection ADDS these fields to a hand-authored board that need not carry them, and ingest
+    // tolerates their absence. `transit` (B.80, 0.12.0) is the third: a quiescent board has nothing in
+    // transit, the wire says so as `[]`, and ingest refuses a non-empty one.
     const withProjectionOnlyFields = {
       ...initial,
       players: {
-        A: { ...initial.players.A, resolving: [],
+        A: { ...initial.players.A, resolving: [], transit: [],
           flags: { ...initial.players.A.flags, prizesTaken: 0 } },
-        B: { ...initial.players.B, resolving: [],
+        B: { ...initial.players.B, resolving: [], transit: [],
           flags: { ...initial.players.B.flags, prizesTaken: 0 } },
       },
     };

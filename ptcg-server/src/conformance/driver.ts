@@ -640,7 +640,11 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
   // TA-373 / §B.34: `from` is the SOURCE zone — where the card was at the START of this action, before
   // any search relocated it — not `loc.zone` (its post-move zone at prompt time). Fall back to the
   // located zone for a card that entered play mid-action (absent from the snapshot).
-  const from = sourceZones.get(cards[0]) ?? (loc !== null ? loc.zone : 'unknown');
+  // B.80 / B.34 amended: a card absent from EVERY settled zone at the start of the action was LIFTED (on
+  // the table, in a pile) — it was in `transit`, so that is its `from` (Tyme's face-down Pokémon revealed
+  // during the opponent's guess). The located zone is the fallback only for a card the game did not know.
+  const from = sourceZones.get(cards[0])
+    ?? (game.ctx.cardToIid.has(cards[0]) ? 'transit' : (loc !== null ? loc.zone : 'unknown'));
   return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
 }
 

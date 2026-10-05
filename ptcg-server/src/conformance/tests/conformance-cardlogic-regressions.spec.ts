@@ -629,10 +629,13 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       .filter(a => a.type === 'choose').map(a => a.target).sort();
     expect(chooseTargets).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4']); // top-5 peeked
     expect(types(reorder).every(t => t === 'choose')).toBe(true);
-    // The homeless temp pile is re-projected onto the TOP of B's deck (fixupProjection), in original
-    // order, so all 8 cards stay observable (card conservation) and match rotomancer's pre-resolve view.
-    expect(reorder.state.players.B.deck.map(c => c.iid))
-      .toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4', 'B-dk5', 'B-dk6', 'B-dk7']);
+    // B.80 (2026-10-04): the looked-at 5 are LIFTED off B's deck and sit in B's `transit` (the card's
+    // owner, not the reorderer), in pile order, `origin: deck`; the un-looked 3 stay in the deck. All 8
+    // stay observable (card conservation). CF-61 used to re-home the pile to the deck top.
+    expect(reorder.state.players.B.deck.map(c => c.iid)).toEqual(['B-dk5', 'B-dk6', 'B-dk7']);
+    expect((reorder.state.players.B.transit ?? []).map(c => c.iid)).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4']);
+    expect((reorder.state.players.B.transit ?? []).every(c => c.origin === 'deck' && c.visibility === 'owner')).toBe(true);
+    expect(reorder.state.players.A.transit).toEqual([]);
 
     // (b) Round-trip: supplying the full choose sequence resolves the reorder. The i-th pick lands at new
     //     deck position i (top-first); the attack then auto-ends A's turn and B draws the NEW top card.
@@ -660,8 +663,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // "Look at the top 20 cards of your deck and attach any number of Energy… Shuffle the rest back." The
     // card pulls the top 20 into a card-local temp CardList that it hands to the AttachEnergyPrompt. That
     // temp is not a projected zone, so pre-fix the 20 vanished from the wire at the attach pause — a
-    // card-conservation hole (RA-5). The attach-energy decomposer's fixupProjection now projects any
-    // source card missing from every zone back into the owner's deck (mirroring native rotomancer).
+    // card-conservation hole (RA-5). CF-61 re-homed them to the deck top; B.80 (2026-10-04): the looked-at
+    // 20 are LIFTED and sit in A's `transit` (origin deck, visibility owner) until attached or shuffled back.
     const Adeck = Array.from({ length: 22 }, (_, i) => ({ iid: `A-dk${i}`, printing: WATER }));
     const cost = [{ iid: 'a-w', printing: WATER }, { iid: 'a-p', printing: PSY }, { iid: 'a-m', printing: METAL }];
     const r = step(
@@ -671,8 +674,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.status).toBe('awaitingAction');
     expect(types(r)).toContain('attachEnergy');                 // paused at the attach decision
     const ap = r.state.players.A;
-    const visible = [...ap.deck, ...ap.hand, ...ap.discard].map(c => c.iid).filter(i => i.startsWith('A-dk'));
+    const visible = [...ap.deck, ...ap.hand, ...ap.discard, ...(ap.transit ?? [])].map(c => c.iid).filter(i => i.startsWith('A-dk'));
     expect(visible.length).toBe(22);                            // pre-fix: only 2 (20 lost in temp)
+    expect((ap.transit ?? []).length).toBe(20);
+    expect((ap.transit ?? []).every(c => c.origin === 'deck' && c.visibility === 'owner')).toBe(true);
   });
 
   it('Revavroom ex "Shattering Speed" ends in a TIE when both boards empty simultaneously [TA-76 sfa-015]', () => {
@@ -2325,7 +2330,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
         for (const slot of [p.active, ...p.bench]) {
           if (slot) { slot.stack.forEach(c => out.push(c.iid)); slot.energy.forEach(c => out.push(c.iid)); slot.tools.forEach(c => out.push(c.iid)); }
         }
-        for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? []]) { z.forEach(c => out.push(c.iid)); }
+        for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? [], p.transit ?? []]) { z.forEach(c => out.push(c.iid)); }
         p.prizes.forEach(pc => out.push(pc.iid));
       }
       return out;
@@ -2379,7 +2384,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
           for (const slot of [p.active, ...p.bench]) {
             if (slot) { slot.stack.forEach(c => out.push(c.iid)); slot.energy.forEach(c => out.push(c.iid)); slot.tools.forEach(c => out.push(c.iid)); }
           }
-          for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? []]) { z.forEach(c => out.push(c.iid)); }
+          for (const z of [p.hand, p.deck, p.discard, p.lostZone, p.resolving ?? [], p.transit ?? []]) { z.forEach(c => out.push(c.iid)); }
           p.prizes.forEach(pc => out.push(pc.iid));
         }
         return out;
@@ -3335,9 +3340,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);
   });
 
-  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder projects at the TOP of the deck, in pile order [CF-86 / B.68 tef-114]', () => {
+  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder is in transit (hidden, bound for the deck bottom) [CF-86 / B.80 tef-114]', () => {
     // The engine bottoms the remainder and THEN raises the shuffle; the printed text shuffles first and
-    // puts on the bottom second, so until the answer the pile has not moved (CF-61 source zone).
+    // puts on the bottom second. CF-86 (2026-09-29) projected the pile at the deck top; B.80 (2026-10-04):
+    // a sub-pile being shuffled face down is in TRANSIT, `origin: deck`, `destination: deckBottom`,
+    // `visibility: hidden`, and the rest of the deck projects as it is.
     const deck = Array.from({ length: 6 }, (_, i) => ({ iid: `d${i}`, printing: WATER }));
     const b = () => board(
       player({ active: inPlay('A-act', ['tef-114']), deck }),
@@ -3345,9 +3352,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     );
     const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Metal Maker' } as unknown as NeutralAction;
     const paused = step(b(), [use]);
-    expect(paused.state.players.A.deck.map(c => c.iid)).toEqual(['d0', 'd1', 'd2', 'd3', 'd4', 'd5']);
+    expect(paused.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5']);
+    expect(paused.state.players.A.transit).toEqual(['d0', 'd1', 'd2', 'd3'].map(iid =>
+      ({ iid, printing: WATER, origin: 'deck', destination: 'deckBottom', visibility: 'hidden' })));
     const after = step(b(), [use, { actor: 'system', type: 'shuffle', order: ['d3', 'd2', 'd1', 'd0'] } as unknown as NeutralAction]);
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);   // at rest: bottomed
+    expect(after.state.players.A.transit).toEqual([]);
   });
 
   it('Smog Signals with Bench space still resolves (and shuffles) over an EMPTY deck (#2171) [TA-396d dri-125]', () => {
@@ -3792,19 +3802,21 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r.state.playerLastAttack?.A).toEqual({ source: 'sfa-015', name: 'Shattering Speed', turn: 3 });
   });
 
-  it('a deck-look pile no prompt references projects back into `deck` in original order (CF-61 residual) [CF-61 pfl-090]', () => {
+  it('a deck-look pile no prompt references projects in `transit` in original order (B.80; CF-61 residual amended) [CF-61 pfl-090]', () => {
     // Grimsley's Move: top 7 into a temp pile (no [D] Pokemon among 15 filler Energy -> zero-candidate
     // pick auto-completes), then the card RESTAGES the looked-at 7 into the deck for the shuffle and
-    // detaches the un-looked 8 into a closure-local `rest` no prompt references. Pre-fix the wire read
-    // A.deck=7 / A.resolving=9; rotomancer projects all 15 in ORIGINAL order with only the Supporter
-    // in `resolving` (driven 2026-09-14, results/20260914-residual-redrive r0334). The card-level deck
-    // stamps restore exactly that.
+    // detaches the un-looked 8 into a closure-local `rest` no prompt references. CF-61 (2026-09-14) put
+    // those 8 back into `deck` by their deck stamps. B.80 (2026-10-04): a pile lifted off the deck is in
+    // TRANSIT, in the order it left the deck (the stamps), `origin: deck`. Residual: this pile sits under
+    // an open shuffle, so `hidden` would be more exact than the orphan pass's `owner` (TA-590 census).
     const r = step(board(
       player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'sup', printing: 'pfl-090' }], deck: fillerDeck('A', 15) }),
       player({ active: inPlay('B-act', [LATIAS]) }),
     ), [{ actor: 'A', type: 'playSupporter', card: 'sup' } as unknown as NeutralAction]);
     expect(types(r)).toContain('shuffle');
-    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(Array.from({ length: 15 }, (_, i) => `A-dk${i}`));
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(Array.from({ length: 7 }, (_, i) => `A-dk${i}`));
+    expect((r.state.players.A.transit ?? []).map(c => c.iid)).toEqual(Array.from({ length: 8 }, (_, i) => `A-dk${i + 7}`));
+    expect((r.state.players.A.transit ?? []).every(c => c.origin === 'deck')).toBe(true);
     expect((r.state.players.A.resolving ?? []).map(c => c.iid)).toEqual(['sup']);
   });
 

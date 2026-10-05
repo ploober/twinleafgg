@@ -1,8 +1,6 @@
 import { OrderCardsPrompt, OrderCardsPromptType } from '../../game/store/prompts/order-cards-prompt';
-import { LegalAction, PokemonInPlay } from '../neutral-types';
+import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, buildPending } from './decomposer';
-import { playerIdToActor } from '../iid-targets';
-import { toPrinting } from '../printing';
 
 /**
  * OrderCardsPrompt ("put these cards back in any order", e.g. Gothorita WHT "Fortunate Eye" — look at
@@ -74,57 +72,11 @@ export const orderCardsDecomposer: PromptDecomposer<OrderCardsPrompt> = {
     return [...picked, ...rest];
   },
 
-  fixupProjection(prompt, _picks, ctx, state, projected) {
-    // The reorder pile is a card-local temp CardList (gothorita.ts moved the opponent's top-5 OUT of
-    // their deck into a local list before prompting), so at the pause those cards are absent from
-    // every projected zone — a card-conservation hole; native rotomancer keeps them on top of the
-    // owner's deck. Re-home each homeless card onto the TOP of its OWNER's deck, preserving temp-list
-    // order. Unlike attach-energy's fix-up (which restores to the PROMPT owner's own deck), the pile
-    // here can belong to the opponent (Fortunate Eye), so route by import-origin owner, not prompt
-    // owner. The engine has not applied the reorder yet (that happens on resolve), so the cards are
-    // still in their original order — project them so, matching rotomancer's pre-resolve view.
-    const presentByActor = new Map<string, Set<string>>();
-    const presentFor = (actor: string): Set<string> => {
-      let set = presentByActor.get(actor);
-      if (set !== undefined) {
-        return set;
-      }
-      set = new Set<string>();
-      const proj = projected.players[actor as 'A' | 'B'];
-      const addPip = (pip: PokemonInPlay | null) => {
-        if (!pip) { return; }
-        pip.stack.forEach(c => set!.add(c.iid));
-        pip.energy.forEach(c => set!.add(c.iid));
-        pip.tools.forEach(c => set!.add(c.iid));
-      };
-      [proj.deck, proj.hand, proj.discard, proj.lostZone].forEach(z => z.forEach(c => set!.add(c.iid)));
-      proj.prizes.forEach(p => set!.add(p.iid));
-      addPip(proj.active);
-      proj.bench.forEach(addPip);
-      presentByActor.set(actor, set);
-      return set;
-    };
+  // B.80: no fix-up. The reorder pile is a card-local temp CardList, and the detached-pile pass
+  // (state-adapter detachedTransitCards) already projects it in its owner's `transit` (origin from the
+  // pile's fromZoneTag: `hand` for Kofu, `deck` for Fortunate Eye; visibility owner), in pile order. It
+  // USED to be re-homed to the top of the deck (TA-81 / CF-61), which B.80 overturned: the player is
+  // holding the cards. A placed card stays in transit until the engine applies the order on resolve —
+  // this prompt does not know whether the pile goes to the top or the bottom.
 
-    // Collect homeless cards per owner-actor, preserving temp-list (deck-top) order.
-    const restoreByActor = new Map<string, Array<{ iid: string; printing: string }>>();
-    for (const card of prompt.cards.cards) {
-      const iid = ctx.cardToIid.get(card);
-      const owner = ctx.cardOwner.get(card);
-      if (iid === undefined || owner === undefined) {
-        continue;
-      }
-      const actor = playerIdToActor(state, state.players[owner].id);
-      if (presentFor(actor).has(iid)) {
-        continue;
-      }
-      const list = restoreByActor.get(actor) ?? [];
-      list.push({ iid, printing: toPrinting(card) });
-      restoreByActor.set(actor, list);
-      presentFor(actor).add(iid);
-    }
-    // Prepend each owner's block as a unit so temp[0] stays on top of the deck (next draw).
-    for (const [actor, refs] of restoreByActor) {
-      projected.players[actor as 'A' | 'B'].deck.unshift(...refs);
-    }
-  },
 };

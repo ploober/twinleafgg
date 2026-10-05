@@ -1,8 +1,6 @@
 import { ConfirmCardsPrompt } from '../../game/store/prompts/confirm-cards-prompt';
-import { LegalAction, PokemonInPlay } from '../neutral-types';
+import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, buildPending } from './decomposer';
-import { playerIdToActor } from '../iid-targets';
-import { toPrinting } from '../printing';
 
 /**
  * ConfirmCardsPrompt ('Confirm cards') WITH `allowCancel: true` — a genuine optional decision ("you
@@ -46,53 +44,19 @@ export const confirmCardsDecomposer: PromptDecomposer<ConfirmCardsPrompt> = {
     return confirmed ? true : null;
   },
 
-  fixupProjection(prompt, _picks, ctx, state, projected) {
-    // A card that reveals deck-top cards (Dig It Up, Trekking Shoes) moves them OUT of the deck into a
-    // card-local temp CardList BEFORE prompting, so at the pause those cards are absent from every
-    // projected zone — a card-conservation hole; native rotomancer keeps them on top of the owner's
-    // deck. Re-home each homeless prompt card onto the TOP of its OWNER's deck (temp-list order), the
-    // same fix-up OrderCards uses (TA-81). Cards still present in a visible zone are left untouched, so
-    // this is a no-op for ConfirmCards variants that reveal cards in place (e.g. a hand discard).
-    const presentByActor = new Map<string, Set<string>>();
-    const presentFor = (actor: string): Set<string> => {
-      let set = presentByActor.get(actor);
-      if (set !== undefined) {
-        return set;
-      }
-      set = new Set<string>();
-      const proj = projected.players[actor as 'A' | 'B'];
-      const addPip = (pip: PokemonInPlay | null) => {
-        if (!pip) { return; }
-        pip.stack.forEach(c => set!.add(c.iid));
-        pip.energy.forEach(c => set!.add(c.iid));
-        pip.tools.forEach(c => set!.add(c.iid));
-      };
-      [proj.deck, proj.hand, proj.discard, proj.lostZone].forEach(z => z.forEach(c => set!.add(c.iid)));
-      proj.prizes.forEach(p => set!.add(p.iid));
-      addPip(proj.active);
-      proj.bench.forEach(addPip);
-      presentByActor.set(actor, set);
-      return set;
-    };
-
-    const restoreByActor = new Map<string, Array<{ iid: string; printing: string }>>();
+  fixupProjection(prompt, _picks, ctx, _state, projected) {
+    // B.80: the revealed deck-top cards (Dig It Up, Trekking Shoes) are a card-local temp pile, already in
+    // their owner's `transit` via the detached-pile pass (origin deck). They USED to be re-homed to the deck
+    // top (TA-81). A ConfirmCards prompt SHOWS them, so their visibility is `public`, not the pass's
+    // default `owner`. A variant that confirms cards in place (a hand discard) finds nothing in transit.
     for (const card of prompt.cards) {
       const iid = ctx.cardToIid.get(card);
-      const owner = ctx.cardOwner.get(card);
-      if (iid === undefined || owner === undefined) {
-        continue;
+      if (iid === undefined) { continue; }
+      for (const who of ['A', 'B'] as const) {
+        const t = (projected.players[who].transit ?? []).find(x => x.iid === iid);
+        if (t !== undefined) { t.visibility = 'public'; }
       }
-      const actor = playerIdToActor(state, state.players[owner].id);
-      if (presentFor(actor).has(iid)) {
-        continue;
-      }
-      const list = restoreByActor.get(actor) ?? [];
-      list.push({ iid, printing: toPrinting(card) });
-      restoreByActor.set(actor, list);
-      presentFor(actor).add(iid);
-    }
-    for (const [actor, refs] of restoreByActor) {
-      projected.players[actor as 'A' | 'B'].deck.unshift(...refs);
     }
   },
+
 };

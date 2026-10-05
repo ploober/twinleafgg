@@ -4,6 +4,7 @@ import { CardTarget, PlayerType } from '../../game/store/actions/play-card-actio
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, targetKey } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
+import { adjustDamage } from '../transit-projection';
 
 /**
  * PutDamagePrompt: one pick = one unit of `prompt.damage` (which is in HP) applied to a target; raw
@@ -158,6 +159,23 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
     }
     const player = promptPlayer(state, _prompt.playerId);
     return { kind: 'counter', target: resolveAnyPokemonTarget(state, player, card) };
+  },
+
+  /**
+   * B.80: a `placeCounter` pick puts the counter on the board at once (the player places it); the projection
+   * shows each placed unit before the next pick. NOT the `dealDamage` family (verb `choose`): there the picks
+   * only DESIGNATE where an attack's damage will go, and the damage lands when the attack resolves, all at
+   * once (#2161 Oil Salvo — the spec cell "applies NO damage until every choice is made" guards it).
+   */
+  fixupProjection(prompt, picks, ctx, state, projected) {
+    if (verbFor(prompt) !== 'placeCounter') {
+      return;
+    }
+    const unit = unitOf(prompt);
+    const player = promptPlayer(state, prompt.playerId);
+    for (const p of realPicks(picks) as Array<{ target: CardTarget }>) {
+      adjustDamage(projected, pokemonTargetToIid(state, player, ctx, p.target), unit);
+    }
   },
 
   assemble(_prompt, picks): DamageMap[] {

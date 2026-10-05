@@ -7,6 +7,7 @@ import {
   PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
+import { placeOnPokemon } from '../transit-projection';
 
 /**
  * MoveEnergyPrompt: relocate an attached Energy from one Pokemon to another. Each transfer is a single
@@ -175,6 +176,19 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     }
     const to = resolveAnyPokemonTarget(state, player, targetCard);
     return { kind: 'move', from, to, index };
+  },
+
+  /** B.80: a `moveEnergy` pick PLACES the Energy on its target at once (the player moves the card); the
+   *  projection shows it there before the next pick. The engine applies the whole list on resolve. */
+  fixupProjection(prompt, picks, ctx, state, projected) {
+    const player = promptPlayer(state, prompt.playerId);
+    for (const p of realPicks(picks) as Array<{ from: CardTarget; to: CardTarget; index: number }>) {
+      const list = StateUtils.getTarget(state, player, p.from);
+      const card = list.cards[p.index];
+      const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
+      if (iid === undefined) { continue; }
+      placeOnPokemon(projected, iid, pokemonTargetToIid(state, player, ctx, p.to));
+    }
   },
 
   assemble(_prompt, picks): Array<{ from: CardTarget; to: CardTarget; index: number }> {

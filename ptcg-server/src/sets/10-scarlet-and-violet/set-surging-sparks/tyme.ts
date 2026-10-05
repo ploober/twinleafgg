@@ -60,8 +60,9 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
         pokemonName = card.name;
         pokemonHP = card.hp;
         MOVE_CARDS(store, state, player.hand, selectedPokemon, { cards: [card], sourceCard: self });
-        // G-63: "face down in front of you" until the reveal, then "return the Pokémon to your hand".
-        CardList.transit.set(card, { origin: 'hand', destination: 'hand', face: 'down' });
+        // B.80 / CF-91: "put that Pokémon face down in front of you" — lifted out of the hand, on the table,
+        // known to its owner and not the opponent until the reveal; "Then, return the Pokémon to your hand".
+        CardList.transit.set(card, { origin: 'hand', destination: 'hand', visibility: 'owner' });
       }
     });
 

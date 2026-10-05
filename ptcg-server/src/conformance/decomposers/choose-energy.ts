@@ -4,6 +4,7 @@ import { StateUtils } from '../../game/store/state-utils';
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, buildPending, END_CHOICE, hasDone } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
+import { liftToTransit, placeInDiscard } from '../transit-projection';
 
 /**
  * TA-142: `ChooseEnergyPrompt` is overwhelmingly a cost payment — retreat or an attack energy cost —
@@ -206,6 +207,23 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
       throw new Error(`[conformance] ${action.type} target '${iid}' is not an energy offered by the prompt`);
     }
     return { kind: 'index', index };
+  },
+
+  /** B.80: a cost `discard` pick is in the discard pile at once; a relocation pick is lifted off the Pokémon
+   *  (public: attached Energy is face up) with the destination the message declares (CF-8). */
+  fixupProjection(prompt, picks, ctx, _state, projected) {
+    const move = isMovePick(prompt);
+    const destination = prompt.message === GameMessage.CHOOSE_ENERGIES_TO_DECK ? 'deck' : 'hand';
+    for (const p of realPicks(picks) as Array<{ index: number }>) {
+      const em = prompt.energy[p.index];
+      const iid = em === undefined ? undefined : ctx.cardToIid.get(em.card);
+      if (iid === undefined) { continue; }
+      if (move) {
+        liftToTransit(projected, iid, { visibility: 'public', origin: 'inPlay', destination });
+      } else {
+        placeInDiscard(projected, iid);
+      }
+    }
   },
 
   assemble(prompt, picks): number[] {

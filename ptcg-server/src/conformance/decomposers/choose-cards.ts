@@ -8,6 +8,7 @@ import { SuperType, Stage, TrainerType, EnergyType } from '../../game/store/card
 import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
+import { liftToTransit, placeInDiscard } from '../transit-projection';
 
 /**
  * TA-204 / SD-14: would adding `candidate` to the already-picked set violate a constraint that
@@ -368,6 +369,28 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       throw new Error(`[conformance] choose target '${action.target}' is not in the prompt's card list`);
     }
     return { kind: 'index', index };
+  },
+
+  /**
+   * B.80 / CF-91: the picks already made read as made. A `discard` pick is in the discard pile at once
+   * (#916: "those go into the Discard Pile right away"). A `choose` / `pick` is a SELECTION whose placement
+   * the text performs later (the reveal, the put-into-hand, the attach), so the card is LIFTED into its
+   * owner's `transit`: `visibility: owner` (the picker knows it; nothing has been revealed yet), `origin`
+   * from the zone it was taken out of, `destination` absent — this prompt does not carry it, and a guess
+   * keyed on the message is the TA-142 mistake.
+   */
+  fixupProjection(prompt, picks, ctx, _state, projected) {
+    const discard = isDiscardPick(prompt);
+    for (const p of realPicks(picks) as Array<{ index: number }>) {
+      const card = prompt.cards.cards[p.index];
+      const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
+      if (iid === undefined) { continue; }
+      if (discard) {
+        placeInDiscard(projected, iid);
+      } else {
+        liftToTransit(projected, iid, { visibility: 'owner' });
+      }
+    }
   },
 
   assemble(prompt, picks): number[] {

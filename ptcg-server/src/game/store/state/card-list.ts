@@ -70,7 +70,7 @@ export class CardList {
    * entry can say so. Set by the card that does it; read only by the projection, and only while the card
    * sits in no projected zone (the moment it lands in one, that zone is where it is projected).
    */
-  public static readonly transit = new WeakMap<Card, { origin: string; destination: string; face: 'up' | 'down' }>();
+  public static readonly transit = new WeakMap<Card, { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden' }>();
   private static deckStampSeq = 0;
 
   private stampMovedCards(cards: Card[], destination: CardList): void {
