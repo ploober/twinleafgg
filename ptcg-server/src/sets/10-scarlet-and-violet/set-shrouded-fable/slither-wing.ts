@@ -6,7 +6,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayerType, StateUtils } from '../../../game';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class SlitherWing extends PokemonCard {
   public regulationMark = 'H';
@@ -66,8 +66,7 @@ export class SlitherWing extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // TA-79: apply the 130 base damage before the discard rider (rulebook step F / #543/#649).
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
     }
     return state;

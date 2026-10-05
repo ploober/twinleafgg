@@ -3,7 +3,6 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, StateUtils } from '../../../game';
 import {
   ADD_MARKER,
-  AFTER_ATTACK,
   HAS_MARKER,
   REMOVE_MARKER_AT_END_OF_TURN,
   REPLACE_MARKER_AT_END_OF_TURN,
@@ -71,7 +70,9 @@ export class Donphan extends PokemonCard {
     );
     // TA-365 (7th site, found by the post-fix re-fuzz — reachable once No Reprieve stopped
     // KOing): Step F, damage before the discard pick.
-    if (AFTER_ATTACK(effect, 1, this)) {
+    // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it
+    // (AttackEffect.afterDamageMoves). Reverses the TA-365 / TA-417 / family-A AFTER_ATTACK hook (B.76, withdrawn).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
     }
     return state;

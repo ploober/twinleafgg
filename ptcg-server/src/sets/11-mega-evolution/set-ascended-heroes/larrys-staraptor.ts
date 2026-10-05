@@ -97,10 +97,7 @@ export class LarrysStaraptor extends PokemonCard {
       };
 
       const applyBaseBenchDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
-        // Base 150 to the Active (step F), then the 50 Bench snipe (no Weakness/Resistance), then the discard.
-        const damageEffect = new DealDamageEffect(effect, effect.damage);
-        s = store.reduceEffect(s, damageEffect);
-        effect.damage = 0;
+        // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
         if (benchTarget) {
           const dealDamage = new DealDamageEffect(effect, 50);
           dealDamage.target = benchTarget;

@@ -1,7 +1,7 @@
 import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED } from '../../../game/store/prefabs/attack-effects';
 import { CardTag, CardType, GameMessage, PokemonCard, SlotType, Stage, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, CONFIRMATION_PROMPT, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { CONFIRMATION_PROMPT, THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class MegaEelektrossex extends PokemonCard {
@@ -54,7 +54,9 @@ export class MegaEelektrossex extends PokemonCard {
 
     // Disaster Shock — post-damage "may" rider (family A): the 190 lands first, then the optional
     // discard-2-[L]-and-Paralyze (TA-128). The decline path must still leave the 190 applied.
-    if (AFTER_ATTACK(effect, 1, this)) {
+    // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it
+    // (AttackEffect.afterDamageMoves). Reverses the TA-365 / TA-417 / family-A AFTER_ATTACK hook (B.76, withdrawn).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       // Disaster Shock: 190 damage, optionally discard 2 [L] Energy to Paralyze
       const player = effect.player;
 

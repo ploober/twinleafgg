@@ -1913,6 +1913,17 @@ export function MOVE_CARDS(
     sourceEffect?: any;
   } = {},
 ): State {
+  // B.82 (#1834, #2002, #2031): Energy the attack's text chose off the attacker's own Pokémon (to its discard pile,
+  // hand or deck) stays attached through the damage and moves after it. Queued whole, so every card hook sees the
+  // move once, when it happens.
+  const pre = state.preDamageAttack as AttackEffect | undefined;
+  if (pre !== undefined && options.cards !== undefined && options.cards.length > 0
+      && options.cards.every(c => c.superType === SuperType.ENERGY)
+      && source instanceof PokemonCardList && (pre.player.active === source || pre.player.bench.includes(source))
+      && (destination === pre.player.discard || destination === pre.player.hand || destination === pre.player.deck)) {
+    pre.afterDamageMoves.push(() => { state = store.reduceEffect(state, new MoveCardsEffect(source, destination, options)); });
+    return state;
+  }
   return store.reduceEffect(state, new MoveCardsEffect(source, destination, options));
 }
 

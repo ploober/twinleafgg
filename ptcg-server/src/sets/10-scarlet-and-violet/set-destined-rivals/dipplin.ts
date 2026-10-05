@@ -3,7 +3,7 @@ import { CardType, Stage, SuperType } from '../../../game/store/card/card-types'
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { MOVE_CARDS, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
@@ -34,8 +34,7 @@ export class Dipplin extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // Rulebook step F / compendium #543/#649: apply damage before the move-Energy rider.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
 
       if (!player.active.cards.some(c => c.superType === SuperType.ENERGY)) {
         return state;

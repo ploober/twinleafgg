@@ -51,21 +51,23 @@
     {
       "file": "set-ascended-heroes/larrys-staraptor.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "dealDamage.attackEffect.ignoreWeakness = true;"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-ascended-heroes/regice-ex.ts",
       "signatures": [
         "{ allowCancel: false, min: 0, max: 2 }",
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-ascended-heroes/registeel-ex.ts",
@@ -80,13 +82,13 @@
     {
       "file": "set-black-bolt-white-flare/reshiram-ex.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "state = store.reduceEffect(state, damageEffect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-destined-rivals/dwebble.ts",
@@ -234,15 +236,15 @@
     {
       "file": "set-mega-evolution/kyogre.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "state = store.reduceEffect(state, damageEffect);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "and wrongly deals 20 instead of 0. [TA-22]",
         "// TA-402 (TA-258 family, rulebook Step F / #649): the 20x lands BEFORE the \"Then, shuffle"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-mega-evolution/mega-absol-ex.ts",
@@ -266,13 +268,13 @@
     {
       "file": "set-perfect-order/landorus.ts",
       "signatures": [
-        "const dealDamage = new DealDamageEffect(effect, effect.damage);",
-        "state = store.reduceEffect(state, dealDamage);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-phantasmal-flames/haunter.ts",
@@ -369,13 +371,13 @@
     {
       "file": "set-stellar-crown/salandit.ts",
       "signatures": [
-        "const dealDamage = new DealDamageEffect(effect, effect.damage);",
-        "state = store.reduceEffect(state, dealDamage);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-stellar-crown/slowpoke.ts",
@@ -552,14 +554,15 @@
     {
       "file": "set-twilight-masquerade/wellspring-mask-ogerpon-ex.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);",
+        "effect.afterDamageMoves.push(() => {",
         "const hasBench = opponent.bench.some(b => b.cards.length > 0);",
         "GameMessage.CHOOSE_ENERGIES_TO_DECK,"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0189"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-black-bolt-white-flare/gothorita.ts",
@@ -589,22 +592,24 @@
     {
       "file": "set-ascended-heroes/camerupt.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-ascended-heroes/tapu-koko.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-black-bolt-white-flare/servine.ts",
@@ -619,23 +624,25 @@
     {
       "file": "set-destined-rivals/dipplin.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "GameMessage.CHOOSE_ENERGIES_TO_HAND,"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-destined-rivals/ethans-cyndaquil.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-destined-rivals/cynthias-feebas.ts",
@@ -697,32 +704,35 @@
     {
       "file": "set-journey-together/salamence-ex.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-mega-evolution/mega-camerupt-ex.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-perfect-order/luxray.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-perfect-order/dedenne.ts",
@@ -737,12 +747,13 @@
     {
       "file": "set-perfect-order/probopass.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-temporal-forces/litten.ts",
@@ -757,22 +768,24 @@
     {
       "file": "set-temporal-forces/metagross.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-stellar-crown/salazzle.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-shrouded-fable/joltik.ts",
@@ -784,12 +797,13 @@
     {
       "file": "set-surging-sparks/charcadet-2.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-surging-sparks/flittle.ts",
@@ -801,22 +815,24 @@
     {
       "file": "set-surging-sparks/duraludon.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-twilight-masquerade/monferno.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
       "fixes": [
         "FX-0206"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-twilight-masquerade/frogadier.ts",
@@ -1085,9 +1101,10 @@
     {
       "file": "set-shrouded-fable/slither-wing.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-temporal-forces/raging-bolt-ex.ts",
@@ -4828,9 +4845,9 @@
     {
       "file": "set-surging-sparks/slaking-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';"
+        "// Great Swing — \"Discard an Energy from this Pokémon.\" B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "state": "guarding"
     },
     {
@@ -5064,9 +5081,9 @@
     {
       "file": "set-ascended-heroes/mega-dragonite-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, IS_ABILITY_BLOCKED, SWITCH_ACTIVE_WITH_BENCHED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "state": "guarding"
     },
     {
@@ -5091,9 +5108,9 @@
         "name: 'Smashing Headbutt',",
         "HAS_MARKER(this.NO_REPRIEVE_CLEAR_MARKER, player, this)",
         "effect.damage += 120;",
-        "if (AFTER_ATTACK(effect, 1, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "state": "guarding"
     },
     {
@@ -6837,14 +6854,15 @@
     {
       "file": "set-twilight-masquerade/infernape.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-surging-sparks/chien-pao.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "GameMessage.CHOOSE_ENERGIES_TO_HAND,",
         "[CardType.COLORLESS],"
       ],
@@ -6852,7 +6870,7 @@
         "[CardType.COLORLESS, CardType.COLORLESS],",
         "GameMessage.CHOOSE_ENERGIES_TO_DISCARD,"
       ],
-      "note": "TA-258 (APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS) + TA-312 (2026-08-26): Icicle Loop returns ONE Energy to HAND (golden ssp.json #56), not two as discard. Absent-markers are the two-energy selector and the DISCARD message a revert re-introduces.",
+      "note": "TA-258 (APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS) + TA-312 (2026-08-26): Icicle Loop returns ONE Energy to HAND (golden ssp.json #56), not two as discard. Absent-markers are the two-energy selector and the DISCARD message a revert re-introduces. | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "fixes": [
         "FX-0280"
       ],
@@ -7350,11 +7368,11 @@
     {
       "file": "set-mega-evolution/inteleon.ts",
       "signatures": [
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "new KnockOutEffect(StateUtils.findOwner(state, target[0]), target[0])"
       ],
       "absentSignatures": [],
-      "note": "TA-316 (2026-08-26): Water Shot's 110 (Step F) must land before the discard-an-energy rider pends (0 vs roto 110 at the pending). Removing this call reverts the deferral.",
+      "note": "TA-316 (2026-08-26): Water Shot's 110 (Step F) must land before the discard-an-energy rider pends (0 vs roto 110 at the pending). Removing this call reverts the deferral. | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "fixes": [
         "FX-0284"
       ],
@@ -7430,12 +7448,12 @@
       "file": "set-pitch-black/silvally.ts",
       "signatures": [
         "{ min: 0, max: 1, blocked, allowCancel: false }",
-        "if (AFTER_ATTACK(effect, 0, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "absentSignatures": [
         "blocked.length >= player.deck.cards.length"
       ],
-      "note": "TA-323 (2026-08-27): 'Call a Buddy' refused to activate (threw CANNOT_USE_POWER via `blocked.length >= deck.cards.length`, and the prompt was min:1) whenever the deck held no Supporter, so with an empty hand + non-empty no-Supporter deck the ability was NOT OFFERED while rotomancer offered it and shuffled. A non-empty deck may be searched even when the target category is absent (compendium #990/#903; only an EMPTY deck blocks, #840). Fix drops the guard and relaxes to min:0 so the ability is usable and whiffs to the already-unconditional shuffle. absentSignatures catches a revert reintroducing the guard. Guard = conformance-cardlogic-regressions.spec [TA-323 pbl-070]. Found by shuffle_reach.py empty-hand routing (#9 residual tail).",
+      "note": "TA-323 (2026-08-27): 'Call a Buddy' refused to activate (threw CANNOT_USE_POWER via `blocked.length >= deck.cards.length`, and the prompt was min:1) whenever the deck held no Supporter, so with an empty hand + non-empty no-Supporter deck the ability was NOT OFFERED while rotomancer offered it and shuffled. A non-empty deck may be searched even when the target category is absent (compendium #990/#903; only an EMPTY deck blocks, #840). Fix drops the guard and relaxes to min:0 so the ability is usable and whiffs to the already-unconditional shuffle. absentSignatures catches a revert reintroducing the guard. Guard = conformance-cardlogic-regressions.spec [TA-323 pbl-070]. Found by shuffle_reach.py empty-hand routing (#9 residual tail). | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "fixes": [
         "FX-0054"
       ],
@@ -7993,16 +8011,18 @@
     {
       "file": "set-chaos-rising/braixen.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 0, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-chaos-rising/ho-oh.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 1, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-chaos-rising/mega-floette-ex.ts",
@@ -8504,9 +8524,9 @@
     {
       "file": "set-ascended-heroes/raichu.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 1, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
-      "note": "TA-417 (2026-09-14): Strong Volt / Bulky Bump / Hyper Beam: the discard rider hooks AFTER_ATTACK, so the printed damage lands before the pick",
+      "note": "TA-417 (2026-09-14): Strong Volt / Bulky Bump / Hyper Beam: the discard rider hooks AFTER_ATTACK, so the printed damage lands before the pick | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
       "fixes": [
         "FX-0290"
       ]
@@ -8564,12 +8584,13 @@
     {
       "file": "set-ascended-heroes/coalossal.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 1, this)) {"
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0290"
-      ]
+      ],
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "set-phantasmal-flames/duraludon.ts",
@@ -8707,14 +8728,14 @@
     {
       "file": "set-destined-rivals/blaziken.ts",
       "signatures": [
-        "s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);",
+        "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).",
         "// TA-434: the Bench target is a Step-D choice — \"you would make that choice now\" — so it is pended"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0308"
       ],
-      "note": "TA-434 (2026-09-18): Bench choice pended first (Step D); also guards TA-79 base-damage-before-discard."
+      "note": "TA-434 (2026-09-18): Bench choice pended first (Step D); also guards TA-79 base-damage-before-discard. | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
     },
     {
       "file": "game/store/store.ts",

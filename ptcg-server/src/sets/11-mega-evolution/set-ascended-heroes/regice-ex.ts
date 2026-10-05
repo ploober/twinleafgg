@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, EnergyCard, EnergyType, GameMessage, AttachEnergyPrompt, PlayerType, SlotType, SuperType, StateUtils, DiscardEnergyPrompt, SpecialCondition } from '../../../game';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Regiceex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -82,9 +82,7 @@ export class Regiceex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // TA-79: rulebook step F / compendium #543/#649 — apply the 140 base damage BEFORE the discard
-      // + Paralyze riders, so the defender shows dmg=140 at the discard pending (was deferred to 0).
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
 
       // "Discard 2 Energy from this Pokémon, AND your opponent's Active is now Paralyzed." — text order:
       // the Paralyze is applied AFTER the discard resolves. It must live INSIDE the discard callback,

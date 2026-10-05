@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ADD_MARKER, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, HAS_MARKER, IS_ABILITY_BLOCKED, JUST_EVOLVED, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ADD_MARKER, HAS_MARKER, IS_ABILITY_BLOCKED, JUST_EVOLVED, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Salazzle extends PokemonCard {
@@ -71,8 +71,7 @@ export class Salazzle extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
 

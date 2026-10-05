@@ -56,10 +56,7 @@ export class Zeraora extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // Rulebook step F: place the 120 before the energy-discard choice pauses.
-      const damageEffect = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, damageEffect);
-      effect.damage = 0;
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
     return state;

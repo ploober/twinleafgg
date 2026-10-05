@@ -6,7 +6,7 @@ import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { CardType, Stage, TrainerType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { ABILITY_USED, IS_ABILITY_BLOCKED, SHUFFLE_DECK, SHOW_CARDS_TO_PLAYER, AFTER_ATTACK, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, IS_ABILITY_BLOCKED, SHUFFLE_DECK, SHOW_CARDS_TO_PLAYER, WAS_POWER_USED, MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ChooseEnergyPrompt } from '../../../game/store/prompts/choose-energy-prompt';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
@@ -117,9 +117,11 @@ export class Silvally extends PokemonCard {
 
     // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts. The DiscardCardsEffect
     // needs the originating AttackEffect, which AfterAttackEffect carries.
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it
+    // (AttackEffect.afterDamageMoves). Reverses the TA-365 / TA-417 / family-A AFTER_ATTACK hook (B.76, withdrawn).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const atk = effect.attackEffect;
+      const atk = effect;
 
       const check = new CheckProvidedEnergyEffect(player);
       store.reduceEffect(state, check);

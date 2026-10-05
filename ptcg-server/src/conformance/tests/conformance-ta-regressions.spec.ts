@@ -53,9 +53,9 @@ function board(A: PlayerState, B: PlayerState, turn = 3): NeutralState {
 
 describe('Conformance — src/sets fix regression guards (merge-revert canaries)', () => {
 
-  it('Reshiram ex "Blazing Burst" places damage BEFORE the discard prompt [TA-55 wht-020]', () => {
-    // The self energy-discard pauses the game; the main damage must already be on the defender.
-    // Pre-fix (damage deferred to attack-end) the defender showed 0 at the pause.
+  it('Reshiram ex "Blazing Burst" asks its discard BEFORE the damage (B.82, reverses TA-55) [wht-020]', () => {
+    // B.82 (owner 2026-10-05, #1834 / #2002): the choice of the attacker's own Energy is made first, the damage is
+    // dealt with it still attached, then it is discarded. TA-55 had put the damage first (B.76, withdrawn).
     const res = step(
       board(player({ active: pip('A-act', RESHIRAM, [
               { iid: 'e0', printing: FIRE }, { iid: 'e1', printing: FIRE }, { iid: 'e2', printing: WATER }]) }),
@@ -63,12 +63,11 @@ describe('Conformance — src/sets fix regression guards (merge-revert canaries)
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Blazing Burst' }],
     );
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBeGreaterThan(0);
+    expect(res.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Wellspring Ogerpon "Torrential Pump" places 100 BEFORE the shuffle rider [TA-55 twm-064]', () => {
-    // The "you may shuffle 3 Energy → +120 to a Bench" rider pauses at a confirm; the base 100 must
-    // already be on the Active. Pre-fix the confirm surfaced with the Active still at 0.
+  it('Wellspring Ogerpon "Torrential Pump" asks its confirm BEFORE the 100 (B.82, #2031; reverses TA-55) [twm-064]', () => {
+    // #2031: the Energy are chosen, the 100 and the 120 are dealt with them attached, then they are shuffled in.
     const res = step(
       board(player({ active: pip('A-act', OGERPON, [
               { iid: 'e0', printing: WATER }, { iid: 'e1', printing: WATER }, { iid: 'e2', printing: WATER }]) }),
@@ -76,7 +75,7 @@ describe('Conformance — src/sets fix regression guards (merge-revert canaries)
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Torrential Pump' }],
     );
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBeGreaterThan(0);
+    expect(res.state.players.B.active!.damage).toBe(0);
   });
 });
 

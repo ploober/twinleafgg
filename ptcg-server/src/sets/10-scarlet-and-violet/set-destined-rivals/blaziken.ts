@@ -2,7 +2,7 @@ import { PokemonCard, Stage, CardType, State, StoreLike, StateUtils, ChoosePokem
 import { Effect } from '../../../game/store/effects/effect';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Blaziken extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -43,7 +43,7 @@ export class Blaziken extends PokemonCard {
       // TA-79: the 120 base damage lands on the Active before the discard rider (rulebook step F /
       // #543/#649); the Bench 120 is a literal, independent of effect.damage.
       const applyDamageAndDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
-        s = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, s, effect);
+        // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
         if (benchTarget) {
           const bench = new PutDamageEffect(effect, 120);
           bench.target = benchTarget;

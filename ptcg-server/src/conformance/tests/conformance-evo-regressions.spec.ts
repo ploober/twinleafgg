@@ -78,14 +78,16 @@ describe('Conformance — evolution-coverage fix regression guards', () => {
     expect(attacksOffered(res)).toEqual(['Beat', 'Cleaning Up']);
   });
 
-  it('Larry\'s Staraptor "Feathery Strike" places its 150 BEFORE the discard prompt [TA-61 asc-170]', () => {
+  // B.82 (owner 2026-10-05, #1834 / #2002) reverses TA-61's order: the discard choice comes first, then the 150 (and the
+  // Bench 50) with the chosen Energy attached, then the discard.
+  it('Larry\'s Staraptor "Feathery Strike" asks its discard choice BEFORE the 150 (B.82) [asc-170]', () => {
     const res = step(
       board(player({ active: inPlay('A-act', ['asc-169', 'asc-170'], en(WATER, 3, 'a')) }),
             player({ active: inPlay('B-act', [TANKY]) })),   // 210 HP survives 150 → attack pauses on the discard
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Feathery Strike' }],
     );
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBe(150);
+    expect(res.state.players.B.active!.damage).toBe(0);
   });
 
   it('Gholdengo "Surf Back" places its 100 BEFORE the optional-shuffle confirm [TA-62 ssp-131]', () => {

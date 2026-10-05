@@ -16,7 +16,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
-import { AFTER_ATTACK, IS_ABILITY_BLOCKED, SWITCH_ACTIVE_WITH_BENCHED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, SWITCH_ACTIVE_WITH_BENCHED, WAS_POWER_USED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MegaDragoniteex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -106,7 +106,9 @@ export class MegaDragoniteex extends PokemonCard {
     }
 
     // Ryuno Glide — post-damage self-discard rider (family A): the 330 lands first, then discard 2 (TA-128).
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it
+    // (AttackEffect.afterDamageMoves). Reverses the TA-365 / TA-417 / family-A AFTER_ATTACK hook (B.76, withdrawn).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
     }
 

@@ -3,7 +3,7 @@ import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Duraludon extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -39,8 +39,7 @@ export class Duraludon extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
 
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);

@@ -78,16 +78,23 @@ const WHIFF_OFFERED: Array<[string, string, string]> = [
 
 describe('Conformance — re-applied src/sets fix regression guards (merge-revert behaviour)', () => {
 
+  // B.82 (owner 2026-10-05, #1834 / #2002): an attack's choice of its OWN Energy (Swirling Waves, Screw Knuckle,
+  // Ember) is made before the damage, so those three now pause at 0; the flip / opponent-hand riders keep the order.
+  const CHOICE_FIRST = new Set(['meg-034', 'por-041', 'scr-023']);
   for (const [printing, attack, name] of DAMAGE_FIRST) {
-    it(`${name} "${attack}" places its damage BEFORE the secondary prompt [${printing}]`, () => {
+    it(`${name} "${attack}" ${CHOICE_FIRST.has(printing) ? 'asks its Energy choice BEFORE the damage (B.82)' : 'places its damage BEFORE the secondary prompt'} [${printing}]`, () => {
       const res = step(
         board(player({ active: pip('A-act', printing, mixed('a')) }),
               player({ active: pip('B-act', TANKY) })),   // 210 HP survives ≤200 → attack pauses
         [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: attack }],
       );
       expect(res.status).toBe('awaitingAction');
-      // Pre-fix the secondary prompt surfaced with the Defending Pokémon still at 0.
-      expect(res.state.players.B.active!.damage).toBeGreaterThan(0);
+      if (CHOICE_FIRST.has(printing)) {
+        expect(res.state.players.B.active!.damage).toBe(0);
+      } else {
+        // Pre-fix the secondary prompt surfaced with the Defending Pokémon still at 0.
+        expect(res.state.players.B.active!.damage).toBeGreaterThan(0);
+      }
     });
   }
 

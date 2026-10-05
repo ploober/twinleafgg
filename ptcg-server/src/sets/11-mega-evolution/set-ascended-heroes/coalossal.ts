@@ -4,7 +4,7 @@ import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_POKEMON } from '../../../game/store/prefabs/attack-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Coalossal extends PokemonCard {
@@ -54,7 +54,9 @@ export class Coalossal extends PokemonCard {
 
     // Bulky Bump — TA-417 (SD-1 / Step F): the discard rider is written AFTER the damage, so it is
     // hooked on AFTER_ATTACK; on WAS_ATTACK_USED the pick paused the attack with the 220 unapplied.
-    if (AFTER_ATTACK(effect, 1, this)) {
+    // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it
+    // (AttackEffect.afterDamageMoves). Reverses the TA-365 / TA-417 / family-A AFTER_ATTACK hook (B.76, withdrawn).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 3);
     }
 

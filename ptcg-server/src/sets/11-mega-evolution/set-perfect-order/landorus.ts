@@ -1,7 +1,6 @@
 import { PokemonCard, Stage, CardType, StoreLike, State, GameLog, ChooseCardsPrompt, GameMessage, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Landorus extends PokemonCard {
@@ -41,10 +40,7 @@ export class Landorus extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this) && effect instanceof AttackEffect) {
       const player = effect.player;
 
-      // Rulebook Step F: deal the 120 damage BEFORE the post-damage put-to-hand effect.
-      const dealDamage = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, dealDamage);
-      effect.damage = 0;
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
 
       const energiesAttached = player.active.cards.filter(card =>
         card.superType === SuperType.ENERGY

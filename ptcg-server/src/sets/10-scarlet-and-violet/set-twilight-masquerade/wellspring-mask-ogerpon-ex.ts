@@ -59,14 +59,10 @@ export class WellspringMaskOgerponex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // TA-55 (compendium #649 / printed order): deal the base 100 to the Active FIRST, before the
-      // optional "shuffle 3 Energy → +120 to a Benched Pokémon" rider pauses the game (Confirm /
-      // energy pick / bench target). Otherwise those prompts surface with the Active still at 0.
-      // Re-applied after the 2026-08-01 upstream merge, whose version applied the 100 only via
-      // effect.damage at attack-end (after the rider). Same pattern as Iron Hands "Volt Wave".
-      const damageEffect = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, damageEffect);
-      effect.damage = 0;
+      // B.82 (#2031: "You shuffle the two energy that are attached back into the deck, and do 80 to the active and
+      // 100 to the bench (remember, damage is still reduced for the DTE since the detachment happens after damage is
+      // done)"): the choices come first, the 100 (the attack's damage step) and the 120 are dealt with the chosen
+      // Energy attached, then they are shuffled in. Reverses TA-55's 100-first order (B.76 reading, withdrawn).
 
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
       // TA-586 / B.77: the "may" is offered whenever Energy can be shuffled — "if you do" gates the Bench damage on
@@ -98,10 +94,13 @@ export class WellspringMaskOgerponex extends PokemonCard {
           // The chosen Energy goes into the deck AFTER the damage (compendium #2031: "damage is still reduced for the
           // DTE since the detachment happens after damage is done"), then the deck is shuffled.
           const shuffleIn = (): State => {
-            MOVE_CARDS(store, state, player.active, player.deck, { cards: cards, sourceCard: this });
-            return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-              player.deck.applyOrder(order);
+            effect.afterDamageMoves.push(() => {
+              MOVE_CARDS(store, state, player.active, player.deck, { cards: cards, sourceCard: this });
+              store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+                player.deck.applyOrder(order);
+              });
             });
+            return state;
           };
 
           if (!hasBench) {

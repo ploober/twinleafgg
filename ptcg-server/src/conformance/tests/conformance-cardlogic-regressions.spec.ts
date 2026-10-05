@@ -517,10 +517,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.damage).toBe(20);   // the 20 is already placed (damage-first)
   });
 
-  it('Zeraora "Strong Volt" places its 120 BEFORE the energy-discard choice [TA-69 tef-057]', () => {
-    // "120. Discard an Energy from this Pokémon." With 3 energy attached the discard is a which-choice
-    // and pauses; the 120 must already be on the defender (rulebook step F). Pre-fix twinleaf showed 0
-    // at the discard pause (surfaced by the per-card re-fuzz after the Shocking Knuckle fix).
+  it('Zeraora "Strong Volt" asks its energy-discard choice BEFORE the 120 (B.82, reverses TA-69) [tef-057]', () => {
+    // "120. Discard an Energy from this Pokémon." With 3 energy attached the discard is a which-choice and pauses.
+    // B.82 (owner 2026-10-05, #1834 / #2002): the choice is made first, the 120 is dealt with the chosen Energy
+    // attached, then it is discarded. TA-69 had put the 120 first (B.76, withdrawn).
     const r = step(
       board(player({ active: inPlay('A-act', ['tef-057'],
         [{ iid: 'e0', printing: 'sve-004' }, { iid: 'e1', printing: 'sve-004' }, { iid: 'e2', printing: WATER }]) }),
@@ -529,7 +529,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     );
     expect(r.status).toBe('awaitingAction');
     expect(types(r)).toContain('discard');               // paused at the which-energy discard
-    expect(r.state.players.B.active!.damage).toBe(120);  // the 120 is already placed (damage-first)
+    expect(r.state.players.B.active!.damage).toBe(0);    // B.82: no damage yet at the choice
   });
 
   it('Larry\'s Dunsparce "Rising Lunge" externalizes its coin flip, not a 500 [TA-68 asc-163]', () => {
@@ -3727,14 +3727,16 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(three.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Strong Volt / Hyper Beam / Bulky Bump land their damage BEFORE the discard pick (Step F, SD-1 fourth wave) [TA-417 asc-056]', () => {
-    // Strong Volt: two [L] attached -> a real 1-of-2 pick, paused with the 150 applied
+  it('Strong Volt / Bulky Bump ask their own-Energy pick BEFORE the damage (B.82); Hyper Beam keeps damage-first [TA-417 asc-056]', () => {
+    // B.82 (owner 2026-10-05, #1834 / #2002): a choice of the attacker's OWN Energy comes before the damage; TA-417 had
+    // put the damage first (B.76, withdrawn). Hyper Beam's pick is the opponent's Energy, which B.82 does not move here.
+    // Strong Volt: two [L] attached -> a real 1-of-2 pick, paused at 0
     const sv = step(board(
       player({ active: inPlay('A-act', ['asc-056'], [...en(LIGHT, 2, 'a'), ...en(PSY, 1, 'x')]) }),
       player({ active: inPlay('B-act', [LATIAS]) }),
     ), [attack('A-act', 'Strong Volt')]);
     expect(hasType(sv, 'discard')).toBe(true);
-    expect(sv.state.players.B.active!.damage).toBe(150);
+    expect(sv.state.players.B.active!.damage).toBe(0);
     // Hyper Beam: the pick is on the OPPONENT's Energy, paused with the 70 applied
     const hb = step(board(
       player({ active: inPlay('A-act', ['pfl-074'], en(METAL, 3, 'a')) }),
@@ -3742,13 +3744,13 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     ), [attack('A-act', 'Hyper Beam')]);
     expect(hasType(hb, 'discard')).toBe(true);
     expect(hb.state.players.B.active!.damage).toBe(70);
-    // Bulky Bump: 3-of-4 discard pick surfaced with the 220 applied
+    // Bulky Bump: 3-of-4 discard pick surfaced at 0
     const bb = step(board(
       player({ active: inPlay('A-act', ['asc-120'], en(FIGHT, 4, 'a')) }),
       player({ active: inPlay('B-act', [LATIAS]) }),
     ), [attack('A-act', 'Bulky Bump')]);
     expect(hasType(bb, 'discard')).toBe(true);
-    expect(bb.state.players.B.active!.damage).toBe(220);
+    expect(bb.state.players.B.active!.damage).toBe(0);
   });
 
   it('Volt Switch skips its switch with no Benched [L] (no inert confirm) and forces the collapse with one [TA-418 asc-066]', () => {

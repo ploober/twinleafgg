@@ -2,7 +2,6 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
@@ -30,11 +29,7 @@ export class Salandit extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      // Rulebook Step F / compendium #649: deal the damage BEFORE the post-damage
-      // discard effect pauses on its energy choice.
-      const dealDamage = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, dealDamage);
-      effect.damage = 0;
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
 

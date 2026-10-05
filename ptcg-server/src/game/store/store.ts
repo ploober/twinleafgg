@@ -372,7 +372,9 @@ export class Store implements StoreLike {
       // (the DiscardCardsEffect reducer queues the move); the adapter leaves its picks attached as `chosen`.
       const pre = state.preDamageAttack as { player?: { id: number } } | undefined;
       const p = prompts[i] as Prompt<any> & { deferredMove?: boolean; message?: unknown };
-      if (pre?.player !== undefined && p.playerId === pre.player.id && p.message === GameMessage.CHOOSE_ENERGIES_TO_DISCARD
+      const moveMessages: unknown[] = [GameMessage.CHOOSE_ENERGIES_TO_DISCARD, GameMessage.CHOOSE_ENERGIES_TO_HAND,
+        GameMessage.CHOOSE_ENERGIES_TO_DECK];
+      if (pre?.player !== undefined && p.playerId === pre.player.id && moveMessages.includes(p.message)
           && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
         p.deferredMove = true;
       }

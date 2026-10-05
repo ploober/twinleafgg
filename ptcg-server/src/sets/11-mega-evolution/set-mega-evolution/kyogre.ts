@@ -5,7 +5,6 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { SuperType } from '../../../game/store/card/card-types';
 import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
-import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Kyogre extends PokemonCard {
@@ -61,11 +60,7 @@ export class Kyogre extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // Rulebook attack step F / compendium #649: the 130 is placed before the
-      // post-damage discard effect pauses on its energy choice.
-      const damageEffect = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, damageEffect);
-      effect.damage = 0;
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2);
     }
 

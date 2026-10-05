@@ -150,40 +150,44 @@ describe('WS1 batch 1a — bench-snipe / spread riders fire AFTER base damage la
   });
 });
 
-describe('WS1 batch 1b — self-energy-discard riders fire AFTER base damage lands', () => {
+// B.82 (owner 2026-10-05, #1834 / #2002) reverses this batch's order: an attack's choice of its own Energy is made
+// FIRST, the damage is dealt with the chosen Energy still attached, and the Energy moves after it. So at the choice
+// the defender is at 0, and once it is answered the damage has landed and the chosen Energy is gone.
+describe('WS1 batch 1b — self-energy-discard: the choice comes before the damage, the discard after it (B.82)', () => {
 
-  it('Ryuno Glide: 330 lands, then "discard 2 Energy" is offered [asc-152 mega-dragonite-ex]', () => {
-    const res = step(
-      board(
-        player({ active: pip('A-act', 'asc-152', [{ iid: 'w', printing: COLOR }, { iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }]) }),
-        player({ active: pip('B-act', BIGDEF) }),
-      ),
-      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Ryuno Glide' }],
-    );
+  it('Ryuno Glide: "discard 2 Energy" is asked at 0 damage; then 330 lands and the two go [asc-152 mega-dragonite-ex]', () => {
+    const attacker = () => player({ active: pip('A-act', 'asc-152', [{ iid: 'w', printing: COLOR }, { iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }]) });
+    const res = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Ryuno Glide' }]);
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBe(330);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const done = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })), [
+      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Ryuno Glide' },
+      { actor: 'A', type: 'discard', target: 'l0' } as never, { actor: 'A', type: 'discard', target: 'l1' } as never]);
+    expect(done.state.players.B.active!.damage).toBe(330);
+    expect(done.state.players.A.active!.energy.map(e => e.iid)).toEqual(['w']);
   });
 
-  it('Great Swing: 280 lands, then "discard an Energy" is offered [ssp-147 slaking-ex]', () => {
-    const res = step(
-      board(
-        player({ active: pip('A-act', 'Slaking ex SSP', [{ iid: 'c0', printing: COLOR }, { iid: 'c1', printing: COLOR }]) }),
-        player({ active: pip('B-act', BIGDEF) }),   // an ex, so Slaking's "Born to Slack" allows the attack
-      ),
-      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }],
-    );
+  it('Great Swing: "discard an Energy" is asked at 0 damage; then 280 lands [ssp-147 slaking-ex]', () => {
+    const attacker = () => player({ active: pip('A-act', 'Slaking ex SSP', [{ iid: 'c0', printing: COLOR }, { iid: 'c1', printing: COLOR }]) });
+    const res = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })),   // an ex, so "Born to Slack" allows it
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }]);
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBe(280);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const done = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })), [
+      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }, { actor: 'A', type: 'discard', target: 'c0' } as never]);
+    expect(done.state.players.B.active!.damage).toBe(280);
+    expect(done.state.players.A.active!.energy.map(e => e.iid)).toEqual(['c1']);
   });
 
-  it('Disaster Shock: 190 lands, then the "may discard+Paralyze" is offered; decline keeps the 190 [asc-061 mega-eelektross-ex]', () => {
+  it('Disaster Shock: the "may discard+Paralyze" is offered at 0 damage; decline deals the 190 [asc-061 mega-eelektross-ex]', () => {
     const attacker = () => player({ active: pip('A-act', 'asc-061', [{ iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }, { iid: 'l2', printing: LIGHT }]) });
     const offered = step(
       board(attacker(), player({ active: pip('B-act', BIGDEF) })),
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Disaster Shock' }],
     );
     expect(offered.status).toBe('awaitingAction');
-    expect(offered.state.players.B.active!.damage).toBe(190);
+    expect(offered.state.players.B.active!.damage).toBe(0);   // B.82: the choice comes first
     expect(offered.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);
 
     // Decline path (CF-33-adjacent landmine): the 190 stays, no Energy discarded, no Paralyze.
@@ -284,6 +288,9 @@ describe('TA-258 — the TA-79 second wave: pool growth 1206→1821 brought new 
   // Same conjunction as every cell above: base damage LANDED and the rider still pending. All five
   // were zone-axis DIVERGENCE rows (tl dmg=0 at the rider pending, roto already applied); the pool
   // enumeration is the census, so these witnessed members ARE the visible population.
+  // B.82 (2026-10-05): Scorching Fire and Icicle Loop choose the attacker's own Energy, so that choice now comes
+  // BEFORE the damage (0 at the pending); the two Bench-move riders and Memory Lock keep the damage-first order.
+  const choiceFirst = new Set(['twm-033', 'ssp-056']);
   const cases: Array<[string, string, string, CardRef[], number, boolean]> = [
     // [printing, attack, itLabel, attacker energy, expected damage, needsBench]
     ['dri-003', 'Jet Cyclone', 'Yanmega ex', [
@@ -308,7 +315,8 @@ describe('TA-258 — the TA-79 second wave: pool growth 1206→1821 brought new 
       );
       expect(`${printing}:${res.status}`).toBe(`${printing}:awaitingAction`);
       expect(`${printing}:n=${(res.pending?.legalActions ?? []).length > 0}`).toBe(`${printing}:n=true`); // rider pending
-      expect(`${printing}:dmg=${res.state.players.B.active!.damage}`).toBe(`${printing}:dmg=${dmg}`);      // damage already landed
+      const atPending = choiceFirst.has(printing) ? 0 : dmg;
+      expect(`${printing}:dmg=${res.state.players.B.active!.damage}`).toBe(`${printing}:dmg=${atPending}`);
     });
   }
 });

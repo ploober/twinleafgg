@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Inteleon extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -97,10 +97,7 @@ export class Inteleon extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      // TA-258: Water Shot's 110 (Step F) must land BEFORE the "Discard an Energy from this Pokemon"
-      // rider pends -- rotomancer/rulebook show damaged:110 up front, but twinleaf went straight into
-      // the discard prompt and deferred the whole 110 past it (0 vs 110 at the pending).
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 1);
     }
 

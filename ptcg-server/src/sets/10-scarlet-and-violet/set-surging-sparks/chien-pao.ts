@@ -3,7 +3,7 @@ import { Stage, CardType, SuperType } from '../../../game/store/card/card-types'
 import { PowerType, StoreLike, State, ConfirmPrompt, GameMessage, StateUtils, ChooseEnergyPrompt, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class ChienPao extends PokemonCard {
@@ -71,9 +71,7 @@ export class ChienPao extends PokemonCard {
     }
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
-      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
+      // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
       const player = effect.player;
 
       if (!player.active.energies.cards.some(c => c.superType === SuperType.ENERGY)) {
