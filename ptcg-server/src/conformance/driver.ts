@@ -3,6 +3,10 @@ import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
+import { CardList } from '../game/store/state/card-list';
+import { ChooseCardsPrompt } from '../game/store/prompts/choose-cards-prompt';
+import { isDiscardPick } from './decomposers/choose-cards';
+import { liftToTransit, originOfTag } from './transit-projection';
 import { State, GameWinner } from '../game/store/state/state';
 import { setupGame } from '../game/store/reducers/setup-reducer';
 import { Prompt } from '../game/store/prompts/prompt';
@@ -347,6 +351,14 @@ interface LoopResult {
   /** Set when the log ran dry MID-decomposition: the open prompt + the picks made so far. Lets the
    *  projection apply the decomposer's take-immediately fix-up (CF-1). */
   midPrompt?: { prompt: Prompt<any>; picks: WirePick[] };
+  /**
+   * B.80: searches COMPLETED during this step whose chosen cards the engine still holds in the source zone
+   * (Burning Charge: the ChooseCardsPrompt over the deck resolves, the card code keeps the two Energy in
+   * `player.deck` until the recipient ChoosePokemonPrompt resolves). Physically the player is holding
+   * them, so at a later pause of the same step they project in `transit`. The resolved prompt itself is
+   * spliced out of `state.prompts` (store.ts), so the selection has to be remembered here.
+   */
+  completedSearches?: Array<{ cards: Card[]; source: CardList }>;
 }
 
 /**
@@ -652,6 +664,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
   let accum: WirePick[] = [];
+  const completedSearches: Array<{ cards: Card[]; source: CardList }> = [];
   // (Removed 2026-07-24, TA-129/CF-12: `turnEndedBy` tracked the actor whose turn was auto-ended by
   // their own declareAttack, so the driver could absorb that player's redundant trailing `endTurn`.
   // CF-12 deprecates that leniency — the action is not offered and must reject. See the dispatch loop.)
@@ -840,7 +853,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           cursor.i++;
           throw new GameError(GameMessage.ILLEGAL_ACTION);
         }
-        return { events, pending: toWirePending(systemPending(game, prompt)), applied: cursor.i };
+        return { events, pending: toWirePending(systemPending(game, prompt)), applied: cursor.i, completedSearches };
       }
       if (kind === 'unsupported') {
         throw new Error(`[conformance] prompt '${prompt.type}' has no decomposer (out of scope)`);
@@ -882,6 +895,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // The cards have not moved yet at this point (the dispatch below is what runs the card code),
         // so this still reports the SOURCE zone a within-resolution search relocates from (TA-373 intact).
         actionStartZones = snapshotCardZones(game.state);
+        // B.80: remember a completed SEARCH (a non-discard, non-secret ChooseCards over a settled deck or
+        // discard pile) so a later pause in this step can project its still-in-zone selections in transit.
+        if (prompt instanceof ChooseCardsPrompt && Array.isArray(result) && result.length > 0
+            && !isDiscardPick(prompt) && prompt.options.isSecret !== true
+            && (prompt.cards.zoneTag === 'deck' || prompt.cards.zoneTag === 'discard')) {
+          completedSearches.push({ cards: result as Card[], source: prompt.cards });
+        }
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
         accum = [];
         continue; // the callback may have raised the next prompt
@@ -944,7 +964,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       if (nextAction === undefined) {
         // Log dry mid-decision: carry the open prompt + picks so the projection can apply the
         // decomposer's take-immediately fix-up (CF-1).
-        return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum } };
+        return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum }, completedSearches };
       }
       // R1 (next-action-completes): if the next action is not one of this decision's pick types and
       // the decision permits stopping (its internal `endChoice` marker is present), synthesize the
@@ -1122,14 +1142,33 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   if (initial.phase === 'setup') {
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
-  const { events, pending, applied, rejection, midPrompt } = runLoop(game, actions);
+  const { events, pending, applied, rejection, midPrompt, completedSearches } = runLoop(game, actions);
   const state = projectGame(game);
   if (midPrompt !== undefined) {
     // Mid-decomposition pause: apply the decomposer's take-immediately projection fix-up (CF-1) so
     // picks already made read as applied (e.g. a picked prize is in the hand, not the pile).
     const dec = decomposerFor(midPrompt.prompt);
     dec.fixupProjection?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state);
-  } else if (rejection !== undefined) {
+  }
+  if (pending !== null && completedSearches !== undefined) {
+    // B.80: a search completed earlier in this step whose chosen cards the engine still keeps in the
+    // source zone while a LATER decision of the same effect is open (Burning Charge's recipient pick):
+    // the player is holding those cards, so they project in transit, `origin` = that zone, `visibility:
+    // owner` (the text's reveal, where it has one, has not fired at this pause or the card has moved).
+    // Not at a `system` shuffle that names the card: then it is being shuffled in, i.e. in the deck.
+    const first = pending.legalActions[0] as { type?: string; deck?: string[] } | undefined;
+    const shuffling = new Set<string>(pending.actor === 'system' && first?.type === 'shuffle' ? (first.deck ?? []) : []);
+    for (const search of completedSearches) {
+      const origin = originOfTag(search.source.zoneTag);
+      for (const card of search.cards) {
+        if (!search.source.cards.includes(card)) { continue; }
+        const iid = game.ctx.cardToIid.get(card);
+        if (iid === undefined || shuffling.has(iid)) { continue; }
+        liftToTransit(state, iid, origin === undefined ? { visibility: 'owner' } : { visibility: 'owner', origin });
+      }
+    }
+  }
+  if (midPrompt === undefined && rejection !== undefined) {
     // An action was rejected while a decomposable prompt with homeless temp cards was still open — e.g.
     // an illegal action submitted mid-reorder (OrderCards) or mid-attach. The rollback state still
     // holds that open prompt, but we are NOT surfacing it, so its fix-up never ran and its temp pile

@@ -133,6 +133,19 @@ describe('B.80 transit: search picks lift, discard picks place', () => {
     expect(step(attackerBoard(), [ATTACK]).state.players.A.transit).toEqual([]);
   });
 
+  it('after both picks, at the recipient pick, BOTH Energy are in transit (the search completed; the engine still lists them in the deck)', () => {
+    // Mutation guard for the driver's completedSearches lift: drop it and this cell reds (transit [] while the
+    // player is holding two Energy).
+    const res = step(attackerBoard(), [ATTACK,
+      { actor: 'A', type: 'choose', target: 'ad1' } as never, { actor: 'A', type: 'choose', target: 'ad2' } as never]);
+    expect(res.status).toBe('awaitingAction');
+    expect((res.pending?.legalActions ?? []).every(a => (a as { type: string }).type === 'choose')).toBe(true);
+    expect(res.state.players.A.transit).toEqual([
+      { iid: 'ad1', printing: FIRE, origin: 'deck', visibility: 'owner' },
+      { iid: 'ad2', printing: FIRE, origin: 'deck', visibility: 'owner' }]);
+    expect(res.state.players.A.deck.map(c => c.iid)).toEqual(['ad0', 'ad3', 'ad4', 'ad5']);
+  });
+
   it('after both picks and the recipient pick the Energy is attached and transit is empty', () => {
     const res = step(attackerBoard(), [ATTACK,
       { actor: 'A', type: 'choose', target: 'ad1' } as never, { actor: 'A', type: 'choose', target: 'ad2' } as never,

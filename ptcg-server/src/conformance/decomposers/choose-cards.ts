@@ -101,7 +101,7 @@ function violatesConstraints(prompt: ChooseCardsPrompt, pickedCards: Card[], can
 
 /** A card-pick whose purpose is discarding surfaces as `discard {owner, target}` (the wire's
  * specific type — matches the retreat-cost / energy-discard convention and rotomancer). */
-function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
+export function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
   return prompt.message === GameMessage.CHOOSE_CARD_TO_DISCARD;
 }
 

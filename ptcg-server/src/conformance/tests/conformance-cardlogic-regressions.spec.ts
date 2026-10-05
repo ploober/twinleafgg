@@ -3340,7 +3340,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);
   });
 
-  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder is in transit (hidden, bound for the deck bottom) [CF-86 / B.80 tef-114]', () => {
+  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder is in transit (hidden, bound for the deck bottom; B.80) [CF-86 / B.68 tef-114]', () => {
     // The engine bottoms the remainder and THEN raises the shuffle; the printed text shuffles first and
     // puts on the bottom second. CF-86 (2026-09-29) projected the pile at the deck top; B.80 (2026-10-04):
     // a sub-pile being shuffled face down is in TRANSIT, `origin: deck`, `destination: deckBottom`,
