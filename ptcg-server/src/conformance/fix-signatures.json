@@ -10029,6 +10029,16 @@
       "fixes": [
         "FX-0385"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/iono.ts",
+      "signatures": [
+        "          block.forEach((c, k) => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner', order: k }));"
+      ],
+      "note": "TA-608 (2026-10-05): Iono pal-185: each hand goes through a system shuffle (ShuffleDeckPrompt {zone: hand, bottomCount}) in lockstep (B.74): ",
+      "fixes": [
+        "FX-0386"
+      ]
     }
   ]
 }
