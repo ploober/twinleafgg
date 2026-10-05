@@ -64,28 +64,15 @@ function answerWith(g: SetupGameResult, transfers: DamageTransfer[]): { seenType
 
 describe('Conformance gap — Munkidori Adrena-Brain spent for a 0-counter move (RemoveDamagePrompt has no source-damage check)', () => {
 
-  it('REPRO (open): answering with an UNDAMAGED source is accepted, moves 0 counters, and consumes the once-per-turn Ability', () => {
-    // When this goes red, the bug is fixed: flip the assertion to the rule (the undamaged-source answer
-    // is rejected by validate / the Ability stays unused and re-usable this turn).
+  it('an UNDAMAGED source is not a legal answer: validate rejects it and the Ability stays unused [TA-581]', () => {
+    // Fixed 2026-10-04 (TA-581): RemoveDamagePrompt.validate rejects a source with no damage, and munkidori.ts sets its
+    // marker after the transfer, not inside the loop. This cell asserted the defect until then.
     const g = build();
-    expect(munkidoriMarkerSet(g)).toBe(false);
-
-    const seen = answerWith(g, [{ from: UNDAMAGED_BENCH, to: OPP_ACTIVE }]);
-    useAbility(g.store, g.state, 0, 'Adrena-Brain');
-
-    expect(seen.seenType).toBe(RemoveDamagePromptType);       // the engine prompt was really answered
-    expect(g.player1.bench[1].damage).toBe(0);                 // source had nothing to give
-    expect(g.player1.bench[0].damage).toBe(30);                // the damaged Pokemon is untouched
-    expect(g.player2.active.damage).toBe(0);                   // 0 counters landed on the opponent
-    expect(g.state.prompts.filter(p => p.result === undefined).length).toBe(0);
-
-    // DEFECT: the Ability is spent anyway.
-    expect(munkidoriMarkerSet(g)).toBe(true);
-    answerWith(g, [{ from: DAMAGED_BENCH, to: OPP_ACTIVE }]);
-    // Refused as already used (engine ABILITY_USED gate), though a damaged source (30) and [D] Energy remain.
-    expect(() => useAbility(g.store, g.state, 0, 'Adrena-Brain')).toThrow(jasmine.objectContaining({ message: 'POWER_ALREADY_USED' }));
+    answerWith(g, [{ from: UNDAMAGED_BENCH, to: OPP_ACTIVE }]);
+    expect(() => useAbility(g.store, g.state, 0, 'Adrena-Brain')).toThrowError(/Invalid auto-resolved prompt result/);
     expect(g.player1.bench[0].damage).toBe(30);
     expect(g.player2.active.damage).toBe(0);
+    expect(munkidoriMarkerSet(g)).toBe(false);
   });
 
   it('CONTROL: on the same board, answering with the DAMAGED source moves the counters (then, correctly, the Ability is spent)', () => {

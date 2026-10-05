@@ -105,6 +105,10 @@ export class RemoveDamagePrompt extends Prompt<DamageTransfer[]> {
       if (from === undefined || blockedFrom.includes(from)) {
         return false;
       }
+      // TA-581: a Pokémon with no damage counters has none to move — not a legal source (#13: no Ability for no effect).
+      if (from.damage <= 0) {
+        return false;
+      }
       const to = StateUtils.getTarget(state, player, r.to);
       if (to === undefined || blockedTo.includes(to)) {
         return false;

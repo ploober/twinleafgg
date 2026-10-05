@@ -150,13 +150,6 @@ export class Munkidori extends PokemonCard {
               //   throw new GameError(GameMessage.INVALID_TARGET);
               // }
 
-              player.marker.addMarker(this.ADRENA_BRAIN_MARKER, this);
-
-              player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-                if (cardList.getPokemonCard() === this) {
-                  cardList.addBoardEffect(BoardEffect.ABILITY_USED);
-                }
-              });
 
               /*blockedFrom.forEach(blocked => {
                 if (transfer.from === blocked && transfer.to === blocked) {
@@ -187,6 +180,15 @@ export class Munkidori extends PokemonCard {
               }
               if (totalDamageMoved >= 30) break;
             }
+
+            // The Ability is used once the transfer resolves (B.57: a whiff by prevention is still a use). An undamaged
+            // source is no longer a legal answer (RemoveDamagePrompt.validate, TA-581), so it cannot be spent for nothing.
+            player.marker.addMarker(this.ADRENA_BRAIN_MARKER, this);
+            player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+              if (cardList.getPokemonCard() === this) {
+                cardList.addBoardEffect(BoardEffect.ABILITY_USED);
+              }
+            });
           });
         }
       });
