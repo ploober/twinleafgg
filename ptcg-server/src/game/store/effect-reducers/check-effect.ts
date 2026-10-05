@@ -221,6 +221,7 @@ export function applyPromotion(store: StoreLike, state: State, player: Player, r
   const temp = player.active;
   player.active = player.bench[benchIndex];
   player.bench[benchIndex] = temp;
+  CardList.legCut?.(player);   // B.81 (conformance; inert for gameplay)
   const newActivePokemon = player.active.getPokemonCard();
   if (newActivePokemon) {
     if (!player.movedToActiveThisTurn.includes(newActivePokemon.id)) {

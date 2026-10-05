@@ -82,6 +82,14 @@ export class CardList {
    */
   public static topTake?: (from: CardList, to: CardList, count: number) => void;
 
+  /**
+   * Conformance only, inert for gameplay: called once a switch between the Active Spot and the Bench completes
+   * (Player.switchPokemon, applyPromotion), with the player whose Pokémon swapped. The driver cuts the physical
+   * `moved` legs there (B.81: a switch is an ordering point), so a Pokémon pushed to the Bench and Knocked Out in
+   * the same dispatch shows its stop on the Bench.
+   */
+  public static legCut?: (player: unknown) => void;
+
   private stampMovedCards(cards: Card[], destination: CardList): void {
     if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
     if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }

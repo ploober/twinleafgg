@@ -721,13 +721,25 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
   };
 
+  // B.81: a switch is an ordering point. The engine calls CardList.legCut once an Active / Bench swap completes;
+  // the legs up to that board are derived then, and the dispatch's board diff runs on from it. Live identity only.
+  let segment: { start: NeutralState; legs: NeutralEvent[] } | undefined;
+  CardList.legCut = (who: unknown): void => {
+    if (segment === undefined || !game.store.state.players.some(p => p === who)) { return; }
+    const now = projectState(game.store.state, game.ctx);
+    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, wholeDeckShufflePending(game.store.state)));
+    segment.start = now;
+  };
+
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
     const beforeState = projectState(game.state, game.ctx);
+    segment = { start: beforeState, legs: [] };
     // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
     const beforeNames = basicIidDisplayNames(game.state, game.ctx);
     let starved: FlipStarvation | undefined;
+    let cut: { start: NeutralState; legs: NeutralEvent[] } | undefined;
     try {
       fire();
     } catch (err) {
@@ -740,6 +752,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // catch site can pause with a system flip pending (drives AFTER_ATTACK flips without touching cards).
       game.state = game.store.state;
       starved = err;
+    } finally {
+      cut = segment;
+      segment = undefined;
     }
     const afterState = projectState(game.state, game.ctx);
     // All-card iid -> name (energy/tool/evolution names for the observed-tier state-diff derivations).
@@ -760,7 +775,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         }
       }
     }
-    events.push(...deriveMoved(beforeState, afterState, revealedSince, wholeDeckShufflePending(game.state)));
+    // A starved dispatch may have rolled back past its cuts: then the single before/after diff is the trace.
+    if (starved === undefined && cut !== undefined && cut.legs.length > 0) {
+      events.push(...cut.legs, ...deriveMoved(cut.start, afterState, revealedSince, wholeDeckShufflePending(game.state)));
+    } else {
+      events.push(...deriveMoved(beforeState, afterState, revealedSince, wholeDeckShufflePending(game.state)));
+    }
     revealedSince.clear();
     if (starved !== undefined) { throw starved; }
   };
@@ -798,6 +818,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection };
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
+    CardList.legCut = undefined;
   }
 
   function loop(): LoopResult {

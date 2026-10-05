@@ -465,6 +465,7 @@ export class Player {
 
       this.active = this.bench[benchIndex];
       this.bench[benchIndex] = temp;
+      CardList.legCut?.(this);   // B.81 (conformance; inert for gameplay)
 
       const activePokemon = this.active.getPokemonCard();
       if (activePokemon) {

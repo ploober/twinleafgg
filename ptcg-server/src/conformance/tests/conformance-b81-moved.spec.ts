@@ -551,3 +551,28 @@ describe('B.80 / B.81: Bug Catching Set pre-102 takes from the lifted window (TA
     expect(back?.destination).toEqual({ zone: 'deck', position: 'any' });
   });
 });
+
+describe('B.81 moved: a switch inside one dispatch is an ordering point (a cut)', () => {
+  // Bayleef meg-009 Push Down deals 50, then the Defending Pokémon is switched to the Bench and its replacement
+  // promoted, all inside one attack; the Knock Out check at the end of the attack then discards the damaged Pokémon
+  // FROM THE BENCH. A board diff over the whole dispatch sees only active -> discardPile. The legs are cut once the
+  // switch completes (CardList.legCut, from Player.switchPokemon / applyPromotion), so the trace shows the stop on
+  // the Bench. Mutation guard: drop the legCut call in switchPokemon and this reds (active -> discardPile).
+  it('Push Down: the pushed Pokémon and its cards go active -> bench, then bench -> discardPile [TA-604]', () => {
+    const a1: PokemonInPlay = { stack: [{ iid: 'a1', printing: 'por-039' }], energy: [{ iid: 'a1e0', printing: 'sve-006' }, { iid: 'a1e1', printing: 'sve-006' }],
+      tools: [{ iid: 'a1t0', printing: 'tef-151' }], damage: 60, conditions: [], markers: markers() };
+    const b1: PokemonInPlay = { stack: [{ iid: 'b1', printing: 'meg-008' }, { iid: 'b1z', printing: 'meg-009' }],
+      energy: [{ iid: 'b1e0', printing: GRASS }, { iid: 'b1e1', printing: 'sve-003' }], tools: [], damage: 0, conditions: [], markers: markers() };
+    const initial: NeutralState = { ...game(
+      player({ active: a1, bench: [basic('a2', 'twm-118')], hand: cards('ah', 1, 'sve-003'), deck: cards('ad', 4, 'sve-003'), prizes: prizes('ap', 6) }),
+      player({ active: b1, hand: cards('bh', 1, 'sve-003'), deck: cards('bd', 4, 'sve-003'), prizes: prizes('bp', 6) })),
+      turn: 4, activePlayer: 'B' };
+    const res = step(initial, [{ actor: 'B', type: 'declareAttack', source: 'b1', name: 'Push Down' } as never]);
+    const legs = (iid: string) => moved(res.events).filter(e => e.card === iid).map(e => `${place(e.owner, e.origin)}>${place(e.owner, e.destination)}`);
+    expect(legs('a1')).toEqual(['active:a1:pokemon>bench:a1:pokemon', 'bench:a1:pokemon>A.discardPile']);
+    expect(legs('a1e0')).toEqual(['active:a1:energy>bench:a1:energy', 'bench:a1:energy>A.discardPile']);
+    expect(legs('a1t0')).toEqual(['active:a1:tool>bench:a1:tool', 'bench:a1:tool>A.discardPile']);
+    expect(legs('a2')).toEqual(['bench:a2:pokemon>active:a2:pokemon']);
+    expect(replays(initial, res)).toEqual([]);
+  });
+});
