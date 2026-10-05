@@ -430,8 +430,8 @@
     {
       "file": "set-surging-sparks/pikachu-ex.ts",
       "signatures": [
-        "const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);",
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
+        "discardAfterDamage(checkProvidedEnergy.energyMap.map(e => e.card));",
+        "energyPrompt.deferredMove = true;"
       ],
       "state": "guarding",
       "fixes": [
@@ -2019,7 +2019,7 @@
     {
       "file": "game/store/prefabs/costs.ts",
       "signatures": [
-        "const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));",
+        "const cards = eligible.map(em => em.card);",
         "return matchesCardFilter(card, filter);"
       ],
       "state": "guarding"

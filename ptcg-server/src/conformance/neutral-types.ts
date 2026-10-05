@@ -616,6 +616,8 @@ export type NeutralEvent =
   // zone-replay law (initialState + the trace's legs = the response's board). Derived in moved-events.ts from a
   // before/after board diff per dispatch, plus the mid-decision fix-up legs at a pause (driver.step).
   | { kind: 'moved'; owner: NeutralPlayerId; card: string; origin: Location; destination: Location; visibility: TransitVisibility }
+  // B.82 / CF-93 (contract 0.14.0): a card IN PLAY an attack chose before its damage; it stays at `origin` and moves after.
+  | { kind: 'chosen'; owner: NeutralPlayerId; card: string; origin: Location; visibility: TransitVisibility }
   // ── SHARED-OBSERVED + informational trace — pinned, NOT diffed (`player`, not `actor`) ──
   | { kind: 'benchedBasic'; player: NeutralPlayerId; card: string }
   | { kind: 'evolved'; player: NeutralPlayerId; card: string; pokemon: string }

@@ -1,5 +1,6 @@
+import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCard, CardTag, Stage, CardType, StoreLike, State, StateUtils, PowerType, Card, ChooseEnergyPrompt, GameMessage } from '../../../game';
-import { DealDamageEffect, DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
@@ -59,12 +60,8 @@ export class Pikachuex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // Rulebook attack step F / compendium #649: the 300 is placed before the
-      // post-damage discard effect pauses on its energy choice.
-      const damageEffect = new DealDamageEffect(effect, effect.damage);
-      state = store.reduceEffect(state, damageEffect);
-      effect.damage = 0;
-
+      // B.82 (#1834, #2002; reverses FX-0165's B.76 order, TA-609): the choice is made first, the 300 is dealt with
+      // the chosen Energy still attached, and they are discarded after it (AttackEffect.afterDamageMoves).
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
@@ -79,25 +76,30 @@ export class Pikachuex extends PokemonCard {
       // cards) were all discarded with no choice, although compendium #833 makes discarding
       // a 2-Energy card plus one other a legal "Discard 3 Energy" that keeps a card.
       const providedEnergy = checkProvidedEnergy.energyMap.reduce((n, e) => n + e.provides.length, 0);
+      const discardAfterDamage = (cards: Card[]): void => {
+        effect.afterDamageMoves.push(() => {
+          const discardEnergy = new DiscardCardsEffect(effect, cards);
+          discardEnergy.target = player.active;
+          store.reduceEffect(state, discardEnergy);
+        });
+      };
       if (providedEnergy <= 3) {
-        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-        const discardEnergy = new DiscardCardsEffect(effect, cards);
-        discardEnergy.target = player.active;
-        store.reduceEffect(state, discardEnergy);
+        discardAfterDamage(checkProvidedEnergy.energyMap.map(e => e.card));
         return state;
       }
 
-      state = store.prompt(state, new ChooseEnergyPrompt(
+      const energyPrompt = new ChooseEnergyPrompt(
         player.id,
         GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
         checkProvidedEnergy.energyMap,
         [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS],
         { allowCancel: false }
-      ), energy => {
+      );
+      energyPrompt.deferredMove = true;
+      state = store.prompt(state, energyPrompt, energy => {
         const cards: Card[] = (energy || []).map(e => e.card);
-        const discardEnergy = new DiscardCardsEffect(effect, cards);
-        discardEnergy.target = player.active;
-        store.reduceEffect(state, discardEnergy);
+        CardList.chosen?.(cards);
+        discardAfterDamage(cards);
       });
     }
 

@@ -1,3 +1,4 @@
+import { CardList } from '../../../game/store/state/card-list';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, Card, State, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, SlotType, ShuffleDeckPrompt, StateUtils } from '../../../game';
@@ -96,16 +97,21 @@ export class Greninjaex extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
+      // B.82 / #2002: "You first CHOOSE the energy you're going to discard, then do the damage ..., and THEN discard
+      // the energy." The chosen Energy stay attached through the target pick and the 120s (TA-610).
+      const energyPrompt = new ChooseEnergyPrompt(
+        player.id,
+        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
+        checkProvidedEnergy.energyMap,
+        [CardType.COLORLESS, CardType.COLORLESS],
+        { allowCancel: false },
+      );
+      energyPrompt.deferredMove = true;
       state = store.prompt(
         state,
-        new ChooseEnergyPrompt(
-          player.id,
-          GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
-          checkProvidedEnergy.energyMap,
-          [CardType.COLORLESS, CardType.COLORLESS],
-          { allowCancel: false },
-        ),
+        energyPrompt,
         (energy) => {
+          CardList.chosen?.((energy || []).map((e) => e.card));
           // TA-390: "2 of your opponent's Pokemon" is a FIXED count, not "up to 2" — `min: 1` offered a
           // stop after the first target (halving the attack) and left the forced second pick surfaced.
           // Pin min === max === min(2, available); the adapter collapses the forced set (CF-14, TA-317 idiom).

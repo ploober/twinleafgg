@@ -34,6 +34,13 @@ export class DiscardEnergyPrompt extends Prompt<DiscardEnergyTransfer[]> {
   public options: DiscardEnergyOptions;
   public cardList!: CardList;
 
+  /**
+   * B.82 (conformance projection; inert for gameplay): set by an attack prefab that asks this choice BEFORE the
+   * attack's damage and moves the chosen cards after it (AttackEffect.afterDamageMoves). The adapter then leaves
+   * picks 1..k where they are at a mid-decision pause and records them as `chosen`.
+   */
+  public deferredMove?: boolean;
+
   constructor(
     playerId: number,
     public message: GameMessage,

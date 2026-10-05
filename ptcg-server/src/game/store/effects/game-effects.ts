@@ -207,6 +207,12 @@ export class AttackEffect implements Effect {
   public source: PokemonCardList;
   public invisibleTentacles?: boolean = false;
   target: any;
+  /**
+   * B.82 (#1834, #2002, #2031): an attack's choice of cards in play is made first, the damage reads them where they
+   * are, and they move after the damage. A prefab that asks such a choice queues the move here; the attack flow
+   * runs the queue right after the damage, before AfterAttackEffect (game-effect useAttack, copy-attack-delegation).
+   */
+  public afterDamageMoves: Array<() => void> = [];
 
   constructor(player: Player, opponent: Player, attack: Attack) {
     this.player = player;

@@ -92,6 +92,13 @@ export class CardList {
    */
   public static legCut?: (player: unknown) => void;
 
+  /**
+   * Conformance only, inert for gameplay: called when an attack's pre-damage choice of cards in play resolves
+   * (B.82), with the chosen cards. They stay where they are until AttackEffect.afterDamageMoves moves them; the
+   * driver records each as a `chosen` event.
+   */
+  public static chosen?: (cards: Card[]) => void;
+
   private stampMovedCards(cards: Card[], destination: CardList): void {
     if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
     if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }

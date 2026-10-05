@@ -1,3 +1,4 @@
+import { Card } from '../../game/store/card/card';
 import { DiscardEnergyPrompt } from '../../game/store/prompts/discard-energy-prompt';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget, PlayerType } from '../../game/store/actions/play-card-action';
@@ -103,7 +104,14 @@ export const discardEnergyDecomposer: PromptDecomposer<DiscardEnergyPrompt> = {
   },
 
   /** B.80 / #916: a `discard` pick is in its owner's discard pile at once. */
+  pickedCards(prompt, picks, _ctx, state) {
+    const player = promptPlayer(state, prompt.playerId);
+    return (realPicks(picks) as Array<{ from: CardTarget; index: number }>)
+      .map(p => StateUtils.getTarget(state, player, p.from).cards[p.index]).filter((c): c is Card => c !== undefined);
+  },
+
   fixupProjection(prompt, picks, ctx, state, projected) {
+    if (prompt.deferredMove) { return; }   // B.82: a pre-damage choice; the picked Energy stays attached
     const player = promptPlayer(state, prompt.playerId);
     for (const p of realPicks(picks) as Array<{ from: CardTarget; index: number }>) {
       const card = StateUtils.getTarget(state, player, p.from).cards[p.index];

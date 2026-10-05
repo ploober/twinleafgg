@@ -91,6 +91,11 @@ export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
   toPick(prompt: P, action: NeutralAction, ctx: IidContext, state: State, picks?: WirePick[]): WirePick;
   assemble(prompt: P, picks: WirePick[]): unknown;
   fixupProjection?(prompt: P, picks: WirePick[], ctx: IidContext, state: State, projected: NeutralState): void;
+  /**
+   * B.82: the cards picks 1..k name, for a prompt the engine marked `deferredMove` (an attack's pre-damage choice of
+   * cards in play). The driver records them as `chosen` at a mid-decision pause; they stay where they are.
+   */
+  pickedCards?(prompt: P, picks: WirePick[], ctx: IidContext, state: State): Card[];
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────

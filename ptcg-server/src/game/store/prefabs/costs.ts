@@ -7,6 +7,7 @@ import { CheckProvidedEnergyEffect } from '../effects/check-effects';
 import { AttackEffect } from '../effects/game-effects';
 import { AfterAttackEffect } from '../effects/game-phase-effects';
 import { PokemonCardList } from '../state/pokemon-card-list';
+import { CardList } from '../state/card-list';
 
 // =============================================================================
 // Internal helpers
@@ -135,18 +136,22 @@ export function DISCARD_UP_TO_X_ENERGY_FROM_YOUR_POKEMON(
   const promptMax = Math.min(maxAmount, availableEnergy);
   const promptMin = Math.min(Math.max(0, minAmount), promptMax);
 
-  return store.prompt(state, new DiscardEnergyPrompt(
+  const prompt = new DiscardEnergyPrompt(
     player.id,
     GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
     PlayerType.BOTTOM_PLAYER,
     slots,
     { superType: SuperType.ENERGY, ...filter },
     { allowCancel: false, min: promptMin, max: promptMax }
-  ), transfers => {
+  );
+  prompt.deferredMove = true;   // B.82
+  return store.prompt(state, prompt, transfers => {
     if (transfers === null || transfers.length === 0) {
       return state;
     }
-    state = discardTransfersAsEffects(store, state, effect, transfers);
+    // B.82: the choice is made now; the damage counts the chosen cards where they are; they move after it.
+    CardList.chosen?.(transfers.map(t => t.card));
+    effect.afterDamageMoves.push(() => { state = discardTransfersAsEffects(store, state, effect, transfers); });
     if (onDiscarded !== undefined) {
       onDiscarded(transfers);
     }
@@ -206,14 +211,16 @@ export function DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
   const promptMax = Math.min(maxAmount, availableTypedEnergy);
   const promptMin = Math.min(Math.max(0, minAmount), promptMax);
 
-  return store.prompt(state, new DiscardEnergyPrompt(
+  const prompt = new DiscardEnergyPrompt(
     player.id,
     GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
     PlayerType.BOTTOM_PLAYER,
     slots,
     { superType: SuperType.ENERGY },
     { allowCancel: false, min: promptMin, max: promptMax, blockedMap }
-  ), transfers => {
+  );
+  prompt.deferredMove = true;   // B.82
+  return store.prompt(state, prompt, transfers => {
     if (transfers === null || transfers.length === 0) {
       return state;
     }
@@ -222,7 +229,9 @@ export function DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
       throw new GameError(GameMessage.INVALID_PROMPT_RESULT);
     }
 
-    state = discardTransfersAsEffects(store, state, effect, transfers);
+    // B.82: the choice is made now; the damage counts the chosen cards where they are; they move after it.
+    CardList.chosen?.(transfers.map(t => t.card));
+    effect.afterDamageMoves.push(() => { state = discardTransfersAsEffects(store, state, effect, transfers); });
     if (onDiscarded !== undefined) {
       onDiscarded(transfers);
     }
@@ -256,11 +265,23 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     type === CardType.COLORLESS
     || em.provides.includes(type)
     || em.provides.includes(CardType.ANY));
+  // B.82 (#1834, #2002): called from the attack's own effect (before its damage), the choice is made now and the
+  // chosen Energy stay attached until the damage is done; AttackEffect.afterDamageMoves discards them after it.
+  // Called from AFTER_ATTACK the damage is already done, so the discard is immediate.
+  const deferred = effect instanceof AttackEffect;
+  const discard = (cards: Card[]): void => {
+    const discardEnergy = new DiscardCardsEffect(base, cards);
+    discardEnergy.target = player.active;
+    state = store.reduceEffect(state, discardEnergy);
+  };
   if (eligible.length <= amount) {
     if (eligible.length > 0) {
-      const discardEnergy = new DiscardCardsEffect(base, eligible.map(em => em.card));
-      discardEnergy.target = player.active;
-      state = store.reduceEffect(state, discardEnergy);
+      const cards = eligible.map(em => em.card);
+      if (deferred) {
+        (effect as AttackEffect).afterDamageMoves.push(() => discard(cards));
+      } else {
+        discard(cards);
+      }
     }
     return state;
   }
@@ -270,17 +291,23 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     energyList.push(type);
   }
 
-  state = store.prompt(state, new ChooseEnergyPrompt(
+  const prompt = new ChooseEnergyPrompt(
     player.id,
     GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
     checkProvidedEnergy.energyMap,
     energyList,
     { allowCancel: false }
-  ), energy => {
+  );
+  prompt.deferredMove = deferred;
+  state = store.prompt(state, prompt, energy => {
     const cards: Card[] = (energy || []).map(e => e.card);
-    const discardEnergy = new DiscardCardsEffect(base, cards);
-    discardEnergy.target = player.active;
-    return store.reduceEffect(state, discardEnergy);
+    if (deferred) {
+      CardList.chosen?.(cards);
+      (effect as AttackEffect).afterDamageMoves.push(() => discard(cards));
+      return state;
+    }
+    discard(cards);
+    return state;
   });
 
   return state;

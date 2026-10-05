@@ -1,3 +1,4 @@
+import { Card } from '../../game/store/card/card';
 import { ChooseEnergyPrompt } from '../../game/store/prompts/choose-energy-prompt';
 import { GameMessage } from '../../game/game-message';
 import { StateUtils } from '../../game/store/state-utils';
@@ -213,7 +214,12 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
    *  (public: attached Energy is face up) with the destination the message declares (CF-8). B.81: the origin
    *  is the full in-play Location (section, stack, role: energy), read off the projection the card is lifted
    *  from; a to-deck destination is omitted (the adapter cannot read top / bottom / shuffle off the message). */
+  pickedCards(prompt, picks) {
+    return (realPicks(picks) as Array<{ index: number }>).map(p => prompt.energy[p.index]?.card).filter((c): c is Card => c !== undefined);
+  },
+
   fixupProjection(prompt, picks, ctx, _state, projected) {
+    if (prompt.deferredMove) { return; }   // B.82: a pre-damage choice; the picked Energy stays attached
     const move = isMovePick(prompt);
     const toHand = prompt.message !== GameMessage.CHOOSE_ENERGIES_TO_DECK;
     for (const p of realPicks(picks) as Array<{ index: number }>) {

@@ -354,6 +354,11 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
     state = store.reduceEffect(state, dealDamage);
   }
 
+  // B.82: the cards the copied attack's text chose before its damage move now, after it.
+  for (const move of attackEffect.afterDamageMoves.splice(0)) {
+    move();
+  }
+
   if (!skipAfterAttack) {
     // TA-128 (family-A migration): AfterAttackEffect carries the originating AttackEffect so a
     // post-damage rider migrated onto AFTER_ATTACK can build damage/counter sub-effects, which need
@@ -438,6 +443,14 @@ export function* runDelegatedCopiedAttackGenerator(
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }
+  }
+
+  // B.82: the cards the copied attack's text chose before its damage move now, after it.
+  for (const move of attackEffect.afterDamageMoves.splice(0)) {
+    move();
+  }
+  if (store.hasPrompts()) {
+    yield store.waitPrompt(state, () => next());
   }
 
   if (!skipAfterAttack) {

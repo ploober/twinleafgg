@@ -9,6 +9,7 @@ import { isDiscardPick } from './decomposers/choose-cards';
 import { liftToTransit, locationOfTag } from './transit-projection';
 import { deriveMoved } from './moved-events';
 import { State, GameWinner } from '../game/store/state/state';
+import { SuperType } from '../game/store/card/card-types';
 import { setupGame } from '../game/store/reducers/setup-reducer';
 import { Prompt } from '../game/store/prompts/prompt';
 import { ShowCardsPrompt } from '../game/store/prompts/show-cards-prompt';
@@ -678,6 +679,29 @@ function wholeDeckShufflePending(state: State): Set<NeutralPlayerId> {
   return out;
 }
 
+/**
+ * B.82 / CF-93: the `chosen` event for a card IN PLAY an attack chose before its damage: its owner, its place on the
+ * stack (the card stays there until the effect moves it after the damage), visibility `public` (a card in play).
+ * Undefined for a card not on a Pokémon in play: the contract allows `chosen` only there.
+ */
+function chosenEvent(game: ImportedGame, card: Card): NeutralEvent | undefined {
+  const iid = game.ctx.cardToIid.get(card);
+  if (iid === undefined) { return undefined; }
+  const players = game.store.state.players;
+  for (let i = 0; i < players.length; i++) {
+    const p = players[i];
+    const lists: Array<[PokemonCardList, 'active' | 'bench']> = [[p.active, 'active'], ...p.bench.map(b => [b, 'bench'] as [PokemonCardList, 'bench'])];
+    for (const [list, section] of lists) {
+      if (!list.cards.includes(card)) { continue; }
+      const basic = game.ctx.cardToIid.get(list.getPokemons()[0]);
+      if (basic === undefined) { return undefined; }
+      const role = card.superType === SuperType.ENERGY ? 'energy' : card.superType === SuperType.TRAINER ? 'tool' : 'pokemon';
+      return { kind: 'chosen', owner: i === 0 ? 'A' : 'B', card: iid, origin: { zone: section, pokemon: basic, role }, visibility: 'public' };
+    }
+  }
+  return undefined;
+}
+
 function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
@@ -731,9 +755,20 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     segment.start = now;
   };
 
+  // B.82 / CF-93: the cards an attack chose before its damage, recorded when the choice resolves (CardList.chosen,
+  // from the cost prefabs); emitted in the dispatch's events ahead of its legs (a chosen card's move comes later).
+  const chosenOps: NeutralEvent[] = [];
+  CardList.chosen = (cards: Card[]): void => {
+    for (const c of cards) {
+      const e = chosenEvent(game, c);
+      if (e !== undefined) { chosenOps.push(e); }
+    }
+  };
+
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
+    const beforeChosen = chosenOps.length;
     const beforeState = projectState(game.state, game.ctx);
     segment = { start: beforeState, legs: [] };
     // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
@@ -763,6 +798,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const draws = drawOps.splice(beforeDraws);
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
       draws));
+    events.push(...chosenOps.splice(beforeChosen));
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
     // TA-591: a card shown by a ShowCardsPrompt still open at the end of this dispatch was revealed by it — the
     // engine raises the show and moves the card in one callback (SEARCH_DECK_FOR_CARDS_TO_HAND: "reveal it, and put
@@ -819,6 +855,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
+    CardList.chosen = undefined;
   }
 
   function loop(): LoopResult {
@@ -1244,6 +1281,13 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     // picks already made read as applied (e.g. a picked prize is in the hand, not the pile).
     const dec = decomposerFor(midPrompt.prompt);
     dec.fixupProjection?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state);
+    // B.82 / CF-93: picks 1..k of an attack's pre-damage choice stay where they are and are recorded as `chosen`.
+    if ((midPrompt.prompt as { deferredMove?: boolean }).deferredMove && rejection === undefined) {
+      for (const c of dec.pickedCards?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state) ?? []) {
+        const e = chosenEvent(game, c);
+        if (e !== undefined) { events.push(e); }
+      }
+    }
   }
   if (pending !== null && completedSearches !== undefined) {
     // B.80: a search completed earlier in this step whose chosen cards the engine still keeps in the

@@ -406,6 +406,14 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
       }
     }
 
+    // B.82: the cards the attack's text chose before its damage move now, after it.
+    for (const move of attackEffect.afterDamageMoves.splice(0)) {
+      move();
+    }
+    if (store.hasPrompts()) {
+      yield store.waitPrompt(state, () => next());
+    }
+
     const afterAttackEffect = new AfterAttackEffect(effect.player, opponent, attack, attackEffect);
     state = store.reduceEffect(state, afterAttackEffect);
 
