@@ -269,7 +269,7 @@ export class Player {
   chainsOfControlUsed: any;
   pokemonKnockedOutDuringOpponentsLastTurn = false;
   pokemonKnockedOutByAttackDuringOpponentsLastTurn = false;
-  pokemonKnockedOutLastTurnEntries: CardTag[][] = [];
+  pokemonKnockedOutLastTurnEntries: { tags: CardTag[]; byAttackDamage: boolean }[] = [];
   usedDragonsWish = false;
   /**
    * Dragon's Wish countdown. 2 = armed this turn (not yet active), 1 = unlimited

@@ -118,6 +118,7 @@ function resetEmptyPokemonSlot(slot: PokemonCardList): void {
   slot.removeAttackEffects();
   slot.clearEffects();
   slot.damage = 0;
+  slot.attackDamagedOnTurn = -1;
   slot.hp = 0;
   slot.specialConditions = [];
   slot.poisonDamage = 10;
@@ -722,14 +723,18 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
       const duringOpponentsTurn = [GamePhase.PLAYER_TURN, GamePhase.ATTACK].includes(state.phase)
         && state.players[state.activePlayer] === attacker;
 
+      // TA-573: "Knocked Out by damage from an attack" is a fact about THIS Pokémon — it took the attack's damage this
+      // turn — not the player-level "an attack did damage to one of your Pokémon" marker, which paired a counter-KO'd
+      // Ethan's Pokémon with another Pokémon's damage KO.
+      const byAttackDamage = state.phase === GamePhase.ATTACK
+        && state.players[state.activePlayer] === attacker
+        && effect.target.attackDamagedOnTurn === state.turn;
       if (duringOpponentsTurn) {
         knockedOutOwner.pokemonKnockedOutDuringOpponentsLastTurn = true;
-        knockedOutOwner.pokemonKnockedOutLastTurnEntries.push([...(card.tags || [])] as CardTag[]);
+        knockedOutOwner.pokemonKnockedOutLastTurnEntries.push({ tags: [...(card.tags || [])] as CardTag[], byAttackDamage });
       }
 
-      if (state.phase === GamePhase.ATTACK &&
-        state.players[state.activePlayer] === attacker &&
-        knockedOutOwner.marker.hasMarker(knockedOutOwner.DAMAGE_DEALT_MARKER)) {
+      if (byAttackDamage) {
         knockedOutOwner.pokemonKnockedOutByAttackDuringOpponentsLastTurn = true;
       }
 

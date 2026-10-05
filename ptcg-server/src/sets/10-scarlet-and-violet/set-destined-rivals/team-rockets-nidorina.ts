@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
-import { Card, CardManager, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, GameLog, GameMessage, PlayerType, PokemonCardList, SlotType, State, StoreLike, pokemonHasCardType, pokemonHasCardTypeOptional } from '../../../game';
+import { Card, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, GameLog, GameMessage, PlayerType, PokemonCardList, SlotType, State, StoreLike, pokemonHasCardTypeOptional } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
@@ -19,27 +19,16 @@ function* useDarkAwakening(
     return SHUFFLE_DECK(store, state, player);
   }
 
-  // Look through all known cards to find out if Pokemon can evolve
-  const cm = CardManager.getInstance();
-  const evolutions = cm.getAllCards().filter((c) => {
-    return c instanceof PokemonCard && c.stage !== Stage.BASIC;
-  }) as PokemonCard[];
-
-  // Build possible evolution card names
-  const evolutionNames: string[] = [];
-  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-    const valid = evolutions.filter(
-      (e) => e.evolvesFrom === card.name && pokemonHasCardType(e, CardType.DARK),
-    );
-    valid.forEach((c) => {
-      if (!evolutionNames.includes(c.name)) {
-        evolutionNames.push(c.name);
-      }
-    });
+  // TA-574: "Choose up to 2 of your [D] Pokémon" — the [D] is on the Pokémon in play; the card that evolves from it
+  // may be any type (Morpeko V -> Lightning Morpeko VMAX). The old gate required a Darkness EVOLUTION and skipped the
+  // pick, the search and the shuffle otherwise. Nothing to choose only when no [D] Pokémon is in play.
+  let anyDark = false;
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list) => {
+    if (pokemonHasCardTypeOptional(list.getPokemonCard(), CardType.DARK)) {
+      anyDark = true;
+    }
   });
-
-  // There is nothing that can evolve
-  if (evolutionNames.length === 0) {
+  if (!anyDark) {
     return state;
   }
 

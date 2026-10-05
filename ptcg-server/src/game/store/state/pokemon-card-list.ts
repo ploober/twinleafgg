@@ -69,6 +69,9 @@ export type StoredRetaliateOnDamage = RetaliateOnDamageOptions & {
 
 export class PokemonCardList extends CardList {
   public damage: number = 0;
+
+  /** TA-573: the turn on which attack damage was last put on this Pokémon (-1: never) — a KO's cause is per Pokémon. */
+  public attackDamagedOnTurn: number = -1;
   public hp: number = 0;
   public specialConditions: SpecialCondition[] = [];
   public poisonDamage: number = 10;

@@ -3096,8 +3096,10 @@ export function WAS_POKEMON_KNOCKED_OUT_DURING_OPPONENTS_LAST_TURN(
   }
 
   if (filter?.tags?.length) {
+    // TA-573: the tags and the attack-damage cause must hold for the SAME Knocked Out Pokémon.
     return player.pokemonKnockedOutLastTurnEntries.some((entry) =>
-      filter.tags!.every((tag) => entry.includes(tag)),
+      (!filter.byAttackDamage || entry.byAttackDamage)
+      && filter.tags!.every((tag) => entry.tags.includes(tag)),
     );
   }
 

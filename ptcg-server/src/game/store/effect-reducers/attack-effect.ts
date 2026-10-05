@@ -27,6 +27,7 @@ function applyPutDamage(store: StoreLike, state: State, effect: PutDamageEffect)
   target.damage += damage;
 
   if (damage > 0) {
+    target.attackDamagedOnTurn = state.turn;   // TA-573: the KO cause is per Pokémon
     store.log(state, GameLog.LOG_PLAYER_DEALS_DAMAGE, {
       name: sourceOwner.name,
       damage: damage,
