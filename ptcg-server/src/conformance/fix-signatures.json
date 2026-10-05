@@ -9869,6 +9869,16 @@
       "fixes": [
         "FX-0372"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/wellspring-mask-ogerpon-ex.ts",
+      "signatures": [
+        "              const benchDamage = new DealDamageEffect(effect, 120);"
+      ],
+      "note": "TA-566, TA-586 (2026-10-04): Wellspring Mask Ogerpon ex twm-064 Torrential Pump: the Bench 120 is done while the Energy is attached (#2031: Double Tu",
+      "fixes": [
+        "FX-0373"
+      ]
     }
   ]
 }
