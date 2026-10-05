@@ -3340,11 +3340,13 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);
   });
 
-  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder is in transit (hidden, bound for the deck bottom; B.80) [CF-86 / B.68 tef-114]', () => {
+  it('while the Metal Maker bottom-segment shuffle is OPEN the remainder is in transit (owner: it was looked at; bound for the deck bottom; B.80 / B.81 §4) [CF-86 / B.68 tef-114]', () => {
     // The engine bottoms the remainder and THEN raises the shuffle; the printed text shuffles first and
     // puts on the bottom second. CF-86 (2026-09-29) projected the pile at the deck top; B.80 (2026-10-04):
     // a sub-pile being shuffled face down is in TRANSIT, `origin: deck`, `destination: deckBottom`,
-    // `visibility: hidden`, and the rest of the deck projects as it is.
+    // and the rest of the deck projects as it is. Visibility `owner`, not `hidden` (B.81 §4, a card its owner
+    // has seen is never hidden; rotomancer N-0278 §3): Metal Maker's owner looked at all four before the rest
+    // went under. TA-591 had projected every deck-sourced segment `hidden`.
     const deck = Array.from({ length: 6 }, (_, i) => ({ iid: `d${i}`, printing: WATER }));
     const b = () => board(
       player({ active: inPlay('A-act', ['tef-114']), deck }),
@@ -3354,7 +3356,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const paused = step(b(), [use]);
     expect(paused.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5']);
     expect(paused.state.players.A.transit).toEqual(['d0', 'd1', 'd2', 'd3'].map(iid =>
-      ({ iid, printing: WATER, origin: { zone: 'deck' }, destination: { zone: 'deck', position: 'bottom' }, visibility: 'hidden' })));
+      ({ iid, printing: WATER, origin: { zone: 'deck' }, destination: { zone: 'deck', position: 'bottom' }, visibility: 'owner' })));
     const after = step(b(), [use, { actor: 'system', type: 'shuffle', order: ['d3', 'd2', 'd1', 'd0'] } as unknown as NeutralAction]);
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);   // at rest: bottomed
     expect(after.state.players.A.transit).toEqual([]);

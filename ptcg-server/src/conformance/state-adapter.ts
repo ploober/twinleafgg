@@ -558,7 +558,7 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
  * B.80 (amends CF-86 / B.63 / TA-396c): at an open ShuffleDeckPrompt over the BOTTOM `bottomCount` cards of
  * the deck (a hand or a looked-at remainder that was put under the deck and is being shuffled), that
  * segment is a sub-pile being shuffled face down: it is in TRANSIT (`origin` = the prompt's source zone,
- * `destination: deckBottom`, `visibility: hidden`), not in the deck. The rest of the deck projects as it is.
+ * `destination: {deck, bottom}`, `visibility: owner` — its owner has seen it), not in the deck. The rest of the deck projects as it is.
  * A whole-deck shuffle (no `bottomCount`) lifts nothing: the deck zone IS the face-down stack.
  */
 function deckAndShuffleSegment(state: State, player: Player, ctx: IidContext): { deck: Card[]; inFlight: TransitRef[] } {
@@ -569,13 +569,15 @@ function deckAndShuffleSegment(state: State, player: Player, ctx: IidContext): {
   if (n <= 0) {
     return { deck: cards, inFlight: [] };
   }
-  // B.81: `origin` and `destination` are Locations. A hand-sourced segment (the Iono family) is KNOWN to its
-  // owner — a card its owner has seen is never `hidden` (B.81 §4) — so only a deck-sourced, never-looked
-  // segment is hidden.
+  // B.81: `origin` and `destination` are Locations. A card its owner has seen is never `hidden` (B.81 §4): a
+  // hand-sourced segment (the Iono family) is known to its owner, and so is every deck-sourced one twinleaf
+  // raises — the only deck-sourced bottom segment is the looked-at remainder of a "look at the top N" effect
+  // (moveRemainingTopDeckCards: Metal Maker tef-114, Delibird J-MEE). Rotomancer N-0278 §3 caught the
+  // `hidden` this used to say for it. A never-looked deck block would be `hidden`; no prefab raises one.
   const zone = (open as unknown as { zone?: string }).zone ?? 'deck';
   const origin = locationOfTag(zone);
   const inFlight: TransitRef[] = cards.slice(cards.length - n).map(c => {
-    const t: TransitRef = { ...cardRef(ctx, c), visibility: zone === 'deck' ? 'hidden' : 'owner', destination: { zone: 'deck', position: 'bottom' } };
+    const t: TransitRef = { ...cardRef(ctx, c), visibility: 'owner', destination: { zone: 'deck', position: 'bottom' } };
     if (origin !== undefined) { t.origin = origin; }
     return t;
   });
