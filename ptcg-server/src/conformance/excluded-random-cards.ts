@@ -36,7 +36,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Inkay M6",
   "Inkay ROS",
   "Inteleon SSH 59",
-  "Iono PAL",
   "Kingdra LOR",
   "Krokorok SUM",
   "Krookodile SIT 113",

@@ -150,10 +150,11 @@ describe('Conformance M6 — capabilities', () => {
 
     // CF-23: a nondeterministic (inline-Math.random) card is still ENUMERATED in its set listing,
     // flagged `nondeterministic: true` — the catalog no longer blanket-excludes such cards.
-    const iono = buildCardsForSet('pal').cards
-      .find(c => c.printing === toPrinting(getCardByName('Iono PAL')));
-    expect(iono).toBeDefined();
-    expect(iono!.nondeterministic).toBe(true);
+    // (Iono PAL was the example until TA-608 took it off its inline shuffle.)
+    const espeon = buildCardsForSet('pre').cards
+      .find(c => c.printing === toPrinting(getCardByName('Espeon ex PRE')));
+    expect(espeon).toBeDefined();
+    expect(espeon!.nondeterministic).toBe(true);
     // a set with no implemented cards → UnknownSetError (→ HTTP 404)
     expect(() => buildCardsForSet('zzz')).toThrowError(UnknownSetError);
   });

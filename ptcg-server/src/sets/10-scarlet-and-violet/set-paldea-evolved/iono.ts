@@ -6,7 +6,9 @@ import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { Card, GameError, GameMessage, Player } from '../../../game';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { DRAW_CARDS, MOVE_HAND_TO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MoveCardsEffect } from '../../../game/store/effects/game-effects';
+import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 
 export class Iono extends TrainerCard {
   public regulationMark = 'G';
@@ -61,56 +63,40 @@ export class Iono extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      this.shuffleCards(playerCards);
-      this.shuffleCards(opponentCards);
-
-      // One player at a time (hand→deck wait → draw) so board animations can finish.
-      const runOpponent = (): void => {
-        if (opponentCards.length > 0) {
-          MOVE_HAND_TO_DECK_THEN_DRAW(store, state, opponent, {
-            cards: opponentCards,
-            drawCount: opponent.getPrizeLeft(),
-            sourceCard: this,
-          });
-          return;
-        }
-        // Player put cards; opponent had an empty hand — still draws for prizes.
-        if (playerCards.length > 0) {
-          DRAW_CARDS(store, state, opponent, opponent.getPrizeLeft());
-        }
+      // TA-608: each hand was shuffled with an inline PRNG, so no shuffle was ever offered and the bottom order
+      // could not be supplied. TA-556 / B.74: the steps run in LOCKSTEP — both hands go under their decks, then each
+      // hand block is shuffled (ShuffleDeckPrompt {zone: hand, bottomCount}, the Grand Wing TA-458 / TA-591 shape),
+      // then each player draws. A put blocked by an effect (Milotic) puts nothing.
+      const putUnder = (who: Player, cards: Card[]): number => {
+        if (cards.length === 0) { return 0; }
+        const move = new MoveCardsEffect(who.hand, who.deck, { cards, sourceCard: this });
+        state = store.reduceEffect(state, move);
+        return move.preventDefault ? 0 : cards.length;
       };
+      const nPlayer = putUnder(player, playerCards);
+      const nOpponent = putUnder(opponent, opponentCards);
 
-      if (playerCards.length > 0) {
-        return MOVE_HAND_TO_DECK_THEN_DRAW(store, state, player, {
-          cards: playerCards,
-          drawCount: player.getPrizeLeft(),
-          sourceCard: this,
-          afterDraw: () => runOpponent(),
+      const draw = (): void => {
+        if (nPlayer + nOpponent === 0) { return; }
+        DRAW_CARDS(store, state, player, player.getPrizeLeft());
+        DRAW_CARDS(store, state, opponent, opponent.getPrizeLeft());
+      };
+      const shuffleBlock = (who: Player, n: number, next: () => void): State => {
+        if (n === 0) { next(); return state; }
+        return store.prompt(state, new ShuffleDeckPrompt(who.id, { zone: 'hand', bottomCount: n }), order => {
+          const deck = who.deck.cards;
+          const start = deck.length - n;
+          // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+          const segment = order.length === n ? order.map(i => start + i) : order.filter(i => i >= start);
+          if (segment.length === n && new Set(segment).size === n && segment.every(i => i >= start && i < deck.length)) {
+            who.deck.cards = [...deck.slice(0, start), ...segment.map(i => deck[i])];
+          }
+          next();
         });
-      }
-
-      // Only opponent has cards to put on the bottom.
-      return MOVE_HAND_TO_DECK_THEN_DRAW(store, state, opponent, {
-        cards: opponentCards,
-        drawCount: opponent.getPrizeLeft(),
-        sourceCard: this,
-        afterDraw: () => {
-          DRAW_CARDS(store, state, player, player.getPrizeLeft());
-        },
-        onMovePrevented: () => {
-          // Opponent put was blocked (e.g. Milotic); acting player still draws.
-          DRAW_CARDS(store, state, player, player.getPrizeLeft());
-        },
-      });
+      };
+      return shuffleBlock(player, nPlayer, () => { shuffleBlock(opponent, nOpponent, draw); });
     }
 
     return state;
-  }
-
-  private shuffleCards(cards: Card[]): void {
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [cards[i], cards[j]] = [cards[j], cards[i]];
-    }
   }
 }
