@@ -62,8 +62,9 @@ export class IronThorns extends PokemonCard {
       // cards move — the reveal then carries `from:"deck"` and the full top-5 in top-first order,
       // converging with rotomancer's CF-18 `reveal{owner, cards, from:"deck", to:"all"}`.
       const top5 = player.deck.cards.slice(0, 5);
-      const futureCards = top5.filter(c =>
-        c instanceof PokemonCard && c.hasTag(CardTag.FUTURE));
+      // TA-564: "each Future card" — any card with the Future tag (Techno Radar, Future Booster Energy Capsule are
+      // Future Trainers), not only Future Pokémon.
+      const futureCards = top5.filter(c => c.hasTag(CardTag.FUTURE));
 
       // TA-247: assign the damage BEFORE the empty-deck bail-out, not after. `damage: 70` with
       // `damageCalculation: 'x'` declares a MULTIPLICAND, not a base — so returning early left the
@@ -85,8 +86,7 @@ export class IronThorns extends PokemonCard {
         MOVE_CARDS(store, state, player.deck, deckTop, { count: 5, sourceCard: this });
 
         // Discard the revealed Future cards; shuffle the rest back into the deck.
-        const toDiscard = deckTop.cards.filter(c =>
-          c instanceof PokemonCard && c.hasTag(CardTag.FUTURE));
+        const toDiscard = deckTop.cards.filter(c => c.hasTag(CardTag.FUTURE));   // TA-564: every Future card
         deckTop.moveCardsTo(toDiscard, player.discard);
 
         // TA-251 / B.33: "shuffle THE OTHER cards back" — the revealed cards NOT discarded. If every
