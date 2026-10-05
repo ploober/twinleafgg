@@ -4,6 +4,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import {
   Card,
+  EnergyCard,
   ChooseEnergyPrompt,
   ChoosePokemonPrompt,
   ConfirmPrompt,
@@ -15,7 +16,7 @@ import {
   StateUtils,
 } from '../../../game';
 
-import { DealDamageEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import {WAS_ATTACK_USED, TERA_RULE, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { BLOCK_RETREAT } from '../../../game/store/prefabs/effect-of-attack-prefabs';
@@ -68,8 +69,9 @@ export class WellspringMaskOgerponex extends PokemonCard {
       effect.damage = 0;
 
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
-
-      if (!hasBench) {
+      // TA-586 / B.77: the "may" is offered whenever Energy can be shuffled — "if you do" gates the Bench damage on
+      // the shuffle, never the shuffle on a Bench target.
+      if (!player.active.cards.some(c => c instanceof EnergyCard)) {
         return state;
       }
 
@@ -92,30 +94,43 @@ export class WellspringMaskOgerponex extends PokemonCard {
           { allowCancel: false }
         ), energy => {
           const cards: Card[] = (energy || []).map(e => e.card);
-          MOVE_CARDS(store, state, player.active, player.deck, { cards: cards, sourceCard: this });
 
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-            player.deck.applyOrder(order);
-
-            return store.prompt(state, new ChoosePokemonPrompt(
-              player.id,
-              GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
-              PlayerType.TOP_PLAYER,
-              [SlotType.BENCH],
-              { min: 1, max: 1, allowCancel: false }
-            ), selected => {
-              const target = selected?.[0];
-              if (target) {
-                const damageEffect = new PutDamageEffect(effect, 120);
-                damageEffect.target = target;
-                store.reduceEffect(state, damageEffect);
-              }
-              return state;
+          // The chosen Energy goes into the deck AFTER the damage (compendium #2031: "damage is still reduced for the
+          // DTE since the detachment happens after damage is done"), then the deck is shuffled.
+          const shuffleIn = (): State => {
+            MOVE_CARDS(store, state, player.active, player.deck, { cards: cards, sourceCard: this });
+            return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+              player.deck.applyOrder(order);
             });
+          };
+
+          if (!hasBench) {
+            return shuffleIn();
+          }
+
+          // TA-566: the 120 is attack damage done while the Energy is attached (a DealDamageEffect: the attacker's
+          // modifiers such as Double Turbo Energy apply; a Benched target takes no Weakness or Resistance, TA-600).
+          return store.prompt(state, new ChoosePokemonPrompt(
+            player.id,
+            GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+            PlayerType.TOP_PLAYER,
+            [SlotType.BENCH],
+            { min: 1, max: 1, allowCancel: false }
+          ), selected => {
+            const target = selected?.[0];
+            if (target) {
+              const benchDamage = new DealDamageEffect(effect, 120);
+              benchDamage.target = target;
+              store.reduceEffect(state, benchDamage);
+            }
+            return shuffleIn();
           });
         });
+
         return state;
       });
+
+      return state;
     }
 
     TERA_RULE(effect, state, this);
