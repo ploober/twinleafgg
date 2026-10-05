@@ -9949,6 +9949,36 @@
       "fixes": [
         "FX-0377"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "        && effect.target.attackDamagedOnTurn === state.turn;"
+      ],
+      "note": "TA-573 (2026-10-04): A Knock Out's attack-damage cause is recorded per Pokemon (PokemonCardList.attackDamagedOnTurn; each last-turn KO entry ",
+      "fixes": [
+        "FX-0380"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-nidorina.ts",
+      "signatures": [
+        "    if (pokemonHasCardTypeOptional(list.getPokemonCard(), CardType.DARK)) {"
+      ],
+      "note": "TA-574 (2026-10-04): Team Rocket's Nidorina dri-115 Dark Awakening offers any [D] Pokemon in play, whatever the type of its evolution (Morpek",
+      "fixes": [
+        "FX-0381"
+      ]
+    },
+    {
+      "file": "game/store/state/player.ts",
+      "signatures": [
+        "  pokemonKnockedOutLastTurnEntries: { tags: CardTag[]; byAttackDamage: boolean }[] = [];"
+      ],
+      "note": "TA-573 (2026-10-04): each last-turn KO entry carries its own attack-damage cause",
+      "fixes": [
+        "FX-0380"
+      ]
     }
   ]
 }
