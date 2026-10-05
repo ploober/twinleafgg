@@ -105,4 +105,17 @@ describe('TA-608 / TA-556: Iono pal-185 shuffles each hand through a system shuf
     expect(res.state.players.B.deck.length).toBe(7);
     expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ad0', 'ad1', 'ad2', 'ad3']);
   });
+
+  it('an empty hand is still shuffled (B.62: a "shuffle your hand" is performed on a 0-card hand): shuffled {A, hand}, then B\'s shuffle [TA-608]', () => {
+    const b = board();
+    b.players.A.hand = [{ iid: 'iono', printing: IONO }];
+    const res = step(b, [PLAY as never]);
+    const zones = (res.events as Array<{ kind: string; player?: string; zone?: string }>)
+      .filter(e => e.kind === 'shuffled').map(e => `${e.player}:${e.zone}`);
+    expect(zones).toEqual(['A:hand']);
+    const pending = res.pending as unknown as Pending;
+    expect(pending.actor).toBe('system');
+    expect([...(pending.legalActions[0].deck ?? [])].sort()).toEqual(['y0', 'y1', 'y2']);
+  });
 });
+

@@ -97,10 +97,12 @@ export class Iono extends TrainerCard {
           return state;
         }
         const [who, pile] = piles[i];
-        const n = pile === undefined ? 0 : pile.cards.length;
-        if (n === 0) { return shuffle(i + 1); }
+        // A protected player's hand is not shuffled; an EMPTY hand still is (B.62: "you would shuffle your hand of
+        // zero cards"), so its shuffle is raised with an empty segment and resolves as the identity.
+        if (pile === undefined) { return shuffle(i + 1); }
+        const n = pile.cards.length;
         const start = who.deck.cards.length;
-        pile!.moveTo(who.deck);
+        pile.moveTo(who.deck);
         return store.prompt(state, new ShuffleDeckPrompt(who.id, { zone: 'hand', bottomCount: n }), order => {
           const deck = who.deck.cards;
           // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
@@ -108,7 +110,7 @@ export class Iono extends TrainerCard {
           const block = segment.length === n && new Set(segment).size === n && segment.every(k => k >= start && k < deck.length)
             ? segment.map(k => deck[k]) : deck.slice(start);
           who.deck.cards = deck.slice(0, start);
-          pile!.cards = block;
+          pile.cards = block;
           block.forEach((c, k) => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner', order: k }));
           shuffle(i + 1);
         });
