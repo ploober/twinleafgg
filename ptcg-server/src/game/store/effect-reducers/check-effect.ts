@@ -505,22 +505,31 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
   }
 
   // Handle KOs first
-  const pokemonsToDiscard = findKoPokemons(store, state);
+  const pokemonsToDiscard: PokemonItem[] = [];
+  const knockOutEffects: KnockOutEffect[] = [];
   // CF-38 KO window: every KO in this sweep is simultaneous, so their REACTIONS are one batch across
   // victims — one candidate per (reactor, victim), the victim on the wire as `subject`. Fewer than two
   // reactors: a no-op, and the per-victim dispatch below behaves exactly as it always has.
-  const knockOutEffects = pokemonsToDiscard.map(p => {
-    const knockOutEffect = new KnockOutEffect(state.players[p.playerNum], p.cardList);
-    knockOutEffect.viaCheckState = true;
-    return knockOutEffect;
-  });
-  if (knockOutEffects.length > 0) {
+  // TA-577: a reaction can itself Knock Out a Pokémon (Exploding Needles on the Attacking Pokémon). That Knock Out
+  // belongs to the SAME group — all Knocked Out Pokémon are discarded together and both players take Prizes
+  // (Advanced Rulebook KO steps 3-4; a race both win ties, B.51) — so the victims are re-collected after the
+  // reactions, and the new ones' reactions resolved in turn, until no new victim appears.
+  let fresh = findKoPokemons(store, state);
+  while (fresh.length > 0) {
+    const effects = fresh.map(p => {
+      const knockOutEffect = new KnockOutEffect(state.players[p.playerNum], p.cardList);
+      knockOutEffect.viaCheckState = true;
+      return knockOutEffect;
+    });
+    pokemonsToDiscard.push(...fresh);
+    knockOutEffects.push(...effects);
     // Only when there IS a KO: a sweep with none must not start waiting on a prompt some earlier step
     // left pending (a retreat's Energy choice, say) — that would be a new sequencing, not a batch.
-    state = store.resolveKnockOutReactions(state, knockOutEffects);
+    state = store.resolveKnockOutReactions(state, effects);
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }
+    fresh = findKoPokemons(store, state).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
   }
   for (let i = 0; i < pokemonsToDiscard.length; i++) {
     const pokemonToDiscard = pokemonsToDiscard[i];
