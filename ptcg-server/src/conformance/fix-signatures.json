@@ -9799,6 +9799,16 @@
       "fixes": [
         "FX-0368"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "    fresh = findKoPokemons(store, state).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));"
+      ],
+      "note": "TA-577 (2026-10-04): A Knock Out made by a Knock Out reaction joins the same Knock Out group: check-effect re-collects victims after the reac",
+      "fixes": [
+        "FX-0369"
+      ]
     }
   ]
 }
