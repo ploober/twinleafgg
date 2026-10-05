@@ -475,7 +475,7 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     // attached through the damage and is discarded after it. The effect has been reduced (every card saw it now);
     // only the move is queued on the in-flight attack, run right after the damage (game-effect useAttack).
     const pre = state.preDamageAttack as AttackEffect | undefined;
-    if (pre !== undefined && pre === effect.attackEffect && owner === pre.player
+    if (pre !== undefined && state.inChosenCallback === true && pre === effect.attackEffect && owner === pre.player
         && cards.length > 0 && cards.every(c => c.superType === SuperType.ENERGY)) {
       pre.afterDamageMoves.push(() => { target.moveCardsTo(cards.filter(c => target.cards.includes(c)), owner.discard); });
       return state;

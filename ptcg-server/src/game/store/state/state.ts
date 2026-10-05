@@ -72,6 +72,13 @@ export class State {
    */
   public preDamageAttack?: Effect;
 
+  /**
+   * B.82: true while the callback of a `deferredMove` prompt runs (the attacker's pre-damage choice of its own Energy).
+   * The generic deferrals (DiscardCardsEffect, MOVE_CARDS) apply only then: B.82 is about CHOSEN cards; a move of ALL
+   * the Energy (Phantasmal Barrage, Sonic Ripper) keeps its printed order.
+   */
+  public inChosenCallback?: boolean;
+
   public isSuddenDeath?: boolean;
 
   public benchSizeChangeHandled: boolean = false;

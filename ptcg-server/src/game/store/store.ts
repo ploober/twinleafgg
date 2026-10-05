@@ -450,12 +450,16 @@ export class Store implements StoreLike {
         if (source) {
           this.resolvingTrainer = source;
         }
+        const prevChosen = state.inChosenCallback;
+        state.inChosenCallback = promptItem.ids.some(id =>
+          (state.prompts.find(item => item.id === id) as { deferredMove?: boolean } | undefined)?.deferredMove === true);
         try {
           const itemIndex = this.promptItems.indexOf(promptItem);
           promptItem.then(results.length === 1 ? results[0] : results);
           this.promptItems.splice(itemIndex, 1);
         } finally {
           this.resolvingTrainer = previous;
+          state.inChosenCallback = prevChosen;
         }
       }
 

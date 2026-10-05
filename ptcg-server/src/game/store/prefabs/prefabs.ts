@@ -1917,7 +1917,7 @@ export function MOVE_CARDS(
   // hand or deck) stays attached through the damage and moves after it. Queued whole, so every card hook sees the
   // move once, when it happens.
   const pre = state.preDamageAttack as AttackEffect | undefined;
-  if (pre !== undefined && options.cards !== undefined && options.cards.length > 0
+  if (pre !== undefined && state.inChosenCallback === true && options.cards !== undefined && options.cards.length > 0
       && options.cards.every(c => c.superType === SuperType.ENERGY)
       && source instanceof PokemonCardList && (pre.player.active === source || pre.player.bench.includes(source))
       && (destination === pre.player.discard || destination === pre.player.hand || destination === pre.player.deck)) {
