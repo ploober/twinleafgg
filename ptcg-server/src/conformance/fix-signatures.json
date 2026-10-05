@@ -9819,6 +9819,36 @@
       "fixes": [
         "FX-0370"
       ]
+    },
+    {
+      "file": "set-pokemon-151/moltres.ts",
+      "signatures": [
+        "      // TA-565: \"Discard 2 [R] Energy from this Pokémon\" is owed whether or not there is a Benched Pokémon to hit;"
+      ],
+      "note": "TA-565 (2026-10-04): Moltres mew-146 Blazing Flight discards its 2 [R] Energy even when the opponent has no Benched Pokemon; only the Bench h",
+      "fixes": [
+        "FX-0371"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/attack-effect.ts",
+      "signatures": [
+        "    const skipForBench = onBench && !effect.applyWeaknessToBench;"
+      ],
+      "note": "TA-600 (2026-10-04): No Weakness or Resistance for a Benched Pokemon unless the card says so: DealDamageEffect skips W/R for a non-Active tar",
+      "fixes": [
+        "FX-0372"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "        if (target === base.opponent.active) {"
+      ],
+      "note": "TA-600 (2026-10-04): the x-of-opponent's-Pokemon prefab compares the CHOSEN target, so a Bench hit no longer takes the Weakness path",
+      "fixes": [
+        "FX-0372"
+      ]
     }
   ]
 }
