@@ -7192,13 +7192,6 @@
       "state": "guarding"
     },
     {
-      "file": "set-twilight-masquerade/bug-catching-set.ts",
-      "signatures": [
-        "      () => next(),\n    );\n  }\n\n  deckTop.moveCardsTo(cards, player.hand);"
-      ],
-      "state": "guarding"
-    },
-    {
       "file": "set-twilight-masquerade/perrin.ts",
       "signatures": [
         "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: effect.trainerCard });",
@@ -9785,6 +9778,26 @@
       "note": "TA-595 (2026-10-04): TAKE_X_PRIZES always prompts for min(count, Prizes left), even for the last Prize; its callback runs on the prompt's res",
       "fixes": [
         "FX-0366"
+      ]
+    },
+    {
+      "file": "set-perfect-order/vivillon.ts",
+      "signatures": [
+        "      return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand', bottomCount: n }), order => {"
+      ],
+      "note": "TA-598 (2026-10-05): Vivillon por-009 Grand Wing puts the hand under the untouched deck and shuffles only that bottom segment (ShuffleDeckPro",
+      "fixes": [
+        "FX-0367"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/bug-catching-set.ts",
+      "signatures": [
+        "      () => next(),\n    );\n  }\n\n  deckTop.moveCardsTo(cards, player.hand);"
+      ],
+      "note": "TA-599 (2026-10-05): Bug Catching Set twm-143/pre-102 reveals from the lifted window, takes the chosen cards from it, then returns the rest f",
+      "fixes": [
+        "FX-0368"
       ]
     }
   ]
