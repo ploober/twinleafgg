@@ -117,5 +117,16 @@ describe('TA-608 / TA-556: Iono pal-185 shuffles each hand through a system shuf
     expect(pending.actor).toBe('system');
     expect([...(pending.legalActions[0].deck ?? [])].sort()).toEqual(['y0', 'y1', 'y2']);
   });
+
+  it('when the draws leave only the put block, the block is still at its declared end, `bottom` (top and bottom coincide) [TA-608]', () => {
+    // A puts 2 under a 2-card deck and draws 2 (2 Prizes): at the end of the dispatch the deck IS the block.
+    const b = board();
+    b.players.A.deck = cards('ad', 2);
+    b.players.A.prizes = prizes('ap', 2);
+    const res = step(b, [PLAY as never, shuffle(['x1', 'x0']) as never, shuffle(['y2', 'y0', 'y1']) as never]);
+    type Leg = { kind: string; card?: string; origin?: { zone: string }; destination?: { zone: string; position?: string } };
+    const put = (res.events as Leg[]).filter(e => e.kind === 'moved' && e.origin?.zone === 'transit' && e.destination?.zone === 'deck');
+    expect(put.filter(e => e.card!.startsWith('x')).map(e => e.destination!.position)).toEqual(['bottom', 'bottom']);
+  });
 });
 

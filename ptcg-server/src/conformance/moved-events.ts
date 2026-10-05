@@ -28,6 +28,8 @@ interface Board {
   at: Map<string, Place>;
   deck: Record<NeutralPlayerId, string[]>;
   transitVisibility: Map<string, TransitVisibility>;
+  /** A lifted card's declared deck end (`destination: {deck, top|bottom}`), when its transit entry has one. */
+  transitDeckEnd: Map<string, 'top' | 'bottom'>;
 }
 
 const PLAYERS: NeutralPlayerId[] = ['A', 'B'];
@@ -44,6 +46,7 @@ export function board(state: NeutralState): Board {
   const at = new Map<string, Place>();
   const deck: Record<NeutralPlayerId, string[]> = { A: [], B: [] };
   const transitVisibility = new Map<string, TransitVisibility>();
+  const transitDeckEnd = new Map<string, 'top' | 'bottom'>();
   for (const owner of PLAYERS) {
     const p = state.players[owner];
     stackPlaces(owner, 'active', p.active, at);
@@ -57,12 +60,14 @@ export function board(state: NeutralState): Board {
     for (const c of p.transit ?? []) {
       at.set(c.iid, { owner, loc: { zone: 'transit' } });
       transitVisibility.set(c.iid, c.visibility);
+      const end = c.destination?.zone === 'deck' ? c.destination.position : undefined;
+      if (end === 'top' || end === 'bottom') { transitDeckEnd.set(c.iid, end); }
     }
   }
   if (state.stadium) {
     at.set(state.stadium.iid, { owner: state.stadium.owner, loc: { zone: 'stadium' } });
   }
-  return { at, deck, transitVisibility };
+  return { at, deck, transitVisibility, transitDeckEnd };
 }
 
 function samePlace(a: Place, b: Place): boolean {
@@ -128,6 +133,12 @@ export function deriveMoved(beforeState: NeutralState, afterState: NeutralState,
     if (landed.size === 0) { continue; }
     if (shuffledIn.has(owner)) {
       for (const iid of landed) { position.set(iid, 'any'); }
+      continue;
+    }
+    // The landed cards ARE the whole deck: top and bottom coincide. Their declared end decides (Iono's block, lifted
+    // `-> {deck, bottom}`, under a deck its own draws then emptied: rotomancer cuts before the draws and says bottom).
+    if (deck.length > 0 && deck.every(iid => landed.has(iid)) && deck.every(iid => before.transitDeckEnd.get(iid) === 'bottom')) {
+      for (const iid of deck) { position.set(iid, 'bottom'); bottomOrder.push(iid); }
       continue;
     }
     let top = 0;
