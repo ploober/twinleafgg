@@ -25,8 +25,9 @@ export const orderCardsDecomposer: PromptDecomposer<OrderCardsPrompt> = {
     const n = prompt.cards.cards.length;
     const rp = realPicks(picks);
     // n<=1 → exactly one possible order (a forced non-decision): resolve identity with NO pending,
-    // mirroring the CF-11 <=1-card shuffle. Complete once every position is filled.
-    if (n <= 1 || rp.length >= n) {
+    // mirroring the CF-11 <=1-card shuffle. TA-587 / B.73: the LAST card has one place left, so an N-card reorder
+    // completes after N-1 picks (assemble fills the tail).
+    if (n <= 1 || rp.length >= n - 1) {
       return null;
     }
     const picked = new Set(rp.map(p => (p as { index: number }).index));

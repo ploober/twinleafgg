@@ -640,8 +640,9 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // (b) Round-trip: supplying the full choose sequence resolves the reorder. The i-th pick lands at new
     //     deck position i (top-first); the attack then auto-ends A's turn and B draws the NEW top card.
     //     Pick order [dk2,dk4,dk0,dk3,dk1] ⇒ new top-5 = that order, then dk5..dk7; B draws dk2.
+    // TA-587 / B.73 (2026-10-04): the LAST card has one place left, so a 5-card reorder is 4 picks (dk1 lands last).
     const done = step(gothBoard(), [attack('A-act', 'Fortunate Eye'),
-      choose('B-dk2'), choose('B-dk4'), choose('B-dk0'), choose('B-dk3'), choose('B-dk1')]);
+      choose('B-dk2'), choose('B-dk4'), choose('B-dk0'), choose('B-dk3')]);
     expect(done.status).not.toBe('invalidAction');
     expect(done.state.activePlayer).toBe('B');                  // turn advanced after the reorder resolved
     expect(done.state.players.B.hand.map(c => c.iid)).toContain('B-dk2'); // B drew the chosen top card
