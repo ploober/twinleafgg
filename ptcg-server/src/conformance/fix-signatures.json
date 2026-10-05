@@ -9999,6 +9999,36 @@
       "fixes": [
         "FX-0382"
       ]
+    },
+    {
+      "file": "set-surging-sparks/terapagos.ts",
+      "signatures": [
+        "          { allowCancel: false, min: 0, max: 3, blockedTo: blocked2, differentTypes: true },   // TA-584: \"of different types\""
+      ],
+      "note": "TA-584 (2026-10-04): Terapagos ssp-161 Prism Charge enforces 'of different types' (AttachEnergyPrompt differentTypes) [TA-584]",
+      "fixes": [
+        "FX-0383"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/great-haul-net.ts",
+      "signatures": [
+        "      { min: 1, max: 6, allowCancel: false, blocked, maxPokemons: 3, maxBasicEnergies: 3 },   // TA-585: an Item's \"up to\" has a floor of 1 (#2301)"
+      ],
+      "note": "TA-585 (2026-10-04): Great Haul Net cri-078: the pick has a floor of 1 (#2301), and the Item stays in resolving until its shuffle completes (",
+      "fixes": [
+        "FX-0384"
+      ]
+    },
+    {
+      "file": "set-mega-evolution-promos/celebratory-fanfare.ts",
+      "signatures": [
+        "      if (healable.length === 0) {"
+      ],
+      "note": "TA-589 (2026-10-04): Celebratory Fanfare mep-028 is refused with nothing to heal (B.41) and ends the turn only if it healed; text field corre",
+      "fixes": [
+        "FX-0385"
+      ]
     }
   ]
 }
