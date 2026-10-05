@@ -9909,6 +9909,46 @@
       "fixes": [
         "FX-0376"
       ]
+    },
+    {
+      "file": "set-pokemon-151/starmie.ts",
+      "signatures": [
+        "          const place = new PlaceDamageCountersEffect(player, target, 20, this);"
+      ],
+      "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a",
+      "fixes": [
+        "FX-0377"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/armarouge.ts",
+      "signatures": [
+        "          .filter(em => em.provides.includes(CardType.FIRE) || em.provides.includes(CardType.ANY))"
+      ],
+      "note": "TA-571 (2026-10-04): Armarouge ssp-034 Crimson Blaster discards every attached Energy that provides [R] (Legacy / Luminous Energy, #1776), no",
+      "fixes": [
+        "FX-0378"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/revavroom.ts",
+      "signatures": [
+        "      if (player.deck.cards.length === 0) {"
+      ],
+      "note": "TA-572 (2026-10-04): Revavroom svi-142 Rumbling Engine is refused with an empty deck (#169, #13), and its Energy cost is not cancellable (B.4",
+      "fixes": [
+        "FX-0379"
+      ]
+    },
+    {
+      "file": "set-paldean-fates/starmie.ts",
+      "signatures": [
+        "          const place = new PlaceDamageCountersEffect(player, target, 20, this);"
+      ],
+      "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint)",
+      "fixes": [
+        "FX-0377"
+      ]
     }
   ]
 }
