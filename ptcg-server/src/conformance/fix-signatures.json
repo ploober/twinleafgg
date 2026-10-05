@@ -10188,6 +10188,26 @@
       "fixes": [
         "FX-0387"
       ]
+    },
+    {
+      "file": "set-chaos-rising/metagross.ts",
+      "signatures": [
+        "return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { sourceEffect: effect.attackEffect });"
+      ],
+      "note": "TA-614 (2026-10-05): Bounce Back cri-061: the opponent chooses the new Active Pokémon (SWITCH_OUT_OPPONENT_ACTIVE_POKEMON) [TA-614]",
+      "fixes": [
+        "FX-0388"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/inteleon.ts",
+      "signatures": [
+        "return hpCheck.hp - list.damage;"
+      ],
+      "note": "TA-615 (2026-10-05): Bring Down meg-142: only the Pokémon with the least HP REMAINING are offered (reduced CheckHpEffect minus damage); one c",
+      "fixes": [
+        "FX-0389"
+      ]
     }
   ]
 }
