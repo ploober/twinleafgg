@@ -4,6 +4,7 @@ import { ChoosePokemonPrompt, GameMessage, PlayerType, PowerType, SlotType, Stat
 import { Effect } from '../../../game/store/effects/effect';
 
 import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 
 export class Starmie extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -47,17 +48,24 @@ export class Starmie extends PokemonCard {
         { min: 1, max: 1, allowCancel: false },
       ), selected => {
         const targets = selected || [];
+        // TA-570: an Ability's counters go through PlaceDamageCountersEffect, so protection from the opponent's
+        // Abilities applies (#1768: Stealthy Hood, Hide 'n' Sneak), and Starmie is discarded only "If you placed
+        // any damage counters in this way".
+        let placed = false;
         targets.forEach(target => {
-          target.damage += 20;
+          const place = new PlaceDamageCountersEffect(player, target, 20, this);
+          store.reduceEffect(state, place);
+          placed = placed || !place.preventDefault;
         });
-
-      });
-
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-        if (cardList.getPokemonCard() === this) {
-          MOVE_CARDS(store, state, cardList, player.discard, { sourceCard: this });
-          cardList.clearEffects();
+        if (!placed) {
+          return;
         }
+        player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+          if (cardList.getPokemonCard() === this) {
+            MOVE_CARDS(store, state, cardList, player.discard, { sourceCard: this });
+            cardList.clearEffects();
+          }
+        });
       });
 
       return state;

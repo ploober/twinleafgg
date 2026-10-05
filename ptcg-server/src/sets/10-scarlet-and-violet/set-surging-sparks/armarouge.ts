@@ -1,9 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, EnergyCard, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, PokemonCardList } from '../../../game';
+import { StoreLike, State, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType, PokemonCardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class Armarouge extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -49,9 +50,14 @@ export class Armarouge extends PokemonCard {
       // damage. The final board is identical; this only corrects the decision ORDER (twinleaf
       // previously discarded the Fire Energy before surfacing the choice).
       const discardThenDamage = (target?: PokemonCardList): State => {
-        const fireEnergy = player.active.cards.filter(card =>
-          card instanceof EnergyCard && card.name === 'Fire Energy'
-        );
+        // TA-571: "[R] Energy" is every attached Energy that PROVIDES [R] — Legacy / Luminous Energy provide every type
+        // while attached (#1776) — not only cards named "Fire Energy".
+        const provided = new CheckProvidedEnergyEffect(player, player.active);
+        store.reduceEffect(state, provided);
+        const fireEnergy = provided.energyMap
+          .filter(em => em.provides.includes(CardType.FIRE) || em.provides.includes(CardType.ANY))
+          .map(em => em.card)
+          .filter((card, i, all) => all.indexOf(card) === i);
         const discardEnergy = new DiscardCardsEffect(effect, fireEnergy);
         discardEnergy.target = player.active;
         store.reduceEffect(state, discardEnergy);

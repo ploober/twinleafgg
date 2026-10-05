@@ -59,6 +59,12 @@ export class Revavroom extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-572: with an empty deck nothing can be drawn — #169 ("you cannot draw zero"), #13 (no Ability for no effect).
+      // The menu already hid it; a sent use was still accepted and discarded the Energy.
+      if (player.deck.cards.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
+
       const hasEnergyInHand = player.hand.cards.some(c => {
         return c instanceof EnergyCard;
       });
