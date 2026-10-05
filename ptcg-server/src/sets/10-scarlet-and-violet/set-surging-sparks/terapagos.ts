@@ -77,7 +77,7 @@ export class Terapagos extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH, SlotType.ACTIVE],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-          { allowCancel: false, min: 0, max: 3, blockedTo: blocked2 },
+          { allowCancel: false, min: 0, max: 3, blockedTo: blocked2, differentTypes: true },   // TA-584: "of different types"
         ),
         (transfers) => {
           transfers = transfers || [];

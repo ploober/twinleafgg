@@ -48,7 +48,7 @@ function* playCard(
       GameMessage.CHOOSE_CARD_TO_DECK,
       player.discard,
       {},
-      { min: 0, max: 6, allowCancel: false, blocked, maxPokemons: 3, maxBasicEnergies: 3 },
+      { min: 1, max: 6, allowCancel: false, blocked, maxPokemons: 3, maxBasicEnergies: 3 },   // TA-585: an Item's "up to" has a floor of 1 (#2301)
     ),
     (selected) => {
       cards = selected || [];

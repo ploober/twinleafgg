@@ -2125,10 +2125,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
 
     // THE fix: attach ONE Basic Energy from the deck to the Tera, finish (confirm) — the mandated
     // shuffle still fires. Pre-fix this branch reached `endTurn` with NO shuffle.
+    // TA-584 (2026-10-04): "of different types" is enforced, so with an all-Water deck one Water completes the pick
+    // (the other two cannot be taken) and no stop is offered — the attach alone reaches the owed shuffle.
     const attached = step(teraBoard(),
       [attack('A-act', 'Prism Charge'),
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-d0', target: 'A-tera' },
-       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-d0', target: 'A-tera' }]);
     expect(attached.status).toBe('awaitingAction');
     expect(attached.pending!.actor).toBe('system');
     expect(types(attached)).toContain('shuffle');
