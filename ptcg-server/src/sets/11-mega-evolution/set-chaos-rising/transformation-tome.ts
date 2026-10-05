@@ -23,11 +23,9 @@ export class TransformationTome extends TrainerCard {
     if (second === undefined) {
       return false;
     }
-    const hasBasicInPlay =
-      player.active.cards.some(c => c instanceof PokemonCard && c.stage === Stage.BASIC) ||
-      player.bench.some(b =>
-        b.cards.some(c => c instanceof PokemonCard && c.stage === Stage.BASIC)
-      );
+    // TA-567: "1 of your Basic Pokémon in play" — a Pokémon whose TOP card is Basic, not a stack that merely contains
+    // a Basic card under an evolution.
+    const hasBasicInPlay = [player.active, ...player.bench].some(l => l.getPokemonCard()?.stage === Stage.BASIC);
     const hasBasicInDiscard = player.discard.cards.some(
       c => c instanceof PokemonCard && c.stage === Stage.BASIC
     );
@@ -45,13 +43,7 @@ export class TransformationTome extends TrainerCard {
       if (second === undefined) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
-      const hasBasicInPlay =
-        player.active.cards.some(
-          (c) => c instanceof PokemonCard && (c as PokemonCard).stage === Stage.BASIC,
-        ) ||
-        player.bench.some((b) =>
-          b.cards.some((c) => c instanceof PokemonCard && (c as PokemonCard).stage === Stage.BASIC),
-        );
+      const hasBasicInPlay = [player.active, ...player.bench].some(l => l.getPokemonCard()?.stage === Stage.BASIC);   // TA-567
       const hasBasicInDiscard = player.discard.cards.some(
         (c) => c instanceof PokemonCard && (c as PokemonCard).stage === Stage.BASIC,
       );

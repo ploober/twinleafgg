@@ -145,6 +145,11 @@ export class AntiqueCoverFossil extends TrainerCard {
         return state;
       }
 
+      // TA-568: "attacks used by your OPPONENT'S Pokémon" — its own player's attacks (Combee's Share) still apply.
+      if (effect.player === StateUtils.findOwner(state, effect.target)) {
+        return state;
+      }
+
       if (sourceCard) {
         // Try to reduce PowerEffect, to check if something is blocking our ability
         try {
