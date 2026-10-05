@@ -134,7 +134,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.state.players.B.deck.length).toBe(1);
 
     // ── events ──
-    expect(res.events).toEqual([
+    expect(res.events.filter(e => e.kind !== 'moved')).toEqual([   // B.81: the physical layer rides beneath the significant vocabulary
       { kind: 'evolved', player: 'A', card: 'Kirlia', pokemon: 'A-active' },        // CF-60: pokemon is the basic iid (Ralts->Kirlia share it), not a name
       { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'A-active' },
       { kind: 'attackUsed', player: 'A', attack: 'Slap' },
@@ -197,7 +197,7 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
     expect(res.state.activePlayer).toBe('B');
     expect(res.state.players.B.hand.length).toBe(1);
 
-    expect(res.events).toEqual([
+    expect(res.events.filter(e => e.kind !== 'moved')).toEqual([   // B.81: the physical layer rides beneath the significant vocabulary
       { kind: 'energyAttached', player: 'A', card: 'Psychic Energy', pokemon: 'A-bench0' }, // CF-60: basic iid, not a name
       { kind: 'retreated', player: 'A', to: 'Ralts' },
       { kind: 'turnEnded', player: 'A' },

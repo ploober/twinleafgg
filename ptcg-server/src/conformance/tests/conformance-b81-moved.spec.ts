@@ -1,0 +1,258 @@
+import { step } from '../driver';
+import {
+  NeutralState, NeutralEvent, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, Location,
+  SCHEMA_VERSION,
+} from '../neutral-types';
+
+/**
+ * B.81 / CF-92 (contract 0.13.0): one `moved` event per card per physical pluck-and-place, `{owner, card, origin,
+ * destination, visibility}`, with `Location` objects at both ends. Twinleaf derives it from a before/after board
+ * diff per dispatch plus the mid-decision fix-up legs at a pause (moved-events.ts, driver.ts).
+ *
+ * The harness holds the trace to the ZONE-REPLAY law (initialState + legs = the response's board); `replays`
+ * below is that law in miniature (places only), run on every cell so a leg the diff gets wrong — or a move it
+ * misses — reds here before it reds on the wire.
+ *
+ * Mutation guards: drop the `deriveMoved` push in `dispatchAndCollect` and the draw / discard / KO cells red;
+ * drop the step()-level push and the Burning Charge pick-1 cell reds (the lift into transit has no leg);
+ * drop the `revealedSince` recording and the Tyme reveal cell reds (`owner`, not `public`).
+ */
+
+type Moved = Extract<NeutralEvent, { kind: 'moved' }>;
+
+const TYME = 'ssp-190';
+const BELLSPROUT = 'asc-004';
+const GRASS = 'sve-001';
+const FIRE = 'sve-002';
+const CARNELIAN = 'pre-074';
+const BURNING = 'pre-014';
+const ULTRA_BALL = 'meg-131';
+
+function markers(): PokemonMarkers {
+  return { playedOnTurn: 1, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
+}
+function flags(): PlayerFlags {
+  return { supporterPlayedThisTurn: false, energyAttachedThisTurn: false, stadiumPlayedThisTurn: false, retreatedThisTurn: false, cardsPlayedThisTurn: 0, prizesTakenThisTurn: 0, prizesTakenLastTurn: 0, vstarUsed: false };
+}
+function player(over: Partial<PlayerState> = {}): PlayerState {
+  return { active: null, bench: [], hand: [], deck: [], discard: [], lostZone: [], prizes: [], flags: flags(), ...over };
+}
+function basic(iid: string, printing = BELLSPROUT, energy: CardRef[] = []): PokemonInPlay {
+  return { stack: [{ iid, printing }], energy, tools: [], damage: 0, conditions: [], markers: markers() };
+}
+function cards(tag: string, n: number, printing = GRASS): CardRef[] {
+  return Array.from({ length: n }, (_, i) => ({ iid: `${tag}${i}`, printing }));
+}
+function prizes(tag: string, n: number): PrizeRef[] {
+  return cards(tag, n).map(c => ({ ...c, faceUp: false }));
+}
+function game(a: PlayerState, b: PlayerState): NeutralState {
+  return {
+    schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'B',
+    phase: 'main', outcome: 'ongoing', stadium: null, players: { A: a, B: b },
+  };
+}
+
+function moved(events: NeutralEvent[]): Moved[] {
+  return events.filter((e): e is Moved => e.kind === 'moved');
+}
+
+/** Every card's place, keyed as the harness keys it (in-play by stack + role, else by owner + zone). */
+function places(state: NeutralState): Map<string, string> {
+  const m = new Map<string, string>();
+  const stack = (section: string, pip: PokemonInPlay | null) => {
+    if (!pip || pip.stack.length === 0) { return; }
+    const b = pip.stack[0].iid;
+    pip.stack.forEach(c => m.set(c.iid, `${section}:${b}:pokemon`));
+    pip.energy.forEach(c => m.set(c.iid, `${section}:${b}:energy`));
+    pip.tools.forEach(c => m.set(c.iid, `${section}:${b}:tool`));
+  };
+  for (const who of ['A', 'B'] as const) {
+    const p = state.players[who];
+    stack('active', p.active);
+    p.bench.forEach(b => stack('bench', b));
+    p.hand.forEach(c => m.set(c.iid, `${who}.hand`));
+    p.deck.forEach(c => m.set(c.iid, `${who}.deck`));
+    p.discard.forEach(c => m.set(c.iid, `${who}.discardPile`));
+    p.lostZone.forEach(c => m.set(c.iid, `${who}.lostZone`));
+    p.prizes.forEach(c => m.set(c.iid, `${who}.prizes`));
+    (p.resolving ?? []).forEach(c => m.set(c.iid, `${who}.resolving`));
+    (p.transit ?? []).forEach(c => m.set(c.iid, `${who}.transit`));
+  }
+  if (state.stadium) { m.set(state.stadium.iid, 'stadium'); }
+  return m;
+}
+function place(owner: string, loc: Location): string {
+  if (loc.zone === 'active' || loc.zone === 'bench') { return `${loc.zone}:${loc.pokemon}:${loc.role}`; }
+  if (loc.zone === 'stadium') { return 'stadium'; }
+  return `${owner}.${loc.zone}`;
+}
+
+/** The zone-replay law, places only: the initial board with the trace's legs applied is the response's board. */
+function replays(initial: NeutralState, res: { events: NeutralEvent[]; state: NeutralState }): string[] {
+  const at = places(initial);
+  const problems: string[] = [];
+  for (const e of moved(res.events)) {
+    const was = at.get(e.card);
+    const from = place(e.owner, e.origin);
+    if (was !== from) { problems.push(`${e.card}: leg from ${from} but the board had it at ${was}`); }
+    at.set(e.card, place(e.owner, e.destination));
+  }
+  const shown = places(res.state);
+  for (const [iid, p] of shown) {
+    if (at.get(iid) !== p) { problems.push(`${iid}: legs end at ${at.get(iid)} but the board shows ${p}`); }
+  }
+  return problems;
+}
+
+describe('B.81 moved: the physical layer, derived per dispatch', () => {
+  const quiet = () => game(
+    player({ active: basic('a1'), hand: [{ iid: 'ah0', printing: GRASS }], deck: cards('ad', 6), prizes: prizes('ap', 3) }),
+    player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+
+  it('a quiescent board emits nothing', () => {
+    const res = step(quiet(), []);
+    expect(moved(res.events)).toEqual([]);
+  });
+
+  it('the start-of-turn draw is one leg per card, deck -> hand, known to the owner; the trace replays', () => {
+    const initial = quiet();
+    const res = step(initial, [{ actor: 'A', type: 'endTurn' } as never]);
+    const legs = moved(res.events);
+    expect(legs).toEqual([{ kind: 'moved', owner: 'B', card: 'bd0', origin: { zone: 'deck' }, destination: { zone: 'hand' }, visibility: 'owner' }]);
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('attaching an Energy from the hand is hand -> {active, stack, energy}, public', () => {
+    const initial = quiet();
+    const res = step(initial, [{ actor: 'A', type: 'attachEnergy', card: 'ah0', target: 'a1' } as never]);
+    expect(moved(res.events)).toEqual([{ kind: 'moved', owner: 'A', card: 'ah0', origin: { zone: 'hand' },
+      destination: { zone: 'active', pokemon: 'a1', role: 'energy' }, visibility: 'public' }]);
+    expect(replays(initial, res)).toEqual([]);
+  });
+});
+
+describe('B.81 moved: Tyme ssp-190 (a lift, a reveal, a return)', () => {
+  const board = () => game(
+    player({ active: basic('a1'), hand: [{ iid: 'tyme', printing: TYME }, { iid: 'ah-poke', printing: BELLSPROUT }],
+      deck: cards('ad', 6), prizes: prizes('ap', 3) }),
+    player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+  const PLAY = { actor: 'A', type: 'playSupporter', card: 'tyme' } as never;
+
+  it('at the guess: Tyme hand -> resolving (public), the named Pokémon hand -> transit (owner)', () => {
+    const initial = board();
+    const res = step(initial, [PLAY]);
+    const legs = moved(res.events);
+    expect(legs).toContain({ kind: 'moved', owner: 'A', card: 'tyme', origin: { zone: 'hand' }, destination: { zone: 'resolving' }, visibility: 'public' });
+    expect(legs).toContain({ kind: 'moved', owner: 'A', card: 'ah-poke', origin: { zone: 'hand' }, destination: { zone: 'transit' }, visibility: 'owner' });
+    expect(res.state.players.A.transit).toEqual([{ iid: 'ah-poke', printing: BELLSPROUT, origin: { zone: 'hand' }, destination: { zone: 'hand' }, visibility: 'owner' }]);
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('after the guess: the revealed Pokémon returns transit -> hand PUBLIC, Tyme resolving -> discardPile; the trace replays', () => {
+    const initial = board();
+    const res = step(initial, [PLAY, { actor: 'B', type: 'selectOption', label: '60' } as never]);
+    const legs = moved(res.events).filter(e => e.card === 'ah-poke' || e.card === 'tyme');
+    expect(legs).toContain({ kind: 'moved', owner: 'A', card: 'ah-poke', origin: { zone: 'transit' }, destination: { zone: 'hand' }, visibility: 'public' });
+    expect(legs).toContain({ kind: 'moved', owner: 'A', card: 'tyme', origin: { zone: 'resolving' }, destination: { zone: 'discardPile' }, visibility: 'public' });
+    // the right guess: the opponent draws 4 — four deck -> hand legs, owner-known
+    const draws = moved(res.events).filter(e => e.owner === 'B' && e.origin.zone === 'deck' && e.destination.zone === 'hand');
+    expect(draws.length).toBe(4);
+    expect(draws.every(e => e.visibility === 'owner')).toBe(true);
+    expect(replays(initial, res)).toEqual([]);
+  });
+});
+
+describe('B.81 moved: picks (Burning Charge pre-014, Ultra Ball meg-131)', () => {
+  const attacker = () => game(
+    player({
+      active: { stack: [{ iid: 'a1s0', printing: CARNELIAN }, { iid: 'a1s1', printing: BURNING }],
+        energy: [{ iid: 'ae0', printing: FIRE }, { iid: 'ae1', printing: GRASS }], tools: [], damage: 0, conditions: [], markers: markers() },
+      bench: [basic('ab1')], deck: cards('ad', 6, FIRE), prizes: prizes('ap', 3),
+    }),
+    player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+  const ATTACK = { actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Burning Charge' } as never;
+
+  it('a search pick at its pause is deck -> transit (owner): the fix-up leg closes the trace', () => {
+    const initial = attacker();
+    const res = step(initial, [ATTACK, { actor: 'A', type: 'choose', target: 'ad1' } as never]);
+    expect(moved(res.events)).toContain({ kind: 'moved', owner: 'A', card: 'ad1', origin: { zone: 'deck' }, destination: { zone: 'transit' }, visibility: 'owner' });
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('once attached, each searched Energy has a leg ending on the Active as energy; the trace replays', () => {
+    const initial = attacker();
+    const res = step(initial, [ATTACK,
+      { actor: 'A', type: 'choose', target: 'ad1' } as never, { actor: 'A', type: 'choose', target: 'ad2' } as never,
+      { actor: 'A', type: 'choose', target: 'a1s0' } as never]);
+    for (const iid of ['ad1', 'ad2']) {
+      const last = moved(res.events).filter(e => e.card === iid).pop();
+      expect(last?.destination).toEqual({ zone: 'active', pokemon: 'a1s0', role: 'energy' });
+      expect(last?.visibility).toBe('public');
+    }
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('a cost discard pick is hand -> discardPile (public) at once (#916)', () => {
+    const initial = game(
+      player({ active: basic('a1'),
+        hand: [{ iid: 'ub', printing: ULTRA_BALL }, { iid: 'h1', printing: GRASS }, { iid: 'h2', printing: GRASS }, { iid: 'h3', printing: GRASS }],
+        deck: [{ iid: 'dp', printing: BELLSPROUT }, ...cards('ad', 5)], prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    const res = step(initial, [{ actor: 'A', type: 'playItem', card: 'ub' } as never,
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h1' } as never]);
+    expect(moved(res.events)).toContain({ kind: 'moved', owner: 'A', card: 'ub', origin: { zone: 'hand' }, destination: { zone: 'resolving' }, visibility: 'public' });
+    expect(moved(res.events)).toContain({ kind: 'moved', owner: 'A', card: 'h1', origin: { zone: 'hand' }, destination: { zone: 'discardPile' }, visibility: 'public' });
+    expect(replays(initial, res)).toEqual([]);
+  });
+});
+
+describe('B.81 moved: a Knock Out is one leg per card of the stack, and the Prize is a leg', () => {
+  // B's Bellsprout (60 HP) carrying 50 damage; A's Eevee (pre-074 is the PRE alt-art of the SSP Eevee) uses
+  // Reckless Charge [C][C] for 30: the KO. B has a bencher, so B's promote and A's Prize pick follow.
+  const EEVEE = CARNELIAN;
+  const board = () => {
+    const g = game(
+      player({
+        active: { stack: [{ iid: 'a1s0', printing: EEVEE }], energy: [{ iid: 'ae0', printing: FIRE }, { iid: 'ae1', printing: FIRE }],
+          tools: [], damage: 0, conditions: [], markers: markers() },
+        bench: [basic('ab1')], deck: cards('ad', 6, FIRE), prizes: prizes('ap', 2),
+      }),
+      player({ active: basic('b1', BELLSPROUT, [{ iid: 'be0', printing: GRASS }]), bench: [basic('bb1')], deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    g.players.B.active!.damage = 50;
+    return g;
+  };
+  const ATTACK = { actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Reckless Charge' } as never;
+
+  it('the KO\'d Pokémon and its Energy each have a leg active -> discardPile (public), named by stack and role', () => {
+    const initial = board();
+    const res = step(initial, [ATTACK]);
+    expect(res.events.some(e => e.kind === 'ko')).toBe(true);
+    const legs = moved(res.events);
+    expect(legs.filter(e => e.destination.zone === 'discardPile' && e.owner === 'B').map(e => e.card).sort()).toEqual(['b1', 'be0']);
+    expect(legs.find(e => e.card === 'b1')?.origin).toEqual({ zone: 'active', pokemon: 'b1', role: 'pokemon' });
+    expect(legs.find(e => e.card === 'be0')?.origin).toEqual({ zone: 'active', pokemon: 'b1', role: 'energy' });
+    expect(legs.filter(e => e.owner === 'B').every(e => e.visibility === 'public')).toBe(true);
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('the taken Prize is one leg prizes -> hand, known to its owner; the trace replays through the KO and the take', () => {
+    const initial = board();
+    const first = step(initial, [ATTACK]);
+    const take = first.pending?.legalActions.find(a => (a as { type: string }).type === 'takePrize');
+    const promote = first.pending?.legalActions.find(a => (a as { type: string }).type === 'choose');
+    const next = take ?? promote;
+    expect(next).toBeDefined();
+    const res = step(initial, [ATTACK, { actor: first.pending!.actor, ...(next as object) } as never]);
+    if (take !== undefined) {
+      const prize = moved(res.events).find(e => e.owner === 'A' && e.origin.zone === 'prizes');
+      expect(prize?.destination).toEqual({ zone: 'hand' });
+      expect(prize?.visibility).toBe('owner');
+    } else {
+      const up = moved(res.events).find(e => e.card === 'bb1');
+      expect(up?.origin).toEqual({ zone: 'bench', pokemon: 'bb1', role: 'pokemon' });
+      expect(up?.destination).toEqual({ zone: 'active', pokemon: 'bb1', role: 'pokemon' });
+    }
+    expect(replays(initial, res)).toEqual([]);
+  });
+});

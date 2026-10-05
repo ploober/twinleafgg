@@ -210,16 +210,18 @@ export const chooseEnergyDecomposer: PromptDecomposer<ChooseEnergyPrompt> = {
   },
 
   /** B.80: a cost `discard` pick is in the discard pile at once; a relocation pick is lifted off the Pokémon
-   *  (public: attached Energy is face up) with the destination the message declares (CF-8). */
+   *  (public: attached Energy is face up) with the destination the message declares (CF-8). B.81: the origin
+   *  is the full in-play Location (section, stack, role: energy), read off the projection the card is lifted
+   *  from; a to-deck destination is omitted (the adapter cannot read top / bottom / shuffle off the message). */
   fixupProjection(prompt, picks, ctx, _state, projected) {
     const move = isMovePick(prompt);
-    const destination = prompt.message === GameMessage.CHOOSE_ENERGIES_TO_DECK ? 'deck' : 'hand';
+    const toHand = prompt.message !== GameMessage.CHOOSE_ENERGIES_TO_DECK;
     for (const p of realPicks(picks) as Array<{ index: number }>) {
       const em = prompt.energy[p.index];
       const iid = em === undefined ? undefined : ctx.cardToIid.get(em.card);
       if (iid === undefined) { continue; }
       if (move) {
-        liftToTransit(projected, iid, { visibility: 'public', origin: 'inPlay', destination });
+        liftToTransit(projected, iid, toHand ? { visibility: 'public', destination: { zone: 'hand' } } : { visibility: 'public' });
       } else {
         placeInDiscard(projected, iid);
       }

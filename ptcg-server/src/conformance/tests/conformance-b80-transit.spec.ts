@@ -4,7 +4,7 @@ import {
 } from '../neutral-types';
 
 /**
- * B.80 / CF-91 (contract 0.12.0): a card a player has lifted out of a zone is in `transit`, with `origin`,
+ * B.80 / CF-91 (contract 0.12.0; origin / destination are B.81 Locations since 0.13.0): a card a player has lifted out of a zone is in `transit`, with `origin`,
  * `visibility` and (when known) `destination`; `resolving` is the played Trainer alone.
  *
  * Tyme `ssp-190` is the in-pool card that puts a card outside the standard zones and then waits for a
@@ -70,7 +70,7 @@ describe('B.80 transit zone (Tyme ssp-190)', () => {
   it('the named Pokémon is in transit: hand -> hand, visible to its owner only, while the opponent guesses', () => {
     const res = step(board(), [PLAY]);
     expect(res.state.players.A.transit).toEqual(
-      [{ iid: 'ah-poke', printing: BELLSPROUT, origin: 'hand', destination: 'hand', visibility: 'owner' }]);
+      [{ iid: 'ah-poke', printing: BELLSPROUT, origin: { zone: 'hand' }, destination: { zone: 'hand' }, visibility: 'owner' }]);
     expect(res.state.players.A.hand.map(c => c.iid)).not.toContain('ah-poke');
   });
 
@@ -126,7 +126,7 @@ describe('B.80 transit: search picks lift, discard picks place', () => {
   it('after the first search pick the Energy is in transit (deck -> ?, owner), out of the deck', () => {
     const res = step(attackerBoard(), [ATTACK, { actor: 'A', type: 'choose', target: 'ad1' } as never]);
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.A.transit).toEqual([{ iid: 'ad1', printing: FIRE, origin: 'deck', visibility: 'owner' }]);
+    expect(res.state.players.A.transit).toEqual([{ iid: 'ad1', printing: FIRE, origin: { zone: 'deck' }, visibility: 'owner' }]);
     expect(res.state.players.A.deck.map(c => c.iid)).not.toContain('ad1');
     expect(res.state.players.A.deck.length).toBe(5);
     // control: before the pick nothing is in transit
@@ -141,8 +141,8 @@ describe('B.80 transit: search picks lift, discard picks place', () => {
     expect(res.status).toBe('awaitingAction');
     expect((res.pending?.legalActions ?? []).every(a => (a as { type: string }).type === 'choose')).toBe(true);
     expect(res.state.players.A.transit).toEqual([
-      { iid: 'ad1', printing: FIRE, origin: 'deck', visibility: 'owner' },
-      { iid: 'ad2', printing: FIRE, origin: 'deck', visibility: 'owner' }]);
+      { iid: 'ad1', printing: FIRE, origin: { zone: 'deck' }, visibility: 'owner' },
+      { iid: 'ad2', printing: FIRE, origin: { zone: 'deck' }, visibility: 'owner' }]);
     expect(res.state.players.A.deck.map(c => c.iid)).toEqual(['ad0', 'ad3', 'ad4', 'ad5']);
   });
 

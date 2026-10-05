@@ -634,7 +634,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // stay observable (card conservation). CF-61 used to re-home the pile to the deck top.
     expect(reorder.state.players.B.deck.map(c => c.iid)).toEqual(['B-dk5', 'B-dk6', 'B-dk7']);
     expect((reorder.state.players.B.transit ?? []).map(c => c.iid)).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4']);
-    expect((reorder.state.players.B.transit ?? []).every(c => c.origin === 'deck' && c.visibility === 'owner')).toBe(true);
+    expect((reorder.state.players.B.transit ?? []).every(c => c.origin?.zone === 'deck' && c.visibility === 'owner')).toBe(true);
     expect(reorder.state.players.A.transit).toEqual([]);
 
     // (b) Round-trip: supplying the full choose sequence resolves the reorder. The i-th pick lands at new
@@ -677,7 +677,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const visible = [...ap.deck, ...ap.hand, ...ap.discard, ...(ap.transit ?? [])].map(c => c.iid).filter(i => i.startsWith('A-dk'));
     expect(visible.length).toBe(22);                            // pre-fix: only 2 (20 lost in temp)
     expect((ap.transit ?? []).length).toBe(20);
-    expect((ap.transit ?? []).every(c => c.origin === 'deck' && c.visibility === 'owner')).toBe(true);
+    expect((ap.transit ?? []).every(c => c.origin?.zone === 'deck' && c.visibility === 'owner')).toBe(true);
   });
 
   it('Revavroom ex "Shattering Speed" ends in a TIE when both boards empty simultaneously [TA-76 sfa-015]', () => {
@@ -3354,7 +3354,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const paused = step(b(), [use]);
     expect(paused.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5']);
     expect(paused.state.players.A.transit).toEqual(['d0', 'd1', 'd2', 'd3'].map(iid =>
-      ({ iid, printing: WATER, origin: 'deck', destination: 'deckBottom', visibility: 'hidden' })));
+      ({ iid, printing: WATER, origin: { zone: 'deck' }, destination: { zone: 'deck', position: 'bottom' }, visibility: 'hidden' })));
     const after = step(b(), [use, { actor: 'system', type: 'shuffle', order: ['d3', 'd2', 'd1', 'd0'] } as unknown as NeutralAction]);
     expect(after.state.players.A.deck.map(c => c.iid)).toEqual(['d4', 'd5', 'd3', 'd2', 'd1', 'd0']);   // at rest: bottomed
     expect(after.state.players.A.transit).toEqual([]);
@@ -3816,7 +3816,7 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(types(r)).toContain('shuffle');
     expect(r.state.players.A.deck.map(c => c.iid)).toEqual(Array.from({ length: 7 }, (_, i) => `A-dk${i}`));
     expect((r.state.players.A.transit ?? []).map(c => c.iid)).toEqual(Array.from({ length: 8 }, (_, i) => `A-dk${i + 7}`));
-    expect((r.state.players.A.transit ?? []).every(c => c.origin === 'deck')).toBe(true);
+    expect((r.state.players.A.transit ?? []).every(c => c.origin?.zone === 'deck')).toBe(true);
     expect((r.state.players.A.resolving ?? []).map(c => c.iid)).toEqual(['sup']);
   });
 

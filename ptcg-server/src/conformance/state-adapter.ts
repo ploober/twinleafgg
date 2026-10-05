@@ -18,7 +18,7 @@ import {
   PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, ConditionToken, Phase, Outcome, StadiumRef,
   PlayerLastAttacks, TransitRef
 } from './neutral-types';
-import { originOfTag } from './transit-projection';
+import { locationOfTag } from './transit-projection';
 
 // M0 reuses the test harness's set-loading/registration machinery (the impl doc's
 // `ensureCardsRegistered`). A dedicated, non-test card-registry seam replaces this in a later
@@ -569,9 +569,13 @@ function deckAndShuffleSegment(state: State, player: Player, ctx: IidContext): {
   if (n <= 0) {
     return { deck: cards, inFlight: [] };
   }
-  const origin = originOfTag((open as unknown as { zone?: string }).zone ?? 'deck');
+  // B.81: `origin` and `destination` are Locations. A hand-sourced segment (the Iono family) is KNOWN to its
+  // owner — a card its owner has seen is never `hidden` (B.81 §4) — so only a deck-sourced, never-looked
+  // segment is hidden.
+  const zone = (open as unknown as { zone?: string }).zone ?? 'deck';
+  const origin = locationOfTag(zone);
   const inFlight: TransitRef[] = cards.slice(cards.length - n).map(c => {
-    const t: TransitRef = { ...cardRef(ctx, c), visibility: 'hidden', destination: 'deckBottom' };
+    const t: TransitRef = { ...cardRef(ctx, c), visibility: zone === 'deck' ? 'hidden' : 'owner', destination: { zone: 'deck', position: 'bottom' } };
     if (origin !== undefined) { t.origin = origin; }
     return t;
   });
@@ -728,13 +732,26 @@ function detachedTransitCards(state: State, ctx: IidContext): TransitRef[][] {
     if (pile === undefined) { continue; }
     const promptOwner = state.players.findIndex(p => p.id === prompt.playerId);
     if (promptOwner === -1) { continue; }
-    const origin = originOfTag(pile.fromZoneTag);
+    const zoneOrigin = locationOfTag(pile.fromZoneTag);
+    const ref = (pile as unknown as { fromZoneRef?: object }).fromZoneRef;
+    // B.81: a pile lifted off a Pokémon (fromZoneTag `inPlay`) names the stack and the role — the source list
+    // is the PokemonCardList itself, so its section and basic are readable.
+    let stack: { section: 'active' | 'bench'; basic: string } | undefined;
+    if (ref !== undefined && pile.fromZoneTag === 'inPlay') {
+      for (const p of state.players) {
+        const section = sameList(ref, p.active) ? 'active' : p.bench.some(b => sameList(ref, b)) ? 'bench' : undefined;
+        if (section === undefined) { continue; }
+        const list = (section === 'active' ? p.active : p.bench.find(b => sameList(ref, b))) as PokemonCardList;
+        const basicIid = ctx.cardToIid.get(list.getPokemons()[0]);
+        if (basicIid !== undefined) { stack = { section, basic: basicIid }; }
+        break;
+      }
+    }
     for (const card of pile.cards) {
       // Owner = the player whose settled zone the pile came from (a deck window belongs to the deck's
       // owner, resolved through fromZoneRef up the prototype chain), else the import-origin owner, else
       // the prompt's owner.
       let owner = -1;
-      const ref = (pile as unknown as { fromZoneRef?: object }).fromZoneRef;
       if (ref !== undefined) {
         owner = state.players.findIndex(p => sameList(ref, p.deck) || sameList(ref, p.hand) || sameList(ref, p.discard)
           || sameList(ref, p.lostzone) || p.prizes.some(z => sameList(ref, z)));
@@ -743,7 +760,12 @@ function detachedTransitCards(state: State, ctx: IidContext): TransitRef[][] {
       const iid = ctx.cardToIid.get(card);
       if (iid === undefined) { continue; }
       const t: TransitRef = { iid, printing: toPrinting(card), visibility: 'owner' };
-      if (origin !== undefined) { t.origin = origin; }
+      if (stack !== undefined) {
+        t.origin = { zone: stack.section, pokemon: stack.basic,
+          role: card.superType === SuperType.ENERGY ? 'energy' : card.superType === SuperType.TRAINER ? 'tool' : 'pokemon' };
+      } else if (zoneOrigin !== undefined) {
+        t.origin = zoneOrigin;
+      }
       out[owner].push(t);
     }
   }
@@ -888,13 +910,15 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
     const p = state.players[who];
     const stamp = CardList.transit.get(card);
     if (stamp !== undefined) {
+      // B.81: the card-text stamp names zones as tags (Tyme: {hand, hand, owner}); they project as Locations.
       const t: TransitRef = { iid, printing: toPrinting(card), visibility: stamp.visibility };
-      const origin = originOfTag(stamp.origin);
+      const origin = locationOfTag(stamp.origin);
       if (origin !== undefined) { t.origin = origin; }
-      if (stamp.destination !== undefined) { t.destination = stamp.destination as TransitRef['destination']; }
+      const destination = locationOfTag(stamp.destination, true);
+      if (destination !== undefined) { t.destination = destination; }
       p.transit = [...(p.transit ?? []), t];
     } else if (CardList.deckStamp.has(card)) {
-      stamped[who].push({ t: { iid, printing: toPrinting(card), origin: 'deck', visibility: 'owner' }, seq: CardList.deckStamp.get(card)! });
+      stamped[who].push({ t: { iid, printing: toPrinting(card), origin: { zone: 'deck' }, visibility: 'owner' }, seq: CardList.deckStamp.get(card)! });
     } else {
       p.transit = [...(p.transit ?? []), { iid, printing: toPrinting(card) } as TransitRef];
     }

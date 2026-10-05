@@ -35,12 +35,28 @@ export interface CardRef {
  * text sends it elsewhere than the discard (absent = discardPile).
  */
 export interface ResolvingRef extends CardRef {
-  destination?: 'discardPile' | 'deck' | 'deckBottom' | 'hand' | 'lostZone';
+  destination?: Location;
 }
 
-export type TransitOrigin = 'hand' | 'deck' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
+/**
+ * B.81 / CF-92 (contract 0.13.0, `Location`): WHERE a card is, was, or is going — the one object every wire
+ * field uses for it (`TransitRef.origin` / `destination`, `ResolvingRef.destination`, `moved`). `zone` splits
+ * the in-play zone into its two rulebook sections; `pokemon` (the stack's basic iid) and `role` (on top /
+ * under / attached) are REQUIRED with `active` | `bench`; `position` is required with `deck` on a destination
+ * (`any` = shuffled in, lawful only if a `shuffled {zone: deck}` follows). Bench slot, prize slot and position
+ * within hand / discard / Lost Zone are deliberately not here.
+ */
+export type LocationZone = 'hand' | 'deck' | 'discardPile' | 'lostZone' | 'prizes' | 'active' | 'bench' | 'stadium' | 'resolving' | 'transit';
+export type StackRole = 'pokemon' | 'energy' | 'tool';
+export type DeckPosition = 'top' | 'bottom' | 'any';
+export interface Location {
+  zone: LocationZone;
+  pokemon?: string;
+  role?: StackRole;
+  position?: DeckPosition;
+}
+
 export type TransitVisibility = 'public' | 'owner' | 'hidden';
-export type TransitDestination = 'hand' | 'deck' | 'deckBottom' | 'discardPile' | 'lostZone' | 'prizes' | 'inPlay';
 
 /**
  * B.80 / CF-91 (contract 0.12.0, `TransitCard`): a card a player has lifted out of a zone and not yet placed
@@ -52,9 +68,9 @@ export type TransitDestination = 'hand' | 'deck' | 'deckBottom' | 'discardPile' 
  * read it.
  */
 export interface TransitRef extends CardRef {
-  origin?: TransitOrigin;
+  origin?: Location;
   visibility: TransitVisibility;
-  destination?: TransitDestination;
+  destination?: Location;
 }
 
 export interface PrizeRef extends CardRef {
@@ -592,6 +608,13 @@ export type NeutralEvent =
   // engines emit it → differential-checked ONCE rotomancer also emits (informational meanwhile; see
   // OpenAPI `Event`). `owner` owns the cards; `to:'all'` = public; a private look emits nothing.
   | { kind: 'reveal'; owner: NeutralPlayerId; cards: string[]; from: string; to: NeutralPlayerId | 'all' }
+  // B.81 / CF-92 (contract 0.13.0): ONE event per card per physical pluck-and-place — the motion between two
+  // pauses a GUI animates and no state clause can see. `owner` is whose card; `card` the iid; `origin` /
+  // `destination` are Locations; `visibility` is who could identify the card during the motion. Compared GATED
+  // (only once every engine emits one) as collapsed legs per (owner, card); held per engine by the harness's
+  // zone-replay law (initialState + the trace's legs = the response's board). Derived in moved-events.ts from a
+  // before/after board diff per dispatch, plus the mid-decision fix-up legs at a pause (driver.step).
+  | { kind: 'moved'; owner: NeutralPlayerId; card: string; origin: Location; destination: Location; visibility: TransitVisibility }
   // ── SHARED-OBSERVED + informational trace — pinned, NOT diffed (`player`, not `actor`) ──
   | { kind: 'benchedBasic'; player: NeutralPlayerId; card: string }
   | { kind: 'evolved'; player: NeutralPlayerId; card: string; pokemon: string }

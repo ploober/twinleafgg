@@ -6,7 +6,8 @@ import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { CardList } from '../game/store/state/card-list';
 import { ChooseCardsPrompt } from '../game/store/prompts/choose-cards-prompt';
 import { isDiscardPick } from './decomposers/choose-cards';
-import { liftToTransit, originOfTag } from './transit-projection';
+import { liftToTransit, locationOfTag } from './transit-projection';
+import { deriveMoved } from './moved-events';
 import { State, GameWinner } from '../game/store/state/state';
 import { setupGame } from '../game/store/reducers/setup-reducer';
 import { Prompt } from '../game/store/prompts/prompt';
@@ -563,12 +564,13 @@ function shuffleOrderToPermutation(game: ImportedGame, prompt: Prompt<any>, acti
  */
 function locateCard(state: State, card: Card): { owner: Player; zone: string } | null {
   for (const owner of state.players) {
+    // B.81: zone labels are the contract's `Location.zone` vocabulary (`discardPile`, `active` | `bench`).
     if (owner.hand.cards.includes(card)) { return { owner, zone: 'hand' }; }
     if (owner.deck.cards.includes(card)) { return { owner, zone: 'deck' }; }
-    if (owner.discard.cards.includes(card)) { return { owner, zone: 'discard' }; }
+    if (owner.discard.cards.includes(card)) { return { owner, zone: 'discardPile' }; }
     if (owner.lostzone.cards.includes(card)) { return { owner, zone: 'lostZone' }; }
-    if (owner.active.cards.includes(card)) { return { owner, zone: 'play' }; }
-    for (const b of owner.bench) { if (b.cards.includes(card)) { return { owner, zone: 'play' }; } }
+    if (owner.active.cards.includes(card)) { return { owner, zone: 'active' }; }
+    for (const b of owner.bench) { if (b.cards.includes(card)) { return { owner, zone: 'bench' }; } }
     for (const p of owner.prizes) { if (p.cards.includes(card)) { return { owner, zone: 'prizes' }; } }
   }
   return null;
@@ -587,10 +589,10 @@ function snapshotCardZones(state: State): Map<Card, string> {
   for (const owner of state.players) {
     for (const c of owner.hand.cards) { m.set(c, 'hand'); }
     for (const c of owner.deck.cards) { m.set(c, 'deck'); }
-    for (const c of owner.discard.cards) { m.set(c, 'discard'); }
+    for (const c of owner.discard.cards) { m.set(c, 'discardPile'); }   // B.81 vocabulary
     for (const c of owner.lostzone.cards) { m.set(c, 'lostZone'); }
-    for (const c of owner.active.cards) { m.set(c, 'play'); }
-    for (const b of owner.bench) { for (const c of b.cards) { m.set(c, 'play'); } }
+    for (const c of owner.active.cards) { m.set(c, 'active'); }
+    for (const b of owner.bench) { for (const c of b.cards) { m.set(c, 'bench'); } }
     for (const p of owner.prizes) { for (const c of p.cards) { m.set(c, 'prizes'); } }
   }
   return m;
@@ -687,6 +689,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // Cross-batch turn-boundary memory for the deferred `turnEnded` (TA-2/TA-8) — one per replay.
   const turnCarry: TurnCarry = {};
 
+  // B.81: the cards a `reveal` named since the last dispatch — their next leg is `public`.
+  const revealedSince = new Set<string>();
+
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeState = projectState(game.state, game.ctx);
@@ -711,6 +716,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
     const allNames = allIidNames(game.ctx);
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames));
+    // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
+    events.push(...deriveMoved(beforeState, afterState, revealedSince));
+    revealedSince.clear();
     if (starved !== undefined) { throw starved; }
   };
 
@@ -769,6 +777,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt, actionStartZones);
           if (revealEvent !== null) {
             events.push(revealEvent);
+            (revealEvent as { cards: string[] }).cards.forEach(c => revealedSince.add(c));
           }
         }
         // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
@@ -1143,6 +1152,9 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
   const { events, pending, applied, rejection, midPrompt, completedSearches } = runLoop(game, actions);
+  // B.81: the board as the engine holds it, before the fix-ups below re-home picks already made; the legs between
+  // this and the fixed-up board are the pause's own `moved` events (appended after the dispatch legs).
+  const raw = projectGame(game);
   const state = projectGame(game);
   if (midPrompt !== undefined) {
     // Mid-decomposition pause: apply the decomposer's take-immediately projection fix-up (CF-1) so
@@ -1159,7 +1171,7 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     const first = pending.legalActions[0] as { type?: string; deck?: string[] } | undefined;
     const shuffling = new Set<string>(pending.actor === 'system' && first?.type === 'shuffle' ? (first.deck ?? []) : []);
     for (const search of completedSearches) {
-      const origin = originOfTag(search.source.zoneTag);
+      const origin = locationOfTag(search.source.zoneTag);
       for (const card of search.cards) {
         if (!search.source.cards.includes(card)) { continue; }
         const iid = game.ctx.cardToIid.get(card);
@@ -1184,6 +1196,12 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   // into a settled zone, leaving it in both. Drop the resolving copy — the settled zone wins. Runs
   // after every fixup so the wire state never duplicates an iid. (G-44 look-pile projection.)
   pruneResolvingDuplicates(state);
+  // B.81 / CF-92: the fix-ups above are physical moves the engine has not made yet (a pick lifted into transit, a
+  // cost discard already in the pile): their legs close the trace so the harness's replay (initialState + legs)
+  // lands on this board. A rejection's state is the rolled-back board and emits none.
+  if (rejection === undefined) {
+    events.push(...deriveMoved(raw, state));
+  }
   // CF-65 sub-shape 3 (2026-09-11): while an attack is in flight and the response pauses inside it, project
   // the DECLARED attack (with its declaration turn) as the attacker's last attack — the engine's record is
   // written only after resolution (TA-399), so it still names the previous attack at every rider pick,
