@@ -256,3 +256,55 @@ describe('B.81 moved: a Knock Out is one leg per card of the stack, and the Priz
     expect(replays(initial, res)).toEqual([]);
   });
 });
+
+describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chansey mew-113)', () => {
+  // The taker has lifted the Prize and seen it; the engine keeps it in the pile until the reaction resolves. The
+  // wire shows it in transit {prizes, owner} (N-0275 §2c: a card its owner has seen is never hidden). Mutation
+  // guard: drop the `CardList.transit.set` in chansey.ts and the first cell reds (Chansey still on the Prize row).
+  const CHANSEY = 'mew-113';
+  const board = () => {
+    const g = game(
+      player({
+        active: { stack: [{ iid: 'a1', printing: CARNELIAN }], energy: [{ iid: 'ae0', printing: FIRE }, { iid: 'ae1', printing: FIRE }],
+          tools: [], damage: 0, conditions: [], markers: markers() },
+        bench: [basic('ab1')], deck: cards('ad', 6, FIRE),
+        prizes: [{ iid: 'chansey', printing: CHANSEY, faceUp: false }, { iid: 'ap1', printing: GRASS, faceUp: false }],
+      }),
+      player({ active: basic('b1', BELLSPROUT, [{ iid: 'be0', printing: GRASS }]), bench: [basic('bb1')], deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    g.players.B.active!.damage = 50;
+    return g;
+  };
+  const ATTACK = { actor: 'A', type: 'declareAttack', source: 'a1', name: 'Reckless Charge' } as never;
+  const TAKE = { actor: 'A', type: 'takePrize', index: 0 } as never;
+
+  it('while the reaction is open the Prize is in transit {prizes, owner}, off the Prize row, with its leg', () => {
+    const initial = board();
+    const res = step(initial, [ATTACK, TAKE]);
+    expect(res.pending?.actor).toBe('A');
+    expect((res.pending?.legalActions ?? []).every(a => (a as { type: string }).type === 'confirm')).toBe(true);
+    expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap1']);
+    expect(res.state.players.A.transit).toEqual([{ iid: 'chansey', printing: CHANSEY, origin: { zone: 'prizes' }, visibility: 'owner' }]);
+    expect(moved(res.events)).toContain({ kind: 'moved', owner: 'A', card: 'chansey', origin: { zone: 'prizes' }, destination: { zone: 'transit' }, visibility: 'owner' });
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('declined: the Prize goes transit -> hand, known to its owner; the trace replays', () => {
+    const initial = board();
+    const declined = step(initial, [ATTACK, TAKE, { actor: 'A', type: 'confirm', value: false } as never]);
+    expect(declined.state.players.A.hand.map(c => c.iid)).toContain('chansey');
+    expect(declined.state.players.A.transit).toEqual([]);
+    expect(moved(declined.events).filter(e => e.card === 'chansey').pop()).toEqual(
+      { kind: 'moved', owner: 'A', card: 'chansey', origin: { zone: 'transit' }, destination: { zone: 'hand' }, visibility: 'owner' });
+    expect(replays(initial, declined)).toEqual([]);
+  });
+
+  it('accepted: the engine faults ("Generator is already running") [TA-592 repro — flip this cell when the card is fixed]', () => {
+    // Pre-existing card defect found by this drive (2026-10-04, served build 6b3b31549 answers HTTP 500 engineFault):
+    // chansey.ts yields TAKE_X_PRIZES with a `() => next()` callback that the prefab fires SYNCHRONOUSLY when the
+    // remaining Prize pick is forced, re-entering the running generator. Not a projection matter; filed as TA-592.
+    // When fixed, replace this with: Chansey transit -> {bench, chansey, pokemon} public, and `replays` empty.
+    const initial = board();
+    expect(() => step(initial, [ATTACK, TAKE, { actor: 'A', type: 'confirm', value: true } as never]))
+      .toThrowError(/Generator is already running/);
+  });
+});

@@ -601,6 +601,10 @@ function projectPlayer(ctx: IidContext, state: State, player: Player, turn: numb
   for (const prize of player.prizes) {
     const card = prize.cards[0];
     if (card === undefined) { continue; }
+    // B.81: a Prize its card text has stamped as lifted (Lucky Bonus's Chansey while its reaction is open: taken and
+    // seen, kept in the pile by the engine until the flow completes) is NOT on the Prize row; the orphan pass
+    // projects it in transit from the stamp.
+    if (CardList.transit.has(card)) { continue; }
     prizes.push({ ...cardRef(ctx, card), faceUp: prize.faceUpPrize });
   }
   return {
