@@ -567,19 +567,30 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
 
   // Handle prize selection first - opponent then player
   const prizePrompts = choosePrizeCards(store, state, prizeGroups);
-  for (const prompt of prizePrompts) {
-    const player = state.players.find(p => p.id === prompt.playerId);
+  for (const group of prizePrompts) {
+    const player = state.players.find(p => p.id === group.playerId);
     if (!player) {
       throw new GameError(GameMessage.ILLEGAL_ACTION);
     }
 
-    state = store.prompt(state, prompt, (result) => {
-      const destination: CardList = prompt.options.destination || player.hand;
-      TAKE_SPECIFIC_PRIZES(store, state, player, result, { destination });
-    });
+    // Prizes are taken ONE AT A TIME (compendium #809, TPCi 2020-01-09: "Whenever you take more than one prize
+    // in a single action, each prize can be taken one at a time"): each pick is its own take, so a reaction to a
+    // taken Prize (Chansey mew-113 Lucky Bonus) resolves before the next pick, and a card that empties the row
+    // meanwhile (Lucky Bonus heads) ends the remaining picks. TA-592: one prompt for the whole group resolved
+    // every pick at once, so the reaction opened only after all of them.
+    for (let k = 0; k < group.options.count; k++) {
+      if (player.getPrizeLeft() === 0 || state.phase === GamePhase.FINISHED) {
+        break;
+      }
+      const prompt = new ChoosePrizePrompt(group.playerId, group.message, { ...group.options, count: 1 });
+      state = store.prompt(state, prompt, (result) => {
+        const destination: CardList = prompt.options.destination || player.hand;
+        TAKE_SPECIFIC_PRIZES(store, state, player, result, { destination });
+      });
 
-    if (store.hasPrompts()) {
-      yield store.waitPrompt(state, () => next());
+      if (store.hasPrompts()) {
+        yield store.waitPrompt(state, () => next());
+      }
     }
   }
 

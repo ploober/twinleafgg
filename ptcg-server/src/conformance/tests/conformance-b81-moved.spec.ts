@@ -302,7 +302,8 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
   // `() => next()` the prefab fires SYNCHRONOUSLY when the remaining Prize pick is forced, re-entering the running
   // generator. Mutation guards (each measured red): restore the yield + callback -> the two forced-accept cells
   // throw; restore the full-array `blocked` -> the two-Prizes-left cell; drop the take of the other Prizes -> the
-  // three two-Prize KO cells; drop `prizesTakenThisTurn += 1` -> the accepted two-Prize KO cell.
+  // three two-Prize KO cells; drop the count at the take -> 6 cells; read `coinFlip.result` inline -> the flip-pause
+  // cell; one ChoosePrizePrompt per Prize group again (check-effect.ts) -> 3 of the two-Prize KO cells.
   const ACCEPT = { actor: 'A', type: 'confirm', value: true } as never;
   const flip = (face: 'heads' | 'tails') => ({ actor: 'system', type: 'flip', face }) as never;
 
@@ -340,9 +341,29 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
     expect(replays(initial, took)).toEqual([]);
   });
 
+  it('while the reaction is open the Prize already counts as taken this turn [TA-592]', () => {
+    // The Prize has been taken (lifted off the row, seen by its taker); only where it goes is open.
+    const res = step(board(), [ATTACK, TAKE]);
+    expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(1);
+    const declined = step(board(), [ATTACK, TAKE, { actor: 'A', type: 'confirm', value: false } as never]);
+    expect(declined.state.players.A.flags.prizesTakenThisTurn).toBe(1);
+  });
+
+  it('at the coin-flip pause nothing has been decided by the flip yet [TA-592]', () => {
+    // chansey.ts read `coinFlip.result` inline; an unscripted flip pauses with the result unset, which the card
+    // read as heads — the last Prize was already in the hand at the pause and went back on tails.
+    const res = step(board(), [ATTACK, TAKE, ACCEPT]);
+    expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap1']);
+    expect(res.state.players.A.hand.map(c => c.iid)).not.toContain('ap1');
+    expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(1);
+  });
+
   describe('a two-Prize Knock Out with Chansey among the picks [TA-592]', () => {
     // Pre-fix the intercept prevented the WHOLE DrawPrizesEffect, so the other Prize taken with Chansey was never
-    // moved: a Pokémon ex KO paid one Prize. The other Prize is the taker's at once; only Chansey waits on the reaction.
+    // moved: a Pokémon ex KO paid one Prize. And Prizes are taken one at a time (compendium #809: "Whenever you
+    // take more than one prize in a single action, each prize can be taken one at a time"), so Chansey's reaction
+    // opens when Chansey is taken, before the next pick — pre-fix the picks were collected first, and Chansey
+    // was shown in the hand at pick 1 and back in transit at pick 2.
     const exBoard = () => {
       const g = board();
       g.players.A.prizes.push({ iid: 'ap2', printing: FIRE, faceUp: false });
@@ -350,32 +371,44 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
       g.players.B.active!.damage = 200;
       return g;
     };
-    const BOTH = [ATTACK, TAKE, TAKE];   // Chansey, then (current-pile indexing) ap1
+    const DECLINE = { actor: 'A', type: 'confirm', value: false } as never;
 
-    it('while the reaction is open the other Prize is already in the hand', () => {
+    it('Chansey first: the reaction opens at once, Chansey in transit, one Prize taken', () => {
       const initial = exBoard();
-      const res = step(initial, BOTH);
-      expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ap1']);
-      expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+      const res = step(initial, [ATTACK, TAKE]);
+      expect((res.pending?.legalActions ?? []).every(x => (x as { type: string }).type === 'confirm')).toBe(true);
       expect((res.state.players.A.transit ?? []).map(c => c.iid)).toEqual(['chansey']);
+      expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap1', 'ap2']);
+      expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(1);
       expect(replays(initial, res)).toEqual([]);
     });
 
-    it('declined: both Prizes are in the hand, two taken this turn', () => {
+    it('declined: the second Prize is picked next; both end in the hand, two taken this turn', () => {
       const initial = exBoard();
-      const res = step(initial, [...BOTH, { actor: 'A', type: 'confirm', value: false } as never]);
+      const mid = step(initial, [ATTACK, TAKE, DECLINE]);
+      expect(mid.pending?.legalActions.map(x => (x as { type: string }).type)).toEqual(['takePrize', 'takePrize']);
+      const res = step(initial, [ATTACK, TAKE, DECLINE, TAKE]);
       expect(res.state.players.A.hand.map(c => c.iid).sort()).toEqual(['ap1', 'chansey']);
       expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
       expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(2);
       expect(replays(initial, res)).toEqual([]);
     });
 
-    it('accepted, tails: Chansey on the Bench, the other Prize in the hand, two taken this turn', () => {
+    it('accepted, tails: Chansey on the Bench, then the second pick; two taken this turn', () => {
       const initial = exBoard();
-      const res = step(initial, [...BOTH, ACCEPT, flip('tails')]);
+      const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('tails'), TAKE]);
       expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ap1']);
       expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
       expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+      expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(2);
+      expect(replays(initial, res)).toEqual([]);
+    });
+
+    it('Chansey second: the first Prize is in the hand before Chansey is picked', () => {
+      const initial = exBoard();
+      const res = step(initial, [ATTACK, { actor: 'A', type: 'takePrize', index: 1 } as never, TAKE]);
+      expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ap1']);
+      expect((res.state.players.A.transit ?? []).map(c => c.iid)).toEqual(['chansey']);
       expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(2);
       expect(replays(initial, res)).toEqual([]);
     });
