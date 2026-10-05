@@ -81,7 +81,7 @@ export class Revavroom extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         { superType: SuperType.ENERGY },
-        { allowCancel: true, min: 1, max: 1 }
+        { allowCancel: false, min: 1, max: 1 }   // TA-572: the cost of an Ability already activated has no decline (B.46)
       ), cards => {
         cards = cards || [];
         if (cards.length === 0) {

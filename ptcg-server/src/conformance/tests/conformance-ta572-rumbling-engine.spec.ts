@@ -551,7 +551,11 @@ describe('TA-572: Rumbling Engine is refused with an empty deck', () => {
     expect(res.status).toBe('invalidAction');
     expect(res.state.players.A.discard.length).toBe(EMPTY.players.A.discard.length);
   });
-  it('control: a stocked deck accepts it [TA-572]', () => {
-    expect(step(STOCKED, [USE]).status).not.toBe('invalidAction');
+  it('control: a stocked deck accepts it, and the one-Energy cost pick is forced (no post-activation decline, B.46) [TA-572]', () => {
+    const res = step(STOCKED, [USE]);
+    expect(res.status).not.toBe('invalidAction');
+    // One Energy in hand: the cost has one resolution, so it is applied at once (CF-14) and the draw follows.
+    expect(res.state.players.A.discard.map(c => c.iid)).toEqual(['ah0']);
+    expect(res.state.players.A.hand.length).toBe(6);
   });
 });
