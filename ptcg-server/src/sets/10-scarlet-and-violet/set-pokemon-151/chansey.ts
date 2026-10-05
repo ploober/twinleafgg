@@ -73,6 +73,13 @@ export class Chansey extends PokemonCard {
     // Prevent prize card from going to hand until we complete the ability flow
     effect.preventDefault = true;
 
+    // Any other Prize cards taken together with this one (a KO worth 2+) are not this ability's to hold: they go
+    // to the hand now. Preventing the whole effect used to leave them on the Prize row (TA-592).
+    const others = effect.prizes.filter(p => p !== prizeCard);
+    if (others.length > 0) {
+      TAKE_SPECIFIC_PRIZES(store, state, player, others, { skipReduce: true });
+    }
+
     // Ask player if they want to use the ability
     let wantToUse = false;
     // B.80 / B.81 (conformance projection; inert for gameplay). The Prize has been TAKEN — lifted off the Prize row
@@ -118,6 +125,7 @@ export class Chansey extends PokemonCard {
     // it does not go to the player's hand)
     this.abilityUsed = true;
     player.prizesTaken += 1;
+    player.prizesTakenThisTurn += 1;
 
     const targetSlot = emptyBenchSlots[0];
     for (const [index, prize] of player.prizes.entries()) {
@@ -136,13 +144,11 @@ export class Chansey extends PokemonCard {
       return state;
     }
 
-    // Handle extra prize (excluding the group this card is in)
-    yield TAKE_X_PRIZES(store, state, player, 1, {
-      promptOptions: {
-        blocked: effect.prizes.map(p => player.prizes.indexOf(p))
-      }
-    }, () => next());
-
-    return state;
+    // Take 1 more Prize card: any remaining one (the piles taken with this card are already empty, so nothing is
+    // blocked — `blocked` indexes the NON-EMPTY piles, and a full-array index here blocked the wrong card). Nothing
+    // follows it, so it is not yielded: when the pick is forced (the last Prize) TAKE_X_PRIZES resolves
+    // synchronously, and a `() => next()` callback would re-enter this still-running generator ("Generator is
+    // already running", TA-592).
+    return TAKE_X_PRIZES(store, state, player, 1);
   }
 } 

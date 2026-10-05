@@ -298,13 +298,94 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
     expect(replays(initial, declined)).toEqual([]);
   });
 
-  it('accepted: the engine faults ("Generator is already running") [TA-592 repro — flip this cell when the card is fixed]', () => {
-    // Pre-existing card defect found by this drive (2026-10-04, served build 6b3b31549 answers HTTP 500 engineFault):
-    // chansey.ts yields TAKE_X_PRIZES with a `() => next()` callback that the prefab fires SYNCHRONOUSLY when the
-    // remaining Prize pick is forced, re-entering the running generator. Not a projection matter; filed as TA-592.
-    // When fixed, replace this with: Chansey transit -> {bench, chansey, pokemon} public, and `replays` empty.
+  // TA-592 (fixed): accepting faulted with "Generator is already running" — chansey.ts yielded TAKE_X_PRIZES with a
+  // `() => next()` the prefab fires SYNCHRONOUSLY when the remaining Prize pick is forced, re-entering the running
+  // generator. Mutation guards (each measured red): restore the yield + callback -> the two forced-accept cells
+  // throw; restore the full-array `blocked` -> the two-Prizes-left cell; drop the take of the other Prizes -> the
+  // three two-Prize KO cells; drop `prizesTakenThisTurn += 1` -> the accepted two-Prize KO cell.
+  const ACCEPT = { actor: 'A', type: 'confirm', value: true } as never;
+  const flip = (face: 'heads' | 'tails') => ({ actor: 'system', type: 'flip', face }) as never;
+
+  it('accepted: Chansey transit -> Bench (public), then a coin flip [TA-592]', () => {
     const initial = board();
-    expect(() => step(initial, [ATTACK, TAKE, { actor: 'A', type: 'confirm', value: true } as never]))
-      .toThrowError(/Generator is already running/);
+    const res = step(initial, [ATTACK, TAKE, ACCEPT]);
+    expect(res.pending?.legalActions.map(a => (a as { type: string }).type)).toContain('flip');
+    expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
+    expect(res.state.players.A.transit).toEqual([]);
+    expect(res.state.players.A.hand.map(c => c.iid)).not.toContain('chansey');
+    expect(moved(res.events).filter(e => e.card === 'chansey').pop()).toEqual(
+      { kind: 'moved', owner: 'A', card: 'chansey', origin: { zone: 'transit' }, destination: { zone: 'bench', pokemon: 'chansey', role: 'pokemon' }, visibility: 'public' });
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('accepted, heads: A takes 1 more Prize (the last one) and the trace replays [TA-592]', () => {
+    const initial = board();
+    const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads')]);
+    expect(res.state.players.A.prizes).toEqual([]);
+    expect(res.state.players.A.hand.map(c => c.iid)).toContain('ap1');
+    expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
+    expect(replays(initial, res)).toEqual([]);
+  });
+
+  it('accepted, heads, two Prizes left: either remaining Prize may be taken, and the taken one is in the hand [TA-592]', () => {
+    // chansey.ts blocked `player.prizes.indexOf(...)` — a FULL-array index — but `blocked` indexes the NON-EMPTY
+    // piles, and Chansey's own pile is empty by then: the first remaining Prize was blocked in its place.
+    const initial = board();
+    initial.players.A.prizes.push({ iid: 'ap2', printing: FIRE, faceUp: false });
+    const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads')]);
+    expect(res.pending?.legalActions.map(a => (a as { index?: number }).index)).toEqual([0, 1]);
+    const took = step(initial, [ATTACK, TAKE, ACCEPT, flip('heads'), TAKE]);
+    expect(took.state.players.A.hand.map(c => c.iid)).toContain('ap1');
+    expect(took.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+    expect(replays(initial, took)).toEqual([]);
+  });
+
+  describe('a two-Prize Knock Out with Chansey among the picks [TA-592]', () => {
+    // Pre-fix the intercept prevented the WHOLE DrawPrizesEffect, so the other Prize taken with Chansey was never
+    // moved: a Pokémon ex KO paid one Prize. The other Prize is the taker's at once; only Chansey waits on the reaction.
+    const exBoard = () => {
+      const g = board();
+      g.players.A.prizes.push({ iid: 'ap2', printing: FIRE, faceUp: false });
+      g.players.B.active = basic('b1', 'wht-020', [{ iid: 'be0', printing: GRASS }]);   // Reshiram ex: 2 Prizes
+      g.players.B.active!.damage = 200;
+      return g;
+    };
+    const BOTH = [ATTACK, TAKE, TAKE];   // Chansey, then (current-pile indexing) ap1
+
+    it('while the reaction is open the other Prize is already in the hand', () => {
+      const initial = exBoard();
+      const res = step(initial, BOTH);
+      expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ap1']);
+      expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+      expect((res.state.players.A.transit ?? []).map(c => c.iid)).toEqual(['chansey']);
+      expect(replays(initial, res)).toEqual([]);
+    });
+
+    it('declined: both Prizes are in the hand, two taken this turn', () => {
+      const initial = exBoard();
+      const res = step(initial, [...BOTH, { actor: 'A', type: 'confirm', value: false } as never]);
+      expect(res.state.players.A.hand.map(c => c.iid).sort()).toEqual(['ap1', 'chansey']);
+      expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+      expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(2);
+      expect(replays(initial, res)).toEqual([]);
+    });
+
+    it('accepted, tails: Chansey on the Bench, the other Prize in the hand, two taken this turn', () => {
+      const initial = exBoard();
+      const res = step(initial, [...BOTH, ACCEPT, flip('tails')]);
+      expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ap1']);
+      expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
+      expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap2']);
+      expect(res.state.players.A.flags.prizesTakenThisTurn).toBe(2);
+      expect(replays(initial, res)).toEqual([]);
+    });
+  });
+
+  it('accepted, tails: no more Prize; the last Prize stays on the row [TA-592]', () => {
+    const initial = board();
+    const res = step(initial, [ATTACK, TAKE, ACCEPT, flip('tails')]);
+    expect(res.state.players.A.prizes.map(c => c.iid)).toEqual(['ap1']);
+    expect(res.state.players.A.bench.map(b => b.stack[0].iid)).toEqual(['ab1', 'chansey']);
+    expect(replays(initial, res)).toEqual([]);
   });
 });
