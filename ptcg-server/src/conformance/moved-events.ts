@@ -97,9 +97,13 @@ function visibilityOf(from: Place, to: Place, iid: string, before: Board, after:
  * landed on TOP of the deck are emitted deepest-first (each replayed `top` leg stacks above the previous), the
  * cards that landed at the BOTTOM in index order, everything else as encountered. A card that moved to a deck
  * position that is neither its contiguous top nor its contiguous bottom is `any` (shuffled in; the harness
- * holds that to a following `shuffled`).
+ * holds that to a following `shuffled`). So is every card that landed in a deck whose WHOLE-deck shuffle is open
+ * when the dispatch ends (`shuffledIn`): the engine puts the card on top or underneath and THEN raises the
+ * shuffle, but the text shuffles it in (rotomancer's legs say `any` there too). A bottom-SEGMENT shuffle (Metal
+ * Maker's remainder) is not in `shuffledIn`: those cards do go to the bottom.
  */
-export function deriveMoved(beforeState: NeutralState, afterState: NeutralState, revealed: ReadonlySet<string> = new Set()): NeutralEvent[] {
+export function deriveMoved(beforeState: NeutralState, afterState: NeutralState, revealed: ReadonlySet<string> = new Set(),
+    shuffledIn: ReadonlySet<NeutralPlayerId> = new Set()): NeutralEvent[] {
   const before = board(beforeState);
   const after = board(afterState);
   const moved: Array<{ iid: string; from: Place; to: Place }> = [];
@@ -122,6 +126,10 @@ export function deriveMoved(beforeState: NeutralState, afterState: NeutralState,
     const deck = after.deck[owner];
     const landed = toDeck[owner];
     if (landed.size === 0) { continue; }
+    if (shuffledIn.has(owner)) {
+      for (const iid of landed) { position.set(iid, 'any'); }
+      continue;
+    }
     let top = 0;
     while (top < deck.length && landed.has(deck[top])) { top++; }
     let bottom = deck.length;

@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameError, GameMessage, StateUtils, CardList, PowerType, ShuffleDeckPrompt } from '../../../game';
+import { StoreLike, State, GameError, GameMessage, StateUtils, PowerType, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { ABILITY_USED, DRAW_CARDS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
@@ -65,14 +65,22 @@ export class Vivillon extends PokemonCard {
       // TA-370/TA-379 way: stage the hand INTO the (emptied) deck so the adapter's ShuffleDeckPrompt
       // advertises exactly those cards, restack the untouched deck on top inside the callback, and
       // only THEN draw.
-      const rest = new CardList();
-      opponent.deck.moveTo(rest);
+      // TA-591 / B.80: the hand goes UNDER the untouched deck and only that bottom segment is shuffled
+      // (`bottomCount`), so the projection shows the hand in transit {hand -> deck bottom} and the deck as it
+      // is. The old staging (deck into a temp list, hand into the emptied deck) put the whole deck in transit
+      // and the hand on top at the pause.
+      const n = opponent.hand.cards.length;
       opponent.hand.moveTo(opponent.deck);
       // TA-462 / B.66: the pile is the HAND (a hand-to-bottom), not the deck — declare it so the
       // adapter's `shuffled` carries zone:'hand' and the deck-randomised property is not asserted.
-      return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand' }), order => {
-        opponent.deck.applyOrder(order);
-        rest.moveToTopOfDestination(opponent.deck);
+      return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand', bottomCount: n }), order => {
+        const deck = opponent.deck.cards;
+        const start = deck.length - n;
+        // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+        const segment = order.length === n ? order.map(i => start + i) : order.filter(i => i >= start);
+        if (segment.length === n && new Set(segment).size === n && segment.every(i => i >= start && i < deck.length)) {
+          opponent.deck.cards = [...deck.slice(0, start), ...segment.map(i => deck[i])];
+        }
         DRAW_CARDS(store, state, opponent, Math.min(4, opponent.deck.cards.length));
       });
     }

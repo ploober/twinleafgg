@@ -2593,6 +2593,27 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r2.state!.players.A.active!.markers.abilitiesUsedThisTurn).toEqual(['Grand Wing']);
   });
 
+  it('Vivillon "Grand Wing": at the shuffle pause the deck is untouched and the hand is in transit hand -> deck bottom (B.80) [TA-591 por-009]', () => {
+    // The card staged the shuffle by moving the untouched deck into a temp list and the hand into the emptied deck,
+    // so the wire showed the whole deck in transit and the hand on top. Physically the hand is lifted and shuffled
+    // under an untouched deck: transit {origin hand, destination {deck, bottom}, owner} (rotomancer's legs say
+    // hand -> {deck, bottom}).
+    const b = board(
+      player({ active: inPlay('A-act', ['por-007', 'por-008', 'por-009']), deck: en(WATER, 4, 'Ad') }),
+      player({ active: inPlay('B-act', [RALTS]),
+               hand: [{ iid: 'B-h0', printing: FIRE }, { iid: 'B-h1', printing: WATER }],
+               deck: [{ iid: 'B-d0', printing: METAL }, { iid: 'B-d1', printing: GRASS }] }),
+    );
+    const use = { actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Grand Wing' } as unknown as NeutralAction;
+    const r1 = step(b, [use]);
+    const B = r1.state!.players.B;
+    expect(B.deck.map(c => c.iid)).toEqual(['B-d0', 'B-d1']);
+    expect(B.hand).toEqual([]);
+    expect((B.transit ?? []).map(t => ({ iid: t.iid, origin: t.origin, destination: t.destination, visibility: t.visibility }))).toEqual([
+      { iid: 'B-h0', origin: { zone: 'hand' }, destination: { zone: 'deck', position: 'bottom' }, visibility: 'owner' },
+      { iid: 'B-h1', origin: { zone: 'hand' }, destination: { zone: 'deck', position: 'bottom' }, visibility: 'owner' }]);
+  });
+
   // TA-280 — the empty-deck gate at the OFFER, once, from the printed text (B.27/B.29 rule 1/B.41), instead
   // of a hand-written throw per card file. Each cell carries its own stocked-deck positive control.
   it('a deck-search Ability is withheld on an EMPTY deck and offered on a stocked one [TA-280 asc-289 X-Boot]', () => {

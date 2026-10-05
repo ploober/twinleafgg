@@ -9097,7 +9097,7 @@
     {
       "file": "set-perfect-order/vivillon.ts",
       "signatures": [
-        "      return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand' }), order => {"
+        "      return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand', bottomCount: n }), order => {"
       ],
       "note": "TA-458 (2026-09-20): Vivillon por-009 Grand Wing externalizes the hand shuffle as a ShuffleDeckPrompt over exactly the bottomed cards (TA-370",
       "fixes": [

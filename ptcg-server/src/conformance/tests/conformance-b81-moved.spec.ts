@@ -471,3 +471,51 @@ describe('TA-593: `draw` for every draw, effect draws included (§10.4)', () => 
     expect(draws(res.events)).toEqual([]);
   });
 });
+
+describe('B.81 moved: a card shuffled into the deck lands at `any` (TA-591)', () => {
+  // Hitmontop asc-102 Spin and Draw: "Shuffle your hand into your deck. Then, draw 6 cards." The engine puts the hand
+  // under the deck and THEN raises the whole-deck shuffle; the text shuffles it in, so the leg's position is `any`
+  // (rotomancer emits `any`; twinleaf said `bottom`). Mutation guard: drop the shuffle-pending set passed to
+  // deriveMoved and this cell reds (`bottom`).
+  it('at the shuffle pause the hand card\'s leg is hand -> {deck, any} [TA-591]', () => {
+    const initial = game(
+      player({ active: { stack: [{ iid: 'a1s0', printing: 'asc-102' }], energy: [{ iid: 'a1e0', printing: 'sve-003' }],
+        tools: [], damage: 0, conditions: [], markers: markers() },
+        hand: [{ iid: 'ah1', printing: FIRE }], deck: cards('ad', 8), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    const res = step(initial, [{ actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Spin and Draw' } as never]);
+    expect(moved(res.events).filter(e => e.card === 'ah1')).toEqual([
+      { kind: 'moved', owner: 'A', card: 'ah1', origin: { zone: 'hand' }, destination: { zone: 'deck', position: 'any' }, visibility: 'owner' }]);
+  });
+});
+
+describe('B.81 / CF-18: reveals on the physical layer (TA-591)', () => {
+  type Reveal = Extract<NeutralEvent, { kind: 'reveal' }>;
+  const reveals = (events: NeutralEvent[]) => events.filter((e): e is Reveal => e.kind === 'reveal');
+
+  it('Haughty Order dri-150 shows the opponent\'s top 10 to each player: ONE public reveal, owned by B [TA-591]', () => {
+    // The card raises one ShowCardsPrompt per audience; the second (cards in a temp list, unlocatable) used to read
+    // owner A. Mutation guard: drop the repeat check in the driver and this reds (two reveals).
+    const res = step(game(
+      player({ active: { stack: [{ iid: 'a1', printing: 'dri-150' }], energy: [{ iid: 'ae0', printing: GRASS }, { iid: 'ae1', printing: GRASS }],
+        tools: [], damage: 0, conditions: [], markers: markers() }, hand: [{ iid: 'ah0', printing: GRASS }], deck: cards('ad', 2), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), hand: [{ iid: 'bh0', printing: GRASS }], deck: cards('bd', 10), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'a1', name: 'Haughty Order' } as never]);
+    expect(reveals(res.events).map(r => r.owner)).toEqual(['B']);
+  });
+
+  it('Last-Ditch Catch por-062 "reveal it, and put it into your hand": the searched card\'s leg is public [TA-591]', () => {
+    // The prefab raises the show and moves the card in one callback; the reveal event is captured at the ack, one
+    // dispatch later, so the leg read `owner`. Mutation guard: drop the open-show scan and this reds.
+    const res = step(game(
+      player({ active: basic('a1', 'meg-109'), hand: [{ iid: 'm1', printing: 'por-062' }],
+        deck: [{ iid: 'sup', printing: 'ssp-178' }, { iid: 'ad1', printing: GRASS }], prizes: prizes('ap', 3) }),
+      player({ active: basic('b1', 'meg-109'), deck: cards('bd', 1), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'benchBasic', card: 'm1' } as never, { actor: 'A', type: 'confirm', value: true } as never,
+        { actor: 'A', type: 'choose', target: 'sup' } as never]);
+    const legs = moved(res.events).filter(e => e.card === 'sup');
+    expect(legs.length).toBeGreaterThan(0);
+    expect(legs[legs.length - 1].destination).toEqual({ zone: 'hand' });
+    expect(legs[legs.length - 1].visibility).toBe('public');
+  });
+});

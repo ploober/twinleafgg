@@ -662,6 +662,22 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
   return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
 }
 
+/**
+ * B.81 (TA-591): the players whose WHOLE deck has an open shuffle (no `bottomCount`, zone deck). A card that landed
+ * in such a deck in the dispatch just run is shuffled in (`position: any`), whatever end the engine put it at.
+ */
+function wholeDeckShufflePending(state: State): Set<NeutralPlayerId> {
+  const out = new Set<NeutralPlayerId>();
+  for (const p of state.prompts) {
+    if (p.result !== undefined || !p.type.startsWith('Shuffle')) { continue; }
+    const q = p as unknown as { bottomCount?: number; zone?: string };
+    if ((q.bottomCount ?? 0) > 0 || (q.zone ?? 'deck') !== 'deck') { continue; }
+    const i = state.players.findIndex(pl => pl.id === p.playerId);
+    if (i >= 0) { out.add(i === 0 ? 'A' : 'B'); }
+  }
+  return out;
+}
+
 function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
@@ -733,7 +749,18 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
       draws));
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
-    events.push(...deriveMoved(beforeState, afterState, revealedSince));
+    // TA-591: a card shown by a ShowCardsPrompt still open at the end of this dispatch was revealed by it — the
+    // engine raises the show and moves the card in one callback (SEARCH_DECK_FOR_CARDS_TO_HAND: "reveal it, and put
+    // it into your hand"), so its leg is `public` though the reveal event is captured at the ack, one dispatch later.
+    for (const p of game.state.prompts) {
+      if (p.result === undefined && p.type === 'Show cards') {
+        for (const c of (p as ShowCardsPrompt).cards) {
+          const iid = game.ctx.cardToIid.get(c);
+          if (iid !== undefined) { revealedSince.add(iid); }
+        }
+      }
+    }
+    events.push(...deriveMoved(beforeState, afterState, revealedSince, wholeDeckShufflePending(game.state)));
     revealedSince.clear();
     if (starved !== undefined) { throw starved; }
   };
@@ -777,6 +804,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // TA-373: source-zone snapshot for `reveal.from`, refreshed at each top-level action (below) so a
   // search-then-reveal reports the card's pre-search zone, not where it landed.
   let actionStartZones = snapshotCardZones(game.state);
+  // TA-591: the cards a `reveal` already named in this top-level action. A card shows the same cards once to EACH
+  // player (Haughty Order dri-150: one ShowCardsPrompt per audience); in a 2-player game that is ONE public reveal,
+  // and the second show (cards now in a temp list) read the wrong owner.
+  let revealedThisAction = new Set<string>();
   for (;;) {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
@@ -793,7 +824,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // (WaitPrompt, Alert, non-cancelable Confirm cards) carry no observable and emit nothing.
         if (prompt.type === 'Show cards') {
           const revealEvent = buildRevealEvent(game, prompt as ShowCardsPrompt, actionStartZones);
-          if (revealEvent !== null) {
+          const shown = revealEvent === null ? [] : (revealEvent as { cards: string[] }).cards;
+          const repeat = shown.length > 0 && shown.every(c => revealedThisAction.has(c));
+          if (revealEvent !== null && !repeat) {
+            shown.forEach(c => revealedThisAction.add(c));
             events.push(revealEvent);
             (revealEvent as { cards: string[] }).cards.forEach(c => revealedSince.add(c));
           }
@@ -835,7 +869,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           // action is always correct.
           const player = game.state.players.find(p => p.id === prompt.playerId);
           const deckLen = player ? player.deck.cards.length : 0;
-          if (deckLen <= 1) {
+          // A bottom-SEGMENT shuffle permutes only the segment (TA-396c): a 1-card segment under a stocked deck is the
+          // same non-decision (Grand Wing on a 1-card hand). The identity is still a whole-deck permutation.
+          const segmentBottom = (prompt as { bottomCount?: number }).bottomCount;
+          const permuted = segmentBottom !== undefined ? Math.min(segmentBottom, deckLen) : deckLen;
+          if (permuted <= 1) {
             const perm = Array.from({ length: deckLen }, (_, i) => i);
             // Push BEFORE the dispatch: resolving this prompt can run the game on past the turn
             // boundary, and dispatchAndCollect appends everything that derives from it. Pushing
@@ -1101,6 +1139,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // TA-373: snapshot pre-action card zones so a reveal fired inside this action's effect reports
       // each card's SOURCE zone, not the zone a mid-effect search moved it into.
       actionStartZones = snapshotCardZones(game.state);
+      revealedThisAction = new Set<string>();
       // CF-65 sub-shape 3: a new top-level action closes whatever attack was in flight; a `declareAttack`
       // opens one (see `InFlightAttack`). Resolution failures are the dispatch's to report, not this note's.
       game.inFlightAttack = undefined;
