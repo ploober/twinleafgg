@@ -4,15 +4,12 @@ import {
   PokemonCard,
   StoreLike,
   State,
-  StateUtils,
-  PlayerType,
   SlotType,
-  ChoosePokemonPrompt,
   GameMessage,
   ConfirmPrompt,
 } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, SWITCH_OUT_OPPONENT_ACTIVE_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Metagross extends PokemonCard {
@@ -48,26 +45,10 @@ export class Metagross extends PokemonCard {
   public fullName: string = 'Metagross M4';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Bounce Back: "Switch out your opponent's Active Pokémon to the Bench. (Your opponent chooses the new Active
+    // Pokémon.)" TA-614: the new-Active pick was raised to the attacker; the prefab asks the opponent.
     if (AFTER_ATTACK(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some((b) => b.cards.length > 0);
-      if (!hasBench) return state;
-      return store.prompt(
-        state,
-        new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_SWITCH,
-          PlayerType.TOP_PLAYER,
-          [SlotType.BENCH],
-          { allowCancel: false },
-        ),
-        (result) => {
-          if (result && result.length > 0) {
-            opponent.switchPokemon(result[0]);
-          }
-        },
-      );
+      return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { sourceEffect: effect.attackEffect });
     }
     if (WAS_ATTACK_USED(effect, 1, this) && effect instanceof AttackEffect) {
       const player = effect.player;

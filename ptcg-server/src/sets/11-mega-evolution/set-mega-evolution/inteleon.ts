@@ -1,3 +1,4 @@
+import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import { CardTarget, ChoosePokemonPrompt, GameError, GameMessage, PlayerType, SlotType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
@@ -41,18 +42,20 @@ export class Inteleon extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = effect.opponent;
+      // TA-615: "the least HP REMAINING" — the current HP (CheckHpEffect, reduced so HP modifiers apply) minus the
+      // damage on it. The CheckHpEffect was never reduced and damage was ignored, so every Pokémon with the same
+      // printed HP was offered.
+      const remaining = (owner: typeof player, list: PokemonCardList): number => {
+        const hpCheck = new CheckHpEffect(owner, list);
+        store.reduceEffect(state, hpCheck);
+        return hpCheck.hp - list.damage;
+      };
       let leastHP = Infinity;
-
-      // figuring out which pokemon actually has the least hp
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, card => {
-        if (card !== player.active) {
-          const hpCheck = new CheckHpEffect(player, card);
-          if (hpCheck.hp < leastHP) { leastHP = hpCheck.hp; }
-        }
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, list => {
+        if (list !== player.active) { leastHP = Math.min(leastHP, remaining(player, list)); }
       });
-      opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, card => {
-        const hpCheck = new CheckHpEffect(opponent, card);
-        if (hpCheck.hp < leastHP) { leastHP = hpCheck.hp; }
+      opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, list => {
+        leastHP = Math.min(leastHP, remaining(opponent, list));
       });
 
       // making sure it gets put on the active pokemon
@@ -68,17 +71,10 @@ export class Inteleon extends PokemonCard {
       // Net effect: `blocked` came out as [1:1:0, 1:1:0] and the attacker itself stayed selectable,
       // which the card explicitly forbids ("except for this Pokémon").
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-        const hpCheck = new CheckHpEffect(player, list);
-        if (list === player.active) { blockedTo.push(target); }
-        else if (hpCheck.hp !== leastHP) {
-          blockedTo.push(target);
-        }
+        if (list === player.active || remaining(player, list) !== leastHP) { blockedTo.push(target); }
       });
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (list, card, target) => {
-        const hpCheck = new CheckHpEffect(opponent, list);
-        if (hpCheck.hp !== leastHP) {
-          blockedTo.push(target);
-        }
+        if (remaining(opponent, list) !== leastHP) { blockedTo.push(target); }
       });
 
       store.prompt(state, new ChoosePokemonPrompt(
