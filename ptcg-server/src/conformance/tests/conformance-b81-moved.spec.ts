@@ -603,3 +603,18 @@ describe('B.80 / B.81: a looked-at card is known to its owner only (Snack Seek t
     expect(moved(res.events).filter(e => e.card === 'ad0').map(e => e.visibility)).toEqual(['owner']);
   });
 });
+
+describe('B.83: a look at the opponent\'s deck is known to the looker only (`opponent`)', () => {
+  // Gothorita wht-042 Fortunate Eye: "Look at the top 5 cards of your opponent's deck and put them back in any order."
+  // The five are B's cards, lifted into B's transit; only A has seen them. Mutation guard: project every prompt pile
+  // `owner` again and this reds.
+  it('Fortunate Eye: B\'s five are in B.transit as `opponent`, and their legs say `opponent` [TA-611]', () => {
+    const res = step(game(
+      player({ active: { stack: [{ iid: 'a1', printing: 'wht-042' }], energy: cards('ae', 3, 'sve-005'), tools: [], damage: 0, conditions: [], markers: markers() },
+        deck: cards('ad', 4), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 8), prizes: prizes('bp', 3) })),
+      [{ actor: 'A', type: 'declareAttack', source: 'a1', name: 'Fortunate Eye' } as never]);
+    expect((res.state.players.B.transit ?? []).map(t => t.visibility)).toEqual(Array(5).fill('opponent'));
+    expect(moved(res.events).filter(e => e.owner === 'B').map(e => e.visibility)).toEqual(Array(5).fill('opponent'));
+  });
+});

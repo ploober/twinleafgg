@@ -631,10 +631,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(types(reorder).every(t => t === 'choose')).toBe(true);
     // B.80 (2026-10-04): the looked-at 5 are LIFTED off B's deck and sit in B's `transit` (the card's
     // owner, not the reorderer), in pile order, `origin: deck`; the un-looked 3 stay in the deck. All 8
-    // stay observable (card conservation). CF-61 used to re-home the pile to the deck top.
+    // stay observable (card conservation). CF-61 used to re-home the pile to the deck top. B.83 (2026-10-05, TA-611):
+    // only A has looked at them, so they are `opponent` (known to B's opponent), not `owner`.
     expect(reorder.state.players.B.deck.map(c => c.iid)).toEqual(['B-dk5', 'B-dk6', 'B-dk7']);
     expect((reorder.state.players.B.transit ?? []).map(c => c.iid)).toEqual(['B-dk0', 'B-dk1', 'B-dk2', 'B-dk3', 'B-dk4']);
-    expect((reorder.state.players.B.transit ?? []).every(c => c.origin?.zone === 'deck' && c.visibility === 'owner')).toBe(true);
+    expect((reorder.state.players.B.transit ?? []).every(c => c.origin?.zone === 'deck' && c.visibility === 'opponent')).toBe(true);
     expect(reorder.state.players.A.transit).toEqual([]);
 
     // (b) Round-trip: supplying the full choose sequence resolves the reorder. The i-th pick lands at new

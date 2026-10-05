@@ -717,7 +717,7 @@ function promptTempPile(prompt: Prompt<unknown>): CardList | undefined {
  * `deck.moveTo(temp, 6)` then a ChooseCardsPrompt over `temp`), an opponent-peek pile, a reorder pile.
  * B.80: those cards have been LIFTED out of a zone and belong in their OWNER's `transit`, with `origin` read
  * from the pile's CardList.fromZoneTag (stamped by moveTo/moveCardsTo from the tagged settled zone) and
- * `visibility: owner` (a look is known to the looker, not the opponent; a decomposer whose prompt is a
+ * `visibility: owner` when the looker owns the pile, `opponent` when it is the other player's (B.83; a decomposer whose prompt is a
  * public reveal raises it to `public` in its fix-up). No settled-zone filter here: pruneTransitDuplicates
  * applies it against the SAME snapshot it projects, the only place the filter is guaranteed consistent.
  */
@@ -765,7 +765,9 @@ function detachedTransitCards(state: State, ctx: IidContext): TransitRef[][] {
       if (owner === -1) { owner = ctx.cardOwner.get(card) ?? promptOwner; }
       const iid = ctx.cardToIid.get(card);
       if (iid === undefined) { continue; }
-      const t: TransitRef = { iid, printing: toPrinting(card), visibility: 'owner' };
+      // B.83: the prompt's player is the looker. A pile of the OTHER player's cards (Fortunate Eye looks at the
+      // opponent's top five) is known to its owner's opponent only: `opponent` (TA-611).
+      const t: TransitRef = { iid, printing: toPrinting(card), visibility: owner === promptOwner ? 'owner' : 'opponent' };
       if (stack !== undefined) {
         t.origin = { zone: stack.section, pokemon: stack.basic,
           role: card.superType === SuperType.ENERGY ? 'energy' : card.superType === SuperType.TRAINER ? 'tool' : 'pokemon' };

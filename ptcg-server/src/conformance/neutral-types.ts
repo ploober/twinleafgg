@@ -56,7 +56,8 @@ export interface Location {
   position?: DeckPosition;
 }
 
-export type TransitVisibility = 'public' | 'owner' | 'hidden';
+/** B.80 / B.81; `opponent` (B.83, contract 0.14.0): the owner's opponent can identify the card, the owner cannot. */
+export type TransitVisibility = 'public' | 'owner' | 'opponent' | 'hidden';
 
 /**
  * B.80 / CF-91 (contract 0.12.0, `TransitCard`): a card a player has lifted out of a zone and not yet placed
