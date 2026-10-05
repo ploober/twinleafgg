@@ -9849,6 +9849,26 @@
       "fixes": [
         "FX-0372"
       ]
+    },
+    {
+      "file": "game/store/effects/attack-effects.ts",
+      "signatures": [
+        "  public applyWeaknessToBench = false;"
+      ],
+      "note": "TA-600 (2026-10-04): DealDamageEffect.applyWeaknessToBench opt-in",
+      "fixes": [
+        "FX-0372"
+      ]
+    },
+    {
+      "file": "set-plasma-freeze/espeon.ts",
+      "signatures": [
+        "          dealDamage.applyWeaknessToBench = true;   // TA-600: \"Also apply Weakness and Resistance for Benched Pokémon\""
+      ],
+      "note": "TA-600 (2026-10-04): DealDamageEffect.applyWeaknessToBench opt-in",
+      "fixes": [
+        "FX-0372"
+      ]
     }
   ]
 }
