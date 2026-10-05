@@ -909,6 +909,7 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
   // else origin AND visibility are omitted — the adapter cannot read where the card came from or who sees
   // it, and the harness reports that as a contract gap rather than letting a guess stand in (TA-590 census).
   const stamped: Record<NeutralPlayerId, Array<{ t: TransitRef; seq: number }>> = { A: [], B: [] };
+  const textStamped: Record<NeutralPlayerId, Array<{ t: TransitRef; order: number }>> = { A: [], B: [] };
   for (const [iid, card] of ctx.iidToCard) {
     if (seen.has(iid)) { continue; }
     const ownerIndex = ctx.cardOwner.get(card);
@@ -922,13 +923,19 @@ export function projectOrphans(state: NeutralState, ctx: IidContext): void {
       if (origin !== undefined) { t.origin = origin; }
       const destination = locationOfTag(stamp.destination, true);
       if (destination !== undefined) { t.destination = destination; }
-      p.transit = [...(p.transit ?? []), t];
+      textStamped[who].push({ t, order: stamp.order ?? Number.POSITIVE_INFINITY });
     } else if (CardList.deckStamp.has(card)) {
       stamped[who].push({ t: { iid, printing: toPrinting(card), origin: { zone: 'deck' }, visibility: 'owner' }, seq: CardList.deckStamp.get(card)! });
     } else {
       p.transit = [...(p.transit ?? []), { iid, printing: toPrinting(card) } as TransitRef];
     }
     seen.add(iid);
+  }
+  // A text-stamped pile in its known order (`order`); unordered stamps keep the walk's order (a stable sort).
+  for (const who of ['A', 'B'] as NeutralPlayerId[]) {
+    if (textStamped[who].length === 0) { continue; }
+    const p = state.players[who];
+    p.transit = [...(p.transit ?? []), ...textStamped[who].sort((x, y) => (x.order === y.order ? 0 : x.order - y.order)).map(x => x.t)];
   }
   for (const who of ['A', 'B'] as NeutralPlayerId[]) {
     if (stamped[who].length === 0) { continue; }

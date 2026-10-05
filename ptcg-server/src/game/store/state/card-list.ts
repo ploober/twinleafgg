@@ -68,9 +68,11 @@ export class CardList {
    * standard zones mid-effect ("put that Pokémon face down in front of you": Tyme) records where it came
    * from, where the text will put it when the effect completes, and its face, so its wire `resolving`
    * entry can say so. Set by the card that does it; read only by the projection, and only while the card
-   * sits in no projected zone (the moment it lands in one, that zone is where it is projected).
+   * sits in no projected zone (the moment it lands in one, that zone is where it is projected). `order`, when set,
+   * is the card's place in a lifted pile whose order is known (Iono's answered hand block); the projection lists
+   * stamped cards by it.
    */
-  public static readonly transit = new WeakMap<Card, { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden' }>();
+  public static readonly transit = new WeakMap<Card, { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden'; order?: number }>();
   private static deckStampSeq = 0;
 
   /**

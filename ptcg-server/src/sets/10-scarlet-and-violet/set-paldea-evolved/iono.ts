@@ -8,6 +8,7 @@ import { Card, GameError, GameMessage, Player } from '../../../game';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 import { MoveCardsEffect } from '../../../game/store/effects/game-effects';
+import { CardList } from '../../../game/store/state/card-list';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 
 export class Iono extends TrainerCard {
@@ -63,38 +64,56 @@ export class Iono extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      // TA-608: each hand was shuffled with an inline PRNG, so no shuffle was ever offered and the bottom order
-      // could not be supplied. TA-556 / B.74: the steps run in LOCKSTEP — both hands go under their decks, then each
-      // hand block is shuffled (ShuffleDeckPrompt {zone: hand, bottomCount}, the Grand Wing TA-458 / TA-591 shape),
-      // then each player draws. A put blocked by an effect (Milotic) puts nothing.
-      const putUnder = (who: Player, cards: Card[]): number => {
-        if (cards.length === 0) { return 0; }
-        const move = new MoveCardsEffect(who.hand, who.deck, { cards, sourceCard: this });
+      // TA-608: each hand was shuffled with an inline PRNG, so no shuffle was ever offered and the bottom order could
+      // not be supplied. TA-556 / B.74: the steps run in LOCKSTEP and in printed order — every hand is shuffled, then
+      // every hand goes on the bottom of its deck, then every player draws. Each hand is lifted into a pile (B.80:
+      // transit {hand -> deck bottom, owner}); for its shuffle the pile goes under the deck as the bottom segment of a
+      // ShuffleDeckPrompt {zone: hand, bottomCount} (the Grand Wing TA-458 shape) and comes back out in the answered
+      // order. A player protected from the Supporter (Milotic Dew Guard: "prevent all effects of that card done to you
+      // or your hand") keeps their hand and does not draw.
+      const lift = (who: Player, cards: Card[]): CardList | undefined => {
+        const pile = new CardList();
+        if (cards.length === 0) { return pile; }
+        const move = new MoveCardsEffect(who.hand, pile, { cards, sourceCard: this });
         state = store.reduceEffect(state, move);
-        return move.preventDefault ? 0 : cards.length;
+        if (move.preventDefault) { return undefined; }
+        pile.cards.forEach(c => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner' }));
+        return pile;
       };
-      const nPlayer = putUnder(player, playerCards);
-      const nOpponent = putUnder(opponent, opponentCards);
+      const piles: Array<[Player, CardList | undefined]> = [[player, lift(player, playerCards)], [opponent, lift(opponent, opponentCards)]];
 
-      const draw = (): void => {
-        if (nPlayer + nOpponent === 0) { return; }
-        DRAW_CARDS(store, state, player, player.getPrizeLeft());
-        DRAW_CARDS(store, state, opponent, opponent.getPrizeLeft());
-      };
-      const shuffleBlock = (who: Player, n: number, next: () => void): State => {
-        if (n === 0) { next(); return state; }
+      const shuffle = (i: number): State => {
+        if (i === piles.length) {
+          // Put, then draw.
+          const put = piles.some(([, pile]) => pile !== undefined && pile.cards.length > 0);
+          for (const [who, pile] of piles) {
+            if (pile !== undefined) { pile.cards.forEach(c => CardList.transit.delete(c)); pile.moveTo(who.deck); }
+          }
+          if (put) {
+            for (const [who, pile] of piles) {
+              if (pile !== undefined) { DRAW_CARDS(store, state, who, who.getPrizeLeft()); }
+            }
+          }
+          return state;
+        }
+        const [who, pile] = piles[i];
+        const n = pile === undefined ? 0 : pile.cards.length;
+        if (n === 0) { return shuffle(i + 1); }
+        const start = who.deck.cards.length;
+        pile!.moveTo(who.deck);
         return store.prompt(state, new ShuffleDeckPrompt(who.id, { zone: 'hand', bottomCount: n }), order => {
           const deck = who.deck.cards;
-          const start = deck.length - n;
           // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
-          const segment = order.length === n ? order.map(i => start + i) : order.filter(i => i >= start);
-          if (segment.length === n && new Set(segment).size === n && segment.every(i => i >= start && i < deck.length)) {
-            who.deck.cards = [...deck.slice(0, start), ...segment.map(i => deck[i])];
-          }
-          next();
+          const segment = order.length === n ? order.map(k => start + k) : order.filter(k => k >= start);
+          const block = segment.length === n && new Set(segment).size === n && segment.every(k => k >= start && k < deck.length)
+            ? segment.map(k => deck[k]) : deck.slice(start);
+          who.deck.cards = deck.slice(0, start);
+          pile!.cards = block;
+          block.forEach((c, k) => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner', order: k }));
+          shuffle(i + 1);
         });
       };
-      return shuffleBlock(player, nPlayer, () => { shuffleBlock(opponent, nOpponent, draw); });
+      return shuffle(0);
     }
 
     return state;

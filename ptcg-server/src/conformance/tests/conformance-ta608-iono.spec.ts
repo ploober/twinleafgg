@@ -81,4 +81,28 @@ describe('TA-608 / TA-556: Iono pal-185 shuffles each hand through a system shuf
       .filter(e => e.kind === 'shuffled').map(e => `${e.player}:${e.zone}`);
     expect(zones).toEqual(['A:hand', 'B:hand']);
   });
+
+  it('lockstep projection: at A\'s shuffle BOTH hands are lifted {hand -> deck bottom, owner}; both decks untouched [TA-556]', () => {
+    const res = step(board(), [PLAY as never]);
+    const lifted = (who: 'A' | 'B') => (res.state.players[who].transit ?? []).map(t => `${t.iid}:${t.origin?.zone}>${t.destination?.zone}:${t.destination?.position}:${t.visibility}`);
+    expect(lifted('A').sort()).toEqual(['x0:hand>deck:bottom:owner', 'x1:hand>deck:bottom:owner']);
+    expect(lifted('B').sort()).toEqual(['y0:hand>deck:bottom:owner', 'y1:hand>deck:bottom:owner', 'y2:hand>deck:bottom:owner']);
+    expect(res.state.players.A.deck.map(c => c.iid)).toEqual(['ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5']);
+    expect(res.state.players.B.deck.map(c => c.iid)).toEqual(['bd0', 'bd1', 'bd2', 'bd3', 'bd4', 'bd5', 'bd6']);
+  });
+
+  it('lockstep projection: after A\'s answer A\'s shuffled block is still lifted (no put before every hand is shuffled) [TA-556]', () => {
+    const res = step(board(), [PLAY as never, shuffle(['x1', 'x0']) as never]);
+    expect((res.state.players.A.transit ?? []).map(t => t.iid)).toEqual(['x1', 'x0']);
+    expect(res.state.players.A.deck.map(c => c.iid)).toEqual(['ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5']);
+  });
+
+  it('Milotic evs-038 (Dew Guard) protects B: B keeps the hand and does not draw; A still puts and draws [TA-608]', () => {
+    const b = board();
+    b.players.B.bench = [{ stack: [{ iid: 'm0', printing: 'evs-037' }, { iid: 'm1', printing: 'evs-038' }], energy: [], tools: [], damage: 0, conditions: [], markers: markers() }];
+    const res = step(b, [PLAY as never, shuffle(['x1', 'x0']) as never]);
+    expect(res.state.players.B.hand.map(c => c.iid)).toEqual(['y0', 'y1', 'y2']);
+    expect(res.state.players.B.deck.length).toBe(7);
+    expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ad0', 'ad1', 'ad2', 'ad3']);
+  });
 });
