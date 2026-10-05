@@ -692,8 +692,22 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // B.81: the cards a `reveal` named since the last dispatch — their next leg is `public`.
   const revealedSince = new Set<string>();
 
+  // TA-593: every positional take from a player's own deck into that player's own hand is a draw. Live identity
+  // only (a probe's cloned lists never match), cleared when the loop ends; a dispatch that throws drops its draws.
+  const drawOps: Array<{ player: NeutralPlayerId; count: number }> = [];
+  CardList.topTake = (from: CardList, to: CardList, count: number): void => {
+    const players = game.store.state.players;
+    for (let i = 0; i < players.length; i++) {
+      if (players[i].deck === from && players[i].hand === to) {
+        drawOps.push({ player: i === 0 ? 'A' : 'B', count });
+        return;
+      }
+    }
+  };
+
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
+    const beforeDraws = drawOps.length;
     const beforeState = projectState(game.state, game.ctx);
     // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
     const beforeNames = basicIidDisplayNames(game.state, game.ctx);
@@ -715,7 +729,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // All-card iid -> name (energy/tool/evolution names for the observed-tier state-diff derivations).
     // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
     const allNames = allIidNames(game.ctx);
-    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames));
+    const draws = drawOps.splice(beforeDraws);
+    events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
+      draws));
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
     events.push(...deriveMoved(beforeState, afterState, revealedSince));
     revealedSince.clear();
@@ -753,6 +769,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // The cursor is advanced past an action before it is dispatched, so on a rejection it points one
     // past the offending action; `applied` is therefore the count of actions applied before it.
     return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection };
+  } finally {
+    CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
   }
 
   function loop(): LoopResult {

@@ -73,6 +73,15 @@ export class CardList {
   public static readonly transit = new WeakMap<Card, { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden' }>();
   private static deckStampSeq = 0;
 
+  /**
+   * TA-593 (conformance; inert for gameplay — unset outside the conformance driver). Called once per POSITIONAL
+   * take off the top of a list (`moveTo` with or without a count; MoveCardsEffect's `count` path), with the number
+   * of cards taken. The driver keeps the takes from a player's own deck into that player's own hand: that is a
+   * draw (rotomancer's definition too: a positional deck -> own-hand take; a search moves chosen cards, a look
+   * window goes through a temp list, and neither is seen here).
+   */
+  public static topTake?: (from: CardList, to: CardList, count: number) => void;
+
   private stampMovedCards(cards: Card[], destination: CardList): void {
     if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
     if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }
@@ -128,6 +137,9 @@ export class CardList {
     const cards = this.cards.splice(0, count);
     this.stampMovedCards(cards, destination);
     destination.cards.push(...cards);
+    if (cards.length > 0) {
+      CardList.topTake?.(this, destination, cards.length);
+    }
   }
 
   public moveCardsTo(cards: Card[], destination: CardList): void {

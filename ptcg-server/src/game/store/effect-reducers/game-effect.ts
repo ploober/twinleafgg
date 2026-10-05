@@ -1055,6 +1055,9 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
     else if (effect.count !== undefined) {
       const cards = source.cards.slice(0, effect.count);
       moveWithPrismStarCheck(cards, source, destination);
+      if (cards.length > 0) {
+        CardList.topTake?.(source, destination, cards.length);   // TA-593 (conformance; inert for gameplay)
+      }
       if (effect.toTop) {
         liftToTop(cards);
       }

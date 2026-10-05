@@ -430,3 +430,44 @@ describe('B.81 / B.80: a Prize taken with its reaction open (Lucky Bonus, Chanse
     expect(replays(initial, res)).toEqual([]);
   });
 });
+
+describe('TA-593: `draw` for every draw, effect draws included (§10.4)', () => {
+  // The contract's draw row: "both: carry `n`; both: also emit for effect-draws, not just the turn-start draw".
+  // Twinleaf read draws from LOG_PLAYER_DRAWS_CARD, which only the start-of-turn draw writes. Now every positional
+  // take from a player's own deck into that player's hand is one `draw {player, count}` per draw op
+  // (CardList.topTake). Mutation guard: unset the listener in runLoop and the Tyme cell reds (no draw).
+  type Draw = Extract<NeutralEvent, { kind: 'draw' }>;
+  const draws = (events: NeutralEvent[]) => events.filter((e): e is Draw => e.kind === 'draw');
+  const quietBoard = () => game(
+    player({ active: basic('a1'), hand: [{ iid: 'ah0', printing: GRASS }], deck: cards('ad', 6), prizes: prizes('ap', 3) }),
+    player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+
+  it('Tyme, right guess: the opponent\'s four cards are one draw {B, 4} [TA-593]', () => {
+    const initial = game(
+      player({ active: basic('a1'), hand: [{ iid: 'tyme', printing: TYME }, { iid: 'ah-poke', printing: BELLSPROUT }],
+        deck: cards('ad', 6), prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    const res = step(initial, [{ actor: 'A', type: 'playSupporter', card: 'tyme' } as never,
+      { actor: 'B', type: 'selectOption', label: '60' } as never]);
+    expect(res.state.players.B.hand.length).toBe(4);
+    expect(draws(res.events)).toEqual([{ kind: 'draw', player: 'B', count: 4 }]);
+  });
+
+  it('the start-of-turn draw is still one draw {player, 1}, not two [TA-593]', () => {
+    const res = step(quietBoard(), [{ actor: 'A', type: 'endTurn' } as never]);
+    expect(draws(res.events)).toEqual([{ kind: 'draw', player: 'B', count: 1 }]);
+  });
+
+  it('a search into the hand is not a draw (Ultra Ball meg-131) [TA-593]', () => {
+    const initial = game(
+      player({ active: basic('a1'),
+        hand: [{ iid: 'ub', printing: ULTRA_BALL }, { iid: 'h1', printing: GRASS }, { iid: 'h2', printing: GRASS }],
+        deck: [{ iid: 'dp', printing: BELLSPROUT }, ...cards('ad', 5)], prizes: prizes('ap', 3) }),
+      player({ active: basic('b1'), deck: cards('bd', 6), prizes: prizes('bp', 3) }));
+    // Two other cards: the discard cost is forced (collapsed), so the search pick comes first.
+    const res = step(initial, [{ actor: 'A', type: 'playItem', card: 'ub' } as never,
+      { actor: 'A', type: 'choose', target: 'dp' } as never]);
+    expect(res.state.players.A.hand.map(c => c.iid)).toContain('dp');
+    expect(draws(res.events)).toEqual([]);
+  });
+});
