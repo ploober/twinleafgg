@@ -53,7 +53,7 @@ function board(A: PlayerState, B: PlayerState, turn = 3): NeutralState {
 
 describe('Conformance — src/sets fix regression guards (merge-revert canaries)', () => {
 
-  it('Reshiram ex "Blazing Burst" asks its discard BEFORE the damage (B.82, reverses TA-55) [wht-020]', () => {
+  it('Reshiram ex "Blazing Burst" asks its discard BEFORE the damage (B.82, reverses TA-55) [TA-609 wht-020]', () => {
     // B.82 (owner 2026-10-05, #1834 / #2002): the choice of the attacker's own Energy is made first, the damage is
     // dealt with it still attached, then it is discarded. TA-55 had put the damage first (B.76, withdrawn).
     const res = step(
@@ -66,7 +66,7 @@ describe('Conformance — src/sets fix regression guards (merge-revert canaries)
     expect(res.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Wellspring Ogerpon "Torrential Pump" asks its confirm BEFORE the 100 (B.82, #2031; reverses TA-55) [twm-064]', () => {
+  it('Wellspring Ogerpon "Torrential Pump" asks its confirm BEFORE the 100 (B.82, #2031; reverses TA-55) [TA-609 twm-064]', () => {
     // #2031: the Energy are chosen, the 100 and the 120 are dealt with them attached, then they are shuffled in.
     const res = step(
       board(player({ active: pip('A-act', OGERPON, [

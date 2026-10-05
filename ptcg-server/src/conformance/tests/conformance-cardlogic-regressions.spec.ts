@@ -517,7 +517,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r.state.players.B.active!.damage).toBe(20);   // the 20 is already placed (damage-first)
   });
 
-  it('Zeraora "Strong Volt" asks its energy-discard choice BEFORE the 120 (B.82, reverses TA-69) [tef-057]', () => {
+  it('Zeraora "Strong Volt" asks its energy-discard choice BEFORE the 120 (B.82, reverses TA-69) [TA-609 tef-057]', () => {
     // "120. Discard an Energy from this Pokémon." With 3 energy attached the discard is a which-choice and pauses.
     // B.82 (owner 2026-10-05, #1834 / #2002): the choice is made first, the 120 is dealt with the chosen Energy
     // attached, then it is discarded. TA-69 had put the 120 first (B.76, withdrawn).

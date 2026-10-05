@@ -55,7 +55,10 @@
         "dealDamage.attackEffect.ignoreWeakness = true;"
       ],
       "state": "guarding",
-      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-ascended-heroes/regice-ex.ts",
@@ -1104,7 +1107,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
-      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-temporal-forces/raging-bolt-ex.ts",
@@ -2039,7 +2045,10 @@
         "const cards = eligible.map(em => em.card);",
         "return matchesCardFilter(card, filter);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "game/store/effect-reducers/game-effect.ts",
@@ -4848,7 +4857,10 @@
         "// Great Swing — \"Discard an Energy from this Pokémon.\" B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-surging-sparks/spheal.ts",
@@ -5084,7 +5096,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-ascended-heroes/mega-eelektross-ex.ts",
@@ -5111,7 +5126,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-chaos-rising/garbodor.ts",
@@ -6857,7 +6875,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves)."
       ],
       "state": "guarding",
-      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-surging-sparks/chien-pao.ts",
@@ -8014,7 +8035,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "state": "guarding",
-      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-chaos-rising/ho-oh.ts",
@@ -8022,7 +8046,10 @@
         "// B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy is discarded after it"
       ],
       "state": "guarding",
-      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker."
+      "note": "2026-10-05 B.82: the damage-first order this fix put in is reversed (choose first, damage, then move); signature re-recorded to the B.82 marker.",
+      "fixes": [
+        "FX-0387"
+      ]
     },
     {
       "file": "set-chaos-rising/mega-floette-ex.ts",
@@ -10059,6 +10086,107 @@
       "note": "TA-608 (2026-10-05): Iono pal-185: each hand goes through a system shuffle (ShuffleDeckPrompt {zone: hand, bottomCount}) in lockstep (B.74): ",
       "fixes": [
         "FX-0386"
+      ]
+    },
+    {
+      "file": "game/store/prompts/discard-energy-prompt.ts",
+      "signatures": [
+        "public deferredMove?: boolean;"
+      ],
+      "note": "TA-609, TA-610 (2026-10-05): B.82: an attack's choice of the attacker's own Energy is made before the damage, the chosen Energy stays attached throug",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/effects/game-effects.ts",
+      "signatures": [
+        "public afterDamageMoves: Array<() => void> = [];"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/state/state.ts",
+      "signatures": [
+        "public preDamageAttack?: Effect;"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "for (const move of attackEffect.afterDamageMoves.splice(0)) {",
+        "state.preDamageAttack = attackEffect;   // B.82: until the damage step starts (below)"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/attack-effect.ts",
+      "signatures": [
+        "const pre = state.preDamageAttack as AttackEffect | undefined;"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "pre.afterDamageMoves.push(() => { state = store.reduceEffect(state, new MoveCardsEffect(source, destination, options)); });"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "p.deferredMove = true;"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/copy-attack-delegation.ts",
+      "signatures": [
+        "state.preDamageAttack = attackEffect;   // B.82: until the damage step starts"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/costs.ts",
+      "signatures": [
+        "const deferred = effect instanceof AttackEffect;"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
+      ]
+    },
+    {
+      "file": "game/store/prompts/choose-energy-prompt.ts",
+      "signatures": [
+        "public deferredMove?: boolean;"
+      ],
+      "note": "B.82 (2026-10-05, owner pin; #1834, #2002, #2031): an attack's pre-damage choice of the attacker's own Energy stays attached and moves after the damage [TA-609, TA-610]",
+      "fixes": [
+        "FX-0387"
       ]
     }
   ]
