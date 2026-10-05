@@ -744,6 +744,25 @@ describe('TA-567 / TA-568 / TA-569', () => {
   it('control: offered with a Basic Active [TA-567]', () => {
     expect(offersTome(TOME_BASIC)).toBe(true);
   });
+  it('both Tomes are played at once: at the switch pick the second is in resolving with the first, not in the hand [TA-567]', () => {
+    const play = { actor: 'A', type: 'playItem', cards: ['Ah0', 'Ah1'] } as never;
+    const res = step(TOME_BASIC, [play]);
+    expect(res.state.players.A.hand.map(c => c.iid)).not.toContain('Ah1');
+    expect((res.state.players.A.resolving ?? []).map(c => c.iid).sort()).toEqual(['Ah0', 'Ah1']);
+  });
+
+  it('"Any attached cards ... remain on the new Pokémon": the switched-in Basic keeps the Energy [TA-567]', () => {
+    const board = JSON.parse(JSON.stringify(TOME_BASIC)) as NeutralState;
+    board.players.A.active!.energy = [{ iid: 'Ae0', printing: 'sve-001' }];
+    const play = { actor: 'A', type: 'playItem', cards: ['Ah0', 'Ah1'] } as never;
+    const paused = step(board, [play]);
+    const pick = (paused.pending?.legalActions ?? [])[0] as never;
+    const res = step(board, [play, pick]);
+    expect(res.state.players.A.active!.energy.map(c => c.iid)).toEqual(['Ae0']);
+    expect(res.state.players.A.discard.map(c => c.iid)).not.toContain('Ae0');
+    expect(res.state.players.A.discard.map(c => c.iid)).toContain('Ah1');
+  });
+
   it('Share heals its owner\'s own Antique Cover Fossil: 30 -> 10 [TA-568]', () => {
     expect(benchDamage(SHARE_FOSSIL)).toBe(10);
   });

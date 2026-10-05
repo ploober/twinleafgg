@@ -51,6 +51,12 @@ export class TransformationTome extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
       effect.preventDefault = true;
+      // TA-567: both Tomes are played at once — the second is on the playing field (resolving) with the first, not
+      // left in the hand until the effect ends.
+      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [second], sourceCard: this });
+      const discardSecond = (): void => {
+        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [second], sourceCard: this });
+      };
       const blocked: CardTarget[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
         if (card && (card as PokemonCard).stage !== Stage.BASIC) {
@@ -68,7 +74,7 @@ export class TransformationTome extends TrainerCard {
         ),
         (inPlaySelected) => {
           const inPlayTargets = inPlaySelected || [];
-          if (inPlayTargets.length === 0) return state;
+          if (inPlayTargets.length === 0) { discardSecond(); return state; }
           const inPlayList = inPlayTargets[0];
           return store.prompt(
             state,
@@ -81,13 +87,16 @@ export class TransformationTome extends TrainerCard {
             ),
             (discardSelected) => {
               const fromDiscard = discardSelected || [];
-              if (fromDiscard.length === 0) return state;
+              if (fromDiscard.length === 0) { discardSecond(); return state; }
               const inPlayCard = inPlayList.getPokemonCard();
-              if (inPlayCard && inPlayList.cards.length > 0) {
-                MOVE_CARDS(store, state, inPlayList, player.discard, { cards: [inPlayList.cards[0]], sourceCard: this });
-              }
+              // TA-567: "Any attached cards, damage counters, Special Conditions, turns in play, and any other effects
+              // remain on the new Pokémon": the new Basic enters the slot FIRST, then the old Pokémon card leaves, so
+              // the slot is never empty (an emptied slot's attachments are swept to the discard pile).
               MOVE_CARDS(store, state, player.discard, inPlayList, { cards: [fromDiscard[0]], sourceCard: this });
-              MOVE_CARDS(store, state, player.hand, player.discard, { cards: [second], sourceCard: this });
+              if (inPlayCard !== undefined) {
+                MOVE_CARDS(store, state, inPlayList, player.discard, { cards: [inPlayCard], sourceCard: this });
+              }
+              discardSecond();
             },
           );
         },

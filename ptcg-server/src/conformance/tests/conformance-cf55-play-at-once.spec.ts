@@ -139,11 +139,11 @@ describe('Conformance — CF-55 play N copies at once', () => {
     expect(res.pending!.descriptor).toContain('CHOOSE_CARD_TO_PUT_ONTO_BENCH');
     // CF-42 cross-check, and it is worth having the two contracts meet in one cell: the played card
     // is STAGED, not discarded, while its own prompt is open (#919 cost -> effect -> discard).
-    expect((res.state.players.A.resolving ?? []).map(c => c.printing)).toEqual([TOME]);
-    // The companion copy is still in hand HERE — the engine spends it when the effect completes,
-    // not when the action is accepted. Asserting an empty hand at this boundary is what my first
-    // version of this cell did, and it was asserting an end state for a play still in flight.
-    expect((res.state.players.A.hand ?? []).map(c => c.iid)).toEqual(['A-t1']);
+    // B.80 / TA-567 (2026-10-04): BOTH copies are played at once ("You must play 2 Transformation Tome cards at
+    // once"), so both are on the playing field while the effect is in flight — the companion is no longer left in
+    // the hand until the effect completes (this cell used to pin that; rotomancer shows both in resolving).
+    expect((res.state.players.A.resolving ?? []).map(c => c.printing)).toEqual([TOME, TOME]);
+    expect((res.state.players.A.hand ?? []).map(c => c.iid)).toEqual([]);
   });
 
   it('driven to completion, BOTH copies are spent', () => {
