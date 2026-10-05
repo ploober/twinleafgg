@@ -1,4 +1,4 @@
-import { CardType, GamePhase, PokemonCard, PokemonCardList, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
+import { CardType, GameLog, GamePhase, PokemonCard, PokemonCardList, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { BeginTurnEffect } from '../../../game/store/effects/game-phase-effects';
@@ -120,6 +120,15 @@ export class Maractus extends PokemonCard {
         return state;
       }
       attackerSlot.damage += 60;
+      // Log the placement like every engine counter placement (PutCountersEffect): the game log shows it, and the
+      // conformance events read it to attribute the 60 to the Attacking Pokemon when it is Knocked Out in the same
+      // Knock Out group (TA-577) and so leaves no damage to diff.
+      store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {
+        name: player.name,
+        damage: 60,
+        target: attacker.name,
+        effect: this.powers[0].name,
+      });
     }
     // Corner
     if (WAS_ATTACK_USED(effect, 0, this)) {

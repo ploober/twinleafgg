@@ -246,6 +246,11 @@ describe('TA-577: a Knock Out made by a Knock Out reaction joins the same group'
     const afterReaction = step(BOARD, [...ACTIONS, ACCEPT]);
     expect(kos(afterReaction.events).sort()).toEqual(['a0', 'b0', 'bb0']);
     expect(afterReaction.state.players.A.active).toBeNull();
+    // The 6 counters on Arbok are a `damaged` event even though Arbok leaves play in the same dispatch: Maractus
+    // logs the placement (LOG_PLAYER_PLACES_DAMAGE_COUNTERS), which the KO'd attribution reads. Before TA-577 Arbok
+    // stayed Active and the board diff saw the 60; re-fuzz caught its loss (results/ta577-refuzz-20261004).
+    expect(afterReaction.events.filter(e => e.kind === 'damaged' && (e as { target?: string }).target === 'a0')
+      .map(e => (e as { hp?: number }).hp)).toEqual([60]);
     const takeAll = [...ACTIONS, ACCEPT,
       { actor: 'B', type: 'takePrize', index: 0 } as never,
       { actor: 'A', type: 'takePrize', index: 0 } as never,
@@ -254,6 +259,16 @@ describe('TA-577: a Knock Out made by a Knock Out reaction joins the same group'
     expect(end.state.players.B.prizes).toEqual([]);
     expect(end.state.players.A.prizes).toEqual([]);
     expect(end.state.outcome).toBe('tie');
+  });
+
+  it('the reaction order the other way round (Diver\'s Catch first): Arbok\'s 6 counters are still a damaged 60 [TA-577]', () => {
+    const board = JSON.parse(JSON.stringify(BOARD)) as NeutralState;
+    board.players.A.prizes.push({ iid: 'Ap2', printing: board.players.A.prizes[0].printing, faceUp: false });
+    const res = step(board, [(ACTIONS as unknown[])[0] as never,
+      { actor: 'A', type: 'resolveNext', kind: 'abilityEffect', ability: 'Diver\'s Catch', source: 'bb1', subject: 'bb0' } as never, ACCEPT]);
+    expect(kos(res.events).sort()).toEqual(['a0', 'b0', 'bb0']);
+    expect(res.events.filter(e => e.kind === 'damaged' && (e as { target?: string }).target === 'a0')
+      .map(e => (e as { hp?: number }).hp)).toEqual([60]);
   });
 
   it('control: with 3 Prizes left A does not win, and Arbok is still Knocked Out in the same group [TA-577]', () => {
