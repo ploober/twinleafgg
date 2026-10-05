@@ -72,6 +72,7 @@ export class Espeon extends PokemonCard {
           // Use DealDamageEffect for all targets (applies W/R even for bench)
           const dealDamage = new DealDamageEffect(effect, 40);
           dealDamage.target = targets[0];
+          dealDamage.applyWeaknessToBench = true;   // TA-600: "Also apply Weakness and Resistance for Benched Pokémon"
           store.reduceEffect(state, dealDamage);
         },
       );

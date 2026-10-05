@@ -260,10 +260,14 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
       effect.damage = Math.max(0, effect.damage - effect.target.damageReductionBeforeWeaknessNextTurn);
     }
 
+    // TA-600: "When Benched Pokémon take damage, do not apply Weakness or Resistance" (rulebook) — unless the card
+    // says to (`applyWeaknessToBench`). Only an Active Pokémon takes W/R by default.
+    const onBench = !state.players.some(p => p.active === effect.target);
+    const skipForBench = onBench && !effect.applyWeaknessToBench;
     const applyWeakness = new ApplyWeaknessEffect(base, effect.damage);
     applyWeakness.target = effect.target;
-    applyWeakness.ignoreWeakness = base.ignoreWeakness;
-    applyWeakness.ignoreResistance = base.ignoreResistance;
+    applyWeakness.ignoreWeakness = base.ignoreWeakness || skipForBench;
+    applyWeakness.ignoreResistance = base.ignoreResistance || skipForBench;
     state = store.reduceEffect(state, applyWeakness);
 
     const dealDamage = new PutDamageEffect(base, applyWeakness.damage);

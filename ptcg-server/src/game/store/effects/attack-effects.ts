@@ -69,6 +69,11 @@ export class DealDamageEffect extends AbstractAttackEffect implements Effect {
   public preventDefault = false;
   public damage: number;
   public damageIncreased = false;
+  /**
+   * TA-600: Weakness and Resistance apply only to the Active Pokémon unless the card says otherwise ("Also apply
+   * Weakness and Resistance for Benched Pokémon"). Set this for those cards; a Benched target otherwise skips W/R.
+   */
+  public applyWeaknessToBench = false;
   constructor(base: AttackEffect, damage: number) {
     super(base);
     this.damage = damage;

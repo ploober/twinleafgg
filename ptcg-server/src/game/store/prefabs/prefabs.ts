@@ -337,7 +337,9 @@ export function THIS_ATTACK_DOES_X_DAMAGE_TO_X_OF_YOUR_OPPONENTS_POKEMON(
     ),
     (selected) => {
       selected.forEach((target) => {
-        if (base.target === base.opponent.active) {
+        // TA-600: the CHOSEN target decides (the attack's defender is always the Active, so comparing it sent every
+        // Bench hit down the Weakness path).
+        if (target === base.opponent.active) {
           const damageEffect = new DealDamageEffect(base, damage);
           damageEffect.target = target;
           return store.reduceEffect(state, damageEffect);
