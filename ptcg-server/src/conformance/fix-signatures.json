@@ -9979,6 +9979,26 @@
       "fixes": [
         "FX-0380"
       ]
+    },
+    {
+      "file": "game/store/prompts/remove-damage-prompt.ts",
+      "signatures": [
+        "      if (from.damage <= 0) {"
+      ],
+      "note": "TA-581 (2026-10-04): Munkidori twm-095 Adrena-Brain cannot be spent on an undamaged source: RemoveDamagePrompt.validate rejects a source with",
+      "fixes": [
+        "FX-0382"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/munkidori.ts",
+      "signatures": [
+        "            // The Ability is used once the transfer resolves (B.57: a whiff by prevention is still a use). An undamaged"
+      ],
+      "note": "TA-581 (2026-10-04): Adrena-Brain's marker set after the transfer",
+      "fixes": [
+        "FX-0382"
+      ]
     }
   ]
 }
