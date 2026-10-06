@@ -136,6 +136,13 @@ export class ChooseCardsPrompt extends Prompt<Card[]> {
   public options: ChooseCardsOptions;
   private blockedCardIds: number[] = [];
   public player: Player;
+  /**
+   * TA-607: set by a card whose text asks for the selected cards' ORDER in its own decision right after this
+   * selection (Kofu: "put 2 cards ... on the bottom of your deck in any order" -> OrderCardsPrompt over exactly the
+   * selected cards). The selection's pick order then carries nothing, so a forced selection (min >= eligible) is a
+   * non-decision the conformance adapter may collapse (CF-14). Read only by conformance/decomposers/choose-cards.ts.
+   */
+  public orderFollows?: boolean;
 
   constructor(
     player: Player,

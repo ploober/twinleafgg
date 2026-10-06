@@ -9,6 +9,7 @@ import { LegalAction } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
 import { liftToTransit, placeInDiscard } from '../transit-projection';
+import { State } from '../../game/store/state/state';
 
 /**
  * TA-204 / SD-14: would adding `candidate` to the already-picked set violate a constraint that
@@ -191,8 +192,8 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
  * Kind plus forcedness are the ONLY keys. There is deliberately no zone term and no actor term — see
  * the collapse site in `next()` for the measurement that retired both.
  */
-function forcedPickIndices(prompt: ChooseCardsPrompt): number[] | null {
-  if (!COLLAPSIBLE_PICK_MESSAGES.has(prompt.message)
+function forcedPickIndices(prompt: ChooseCardsPrompt, state: State | undefined): number[] | null {
+  if (!(COLLAPSIBLE_PICK_MESSAGES.has(prompt.message) || orderFollowsActiveSelection(prompt, state))
     || prompt.options.allowCancel !== false || prompt.options.isSecret === true) {
     return null;
   }
@@ -205,6 +206,28 @@ function forcedPickIndices(prompt: ChooseCardsPrompt): number[] | null {
     eligible.push(i);
   }
   return eligible.length > 0 && prompt.options.min >= eligible.length ? eligible : null;
+}
+
+/**
+ * TA-607 (B.73 order step, CF-14): a selection the card marks `orderFollows` — its text asks the selected cards'
+ * order in its OWN decision right after (Kofu scr-138 / scr-165: "Put 2 cards from your hand on the bottom of your
+ * deck in any order", an OrderCardsPrompt over exactly the picked cards) — carries no information in its pick order,
+ * so when forced (min >= |eligible|) every valid answer is the same set with the same downstream decision: one
+ * outcome. That is the one thing that kept the order-content messages (CHOOSE_CARDS_TO_PUT_ON_BOTTOM_OF_THE_DECK
+ * and its kin) off the allow-list above, and the marker answers it per card rather than per message: Weavile
+ * brs-087 (out of pool) raises the same message over the opponent's hand with NO order step after, where the pick order IS the
+ * bottom order, and it is not marked. Scoped to the ACTIVE player's own selection (the B.11 / CF-17 active-player
+ * collapse scope); a selection handed to the opponent surfaces.
+ *
+ * Census (2026-10-05, every in-pool ChooseCardsPrompt followed by an OrderCardsPrompt): Kofu scr-138/165 (hand,
+ * this message, marked); Dialga ssp-135 Time Manipulation (deck, CHOOSE_CARD_TO_HAND, already on the allow-list);
+ * Cryptomaniac's Deciphering tef-145 (deck, CHOOSE_CARDS, NOT marked: a deck search, left alone here).
+ */
+function orderFollowsActiveSelection(prompt: ChooseCardsPrompt, state: State | undefined): boolean {
+  // `state` is undefined only from `assemble`, which runs after `next()` already took the decision with the state in
+  // hand (a zero-pick assemble of a marked prompt is reached only through that collapse).
+  return prompt.orderFollows === true
+    && (state === undefined || prompt.player.id === state.players[state.activePlayer].id);
 }
 
 /**
@@ -292,7 +315,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     // effect-internal. So the carve-out is vacuous for this prompt class TODAY — it is not a claim that no
     // structural discard could ever exist. If one is ever added it MUST be carved out here by message, the
     // way `choose-pokemon.ts` carves out CHOOSE_NEW_ACTIVE_POKEMON.
-    const forcedIndices = rp.length === 0 ? forcedPickIndices(prompt) : null;
+    const forcedIndices = rp.length === 0 ? forcedPickIndices(prompt, state) : null;
     if (forcedIndices !== null) {
       return null;
     }
@@ -397,7 +420,7 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
     const picked = realPicks(picks).map(p => (p as { index: number }).index);
     if (picked.length === 0) {
       // Auto-resolved forced discard (next() returned null with no picks): take all eligible (CF-8).
-      const forced = forcedPickIndices(prompt);
+      const forced = forcedPickIndices(prompt, undefined);
       if (forced !== null) {
         return forced;
       }

@@ -25,13 +25,15 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   const deckBottom = new CardList();
 
-  yield store.prompt(state, new ChooseCardsPrompt(
+  const selection = new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARDS_TO_PUT_ON_BOTTOM_OF_THE_DECK,
     player.hand,
     {},
     { allowCancel: false, min: 2, max: 2 }
-  ), selected => {
+  );
+  selection.orderFollows = true; // TA-607: "in any order" is the OrderCardsPrompt below, over exactly these cards
+  yield store.prompt(state, selection, selected => {
     cards = selected || [];
     next();
   });
