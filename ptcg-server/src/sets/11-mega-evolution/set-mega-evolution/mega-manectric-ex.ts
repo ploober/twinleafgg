@@ -56,7 +56,8 @@ export class MegaManectricEx extends PokemonCard {
         (result) => {
           if (result) {
             effect.damage += 130;
-            DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+            // TA-613 (B.82, #1834): the choice is made first; the Energy moves after the damage.
+            effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));
           }
         },
         GameMessage.WANT_TO_DISCARD_ENERGY,

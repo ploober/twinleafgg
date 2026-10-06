@@ -47,7 +47,9 @@ export class Koraidon extends PokemonCard {
 
     // Ref: set-breakthrough/raichu-break.ts (Grand Bolt discard all Energy)
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, effect.player.active.getPokemonCard()!);
+      // TA-613 (B.76, #2031): no card is chosen, so the discard is applied after the damage.
+      const self = effect.player.active.getPokemonCard()!;
+      effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, self));
     }
 
     return state;

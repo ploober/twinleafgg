@@ -62,13 +62,16 @@ export class Kyurem extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
+      // TA-613 (B.76, #2031): no card is chosen, so the discard is applied after the damage.
+      effect.afterDamageMoves.push(() => {
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+        state = store.reduceEffect(state, checkProvidedEnergy);
 
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      state = store.reduceEffect(state, discardEnergy);
+        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        state = store.reduceEffect(state, discardEnergy);
+      });
 
       // "does 110 damage to 3 of your opponent's Pokemon" is a FIXED spread of 3, capped at how many
       // the opponent actually has -- NOT "up to 3", so min === max === min(3, available). When the

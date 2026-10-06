@@ -77,16 +77,18 @@ export class Rotomex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // Discard all Energy from this Pokemon
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
-      store.reduceEffect(state, checkProvidedEnergy);
+      // Discard all Energy from this Pokemon — TA-613 (B.76, #2031): no card is chosen, so after the damage.
+      effect.afterDamageMoves.push(() => {
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
+        store.reduceEffect(state, checkProvidedEnergy);
 
-      const energyCards = checkProvidedEnergy.energyMap.map((e) => e.card);
-      if (energyCards.length > 0) {
-        const discardEnergy = new DiscardCardsEffect(effect, energyCards);
-        discardEnergy.target = player.active;
-        store.reduceEffect(state, discardEnergy);
-      }
+        const energyCards = checkProvidedEnergy.energyMap.map((e) => e.card);
+        if (energyCards.length > 0) {
+          const discardEnergy = new DiscardCardsEffect(effect, energyCards);
+          discardEnergy.target = player.active;
+          store.reduceEffect(state, discardEnergy);
+        }
+      });
     }
 
     return state;

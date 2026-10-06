@@ -64,15 +64,18 @@ export class Zarude extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (wantToUse) {
-          const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
-          state = store.reduceEffect(state, checkProvidedEnergy);
+          // TA-613 (B.82, #1834): the choice is made first; the Energy goes to the hand after the damage.
+          effect.afterDamageMoves.push(() => {
+            const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
+            state = store.reduceEffect(state, checkProvidedEnergy);
 
-          const cards: Card[] = [];
-          checkProvidedEnergy.energyMap.forEach(em => {
-            cards.push(em.card);
+            const cards: Card[] = [];
+            checkProvidedEnergy.energyMap.forEach(em => {
+              cards.push(em.card);
+            });
+
+            MOVE_CARDS(store, state, player.active, player.hand, { cards: cards, sourceCard: this });
           });
-
-          MOVE_CARDS(store, state, player.active, player.hand, { cards: cards, sourceCard: this });
 
           effect.damage += 80;
         }

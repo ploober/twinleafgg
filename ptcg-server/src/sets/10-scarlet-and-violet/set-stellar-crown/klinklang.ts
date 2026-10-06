@@ -56,8 +56,10 @@ export class Klinklang extends PokemonCard {
       PLAY_POKEMON_FROM_HAND_TO_BENCH(state, player, this, effect.target);
     }
 
-    if (WAS_ATTACK_USED(effect, 0, this))
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-613 (B.76, #2031): no card is chosen, so the discard is applied after the damage.
+      effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));
+    }
 
     return state;
   }

@@ -402,9 +402,10 @@
     {
       "file": "set-surging-sparks/ceruledge-ex.ts",
       "signatures": [
-        "DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);"
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-05 TA-613: the TA-59 prefab call now runs after the damage (afterDamageMoves, FX-0390); signature re-recorded to the wrapped line."
     },
     {
       "file": "set-surging-sparks/dedenne.ts",
@@ -10207,6 +10208,236 @@
       "note": "TA-615 (2026-10-05): Bring Down meg-142: only the Pokémon with the least HP REMAINING are offered (reduced CheckHpEffect minus damage); one c",
       "fixes": [
         "FX-0389"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/cynthias-garchomp-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/stevens-claydol.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-journey-together/bombirdier.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-darmanitan.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/pawmot.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/kyurem.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/weavile.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/galvantula-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/klinklang.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/ceruledge-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/zarude.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/hearthflame-mask-ogerpon-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/luxray-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/zapdos.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-mega-evolution-promos/pikachu-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/clawitizer.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/dialga.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-latias-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-manectric-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-perfect-order/dartrix.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-perfect-order/mega-skarmory-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/rotom-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-pitch-black/koraidon.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, self));"
+      ],
+      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
       ]
     }
   ]

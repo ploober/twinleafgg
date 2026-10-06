@@ -44,19 +44,23 @@ export class MegaSkarmoryex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // Get all energy cards from this Pokemon
-      const energyCards = [...player.active.energies.cards];
+      // TA-613 (B.76, #2031): no card is chosen, so the Energy is shuffled in after the damage; the target pick
+      // (Step D) and the 220 come first.
+      effect.afterDamageMoves.push(() => {
+        // Get all energy cards from this Pokemon
+        const energyCards = [...player.active.energies.cards];
 
-      // Move all energy cards to deck. Through the SLOT (PokemonCardList.moveCardsTo prunes the card
-      // from `cards` AND `energies`), not through `energies` alone — that left every moved Energy in
-      // `player.active.cards` as a phantom for the rest of the game (TA-376).
-      if (energyCards.length > 0) {
-        player.active.moveCardsTo(energyCards, player.deck);
-      }
+        // Move all energy cards to deck. Through the SLOT (PokemonCardList.moveCardsTo prunes the card
+        // from `cards` AND `energies`), not through `energies` alone — that left every moved Energy in
+        // `player.active.cards` as a phantom for the rest of the game (TA-376).
+        if (energyCards.length > 0) {
+          player.active.moveCardsTo(energyCards, player.deck);
+        }
 
-      // Shuffle the deck
-      state = store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-        player.deck.applyOrder(order);
+        // Shuffle the deck
+        store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+          player.deck.applyOrder(order);
+        });
       });
 
       // Deal 220 damage to 1 of opponent's Pokemon

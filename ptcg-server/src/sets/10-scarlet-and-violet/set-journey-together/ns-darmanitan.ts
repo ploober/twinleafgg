@@ -73,12 +73,15 @@ export class NsDarmanitan extends PokemonCard {
       // FIRST, then discard + place damage. The final board is identical either way — this only
       // corrects the decision ORDER (twinleaf previously discarded before surfacing the choice).
       const discardThenDamage = (target?: PokemonCardList): State => {
-        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-        state = store.reduceEffect(state, checkProvidedEnergy);
-        const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-        const discardEnergy = new DiscardCardsEffect(effect, cards);
-        discardEnergy.target = player.active;
-        store.reduceEffect(state, discardEnergy);
+        // TA-613 (B.76, #2031): no card is chosen, so the discard is an effect applied after the attack's damage.
+        effect.afterDamageMoves.push(() => {
+          const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+          state = store.reduceEffect(state, checkProvidedEnergy);
+          const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
+          const discardEnergy = new DiscardCardsEffect(effect, cards);
+          discardEnergy.target = player.active;
+          store.reduceEffect(state, discardEnergy);
+        });
         if (target !== undefined) {
           const damageEffect = new PutDamageEffect(effect, 90);
           damageEffect.target = target;

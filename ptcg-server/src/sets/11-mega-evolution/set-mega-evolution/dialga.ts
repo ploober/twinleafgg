@@ -52,10 +52,13 @@ export class Dialga extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToShuffle => {
         if (wantToShuffle) {
-          energyCards.forEach(card => {
-            MOVE_CARDS(store, state, cardList, player.deck, { cards: [card], sourceCard: this });
+          // TA-613 (B.82, #1834): the choice is made first; the Energy is shuffled in after the damage.
+          effect.afterDamageMoves.push(() => {
+            energyCards.forEach(card => {
+              MOVE_CARDS(store, state, cardList, player.deck, { cards: [card], sourceCard: this });
+            });
+            SHUFFLE_DECK(store, state, player);
           });
-          SHUFFLE_DECK(store, state, player);
           effect.damage += 80;
         }
       });

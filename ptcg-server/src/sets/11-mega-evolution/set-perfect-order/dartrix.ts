@@ -37,8 +37,8 @@ export class Dartrix extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Discard all energy from this Pokemon
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+      // Discard all energy from this Pokemon — TA-613 (B.76, #2031): no card is chosen, so after the damage.
+      effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));
 
       // Check if opponent has any Pokemon
       const hasPokemon = opponent.active.cards.length > 0 ||

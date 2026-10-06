@@ -52,7 +52,8 @@ export class Ceruledgeex extends PokemonCard {
       // the discard pile but did NOT remove it from the Pokémon (findCardList + `cards = filter(...)`
       // leaves the PokemonCardList's derived energy stale), so the Energy stayed attached AND showed
       // in discard (duplicated). Route through the proper DiscardCardsEffect prefab. [TA-59]
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+      // TA-613 (B.76, #2031): no card is chosen, so the discard is applied after the damage.
+      effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));
     }
 
     if (

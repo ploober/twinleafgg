@@ -65,13 +65,16 @@ export class CynthiasGarchompex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
+      // TA-613 (B.76, #2031): no card is chosen, so the discard is applied after the damage.
+      effect.afterDamageMoves.push(() => {
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+        state = store.reduceEffect(state, checkProvidedEnergy);
 
-      const cards: Card[] = checkProvidedEnergy.energyMap.map((e) => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
+        const cards: Card[] = checkProvidedEnergy.energyMap.map((e) => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+      });
     }
 
     return state;
