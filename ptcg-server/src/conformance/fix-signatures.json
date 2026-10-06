@@ -10876,6 +10876,16 @@
       "fixes": [
         "FX-0406"
       ]
+    },
+    {
+      "file": "set-obsidian-flames/geeta.ts",
+      "signatures": [
+        "const discardGeeta = () => MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });"
+      ],
+      "note": "TA-629 (2026-10-05): Geeta is discarded after its shuffle (re-fuzz follow-up)",
+      "fixes": [
+        "FX-0404"
+      ]
     }
   ]
 }
