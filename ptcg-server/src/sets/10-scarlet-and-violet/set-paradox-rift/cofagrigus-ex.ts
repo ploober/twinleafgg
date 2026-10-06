@@ -88,12 +88,13 @@ export class Cofagrigusex extends PokemonCard {
         (selected) => {
           cards = selected || [];
           MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
+          // TA-582: the shuffle follows the search, so it is raised inside the pick callback; raised beside the open
+          // pick, the live arbiter shuffled first and the deck stayed in the searched order.
+          store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+            player.deck.applyOrder(order);
+          });
         },
       );
-
-      store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-        player.deck.applyOrder(order);
-      });
     }
 
     // Hollow Hands

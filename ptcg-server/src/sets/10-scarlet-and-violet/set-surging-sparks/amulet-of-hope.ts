@@ -83,10 +83,11 @@ export class AmuletofHope extends TrainerCard {
         ), selected => {
           cards = selected || [];
           MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-        });
-
-        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
+          // TA-582: the shuffle follows the search, so it is raised inside the pick callback; raised beside the open
+          // pick, the live arbiter shuffled first and the deck stayed in the searched order.
+          store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
         });
 
         player.marker.removeMarker(this.AMULET_OF_HOPE_MARKER);

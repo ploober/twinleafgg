@@ -8,6 +8,10 @@ import { ResolvePromptAction } from '../../game/store/actions/resolve-prompt-act
 import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { SuperType } from '../../game/store/card/card-types';
+import { GamePhase } from '../../game/store/state/state';
+import { KnockOutEffect } from '../../game/store/effects/game-effects';
+import { BetweenTurnsEffect } from '../../game/store/effects/game-phase-effects';
+import { Player } from '../../game/store/state/player';
 
 // TA-582 (was GAP): arbiter shuffle ran ahead of an open search pick.
 //
@@ -66,11 +70,11 @@ class LiveArbiterHandler implements StoreHandler {
 const P = 'Psychic Energy SVE';
 const F = 'Mega Sharpedo ex M2'; // non-energy filler
 
-function build(attacker: string, energy: string) {
+function build(attacker: string, energy: string, tools: string[] = []) {
   const game = setupGame({
     turn: 2,
     player1: {
-      active: { card: attacker, energy: [energy] },
+      active: { card: attacker, energy: [energy], tools },
       // 10 cards, 4 Basic Energy: deck ids are distinct and their order is observable
       deck: [F, P, F, F, P, F, P, F, F, P],
     },
@@ -155,5 +159,38 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
     expect(handler.shuffles[0].deckSizeAtShuffle).toBe(9); // the post-search deck
     expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
     expect(player.hand.cards.map(c => c.id)).toContain(card.id);
+  });
+
+  // TA-582 census siblings (in rotomancer's pool, same shape: a deck search to hand with the shuffle raised beside it).
+  // Cofagrigus ex par-076 Gold Coffin: "If this Pokémon is Knocked Out by damage from an attack from your opponent's
+  // Pokémon, search your deck for a card and put it into your hand. Then, shuffle your deck."
+  // Amulet of Hope ssp-162: "If the Pokémon this card is attached to is Knocked Out by damage from an attack from your
+  // opponent's Pokémon, search your deck for up to 3 cards and put them into your hand. Then, shuffle your deck."
+  function knockOut(store: Store, state: State, owner: Player): void {
+    state.phase = GamePhase.ATTACK;
+    store.reduceEffect(state, new KnockOutEffect(owner, owner.active));
+  }
+  function expectShuffleAfterPick(handler: LiveArbiterHandler, store: Store, state: State, player: Player, take: number) {
+    const pick = openPick(state);
+    expect(pick).toBeDefined();
+    expect(state.prompts.some(p => p.result === undefined && p instanceof ShuffleDeckPrompt)).toBe(false);
+    const deckBefore = player.deck.cards.length;
+    store.dispatch(new ResolvePromptAction(pick!.id, player.deck.cards.slice(0, take)));
+    expect(handler.shuffles.length).toBe(1);
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(deckBefore - take);
+  }
+
+  it('REGRESSION (TA-582 sibling): Cofagrigus ex par-076 Gold Coffin shuffles after its pick', () => {
+    const { handler, store, state, player } = build('Cofagrigus ex PAR', P);
+    knockOut(store, state, player);
+    expectShuffleAfterPick(handler, store, state, player, 1);
+  });
+
+  it('REGRESSION (TA-582 sibling): Amulet of Hope ssp-162 shuffles after its pick', () => {
+    const { handler, store, state, player } = build('Gimmighoul SSP', P, ['Amulet of Hope SSP']);
+    knockOut(store, state, player);
+    store.reduceEffect(state, new BetweenTurnsEffect(player));
+    expectShuffleAfterPick(handler, store, state, player, 2);
   });
 });
