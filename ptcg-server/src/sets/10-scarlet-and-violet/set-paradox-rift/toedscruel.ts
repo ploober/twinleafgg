@@ -3,7 +3,8 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { PlayerType, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { DiscardToHandEffect } from '../../../game/store/effects/play-card-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { PowerEffect } from '../../../game/store/effects/game-effects';
+import { HealEffect, PowerEffect } from '../../../game/store/effects/game-effects';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 
 
 export class Toedscruel extends PokemonCard {
@@ -49,6 +50,17 @@ export class Toedscruel extends PokemonCard {
   public fullName: string = 'Toedscruel PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+
+    // TA-532: Mushroom Drain "Heal 30 damage from this Pokémon." -- after the attack's damage.
+    if (AFTER_ATTACK(effect, 0, this)) {
+      const player = effect.player;
+      const self = player.active.getPokemonCard() === this ? player.active
+        : player.bench.find(b => b.getPokemonCard() === this);
+      if (self !== undefined) {
+        state = store.reduceEffect(state, new HealEffect(player, self, 30));
+      }
+      return state;
+    }
 
     if (effect instanceof DiscardToHandEffect) {
       const player = effect.player;

@@ -72,7 +72,8 @@ export class Veluza extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: minMove, max: 2, validCardTypes: [CardType.WATER, CardType.ANY] }
+        // TA-521: "to 1 of your Benched Pokémon" -- one destination for both Energy.
+        { allowCancel: false, min: minMove, max: 2, validCardTypes: [CardType.WATER, CardType.ANY], sameTarget: true }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {

@@ -59,7 +59,9 @@ export class Tinkaton extends PokemonCard {
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         {},
-        { allowCancel: true, min: 1, max: 1 }
+        // TA-528: the discard is the Ability's mandatory cost (an empty hand is refused above), so there is no
+        // cancel; with one card in hand the pick has a single resolution and collapses (CF-14).
+        { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
         if (cards.length === 0) {

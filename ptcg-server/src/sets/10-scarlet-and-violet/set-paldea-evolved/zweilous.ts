@@ -1,9 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt, ShowCardsPrompt, StateUtils, Card } from '../../../game';
+import { StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt, StateUtils, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS, SHOW_CARDS_THEN } from '../../../game/store/prefabs/prefabs';
 
 export class Zweilous extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -49,19 +49,15 @@ export class Zweilous extends PokemonCard {
         { min: 0, max: 2, allowCancel: true }
       ), selected => {
         cards = selected || [];
-
-        cards.forEach((card, index) => {
-          MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: this });
-
-        });
-
-        state = store.prompt(state, new ShowCardsPrompt(
-          opponent.id,
-          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-          cards), () => state
-        );
-        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
+        // TA-543 / B.34: "reveal them, and put them into your hand" -- the reveal names only the cards found (none
+        // found = nothing revealed) and happens before they enter the hand; then the shuffle.
+        SHOW_CARDS_THEN(store, state, opponent, cards, () => {
+          cards.forEach(card => {
+            MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: this });
+          });
+          store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
         });
       });
 

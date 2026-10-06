@@ -3,7 +3,7 @@ import { Stage, CardType } from '../../../game/store/card/card-types';
 import { GamePhase, PlayerType, StateUtils, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AbstractAttackEffect } from '../../../game/store/effects/attack-effects';
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
+import { BeginTurnEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -31,33 +31,43 @@ export class Marshadow extends PokemonCard {
   private readonly PREVENT_ALL_DAMAGE_AND_EFFECTS = 'PREVENT_ALL_DAMAGE_AND_EFFECTS';
   private readonly CLEAR_PREVENT_ALL_DAMAGE_AND_EFFECTS = 'CLEAR_PREVENT_ALL_DAMAGE_AND_EFFECTS';
 
-  private usedShadowySideKick = false;
+  private readonly SHADOWY_SIDE_KICK_USED = 'SHADOWY_SIDE_KICK_USED';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Attack: Shadowy Side Kick
     // Ref: set-plasma-freeze/kakuna.ts (prevent damage/effects), set-crimson-invasion/guzzlord-gx.ts (KO-conditional flag)
+    //
+    // TA-524: "this attack was used" lives on Marshadow's SLOT (game state), never on the card instance. The KO
+    // window probes every in-play card against a CLONE of the state (Store.probe), and Card instances are shared
+    // between the clone and the real state: a card-instance flag consumed by the probe was gone when the real
+    // KnockOutEffect arrived (a TA-87 regression). A slot marker is cloned with the probe state, so the probe
+    // consumes only its own copy.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      this.usedShadowySideKick = true;
+      effect.player.active.marker.addMarker(this.SHADOWY_SIDE_KICK_USED, this);
     }
 
-    // If an opponent's Pokemon is KO'd by this attack's damage, protect Marshadow next turn.
-    // TA-87: two bugs fixed here — (1) KnockOutEffect.player is the KO'd Pokémon's OWNER, not the attacker,
-    // so the old `effect.target === opponent.active` guard never matched and the marker was added to the
-    // wrong Pokémon; (2) the exact-lethal attack KO is processed LATE (after AFTER_ATTACK), so the old
-    // EndTurnEffect flag-reset — which fires mid-attack (still ATTACK phase) — cleared `usedShadowySideKick`
-    // before the KnockOutEffect arrived. We now consume the flag only in this branch (guarded to the ATTACK
-    // phase and to Marshadow being the attacker's Active, so a lingering flag can't mis-fire).
-    if (effect instanceof KnockOutEffect
-      && this.usedShadowySideKick
-      && state.phase === GamePhase.ATTACK) {
+    // The attack's KO is processed in the KO sweep (after AFTER_ATTACK), still in the ATTACK phase of the
+    // attacking player's turn. TA-87: KnockOutEffect.player is the KO'd Pokémon's OWNER, not the attacker.
+    if (effect instanceof KnockOutEffect && state.phase === GamePhase.ATTACK) {
       const koOwner = effect.player;                            // opponent — loses the KO'd Pokémon
       const attacker = StateUtils.getOpponent(state, koOwner);  // Marshadow's owner
-
-      if (attacker.active.getPokemonCard() === this && effect.target.getPokemonCard()) {
-        attacker.active.marker.addMarker(this.PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
+      const slot = attacker.active;
+      if (state.players[state.activePlayer] === attacker
+        && slot.getPokemonCard() === this
+        && slot.marker.hasMarker(this.SHADOWY_SIDE_KICK_USED, this)
+        && effect.target.getPokemonCard()) {
+        slot.marker.removeMarker(this.SHADOWY_SIDE_KICK_USED, this);
+        slot.marker.addMarker(this.PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
         koOwner.marker.addMarker(this.CLEAR_PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
-        this.usedShadowySideKick = false;
       }
+    }
+
+    // A Side Kick that Knocked Out nothing leaves its marker; it lapses when the next turn begins (the attack's KO
+    // window always completes before the turn advances).
+    if (effect instanceof BeginTurnEffect) {
+      state.players.forEach(p => p.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+        cardList.marker.removeMarker(this.SHADOWY_SIDE_KICK_USED, this);
+      }));
     }
 
     // Prevent damage and effects when marker is set
@@ -77,11 +87,6 @@ export class Marshadow extends PokemonCard {
         cardList.marker.removeMarker(this.PREVENT_ALL_DAMAGE_AND_EFFECTS, this);
       });
     }
-
-    // NB: no during-attack reset of `usedShadowySideKick` — the exact-lethal KO is processed *after*
-    // AFTER_ATTACK, so any earlier reset (the old EndTurnEffect one) races ahead of the KnockOutEffect.
-    // The flag is consumed in the KO branch above; a lingering flag (attack that didn't KO) is inert
-    // because the KO branch only fires while Marshadow is the ATTACKER's Active in the ATTACK phase.
 
     return state;
   }

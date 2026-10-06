@@ -45,7 +45,8 @@ export class Starmie extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { min: 1, max: 1, allowCancel: false },
+        // TA-527: a counter placement (contract verb placeCounter), not a bare target pick.
+        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
       ), selected => {
         const targets = selected || [];
         // TA-570: an Ability's counters go through PlaceDamageCountersEffect, so protection from the opponent's
