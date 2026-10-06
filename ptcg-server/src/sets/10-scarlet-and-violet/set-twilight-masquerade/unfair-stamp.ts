@@ -8,9 +8,8 @@ import { Player } from '../../../game/store/state/player';
 import { GamePhase, State } from '../../../game/store/state/state';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import {REMOVE_OPPONENT_LAST_TURN_MARKER_AT_END_OF_TURN, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { REMOVE_OPPONENT_LAST_TURN_MARKER_AT_END_OF_TURN, DRAW_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(
   next: Function,
@@ -36,20 +35,18 @@ function* playCard(
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: self });
-  MOVE_CARDS(store, state, opponent.hand, opponent.deck, { sourceCard: self });
-
-  yield store.prompt(
-    state,
-    [new ShuffleDeckPrompt(player.id), new ShuffleDeckPrompt(opponent.id)],
-    (deckOrder) => {
-      player.deck.applyOrder(deckOrder[0]);
-      opponent.deck.applyOrder(deckOrder[1]);
-
-      MOVE_CARDS(store, state, player.deck, player.hand, { count: 5, sourceCard: self });
-      MOVE_CARDS(store, state, opponent.deck, opponent.hand, { count: 2, sourceCard: self });
-    },
-  );
+  // TA-556 / B.74: lockstep - both hands go into their decks, both decks are shuffled, then you draw 5 and your
+  // opponent draws 2. Each shuffle is applied as it is answered (the batched prompt pair held A's answered order back
+  // until B's shuffle was answered).
+  yield EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, self, [
+    { player, cards },
+    { player: opponent, cards: [...opponent.hand.cards] },
+  ], included => {
+    DRAW_CARDS(store, state, player, 5);
+    if (included.includes(opponent)) {
+      DRAW_CARDS(store, state, opponent, 2);
+    }
+  });
 }
 
 export class UnfairStamp extends TrainerCard {

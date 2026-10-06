@@ -1688,16 +1688,20 @@ export function EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(
     }
     included.push(player);
   }
-  if (included.length === 0) {
-    then(included);
-    return state;
-  }
-  return store.prompt(state, included.map(p => new ShuffleDeckPrompt(p.id)), (results: any) => {
-    // store.prompt hands back the bare result when only one prompt was raised.
-    const orders = (included.length === 1 ? [results] : results) as number[][];
-    included.forEach((p, i) => p.deck.applyOrder(orders[i]));
-    then(included);
-  });
+  // One shuffle at a time, each applied as it is answered: once A's shuffle is answered A's deck IS in that order,
+  // also while B's shuffle is still pending (a batched prompt array would hold A's order back until B answers).
+  const shuffleFrom = (i: number): State => {
+    if (i === included.length) {
+      then(included);
+      return state;
+    }
+    const p = included[i];
+    return store.prompt(state, new ShuffleDeckPrompt(p.id), (order: number[]) => {
+      p.deck.applyOrder(order);
+      shuffleFrom(i + 1);
+    });
+  };
+  return shuffleFrom(0);
 }
 
 /**

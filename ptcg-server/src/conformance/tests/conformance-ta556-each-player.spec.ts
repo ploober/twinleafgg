@@ -226,3 +226,24 @@ describe('TA-556 (B.74): Unfair Stamp twm-165 is already lockstep (guard)', () =
     expect(seq(r).slice(-4)).toEqual(['shuffled:A', 'shuffled:B', 'draw:A:5', 'draw:B:2']);
   });
 });
+
+describe('TA-556 (B.74): an answered shuffle is applied at once, while the other deck\'s shuffle is still pending', () => {
+  // A's deck in A's answered order at B's shuffle pending (a batched prompt pair held it back until B answered).
+  it('Judge por-076 [TA-556]', () => {
+    const r = run(board('por-076'), [{ actor: 'A', type: 'playSupporter', card: 'sup' }, JA]);
+    expect(ids(r.state.players.A.deck)).toEqual(['x1', 'ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'x0']);
+  });
+  it('Harlequin wht-083 [TA-556]', () => {
+    const r = run(board('wht-083'), [{ actor: 'A', type: 'playSupporter', card: 'sup' }, JA]);
+    expect(ids(r.state.players.A.deck)).toEqual(['x1', 'ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'x0']);
+  });
+  it('Team Rocket\'s Archer dri-170 [TA-556]', () => {
+    const r = run(koBoard('dri-170'), [...KO_PRELUDE, { actor: 'A', type: 'playSupporter', card: 'sup' }, KA]);
+    expect(ids(r.state.players.A.deck)).toEqual(['x1', 'ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6', 'x0']);
+  });
+  it('Unfair Stamp twm-165 [TA-556]', () => {
+    const r = run(koBoard('twm-165'), [...KO_PRELUDE, { actor: 'A', type: 'playItem', card: 'sup' }, KA]);
+    expect(pend(r).actor).toBe('system');
+    expect(ids(r.state.players.A.deck)).toEqual(['x1', 'ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6', 'x0']);
+  });
+});
