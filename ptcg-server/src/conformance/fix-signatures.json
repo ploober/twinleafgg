@@ -12051,6 +12051,56 @@
       "fixes": [
         "FX-0429"
       ]
+    },
+    {
+      "file": "set-prismatic-evolution/leafeon-ex.ts",
+      "signatures": [
+        "text: \"This attack does 60 damage for each Energy attached to all of your opponent's Pokémon.\","
+      ],
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0432"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/giovannis-charisma.ts",
+      "signatures": [
+        "return opponent.active.cards.some(c => c.superType === SuperType.ENERGY);"
+      ],
+      "note": "TA-638, TA-639, TA-640 (2026-10-06): Giovanni's Charisma mew-161 needs an Energy on the opponent's Active (B.29); a step refused at a pause answers with the ",
+      "fixes": [
+        "FX-0430"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "store.log(state, GameLog.LOG_POKEMON_KO, { name: card.name, damage: effect.target.damage });"
+      ],
+      "note": "TA-283, TA-264, TA-495 (2026-10-06): Amulet of Hope ssp-162 searches in the Knock Out window, before the Prize and the promotion (B.14); a KO'd Pokémon's let",
+      "fixes": [
+        "FX-0431"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/lisias-appeal.ts",
+      "signatures": [
+        "ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, opponent, this);"
+      ],
+      "note": "TA-287, TA-389, TA-411 (2026-10-06): Leafeon ex pre-006 Verdant Storm text 'does' (and Moss Agate 'Pokémon'); Lisia's Appeal Confuses through AddSpecialCondi",
+      "fixes": [
+        "FX-0432"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/amulet-of-hope.ts",
+      "signatures": [
+        "store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Amulet of Hope' });"
+      ],
+      "note": "TA-283 (2026-10-06): the search runs in the KO window",
+      "fixes": [
+        "FX-0431"
+      ]
     }
   ]
 }
