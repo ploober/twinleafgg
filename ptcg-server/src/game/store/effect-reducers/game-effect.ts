@@ -552,6 +552,32 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     return store.reduceEffect(state, new EndTurnEffect(player));
   }
 
+  // TA-519: the attack's Knock Outs (Prize cards, then the new Active) resolve BEFORE the turn ends. Rulebook, attack
+  // steps: "Your attack is complete, so check to see if any Pokémon were Knocked Out by the attack", then Prizes and
+  // the replacement, and only then "Your turn is over." EndTurnEffect is what every "at the end of your turn" effect
+  // listens to (Great Tusk ex Quaking Demolition: "Once at the end of your turn (after your attack)"), and the KO
+  // sweep used to run only inside its handler -- AFTER all of those cards had already acted. The sweep below is the
+  // same `checkState` the EndTurnEffect handler runs; when that one gets there it finds nothing left to do.
+  //
+  // `onComplete` may fire synchronously (nothing to sweep) or later from a prompt callback; only the latter may
+  // resume this generator. (A bare `waitPrompt` cannot be used: waitItems is a LIFO stack, so this generator's wait
+  // would run before the sweep's own continuation after the first Prize prompt.)
+  let swept = false;
+  let suspended = false;
+  state = checkState(store, state, () => {
+    swept = true;
+    if (suspended) {
+      next();
+    }
+  });
+  if (!swept) {
+    suspended = true;
+    yield state;
+  }
+  if (state.phase === GamePhase.FINISHED) {
+    return state;
+  }
+
   return store.reduceEffect(state, new EndTurnEffect(player));
 }
 
