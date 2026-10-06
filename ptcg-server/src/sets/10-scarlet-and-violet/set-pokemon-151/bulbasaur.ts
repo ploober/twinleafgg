@@ -32,7 +32,7 @@ export class Bulbasaur extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const healEffect = new HealEffect(player, effect.player.active, 30);
+      const healEffect = new HealEffect(player, effect.player.active, 20);   // TA-547: printed 20
       store.reduceEffect(state, healEffect);
       return state;
     }

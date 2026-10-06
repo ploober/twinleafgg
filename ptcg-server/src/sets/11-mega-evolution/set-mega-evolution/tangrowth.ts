@@ -3,8 +3,7 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { HEAL_X_DAMAGE_FROM_THIS_POKEMON } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
-import { CheckAttackCostEffect, CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
+import { HAS_EXTRA_ENERGY_BEYOND_ATTACK_COST, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Tangrowth extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -43,19 +42,9 @@ export class Tangrowth extends PokemonCard {
 
     // Pumped-Up Whip
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      const player = effect.player;
-      // Check attack cost
-      const checkCost = new CheckAttackCostEffect(player, this.attacks[0]);
-      state = store.reduceEffect(state, checkCost);
-      // Check attached energy
-      const checkEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkEnergy);
-      // Count total attached energy
-      const totalEnergy = checkEnergy.energyMap.reduce((sum, energy) => sum + energy.provides.length, 0);
-      const attackCost = checkCost.cost.length;
-      const extraEnergy = totalEnergy - attackCost;
-      if (extraEnergy >= 2) {
-        effect.damage += 80;
+      // TA-523: the extra Energy is counted beyond THIS attack's cost (GGCC), and the bonus is the printed 140.
+      if (HAS_EXTRA_ENERGY_BEYOND_ATTACK_COST(store, state, effect.player, this.attacks[1], 2)) {
+        effect.damage += 140;
       }
     }
 

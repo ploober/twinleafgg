@@ -61,7 +61,8 @@ export class Arcanineex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      effect.damage += effect.player.active.damage * 10;
+      // TA-540: `damage` is already in HP (one counter = 10), so 10 per counter is the damage itself.
+      effect.damage += effect.player.active.damage;
       return state;
     }
 

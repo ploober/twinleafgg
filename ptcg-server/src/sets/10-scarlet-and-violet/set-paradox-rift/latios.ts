@@ -1,10 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, Card } from '../../../game';
+import { StoreLike, State } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
+import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Latios extends PokemonCard {
@@ -32,7 +31,7 @@ export class Latios extends PokemonCard {
       name: 'Luster Purge',
       cost: [CardType.PSYCHIC, CardType.PSYCHIC, CardType.COLORLESS],
       damage: 180,
-      text: 'Discard all Energy attached to this Pokemon.'
+      text: 'Discard 3 Energy from this Pokémon.'
     }
   ];
 
@@ -51,15 +50,8 @@ export class Latios extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      const player = effect.player;
-
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const cards: Card[] = checkProvidedEnergy.energyMap.map(e => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
+      // TA-536: "Discard 3 Energy from this Pokémon." — 3, chosen when more are attached (collapses at 3 or fewer).
+      state = DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 3);
     }
     return state;
   }
