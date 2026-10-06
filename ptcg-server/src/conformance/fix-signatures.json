@@ -1159,7 +1159,10 @@
         "{ eligible: card => providesValidType.has(card) });"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)"
+      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
+      "fixes": [
+        "FX-0439"
+      ]
     },
     {
       "file": "set-ex-hidden-legends/medicham.ts",
@@ -4396,7 +4399,10 @@
         "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this, { count: 3 });"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0439"
+      ]
     },
     {
       "file": "set-journey-together/accelgor.ts",
@@ -4524,7 +4530,10 @@
         "name: 'Scalding Steam',"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0439"
+      ]
     },
     {
       "file": "set-obsidian-flames/kingambit.ts",
@@ -5863,10 +5872,14 @@
     {
       "file": "game/store/prompts/choose-cards-prompt.ts",
       "signatures": [
-        "it MUTATES the real deck/discard order (game state)"
+        "it MUTATES the real deck/discard order (game state)",
+        "public deferredMove?: boolean;"
       ],
       "note": "deletion-type fix (display sort removed) - the comment is the signature",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0439"
+      ]
     },
     {
       "file": "game/store/prompts/choose-pokemon-prompt.ts",
@@ -6960,7 +6973,10 @@
         "name: 'Shoot THrough',"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)"
+      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
+      "fixes": [
+        "FX-0439"
+      ]
     },
     {
       "file": "set-chaos-rising/mega-pyroar-ex.ts",
@@ -12202,6 +12218,36 @@
       "note": "TA-645 / TA-646 (2026-10-06, B.85 (3)(a)): the hand / opponent-card effect moved from WAS_ATTACK_USED to AFTER_ATTACK.",
       "fixes": [
         "FX-0435"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST("
+      ],
+      "note": "TA-651 (2026-10-06): 'Move [an / 3] Energy from this Pokemon to 1 of your Benched Pokemon' chooses the Energy before the damage (chosen), mov",
+      "fixes": [
+        "FX-0439"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/iron-thorns-ex.ts",
+      "signatures": [
+        "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);"
+      ],
+      "note": "TA-651 (2026-10-06, B.82 (1)): the attacker's own Energy is chosen before the damage and moved after (choose-first prefab).",
+      "fixes": [
+        "FX-0439"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-gengar-ex.ts",
+      "signatures": [
+        "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);"
+      ],
+      "note": "TA-651 (2026-10-06, B.82 (1)): the attacker's own Energy is chosen before the damage and moved after (choose-first prefab).",
+      "fixes": [
+        "FX-0439"
       ]
     }
   ]
