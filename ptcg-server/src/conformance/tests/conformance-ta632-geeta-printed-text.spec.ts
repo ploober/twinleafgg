@@ -82,10 +82,11 @@ describe('TA-632: Geeta obf-188 needs no Bench and always locks attacks this tur
     expect(targets(r)).toContain('ad0');
   });
 
-  it('no Benched Pokémon: the 2 Energy go to the Active, then shuffle, Geeta discarded, no attack [TA-632]', () => {
+  it('no Benched Pokémon: the 2 Energy go to the Active (the only target, no choice), then shuffle, Geeta discarded, no attack [TA-632]', () => {
     const pick = step(board({ bench: false }), [play, choose('ad0'), choose('ad1')]);
-    expect(targets(pick)).toEqual(['a1']);
-    const r = run(board({ bench: false }), [play, choose('ad0'), choose('ad1'), choose('a1')]);
+    expect(types(pick)).toEqual(['shuffle']);
+    expect(energy(pick)).toEqual(['ae0', 'ad0', 'ad1']);
+    const r = run(board({ bench: false }), [play, choose('ad0'), choose('ad1')]);
     expect(r.status).toBe('awaitingAction');
     expect(energy(r)).toEqual(['ae0', 'ad0', 'ad1']);
     expect(r.state.players.A.discard.map(c => c.iid)).toContain('g');

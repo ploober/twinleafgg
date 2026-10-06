@@ -45,12 +45,12 @@ export class Geeta extends TrainerCard {
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      if (player.deck.cards.length === 0) {
-        return state;
-      }
+      // TA-632: "During this turn, your Pokémon can't attack" does not depend on the search, so it is set on every
+      // resolution (0 Energy found, an empty deck); and "attach them to 1 of your Pokémon" includes the Active, so
+      // no Benched Pokémon is needed (the attach target below already offers ACTIVE and BENCH).
+      player.marker.addMarker(this.GEETA_MARKER, this);
 
-      const hasBenched = player.bench.some(b => b.cards.length > 0);
-      if (!hasBenched) {
+      if (player.deck.cards.length === 0) {
         return state;
       }
 
@@ -97,7 +97,6 @@ export class Geeta extends TrainerCard {
           }
           const target = targets[0];
           MOVE_CARDS(store, state, player.deck, target, { cards: cards, sourceCard: this });
-          player.marker.addMarker(this.GEETA_MARKER, this);
           shuffle(discardGeeta);
         });
       });
