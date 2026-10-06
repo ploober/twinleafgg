@@ -12,7 +12,7 @@ import { ChangeAvatarAction } from './actions/change-avatar-action';
 import { Effect } from './effects/effect';
 import { AttachEnergyEffect, PlayPokemonEffect, TrainerEffect } from './effects/play-card-effects';
 import { CheckAttackCostEffect, CheckEffects, CheckPokemonPowersEffect, CheckRetreatCostEffect } from './effects/check-effects';
-import { KnockOutEffect, MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect } from './effects/game-effects';
+import { KnockOutEffect, MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect, SpecialEnergyEffect } from './effects/game-effects';
 import {
   CLEAR_ABILITY_LOCK_ACTIVATION,
   STAMP_ABILITY_LOCK_ACTIVATION,
@@ -278,14 +278,15 @@ export class Store implements StoreLike {
   private probeRaisedPrompt = false;
   /**
    * TA-612: set while probing when the handler dispatched an effect of its own that is not a read-only check
-   * (Check* effects) or the ability-lock test (`IS_ABILITY_BLOCKED` dispatches a PowerEffect). A trigger that
+   * (Check* effects) or a lock test (`IS_ABILITY_BLOCKED` dispatches a PowerEffect, `IS_SPECIAL_ENERGY_BLOCKED` a
+   * SpecialEnergyEffect). A trigger that
    * resolves to no board change still ACTED (Magearna's Auto Heal on an undamaged Pokémon dispatches its heal), and
    * its order against the batch's other triggers can matter.
    */
   private probeDispatched = false;
 
   public reduceEffect(state: State, effect: Effect): State {
-    if (this.probing && !(effect instanceof PowerEffect)
+    if (this.probing && !(effect instanceof PowerEffect) && !(effect instanceof SpecialEnergyEffect)
       && !CHECK_EFFECT_TYPES.has((effect as { type?: string }).type ?? '')) {
       this.probeDispatched = true;
     }
@@ -813,7 +814,9 @@ export class Store implements StoreLike {
         slot.tools.forEach(t => inPlay.add(t));
       }
     }
-    const probeable = cards.filter(c => inPlay.has(c));
+    // The attached Energy itself is a candidate: its "when you attach this card from your hand" effect (Rich Energy
+    // ssp-191 draws 4) is one of the window's triggers, and while this effect is being reduced the card is still in hand.
+    const probeable = cards.filter(c => inPlay.has(c) || c === effect.energyCard);
     if (probeable.length < 2) {
       return legacy();
     }

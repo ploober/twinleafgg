@@ -32,11 +32,11 @@ function cards(tag: string, n: number, printing: string): CardRef[] {
 function prizes(tag: string, n: number): PrizeRef[] {
   return cards(tag, n, METAL).map(c => ({ ...c, faceUp: false }));
 }
-function board(aActive: string, bActive: string, bBench: string[] = []): NeutralState {
+function board(aActive: string, bActive: string, bBench: string[] = [], energy = METAL): NeutralState {
   return {
     schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'B', phase: 'main', outcome: 'ongoing', stadium: null,
     players: {
-      A: player({ active: mon('a1', aActive), hand: [{ iid: 'ah0', printing: METAL }], deck: cards('ad', 6, METAL), prizes: prizes('ap', 6) }),
+      A: player({ active: mon('a1', aActive), hand: [{ iid: 'ah0', printing: energy }], deck: cards('ad', 6, METAL), prizes: prizes('ap', 6) }),
       B: player({ active: mon('b1', bActive), bench: bBench.map((p, i) => mon(`bb${i + 1}`, p)), deck: cards('bd', 6, METAL), prizes: prizes('bp', 6) }),
     },
   };
@@ -85,5 +85,29 @@ describe('TA-612: the Energy-attach window asks the current player to order its 
     const r = step(board('jtg-107', 'asc-061'), [attach]);
     expect(nextSources(r)).toEqual([]);
     expect(r.state.players.A.active?.energy.map(c => c.iid)).toEqual(['ah0']);
+  });
+
+  it('Rich Energy ssp-191 (its own "when you attach this card" draw) + Gnawing Curse: both are candidates [TA-612]', () => {
+    const b = board('asc-061', 'tef-104', [], 'ssp-191');
+    const r = step(b, [attach]);
+    expect(nextSources(r)).toEqual(['ah0', 'b1']);
+    expect(r.state.players.A.hand.length).toBe(0);
+    const rich = (r.pending?.legalActions ?? []).find(x => x.type === 'resolveNext' && (x as { source?: string }).source === 'ah0');
+    expect(rich).toBeDefined();
+    const done = step(b, [attach, rich as never]);
+    expect(done.state.players.A.hand.length).toBe(4);
+    expect(done.state.players.A.active?.damage).toBe(20);
+  });
+
+  it('control: Rich Energy alone is not a decision: it draws 4 at once [TA-612]', () => {
+    const r = step(board('asc-061', 'asc-061', [], 'ssp-191'), [attach]);
+    expect(nextSources(r)).toEqual([]);
+    expect(r.state.players.A.hand.length).toBe(4);
+  });
+
+  it('control: Telepath Psychic Energy por-088 on a non-Psychic Pokemon (only its lock test runs) adds no candidate [TA-612]', () => {
+    const r = step(board('asc-061', 'tef-104', [], 'por-088'), [attach]);
+    expect(nextSources(r)).toEqual([]);
+    expect(r.state.players.A.active?.damage).toBe(20);
   });
 });
