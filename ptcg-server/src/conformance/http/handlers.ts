@@ -1,5 +1,5 @@
 import { step } from '../driver';
-import { resolveFormat } from '../formats';
+import { resolveFormat, UnsupportedFormatError } from '../formats';
 import { StepResponse, NeutralState, NeutralAction, NeutralCardList, SCHEMA_VERSION } from '../neutral-types';
 import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
 import { buildCardsForSet } from '../cards';
@@ -97,5 +97,9 @@ export function handleCapabilities(): CapabilitiesResponse {
 
 /** The `GET /v1/cards/{setCode}` payload. Throws `UnknownSetError` (→ 404) for an unimplemented set. */
 export function handleCards(setCode: string, format?: unknown): NeutralCardList {
+  if (format === undefined || format === null) {
+    // TA-649: `format` is a required query parameter here (CF-85); the absent-means-standard bridge is for boards only
+    throw new UnsupportedFormatError('format is required on GET /v1/cards/{setCode} (CF-85)');
+  }
   return buildCardsForSet(setCode, resolveFormat(format));
 }
