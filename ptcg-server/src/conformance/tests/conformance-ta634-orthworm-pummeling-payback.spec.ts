@@ -23,7 +23,6 @@ const GRASS = 'sve-001';
 const PSYCHIC = 'sve-005';
 const METAL = 'sve-008';
 const ORTH = 'scr-162';
-const ORTH_BASE = 'scr-110';
 const LATIAS = 'meg-181';
 const DONDOZO = 'svi-061';
 
@@ -128,10 +127,4 @@ describe('TA-634: Orthworm ex Pummeling Payback reacts only to damage to itself,
     expect(attackerDamage(r)).toBe(60);
   });
 
-  it('scr-110 (the base printing) is served and reacts the same: 2 counters [TA-634]', () => {
-    const B = player(slot(['b1'], [ORTH_BASE], metal('b1e', 1)), [slot(['bb1'], [DONDOZO], [])], 'b');
-    const r = step(board(B), strike);
-    expect(rejected(r)).toBeUndefined();
-    expect(attackerDamage(r)).toBe(20);
-  });
 });

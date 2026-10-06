@@ -10,7 +10,6 @@ import { Applin } from "./applin";
 import { Archaludon } from "./archaludon";
 import { AreaZeroUnderdepths } from "./area-zero-underdepths";
 import { Bouffalant } from "./bouffalant";
-import { Orthwormex } from "./orthworm-ex";
 import { Briar } from "./briar";
 import { Chewtle } from "./chewtle";
 import { Cinderaceex } from "./cinderace-ex";
@@ -140,7 +139,7 @@ export const setStellarCrown: Card[] = [
   new Meltan(),
   new Noctowl(),
   new Ponyta(),
-  new Orthwormex(),
+  // new Orthwormex(),
   new Raboot(),
   new RagingBolt(),
   new Rapidash(),
