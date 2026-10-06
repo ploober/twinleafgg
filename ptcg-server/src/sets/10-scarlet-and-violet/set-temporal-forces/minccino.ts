@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PokemonCardList, GameMessage, CardTarget, ChoosePokemonPrompt, PlayerType, SlotType, StateUtils, ChooseCardsPrompt } from '../../../game';
+import { Stage, CardType } from '../../../game/store/card/card-types';
+import { StoreLike, State, PokemonCardList, GameMessage, PlayerType, StateUtils, ChooseCardsPrompt, Card, CardList } from '../../../game';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -10,20 +10,22 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
-  let pokemonsWithTool = 0;
-  const blocked: CardTarget[] = [];
-  opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
-    if (cardList.tools.length > 0) {
-      pokemonsWithTool += 1;
-    } else {
-      blocked.push(target);
-    }
+  // TA-579: the objects chosen are the Tools themselves ("Discard up to 2 Pokémon Tools from your opponent's
+  // Pokémon"), up to 2 in total, both possibly off one Pokémon. This used to pick up to 2 BEARERS and then raise a
+  // ChooseCardsPrompt per bearer inside a forEach without yield, so a bearer holding 2 Tools lost nothing.
+  const tools: Card[] = [];
+  const bearerOf = new Map<Card, PokemonCardList>();
+  opponent.forEachPokemon(PlayerType.TOP_PLAYER, cardList => {
+    cardList.tools.forEach(tool => {
+      tools.push(tool);
+      bearerOf.set(tool, cardList);
+    });
   });
 
   // "Discard up to 2 Pokémon Tools" is a whiff: with no Tools in play there is nothing to discard,
   // but the attack is still legal to use — it just does nothing. Do not reject it (an offer-then-reject
   // would hide the attack from the menu). Same whiff-is-a-no-op class as regice-ex / slowpoke (TA-46/52).
-  if (pokemonsWithTool === 0) {
+  if (tools.length === 0) {
     return state;
   }
 
@@ -31,46 +33,26 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
   effect.preventDefault = true;
 
   // TA-155 / compendium #2301: for ATTACK effects, "up to X" means any number between 0 and X —
-  // the player may discard nothing. min:1+allowCancel expressed the 0 option only through the UI's
-  // cancel, which the wire cannot see (the declared range IS the wire contract, and a 1..1 range
-  // auto-resolves as decisionless per CF-14). min:0 declares the real range. Note the ruling's
-  // asymmetry: Trainer/Ability "up to X" is 1..X, so min:1 stays correct on those (Blowtorch, Ruffian).
-  const max = Math.min(2, pokemonsWithTool);
-  let targets: PokemonCardList[] = [];
-  yield store.prompt(state, new ChoosePokemonPrompt(
-    player.id,
-    GameMessage.CHOOSE_POKEMON_TO_DISCARD_CARDS,
-    PlayerType.TOP_PLAYER,
-    [SlotType.ACTIVE, SlotType.BENCH],
-    { min: 0, max: max, allowCancel: true, blocked }
+  // the player may discard nothing. min:0 declares the real range (the declared range IS the wire contract).
+  // Note the ruling's asymmetry: Trainer/Ability "up to X" is 1..X (Blowtorch, Ruffian).
+  const toolList = new CardList();
+  toolList.cards = tools;
+  let selected: Card[] = [];
+  yield store.prompt(state, new ChooseCardsPrompt(
+    player,
+    GameMessage.CHOOSE_CARD_TO_DISCARD,
+    toolList,
+    {},
+    { min: 0, max: Math.min(2, tools.length), allowCancel: false }
   ), results => {
-    targets = results || [];
+    selected = results || [];
     next();
   });
 
-  if (targets.length === 0) {
-    return state;
-  }
-
-  targets.forEach(target => {
-    const owner = StateUtils.findOwner(state, target);
-    if (target.tools.length > 0) {
-      if (target.tools.length > 1) {
-        // Prompt to choose up to 2 tools
-        store.prompt(state, new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
-          target,
-          { superType: SuperType.TRAINER, trainerType: TrainerType.TOOL },
-          { min: 1, max: 2, allowCancel: false }
-        ), selected => {
-          if (selected && selected.length > 0) {
-            MOVE_CARDS(store, state, target, owner.discard, { cards: selected, sourceCard: effect.source.getPokemonCard()! });
-          }
-        });
-      } else {
-        MOVE_CARDS(store, state, target, owner.discard, { cards: [target.tools[0]], sourceCard: effect.source.getPokemonCard()! });
-      }
+  selected.forEach(tool => {
+    const bearer = bearerOf.get(tool);
+    if (bearer !== undefined && bearer.tools.includes(tool)) {
+      MOVE_CARDS(store, state, bearer, opponent.discard, { cards: [tool], sourceCard: effect.source.getPokemonCard()! });
     }
   });
 
