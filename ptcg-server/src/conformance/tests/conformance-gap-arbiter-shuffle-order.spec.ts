@@ -4,6 +4,8 @@ import { StoreHandler } from '../../game/store/store-handler';
 import { State } from '../../game/store/state/state';
 import { Arbiter } from '../../game/core/arbiter';
 import { AttackAction } from '../../game/store/actions/game-actions';
+import { PlayCardAction, PlayerType, SlotType } from '../../game/store/actions/play-card-action';
+import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-prompt';
 import { ResolvePromptAction } from '../../game/store/actions/resolve-prompt-action';
 import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
@@ -192,5 +194,91 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
     knockOut(store, state, player);
     store.reduceEffect(state, new BetweenTurnsEffect(player));
     expectShuffleAfterPick(handler, store, state, player, 2);
+  });
+});
+
+// TA-629: Geeta obf-188 (Supporter): "Search your deck for up to 2 Basic Energy cards and attach them to 1 of your
+// Pokémon. Then, shuffle your deck. During this turn, your Pokémon can't attack." The shuffle follows the search
+// and the attach, on every branch: an empty pick, a cancelled Pokémon choice, and an attach.
+describe('TA-629: live arbiter never resolves Geeta obf-188\'s ShuffleDeckPrompt ahead of its open search [TA-629 obf-188]', () => {
+  function buildGeeta() {
+    const game = setupGame({
+      turn: 2,
+      player1: {
+        active: { card: 'Gimmighoul SSP' },
+        bench: [{ card: 'Gimmighoul SSP' }],
+        hand: ['Geeta OBF'],
+        deck: [F, P, F, F, P, F, P, F, F, P],
+      },
+      player2: {
+        active: { card: 'Mega Sharpedo ex M2' },
+        deck: [F, F, F, F, F],
+      },
+    });
+    const handler = new LiveArbiterHandler();
+    const store = new Store(handler);
+    handler.store = store;
+    store.state = game.state;
+    const player = game.player1;
+    const handIndex = player.hand.cards.findIndex(c => c.fullName === 'Geeta OBF');
+    store.dispatch(new PlayCardAction(player.id, handIndex, { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }));
+    return { handler, store, state: game.state, player };
+  }
+  function openPokemonChoice(state: State): ChoosePokemonPrompt | undefined {
+    return state.prompts.find(p => p.result === undefined && p instanceof ChoosePokemonPrompt) as ChoosePokemonPrompt | undefined;
+  }
+  function expectOnlyThePickOpen(handler: LiveArbiterHandler, state: State) {
+    expect(openPick(state)).toBeDefined();
+    expect(state.prompts.filter(p => p.result === undefined).length).toBe(1);
+    expect(state.prompts.some(p => p instanceof ShuffleDeckPrompt)).toBe(false);
+    expect(handler.shuffles.length).toBe(0);
+  }
+
+  it('REGRESSION (TA-629): attaching 2 Energy shuffles once, AFTER the attach, over the post-search deck [TA-629 obf-188]', () => {
+    const { handler, store, state, player } = buildGeeta();
+    expect(player.deck.cards.length).toBe(10);
+    expectOnlyThePickOpen(handler, state);
+
+    const picked = player.deck.cards.filter(c => c.superType === SuperType.ENERGY).slice(0, 2);
+    const pickedIds = picked.map(c => c.id);
+    store.dispatch(new ResolvePromptAction(openPick(state)!.id, picked));
+
+    // The Pokémon choice is open; the shuffle is not raised yet.
+    const choice = openPokemonChoice(state);
+    expect(choice).toBeDefined();
+    expect(handler.shuffles.length).toBe(0);
+    store.dispatch(new ResolvePromptAction(choice!.id, [player.active]));
+
+    expect(player.active.cards.map(c => c.id)).toEqual(jasmine.arrayContaining(pickedIds));
+    expect(handler.shuffles.length).toBe(1);
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(8); // the post-search deck
+    expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
+  });
+
+  it('REGRESSION (TA-629): picking nothing still shuffles once, after the pick, over the whole deck [TA-629 obf-188]', () => {
+    const { handler, store, state, player } = buildGeeta();
+    expectOnlyThePickOpen(handler, state);
+    store.dispatch(new ResolvePromptAction(openPick(state)!.id, []));
+    expect(openPokemonChoice(state)).toBeUndefined();
+    expect(handler.shuffles.length).toBe(1);
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(10);
+    expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
+  });
+
+  it('REGRESSION (TA-629): a cancelled Pokémon choice still shuffles once, after it [TA-629 obf-188]', () => {
+    const { handler, store, state, player } = buildGeeta();
+    expectOnlyThePickOpen(handler, state);
+    const picked = player.deck.cards.filter(c => c.superType === SuperType.ENERGY).slice(0, 2);
+    store.dispatch(new ResolvePromptAction(openPick(state)!.id, picked));
+    const choice = openPokemonChoice(state);
+    expect(choice).toBeDefined();
+    expect(handler.shuffles.length).toBe(0);
+    store.dispatch(new ResolvePromptAction(choice!.id, null));
+    expect(handler.shuffles.length).toBe(1);
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(10);
+    expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
   });
 });

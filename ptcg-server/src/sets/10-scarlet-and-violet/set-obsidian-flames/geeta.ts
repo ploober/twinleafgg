@@ -54,8 +54,18 @@ export class Geeta extends TrainerCard {
         return state;
       }
 
+      // TA-629: "Then, shuffle your deck" follows the search and the attach, so the shuffle is raised inside the
+      // callbacks on every branch (an empty pick, a cancelled Pokémon choice, an attach), as gimmighoul.ts does since
+      // TA-582. Raised beside the open search, the live arbiter (Game.handleArbiterPrompts) answered it first, over
+      // the pre-search deck, and the deck stayed in the order the player searched.
+      const shuffle = () => {
+        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
+      };
+
       let cards: Card[] = [];
-      store.prompt(state, new ChooseCardsPrompt(
+      return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
@@ -64,28 +74,29 @@ export class Geeta extends TrainerCard {
       ), selected => {
         cards = selected || [];
 
-        if (cards.length > 0) {
-          store.prompt(state, new ChoosePokemonPrompt(
-            player.id,
-            GameMessage.CHOOSE_POKEMON_TO_ATTACH_CARDS,
-            PlayerType.BOTTOM_PLAYER,
-            [SlotType.ACTIVE, SlotType.BENCH],
-            { allowCancel: true }
-          ), targets => {
-            if (!targets || targets.length === 0) {
-              MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
-              return;
-            }
-            const target = targets[0];
-            MOVE_CARDS(store, state, player.deck, target, { cards: cards, sourceCard: this });
-            player.marker.addMarker(this.GEETA_MARKER, this);
-            MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
-          });
+        if (cards.length === 0) {
+          shuffle();
+          return;
         }
-      });
 
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
+        store.prompt(state, new ChoosePokemonPrompt(
+          player.id,
+          GameMessage.CHOOSE_POKEMON_TO_ATTACH_CARDS,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH],
+          { allowCancel: true }
+        ), targets => {
+          if (!targets || targets.length === 0) {
+            MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
+            shuffle();
+            return;
+          }
+          const target = targets[0];
+          MOVE_CARDS(store, state, player.deck, target, { cards: cards, sourceCard: this });
+          player.marker.addMarker(this.GEETA_MARKER, this);
+          MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
+          shuffle();
+        });
       });
     }
 
