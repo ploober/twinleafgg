@@ -44,10 +44,16 @@ export class Blaziken extends PokemonCard {
       // #543/#649); the Bench 120 is a literal, independent of effect.damage.
       const applyDamageAndDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
         // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
+        // The choices come first (the Bench target, then the Energy), then the damage (the Active's 120, then the Bench
+        // 120), then the chosen Energy moves. TA-494 (TA-635's shape, Larry's Staraptor asc-170): the Bench 120 is
+        // queued on afterDamageMoves ahead of the Energy discard (queued by its own pick), so it lands after the base
+        // damage and before the discard, not when the Bench target is chosen.
         if (benchTarget) {
-          const bench = new PutDamageEffect(effect, 120);
-          bench.target = benchTarget;
-          s = store.reduceEffect(s, bench);
+          effect.afterDamageMoves.push(() => {
+            const bench = new PutDamageEffect(effect, 120);
+            bench.target = benchTarget;
+            state = store.reduceEffect(state, bench);
+          });
         }
         DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, s, effect, 2);
         return s;

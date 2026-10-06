@@ -9,8 +9,8 @@ import { ChooseEnergyPromptType } from '../../game/store/prompts/choose-energy-p
 // APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS at the top; the Bench 120 is a literal, independent of effect.damage.
 beforeAll(() => { loadAllSets(); });
 
-describe('Blaziken DRI — Inferno Kick Flurry damage-before-rider (TA-79)', () => {
-  it('applies the 120 Active base damage BEFORE the energy-discard rider prompt', () => {
+describe('Blaziken DRI — Inferno Kick Flurry: choose, then damage, then discard (B.82, TA-494)', () => {
+  it('asks the Energy choice before any damage; both 120s land, then the discard', () => {
     const game = setupGame({
       turn: 2,
       player1: {
@@ -28,15 +28,20 @@ describe('Blaziken DRI — Inferno Kick Flurry damage-before-rider (TA-79)', () 
       },
     });
 
-    let observedDmg = -1;
+    // B.82 (owner 2026-10-05, #2002) supersedes TA-79's order for this attack: the Energy is CHOSEN before the damage,
+    // then the damage (Active 120, Bench 120), then the discard. TA-494: the Bench 120 is not placed at the Bench pick.
+    let observedActive = -1;
+    let observedBench = -1;
     game.overridePrompt(ChooseEnergyPromptType, (_prompt, state) => {
-      observedDmg = getDamage(state, 1, 'active');
+      observedActive = getDamage(state, 1, 'active');
+      observedBench = getDamage(state, 1, 0);
       return [0, 1];
     });
 
     useAttack(game.store, game.state, 0, 'Inferno Kick Flurry');
 
-    expect(observedDmg).toBe(120);              // RED: 0, GREEN: 120 (Active base damage, before rider)
+    expect(observedActive).toBe(0);              // the choice comes before the damage (B.82)
+    expect(observedBench).toBe(0);               // TA-494: the Bench 120 is not placed at the pick
     expect(getDamage(game.state, 1, 'active')).toBe(120);
     expect(getDamage(game.state, 1, 0)).toBe(120); // Bench snipe still lands its 120
   });

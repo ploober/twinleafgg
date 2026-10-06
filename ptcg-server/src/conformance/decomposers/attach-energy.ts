@@ -1,5 +1,6 @@
 import { AttachEnergyPrompt } from '../../game/store/prompts/attach-energy-prompt';
 import { EnergyCard } from '../../game/store/card/energy-card';
+import { Card } from '../../game/store/card/card';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
 import { LegalAction } from '../neutral-types';
@@ -225,7 +226,16 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
     return (realPicks(picks) as Array<{ to: CardTarget; index: number }>).map(p => ({ to: p.to, index: p.index }));
   },
 
+  /** B.82 / CF-93: the cards an attack's pre-damage choice picked (the engine marked the prompt `deferredMove`: Power
+   *  Cyclone obf-085 moving its own Energy to the Bench). They stay attached until after the damage; the adapter
+   *  records them as `chosen`. */
+  pickedCards(prompt, picks) {
+    return (realPicks(picks) as Array<{ index: number }>).map(p => prompt.cardList.cards[p.index])
+      .filter((c): c is Card => c !== undefined);
+  },
+
   fixupProjection(prompt, picks, ctx, state, projected) {
+    if ((prompt as { deferredMove?: boolean }).deferredMove) { return; }   // B.82: the picked Energy stays attached
     // B.80 / CF-91. The source pile ("look at the top N and attach any Energy you find there": Lapras ex
     // Larimar Rain, Max Elixir, Heavy Baton) is a card-local temp CardList: those cards are LIFTED and the
     // detached-pile pass (state-adapter detachedTransitCards) has already put them in their owner's transit

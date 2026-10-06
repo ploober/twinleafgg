@@ -4,7 +4,7 @@ import { StoreLike, State, AttachEnergyPrompt, PlayerType, SlotType, StateUtils 
 
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
-import {WAS_ATTACK_USED, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Porygon extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -30,34 +30,39 @@ export class Porygon extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-494 (B.84 (1), (3); #571): the flip only gates the move, so the flip, the choice and the move are effects of
+    // the attack and come after its damage (AFTER_ATTACK); the damage reads the Energy attached (#77). On heads the
+    // move is mandatory ("move an Energy"): min 1, no decline. Nothing to move (no Energy on the Active or no Benched
+    // Pokémon) is checked at heads, after the flip.
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
       return COIN_FLIP_PROMPT(store, state, player, result => {
-        if (result === true) {
-
-          if (hasBench === false) {
-            return state;
-          }
-
-          return store.prompt(state, new AttachEnergyPrompt(
-            player.id,
-            GameMessage.ATTACH_ENERGY_TO_BENCH,
-            opponent.active,
-            PlayerType.TOP_PLAYER,
-            [SlotType.BENCH],
-            { superType: SuperType.ENERGY },
-            { allowCancel: false, min: 0, max: 1 }
-          ), transfers => {
-            transfers = transfers || [];
-            for (const transfer of transfers) {
-              const target = StateUtils.getTarget(state, player, transfer.to);
-              MOVE_CARDS(store, state, opponent.active, target, { cards: [transfer.card], sourceCard: this });
-            }
-          });
+        if (result !== true) {
+          return state;
         }
+        const hasBench = opponent.bench.some(b => b.cards.length > 0);
+        const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
+        if (!hasBench || !hasEnergy) {
+          return state;
+        }
+
+        return store.prompt(state, new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_TO_BENCH,
+          opponent.active,
+          PlayerType.TOP_PLAYER,
+          [SlotType.BENCH],
+          { superType: SuperType.ENERGY },
+          { allowCancel: false, min: 1, max: 1 }
+        ), transfers => {
+          transfers = transfers || [];
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            MOVE_CARDS(store, state, opponent.active, target, { cards: [transfer.card], sourceCard: this });
+          }
+        });
       });
     }
     return state;

@@ -93,7 +93,7 @@ export class Togekiss extends PokemonCard {
         return state;
       }
 
-      return store.prompt(state, new AttachEnergyPrompt(
+      const prompt = new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
         player.active,
@@ -101,11 +101,22 @@ export class Togekiss extends PokemonCard {
         [SlotType.BENCH],
         { superType: SuperType.ENERGY },
         { allowCancel: false, min: 1, max: 1 }
-      ), transfers => {
+      );
+      // B.82 (3) / CF-93: a pre-damage choice of the attacker's own card in play; the adapter records the pick as
+      // `chosen` and leaves it attached until the move below runs after the damage.
+      (prompt as AttachEnergyPrompt & { deferredMove?: boolean }).deferredMove = true;
+      return store.prompt(state, prompt, transfers => {
         transfers = transfers || [];
+        // TA-494 / B.82 (1) (#1834, #2002): the Energy is chosen before the damage and moves after it
+        // (AttackEffect.afterDamageMoves), so the damage reads it attached (Double Turbo Energy's 20 less).
+        const source = player.active;
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
+          effect.afterDamageMoves.push(() => {
+            if (source.cards.includes(transfer.card)) {
+              MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
+            }
+          });
         }
       });
     }

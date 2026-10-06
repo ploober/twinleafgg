@@ -1,7 +1,7 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State } from '../../../game';
-import { COIN_FLIP_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 
 export class Trubbish extends PokemonCard {
@@ -29,7 +29,9 @@ export class Trubbish extends PokemonCard {
   public fullName: string = 'Trubbish M4';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-494 (B.84 (1), (3); #571): the flip only gates the discard, so the flip and the choice are effects of the
+    // attack and come after its damage (AFTER_ATTACK), as Ekans mew-023 / Tympole obf-050.
+    if (AFTER_ATTACK(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, (result) => {
         if (result) {
           DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);

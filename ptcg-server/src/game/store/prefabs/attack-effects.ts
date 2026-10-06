@@ -728,6 +728,7 @@ export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too (TA-417)
   allowedEnergyTypes?: CardType[],
   count = 1,
+  options?: { afterDamage?: boolean },
 ) {
   // The DiscardCardsEffect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
   const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
@@ -764,9 +765,23 @@ export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   ), selected => {
     const cards = selected || [];
     if (cards.length > 0) {
-      const discardEnergy = new DiscardCardsEffect(base, cards);
-      discardEnergy.target = opponent.active;
-      store.reduceEffect(state, discardEnergy);
+      const target = opponent.active;
+      const discard = () => {
+        const still = cards.filter(c => target.cards.includes(c));
+        if (still.length > 0) {
+          const discardEnergy = new DiscardCardsEffect(base, still);
+          discardEnergy.target = target;
+          store.reduceEffect(state, discardEnergy);
+        }
+      };
+      // TA-494 / B.84 (1), #77: `afterDamage` (called from the attack's own effect, before its damage) keeps the choice
+      // where it is asked and discards the chosen Energy after the damage (AttackEffect.afterDamageMoves), so the damage
+      // reads it attached. Opt-in per card (pbl-061).
+      if (options?.afterDamage === true && base instanceof AttackEffect && !(effect instanceof AfterAttackEffect)) {
+        base.afterDamageMoves.push(discard);
+      } else {
+        discard();
+      }
     }
   });
 }

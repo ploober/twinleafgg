@@ -32,8 +32,10 @@ export class Shieldon extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Ref: set-ancient-origins/registeel.ts (Forbidden Iron Hammer)
+    // TA-494 / B.84 (1), #77: the choice is asked where it was (B.84 (3) is undecided); the Energy is discarded after
+    // the damage (AttackEffect.afterDamageMoves), so the damage reads it attached.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, { afterDamage: true });
     }
     return state;
   }
