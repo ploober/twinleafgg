@@ -62,7 +62,7 @@ describe('Conformance — HTTP smoke (end-to-end over a real socket)', () => {
   });
 
   it('GET /v1/cards/:setCode serves a set\'s printed-card list; unknown set is 404', async () => {
-    const res = await request(server, 'GET', '/v1/cards/sit');
+    const res = await request(server, 'GET', '/v1/cards/sit?format=unlimited');
     expect(res.status).toBe(200);
     expect(res.headers['content-type']).toMatch(/application\/json/);
     expect(res.json.setCode).toBe('sit');
@@ -70,9 +70,14 @@ describe('Conformance — HTTP smoke (end-to-end over a real socket)', () => {
     expect(res.json.cards.length).toBeGreaterThan(0);
     expect(res.json.cards[0].printing).toMatch(/^sit-/);
 
-    const miss = await request(server, 'GET', '/v1/cards/zzz');
+    const miss = await request(server, 'GET', '/v1/cards/zzz?format=unlimited');
     expect(miss.status).toBe(404);
     expect(miss.json.error).toBe('unknownSet');
+
+    // TA-649: format is required (CF-85); without it the request is malformed
+    const noFormat = await request(server, 'GET', '/v1/cards/sit');
+    expect(noFormat.status).toBe(400);
+    expect(noFormat.json.error).toBe('unsupportedFormat');
   });
 
   it('POST /v1/step round-trips a non-trivial drive identically to in-process step()', async () => {
