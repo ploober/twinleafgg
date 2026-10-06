@@ -1355,6 +1355,20 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
   const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard } = runLoop(game, actions);
+  if (rejection !== undefined && applied < actions.length && game.state.prompts.some(p => p.result === undefined)) {
+    // TA-639: refused at a pause. `applied` names the prefix the response stands on, so its board and trace are that
+    // prefix's response: the open decision's fix-ups (CF-1 / B.80: picks already made read as applied) and the
+    // pause's own events and moved legs (TA-622, B.81), which the rolled-back store below cannot rebuild (its picks
+    // live adapter-side). The prefix replays without the refused action, so it pauses where this one was refused.
+    const prefix = step(initial, actions.slice(0, applied));
+    if (prefix.status !== 'invalidAction') {
+      return {
+        schemaVersion: SCHEMA_VERSION, status: 'invalidAction', applied, index: applied,
+        pending: null, events: prefix.events, state: prefix.state,
+        reasonCode: rejection.reasonCode, nativeReason: rejection.nativeReason,
+      };
+    }
+  }
   // B.81: the board as the engine holds it, before the fix-ups below re-home picks already made; the legs between
   // this and the fixed-up board are the pause's own `moved` events (appended after the dispatch legs).
   const raw = projectGame(game);
