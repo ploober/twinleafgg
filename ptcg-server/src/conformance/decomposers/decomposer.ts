@@ -7,7 +7,7 @@ import { SuperType, CardType } from '../../game/store/card/card-types';
 import { PlayerType, SlotType, CardTarget } from '../../game/store/actions/play-card-action';
 import { StateUtils } from '../../game/store/state-utils';
 import { IidContext } from '../state-adapter';
-import { NeutralAction, NeutralState, PendingDecision, LegalAction, Actor } from '../neutral-types';
+import { NeutralAction, NeutralState, NeutralEvent, PendingDecision, LegalAction, Actor } from '../neutral-types';
 import { playerIdToActor } from '../iid-targets';
 
 /**
@@ -96,6 +96,12 @@ export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
    * cards in play). The driver records them as `chosen` at a mid-decision pause; they stay where they are.
    */
   pickedCards?(prompt: P, picks: WirePick[], ctx: IidContext, state: State): Card[];
+  /**
+   * TA-622 (B.80 / B.81: the board is true at every pick and the events are its full replay trace): the rules events
+   * of what `fixupProjection` put on the board at this pause -- a `placeCounter` pick's counter is a `damaged` (CF-6:
+   * one per placement). Called after `fixupProjection` with the same picks; `projected` is the fixed-up board.
+   */
+  pauseEvents?(prompt: P, picks: WirePick[], ctx: IidContext, state: State, projected: NeutralState): NeutralEvent[];
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────

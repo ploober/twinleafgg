@@ -1292,6 +1292,11 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     // picks already made read as applied (e.g. a picked prize is in the hand, not the pile).
     const dec = decomposerFor(midPrompt.prompt);
     dec.fixupProjection?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state);
+    // TA-622: the rules events of what the fix-up placed (a counter at a pause is a `damaged`); not on a rejection,
+    // whose board is the rolled-back one.
+    if (rejection === undefined) {
+      events.push(...(dec.pauseEvents?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state, state) ?? []));
+    }
     // B.82 / CF-93: picks 1..k of an attack's pre-damage choice stay where they are and are recorded as `chosen`.
     if ((midPrompt.prompt as { deferredMove?: boolean }).deferredMove && rejection === undefined) {
       for (const c of dec.pickedCards?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state) ?? []) {

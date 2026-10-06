@@ -1,10 +1,10 @@
 import { PutDamagePrompt } from '../../game/store/prompts/put-damage-prompt';
 import { DamageMap } from '../../game/store/prompts/move-damage-prompt';
 import { CardTarget, PlayerType } from '../../game/store/actions/play-card-action';
-import { LegalAction } from '../neutral-types';
+import { LegalAction, NeutralEvent } from '../neutral-types';
 import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, targetKey } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
-import { adjustDamage } from '../transit-projection';
+import { adjustDamage, findPip } from '../transit-projection';
 
 /**
  * PutDamagePrompt: one pick = one unit of `prompt.damage` (which is in HP) applied to a target; raw
@@ -176,6 +176,28 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
     for (const p of realPicks(picks) as Array<{ target: CardTarget }>) {
       adjustDamage(projected, pokemonTargetToIid(state, player, ctx, p.target), unit);
     }
+  },
+
+  /**
+   * TA-622: the counter each `placeCounter` pick put on the board at this pause is a placement, so it is a `damaged`
+   * (CF-6: one per placement; Sinistcha twm-022 Cursed Drop emitted none until the close, while the board showed it).
+   * Not the `dealDamage` family: nothing lands before the attack resolves (the fix-up above leaves those boards alone).
+   */
+  pauseEvents(prompt, picks, ctx, state, projected): NeutralEvent[] {
+    if (verbFor(prompt) !== 'placeCounter') {
+      return [];
+    }
+    const unit = unitOf(prompt);
+    const player = promptPlayer(state, prompt.playerId);
+    const out: NeutralEvent[] = [];
+    for (const p of realPicks(picks) as Array<{ target: CardTarget }>) {
+      const iid = pokemonTargetToIid(state, player, ctx, p.target);
+      const at = findPip(projected, iid);
+      if (at !== undefined) {
+        out.push({ kind: 'damaged', player: at.owner, target: iid, hp: unit });
+      }
+    }
+    return out;
   },
 
   assemble(_prompt, picks): DamageMap[] {
