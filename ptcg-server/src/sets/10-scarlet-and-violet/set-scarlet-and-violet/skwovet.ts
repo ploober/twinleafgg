@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 
-import { CardList, GameError, GameMessage, PlayerType, ShuffleDeckPrompt } from '../../../game';
+import { GameError, GameMessage, PlayerType, ShuffleDeckPrompt } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { WAS_POWER_USED, DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -74,8 +74,9 @@ export class Skwovet extends PokemonCard {
 
       // TA-502: "you may shuffle your hand and put it on the bottom of your deck. If you put any cards on the bottom of
       // your deck in this way, draw a card." The hand used to go to the bottom IN HAND ORDER, with no shuffle. The
-      // TA-379 pattern (Special Red Card): stage the hand INTO the emptied deck so the ShuffleDeckPrompt carries
-      // exactly those cards (zone 'hand', B.66), restack the rest of the deck on top in the callback, then draw.
+      // Grand Wing pattern (Vivillon por-009, TA-458 / TA-591): the hand goes UNDER the untouched deck and only that
+      // bottom segment is shuffled (`bottomCount`, zone 'hand', B.66), so at the pause the hand projects in transit
+      // {hand -> deck bottom} and the deck as it is; the draw follows the shuffle.
       player.marker.addMarker(this.NEST_STASH_MARKER, this);
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
         if (cardList.getPokemonCard() === this) {
@@ -83,12 +84,16 @@ export class Skwovet extends PokemonCard {
         }
       });
 
-      const rest = new CardList();
-      player.deck.moveTo(rest);
+      const n = player.hand.cards.length;
       player.hand.moveTo(player.deck);
-      return store.prompt(state, new ShuffleDeckPrompt(player.id, { zone: 'hand' }), order => {
-        player.deck.applyOrder(order);
-        rest.moveToTopOfDestination(player.deck);
+      return store.prompt(state, new ShuffleDeckPrompt(player.id, { zone: 'hand', bottomCount: n }), order => {
+        const deck = player.deck.cards;
+        const start = deck.length - n;
+        // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+        const segment = order.length === n ? order.map(k => start + k) : order.filter(k => k >= start);
+        if (segment.length === n && new Set(segment).size === n && segment.every(k => k >= start && k < deck.length)) {
+          player.deck.cards = [...deck.slice(0, start), ...segment.map(k => deck[k])];
+        }
         DRAW_CARDS(store, state, player, 1);
       });
     }

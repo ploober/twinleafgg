@@ -251,6 +251,15 @@ describe('TA-502 Skwovet Nest Stash shuffles the hand before bottoming it', () =
     expect(sh.length).toBe(1);
     expect([...(sh[0].deck ?? [])].sort()).toEqual(['ah0', 'ah1']);
   });
+  it('at the shuffle pause the deck is untouched and the hand is in transit hand -> deck bottom (B.80) [TA-502]', () => {
+    const r = run(st([GRASS, PSYCHIC]), [USE]);
+    const A0 = r.state.players.A;
+    expect(A0.deck.map(c => c.iid)).toEqual(['ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5']);
+    expect(A0.hand).toEqual([]);
+    expect((A0.transit ?? []).map(t => ({ iid: t.iid, origin: t.origin, destination: t.destination }))).toEqual([
+      { iid: 'ah0', origin: { zone: 'hand' }, destination: { zone: 'deck', position: 'bottom' } },
+      { iid: 'ah1', origin: { zone: 'hand' }, destination: { zone: 'deck', position: 'bottom' } }]);
+  });
   it('the answered order is the order at the bottom of the deck, then 1 card is drawn [TA-502]', () => {
     const r = run(st([GRASS, PSYCHIC]), [USE, SYS({ type: 'shuffle', order: ['ah1', 'ah0'] })]);
     const deck = r.state.players.A.deck.map(c => c.iid);
