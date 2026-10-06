@@ -9,9 +9,9 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import {
   PlayerType, StateUtils, GameError, GameMessage,
   PokemonCardList,
-  CardTarget,
-  ChoosePokemonPrompt,
-  SlotType,
+  ChooseCardsPrompt,
+  Card,
+  CardList,
   Player
 } from '../../../game';
 
@@ -19,53 +19,47 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
-  let pokemonsWithTool = 0;
-  const blocked: CardTarget[] = [];
-  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-    if (cardList.tools.length > 0) {
-      pokemonsWithTool += 1;
-    } else {
-      blocked.push(target);
-    }
+  // TA-627: the objects chosen are the Tools themselves ("Choose up to 2 Pokémon Tools attached to Pokémon (yours or
+  // your opponent's) and discard them"), up to 2 in total from either side, both possibly off one Pokémon (as
+  // minccino.ts does since TA-579). This used to pick up to 2 BEARERS and discard tools[0] of each, so the second Tool
+  // on a Pokémon could not be chosen and 2 could not come off one Pokémon.
+  const tools: Card[] = [];
+  const bearerOf = new Map<Card, PokemonCardList>();
+  const ownerOf = new Map<Card, Player>();
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+    cardList.tools.forEach(tool => { tools.push(tool); bearerOf.set(tool, cardList); ownerOf.set(tool, player); });
   });
-  opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
-    if (cardList.tools.length > 0) {
-      pokemonsWithTool += 1;
-    } else {
-      blocked.push(target);
-    }
+  opponent.forEachPokemon(PlayerType.TOP_PLAYER, cardList => {
+    cardList.tools.forEach(tool => { tools.push(tool); bearerOf.set(tool, cardList); ownerOf.set(tool, opponent); });
   });
 
-  if (pokemonsWithTool === 0) {
+  if (tools.length === 0) {
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  const max = Math.min(2, pokemonsWithTool);
-  let targets: PokemonCardList[] = [];
-  yield store.prompt(state, new ChoosePokemonPrompt(
-    player.id,
-    GameMessage.CHOOSE_POKEMON_TO_DISCARD_CARDS,
-    PlayerType.ANY,
-    [SlotType.ACTIVE, SlotType.BENCH],
-    { min: 1, max: max, allowCancel: true, blocked }
+  // Compendium #2301 (B.18): a Trainer's "up to X" is 1..X, so at least one Tool is chosen.
+  const toolList = new CardList();
+  toolList.cards = tools;
+  let selected: Card[] = [];
+  yield store.prompt(state, new ChooseCardsPrompt(
+    player,
+    GameMessage.CHOOSE_CARD_TO_DISCARD,
+    toolList,
+    {},
+    { min: 1, max: Math.min(2, tools.length), allowCancel: false }
   ), results => {
-    targets = results || [];
+    selected = results || [];
     next();
   });
 
-  if (targets.length === 0) {
-    return state;
-  }
-
-  // Discard trainer only when user selected a Pokemon
-
-  targets.forEach(target => {
-    const owner = StateUtils.findOwner(state, target);
-    if (target.tools.length > 0) {
-      MOVE_CARDS(store, state, target, owner.discard, { cards: [target.tools[0]], sourceCard: effect.trainerCard });
+  selected.forEach(tool => {
+    const bearer = bearerOf.get(tool);
+    const owner = ownerOf.get(tool);
+    if (bearer !== undefined && owner !== undefined && bearer.tools.includes(tool)) {
+      MOVE_CARDS(store, state, bearer, owner.discard, { cards: [tool], sourceCard: effect.trainerCard });
     }
   });
 
