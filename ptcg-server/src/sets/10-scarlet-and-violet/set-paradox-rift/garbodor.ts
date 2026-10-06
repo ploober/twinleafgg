@@ -59,7 +59,14 @@ export class Garbodor extends PokemonCard {
         .filter(c => c instanceof TrainerCard && c.trainerType !== TrainerType.TOOL)
         .map(c => player.hand.cards.indexOf(c));
 
-      // Prompt player to choose cards to discard 
+      // TA-503: "This attack does 50 damage for each card you discarded in this way." The damage was left at the
+      // printed 50 when nothing was discarded; it is 50 x the cards discarded, so 0 discarded is 0 damage.
+      effect.damage = 0;
+      if (!player.hand.cards.some(c => c instanceof TrainerCard && c.trainerType === TrainerType.TOOL)) {
+        return state;
+      }
+
+      // Prompt player to choose cards to discard
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,

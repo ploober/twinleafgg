@@ -40,7 +40,16 @@ export class Arboliva extends PokemonCard {
     if (effect instanceof EvolveEffect && effect.pokemonCard === this) {
       const player = effect.player;
 
-      if (player.deck.cards.length === 0) {
+      // TA-500: this used to return on an empty deck (a copy-paste; the text has no deck condition) and so offered the
+      // "may" with no damaged Pokémon. The operand is a damaged Pokémon of the player's: with none, the Ability can do
+      // nothing and is not offered (B.29, #2306).
+      let damaged = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+        if (cardList.damage > 0) {
+          damaged = true;
+        }
+      });
+      if (!damaged) {
         return state;
       }
 
@@ -67,7 +76,8 @@ export class Arboliva extends PokemonCard {
             GameMessage.CHOOSE_POKEMON_TO_HEAL,
             PlayerType.BOTTOM_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
-            { min: 0, max: 1, allowCancel: false, blocked }
+            // TA-500: the 'may' was answered by the confirm; the heal pick is not a second decline (TA-488 shape).
+            { min: 1, max: 1, allowCancel: false, blocked }
           ), results => {
             targets = results || [];
             if (targets.length === 0) {

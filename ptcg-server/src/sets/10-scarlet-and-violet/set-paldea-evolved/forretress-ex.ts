@@ -16,11 +16,14 @@ import {
   AttachEnergyPrompt,
   StateUtils,
   GameError,
+  PokemonCardList,
+  ShuffleDeckPrompt,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import {SHUFFLE_DECK, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Forretressex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -78,19 +81,25 @@ export class Forretressex extends PokemonCard {
         ),
         (transfers) => {
           transfers = transfers || [];
-          // cancelled by user
-          if (transfers.length === 0) {
-            SHUFFLE_DECK(store, state, player);
-            return state;
-          }
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);
             MOVE_CARDS(store, state, player.deck, target, { cards: [transfer.card], sourceCard: this });
-            SHUFFLE_DECK(store, state, player);
           }
-          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-            if (cardList.getPokemonCard() === this) {
-              cardList.damage += 999;
+          // TA-501: "Then, shuffle your deck. If you searched your deck in this way, this Pokémon is Knocked Out." The
+          // search happened whatever was taken (#127, B.44), so the KO is owed for 0 taken too (it used to shuffle and
+          // return). The deck is shuffled ONCE, after the attaching (it was shuffled once per card), and the KO follows
+          // the shuffle as a Knock Out, not as 999 damage placed before it.
+          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+            let self: PokemonCardList | undefined;
+            player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+              if (cardList.getPokemonCard() === this) {
+                self = cardList;
+              }
+            });
+            if (self !== undefined) {
+              // KnockOutEffect.player is the OWNER of the Knocked Out Pokémon (its cards go to that player's discard).
+              store.reduceEffect(state, new KnockOutEffect(player, self));
             }
           });
         },

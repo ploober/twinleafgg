@@ -5,10 +5,10 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 
-import { CardList, GameError, GameMessage, PlayerType } from '../../../game';
+import { CardList, GameError, GameMessage, PlayerType, ShuffleDeckPrompt } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_POWER_USED, DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Skwovet extends PokemonCard {
 
@@ -72,24 +72,25 @@ export class Skwovet extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      // Create deckBottom and move hand into it
-      const deckBottom = new CardList();
-      MOVE_CARDS(store, state, player.hand, deckBottom, { count: cards.length, sourceCard: this });
-
-      // Later, move deckBottom to player's deck
-
-      MOVE_CARDS(store, state, deckBottom, player.deck, { count: cards.length, sourceCard: this });
+      // TA-502: "you may shuffle your hand and put it on the bottom of your deck. If you put any cards on the bottom of
+      // your deck in this way, draw a card." The hand used to go to the bottom IN HAND ORDER, with no shuffle. The
+      // TA-379 pattern (Special Red Card): stage the hand INTO the emptied deck so the ShuffleDeckPrompt carries
+      // exactly those cards (zone 'hand', B.66), restack the rest of the deck on top in the callback, then draw.
       player.marker.addMarker(this.NEST_STASH_MARKER, this);
-
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
         if (cardList.getPokemonCard() === this) {
           cardList.addBoardEffect(BoardEffect.ABILITY_USED);
         }
       });
 
-      MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
-
-      return state;
+      const rest = new CardList();
+      player.deck.moveTo(rest);
+      player.hand.moveTo(player.deck);
+      return store.prompt(state, new ShuffleDeckPrompt(player.id, { zone: 'hand' }), order => {
+        player.deck.applyOrder(order);
+        rest.moveToTopOfDestination(player.deck);
+        DRAW_CARDS(store, state, player, 1);
+      });
     }
     if (effect instanceof EndTurnEffect) {
       effect.player.marker.removeMarker(this.NEST_STASH_MARKER, this);

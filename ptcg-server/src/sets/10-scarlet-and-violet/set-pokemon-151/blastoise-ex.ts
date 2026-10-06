@@ -1,5 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
+import { Stage, CardType, CardTag, SuperType, EnergyType } from '../../../game/store/card/card-types';
+import { EnergyCard } from '../../../game/store/card/energy-card';
 import {
   StoreLike,
   State,
@@ -7,7 +8,6 @@ import {
   PowerType,
   GamePhase,
   StateUtils,
-  GameError,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
@@ -37,7 +37,7 @@ export class Blastoiseex extends PokemonCard {
       cost: [W, W],
       damage: 140,
       damageCalculation: 'x',
-      text: 'Discard up to 2 Basic [W] Energies from your hand. This attack does 140 damage for each card you discarded in this way.',
+      text: 'Discard up to 2 Basic [W] Energy cards from your hand. This attack does 140 damage for each card you discarded in this way.',
     },
   ];
 
@@ -52,11 +52,16 @@ export class Blastoiseex extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const hasEnergyInHand = player.hand.cards.some((c) => {
-        return c.superType === SuperType.ENERGY;
-      });
-      if (!hasEnergyInHand) {
-        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      // TA-496: "Discard up to 2 Basic [W] Energy cards from your hand. This attack does 140 damage for each card you
+      // discarded in this way." The pick took ANY Energy card, min 1 (with a cancel that kept the printed 140), and the
+      // attack was withheld with no Energy in hand. An attack's "up to 2" is 0..2 (#2301) and the attack is always
+      // usable; the damage is 140 x the cards discarded, so 0 discarded is 0 damage.
+      const filter = { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' };
+      const water = player.hand.cards.filter(c => c.superType === SuperType.ENERGY
+        && (c as EnergyCard).energyType === EnergyType.BASIC && c.name === 'Water Energy');
+      effect.damage = 0;
+      if (water.length === 0) {
+        return state;
       }
       state = store.prompt(
         state,
@@ -64,19 +69,15 @@ export class Blastoiseex extends PokemonCard {
           player,
           GameMessage.CHOOSE_CARD_TO_DISCARD,
           player.hand,
-          { superType: SuperType.ENERGY },
-          { allowCancel: true, min: 1, max: 2 },
+          filter,
+          { allowCancel: false, min: 0, max: 2 },
         ),
         (cards) => {
           cards = cards || [];
-          if (cards.length === 0) {
-            return;
+          effect.damage = cards.length * 140;
+          if (cards.length > 0) {
+            MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: this });
           }
-          const damage = cards.length * 140;
-          effect.damage = damage;
-
-          MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: this });
-
           return state;
         },
       );
