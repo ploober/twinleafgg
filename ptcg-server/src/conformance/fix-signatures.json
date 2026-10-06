@@ -10462,6 +10462,26 @@
       "fixes": [
         "FX-0391"
       ]
+    },
+    {
+      "file": "set-chaos-rising/garbodor.ts",
+      "signatures": [
+        "if ((effect instanceof DealDamageEffect || (effect instanceof PutDamageEffect && !effect.weaknessApplied))"
+      ],
+      "note": "TA-616, TA-623, TA-624 (2026-10-05): Garbodor cri-057 Gloomy Garbage and Antique Jaw Fossil por-068 Intimidating Jaw reduce every damage placement of the opp",
+      "fixes": [
+        "FX-0392"
+      ]
+    },
+    {
+      "file": "set-perfect-order/antique-jaw-fossil.ts",
+      "signatures": [
+        "if ((effect instanceof DealDamageEffect || (effect instanceof PutDamageEffect && !effect.weaknessApplied))"
+      ],
+      "note": "TA-616 / TA-624 (2026-10-05): Intimidating Jaw reduces every damage placement of the opponent's Active's attack, before W/R",
+      "fixes": [
+        "FX-0392"
+      ]
     }
   ]
 }
