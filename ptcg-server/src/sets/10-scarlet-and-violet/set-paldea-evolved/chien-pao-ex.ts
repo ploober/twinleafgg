@@ -103,8 +103,13 @@ export class ChienPaoex extends PokemonCard {
         (cards) => {
           player.marker.addMarker(this.SHIVERY_CHILL_MARKER, this);
 
+          // TA-636 / TA-497: "Then, shuffle your deck" once, after the move, also when 0 cards were taken.
+          const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+            player.deck.applyOrder(order);
+          });
+
           if (cards.length === 0) {
-            return state;
+            return shuffle();
           }
 
           if (cards.length > 0) {
@@ -121,11 +126,9 @@ export class ChienPaoex extends PokemonCard {
             if (cardList.getPokemonCard() === this) {
               cardList.addBoardEffect(BoardEffect.ABILITY_USED);
             }
-
-            return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-              player.deck.applyOrder(order);
-            });
           });
+
+          return shuffle();
         },
       );
     }
