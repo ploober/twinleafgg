@@ -60,23 +60,25 @@ export class Gimmighoul extends PokemonCard {
         return SHUFFLE_DECK(store, state, player);
       }
 
-      let cards: Card[] = [];
-      store.prompt(state, new ChooseCardsPrompt(
+      // TA-582: "Then, shuffle your deck" follows the search, so the shuffle is raised inside the pick callback (as
+      // Greninja ex twm-106 Shinobi Blade does). Raised beside the open pick, the live arbiter (Game.handleArbiterPrompts)
+      // answered it first, over the pre-search deck, and the deck stayed in the order the player searched.
+      return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
         { min: 0, max: 2, allowCancel: false }
       ), selected => {
-        cards = selected || [];
+        const cards: Card[] = selected || [];
 
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
 
         MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-      });
 
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
+        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
       });
     }
 

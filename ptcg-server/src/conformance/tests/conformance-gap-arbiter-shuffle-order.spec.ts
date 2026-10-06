@@ -9,7 +9,7 @@ import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
 import { SuperType } from '../../game/store/card/card-types';
 
-// GAP: arbiter shuffle runs ahead of an open search pick.
+// TA-582 (was GAP): arbiter shuffle ran ahead of an open search pick.
 //
 // Gimmighoul ssp-097 "Minor Errand-Running" [C]: "Search your deck for up to 2 Basic Energy cards,
 // reveal them, and put them into your hand. Then, shuffle your deck." The printed order is: search
@@ -92,46 +92,46 @@ function openPick(state: State): ChooseCardsPrompt | undefined {
 
 beforeAll(() => { loadAllSets(); });
 
-describe('GAP: live arbiter resolves a ShuffleDeckPrompt ahead of an open search pick (Gimmighoul ssp-097)', () => {
+describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an open search pick (Gimmighoul ssp-097)', () => {
 
-  it('REPRO (open): Minor Errand-Running shuffles BEFORE the pick and never after it', () => {
-    // When this goes red, the bug is fixed: flip the assertion to the rule (exactly one shuffle,
-    // raised after the pick resolved, over the 8-card post-search deck).
+  // TA-582 (fixed): the card now raises its ShuffleDeckPrompt inside the search callback, as Greninja ex does.
+  // Before the fix this cell read "shuffles BEFORE the pick and never after it": both prompts open together, the
+  // arbiter shuffled the full 10-card deck while the pick was still open, and the deck stayed in the searched order.
+  it('REGRESSION (TA-582): Minor Errand-Running shuffles once, AFTER the pick, over the post-search deck', () => {
     const { handler, store, state, player } = build('Gimmighoul SSP', P);
-    const before = player.deck.cards.map(c => c.id);
-    expect(before.length).toBe(10);
+    expect(player.deck.cards.length).toBe(10);
 
     store.dispatch(new AttackAction(player.id, 'Minor Errand-Running'));
 
-    // Both prompts were raised together; the arbiter (as game.ts uses it) already took the shuffle.
-    const shuffles = state.prompts.filter(p => p instanceof ShuffleDeckPrompt);
-    expect(shuffles.length).toBe(1);
-    expect(shuffles[0].result).toBeDefined();
+    // Only the pick is open; no shuffle has been raised for the arbiter to jump ahead to.
     const pick = openPick(state);
     expect(pick).toBeDefined();
-    expect(handler.shuffles.length).toBe(1);
-    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(true);
-    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(10); // the whole pre-search deck was shuffled
-    const afterShuffle = handler.shuffles[0].deckIdsAfterShuffle;
+    expect(state.prompts.filter(p => p.result === undefined).length).toBe(1);
+    expect(state.prompts.some(p => p instanceof ShuffleDeckPrompt)).toBe(false);
+    expect(handler.shuffles.length).toBe(0);
 
-    // The player now searches: take the first two Basic Energy in the (already shuffled) deck.
-    const energyIdx = player.deck.cards
-      .map((c, i) => (c.superType === SuperType.ENERGY ? i : -1))
-      .filter(i => i >= 0)
-      .slice(0, 2);
-    expect(energyIdx.length).toBe(2);
-    const picked = energyIdx.map(i => player.deck.cards[i]);
+    const picked = player.deck.cards.filter(c => c.superType === SuperType.ENERGY).slice(0, 2);
+    expect(picked.length).toBe(2);
     const pickedIds = picked.map(c => c.id);
     store.dispatch(new ResolvePromptAction(pick!.id, picked));
 
     expect(player.hand.cards.map(c => c.id)).toEqual(jasmine.arrayContaining(pickedIds));
-    expect(player.deck.cards.length).toBe(8);
-
-    // DEFECT: no shuffle after the search. The deck is exactly the order the player searched,
-    // minus the two picked cards.
     expect(handler.shuffles.length).toBe(1);
-    expect(state.prompts.filter(p => p instanceof ShuffleDeckPrompt).length).toBe(1);
-    expect(player.deck.cards.map(c => c.id)).toEqual(afterShuffle.filter(id => pickedIds.indexOf(id) === -1));
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(8); // the post-search deck
+    expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
+  });
+
+  it('REGRESSION (TA-582): picking nothing still shuffles once, after the pick, over the whole deck', () => {
+    const { handler, store, state, player } = build('Gimmighoul SSP', P);
+    store.dispatch(new AttackAction(player.id, 'Minor Errand-Running'));
+    const pick = openPick(state);
+    expect(pick).toBeDefined();
+    expect(handler.shuffles.length).toBe(0);
+    store.dispatch(new ResolvePromptAction(pick!.id, []));
+    expect(handler.shuffles.length).toBe(1);
+    expect(handler.shuffles[0].pickOpenAtShuffle).toBe(false);
+    expect(handler.shuffles[0].deckSizeAtShuffle).toBe(10);
   });
 
   it('CONTROL: Greninja ex twm-106 Shinobi Blade (shuffle raised INSIDE the pick callback) shuffles after the pick', () => {
