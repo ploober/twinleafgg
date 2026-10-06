@@ -1800,9 +1800,10 @@
     {
       "file": "set-obsidian-flames/vespiquen-ex.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "GameMessage.CHOOSE_POKEMON_TO_HEAL,"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "retargeted 2026-10-06: the fix was extended (class-D batch), not reverted"
     },
     {
       "file": "set-paradox-rift/tsareena-ex.ts",
@@ -4301,10 +4302,10 @@
       "file": "set-destined-rivals/team-rockets-nidorina.ts",
       "signatures": [
         "// \"Choose UP TO 2 of your [D] Pokémon\" — zero is a legal count, so min is 0 (TA-136): the // player may decline (choosing none evolves nothing and, having searched nothing, does not shuffle). { min: 0, max: 2, allowCancel: false, blocked: blocked2 },",
-        "return SHUFFLE_DECK(store, state, player);",
+        "// An empty deck: the search is performed and finds nothing (TA-249); there is no card to pick.",
         "public evolvesFrom = \"Team Rocket's Nidoran♀\";"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | retargeted 2026-10-06: the fix was extended (class-D batch), not reverted",
       "state": "guarding",
       "fixes": [
         "FX-0126"
@@ -7919,9 +7920,9 @@
     {
       "file": "set-twilight-masquerade/teal-mask-ogerpon-ex.ts",
       "signatures": [
-        "{ min: 1, max: 1, allowCancel: false },"
+        "{ min: 1, max: 1, allowCancel: false, blocked, blockedTo },"
       ],
-      "note": "TA-350 (2026-09-01) / B.46 (RE-140 withdrawn, rotomancer right): an ACTIVATED 'once during your turn, you may attach' Ability is decided at useAbility; no post-activation decline (#1197, #2306, #2301 floor, #255). min 0 -> min 1; a zero-take used to charge Stone Arms' once-per-turn for no effect.",
+      "note": "TA-350 (2026-09-01) / B.46 (RE-140 withdrawn, rotomancer right): an ACTIVATED 'once during your turn, you may attach' Ability is decided at useAbility; no post-activation decline (#1197, #2306, #2301 floor, #255). min 0 -> min 1; a zero-take used to charge Stone Arms' once-per-turn for no effect. | retargeted 2026-10-06: the fix was extended (class-D batch), not reverted",
       "fixes": [
         "FX-0026"
       ],
@@ -8467,12 +8468,13 @@
     {
       "file": "game/store/prefabs/shared-attack-prefabs.ts",
       "signatures": [
-        "if (bugOutPokemon.length > 0) {"
+        "if (revealedPokemon.length > 0) {"
       ],
       "fixes": [
         "FX-0003"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "retargeted 2026-10-06: the fix was extended (class-D batch), not reverted"
     },
     {
       "file": "set-jungle/pokeball.ts",
@@ -9774,9 +9776,9 @@
     {
       "file": "set-pokemon-151/weezing.ts",
       "signatures": [
-        "ko.viaCheckState = true;"
+        "opponent.active.knockedOutByEffect = true;"
       ],
-      "note": "TA-559 (2026-10-01): Weezing mew-110 Let's Have a Blast pays the Attacking Pokémon's Prize cards once: the card's KO no longer also lands on ",
+      "note": "TA-559 (2026-10-01): Weezing mew-110 Let's Have a Blast pays the Attacking Pokémon's Prize cards once: the card's KO no longer also lands on  | retargeted 2026-10-06: the fix was extended (class-D batch), not reverted",
       "fixes": [
         "FX-0361"
       ]
@@ -11155,6 +11157,386 @@
       "note": "TA-630 (2026-10-06): printed regulation mark",
       "fixes": [
         "FX-0413"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/tympole.ts",
+      "signatures": [
+        "const discardEnergy = new DiscardCardsEffect(attackEffect, selected || []);"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/baxcalibur.ts",
+      "signatures": [
+        "// TA-516 / B.46: a used Ability attaches \"a Basic [W] Energy card\": one per use, no post-activation decline."
+      ],
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/floragato.ts",
+      "signatures": [
+        "// TA-507: the switch is Magic Whip's (index 1); Seed Bomb has no effect text."
+      ],
+      "note": "class-D batch 4 (FX-0422, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0422"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/forretress-ex.ts",
+      "signatures": [
+        "store.reduceEffect(state, new KnockOutEffect(player, self));"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/pelipper.ts",
+      "signatures": [
+        "const hasSupporterInDiscard = player.discard.cards.some(c => {"
+      ],
+      "note": "class-D batch 4 (FX-0422, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0422"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/tinkaton.ts",
+      "signatures": [
+        "// TA-528: the discard is the Ability's mandatory cost (an empty hand is refused above), so there is no"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/zweilous.ts",
+      "signatures": [
+        "SHOW_CARDS_THEN(store, state, opponent, cards, () => {"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-paldean-fates/kilowattrel.ts",
+      "signatures": [
+        "text: 'This attack does 10 damage for each Pokémon in your discard pile that has the United Wings attack to 1 of your opponent\\'s Benched Pokémon. (Don\\'t apply Weakness and Resistance for Benched Pokémon.)'"
+      ],
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/jirachi.ts",
+      "signatures": [
+        "SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, effect.player, this,"
+      ],
+      "note": "class-D batch 4 (FX-0420, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0420"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/minior.ts",
+      "signatures": [
+        "// TA-575: \"when you attach an Energy card from your hand to this Pokémon\". The AttachEnergyEffect carries no"
+      ],
+      "note": "class-D batch 4 (FX-0421, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/panpour.ts",
+      "signatures": [
+        "// TA-535: a search of the hidden deck for a named kind may fail to find (#2171), so the pick floors at 0 and"
+      ],
+      "note": "class-D batch 4 (FX-0421, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/arbok-ex.ts",
+      "signatures": [
+        "// TA-515: the opponent discards, so the cards go to their own discard pile."
+      ],
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/blastoise-ex.ts",
+      "signatures": [
+        "effect.damage = cards.length * 140;"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/ekans.ts",
+      "signatures": [
+        "const discardEnergy = new DiscardCardsEffect(attackEffect, selected || []);"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/gengar.ts",
+      "signatures": [
+        "// Poltergeist (TA-510: index 0; the two attack indices were swapped)"
+      ],
+      "note": "class-D batch 4 (FX-0422, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0422"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/gloom.ts",
+      "signatures": [
+        "return CONFIRMATION_PROMPT(store, state, player, result => {"
+      ],
+      "note": "class-D batch 4 (FX-0422, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0422"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/hitmonchan.ts",
+      "signatures": [
+        "store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {"
+      ],
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/vileplume.ts",
+      "signatures": [
+        "return CONFIRMATION_PROMPT(store, state, player, wantToUse => {"
+      ],
+      "note": "class-D batch 4 (FX-0420, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0420"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/arboliva.ts",
+      "signatures": [
+        "// TA-500: this used to return on an empty deck (a copy-paste; the text has no deck condition) and so offered the"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/skwovet.ts",
+      "signatures": [
+        "return store.prompt(state, new ShuffleDeckPrompt(player.id, { zone: 'hand', bottomCount: n }), order => {"
+      ],
+      "note": "class-D batch 4 (FX-0424, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/spidops-ex.ts",
+      "signatures": [
+        "// TA-513: the opponent's Active's current Retreat Cost, with every modifier (Trap Territory itself included;"
+      ],
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/cresselia.ts",
+      "signatures": [
+        "{ count: 1, allowCancel: true, blocked },"
+      ],
+      "note": "class-D batch 4 (FX-0421, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/blowtorch.ts",
+      "signatures": [
+        "pool.cards = this.discardCandidates(state, opponent);"
+      ],
+      "note": "class-D batch 4 (FX-0421, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "let suspended = false;"
+      ],
+      "note": "TA-519 (2026-10-06): The attack pipeline resolves the attack's Knock Outs (Prize, promote) before it dispatches EndTurnEffect, so every 'at t",
+      "fixes": [
+        "FX-0418"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/marshadow.ts",
+      "signatures": [
+        "effect.player.active.marker.addMarker(this.SHADOWY_SIDE_KICK_USED, this);"
+      ],
+      "note": "TA-521, TA-524, TA-527, TA-528, TA-532, TA-543 (2026-10-06): Class-D batch cdg4: Veluza par-054 one target; Marshadow meg-080 Side Kick protection (slot marker, the KO probe no long",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "game/store/effects/game-phase-effects.ts",
+      "signatures": [
+        "public afterKnockOuts: Array<() => void> = [];"
+      ],
+      "note": "TA-544, TA-546, TA-548, TA-549, TA-550, TA-551, TA-563 (2026-10-06): Class-D batch cdg5: Team Rocket's Nidorina dri-115 asks its pick on an empty deck; Teal Mask Ogerpon ex twm-025 Teal Dan",
+      "fixes": [
+        "FX-0420"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/gothitelle.ts",
+      "signatures": [
+        "const toBottom = deckTop.cards.filter(c => !cards.includes(c));"
+      ],
+      "note": "TA-535, TA-541, TA-554, TA-555, TA-557, TA-575, TA-601 (2026-10-06): Class-D batch cdg6: Panpour par-041 may fail to find; Cresselia sfa-021 one face-down Prize collapses (choose-prize) and",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-spidops.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false, blockedTo },"
+      ],
+      "note": "TA-504, TA-505, TA-506, TA-507, TA-508, TA-509, TA-510 (2026-10-06): Class-D batch cdg8: Team Rocket's Spidops dri-? Charging Up attachEnergy pair; Gloom / Vileplume mew Blooming Energy ask",
+      "fixes": [
+        "FX-0422"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-staraptor.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-511, TA-512, TA-513, TA-514, TA-515, TA-516, TA-635 (2026-10-06): Class-D batch cdg9: Hitmonchan mew-107 logs Counterattack's counters; Kilowattrel paf-022 Bench only; Spidops ex svi-019",
+      "fixes": [
+        "FX-0423"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/garbodor.ts",
+      "signatures": [
+        "if (!player.hand.cards.some(c => c instanceof TrainerCard && c.trainerType === TrainerType.TOOL)) {"
+      ],
+      "note": "TA-496, TA-498, TA-499, TA-500, TA-501, TA-502, TA-503 (2026-10-06): Class-D batch cdg7: Blastoise ex mew-009 Twin Cannons Basic Water, 140 each; Tympole obf-050 / Ekans mew-023 flip after ",
+      "fixes": [
+        "FX-0424"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/veluza.ts",
+      "signatures": [
+        "sameTarget: true"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06)",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/starmie.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06)",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-paldean-fates/starmie.ts",
+      "signatures": [
+        "operation: 'placeCounters'"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06)",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/toedscruel.ts",
+      "signatures": [
+        "new HealEffect(player, self, 30)"
+      ],
+      "note": "class-D batch 4 (FX-0419, 2026-10-06)",
+      "fixes": [
+        "FX-0419"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/togekiss.ts",
+      "signatures": [
+        "effect.afterKnockOuts.push(() => {"
+      ],
+      "note": "class-D batch 4 (FX-0420, 2026-10-06)",
+      "fixes": [
+        "FX-0420"
+      ]
+    },
+    {
+      "file": "game/store/state/pokemon-card-list.ts",
+      "signatures": [
+        "public knockedOutByEffect: boolean = false;"
+      ],
+      "note": "class-D batch 4 (FX-0420, 2026-10-06)",
+      "fixes": [
+        "FX-0420"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/watchog.ts",
+      "signatures": [
+        "text: \"Flip 3 coins. If any of them are heads, your opponent reveals their hand. For each heads, choose a card you find there and shuffle it into your opponent's deck.\","
+      ],
+      "note": "class-D batch 4 (FX-0421, 2026-10-06)",
+      "fixes": [
+        "FX-0421"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/bellibolt-ex.ts",
+      "signatures": [
+        "THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_POKEMON(50, effect, store, state);"
+      ],
+      "note": "class-D batch 4 (FX-0422, 2026-10-06)",
+      "fixes": [
+        "FX-0422"
       ]
     }
   ]
