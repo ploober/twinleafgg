@@ -8,11 +8,10 @@ import { Player } from '../../../game/store/state/player';
 import { GamePhase, State } from '../../../game/store/state/state';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { KnockOutEffect, MoveCardsEffect } from '../../../game/store/effects/game-effects';
+import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import {DRAW_CARDS,
-  REMOVE_OPPONENT_LAST_TURN_MARKER_AT_END_OF_TURN,
-  SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK,
+  REMOVE_OPPONENT_LAST_TURN_MARKER_AT_END_OF_TURN, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsArcher extends TrainerCard {
   public trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -73,26 +72,18 @@ export class TeamRocketsArcher extends TrainerCard {
 
       const cards = player.hand.cards.filter((c) => c !== this);
 
-      const playerMoveEffect = new MoveCardsEffect(player.hand, player.deck, {
-        cards,
-        sourceCard: this,
+      // TA-556 / B.74: lockstep - both hands go into their decks, both decks are shuffled, then you draw 5 and your
+      // opponent draws 3 (the card drew before the shuffles were answered, the opponent first). A protected opponent
+      // (Milotic Dew Guard) keeps the hand and does not draw.
+      return EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, this, [
+        { player, cards },
+        { player: opponent, cards: [...opponent.hand.cards] },
+      ], included => {
+        DRAW_CARDS(store, state, player, 5);
+        if (included.includes(opponent)) {
+          DRAW_CARDS(store, state, opponent, 3);
+        }
       });
-      state = store.reduceEffect(state, playerMoveEffect);
-
-      const opponentMoveEffect = new MoveCardsEffect(opponent.hand, opponent.deck, {
-        sourceCard: this,
-      });
-      state = store.reduceEffect(state, opponentMoveEffect);
-
-      // opponent shuffle and draw
-      if (!opponentMoveEffect.preventDefault) {
-        SHUFFLE_DECK(store, state, opponent);
-        DRAW_CARDS(store, state, opponent, 3);
-      }
-
-      // player shuffle and draw
-      SHUFFLE_DECK(store, state, player);
-      DRAW_CARDS(store, state, player, 5);
     }
 
     // Track when a Team Rocket's Pokemon is knocked out

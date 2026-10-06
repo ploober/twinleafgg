@@ -6,8 +6,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { GameError, GameMessage, Player } from '../../../game';
-import {DRAW_CARDS, SHUFFLE_DECK, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
-import { MoveCardsEffect } from '../../../game/store/effects/game-effects';
+import { DRAW_CARDS, COIN_FLIP_PROMPT, MOVE_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: Harlequin, effect: TrainerEffect): IterableIterator<State> {
@@ -27,27 +26,29 @@ function* playCard(next: Function, store: StoreLike, state: State,
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
+  // TA-556 / B.74: lockstep, in printed order - both hands go into their decks, both decks are shuffled, THEN the
+  // coin is flipped, then each player draws (the card flipped before any hand moved and drew before the shuffles were
+  // answered).
+  let opponentProtected = false;
+  yield EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, self, [
+    { player, cards },
+    { player: opponent, cards: [...opponent.hand.cards] },
+  ], included => {
+    opponentProtected = !included.includes(opponent);
+    next();
+  });
+
   let coinResult = false;
   yield COIN_FLIP_PROMPT(store, state, player, result => {
     coinResult = result;
     next();
   });
 
-  const playerMoveEffect = new MoveCardsEffect(player.hand, player.deck, { cards, sourceCard: self });
-  state = store.reduceEffect(state, playerMoveEffect);
-
-  const opponentMoveEffect = new MoveCardsEffect(opponent.hand, opponent.deck, { sourceCard: self });
-  state = store.reduceEffect(state, opponentMoveEffect);
-
-  // opponent shuffle and draw
-  if (!opponentMoveEffect.preventDefault) {
-    SHUFFLE_DECK(store, state, opponent);
+  DRAW_CARDS(store, state, player, coinResult ? 5 : 3);
+  // A protected opponent (Milotic Dew Guard) keeps the hand and does not draw.
+  if (!opponentProtected) {
     DRAW_CARDS(store, state, opponent, coinResult ? 3 : 5);
   }
-
-  // player shuffle and draw
-  SHUFFLE_DECK(store, state, player);
-  DRAW_CARDS(store, state, player, coinResult ? 5 : 3);
 }
 
 export class Harlequin extends TrainerCard {

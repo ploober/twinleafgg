@@ -2,7 +2,7 @@ import { GameError, GameMessage, Player } from '../../../game';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK } from '../../../game/store/prefabs/prefabs';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
@@ -50,17 +50,13 @@ export class Judge extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      // Player fully (hand→deck → shuffle → draw), then opponent — same pacing as Lillie.
-      return SHUFFLE_HAND_INTO_DECK_THEN_DRAW(store, state, player, {
-        excludeCard: this,
-        sourceCard: this,
-        drawCount: 4,
-        afterDraw: () => {
-          SHUFFLE_HAND_INTO_DECK_THEN_DRAW(store, state, opponent, {
-            sourceCard: this,
-            drawCount: 4,
-          });
-        },
+      // TA-556 / B.74: lockstep - both hands go into their decks, then both decks are shuffled, then each player
+      // draws 4 (the card ran the player's whole sequence before the opponent's hand moved).
+      return EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, this, [
+        { player, cards: player.hand.cards.filter(c => c !== this) },
+        { player: opponent, cards: [...opponent.hand.cards] },
+      ], included => {
+        included.forEach(p => DRAW_CARDS(store, state, p, 4));
       });
     }
 

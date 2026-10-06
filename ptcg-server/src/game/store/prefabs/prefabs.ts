@@ -1665,6 +1665,42 @@ export function SHUFFLE_HAND_INTO_DECK_THEN_DRAW(
 }
 
 /**
+ * TA-556 / B.74: "Each player shuffles their hand into their deck" run in LOCKSTEP. Every player's hand goes into
+ * their deck first, then every deck is shuffled (one ShuffleDeckPrompt per deck, in the order given), and only then
+ * does `then` run (the card's printed intermediate step, if any, and every player's draw). A player whose hand move
+ * is prevented (Milotic Dew Guard) is left out of the shuffle and out of `then`'s `included` list.
+ */
+export function EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(
+  store: StoreLike,
+  state: State,
+  sourceCard: Card,
+  players: Array<{ player: Player; cards: Card[] }>,
+  then: (included: Player[]) => void,
+): State {
+  const included: Player[] = [];
+  for (const { player, cards } of players) {
+    if (cards.length > 0) {
+      const move = new MoveCardsEffect(player.hand, player.deck, { cards, sourceCard });
+      state = store.reduceEffect(state, move);
+      if (move.preventDefault) {
+        continue;
+      }
+    }
+    included.push(player);
+  }
+  if (included.length === 0) {
+    then(included);
+    return state;
+  }
+  return store.prompt(state, included.map(p => new ShuffleDeckPrompt(p.id)), (results: any) => {
+    // store.prompt hands back the bare result when only one prompt was raised.
+    const orders = (included.length === 1 ? [results] : results) as number[][];
+    included.forEach((p, i) => p.deck.applyOrder(orders[i]));
+    then(included);
+  });
+}
+
+/**
  * Put hand cards onto the deck (append = bottom), wait for hand→deck animation,
  * then draw. No deck shuffle — Iono / Marnie style.
  */
