@@ -39,6 +39,8 @@ import {
   ShuffleSystemAction, FlipSystemAction
 } from './neutral-types';
 
+type MovedEvent = Extract<NeutralEvent, { kind: 'moved' }>;
+
 /**
  * M2 driver: the prompt-driven replay loop (impl §4.1). Each iteration finds the open prompt and
  * either decomposes it (a player prompt → one single decision per pick, accumulated from the action
@@ -176,6 +178,8 @@ function dispatchDeclareAttack(game: ImportedGame, action: DeclareAttackAction):
 
 function dispatchEndTurn(game: ImportedGame, action: EndTurnAction): void {
   const player = game.state.players[actorIndex(action.actor)];
+  // B.86 / TA-647: the turn this `endTurn` ends; a Knock Out pause before the next turn starts is Checkup's.
+  game.ctx.endTurnAt = { turn: game.state.turn, activePlayer: game.state.activePlayer, logIndex: game.state.logs.length };
   game.store.dispatch(new PassTurnAction(player.id));
 }
 
@@ -673,11 +677,20 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
 /**
  * B.81 (TA-591): the players whose WHOLE deck has an open shuffle (no `bottomCount`, zone deck). A card that landed
  * in such a deck in the dispatch just run is shuffled in (`position: any`), whatever end the engine put it at.
+ *
+ * B.87 / TA-648 (owner pin): so is a card that landed in a deck the same effect is now SEARCHING — an open decision
+ * over that very deck (the prompt's pile is the player's deck list itself, not a looked-at copy). A search of a deck
+ * is followed by that deck's shuffle, so where the card lies cannot matter to play: Perrin twm-160 ("put them into
+ * your deck. If you do, search your deck ... Then, shuffle your deck") pauses at the search with the cards in.
  */
-function wholeDeckShufflePending(state: State): Set<NeutralPlayerId> {
+function shuffledInDecks(state: State): Set<NeutralPlayerId> {
   const out = new Set<NeutralPlayerId>();
   for (const p of state.prompts) {
-    if (p.result !== undefined || !p.type.startsWith('Shuffle')) { continue; }
+    if (p.result !== undefined) { continue; }
+    const pile = (p as unknown as { cards?: unknown }).cards;
+    const searched = state.players.findIndex(pl => pl.deck === pile);
+    if (searched >= 0) { out.add(searched === 0 ? 'A' : 'B'); continue; }
+    if (!p.type.startsWith('Shuffle')) { continue; }
     const q = p as unknown as { bottomCount?: number; zone?: string };
     if ((q.bottomCount ?? 0) > 0 || (q.zone ?? 'deck') !== 'deck') { continue; }
     const i = state.players.findIndex(pl => pl.id === p.playerId);
@@ -738,6 +751,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
 
   // B.81: the cards a `reveal` named since the last dispatch — their next leg is `public`.
   const revealedSince = new Set<string>();
+  // B.87 / TA-643: deck legs of a dispatch that ended at an auto-acknowledged wait (see dispatchAndCollect).
+  let deckLegsAtWait: MovedEvent[] = [];
 
   // TA-590 (B.80 §5 / §8, B.81 §6): a search pick is lifted into transit AT THE PICK. step() projects that at a pause
   // (the decomposer's fix-up) and closes the trace with its leg, but a replay that ran on past the pause skipped the
@@ -809,7 +824,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   CardList.legCut = (who: unknown): void => {
     if (segment === undefined || !game.store.state.players.some(p => p === who)) { return; }
     const now = traceProject();
-    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, wholeDeckShufflePending(game.store.state)));
+    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, shuffledInDecks(game.store.state)));
     segment.start = now;
   };
 
@@ -876,11 +891,24 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       }
     }
     // A starved dispatch may have rolled back past its cuts: then the single before/after diff is the trace.
-    if (starved === undefined && cut !== undefined && cut.legs.length > 0) {
-      events.push(...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, wholeDeckShufflePending(game.state)));
-    } else {
-      events.push(...deriveMoved(movedBefore, movedAfter, revealedSince, wholeDeckShufflePending(game.state)));
+    const shuffledIn = shuffledInDecks(game.state);
+    const legs = starved === undefined && cut !== undefined && cut.legs.length > 0
+      ? [...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, shuffledIn)]
+      : deriveMoved(movedBefore, movedAfter, revealedSince, shuffledIn);
+    events.push(...legs);
+    // B.87 / TA-643: a deck leg held over a non-decision wait (below) whose deck the effect now shuffles or searches was
+    // shuffled in. Drasna ssp-173 puts the hand into the deck, parks on the hand-to-deck animation wait, and raises the
+    // shuffle only when that wait is acknowledged — the next dispatch.
+    for (const leg of deckLegsAtWait) {
+      if (shuffledIn.has(leg.owner)) { (leg.destination as { position?: string }).position = 'any'; }
     }
+    // A wait the loop acknowledges by itself is no decision and no pause: the effect runs on through it. The deck legs
+    // of a dispatch that ends at one are held until the next dispatch ends somewhere else.
+    const open = game.state.prompts.find(p => p.result === undefined);
+    deckLegsAtWait = open !== undefined && starved === undefined && classify(open) === 'wait'
+      ? [...deckLegsAtWait, ...legs].filter((e): e is MovedEvent => e.kind === 'moved' && e.destination.zone === 'deck'
+        && e.destination.position !== 'any')
+      : [];
     revealedSince.clear();
     // TA-590: a held pick the engine has taken out of the deck is placed; the trace has its leg.
     for (const [card, h] of held) { if (!h.source.cards.includes(card)) { held.delete(card); } }

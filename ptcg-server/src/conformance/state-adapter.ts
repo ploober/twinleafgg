@@ -10,7 +10,7 @@ import { StateUtils } from '../game/store/state-utils';
 import { Prompt } from '../game/store/prompts/prompt';
 import { ShuffleDeckPrompt } from '../game/store/prompts/shuffle-prompt';
 import { ConfirmPrompt } from '../game/store/prompts/confirm-prompt';
-import { GameMessage } from '../game/game-message';
+import { GameMessage, GameLog } from '../game/game-message';
 import { Store } from '../game/store/store';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import {
@@ -68,6 +68,8 @@ export interface IidContext {
   firstPlayer: NeutralPlayerId | null;
   /** CF-85: the board's format, echoed verbatim in every projected state. */
   format: string;
+  /** B.86 / TA-647: set by the driver as it dispatches an `endTurn` (see `projectPhase`). */
+  endTurnAt?: { turn: number; activePlayer: number; logIndex: number };
 }
 
 /**
@@ -443,6 +445,26 @@ const PHASE_PROJECT: Record<number, Phase> = {
   [GamePhase.BETWEEN_TURNS]: 'checkup',
   [GamePhase.FINISHED]: 'gameOver',
 };
+
+/**
+ * B.86 / TA-647 (owner pin, contract convention): a pending raised during Pokémon Checkup, the Knock Out pause
+ * included, reports `checkup`. The engine checks an `endTurn`'s Knock Outs inside the EndTurnEffect, while its phase
+ * is still PLAYER_TURN (BETWEEN_TURNS is entered only after that check, for the Special Conditions), so the Prize pick
+ * and the promotion of that check read `main`. The turn is over at that point: the projection reports `checkup` when
+ * the engine is still in the turn an `endTurn` ended (same turn, same active player), a decision is open, and a
+ * Knock Out has been written since the `endTurn`. An attack's Knock Out is checked before its turn ends (#1869) and is
+ * untouched (no `endTurn` was dispatched in that turn); so is everything once the next turn starts (the turn moved).
+ */
+function projectPhase(state: State, ctx: IidContext): Phase {
+  const phase = PHASE_PROJECT[state.phase] ?? 'main';
+  const end = ctx.endTurnAt;
+  if (phase !== 'main' || state.phase !== GamePhase.PLAYER_TURN || end === undefined
+    || end.turn !== state.turn || end.activePlayer !== state.activePlayer
+    || !state.prompts.some(p => p.result === undefined)) {
+    return phase;
+  }
+  return state.logs.slice(end.logIndex).some(l => l.message === GameLog.LOG_POKEMON_KO) ? 'checkup' : phase;
+}
 
 function projectOutcome(winner: GameWinner): Outcome {
   switch (winner) {
@@ -861,7 +883,7 @@ export function projectState(state: State, ctx: IidContext): NeutralState {
     turn: state.turn,
     activePlayer: indexToPlayerId(state.activePlayer),
     firstPlayer: projectFirstPlayer(state, ctx), // echoed from initialState, or derived after a pre-deal import (CF-84)
-    phase: PHASE_PROJECT[state.phase] ?? 'main',
+    phase: projectPhase(state, ctx),
     outcome: projectOutcome(state.winner),
     stadium: projectStadium(ctx, state),
     players: {
