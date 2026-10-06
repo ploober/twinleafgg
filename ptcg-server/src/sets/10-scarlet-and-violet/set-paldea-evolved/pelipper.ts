@@ -1,7 +1,7 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, TrainerType, SuperType } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
-import { StoreLike, State, StateUtils, GameMessage, TrainerCard, GameError, ChooseCardsPrompt, Card, ShowCardsPrompt, SelectPrompt, ShuffleDeckPrompt } from '../../../game';
+import { StoreLike, State, StateUtils, GameMessage, TrainerCard, ChooseCardsPrompt, Card, ShowCardsPrompt, SelectPrompt, ShuffleDeckPrompt, ConfirmPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import {IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -50,79 +50,94 @@ export class Pelipper extends PokemonCard {
         return state;
       }
 
-      const options: { message: GameMessage, action: () => void }[] = [
-        {
-          message: GameMessage.CHOOSE_SUPPORTER_FROM_DISCARD,
-          action: () => {
+      // TA-509: "you may choose 1: ..." -- the "may" is a decline (CF-32: confirm{true,false}), and only a mode the
+      // player can perform is offered: the discard mode needs a Supporter in the (public) discard pile; the deck mode
+      // needs a deck to search (a hidden zone, so the search may find nothing). With one mode left it applies directly
+      // (CF-14). Before, a SelectPrompt with no cancel always offered both modes and refused the discard mode on a
+      // discard with no Supporter.
+      const hasSupporterInDiscard = player.discard.cards.some(c => {
+        return c instanceof TrainerCard && c.trainerType === TrainerType.SUPPORTER;
+      });
+      const canSearchDeck = player.deck.cards.length > 0;
+      if (!hasSupporterInDiscard && !canSearchDeck) {
+        return state;
+      }
 
-            const hasSupporter = player.discard.cards.some(c => {
-              return c instanceof TrainerCard && c.trainerType === TrainerType.SUPPORTER;
-            });
-
-            if (!hasSupporter) {
-              throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
-            }
-
-            let cards: Card[] = [];
-            return store.prompt(state, new ChooseCardsPrompt(
-              player,
-              GameMessage.CHOOSE_CARD_TO_HAND,
-              player.discard,
-              { superType: SuperType.TRAINER, trainerType: TrainerType.SUPPORTER },
-              { min: 1, max: 1, allowCancel: true }
-            ), selected => {
-              cards = selected || [];
-              if (cards.length > 0) {
-                store.prompt(state, [new ShowCardsPrompt(
-                  opponent.id,
-                  GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-                  cards
-                )], () => {
-                  MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: this });
-                });
-              }
-
-              return state;
+      const fromDiscard = () => {
+        store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_HAND,
+          player.discard,
+          { superType: SuperType.TRAINER, trainerType: TrainerType.SUPPORTER },
+          { min: 1, max: 1, allowCancel: false }
+        ), selected => {
+          const cards: Card[] = selected || [];
+          if (cards.length > 0) {
+            store.prompt(state, [new ShowCardsPrompt(
+              opponent.id,
+              GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+              cards
+            )], () => {
+              MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: this });
             });
           }
-        },
-        {
-          message: GameMessage.CHOOSE_SUPPORTER_FROM_DECK,
-          action: () => {
+        });
+      };
 
-            return store.prompt(state, new ChooseCardsPrompt(
-              player,
-              GameMessage.CHOOSE_CARD_TO_HAND,
-              player.deck,
-              { superType: SuperType.TRAINER, trainerType: TrainerType.SUPPORTER },
-              { min: 0, max: 1, allowCancel: false }
-            ), selected => {
-              const cards = selected || [];
-
-              store.prompt(state, [new ShowCardsPrompt(
-                opponent.id,
-                GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-                cards
-              )], () => {
-                MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-              });
-              return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-                player.deck.applyOrder(order);
-              });
+      const fromDeck = () => {
+        store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_HAND,
+          player.deck,
+          { superType: SuperType.TRAINER, trainerType: TrainerType.SUPPORTER },
+          { min: 0, max: 1, allowCancel: false }
+        ), selected => {
+          const cards: Card[] = selected || [];
+          const shuffle = () => {
+            store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+              player.deck.applyOrder(order);
             });
-
+          };
+          if (cards.length === 0) {
+            shuffle();
+            return;
           }
+          // "reveal it, put it into your hand, and then shuffle your deck"
+          store.prompt(state, [new ShowCardsPrompt(
+            opponent.id,
+            GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+            cards
+          )], () => {
+            MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
+            shuffle();
+          });
+        });
+      };
+
+      const options: { message: GameMessage, action: () => void }[] = [];
+      if (hasSupporterInDiscard) {
+        options.push({ message: GameMessage.CHOOSE_SUPPORTER_FROM_DISCARD, action: fromDiscard });
+      }
+      if (canSearchDeck) {
+        options.push({ message: GameMessage.CHOOSE_SUPPORTER_FROM_DECK, action: fromDeck });
+      }
+
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
+        if (!wantToUse) {
+          return;
         }
-      ];
-
-      return store.prompt(state, new SelectPrompt(
-        player.id,
-        GameMessage.CHOOSE_OPTION,
-        options.map(opt => opt.message),
-        { allowCancel: false }
-      ), choice => {
-        const option = options[choice];
-        option.action();
+        if (options.length === 1) {
+          options[0].action();
+          return;
+        }
+        store.prompt(state, new SelectPrompt(
+          player.id,
+          GameMessage.CHOOSE_OPTION,
+          options.map(opt => opt.message),
+          { allowCancel: false }
+        ), choice => {
+          options[choice].action();
+        });
       });
 
     }

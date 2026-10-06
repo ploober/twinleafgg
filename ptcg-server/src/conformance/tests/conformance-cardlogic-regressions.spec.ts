@@ -3152,7 +3152,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(oneE.state.players.A.active!.energy.map(e => e.iid)).toEqual(['d0']);        // collapsed + applied
     expect(legal(oneE).some(a => a.type === 'choose')).toBe(false);
     const twoE = spid([{ iid: 'd0', printing: GRASS }, { iid: 'd1', printing: FIRE }]);
-    expect(legal(twoE).filter(a => a.type === 'choose').map(a => a.target).sort()).toEqual(['d0', 'd1']);
+    // TA-504 (2026-10-06): Charging Up is now an AttachEnergyPrompt, so the WHICH pick surfaces as the CF-5
+    // attachEnergy{card,target} pairs onto Spidops itself, no longer as a bare choose{energy}.
+    expect(legal(twoE).filter(a => a.type === 'attachEnergy').map(a => `${(a as { card?: string }).card}->${a.target}`).sort())
+      .toEqual(['d0->A-act', 'd1->A-act']);
     const quill = step(board(
       player({ active: inPlay('A-act', ['cri-005', 'cri-006'], en(GRASS, 1, 'a')), deck: [{ iid: 'k0', printing: GRASS }, { iid: 'k1', printing: WATER }] }),
       player({ active: inPlay('B-act', [RALTS]) }),

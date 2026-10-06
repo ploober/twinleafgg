@@ -71,6 +71,10 @@ export class Minior extends PokemonCard {
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
+      // TA-506: "if this Pokémon is on your Bench" -- an attach to an Active Minior offers nothing.
+      if (!player.bench.includes(target)) {
+        return state;
+      }
       state = store.prompt(state, new ConfirmPrompt(
         effect.player.id,
         GameMessage.WANT_TO_USE_ABILITY,

@@ -12,7 +12,9 @@ import {
   SuperType,
   PowerType,
   StateUtils,
-  ChooseCardsPrompt,
+  AttachEnergyPrompt,
+  SlotType,
+  CardTarget,
 } from '../../../game';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -36,7 +38,7 @@ export class TeamRocketsSpidops extends PokemonCard {
     name: 'Charging Up',
     powerType: PowerType.ABILITY,
     useWhenInPlay: true,
-    text: 'Once during your turn, you may attach 1 Basic Energy from your discard pile to this Pokémon.'
+    text: 'Once during your turn, you may attach a Basic Energy card from your discard pile to this Pokémon.'
   }];
 
   public attacks = [
@@ -91,20 +93,32 @@ export class TeamRocketsSpidops extends PokemonCard {
         return state;
       }
 
+      // TA-504: "attach a Basic Energy card from your discard pile to this Pokémon" is an energy attachment, so it is
+      // raised as an AttachEnergyPrompt whose only open destination is this Pokémon (CF-5: attachEnergy{card,target}
+      // per legal pair). It was a ChooseCardsPrompt(CHOOSE_CARD_TO_ATTACH), which surfaced a bare choose{energy}.
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
+        if (list !== cardList) {
+          blockedTo.push(target);
+        }
+      });
+
       return store.prompt(
         state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_CARDS,
           player.discard,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-          { min: 1, max: 1, allowCancel: false },
+          { min: 1, max: 1, allowCancel: false, blockedTo },
         ),
-        (cards) => {
-          cards = cards || [];
-          if (cards.length > 0) {
+        (transfers) => {
+          transfers = transfers || [];
+          if (transfers.length > 0) {
             player.marker.addMarker(this.CHARGE_UP_MARKER, this);
-            MOVE_CARDS(store, state, player.discard, cardList, { cards: cards, sourceCard: this });
+            MOVE_CARDS(store, state, player.discard, cardList, { cards: transfers.map(t => t.card), sourceCard: this });
           }
         },
       );

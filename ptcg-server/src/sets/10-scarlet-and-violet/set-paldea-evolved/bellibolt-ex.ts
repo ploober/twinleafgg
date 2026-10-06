@@ -7,7 +7,7 @@ import {
   CONFIRMATION_PROMPT,
   WAS_ATTACK_USED,
 } from '../../../game/store/prefabs/prefabs';
-import { THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON } from '../../../game/store/prefabs/attack-effects';
+import { THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_POKEMON } from '../../../game/store/prefabs/attack-effects';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class Belliboltex extends PokemonCard {
@@ -44,7 +44,8 @@ export class Belliboltex extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Jumping Press
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_BENCHED_POKEMON(50, effect, store, state);
+      // TA-508: "50 damage to 1 of your opponent's Pokémon" -- the Active is a legal target (W/R apply only to it).
+      THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_POKEMON(50, effect, store, state);
     }
 
     // Paralyzing Bolt

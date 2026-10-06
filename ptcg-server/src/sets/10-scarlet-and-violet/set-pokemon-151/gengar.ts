@@ -34,8 +34,8 @@ export class Gengar extends PokemonCard {
   public fullName: string = 'Gengar MEW';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Poltergeist
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Poltergeist (TA-510: index 0; the two attack indices were swapped)
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       state = store.prompt(state, new ShowCardsPrompt(
@@ -43,14 +43,12 @@ export class Gengar extends PokemonCard {
         GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
         opponent.hand.cards
       ), () => {
-        const cardsInOpponentHand = opponent.hand.cards.filter(card => card instanceof TrainerCard).length;
-        const damage = opponent.hand.cards.slice(0, cardsInOpponentHand);
-        effect.damage = damage.length * 50;
+        effect.damage = 50 * opponent.hand.cards.filter(card => card instanceof TrainerCard).length;
       });
     }
 
-    // Hollow Dive
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Hollow Dive (TA-510: index 1)
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const opponent = StateUtils.getOpponent(state, effect.player);
       const hasBenched = opponent.bench.some((b) => b.cards.length > 0);
       if (hasBenched) {

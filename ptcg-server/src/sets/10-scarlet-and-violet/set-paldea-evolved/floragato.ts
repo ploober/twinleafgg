@@ -33,7 +33,8 @@ export class Floragato extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // TA-507: the switch is Magic Whip's (index 1); Seed Bomb has no effect text.
+    if (AFTER_ATTACK(effect, 1, this)) {
       return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, {
         sourceEffect: effect,
       });
