@@ -58,11 +58,16 @@ export class Geeta extends TrainerCard {
       // callbacks on every branch (an empty pick, a cancelled Pokémon choice, an attach), as gimmighoul.ts does since
       // TA-582. Raised beside the open search, the live arbiter (Game.handleArbiterPrompts) answered it first, over
       // the pre-search deck, and the deck stayed in the order the player searched.
-      const shuffle = () => {
+      // Geeta is still resolving at the shuffle: it goes to the discard pile after it, not before.
+      const shuffle = (then?: () => void) => {
         store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);
+          if (then) {
+            then();
+          }
         });
       };
+      const discardGeeta = () => MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
 
       let cards: Card[] = [];
       return store.prompt(state, new ChooseCardsPrompt(
@@ -87,15 +92,13 @@ export class Geeta extends TrainerCard {
           { allowCancel: true }
         ), targets => {
           if (!targets || targets.length === 0) {
-            MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
-            shuffle();
+            shuffle(discardGeeta);
             return;
           }
           const target = targets[0];
           MOVE_CARDS(store, state, player.deck, target, { cards: cards, sourceCard: this });
           player.marker.addMarker(this.GEETA_MARKER, this);
-          MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
-          shuffle();
+          shuffle(discardGeeta);
         });
       });
     }
