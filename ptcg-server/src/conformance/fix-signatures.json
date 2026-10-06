@@ -1156,9 +1156,10 @@
       "file": "set-ascended-heroes/frosmoth.ts",
       "signatures": [
         "const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);",
-        "{ allowCancel: false, min: numToMove, max: numToMove, blocked }"
+        "{ eligible: card => providesValidType.has(card) });"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)"
     },
     {
       "file": "set-ex-hidden-legends/medicham.ts",
@@ -4392,9 +4393,9 @@
       "file": "set-destined-rivals/yanmega-ex.ts",
       "signatures": [
         "name: 'Buzzing Boost',",
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this, { count: 3 });"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
       "state": "guarding"
     },
     {
@@ -6350,9 +6351,9 @@
       "file": "set-journey-together/volcanion-ex.ts",
       "signatures": [
         "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {",
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
-      "note": "TA-210/B.27 — an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu.",
+      "note": "TA-210/B.27 — an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu. | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
       "fixes": [
         "FX-0080"
       ],
@@ -6953,12 +6954,13 @@
       "file": "set-chaos-rising/keldeo.ts",
       "signatures": [
         "name: 'Shoot Through',",
-        "if (AFTER_ATTACK(effect, 1, this)) {"
+        "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
       "absentSignatures": [
         "name: 'Shoot THrough',"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": " | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)"
     },
     {
       "file": "set-chaos-rising/mega-pyroar-ex.ts",
