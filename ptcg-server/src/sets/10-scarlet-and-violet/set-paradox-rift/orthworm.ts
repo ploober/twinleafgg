@@ -32,7 +32,7 @@ export class Orthworm extends PokemonCard {
 
   public setNumber: string = '138';
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
 
   public cardImage: string = 'assets/cardback.png';
 

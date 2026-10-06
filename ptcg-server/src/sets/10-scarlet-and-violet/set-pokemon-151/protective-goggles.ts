@@ -11,6 +11,7 @@ export class ProtectiveGoggles extends TrainerCard {
   public trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'MEW';
   public name: string = 'Protective Goggles';
+  public regulationMark = 'G';
   public fullName: string = 'Protective Goggles MEW';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '164';

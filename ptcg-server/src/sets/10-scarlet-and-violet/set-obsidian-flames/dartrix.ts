@@ -30,7 +30,7 @@ export class Dartrix extends PokemonCard {
     }
   ];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
 
   public set: string = 'OBF';
 

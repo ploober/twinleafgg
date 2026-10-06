@@ -23,6 +23,7 @@ export class Purrloin extends PokemonCard {
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '55';
   public name: string = 'Purrloin';
+  public regulationMark = 'I';
   public fullName: string = 'Purrloin WHT';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

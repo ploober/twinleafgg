@@ -19,7 +19,7 @@ export class Crocalor extends PokemonCard {
     text: 'Put an Energy attached to this Pokémon into your hand.'
   }];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
   public set: string = 'PAR';
   public setNumber: string = '24';
   public cardImage: string = 'assets/cardback.png';

@@ -51,7 +51,7 @@ export class Decidueyeex extends PokemonCard {
       text: "This attack does 30 damage to 1 of your opponent's Pokémon. (Don't apply Weakness and Resistance for Benched Pokémon.)",
     },
   ];
-  public regulationMark = 'H';
+  public regulationMark = 'G';
 
   public set: string = 'OBF';
 

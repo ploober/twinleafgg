@@ -136,6 +136,7 @@ export class BraveBangleFAPBL extends BraveBangle {
 }
 
 export class CrushingHammerFAPBL extends CrushingHammer {
+  public regulationMark = 'J';
   public fullName = 'Crushing Hammer FA PBL';
   public set = 'PBL';
   public setNumber = '105';

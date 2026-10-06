@@ -29,6 +29,7 @@ export class Spearow extends PokemonCard {
 
   public set: string = 'MEW';
   public name: string = 'Spearow';
+  public regulationMark = 'G';
   public fullName: string = 'Spearow MEW';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '21';

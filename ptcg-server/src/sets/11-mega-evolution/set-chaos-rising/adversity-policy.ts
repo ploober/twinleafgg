@@ -14,6 +14,7 @@ export class AdversityPolicy extends TrainerCard {
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '74';
   public name: string = 'Adversity Policy';
+  public regulationMark = 'I';
   public fullName: string = 'Adversity Policy CRI';
   public text: string = 'If the Pokémon this card is attached to has Weakness to your opponent\'s Active Pokémon\'s type, is in the Active Spot, and is damaged by an attack from your opponent\'s Pokémon (even if this Pokémon is Knocked Out), draw 3 cards.';
 

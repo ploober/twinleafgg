@@ -140,6 +140,7 @@ export class EmmaFA extends Emma {
 }
 
 export class EnergyRetrievalFACRI extends EnergyRetrieval {
+  public regulationMark = 'I';
   public fullName = 'Energy Retrieval FA CRI';
   public set = 'CRI';
   public setNumber = '108';
@@ -157,6 +158,7 @@ export class PhilippeFA extends Philippe {
 }
 
 export class PrismTowerFA extends PrismTower {
+  public regulationMark = 'J';
   public fullName = 'Prism Tower FA CRI';
   public setNumber = '111';
 }
@@ -178,6 +180,7 @@ export class SurfingBeachFACRI extends SurfingBeach {
 }
 
 export class ToolScrapperFACRI extends ToolScrapper {
+  public regulationMark = 'I';
   public fullName = 'Tool Scrapper FA CRI';
   public set = 'CRI';
   public setNumber = '115';

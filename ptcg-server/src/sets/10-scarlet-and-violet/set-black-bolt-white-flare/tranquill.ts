@@ -25,6 +25,7 @@ export class Tranquill extends PokemonCard {
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '72';
   public name: string = 'Tranquill';
+  public regulationMark = 'I';
   public fullName: string = 'Tranquill SV11B';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

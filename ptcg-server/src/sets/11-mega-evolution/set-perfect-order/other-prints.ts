@@ -206,6 +206,7 @@ export class MeowthexFA extends Meowthex {
 // MARK: Full art Trainers
 
 export class EnergyRecyclerFA extends EnergyRecycler {
+  public regulationMark = 'I';
   public fullName = 'Energy Recycler FA POR';
   public set = 'POR';
   public setNumber = '108';

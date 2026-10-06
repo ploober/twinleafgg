@@ -15,7 +15,7 @@ export class Petilil extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'H';
   public set: string = 'JTG';
   public setNumber: string = '6';
   public cardImage: string = 'assets/cardback.png';

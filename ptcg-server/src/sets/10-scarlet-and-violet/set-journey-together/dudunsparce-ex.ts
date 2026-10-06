@@ -39,7 +39,7 @@ export class Dudunsparceex extends PokemonCard {
     },
   ];
 
-  public regulationMark = 'H';
+  public regulationMark = 'I';
   public set: string = 'JTG';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '121';

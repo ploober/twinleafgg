@@ -26,7 +26,7 @@ export class Seaking extends PokemonCard {
     text: 'This attack does 30 more damage for each [W] Energy attached to this Pokémon.'
   }];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
 
   public set: string = 'MEW';
   public cardImage: string = 'assets/cardback.png';

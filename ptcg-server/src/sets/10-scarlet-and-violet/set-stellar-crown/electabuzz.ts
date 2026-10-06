@@ -40,6 +40,7 @@ export class Electabuzz extends PokemonCard {
 
   public name: string = 'Electabuzz';
 
+  public regulationMark = 'H';
   public fullName: string = 'Electabuzz SCR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

@@ -41,7 +41,7 @@ export class Bisharp extends PokemonCard {
 
   public cardImage = 'assets/cardback.png';
 
-  public regulationMark: string = 'H';
+  public regulationMark: string = 'G';
 
   public name: string = 'Bisharp';
 

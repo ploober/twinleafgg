@@ -12,6 +12,7 @@ export class Jett extends TrainerCard {
   public trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'PBL';
   public name: string = 'Jett';
+  public regulationMark = 'J';
   public fullName: string = 'Jett MEP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '79';

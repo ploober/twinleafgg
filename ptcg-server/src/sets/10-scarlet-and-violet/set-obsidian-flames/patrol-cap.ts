@@ -10,6 +10,7 @@ export class PatrolCap extends TrainerCard {
   public trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'OBF';
   public name: string = 'Patrol Cap';
+  public regulationMark = 'G';
   public fullName: string = 'Patrol Cap OBF';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '191';

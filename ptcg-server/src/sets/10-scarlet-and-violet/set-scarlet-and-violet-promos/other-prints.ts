@@ -26,6 +26,7 @@ import { ProfessorsResearch as ProfessorsResearchSVI189 } from '../set-scarlet-a
 import { CelebratoryFanfare } from '../../11-mega-evolution/set-mega-evolution-promos/celebratory-fanfare';
 export class ToxelSVP extends Toxel {
   public setNumber = '119';
+  public regulationMark = 'G';
   public fullName: string = 'Toxel SVP';
   public set = 'SVP';
 }

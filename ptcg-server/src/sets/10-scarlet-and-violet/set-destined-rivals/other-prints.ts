@@ -261,6 +261,7 @@ export class TeamRocketsPersianex2DRI extends TeamRocketsPersianexDRI150 {
 
 export class EmceesHype2DRI extends EmceesHypeDRI163 {
   public setNumber = '220';
+  public regulationMark = 'I';
   public fullName: string = 'Emcee\'s Hype2 DRI';
   public set = 'DRI';
 }

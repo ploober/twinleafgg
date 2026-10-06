@@ -16,6 +16,7 @@ export class AngeFloette extends TrainerCard {
   public set: string = 'CRI';
   public setNumber: string = '75';
   public name: string = 'Ange Floette';
+  public regulationMark = 'J';
   public fullName: string = 'Hyperrogue Ange Floette M4';
   public cardImage: string = 'assets/cardback.png';
   public text: string =

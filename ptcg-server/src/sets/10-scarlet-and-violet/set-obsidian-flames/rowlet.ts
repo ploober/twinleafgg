@@ -15,7 +15,7 @@ export class Rowlet extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
   public set: string = 'OBF';
   public setNumber: string = '13';
   public cardImage: string = 'assets/cardback.png';

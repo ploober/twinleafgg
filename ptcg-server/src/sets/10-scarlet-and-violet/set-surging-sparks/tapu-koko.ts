@@ -29,6 +29,7 @@ export class TapuKoko extends PokemonCard {
   public setNumber: string = '65';
   public cardImage: string = 'assets/cardback.png';
   public name: string = 'Tapu Koko';
+  public regulationMark = 'H';
   public fullName: string = 'Tapu Koko SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

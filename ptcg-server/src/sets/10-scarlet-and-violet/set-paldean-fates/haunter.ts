@@ -7,7 +7,7 @@ import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Haunter extends PokemonCard {
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
 
   public stage: Stage = Stage.STAGE_1;
 

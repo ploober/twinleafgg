@@ -68,6 +68,7 @@ export class Exeggcute extends PokemonCard {
 
   public name: string = 'Exeggcute';
 
+  public regulationMark = 'H';
   public fullName: string = 'Exeggcute SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

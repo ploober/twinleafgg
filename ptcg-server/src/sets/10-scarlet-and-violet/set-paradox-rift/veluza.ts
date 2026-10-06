@@ -42,6 +42,7 @@ export class Veluza extends PokemonCard {
 
   public name: string = 'Veluza';
 
+  public regulationMark = 'G';
   public fullName: string = 'Veluza PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

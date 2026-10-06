@@ -58,7 +58,7 @@ export class Skeledirgeex extends PokemonCard {
     },
   ];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
   public set: string = 'PAR';
   public name: string = 'Skeledirge ex';
   public fullName: string = 'Skeledirge ex PAR';

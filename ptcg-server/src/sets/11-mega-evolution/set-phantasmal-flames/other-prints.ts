@@ -111,6 +111,7 @@ export class SacredCharm2PFL extends SacredCharmPFL93 {
 
 export class SwitchPFL extends Switch {
   public setNumber = '123';
+  public regulationMark = 'I';
   public fullName: string = 'Switch PFL';
   public set = 'PFL';
 }

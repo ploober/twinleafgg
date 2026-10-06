@@ -21,7 +21,7 @@ export class Pawniard extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'H';
+  public regulationMark = 'G';
   public set: string = 'SVI';
   public setNumber: string = '132';
   public cardImage: string = 'assets/cardback.png';

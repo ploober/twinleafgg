@@ -41,6 +41,7 @@ export class BlackKyuremex extends PokemonCard {
   public setNumber: string = '48';
   public cardImage: string = 'assets/cardback.png';
   public name: string = 'Black Kyurem ex';
+  public regulationMark = 'H';
   public fullName: string = 'Black Kyurem ex SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

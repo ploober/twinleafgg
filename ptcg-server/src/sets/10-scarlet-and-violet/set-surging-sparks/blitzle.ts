@@ -24,6 +24,7 @@ export class Blitzle extends PokemonCard {
   public setNumber: string = '62';
   public cardImage: string = 'assets/cardback.png';
   public name: string = 'Blitzle';
+  public regulationMark = 'H';
   public fullName: string = 'Blitzle SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

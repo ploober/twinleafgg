@@ -128,6 +128,7 @@ export class SalamenceexFA extends Salamenceex {
 }
 
 export class DudunsparceexFA extends Dudunsparceex {
+  public regulationMark = 'I';
   public fullName = 'Dudunsparce exFA JTG';
   public setNumber = '178';
 }
