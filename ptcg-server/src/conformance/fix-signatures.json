@@ -1803,7 +1803,10 @@
         "GameMessage.CHOOSE_POKEMON_TO_HEAL,"
       ],
       "state": "guarding",
-      "note": "retargeted 2026-10-06: the fix was extended (class-D batch), not reverted"
+      "note": "retargeted 2026-10-06: the fix was extended (class-D batch), not reverted",
+      "fixes": [
+        "FX-0423"
+      ]
     },
     {
       "file": "set-paradox-rift/tsareena-ex.ts",
