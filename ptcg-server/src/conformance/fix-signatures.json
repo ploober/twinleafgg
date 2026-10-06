@@ -405,7 +405,10 @@
         "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
       ],
       "state": "guarding",
-      "note": "2026-10-05 TA-613: the TA-59 prefab call now runs after the damage (afterDamageMoves, FX-0390); signature re-recorded to the wrapped line."
+      "note": "2026-10-05 TA-613: the TA-59 prefab call now runs after the damage (afterDamageMoves, FX-0390); signature re-recorded to the wrapped line.",
+      "fixes": [
+        "FX-0187"
+      ]
     },
     {
       "file": "set-surging-sparks/dedenne.ts",
