@@ -26,7 +26,7 @@ export class Registeelex extends PokemonCard {
     },
   ];
 
-  public regulationMark: string = 'I';
+  public regulationMark: string = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '145';

@@ -19,7 +19,7 @@ export class Pignite extends PokemonCard {
     text: 'Your opponent\'s Active Pokémon is now Burned.'
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '30';

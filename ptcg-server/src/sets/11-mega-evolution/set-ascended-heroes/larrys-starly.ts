@@ -37,7 +37,7 @@ export class LarrysStarly extends PokemonCard {
     },
   ];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '168';

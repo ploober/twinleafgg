@@ -23,7 +23,7 @@ export class Marill extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
 
   public set: string = 'ASC';
   public setNumber: string = '83';

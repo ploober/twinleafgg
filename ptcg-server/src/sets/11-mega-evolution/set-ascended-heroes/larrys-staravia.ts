@@ -26,7 +26,7 @@ export class LarrysStaravia extends PokemonCard {
     },
   ];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public setNumber: string = '169';
   public cardImage: string = 'assets/cardback.png';

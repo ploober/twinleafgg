@@ -25,7 +25,7 @@ export class Chikorita extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public setNumber: string = '8';
   public cardImage: string = 'assets/cardback.png';

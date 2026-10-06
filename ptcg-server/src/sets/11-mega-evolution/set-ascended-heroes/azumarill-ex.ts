@@ -28,7 +28,7 @@ export class Azumarillex extends PokemonCard {
     text: 'This attack does 40 more damage for each [P] Energy attached to this Pokemon.'
   }];
 
-  public regulationMark: string = 'I';
+  public regulationMark: string = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '84';

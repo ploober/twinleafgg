@@ -16,7 +16,7 @@ export class Tepig extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public setNumber: string = '29';
   public cardImage: string = 'assets/cardback.png';

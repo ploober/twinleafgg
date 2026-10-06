@@ -23,7 +23,7 @@ export class MegaCharizardYex extends PokemonCard {
     },
   ];
 
-  public regulationMark: string = 'I';
+  public regulationMark: string = 'J';
   public set: string = 'ASC';
   public setNumber: string = '22';
   public cardImage: string = 'assets/cardback.png';

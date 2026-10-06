@@ -18,7 +18,7 @@ export class Croconaw extends PokemonCard {
     text: 'Flip a coin. If heads, discard an Energy from your opponent\'s Active Pokémon.'
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
 
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';

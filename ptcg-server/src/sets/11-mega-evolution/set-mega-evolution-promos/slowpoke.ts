@@ -26,7 +26,7 @@ export class Slowpoke extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'MEP';
   public setNumber = '86';
   public cardImage: string = 'assets/cardback.png';

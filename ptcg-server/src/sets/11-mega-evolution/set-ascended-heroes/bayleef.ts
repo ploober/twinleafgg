@@ -17,7 +17,7 @@ export class Bayleef extends PokemonCard {
     text: ''
   }];
 
-  public regulationMark = 'I';
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public setNumber: string = '9';
   public cardImage: string = 'assets/cardback.png';
