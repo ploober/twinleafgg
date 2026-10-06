@@ -34,7 +34,8 @@ export class Minun extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (effect instanceof AttachEnergyEffect) {
+    // TA-641: "attaches an Energy card from their hand" -- not an attach from the discard or the deck.
+    if (effect instanceof AttachEnergyEffect && effect.fromHand) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

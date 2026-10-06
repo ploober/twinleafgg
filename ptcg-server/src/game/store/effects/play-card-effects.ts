@@ -36,11 +36,19 @@ export class AttachEnergyEffect implements Effect {
   public player: Player;
   public energyCard: EnergyCard;
   public target: PokemonCardList;
+  /**
+   * TA-641: the Energy came from the attaching player's hand. Read at construction, while the card is still in its
+   * source zone: a trigger deferred by the TA-612 attach window runs after the card has moved, when a hand test made
+   * then would always fail. "From (your / their) hand" triggers (Gengar ex tef-104 Gnawing Curse, Magearna jtg-107
+   * Auto Heal, Minun par-061 Buddy Pulse, Calamitous Snowy Mountain pal-174) read this.
+   */
+  public readonly fromHand: boolean;
 
   constructor(player: Player, energyCard: EnergyCard, target: PokemonCardList) {
     this.player = player;
     this.energyCard = energyCard;
     this.target = target;
+    this.fromHand = player.hand.cards.includes(energyCard);
   }
 }
 

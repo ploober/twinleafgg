@@ -37,7 +37,8 @@ export class Magearna extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Auto Heal
-    if (effect instanceof AttachEnergyEffect && effect.player.active.cards.includes(this)) {
+    // TA-641: "whenever you attach an Energy card from your hand" -- not an attach from the discard or the deck.
+    if (effect instanceof AttachEnergyEffect && effect.fromHand && effect.player.active.cards.includes(this)) {
       const player = effect.player;
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;

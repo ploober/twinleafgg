@@ -93,7 +93,9 @@ export class Gengarex extends PokemonCard {
       });
     }
 
-    if (effect instanceof AttachEnergyEffect) {
+    // TA-641: "attaches an Energy card from their hand" -- an attach from the discard (Eelektrik asc-060 Dynamotor)
+    // or the deck does not trigger it.
+    if (effect instanceof AttachEnergyEffect && effect.fromHand) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       // Find the owner of this Gengar-EX

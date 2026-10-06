@@ -22,7 +22,8 @@ export class CalamitousSnowyMountain extends TrainerCard {
       throw new GameError(GameMessage.CANNOT_USE_STADIUM);
     }
 
-    if (effect instanceof AttachEnergyEffect && StateUtils.getStadiumCard(state) === this) {
+    // TA-641: "attaches an Energy card from their hand" -- not an attach from the discard or the deck.
+    if (effect instanceof AttachEnergyEffect && effect.fromHand && StateUtils.getStadiumCard(state) === this) {
       const owner = StateUtils.findOwner(state, effect.target);
       const checkPokemonTypeEffect = new CheckPokemonTypeEffect(effect.target);
 
