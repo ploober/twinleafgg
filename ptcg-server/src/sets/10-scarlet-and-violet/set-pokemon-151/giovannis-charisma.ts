@@ -36,7 +36,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   let card: Card;
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
-    GameMessage.CHOOSE_CARD_TO_DISCARD,
+    GameMessage.CHOOSE_CARD_TO_HAND, // TA-650: the Energy goes to the opponent's hand (CF-32: a choose, not a discard)
     opponent.active,
     { superType: SuperType.ENERGY },
     { min: 1, max: 1, allowCancel: false }
