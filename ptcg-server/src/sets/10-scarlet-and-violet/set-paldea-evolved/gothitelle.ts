@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State, PowerType, ChooseCardsPrompt, GameMessage, ShowCardsPrompt, StateUtils, GameError, CardList, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import {ABILITY_USED, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {ABILITY_USED, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, AFTER_ATTACK, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gothitelle extends PokemonCard {
   public regulationMark = 'G';
@@ -76,7 +76,8 @@ export class Gothitelle extends PokemonCard {
     }
 
     // Psych Out
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-646 / B.85 (3)(a): an effect on the opponent's hand, the pick and the discard, comes after the attack's damage.
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = effect.opponent;
 

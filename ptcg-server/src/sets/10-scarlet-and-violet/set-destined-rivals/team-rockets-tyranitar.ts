@@ -11,7 +11,7 @@ import {
   PlayerType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 import { BetweenTurnsEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
@@ -76,8 +76,9 @@ export class TeamRocketsTyranitar extends PokemonCard {
       return state;
     }
 
-    // Breakthrough Tackle
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Demolition Tackle. TA-645 / B.85 (3)(a): an effect on the opponent's cards in play, the pick and the discard,
+    // comes after the attack's damage (AfterAttackEffect), and the picked Energy is discarded at the pick.
+    if (AFTER_ATTACK(effect, 0, this)) {
       const opponent = effect.opponent;
 
       if (!opponent.active.cards.some((c) => c.superType === SuperType.ENERGY)) {
@@ -96,7 +97,7 @@ export class TeamRocketsTyranitar extends PokemonCard {
         ),
         (selected) => {
           card = selected[0];
-          return store.reduceEffect(state, new DiscardCardsEffect(effect, [card]));
+          return store.reduceEffect(state, new DiscardCardsEffect(effect.attackEffect, [card]));
         },
       );
     }

@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gourgeistex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -51,7 +51,9 @@ export class Gourgeistex extends PokemonCard {
       effect.damage += 50 * benchWithDamageCount;
     }
 
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Ghostly Touch
+    // TA-646 / B.85 (3)(a): an effect on the opponent's hand, the pick and the discard, comes after the attack's damage.
+    if (AFTER_ATTACK(effect, 1, this)) {
       const opponent = StateUtils.getOpponent(state, effect.player);
       if (opponent.hand.cards.length > 0) {
         const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);

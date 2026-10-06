@@ -13,9 +13,9 @@ import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
 import { GamePhase } from '../../../game/store/state/state';
 import {
+  AFTER_ATTACK,
   IS_ABILITY_BLOCKED,
   MOVE_CARDS,
-  WAS_ATTACK_USED,
 } from '../../../game/store/prefabs/prefabs';
 
 export class MegaScraftyex extends PokemonCard {
@@ -77,7 +77,8 @@ export class MegaScraftyex extends PokemonCard {
     }
 
     // DDC Outlaw Leg attack
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-646 / B.85 (3)(a): the hand discard comes after the attack's damage, then the deck discard (printed order).
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

@@ -3,7 +3,7 @@ import { Stage, CardType, SuperType } from '../../../game/store/card/card-types'
 import { StoreLike, State, GameMessage, StateUtils, AttachEnergyPrompt, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import {WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Toedscruel extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -37,7 +37,9 @@ export class Toedscruel extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-645 / B.85 (3)(a): the pick of the opponent's Energy and its move come after the damage (AfterAttackEffect), so
+    // the damage reads the Energy attached (#77) and the picked Energy moves at the pick.
+    if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
@@ -56,16 +58,10 @@ export class Toedscruel extends PokemonCard {
         { allowCancel: false, min: 0, max: 1 }
       ), transfers => {
         transfers = transfers || [];
-        // TA-494 / B.84 (1), #77: the choice is asked where it was; the Energy moves after the attack's damage
-        // (AttackEffect.afterDamageMoves), so the damage reads it attached.
         const source = opponent.active;
         for (const transfer of transfers) {
           const target = StateUtils.getTarget(state, player, transfer.to);
-          effect.afterDamageMoves.push(() => {
-            if (source.cards.includes(transfer.card)) {
-              MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
-            }
-          });
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
         }
       });
 

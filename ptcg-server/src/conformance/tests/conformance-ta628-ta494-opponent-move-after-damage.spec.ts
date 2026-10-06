@@ -8,7 +8,8 @@ import {
  * attack discards energy from the Defending Pokemon, the damage reduction happens first and then apply any attack
  * effects") and before Knock Outs are checked; a card the effect moved does not react to that attack's damage (#674,
  * Dangerous Energy: "You would not receive the 2 damage counters"; #2012). B.84 (3), WHEN the choice is asked, is not
- * decided: these cells keep each card's choice where twinleaf asks it today and pin only the move and the reaction.
+ * decided: these cells pinned only the move and the reaction. B.85 (3)(a) (2026-10-06, TA-645) since places the choice
+ * after the damage too; the two "asked before the damage" cells were rewritten to "asked after the damage".
  *
  * TA-628 Spiky Energy jtg-159 / jtg-190 ("If the Pokémon this card is attached to is in the Active Spot and is damaged by
  * an attack from your opponent's Pokémon (even if it is Knocked Out), put 2 damage counters on the Attacking Pokémon"):
@@ -153,10 +154,11 @@ describe('TA-628: Spiky Energy discarded by the attack\'s own effect does not re
 describe('TA-494: Trick Cape and Eerie Tentacles move the opponent\'s Energy after the damage (#77, B.84 (1))', () => {
   const rock = [{ iid: 'b1e0', printing: WATER }];
 
-  it('svi-015 Trick Cape: the confirm is still asked before the damage [TA-494 svi-015]', () => {
+  it('svi-015 Trick Cape: the confirm is asked after the damage (B.85 (3)(a), TA-645) [TA-494 svi-015]', () => {
     const r = step(riderBoard(true, REGIROCK, rock), [attack('Trick Cape')]);
     expect(legal(r)).toEqual(['A:confirm:false', 'A:confirm:true']);
-    expect(dealt(r.events, 'b1')).toBe(0);
+    expect(dealt(r.events, 'b1')).toBe(50);
+    expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
   it('svi-015 Trick Cape: Rock Armor reads the Energy, 50 damage, then the Energy goes to the hand [TA-494 svi-015]', () => {
@@ -175,10 +177,11 @@ describe('TA-494: Trick Cape and Eerie Tentacles move the opponent\'s Energy aft
     expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
-  it('svi-026 Eerie Tentacles: the move is still offered before the damage [TA-494 svi-026]', () => {
+  it('svi-026 Eerie Tentacles: the move is offered after the damage (B.85 (3)(a), TA-645) [TA-494 svi-026]', () => {
     const r = step(riderBoard(false, REGIROCK, rock), [attack('Eerie Tentacles')]);
     expect(legal(r)).toEqual(['A:confirm:false', 'A:moveEnergy:b1e0:b2']);
-    expect(dealt(r.events, 'b1')).toBe(0);
+    expect(dealt(r.events, 'b1')).toBe(30);
+    expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
   it('svi-026 Eerie Tentacles: Rock Armor reads the Energy, 30 damage, then the Energy moves to the Bench [TA-494 svi-026]', () => {

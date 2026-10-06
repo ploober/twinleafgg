@@ -3,7 +3,7 @@ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { BLOCK_RETREAT } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
 export class Arbokex extends PokemonCard {
@@ -41,7 +41,8 @@ export class Arbokex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       return BLOCK_RETREAT(store, state, effect, this);
     }
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // Menacing Fangs. TA-646 / B.85 (3)(a): the opponent's choice and the discard come after the attack's damage.
+    if (AFTER_ATTACK(effect, 1, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 

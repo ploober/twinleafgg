@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 
 export class Shieldon extends PokemonCard {
@@ -32,10 +32,10 @@ export class Shieldon extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Ref: set-ancient-origins/registeel.ts (Forbidden Iron Hammer)
-    // TA-494 / B.84 (1), #77: the choice is asked where it was (B.84 (3) is undecided); the Energy is discarded after
-    // the damage (AttackEffect.afterDamageMoves), so the damage reads it attached.
-    if (WAS_ATTACK_USED(effect, 0, this)) {
-      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, { afterDamage: true });
+    // TA-645 / B.85 (3)(a): the pick of the opponent's Energy and its discard come after the damage (AfterAttackEffect),
+    // so the damage reads the Energy attached (#77) and the picked Energy is discarded at the pick.
+    if (AFTER_ATTACK(effect, 0, this)) {
+      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
     }
     return state;
   }
