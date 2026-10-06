@@ -963,11 +963,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       return st;
     };
     const atk = { actor: 'B' as const, type: 'declareAttack' as const, source: 'B-act', name: 'Thunderbolt' };
-    const prize = { actor: 'B' as const, type: 'takePrize' as const, index: 0 };
-    const promote = { actor: 'A' as const, type: 'promoteBench' as const, target: 'A-b0' };
+    // TA-283 / B.14: the search resolves in the Knock Out window, BEFORE B's Prize and A's promotion, so it is pending
+    // straight after the attack (this cell used to walk the Prize and the promotion first).
 
     // (a) TA-158: reaching the trigger does not fault, and the search pending surfaces for A.
-    const r1 = step(bd(), [atk, prize, promote]);
+    const r1 = step(bd(), [atk]);
     expect(r1.status).toBe('awaitingAction');            // pre-fix: engineFault (missing "ability")
     expect(r1.pending?.actor).toBe('A');                 // the Amulet owner's search, not B's
     // (b) TA-157: no decline at 0 picks — the search is mandatory.
@@ -976,9 +976,9 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(picks.length).toBeGreaterThan(0);
     // (c) after ONE pick the stop appears (1..3 is the real range) and taking it lands the card in
     // A's hand — the whole flow, not merely the menu, carries the floor.
-    const r2 = step(bd(), [atk, prize, promote, picks[0] as never]);
+    const r2 = step(bd(), [atk, picks[0] as never]);
     expect(types(r2)).toContain('confirm');
-    const r3 = step(bd(), [atk, prize, promote, picks[0] as never,
+    const r3 = step(bd(), [atk, picks[0] as never,
       { actor: 'A' as const, type: 'confirm' as const, value: false }]);
     expect(r3.state.players.A.hand.length).toBe(1);      // took exactly the 1 picked card
   });
