@@ -10482,6 +10482,16 @@
       "fixes": [
         "FX-0392"
       ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "private resolveAttachWindow(state: State, effect: AttachEnergyEffect, cards: Card[]): State {"
+      ],
+      "note": "TA-612 (2026-10-05): The Energy-attach window is a simultaneous batch: two or more triggers on one attach (the attached Energy's own included",
+      "fixes": [
+        "FX-0393"
+      ]
     }
   ]
 }
