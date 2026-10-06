@@ -6,7 +6,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { TRAINER_TARGET_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { ADD_SPECIAL_CONDITIONS_TO_PLAYER_ACTIVE, TRAINER_TARGET_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class DangerousLaser extends TrainerCard {
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -30,8 +30,8 @@ export class DangerousLaser extends TrainerCard {
       const active = opponent.active;
 
       if (!TRAINER_TARGET_BLOCKED(store, state, player, this, active)) {
-        active.addSpecialCondition(SpecialCondition.BURNED);
-        active.addSpecialCondition(SpecialCondition.CONFUSED);
+        // SD-26: through AddSpecialConditionsPowerEffect, so "can't be affected by Special Conditions" applies
+        ADD_SPECIAL_CONDITIONS_TO_PLAYER_ACTIVE(store, state, opponent, this, [SpecialCondition.BURNED, SpecialCondition.CONFUSED]);
       }
     }
     return state;
