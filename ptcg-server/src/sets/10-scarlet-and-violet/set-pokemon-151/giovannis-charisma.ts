@@ -90,7 +90,10 @@ export class GiovannisCharisma extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
-    return true;
+    // TA-638 (B.29): "Put an Energy attached to your opponent's Active Pokemon into their hand" has no operand
+    // when that Active has no Energy attached, so the card is not offered (and a forced play is refused).
+    const opponent = StateUtils.getOpponent(state, player);
+    return opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
