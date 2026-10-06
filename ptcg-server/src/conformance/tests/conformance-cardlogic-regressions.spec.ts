@@ -3391,10 +3391,20 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // `if (deck.length === 0 || openSlots.length === 0) return state;` skipped the mandated search and
     // its shuffle at deck 0; only the bench-full half is #2171's carve-out. A's Koffing is hit by
     // Riptide (2 [W] in B's discard = 40); the Ability fires from the AfterDamageEffect.
-    const r = step(boardKeepingEmptyDeck(
+    // TA-562 / B.53 (#2172 is the Smog Signals ruling: "the attack effect ... is done first, then the triggered effect
+    // of searching is done afterwards"): Riptide deals its damage inline, and Smog Signals now waits for Riptide's own
+    // "Then, shuffle those cards into your deck" — so B's shuffle is answered before A's deck is searched and shuffled.
+    const b = () => boardKeepingEmptyDeck(
       player({ active: inPlay('A-act', ['dri-125']), deck: [] }),
       player({ active: inPlay('B-act', ['meg-034'], en(WATER, 1, 'b')), discard: en(WATER, 2, 'bd'), deck: fillerDeck('B', 4) }),
-    ), [{ actor: 'A', type: 'endTurn' }, { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Riptide' }] as unknown as NeutralAction[]);
+    );
+    const acts = [{ actor: 'A', type: 'endTurn' }, { actor: 'B', type: 'declareAttack', source: 'B-act', name: 'Riptide' }] as unknown as NeutralAction[];
+    const paused = step(b(), acts);
+    expect(paused.state.players.A.active!.damage).toBe(40);
+    expect(paused.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(false);
+    const sh = (paused.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
+    expect(sh).toBeDefined();
+    const r = step(b(), [...acts, { actor: 'system', type: 'shuffle', order: sh!.deck } as unknown as NeutralAction]);
     expect(r.state.players.A.active!.damage).toBe(40);
     expect(r.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
   });
