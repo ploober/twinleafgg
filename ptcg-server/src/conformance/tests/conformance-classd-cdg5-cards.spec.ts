@@ -171,7 +171,8 @@ describe('TA-549 Togekiss Precious Gift comes after the attack\'s Knock Out and 
   const PC = attack('a1', 'Power Cyclone');
   function afterMove(s: NeutralState): unknown[] {
     const m = menu(s, [PC]);
-    const mv = m.find(a => a.type === 'moveEnergy' || a.type === 'attachEnergy');
+    // TA-651: the Energy is a `choose` before the damage; the one Benched Pokémon then receives it (forced).
+    const mv = m.find(a => a.type === 'choose' || a.type === 'moveEnergy' || a.type === 'attachEnergy');
     return mv ? [PC, mv] : [PC];
   }
   it('Power Cyclone Knocks Out the Active: the next decision is A\'s Prize, not Precious Gift [TA-549]', () => {

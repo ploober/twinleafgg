@@ -290,7 +290,9 @@ describe('TA-258 — the TA-79 second wave: pool growth 1206→1821 brought new 
   // enumeration is the census, so these witnessed members ARE the visible population.
   // B.82 (2026-10-05): Scorching Fire and Icicle Loop choose the attacker's own Energy, so that choice now comes
   // BEFORE the damage (0 at the pending); the two Bench-move riders and Memory Lock keep the damage-first order.
-  const choiceFirst = new Set(['twm-033', 'ssp-056']);
+  // TA-651 (B.85 (1)(c), 2026-10-06): Jet Cyclone and Scorching Cyclone move the attacker's own Energy, so their Energy
+  // choice comes before the damage too (0 at the pending).
+  const choiceFirst = new Set(['twm-033', 'ssp-056', 'dri-003', 'jtg-031']);
   const cases: Array<[string, string, string, CardRef[], number, boolean]> = [
     // [printing, attack, itLabel, attacker energy, expected damage, needsBench]
     ['dri-003', 'Jet Cyclone', 'Yanmega ex', [
