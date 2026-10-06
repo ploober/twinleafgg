@@ -10855,9 +10855,9 @@
     {
       "file": "set-scarlet-and-violet/meowscarada.ts",
       "signatures": [
-        "{ afterDamage: true }"
+        "if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "note": "TA-633 (2026-10-05): Trick Cape (Meowscarada svi-015) and Eerie Tentacles (Toedscruel svi-026) move the opponent's Energy after the damage (#",
+      "note": "TA-633 (2026-10-05): Trick Cape (Meowscarada svi-015) and Eerie Tentacles (Toedscruel svi-026) move the opponent's Energy after the damage (# | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied)",
       "fixes": [
         "FX-0406"
       ]
@@ -10865,9 +10865,9 @@
     {
       "file": "set-scarlet-and-violet/toedscruel.ts",
       "signatures": [
-        "effect.afterDamageMoves.push(() => {"
+        "if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "note": "TA-633 (2026-10-05): Eerie Tentacles moves the opponent's Energy after the damage (#77, B.84 (1))",
+      "note": "TA-633 (2026-10-05): Eerie Tentacles moves the opponent's Energy after the damage (#77, B.84 (1)) | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied)",
       "fixes": [
         "FX-0406"
       ]
@@ -10875,9 +10875,9 @@
     {
       "file": "game/store/prefabs/attack-effects.ts",
       "signatures": [
-        "options?: { count?: number, afterDamage?: boolean }"
+        "effect: AttackEffect | AfterAttackEffect,   // B.85 (3)(a): called from AFTER_ATTACK by Trick Cape svi-015 (TA-645)"
       ],
-      "note": "TA-633 (2026-10-05): PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND opt-in afterDamage (Trick Cape)",
+      "note": "TA-633 (2026-10-05): PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND opt-in afterDamage (Trick Cape) | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied)",
       "fixes": [
         "FX-0406"
       ]
@@ -11955,9 +11955,9 @@
     {
       "file": "set-pitch-black/shieldon.ts",
       "signatures": [
-        "// TA-494 / B.84 (1), #77: the choice is asked where it was (B.84 (3) is undecided); the Energy is discarded after"
+        "if (AFTER_ATTACK(effect, 0, this)) {"
       ],
-      "note": "batch 5 (FX-0425, 2026-10-06); validated present@HEAD absent@merge-base",
+      "note": "batch 5 (FX-0425, 2026-10-06); validated present@HEAD absent@merge-base | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied)",
       "fixes": [
         "FX-0425"
       ]
