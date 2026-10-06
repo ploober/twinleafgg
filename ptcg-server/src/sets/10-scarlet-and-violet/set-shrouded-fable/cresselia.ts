@@ -1,7 +1,7 @@
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PlayerType, PokemonCardList, Card, ChoosePrizePrompt, ConfirmPrompt, GameMessage, GameError } from '../../../game';
+import { StoreLike, State, PlayerType, PokemonCardList, ChoosePrizePrompt, ConfirmPrompt, GameMessage, GameError } from '../../../game';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -61,11 +61,14 @@ export class Cresselia extends PokemonCard {
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
-      const prizes = player.prizes.filter(p => p.isSecret);
-      const cards: Card[] = [];
-      prizes.forEach(p => { p.cards.forEach(c => cards.push(c)); });
+      // TA-541: "turn 1 of your face-down Prize cards face up". Only a non-empty, face-down pile is a candidate; the
+      // prompt indexes the non-empty piles, so the face-up ones are `blocked` there (they were listed, and picking one
+      // threw CANNOT_USE_POWER). With no face-down prize there is nothing to turn, so the "may" is not asked.
+      const nonEmpty = player.prizes.filter(p => p.cards.length > 0);
+      const blocked: number[] = [];
+      nonEmpty.forEach((p, i) => { if (p.faceUpPrize || !p.isSecret) { blocked.push(i); } });
 
-      if (prizes.length > 0) {
+      if (blocked.length < nonEmpty.length) {
         state = store.prompt(state, new ConfirmPrompt(
           effect.player.id,
           GameMessage.WANT_TO_USE_ABILITY,
@@ -75,16 +78,15 @@ export class Cresselia extends PokemonCard {
             state = store.prompt(state, new ChoosePrizePrompt(
               player.id,
               GameMessage.CHOOSE_POKEMON,
-              { count: 1, allowCancel: true },
+              { count: 1, allowCancel: true, blocked },
             ), chosenPrize => {
+              if (chosenPrize === null || chosenPrize.length === 0) {
+                return state;
+              }
               const prizeCard = chosenPrize[0];
 
               if (prizeCard.faceUpPrize == true) {
                 throw new GameError(GameMessage.CANNOT_USE_POWER);
-              }
-
-              if (chosenPrize === null || chosenPrize.length === 0) {
-                return state;
               }
 
               prizeCard.isSecret = false;

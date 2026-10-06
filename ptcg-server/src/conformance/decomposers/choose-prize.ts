@@ -69,6 +69,15 @@ function remainingNativeIndexes(prompt: ChoosePrizePrompt, state: State, picks: 
 export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
   type: ChoosePrizePromptType,
 
+  /**
+   * TA-541 / CF-14: a NON-take pick of one prize pile (Crescent Purge sfa-021's "turn 1 of your face-down Prize cards
+   * face up") with exactly one choosable pile has one outcome, so it is applied atomically (the driver consults this
+   * only when one candidate remains and no stop is offered). A TAKE stays a decision at any count: the prize take is
+   * the structural turn-flow step CF-14 / B.25 carve out. Whether the 2+-pile face-up pick surfaces at all is CF-66's.
+   * Census 2026-10-06 of non-take ChoosePrizePrompt sites: Cresselia sfa-021/071 (count 1) and Gallade sw (out of pool).
+   */
+  atomicResolvable: (prompt) => !isTakePick(prompt) && prompt.options.count === 1,
+
   next(prompt, picks, ctx, state) {
     const rp = realPicks(picks) as Array<{ kind: 'prize'; index: number }>;
     if (rp.length >= prompt.options.count) {
