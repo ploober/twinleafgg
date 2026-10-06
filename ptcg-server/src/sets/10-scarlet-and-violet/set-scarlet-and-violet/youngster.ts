@@ -5,7 +5,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { GameError, GameMessage, Player } from '../../../game';
-import { SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
+import { RECYCLE_RETURNS_EVERY_CARD, SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
 
 export class Youngster extends TrainerCard {
 
@@ -31,6 +31,11 @@ export class Youngster extends TrainerCard {
       return false;
     }
     if (player.hand.cards.length === 0 && player.deck.cards.length === 0) {
+      return false;
+    }
+    // TA-308 / B.41 (the self-side cycle, as Lacey TA-349): an empty deck and 5 or fewer other cards in hand — the
+    // draw of 5 takes back exactly what went in. A play for no effect; withhold.
+    if (RECYCLE_RETURNS_EVERY_CARD(player.deck.cards.length, player.hand.cards.filter(c => c !== this).length, 5)) {
       return false;
     }
     return true;

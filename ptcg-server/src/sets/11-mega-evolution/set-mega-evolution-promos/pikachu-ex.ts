@@ -44,11 +44,13 @@ export class Pikachuex extends PokemonCard {
     // Ref: set-mega-evolution/xerneas.ts (Geogate — search Basics onto Bench)
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      if (player.deck.cards.length === 0) {
-        return state;
-      }
+      // TA-250 / B.33: a full Bench is a missing destination (no search, no shuffle, B.33 addendum / #2322) and runs
+      // first; an empty deck with Bench room whiffs the search and still owes "Then, shuffle your deck".
       const slots = GET_PLAYER_BENCH_SLOTS(player);
       if (slots.length === 0) {
+        return state;
+      }
+      if (player.deck.cards.length === 0) {
         return SHUFFLE_DECK(store, state, player);
       }
       return SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(

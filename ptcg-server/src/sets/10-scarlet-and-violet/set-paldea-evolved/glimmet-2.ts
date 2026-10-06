@@ -8,14 +8,16 @@ import { GameMessage } from '../../../game/game-message';
 import { Card } from '../../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 function* useAscension(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
 
+  // TA-250 / B.33: the search whiffs on an empty deck, but "Then, shuffle your deck" names an object that survives,
+  // so the shuffle is still owed.
   if (player.deck.cards.length === 0) {
-    return state;
+    return SHUFFLE_DECK(store, state, player);
   }
 
   let cards: Card[] = [];

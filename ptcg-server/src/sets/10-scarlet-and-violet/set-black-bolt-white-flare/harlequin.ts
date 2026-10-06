@@ -6,7 +6,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { GameError, GameMessage, Player } from '../../../game';
-import { DRAW_CARDS, COIN_FLIP_PROMPT, MOVE_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, COIN_FLIP_PROMPT, MOVE_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK, RECYCLE_RETURNS_EVERY_CARD } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
   self: Harlequin, effect: TrainerEffect): IterableIterator<State> {
@@ -78,6 +78,15 @@ export class Harlequin extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
+      return false;
+    }
+
+    // TA-308 / B.41: both decks empty and each hand within the SMALLER arm's draw (3; heads 5/3, tails 3/5) — on
+    // either result every card comes straight back, so the flip decides nothing and the play does nothing (Drasna's
+    // both-arms rule, TA-349). Withhold.
+    const opponent = StateUtils.getOpponent(state, player);
+    if (RECYCLE_RETURNS_EVERY_CARD(player.deck.cards.length, player.hand.cards.filter(c => c !== this).length, 3)
+      && RECYCLE_RETURNS_EVERY_CARD(opponent.deck.cards.length, opponent.hand.cards.length, 3)) {
       return false;
     }
 

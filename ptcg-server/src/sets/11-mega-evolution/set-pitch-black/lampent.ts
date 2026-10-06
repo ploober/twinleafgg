@@ -42,8 +42,13 @@ export class Lampent extends PokemonCard {
       const slots = GET_PLAYER_BENCH_SLOTS(player);
       const maxPut = Math.min(3, slots.length);
 
-      if (player.deck.cards.length === 0 || maxPut === 0) {
+      // TA-250 / B.33: no Bench room is a missing destination (no search, no shuffle, B.33 addendum) and runs first;
+      // an empty deck with room whiffs the search and still owes "Then, shuffle your deck".
+      if (maxPut === 0) {
         return state;
+      }
+      if (player.deck.cards.length === 0) {
+        return SHUFFLE_DECK(store, state, player);
       }
 
       return store.prompt(

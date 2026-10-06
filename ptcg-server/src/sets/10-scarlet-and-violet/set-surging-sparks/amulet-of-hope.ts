@@ -63,11 +63,18 @@ export class AmuletofHope extends TrainerCard {
           return state;
         }
 
+        store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Amulet of Hope' });
+
+        // TA-250 / B.33: on an empty deck there is nothing to take (the search is suppressed, which keeps TA-157's
+        // floor of 1 satisfiable), but "Then, shuffle your deck" names an object that survives, so the shuffle is
+        // still owed. The trigger is spent either way.
         if (player.deck.cards.length === 0) {
+          store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
+          player.marker.removeMarker(this.AMULET_OF_HOPE_MARKER);
           return state;
         }
-
-        store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Amulet of Hope' });
 
         let cards: Card[] = [];
         // TA-157 / compendium #2061 (this exact card): "You must take at least 1 card with Amulet of

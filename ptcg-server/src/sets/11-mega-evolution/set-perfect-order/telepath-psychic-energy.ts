@@ -7,6 +7,7 @@ import {
   GET_PLAYER_BENCH_SLOTS,
   IS_SPECIAL_ENERGY_BLOCKED,
   SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH,
+  SHUFFLE_DECK,
 } from '../../../game/store/prefabs/prefabs';
 import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
@@ -68,12 +69,14 @@ export class TelepathPsychicEnergy extends EnergyCard {
 
       // TA-324: the owed "Then, shuffle your deck" fires even when the deck holds no Basic Psychic
       // Pokemon to find — a zero-take still SEARCHED the deck (B.33/#2171; family of TA-320/TA-322).
-      // Skip only when the search cannot EXECUTE: an empty deck (#840, here) or a full Bench (the
-      // GET_PLAYER_BENCH_SLOTS === 0 guard above, #1108/RE-38). Otherwise fall through: maxToPut
-      // computes to 0 and the prefab whiffs to its unconditional SHUFFLE_DECK. Pre-fix this
-      // early-returned on any zero-FIND, dropping the shuffle (rotomancer shuffled).
+      // Skip only on a full Bench (the GET_PLAYER_BENCH_SLOTS === 0 guard above, #1108/RE-38, #2322 "if your
+      // Bench is full you cannot search or shuffle"). Otherwise fall through: maxToPut computes to 0 and the
+      // prefab whiffs to its unconditional SHUFFLE_DECK. Pre-fix this early-returned on any zero-FIND, dropping
+      // the shuffle (rotomancer shuffled).
+      // TA-250 / B.33: an EMPTY deck is not a missing destination; the search whiffs and "Then, shuffle your deck"
+      // is still owed (#840 is the Trainer play gate, not a triggered search). This returned before the shuffle.
       if (player.deck.cards.length === 0) {
-        return state;
+        return SHUFFLE_DECK(store, state, player);
       }
 
       const maxToPut = Math.min(2, validPokemon.length, GET_PLAYER_BENCH_SLOTS(player).length);

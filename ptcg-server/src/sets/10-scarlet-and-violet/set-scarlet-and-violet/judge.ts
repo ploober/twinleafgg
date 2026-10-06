@@ -2,7 +2,7 @@ import { GameError, GameMessage, Player } from '../../../game';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { DRAW_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK, RECYCLE_RETURNS_EVERY_CARD } from '../../../game/store/prefabs/prefabs';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import { StateUtils } from '../../../game/store/state-utils';
 import { State } from '../../../game/store/state/state';
@@ -32,6 +32,13 @@ export class Judge extends TrainerCard {
       return false;
     }
     if (player.hand.cards.length === 0 && player.deck.cards.length === 0) {
+      return false;
+    }
+    // TA-308 / B.41: both decks empty and each hand no larger than the draw of 4 — every card goes in and comes
+    // straight back, for both players. A play for no effect; both operands are public, so withhold.
+    const opponent = StateUtils.getOpponent(state, player);
+    if (RECYCLE_RETURNS_EVERY_CARD(player.deck.cards.length, player.hand.cards.filter(c => c !== this).length, 4)
+      && RECYCLE_RETURNS_EVERY_CARD(opponent.deck.cards.length, opponent.hand.cards.length, 4)) {
       return false;
     }
     return true;

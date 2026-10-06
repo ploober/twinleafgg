@@ -50,10 +50,6 @@ export class Geeta extends TrainerCard {
       // no Benched Pokémon is needed (the attach target below already offers ACTIVE and BENCH).
       player.marker.addMarker(this.GEETA_MARKER, this);
 
-      if (player.deck.cards.length === 0) {
-        return state;
-      }
-
       // TA-629: "Then, shuffle your deck" follows the search and the attach, so the shuffle is raised inside the
       // callbacks on every branch (an empty pick, a cancelled Pokémon choice, an attach), as gimmighoul.ts does since
       // TA-582. Raised beside the open search, the live arbiter (Game.handleArbiterPrompts) answered it first, over
@@ -68,6 +64,13 @@ export class Geeta extends TrainerCard {
         });
       };
       const discardGeeta = () => MOVE_CARDS(store, state, player.supporter, player.discard, { sourceCard: this });
+
+      // TA-250 / B.33: on an empty deck the search whiffs, but "Then, shuffle your deck" names an object that survives
+      // (the deck exists, empty), so the shuffle is still owed; then Geeta goes to the discard pile as on every branch.
+      if (player.deck.cards.length === 0) {
+        shuffle(discardGeeta);
+        return state;
+      }
 
       let cards: Card[] = [];
       return store.prompt(state, new ChooseCardsPrompt(

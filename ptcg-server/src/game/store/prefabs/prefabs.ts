@@ -4038,6 +4038,19 @@ export function ATTACK_SEARCH_WHIFFS(player: Player): boolean {
 }
 
 /**
+ * TA-308 / B.41 (with its 2026-08-31 and 2026-09-01 addenda: the cycle cell, opponent's deck or own deck = 0). A
+ * recycle moves `moved` cards from a hand into a deck and then draws `draw` cards from that deck. When the deck is
+ * EMPTY and `moved <= draw`, the draw hands back exactly the cards that went in: hand, deck and discard end where they
+ * started. Deck and hand sizes are public, so the no-op is provable and the Trainer is withheld (#1042 Hugh, #2306,
+ * #2365, the modern line). A card that recycles both players' hands is a no-op only when this holds for BOTH, and a
+ * flip-dependent draw only when it holds for the smaller arm (Drasna, TA-349). Lacey and Lillie's Determination
+ * inline the same arithmetic (TA-349).
+ */
+export function RECYCLE_RETURNS_EVERY_CARD(deckSize: number, moved: number, draw: number): boolean {
+  return deckSize === 0 && moved <= draw;
+}
+
+/**
  * Rulebook attack step F / rulings compendium #543 ("Do damage first, then apply effects")
  * and #649 ("the effects of attacks are not applied until after damage is done").
  *

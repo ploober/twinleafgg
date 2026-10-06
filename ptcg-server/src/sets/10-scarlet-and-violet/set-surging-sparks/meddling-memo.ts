@@ -3,7 +3,7 @@ import { TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameError, GameMessage, Player } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, RECYCLE_RETURNS_EVERY_CARD } from '../../../game/store/prefabs/prefabs';
 
 export class MeddlingMemo extends TrainerCard {
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -19,6 +19,11 @@ export class MeddlingMemo extends TrainerCard {
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     const opponent = StateUtils.getOpponent(state, player);
     if (opponent.hand.cards.length === 0) {
+      return false;
+    }
+    // TA-308 / B.41 (the 2026-08-31 cycle cell): the opponent's deck is empty, so their hand goes under it and the draw
+    // of "that many" takes the same cards straight back. A play for no effect; withhold.
+    if (RECYCLE_RETURNS_EVERY_CARD(opponent.deck.cards.length, opponent.hand.cards.length, opponent.hand.cards.length)) {
       return false;
     }
     return true;

@@ -69,11 +69,16 @@ export class Cofagrigusex extends PokemonCard {
         return state;
       }
 
+      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Cofagrigus ex' });
+
+      // TA-250 / B.33: on an empty deck the search whiffs, but "Then, shuffle your deck" names an object that
+      // survives, so the shuffle is still owed.
       if (player.deck.cards.length === 0) {
+        store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+          player.deck.applyOrder(order);
+        });
         return state;
       }
-
-      store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Cofagrigus ex' });
 
       let cards: Card[] = [];
       store.prompt(

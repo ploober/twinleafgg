@@ -2307,12 +2307,15 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       throw new Error('TA-375 guard did not settle');
     };
     // A keeps ONE card in hand after Judge (a 1-card forced shuffle over A's empty deck — the CF-11
-    // case), B holds three (its real shuffle). Mirrors the corpus board tr-bench-por-076--deck0.
+    // case), B holds five (its real shuffle). Mirrors the corpus board tr-bench-por-076--deck0, except
+    // that B held three there: with both decks empty and both hands ≤ 4 every card comes straight back,
+    // and TA-308 (B.41) now withholds Judge on that board. A fifth card stays in B's deck, so Judge is
+    // legal and the two-shuffle wedge this guards is exercised unchanged.
     const judgeBoard = boardKeepingEmptyDeck(
       player({ active: inPlay('A-act', [RALTS]),
                hand: [{ iid: 'A-judge', printing: 'por-076' }, ...en(WATER, 1, 'Ah')], deck: [] }),
       player({ active: inPlay('B-act', [RALTS]),
-               hand: en(WATER, 3, 'Bh'), deck: [] }),
+               hand: en(WATER, 5, 'Bh'), deck: [] }),
     );
     const out = settle(judgeBoard, [{ actor: 'A', type: 'playSupporter', card: 'A-judge' }]);
     expect(out.ok).toBe(true);        // pre-fix: false (invalidAction wedge)
