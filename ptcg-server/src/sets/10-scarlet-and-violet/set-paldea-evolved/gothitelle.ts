@@ -55,9 +55,11 @@ export class Gothitelle extends PokemonCard {
       const deckTop = new CardList();
       MOVE_CARDS(store, state, opponent.deck, deckTop, { count: 2, sourceCard: this });
 
+      // TA-555 / B.73 G1: the one pick names the card PUT BACK (the object of "put 1 of them back"); the other card goes
+      // on the bottom of their deck.
       return store.prompt(state, new ChooseCardsPrompt(
         player,
-        GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM,
+        GameMessage.CHOOSE_CARDS_TO_PUT_ON_TOP_OF_THE_DECK,
         deckTop,
         {},
         { min: 1, max: 1, allowCancel: false }
@@ -67,7 +69,8 @@ export class Gothitelle extends PokemonCard {
         ABILITY_USED(player, this);
         ADD_MARKER(this.READ_THE_STARS_MARKER, player, this);
 
-        MOVE_CARDS(store, state, deckTop, opponent.deck, { cards: cards, sourceCard: this });
+        const toBottom = deckTop.cards.filter(c => !cards.includes(c));
+        MOVE_CARDS(store, state, deckTop, opponent.deck, { cards: toBottom, sourceCard: this });
         deckTop.moveToTopOfDestination(opponent.deck);
       });
     }

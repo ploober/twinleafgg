@@ -34,13 +34,15 @@ export class Panpour extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Call for Family
+    // TA-535: a search of the hidden deck for a named kind may fail to find (#2171), so the pick floors at 0 and
+    // the decline is the zero-take (the TA-145 / TA-481 shape); the deck is still shuffled.
     if (WAS_ATTACK_USED(effect, 0, this)) {
       return SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(
         store,
         state,
         effect.player,
         { stage: Stage.BASIC },
-        { min: 1, max: 1 },
+        { min: 0, max: 1, allowCancel: false },
       );
     }
 

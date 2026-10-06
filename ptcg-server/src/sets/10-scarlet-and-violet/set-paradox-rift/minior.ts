@@ -59,7 +59,11 @@ export class Minior extends PokemonCard {
       }
     }
 
-    if (effect instanceof AttachEnergyEffect && effect.target.cards[0] == this) {
+    // TA-575: "when you attach an Energy card from your hand to this Pokémon". The AttachEnergyEffect carries no
+    // source; an attach from the hand is reduced while the card is still in the hand (play-card-reducer), so an
+    // attack's attach from the deck (Teal Mask Ogerpon dri-026 Grass Kagura) does not trigger it.
+    if (effect instanceof AttachEnergyEffect && effect.target.cards[0] == this
+      && effect.player.hand.cards.includes(effect.energyCard)) {
       const player = effect.player;
       const target = effect.target;
 

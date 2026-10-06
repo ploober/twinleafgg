@@ -22,7 +22,7 @@ export class Watchog extends PokemonCard {
       name: 'Snap Inspection',
       cost: [C],
       damage: 0,
-      text: "Flip 3 coins. For each heads, look at your opponent's hand and choose a card there. Your opponent shuffles those cards into their deck. This attack does 50 damage to 1 of your opponent's Pokémon. (Apply Weakness and Resistance for Benched Pokémon.)",
+      text: "Flip 3 coins. If any of them are heads, your opponent reveals their hand. For each heads, choose a card you find there and shuffle it into your opponent's deck.",
     },
     {
       name: 'Low Kick',
