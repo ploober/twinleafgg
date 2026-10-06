@@ -10442,6 +10442,26 @@
       "fixes": [
         "FX-0390"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/sinistcha.ts",
+      "signatures": [
+        "const provided = new CheckProvidedEnergyEffect(player, cardList);"
+      ],
+      "note": "TA-602, TA-520 (2026-10-05): Sinistcha twm-022 Spill the Tea discards, and Gorebyss dri-056 Crescendo Wave counts, every attached Energy that provide",
+      "fixes": [
+        "FX-0391"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/gorebyss.ts",
+      "signatures": [
+        "water += em.provides.filter(t => t === CardType.WATER || t === CardType.ANY).length;"
+      ],
+      "note": "TA-602 / TA-520 (2026-10-05): Crescendo Wave counts [W]-providing Energy after its own attach, with no confirm before the attach",
+      "fixes": [
+        "FX-0391"
+      ]
     }
   ]
 }
