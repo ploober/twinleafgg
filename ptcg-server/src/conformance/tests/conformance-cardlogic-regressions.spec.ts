@@ -1003,7 +1003,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // (a) the decision SURFACES: a pick plus the advertised decline — nothing auto-resolves.
     const r1 = step(bd(), [declare]);
     expect(r1.status).toBe('awaitingAction');
-    expect(types(r1)).toContain('choose');                        // pre-fix: no pending at all
+    // TA-579 / TA-156: the pick is the Tool itself (`discard {tool}`), no longer the bearer (`choose {pokemon}`).
+    expect(types(r1)).toContain('discard');                       // pre-fix: no pending at all
     expect(types(r1)).toContain('confirm');                       // the 0-option (CF-12 stop)
     expect(r1.state.players.B.bench[0].tools.length).toBe(1);     // pre-fix: already discarded here
 
@@ -1014,7 +1015,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r2.state.activePlayer).toBe('B');
 
     // (c) taking the pick discards the bench Tool — the fix must not have broken the 1-option itself.
-    const r3 = step(bd(), [declare, { actor: 'A' as const, type: 'choose' as const, target: 'B-b0' }]);
+    const r3 = step(bd(), [declare, { actor: 'A', type: 'discard', target: 'b-tool', owner: 'B' } as never]);
     expect(r3.state.players.B.bench[0].tools.length).toBe(0);
     expect(r3.state.players.B.discard.map(c => c.printing)).toContain('asc-181');
   });
