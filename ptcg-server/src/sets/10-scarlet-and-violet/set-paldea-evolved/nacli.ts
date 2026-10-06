@@ -4,7 +4,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
+import { CardTarget, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { HealTargetEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -39,12 +39,21 @@ export class Nacli extends PokemonCard {
 
     // Salt Coating
     if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-518 (as TA-311 Dolliv): only a damaged Pokemon can be healed. Restrict the pick to damaged Pokemon so a
+      // board with none skips the heal (turn ends) and a single damaged Pokemon collapses (CF-14).
+      const blocked: CardTarget[] = [];
+      let hasDamaged = false;
+      effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+        if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }
+      });
+      if (!hasDamaged) { return state; }
+
       return store.prompt(state, new ChoosePokemonPrompt(
         effect.player.id,
-        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+        GameMessage.CHOOSE_POKEMON_TO_HEAL,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false }
+        { allowCancel: false, blocked }
       ), targets => {
         if (!targets || targets.length === 0) {
           return;

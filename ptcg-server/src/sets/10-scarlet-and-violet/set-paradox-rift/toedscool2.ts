@@ -53,7 +53,8 @@ export class Toedscool2 extends PokemonCard {
           && c.energyType === EnergyType.BASIC
           && c.provides.includes(CardType.GRASS);
       });
-      if (!hasEnergyInHand) {
+      // TA-517: no Benched Pokemon means there is nowhere to attach; the attack does nothing.
+      if (!hasEnergyInHand || player.bench.every(b => b.cards.length === 0)) {
         return state;
       }
 
@@ -69,7 +70,7 @@ export class Toedscool2 extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-        { min: 0, max: 1, allowCancel: false }
+        { min: 1, max: 1, allowCancel: false }   // TA-517: printed with no "may" / "up to": the attach is mandatory
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {

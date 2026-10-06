@@ -45,6 +45,12 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
     MOVE_CARDS(store, state, opponent.active, opponent.hand, { cards: [card], sourceCard: effect.trainerCard });
 
+    // TA-533: "If you do, attach an Energy card from your hand to your Active Pokemon" is an instruction, not an
+    // option: mandatory when the hand has an Energy card, skipped when it has none.
+    if (!player.hand.cards.some(c => c.superType === SuperType.ENERGY)) {
+      return state;
+    }
+
     state = store.prompt(state, new AttachEnergyPrompt(
       player.id,
       GameMessage.ATTACH_ENERGY_TO_BENCH,
@@ -52,7 +58,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       PlayerType.BOTTOM_PLAYER,
       [SlotType.ACTIVE],
       { superType: SuperType.ENERGY },
-      { allowCancel: true, min: 0, max: 1 }
+      { allowCancel: false, min: 1, max: 1 }
     ), transfers => {
       transfers = transfers || [];
 

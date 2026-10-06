@@ -43,22 +43,23 @@ export class Wimpod extends PokemonCard {
         return state;
       }
 
+      // TA-525: the discard happens only on heads; the `return` inside the flip callback did not gate a prompt
+      // raised after it.
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result === false) {
-          return state;
+          return;
         }
-      });
+        state = store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          opponent.hand,
+          {},
+          { allowCancel: false, min: 1, max: 1, isSecret: true }
+        ), cards => {
+          cards = cards || [];
 
-      state = store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        opponent.hand,
-        {},
-        { allowCancel: false, min: 1, max: 1, isSecret: true }
-      ), cards => {
-        cards = cards || [];
-
-        MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards, sourceCard: this });
+          MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards, sourceCard: this });
+        });
       });
     }
 

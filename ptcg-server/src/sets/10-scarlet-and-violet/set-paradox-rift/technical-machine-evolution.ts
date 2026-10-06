@@ -50,14 +50,14 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Attac
     GameMessage.CHOOSE_POKEMON_TO_EVOLVE,
     PlayerType.BOTTOM_PLAYER,
     [SlotType.BENCH],
-    { min: 1, max: 2, allowCancel: false, blocked: blocked2 }
+    { min: 0, max: 2, allowCancel: false, blocked: blocked2 }   // TA-553: an attack's "up to 2" is 0..2 (#2301)
   ), selection => {
     targets = selection || [];
     next();
   });
 
   if (targets.length === 0) {
-    return state; // canceled by user
+    return state; // TA-553: none chosen: no search is performed, so no shuffle is owed (B.44)
   }
 
   // Log the selected Pokémon targets

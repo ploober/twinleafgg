@@ -33,7 +33,9 @@ export class Fearow extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     if (AFTER_ATTACK(effect, 0, this)) {
-      SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, effect.player, this, {}, { min: 0, max: 3 }, this.attacks[0]);
+      // TA-537: a search for any card, unspecified kind, must take at least 1 (#2301 exception); the prefab whiffs an
+      // empty deck (and still shuffles).
+      SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, effect.player, this, {}, { min: 1, max: 3 }, this.attacks[0]);
     }
 
     return state;
