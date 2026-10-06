@@ -4346,15 +4346,17 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
       player({ active: inPlay('b1', ['twm-187']), deck: fillerDeck('B', 4) }),
     );
     const use = act({ type: 'useAbility', source: 'a1', ability: 'Spiteful Evolution' });
-    const evolved = step(b(), [use, act({ type: 'choose', target: 'h0' })]);
+    // TA-619 (2026-10-06): one evolution in hand makes the CHOOSE_CARD_TO_EVOLVE pick forced, so it collapses (CF-14;
+    // rotomancer collapses it too, driven 2026-10-06) and the recorded pick of h0 after `use` is surplus.
+    const evolved = step(b(), [use]);
     expect(evolved.state.players.A.active!.stack.map(c => c.printing)).toEqual(['cri-038', 'cri-039']);
     expect(usedLabels(evolved)).withContext('the evolved Pokémon remembers (#798)').toEqual(['Spiteful Evolution']);
     // Strange Timepiece devolves it the same turn: the memory is still there and the re-use is refused
-    const devolved = step(b(), [use, act({ type: 'choose', target: 'h0' }), act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' })]);
+    const devolved = step(b(), [use, act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' })]);
     expect(devolved.status).toBe('awaitingAction');
     expect(devolved.state.players.A.active!.stack.map(c => c.printing)).toEqual(['cri-038']);
     expect(usedLabels(devolved)).toEqual(['Spiteful Evolution']);
-    const again = step(b(), [use, act({ type: 'choose', target: 'h0' }), act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' }), use]);
+    const again = step(b(), [use, act({ type: 'playItem', card: 'tp' }), act({ type: 'choose', target: 'h0' }), use]);
     expect(again.status).toBe('invalidAction');
   });
 
