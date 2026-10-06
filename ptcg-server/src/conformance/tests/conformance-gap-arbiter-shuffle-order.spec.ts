@@ -101,7 +101,7 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
   // TA-582 (fixed): the card now raises its ShuffleDeckPrompt inside the search callback, as Greninja ex does.
   // Before the fix this cell read "shuffles BEFORE the pick and never after it": both prompts open together, the
   // arbiter shuffled the full 10-card deck while the pick was still open, and the deck stayed in the searched order.
-  it('REGRESSION (TA-582): Minor Errand-Running shuffles once, AFTER the pick, over the post-search deck', () => {
+  it('REGRESSION (TA-582): Minor Errand-Running shuffles once, AFTER the pick, over the post-search deck [TA-582 ssp-097]', () => {
     const { handler, store, state, player } = build('Gimmighoul SSP', P);
     expect(player.deck.cards.length).toBe(10);
 
@@ -126,7 +126,7 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
     expect(player.deck.cards.map(c => c.id)).toEqual(handler.shuffles[0].deckIdsAfterShuffle);
   });
 
-  it('REGRESSION (TA-582): picking nothing still shuffles once, after the pick, over the whole deck', () => {
+  it('REGRESSION (TA-582): picking nothing still shuffles once, after the pick, over the whole deck [TA-582 ssp-097]', () => {
     const { handler, store, state, player } = build('Gimmighoul SSP', P);
     store.dispatch(new AttackAction(player.id, 'Minor Errand-Running'));
     const pick = openPick(state);
@@ -181,13 +181,13 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
     expect(handler.shuffles[0].deckSizeAtShuffle).toBe(deckBefore - take);
   }
 
-  it('REGRESSION (TA-582 sibling): Cofagrigus ex par-076 Gold Coffin shuffles after its pick', () => {
+  it('REGRESSION (TA-582 sibling): Cofagrigus ex par-076 Gold Coffin shuffles after its pick [TA-582 par-076]', () => {
     const { handler, store, state, player } = build('Cofagrigus ex PAR', P);
     knockOut(store, state, player);
     expectShuffleAfterPick(handler, store, state, player, 1);
   });
 
-  it('REGRESSION (TA-582 sibling): Amulet of Hope ssp-162 shuffles after its pick', () => {
+  it('REGRESSION (TA-582 sibling): Amulet of Hope ssp-162 shuffles after its pick [TA-582 ssp-162]', () => {
     const { handler, store, state, player } = build('Gimmighoul SSP', P, ['Amulet of Hope SSP']);
     knockOut(store, state, player);
     store.reduceEffect(state, new BetweenTurnsEffect(player));

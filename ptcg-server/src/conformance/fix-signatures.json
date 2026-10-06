@@ -1926,9 +1926,13 @@
     {
       "file": "set-temporal-forces/minccino.ts",
       "signatures": [
-        "{ min: 0, max: max, allowCancel: true, blocked }"
+        "{ min: 0, max: Math.min(2, tools.length), allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-155 min-0 line, retargeted 2026-10-05 when TA-579 rewrote the pick over the Tools (the min: 0 fix is kept)",
+      "fixes": [
+        "FX-0399"
+      ]
     },
     {
       "file": "set-surging-sparks/amulet-of-hope.ts",
@@ -10491,6 +10495,326 @@
       "note": "TA-612 (2026-10-05): The Energy-attach window is a simultaneous batch: two or more triggers on one attach (the attached Energy's own included",
       "fixes": [
         "FX-0393"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/harlequin.ts",
+      "signatures": [
+        "yield EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, self, ["
+      ],
+      "note": "TA-556 (2026-10-05): B.74 lockstep via EACH_PLAYER_SHUFFLE_HAND_INTO_DECK; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0402"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/judge.ts",
+      "signatures": [
+        "return EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, this, ["
+      ],
+      "note": "TA-556 (2026-10-05): B.74 lockstep via EACH_PLAYER_SHUFFLE_HAND_INTO_DECK; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0402"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/unfair-stamp.ts",
+      "signatures": [
+        "yield EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(store, state, self, ["
+      ],
+      "note": "TA-556 (2026-10-05): B.74 lockstep via EACH_PLAYER_SHUFFLE_HAND_INTO_DECK; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0402"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/bayleef.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/charmander.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/charmeleon.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/erikas-bellsprout.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/erikas-gloom.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/erikas-oddish.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/erikas-victreebel.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/erikas-weepinbell.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/koraidon-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-braviary.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-dudunsparce-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-rufflet.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/larrys-starly.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/marill.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mega-charizard-y-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mega-emboar-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mega-feraligatr-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mega-meganium-ex.ts",
+      "signatures": [
+        "public regulationMark: string = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/pignite.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/tepig.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/totodile.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): regulation mark J as printed (card-data/final); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/palkia.ts",
+      "signatures": [
+        "energyCount += em.provides.length;"
+      ],
+      "note": "TA-617 (2026-10-05): Palkia ssp-136 Space Crash counts the Energy its Basic Energy cards provide (sum of provides over Basic Energy cards), n",
+      "fixes": [
+        "FX-0394"
+      ]
+    },
+    {
+      "file": "set-perfect-order/tyrantrum.ts",
+      "signatures": [
+        "const count = Math.min(heads, opponent.deck.cards.length);"
+      ],
+      "note": "TA-625 (2026-10-05): Tyrantrum por-045 Wreak Havoc flips until tails, then discards the top card of the opponent's deck once per heads, after",
+      "fixes": [
+        "FX-0395"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/retreat-effect.ts",
+      "signatures": [
+        "function promptBenchAndRetreat(store: StoreLike, state: State, player: Player, pay: () => void): State {"
+      ],
+      "note": "TA-580 (2026-10-05): The live two-step retreat (RetreatStartEffect) pays its cost and clears the Pokémon's effects only once a Bench Pokémon ",
+      "fixes": [
+        "FX-0396"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/kofu.ts",
+      "signatures": [
+        "selection.orderFollows = true; // TA-607: \"in any order\" is the OrderCardsPrompt below, over exactly these cards"
+      ],
+      "note": "TA-607 (2026-10-05): Kofu scr-138 / scr-165 with exactly 2 cards in hand collapses the forced which-2 selection and asks only the order (CF-1",
+      "fixes": [
+        "FX-0398"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/minccino.ts",
+      "signatures": [
+        "bearerOf.set(tool, cardList);"
+      ],
+      "note": "TA-579, TA-156 (2026-10-05): Minccino tef-136 / tef-182 Cleaning Up offers the opponent's Tools themselves (discard {tool}), up to 2 in total across ",
+      "fixes": [
+        "FX-0399"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/gimmighoul.ts",
+      "signatures": [
+        "// TA-582: \"Then, shuffle your deck\" follows the search, so the shuffle is raised inside the pick callback (as"
+      ],
+      "note": "TA-582 (2026-10-05): Gimmighoul ssp-097 Minor Errand-Running raises its ShuffleDeckPrompt inside the search callback (the Greninja ex twm-106",
+      "fixes": [
+        "FX-0400"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/croconaw.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-578 (2026-10-05): Regulation mark J on the 46 in-pool printings printed J (card-data/final asc / mep) that were served as I: 33 asc base c",
+      "fixes": [
+        "FX-0401"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "export function EACH_PLAYER_SHUFFLE_HAND_INTO_DECK("
+      ],
+      "note": "TA-556 (2026-10-05): Judge, Harlequin, Team Rocket's Archer and Unfair Stamp run in B.74 lockstep (every hand in, every deck shuffled one pro",
+      "fixes": [
+        "FX-0402"
       ]
     }
   ]

@@ -47,7 +47,7 @@ describe('TA-580: retreat cancelled at the Bench choice (RetreatStartAction)', (
     return { game, player, retreatCost: cost.cost.length };
   }
 
-  it('TA-580: cancelling the Bench choice costs nothing: the Energy stays attached, the Pokémon stays Poisoned, and it may still retreat once', () => {
+  it('TA-580: cancelling the Bench choice costs nothing: the Energy stays attached, the Pokémon stays Poisoned, and it may still retreat once [TA-580]', () => {
     const { game, player, retreatCost } = board();
     expect(retreatCost).toBeGreaterThan(0);
     expect(player.active.energies.cards.length).toBe(2);
@@ -93,7 +93,7 @@ describe('TA-580: retreat cancelled at the Bench choice (RetreatStartAction)', (
     expect(player.retreatedTurn).toBe(game.state.turn);
   });
 
-  it('TA-580: a free retreat cancelled at the Bench choice keeps its Special Condition', () => {
+  it('TA-580: a free retreat cancelled at the Bench choice keeps its Special Condition [TA-580]', () => {
     const { game, player } = board();
     // Make the retreat free: drop the cost via a passing CheckRetreatCostEffect hook.
     const store: any = game.store;
