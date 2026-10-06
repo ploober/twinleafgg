@@ -594,7 +594,20 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
       if (state.phase === GamePhase.FINISHED) {
         return;
       }
-      return startNextTurn(store, state);
+      // TA-549: the end-of-turn steps queued for after the Knock Out check (#1869), one at a time, each waiting for
+      // its own prompts; the turn passes only after the last of them.
+      const afterKnockOuts = effect.afterKnockOuts.splice(0);
+      const runAfterKnockOuts = (i: number): State => {
+        if (i >= afterKnockOuts.length || state.phase === GamePhase.FINISHED) {
+          return state.phase === GamePhase.FINISHED ? state : startNextTurn(store, state);
+        }
+        afterKnockOuts[i]();
+        if (store.hasPrompts()) {
+          return store.waitPrompt(state, () => runAfterKnockOuts(i + 1));
+        }
+        return runAfterKnockOuts(i + 1);
+      };
+      return runAfterKnockOuts(0);
     });
     return state;
   }

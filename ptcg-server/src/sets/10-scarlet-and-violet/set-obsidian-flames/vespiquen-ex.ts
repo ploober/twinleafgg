@@ -10,7 +10,7 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealTargetEffect, PutCountersEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Vespiquenex extends PokemonCard {
   public regulationMark = 'G';
@@ -64,18 +64,15 @@ export class Vespiquenex extends PokemonCard {
       });
     }
 
-    if (WAS_ATTACK_USED(effect, 1, this)) {
+    // TA-548: "Put 3 damage counters on each of your opponent's Benched Pokémon that has any damage counters on it."
+    // The Active is never a target (twinleaf also put 20 on a damaged Active), and the counters follow the 200 base
+    // damage (an attack's effects come after its damage: AFTER_ATTACK, the family-A shape).
+    if (AFTER_ATTACK(effect, 1, this)) {
       const opponent = effect.opponent;
 
-      if (opponent.active.damage > 0) {
-        const activeDamageEffect = new PutCountersEffect(effect, 20);
-        activeDamageEffect.target = opponent.active;
-        store.reduceEffect(state, activeDamageEffect);
-      }
-
-      opponent.bench.forEach((bench, index) => {
+      opponent.bench.forEach((bench) => {
         if (bench.cards.length > 0 && bench.damage > 0) {
-          const damageEffect = new PutCountersEffect(effect, 30);
+          const damageEffect = new PutCountersEffect(effect.attackEffect, 30);
           damageEffect.target = bench;
           store.reduceEffect(state, damageEffect);
         }

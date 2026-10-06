@@ -13,12 +13,6 @@ function* useDarkAwakening(
 ): IterableIterator<State> {
   const player = effect.player;
 
-  // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
-  // separate printed instruction whose object survives — so the shuffle is still owed.
-  if (player.deck.cards.length === 0) {
-    return SHUFFLE_DECK(store, state, player);
-  }
-
   // TA-574: "Choose up to 2 of your [D] Pokémon" — the [D] is on the Pokémon in play; the card that evolves from it
   // may be any type (Morpeko V -> Lightning Morpeko VMAX). The old gate required a Darkness EVOLUTION and skipped the
   // pick, the search and the shuffle otherwise. Nothing to choose only when no [D] Pokémon is in play.
@@ -57,8 +51,12 @@ function* useDarkAwakening(
     },
   );
 
+  // TA-544: the empty-deck question is answered AFTER the pick, per chosen Pokémon ("For each of those Pokémon,
+  // search…"). Choosing none searches nothing, so no shuffle is owed (B.44, #2322); choosing at least one performs a
+  // search even on an empty deck, and "Then, shuffle your deck" follows it (TA-250 / B.33, #2303, B.62). The old
+  // empty-deck early return shuffled before the pick and never asked it.
   if (targets.length === 0) {
-    return state; // canceled by user
+    return state;
   }
 
   // Log the selected Pokémon targets
@@ -71,6 +69,11 @@ function* useDarkAwakening(
     const pokemonCard = target.getPokemonCard();
     if (pokemonCard === undefined) {
       return state; // invalid target?
+    }
+
+    // An empty deck: the search is performed and finds nothing (TA-249); there is no card to pick.
+    if (player.deck.cards.length === 0) {
+      continue;
     }
 
     // Blocking pokemon cards, that cannot be valid evolutions

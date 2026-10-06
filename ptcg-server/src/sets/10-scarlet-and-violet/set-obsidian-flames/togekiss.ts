@@ -36,42 +36,47 @@ export class Togekiss extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Precious Gift
+    // TA-549 (#1869): "used at the end of your turn after attacking and checking for a KO but before Pokemon Checkup.
+    // So if your attack causes a KO you would take Prize cards first, and then you can use Precious Gift." Prompting
+    // directly on EndTurnEffect asked before the attack's Knock Out was resolved (the KO'd Active still in play, the
+    // Prize not yet in hand); the step is queued for after the KO check, and every test is read at that time.
     if (effect instanceof EndTurnEffect) {
       const player = effect.player;
-
-      let isTogekissInPlay = false;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        if (card === this) {
-          isTogekissInPlay = true;
-        }
-      });
-
-      if (!isTogekissInPlay) {
-        return state;
-      }
-
-      try {
-        const powerEffect = new PowerEffect(player, this.powers[0], this);
-        store.reduceEffect(state, powerEffect);
-      } catch {
-        return state;
-      }
-
-      if (player.hand.cards.length >= 8) {
-        return state;
-      }
-
-      state = store.prompt(state, new ConfirmPrompt(
-        effect.player.id,
-        GameMessage.WANT_TO_USE_ABILITY,
-      ), wantToUse => {
-        if (wantToUse) {
-          store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Togekiss' });
-
-          while (player.hand.cards.length < 8 && player.deck.cards.length > 0) {
-            MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
+      effect.afterKnockOuts.push(() => {
+        let isTogekissInPlay = false;
+        player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+          if (card === this) {
+            isTogekissInPlay = true;
           }
+        });
+
+        if (!isTogekissInPlay) {
+          return;
         }
+
+        try {
+          const powerEffect = new PowerEffect(player, this.powers[0], this);
+          store.reduceEffect(state, powerEffect);
+        } catch {
+          return;
+        }
+
+        if (player.hand.cards.length >= 8) {
+          return;
+        }
+
+        store.prompt(state, new ConfirmPrompt(
+          player.id,
+          GameMessage.WANT_TO_USE_ABILITY,
+        ), wantToUse => {
+          if (wantToUse) {
+            store.log(state, GameLog.LOG_PLAYER_USES_ABILITY, { name: player.name, ability: 'Togekiss' });
+
+            while (player.hand.cards.length < 8 && player.deck.cards.length > 0) {
+              MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
+            }
+          }
+        });
       });
     }
 

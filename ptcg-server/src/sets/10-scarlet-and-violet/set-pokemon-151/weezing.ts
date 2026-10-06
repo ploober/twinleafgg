@@ -2,7 +2,7 @@ import { CardType, GamePhase, PokemonCard, PowerType, Stage, State, StateUtils, 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import { COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, TAKE_X_PRIZES, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Weezing extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -56,18 +56,12 @@ export class Weezing extends PokemonCard {
         if (!result) {
           return;
         }
-        // Ability-triggered KO — not attack-sourced, so KnockOutEffect is used directly
-        const ko = new KnockOutEffect(opponent, opponent.active);
-        // TA-559 (2026-10-01): this card pays the Prize cards itself, at once (TAKE_X_PRIZES below), so the
-        // engine's direct-KO accumulator (state.pendingDirectKoPrizes, CF-7) must not record this KO as well -
-        // it did, and the owner took the Attacking Pokemon's Prize cards twice. The accumulator's only test is
-        // `viaCheckState`. Paying here rather than through the accumulator keeps the order rotomancer drives on
-        // the same board: the owner takes this Prize before the attacker takes Weezing's, both before either
-        // player promotes (#2026: prizes are taken before the replacement Active is chosen); the accumulator
-        // drains at the NEXT sweep, after the promotions.
-        ko.viaCheckState = true;
-        store.reduceEffect(state, ko);
-        return TAKE_X_PRIZES(store, state, player, ko.prizeCount);
+        // TA-563: the Attacking Pokémon's Knock Out joins Weezing's own Knock Out group (TA-577): the sweep that is
+        // resolving Weezing re-collects it, discards BOTH before any Prize card is taken, and pays each player's Prize
+        // once, the next player (Weezing's owner) first (#2026: Prize cards before the replacement Active). It was
+        // dispatched here and its Prize asked at once (TAKE_X_PRIZES), with the Knocked Out Weezing still in the Active
+        // Spot. TA-559's single payment is kept: the sweep is now the only place that pays it.
+        opponent.active.knockedOutByEffect = true;
       });
     }
 

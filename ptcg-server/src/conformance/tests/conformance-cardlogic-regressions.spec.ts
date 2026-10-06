@@ -3116,7 +3116,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['twm-025']), hand: [{ iid: 'g0', printing: GRASS }, { iid: 'g1', printing: GRASS }], deck: fillerDeck('A', 3) }),
       player({ active: inPlay('B-act', [RALTS]) }),
     ), [use('Teal Dance')]);
-    expect(legal(two).filter(a => a.type === 'choose').map(a => a.target).sort()).toEqual(['g0', 'g1']);
+    // TA-546 (CF-32 / CF-5): the WHICH pick is an attach, so it is offered as attachEnergy{card, target: this Ogerpon}.
+    expect(legal(two).filter(a => a.type === 'attachEnergy').map(a => `${(a as { card?: string }).card}->${a.target}`).sort())
+      .toEqual(['g0->A-act', 'g1->A-act']);
+    expect(legal(two).some(a => a.type === 'choose')).toBe(false);
     expect(legal(two).some(a => a.type === 'confirm')).toBe(false);
     // Stone Arms, one Fighting: collapsed and attached; two: a WHICH pick, no decline.
     const stoneOne = step(board(

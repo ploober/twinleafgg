@@ -39,7 +39,8 @@ function findKoPokemons(store: StoreLike, state: State): PokemonItem[] {
       const checkHpEffect = new CheckHpEffect(player, cardList);
       store.reduceEffect(state, checkHpEffect);
 
-      if (cardList.damage >= checkHpEffect.hp) {
+      // TA-563: a slot a Knock Out reaction Knocked Out by effect belongs to this sweep's group too.
+      if (cardList.damage >= checkHpEffect.hp || cardList.knockedOutByEffect) {
         pokemons.push({ playerNum: i, cardList });
       }
     });
@@ -535,6 +536,7 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
   for (let i = 0; i < pokemonsToDiscard.length; i++) {
     const pokemonToDiscard = pokemonsToDiscard[i];
     const knockOutEffect = knockOutEffects[i];
+    pokemonToDiscard.cardList.knockedOutByEffect = false;
     state = store.reduceEffect(state, knockOutEffect);
 
     if (store.hasPrompts()) {

@@ -1,7 +1,8 @@
 import { PokemonCard, Stage, CardType, PowerType, EnergyType, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EvolveEffect } from '../../../game/store/effects/game-effects';
-import { IS_ABILITY_BLOCKED, LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY } from '../../../game/store/prefabs/prefabs';
+import { CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY } from '../../../game/store/prefabs/prefabs';
+import { GameMessage } from '../../../game/game-message';
 
 export class Vileplume extends PokemonCard {
 
@@ -59,17 +60,24 @@ export class Vileplume extends PokemonCard {
       // - Shuffled the remaining cards back into the deck.
       //
       // Converted to prefab version (LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY).
-      return LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY(
-        store,
-        state,
-        player,
-        8,
-        8,
-        {
-          energyFilter: { energyType: EnergyType.BASIC },
-          remainderDestination: 'shuffle'
+      // TA-550: "you may look at the top 8 cards": the may gates the look and the shuffle that follows it. Declining
+      // looks at nothing and shuffles nothing (B.44); accepting and attaching 0 is a different answer (looked, shuffled).
+      return CONFIRMATION_PROMPT(store, state, player, wantToUse => {
+        if (!wantToUse) {
+          return;
         }
-      );
+        LOOK_AT_TOP_X_CARDS_AND_ATTACH_UP_TO_Y_ENERGY(
+          store,
+          state,
+          player,
+          8,
+          8,
+          {
+            energyFilter: { energyType: EnergyType.BASIC },
+            remainderDestination: 'shuffle'
+          }
+        );
+      }, GameMessage.WANT_TO_USE_ABILITY);
     }
     return state;
   }

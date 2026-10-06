@@ -1,9 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType } from '../../../game/store/card/card-types';
+import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
 import { PlayerType, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { PutCountersEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
+import { SEARCH_DECK_FOR_CARDS_TO_HAND, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Jirachi extends PokemonCard {
 
@@ -47,6 +48,17 @@ export class Jirachi extends PokemonCard {
   public fullName: string = 'Jirachi PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+
+    // TA-551: Charge Energy had no implementation (the attack did nothing). "Search your deck for up to 2 Basic Energy
+    // cards, reveal them, and put them into your hand. Then, shuffle your deck." The prefab reveals a typed pick and
+    // shuffles after the search, also when 0 are taken or the deck is empty (#2303, TA-250 / B.33).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      SEARCH_DECK_FOR_CARDS_TO_HAND(store, state, effect.player, this,
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { min: 0, max: 2, allowCancel: false },
+        this.attacks[0]);
+      return state;
+    }
 
     if (effect instanceof PutCountersEffect) {
       const player = effect.player;

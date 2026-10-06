@@ -72,6 +72,12 @@ export class PokemonCardList extends CardList {
 
   /** TA-573: the turn on which attack damage was last put on this Pokémon (-1: never) — a KO's cause is per Pokémon. */
   public attackDamagedOnTurn: number = -1;
+  /**
+   * TA-563: Knocked Out by an effect ("the Attacking Pokémon is Knocked Out") from inside a Knock Out reaction. The
+   * checkState sweep's re-collect treats the slot as Knocked Out, so it joins the SAME Knock Out group (TA-577): every
+   * Pokémon of the group is discarded before any Prize card is taken. Cleared by the sweep when it resolves the slot.
+   */
+  public knockedOutByEffect: boolean = false;
   public hp: number = 0;
   public specialConditions: SpecialCondition[] = [];
   public poisonDamage: number = 10;

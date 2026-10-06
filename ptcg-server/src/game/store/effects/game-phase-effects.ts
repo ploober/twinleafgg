@@ -109,6 +109,14 @@ export class EndTurnEffect implements Effect {
   readonly type: string = GamePhaseEffects.END_TURN_EFFECT;
   public preventDefault = false;
   public player: Player;
+  /**
+   * TA-549: end-of-turn steps that come AFTER the turn's Knock Outs are checked and their Prize cards taken, and
+   * before Pokémon Checkup (#1869, Precious Gift: "used at the end of your turn after attacking and checking for a KO
+   * but before Pokemon Checkup"). A card handler that prompted directly on this effect asked before the attack's
+   * Knock Out was resolved; it pushes its step here instead, and the default handler runs the queue once the KO sweep
+   * has completed, before the turn passes.
+   */
+  public afterKnockOuts: Array<() => void> = [];
 
   constructor(player: Player) {
     this.player = player;

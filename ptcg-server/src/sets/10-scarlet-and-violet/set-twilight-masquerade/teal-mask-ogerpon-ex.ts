@@ -14,9 +14,11 @@ import {
   GameError,
   GameMessage,
   StateUtils,
-  ChooseCardsPrompt,
+  AttachEnergyPrompt,
+  CardTarget,
   EnergyCard,
   PlayerType,
+  SlotType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
@@ -101,35 +103,47 @@ export class TealMaskOgerponex extends PokemonCard {
         return state;
       }
 
+      // TA-546 (CF-32 / CF-5): the pick is an attach, so it is an AttachEnergyPrompt from the hand to THIS Pokémon
+      // (every other slot blocked), projected as attachEnergy{card, target}. It was a ChooseCardsPrompt
+      // (CHOOSE_CARD_TO_ATTACH), projected as a bare choose{card}.
+      // TA-350 / B.46: the `may` IS the activation — `useAbility` is the decision, and once used the attach is
+      // mandatory (#1197, #2306, #2301's 1..max floor for an Ability). With ONE Grass the pick is forced and
+      // collapses (CF-14), with two it is a WHICH pick.
+      const blocked: number[] = [];
+      player.hand.cards.forEach((c, index) => {
+        if (!(c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.provides.includes(CardType.GRASS))) {
+          blocked.push(index);
+        }
+      });
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
+        if (list !== cardList) {
+          blockedTo.push(target);
+        }
+      });
+
       return store.prompt(
         state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_CARDS,
           player.hand,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-          // TA-350 / B.46: the `may` IS the activation — `useAbility` is the decision, and once
-          // used the attach is mandatory (#1197, #2306, #2301's 1..max floor for an Ability). The
-          // old `min: 0` surfaced a post-activation decline that no rule provides for; with ONE
-          // Grass the pick is forced and collapses (CF-14), with two it is a WHICH pick.
-          { min: 1, max: 1, allowCancel: false },
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { min: 1, max: 1, allowCancel: false, blocked, blockedTo },
         ),
-        (cards) => {
-          cards = cards || [];
+        (transfers) => {
+          const cards = (transfers || []).map(t => t.card);
           if (cards.length > 0) {
             player.marker.addMarker(this.TEAL_DANCE_MARKER, this);
-
-            player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-              if (cardList.getPokemonCard() === this) {
-                cardList.addBoardEffect(BoardEffect.ABILITY_USED);
+            player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list) => {
+              if (list.getPokemonCard() === this) {
+                list.addBoardEffect(BoardEffect.ABILITY_USED);
               }
             });
 
-            MOVE_CARDS(store, state, player.hand, cardList, { cards: cards, sourceCard: this });
-
-            // cards.forEach((card, index) => {
-            //   store.log(state, GameLog.LOG_PLAYER_ATTACHES_CARD, { name: player.name, card: card.name, cardList: cardList });
-            // });
+            MOVE_CARDS(store, state, player.hand, cardList, { cards, sourceCard: this });
 
             MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
           }
