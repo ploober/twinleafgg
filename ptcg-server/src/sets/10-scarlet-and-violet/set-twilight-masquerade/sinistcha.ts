@@ -1,7 +1,8 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, PlayerType, GameMessage, SlotType, DiscardEnergyPrompt } from '../../../game';
+import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
+import { StoreLike, State, StateUtils, PlayerType, GameMessage, SlotType, DiscardEnergyPrompt, CardTarget } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
 import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -47,12 +48,31 @@ export class Sinistcha extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
+      // TA-602: "[G] Energy cards" are the attached Energy cards that PROVIDE [G] -- Legacy / Luminous Energy provide
+      // every type while attached (#687, #443) -- not only Basic cards named "Grass Energy". The provided type is
+      // dynamic (CheckProvidedEnergyEffect), so every other attached Energy is blocked per Pokemon.
       let totalGrassEnergy = 0;
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-        const grassCount = cardList.cards.filter(card =>
-          card.superType === SuperType.ENERGY && card.name === 'Grass Energy'
-        ).length;
-        totalGrassEnergy += grassCount;
+      const blockedMap: { source: CardTarget, blocked: number[] }[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, _card, target) => {
+        const provided = new CheckProvidedEnergyEffect(player, cardList);
+        store.reduceEffect(state, provided);
+        const grass = provided.energyMap
+          .filter(em => em.provides.includes(CardType.GRASS) || em.provides.includes(CardType.ANY))
+          .map(em => em.card);
+        const blocked: number[] = [];
+        cardList.cards.forEach((card, index) => {
+          if (card.superType !== SuperType.ENERGY) {
+            return;
+          }
+          if (grass.includes(card)) {
+            totalGrassEnergy++;
+          } else {
+            blocked.push(index);
+          }
+        });
+        if (blocked.length > 0) {
+          blockedMap.push({ source: target, blocked });
+        }
       });
 
       return store.prompt(state, new DiscardEnergyPrompt(
@@ -60,8 +80,8 @@ export class Sinistcha extends PokemonCard {
         GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],// Card source is target Pokemon
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-        { min: 0, max: Math.min(totalGrassEnergy, 3), allowCancel: false }
+        { superType: SuperType.ENERGY },
+        { min: 0, max: Math.min(totalGrassEnergy, 3), allowCancel: false, blockedMap }
       ), transfers => {
         // TA-392: "70 damage for each card you discarded in this way" — the multiplier was assigned
         // INSIDE the transfer loop, so with zero cards chosen the printed base 70 was never zeroed and

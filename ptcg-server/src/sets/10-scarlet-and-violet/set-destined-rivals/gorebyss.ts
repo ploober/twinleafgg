@@ -2,6 +2,7 @@ import { AttachEnergyPrompt, GameMessage, PlayerType, SlotType, State, StateUtil
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
+import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import {CONFIRMATION_PROMPT, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gorebyss extends PokemonCard {
@@ -31,39 +32,48 @@ export class Gorebyss extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-602 / TA-621: "30 damage for each [W] Energy attached" counts every Energy PROVIDING [W] (Legacy / Luminous
+      // Energy provide every type while attached, #443), and it is counted AFTER the optional attach, which happens
+      // "Before doing damage" -- the count used to run as soon as the confirm was raised, before any answer.
+      const setDamage = () => {
+        const provided = new CheckProvidedEnergyEffect(player, player.active);
+        store.reduceEffect(state, provided);
+        let water = 0;
+        provided.energyMap.forEach(em => {
+          water += em.provides.filter(t => t === CardType.WATER || t === CardType.ANY).length;
+        });
+        effect.damage = water * 30;
+      };
+
       const energiesInHand = player.hand.cards.filter(c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Water Energy');
 
-      if (energiesInHand.length > 0) {
-        CONFIRMATION_PROMPT(store, state, effect.player, result => {
-          if (result) {
-
-            state = store.prompt(state, new AttachEnergyPrompt(
-              player.id,
-              GameMessage.ATTACH_ENERGY_TO_ACTIVE,
-              player.hand,
-              PlayerType.BOTTOM_PLAYER,
-              [SlotType.ACTIVE],
-              { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
-              { allowCancel: false, min: 0 }
-            ), transfers => {
-              transfers = transfers || [];
-
-              if (transfers.length === 0) {
-                return state;
-              }
-
-              for (const transfer of transfers) {
-                const target = StateUtils.getTarget(state, player, transfer.to);
-                MOVE_CARDS(store, state, player.hand, target, { cards: [transfer.card], sourceCard: this });
-              }
-            });
-
-          }
-        });
+      if (energiesInHand.length === 0) {
+        setDamage();
+        return state;
       }
 
-      const energies = player.active.cards.filter(c => c.superType === SuperType.ENERGY && c.energyType === EnergyType.BASIC && c.name === 'Water Energy');
-      effect.damage = energies.length * 30;
+      CONFIRMATION_PROMPT(store, state, effect.player, result => {
+        if (!result) {
+          setDamage();
+          return;
+        }
+
+        state = store.prompt(state, new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_TO_ACTIVE,
+          player.hand,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
+          { allowCancel: false, min: 0 }
+        ), transfers => {
+          for (const transfer of transfers || []) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            MOVE_CARDS(store, state, player.hand, target, { cards: [transfer.card], sourceCard: this });
+          }
+          setDamage();
+        });
+      });
     }
 
     return state;
