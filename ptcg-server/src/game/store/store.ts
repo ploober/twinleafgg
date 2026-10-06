@@ -10,8 +10,8 @@ import { SuperType, TrainerType } from './card/card-types';
 import { TrainerCard } from './card/trainer-card';
 import { ChangeAvatarAction } from './actions/change-avatar-action';
 import { Effect } from './effects/effect';
-import { PlayPokemonEffect, TrainerEffect } from './effects/play-card-effects';
-import { CheckAttackCostEffect, CheckPokemonPowersEffect, CheckRetreatCostEffect } from './effects/check-effects';
+import { AttachEnergyEffect, PlayPokemonEffect, TrainerEffect } from './effects/play-card-effects';
+import { CheckAttackCostEffect, CheckEffects, CheckPokemonPowersEffect, CheckRetreatCostEffect } from './effects/check-effects';
 import { KnockOutEffect, MovedFromActiveToBenchEffect, MovedToActiveEffect, PowerEffect } from './effects/game-effects';
 import {
   CLEAR_ABILITY_LOCK_ACTIVATION,
@@ -171,6 +171,8 @@ export function wireVisibleBoardDiffers(a: State, b: State): boolean {
   return false;
 }
 
+const CHECK_EFFECT_TYPES: ReadonlySet<string> = new Set<string>(Object.values(CheckEffects));
+
 export class Store implements StoreLike {
 
   //private effectHistory: Effect[] = [];
@@ -274,8 +276,19 @@ export class Store implements StoreLike {
    */
   private probing = false;
   private probeRaisedPrompt = false;
+  /**
+   * TA-612: set while probing when the handler dispatched an effect of its own that is not a read-only check
+   * (Check* effects) or the ability-lock test (`IS_ABILITY_BLOCKED` dispatches a PowerEffect). A trigger that
+   * resolves to no board change still ACTED (Magearna's Auto Heal on an undamaged Pokémon dispatches its heal), and
+   * its order against the batch's other triggers can matter.
+   */
+  private probeDispatched = false;
 
   public reduceEffect(state: State, effect: Effect): State {
+    if (this.probing && !(effect instanceof PowerEffect)
+      && !CHECK_EFFECT_TYPES.has((effect as { type?: string }).type ?? '')) {
+      this.probeDispatched = true;
+    }
     // Track Active ability-lock activation order before card handlers run.
     if (effect instanceof MovedToActiveEffect) {
       STAMP_ABILITY_LOCK_ACTIVATION(state, effect.player.active, effect.pokemonCard);
@@ -694,6 +707,12 @@ export class Store implements StoreLike {
       return this.resolveSimultaneous(state, effect, batchable);
     }
 
+    // TA-612 / B.52: the Energy-attach window is a simultaneous batch too (Magearna jtg-107 Auto Heal + Gengar ex
+    // tef-104 Gnawing Curse on one attach).
+    if (effect instanceof AttachEnergyEffect) {
+      return this.resolveAttachWindow(state, effect, batchable);
+    }
+
     // CF-38 KO window: a reactor already resolved by the sweep-level batch (`resolveKnockOutReactions`)
     // must not fire a second time when this victim's KnockOutEffect is dispatched for real.
     const alreadyResolved = effect instanceof KnockOutEffect ? effect.resolvedReactors : [];
@@ -763,6 +782,57 @@ export class Store implements StoreLike {
     state = this.askResolveNext(state, actors.map(card => ({ card, effect, subject })), owners[0] as Player);
     // Handlers the probe judged inert still get their turn, after the batch. They are no-ops by
     // construction; running them preserves the old path's guarantee that every card sees the effect.
+    nonActors.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+    return state;
+  }
+
+  /**
+   * TA-612: the triggers raised by ONE Energy attach are one simultaneous batch, and B.52 (owner 2026-09-17) gives the
+   * order to the CURRENT player: "During a turn, the current player can choose the order of multiple triggered effects
+   * when ... an energy is attached." B.49: two triggers from two Pokémon are two members, so two actors make a
+   * resolveNext; one or none keeps the old forEach. Mixed owners are one batch (B.52 lifts the same-owner gate, as in
+   * the KO window). The actor test is `wireVisibleBoardDiffers` (a marker is not an ordered effect), and every
+   * candidate's `subject` is the Pokémon the Energy goes to (CF-75).
+   *
+   * ⚠️ A handler that THROWS on the attach refuses it (an attach lock). The batch runs its non-actors after the
+   * picks, so a refusal there would come after triggers had already applied. Any probe that throws therefore keeps
+   * the legacy order, which throws exactly as it did before. A nested call inside a probe keeps the legacy order too.
+   */
+  private resolveAttachWindow(state: State, effect: AttachEnergyEffect, cards: Card[]): State {
+    const legacy = (): State => {
+      cards.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
+      return state;
+    };
+    if (this.probing) {
+      return legacy();
+    }
+    const inPlay = new Set<Card>();
+    for (const player of state.players) {
+      for (const slot of [player.active, ...player.bench]) {
+        slot.cards.forEach(c => inPlay.add(c));
+        slot.tools.forEach(t => inPlay.add(t));
+      }
+    }
+    const probeable = cards.filter(c => inPlay.has(c));
+    if (probeable.length < 2) {
+      return legacy();
+    }
+    const actors: Card[] = [];
+    for (const card of probeable) {
+      const probe = this.probe(card, state, effect);
+      if (probe === null) {
+        return legacy();
+      }
+      if (probe.raised || probe.dispatched || wireVisibleBoardDiffers(state, probe.after)) {
+        actors.push(card);
+      }
+    }
+    if (actors.length < 2) {
+      return legacy();
+    }
+    const subject = effect.target.getPokemons()[0];
+    const nonActors = cards.filter(c => !actors.includes(c));
+    state = this.askResolveNext(state, actors.map(card => ({ card, effect, subject })), state.players[state.activePlayer]);
     nonActors.forEach(c => { state = this.callReduceEffect(c, this, state, effect); });
     return state;
   }
@@ -916,7 +986,7 @@ export class Store implements StoreLike {
    * left — the two actor signals. `null` when the handler threw (declining). Split out of
    * `probeWouldAct` so the KO window can apply a narrower diff to `after` (see `wireVisibleBoardDiffers`).
    */
-  private probe(card: Card, state: State, effect: Effect): { raised: boolean; after: State } | null {
+  private probe(card: Card, state: State, effect: Effect): { raised: boolean; dispatched: boolean; after: State } | null {
     const refMap = new Map<object, object>();
     // 🚨 IDENTITY THAT LIVES ON A CARD MUST SURVIVE THE CLONE, AND `Card` IN THE IGNORE LIST IS NOT
     // ENOUGH TO GIVE IT THAT. `deepClone` treats a `Card` as opaque and never walks into it, so
@@ -954,10 +1024,13 @@ export class Store implements StoreLike {
     // away. Restoring the previous value makes the nesting harmless instead of load-bearing.
     const wasProbing = this.probing;
     const outerRaised = this.probeRaisedPrompt;
+    const outerDispatched = this.probeDispatched;
     this.probing = true;
     this.probeRaisedPrompt = false;
+    this.probeDispatched = false;
     let after: State;
     let raised: boolean;
+    let dispatched: boolean;
     try {
       after = this.callReduceEffect(card, this, probeState, probeEffect);
     } catch {
@@ -966,12 +1039,14 @@ export class Store implements StoreLike {
       return null;
     } finally {
       raised = this.probeRaisedPrompt;
+      dispatched = this.probeDispatched;
       this.probing = wasProbing;
       this.probeRaisedPrompt = outerRaised;
+      this.probeDispatched = outerDispatched;
       this.promptItems.length = promptItemsBefore;
       this.logId = logIdBefore;
     }
-    return { raised, after };
+    return { raised, dispatched, after };
   }
 
   /** The player who owns the card an effect comes from — a Tool's owner is the Pokemon's owner. */
