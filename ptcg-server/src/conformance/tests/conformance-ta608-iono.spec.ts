@@ -128,5 +128,17 @@ describe('TA-608 / TA-556: Iono pal-185 shuffles each hand through a system shuf
     const put = (res.events as Leg[]).filter(e => e.kind === 'moved' && e.origin?.zone === 'transit' && e.destination?.zone === 'deck');
     expect(put.filter(e => e.card!.startsWith('x')).map(e => e.destination!.position)).toEqual(['bottom', 'bottom']);
   });
+  it('Milotic evs-038 protects B with an EMPTY hand too: B is not shuffled and does not draw [TA-556]', () => {
+    const b = board();
+    b.players.B.hand = [];
+    b.players.B.bench = [{ stack: [{ iid: 'm0', printing: 'evs-037' }, { iid: 'm1', printing: 'evs-038' }], energy: [], tools: [], damage: 0, conditions: [], markers: markers() }];
+    const res = step(b, [PLAY as never, shuffle(['x1', 'x0']) as never]);
+    expect((res.pending as unknown as Pending).actor).toBe('A');
+    expect(res.state.players.B.hand).toEqual([]);
+    expect(res.state.players.B.deck.length).toBe(7);
+    const zones = (res.events as Array<{ kind: string; player?: string; zone?: string }>)
+      .filter(e => e.kind === 'shuffled').map(e => `${e.player}:${e.zone}`);
+    expect(zones).toEqual(['A:hand']);
+  });
 });
 

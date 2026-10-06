@@ -1679,12 +1679,13 @@ export function EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(
 ): State {
   const included: Player[] = [];
   for (const { player, cards } of players) {
-    if (cards.length > 0) {
-      const move = new MoveCardsEffect(player.hand, player.deck, { cards, sourceCard });
-      state = store.reduceEffect(state, move);
-      if (move.preventDefault) {
-        continue;
-      }
+    // The move is raised for an EMPTY hand too (a no-op move): protection (Milotic Dew Guard: "prevent all effects
+    // of that card done to you or your hand") is decided per player, not by hand size, so a protected player with no
+    // cards in hand is still neither shuffled nor drawn for.
+    const move = new MoveCardsEffect(player.hand, player.deck, { cards, sourceCard });
+    state = store.reduceEffect(state, move);
+    if (move.preventDefault) {
+      continue;
     }
     included.push(player);
   }

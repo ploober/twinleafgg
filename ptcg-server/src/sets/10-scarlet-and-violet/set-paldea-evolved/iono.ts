@@ -73,7 +73,7 @@ export class Iono extends TrainerCard {
       // or your hand") keeps their hand and does not draw.
       const lift = (who: Player, cards: Card[]): CardList | undefined => {
         const pile = new CardList();
-        if (cards.length === 0) { return pile; }
+        // The move is raised for an EMPTY hand too (a no-op move), so Dew Guard's protection does not depend on hand size.
         const move = new MoveCardsEffect(who.hand, pile, { cards, sourceCard: this });
         state = store.reduceEffect(state, move);
         if (move.preventDefault) { return undefined; }

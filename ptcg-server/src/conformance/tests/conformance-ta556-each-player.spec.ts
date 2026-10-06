@@ -247,3 +247,32 @@ describe('TA-556 (B.74): an answered shuffle is applied at once, while the other
     expect(ids(r.state.players.A.deck)).toEqual(['x1', 'ad0', 'ad1', 'ad2', 'ad3', 'ad4', 'ad5', 'ad6', 'x0']);
   });
 });
+
+describe('TA-556: Milotic evs-038 Dew Guard protects B even when B\'s hand is EMPTY (protection does not depend on hand size)', () => {
+  // "Whenever your opponent plays a Supporter card from their hand, prevent all effects of that card done to you or
+  // your hand." An empty hand has nothing to move, but the shuffle and the draw are still effects done to B.
+  const withMilotic = (printing: string): NeutralState => {
+    const b = board(printing);
+    b.players.B.hand = [];
+    b.players.B.bench = [{ stack: [{ iid: 'm0', printing: 'evs-037' }, { iid: 'm1', printing: 'evs-038' }], energy: [], tools: [], damage: 0, conditions: [], markers: markers() }];
+    return b;
+  };
+  const PLAY = { actor: 'A', type: 'playSupporter', card: 'sup' };
+
+  it('Judge por-076: B is not shuffled and does not draw; A draws 4 [TA-556]', () => {
+    const r = run(withMilotic('por-076'), [PLAY, JA]);
+    expect(pend(r).actor).toBe('A');
+    expect(ids(r.state.players.B.hand)).toEqual([]);
+    expect(ids(r.state.players.B.deck)).toEqual(['bd0', 'bd1', 'bd2', 'bd3', 'bd4', 'bd5', 'bd6']);
+    expect(seq(r)).toEqual(['shuffled:A', 'draw:A:4']);
+  });
+
+  it('Harlequin wht-083 (tails): B is not shuffled and does not draw; A draws 3 [TA-556]', () => {
+    const r = run(withMilotic('wht-083'), [PLAY, JA, flip('tails')]);
+    expect(pend(r).actor).toBe('A');
+    expect(ids(r.state.players.B.hand)).toEqual([]);
+    expect(ids(r.state.players.B.deck)).toEqual(['bd0', 'bd1', 'bd2', 'bd3', 'bd4', 'bd5', 'bd6']);
+    expect(ids(r.state.players.A.hand)).toEqual(['x1', 'ad0', 'ad1']);
+    expect(seq(r)).toEqual(['shuffled:A', 'draw:A:3']);
+  });
+});
