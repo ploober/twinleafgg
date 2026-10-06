@@ -97,8 +97,9 @@ export class LarrysStaraptor extends PokemonCard {
       };
 
       const applyBaseBenchDiscard = (s: State, benchTarget?: typeof opponent.bench[number]): State => {
-        // B.82 (#1834, #2002): the choices are made first (the Bench target, then the Energy), then the damage (the
-        // Active's 150, then the Bench 50), then the chosen Energy moves. TA-635: the Bench 50 is queued on
+        // B.82 (#1834, #2002): the choice is made before the damage; the chosen Energy moves after it (afterDamageMoves).
+        // The choices come first (the Bench target, then the Energy), then the damage (the Active's 150, then the Bench
+        // 50), then the chosen Energy moves. TA-635: the Bench 50 is queued on
         // afterDamageMoves ahead of the Energy discard (queued by its own pick), so it lands after the base damage and
         // before the discard, not when the Bench target is chosen.
         if (benchTarget) {
