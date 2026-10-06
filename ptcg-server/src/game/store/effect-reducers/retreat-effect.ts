@@ -46,7 +46,12 @@ function retreatPokemon(store: StoreLike, state: State, effect: RetreatEffect) {
   player.switchPokemon(player.bench[effect.benchIndex], store, state);
 }
 
-function promptBenchAndRetreat(store: StoreLike, state: State, player: Player): State {
+/**
+ * TA-580: the Bench choice of the two-step (live client) retreat. Retreating is one act: the cost is paid and
+ * the Pokémon's effects / Special Conditions end only once a Bench Pokémon is chosen, so `pay` runs here, after
+ * the choice. A cancelled choice (null) changes nothing, and the Pokémon has not retreated this turn.
+ */
+function promptBenchAndRetreat(store: StoreLike, state: State, player: Player, pay: () => void): State {
   const prompt = new ChoosePokemonPrompt(
     player.id,
     GameMessage.CHOOSE_POKEMON_TO_SWITCH,
@@ -63,6 +68,8 @@ function promptBenchAndRetreat(store: StoreLike, state: State, player: Player): 
     if (benchIndex < 0) {
       return;
     }
+    player.active.clearEffects();
+    pay();
     retreatPokemon(store, state, new RetreatEffect(player, benchIndex));
   });
 }
@@ -131,8 +138,7 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
     state = store.reduceEffect(state, checkRetreatCost);
 
     if (checkRetreatCost.cost.length === 0) {
-      player.active.clearEffects();
-      return promptBenchAndRetreat(store, state, player);
+      return promptBenchAndRetreat(store, state, player, () => undefined);
     }
 
     const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
@@ -155,9 +161,8 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
         return;
       }
       const cards = energy.map(e => e.card);
-      player.active.clearEffects();
-      player.active.moveCardsTo(cards, player.discard);
-      promptBenchAndRetreat(store, state, player);
+      // TA-580: the chosen Energy is discarded only once the Bench choice is made (promptBenchAndRetreat).
+      promptBenchAndRetreat(store, state, player, () => player.active.moveCardsTo(cards, player.discard));
     });
   }
 

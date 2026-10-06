@@ -25,7 +25,7 @@ import { padDeck, setupGame } from '../../sets/tests/test-helpers';
  * RetreatAction(benchIndex), whose Bench target is fixed before any cost is paid; RetreatStartAction
  * is sent only by the socket client. This spec drives the engine directly.
  */
-describe('Conformance gap: retreat cancelled at the Bench choice (RetreatStartAction)', () => {
+describe('TA-580: retreat cancelled at the Bench choice (RetreatStartAction)', () => {
 
   function board() {
     const game = setupGame({
@@ -47,9 +47,7 @@ describe('Conformance gap: retreat cancelled at the Bench choice (RetreatStartAc
     return { game, player, retreatCost: cost.cost.length };
   }
 
-  it('REPRO (open): cancelling the Bench choice leaves the Energy discarded, the Pokémon cured, and retreat still available', () => {
-    // When this goes red, the bug is fixed: flip the assertion to the rule (Energy still attached,
-    // still Poisoned, no Energy in the discard pile).
+  it('TA-580: cancelling the Bench choice costs nothing: the Energy stays attached, the Pokémon stays Poisoned, and it may still retreat once', () => {
     const { game, player, retreatCost } = board();
     expect(retreatCost).toBeGreaterThan(0);
     expect(player.active.energies.cards.length).toBe(2);
@@ -63,6 +61,7 @@ describe('Conformance gap: retreat cancelled at the Bench choice (RetreatStartAc
       seen.push(prompt.constructor.name);
       return origPrompt(state, prompt, cb);
     };
+    // One-shot override: only the first Bench choice is cancelled.
     game.overridePrompt(ChoosePokemonPromptType, (p: Prompt<any>) => {
       expect((p as ChoosePokemonPrompt).options.allowCancel).toBe(true);
       return null;
@@ -76,20 +75,40 @@ describe('Conformance gap: retreat cancelled at the Bench choice (RetreatStartAc
     expect(player.active.getPokemonCard()?.fullName).toBe('Ralts SIT');
     expect(player.bench[0].getPokemonCard()?.fullName).toBe('Manaphy BRS');
     expect(player.retreatedTurn).not.toBe(game.state.turn);
-    // DEFECT: the Retreat Cost was paid anyway ...
-    expect(player.active.energies.cards.length).toBe(2 - retreatCost);
-    expect(player.discard.cards.length).toBe(retreatCost);
-    // ... and the Special Condition was cured anyway.
-    expect(player.active.specialConditions).not.toContain(SpecialCondition.POISONED);
+    // The Retreat Cost was not paid ...
+    expect(player.active.energies.cards.length).toBe(2);
+    expect(player.discard.cards.length).toBe(0);
+    // ... and the Special Condition was not cured.
+    expect(player.active.specialConditions).toContain(SpecialCondition.POISONED);
 
-    // DEFECT: retreat is still available this turn; a second retreat pays again and completes.
+    // Retreat is still available this turn; completing it pays the cost ONCE.
     seen.length = 0;
     game.store.dispatch(new RetreatStartAction(player.id));
     expect(seen).toEqual(['ChooseEnergyPrompt', 'ChoosePokemonPrompt']);
     expect(player.active.getPokemonCard()?.fullName).toBe('Manaphy BRS');
     expect(player.bench[0].getPokemonCard()?.fullName).toBe('Ralts SIT');
-    expect(player.discard.cards.length).toBe(2 * retreatCost);
+    expect(player.bench[0].energies.cards.length).toBe(2 - retreatCost);
+    expect(player.discard.cards.length).toBe(retreatCost);
+    expect(player.bench[0].specialConditions).not.toContain(SpecialCondition.POISONED);
     expect(player.retreatedTurn).toBe(game.state.turn);
+  });
+
+  it('TA-580: a free retreat cancelled at the Bench choice keeps its Special Condition', () => {
+    const { game, player } = board();
+    // Make the retreat free: drop the cost via a passing CheckRetreatCostEffect hook.
+    const store: any = game.store;
+    const origReduce = store.reduceEffect.bind(store);
+    store.reduceEffect = (state: any, effect: any) => {
+      const r = origReduce(state, effect);
+      if (effect instanceof CheckRetreatCostEffect) { effect.cost = []; }
+      return r;
+    };
+    game.overridePrompt(ChoosePokemonPromptType, () => null);
+    game.store.dispatch(new RetreatStartAction(player.id));
+    expect(player.active.getPokemonCard()?.fullName).toBe('Ralts SIT');
+    expect(player.active.energies.cards.length).toBe(2);
+    expect(player.active.specialConditions).toContain(SpecialCondition.POISONED);
+    expect(player.retreatedTurn).not.toBe(game.state.turn);
   });
 
   it('CONTROL: completing the Bench choice (and the one-step RetreatAction) retreats once, paying the cost once', () => {
