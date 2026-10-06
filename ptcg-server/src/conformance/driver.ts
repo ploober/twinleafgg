@@ -363,6 +363,11 @@ interface LoopResult {
    * spliced out of `state.prompts` (store.ts), so the selection has to be remembered here.
    */
   completedSearches?: Array<{ cards: Card[]; source: CardList }>;
+  /**
+   * TA-590: the board the trace has reached when it differs from the engine's (search picks lifted into transit at
+   * a pause the replay ran through, still in the deck on the engine side). step()'s closing legs start from it.
+   */
+  traceBoard?: NeutralState;
 }
 
 /**
@@ -734,6 +739,57 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // B.81: the cards a `reveal` named since the last dispatch — their next leg is `public`.
   const revealedSince = new Set<string>();
 
+  // TA-590 (B.80 §5 / §8, B.81 §6): a search pick is lifted into transit AT THE PICK. step() projects that at a pause
+  // (the decomposer's fix-up) and closes the trace with its leg, but a replay that ran on past the pause skipped the
+  // leg: the completed search read deck -> hand and its reveal read the engine's deck, where the card stays until the
+  // prompt resolves (and, for a generator card such as Earthen Vessel, until its show is acknowledged). `held` is
+  // every deck-search pick made at a pause the replay ran through: the trace's board shows it in transit (`overlay`)
+  // until the engine takes it out of the deck. Its lift leg is emitted at the pause, every dispatch's legs are
+  // derived between overlaid boards, and the reveal names it `from: transit`. Nothing changes for a search completed
+  // by the action that made its only pick: it never pauses, and both engines read deck -> hand, from: deck.
+  const held = new Map<Card, { iid: string; source: CardList; legs: NeutralEvent[] }>();
+  const isDeckSearch = (prompt: Prompt<any>): prompt is ChooseCardsPrompt => prompt instanceof ChooseCardsPrompt
+    && !isDiscardPick(prompt) && prompt.options.isSecret !== true && prompt.cards.zoneTag === 'deck';
+  const overlay = (board: NeutralState): NeutralState => {
+    for (const [card, h] of held) {
+      if (h.source.cards.includes(card)) { liftToTransit(board, h.iid, { visibility: 'owner', origin: { zone: 'deck' } }); }
+    }
+    return board;
+  };
+  const traceProject = (): NeutralState => overlay(projectState(game.store.state, game.ctx));
+  const liftPausedSearchPicks = (prompt: Prompt<any>, picks: WirePick[]): void => {
+    if (!isDeckSearch(prompt)) { return; }
+    const fresh: Card[] = [];
+    for (const p of realPicks(picks) as Array<{ index: number }>) {
+      const card = prompt.cards.cards[p.index];
+      const iid = card === undefined ? undefined : game.ctx.cardToIid.get(card);
+      if (card === undefined || iid === undefined || held.has(card)) { continue; }
+      // The source is the player's own deck (a prompt over a copied pile tagged `deck` would never lose the card).
+      const deck = game.store.state.players.map(pl => pl.deck).find(d => d.cards.includes(card));
+      if (deck === undefined) { continue; }
+      fresh.push(card);
+      held.set(card, { iid, source: deck, legs: [] });
+    }
+    if (fresh.length === 0) { return; }
+    const before = projectState(game.store.state, game.ctx);
+    for (const card of held.keys()) {
+      if (!fresh.includes(card)) { const h = held.get(card)!; if (h.source.cards.includes(card)) { liftToTransit(before, h.iid, { visibility: 'owner', origin: { zone: 'deck' } }); } }
+    }
+    const legs = deriveMoved(before, traceProject());
+    events.push(...legs);
+    for (const leg of legs) {
+      const card = game.ctx.iidToCard.get((leg as { card: string }).card);
+      const h = card === undefined ? undefined : held.get(card);
+      if (h !== undefined) { h.legs.push(leg); }
+    }
+  };
+  // B.34 as amended by B.80: a held pick was in transit at the start of the action.
+  const snapshotZones = (): Map<Card, string> => {
+    const m = snapshotCardZones(game.state);
+    for (const [card, h] of held) { if (h.source.cards.includes(card)) { m.set(card, 'transit'); } }
+    return m;
+  };
+
   // TA-593: every positional take from a player's own deck into that player's own hand is a draw. Live identity
   // only (a probe's cloned lists never match), cleared when the loop ends; a dispatch that throws drops its draws.
   const drawOps: Array<{ player: NeutralPlayerId; count: number }> = [];
@@ -752,7 +808,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   let segment: { start: NeutralState; legs: NeutralEvent[] } | undefined;
   CardList.legCut = (who: unknown): void => {
     if (segment === undefined || !game.store.state.players.some(p => p === who)) { return; }
-    const now = projectState(game.store.state, game.ctx);
+    const now = traceProject();
     segment.legs.push(...deriveMoved(segment.start, now, revealedSince, wholeDeckShufflePending(game.store.state)));
     segment.start = now;
   };
@@ -761,7 +817,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
     const beforeState = projectState(game.state, game.ctx);
-    segment = { start: beforeState, legs: [] };
+    // TA-590: the legs run between the trace's boards (held search picks in transit); every other derivation reads
+    // the engine's own.
+    const movedBefore = held.size > 0 ? traceProject() : beforeState;
+    segment = { start: movedBefore, legs: [] };
     // TA-252: display names captured from the PRE-dispatch state — the KO'd are only in `before`.
     const beforeNames = basicIidDisplayNames(game.state, game.ctx);
     let starved: FlipStarvation | undefined;
@@ -797,6 +856,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       segment = undefined;
     }
     const afterState = projectState(game.state, game.ctx);
+    const movedAfter = held.size > 0 ? overlay(projectState(game.state, game.ctx)) : afterState;
     // All-card iid -> name (energy/tool/evolution names for the observed-tier state-diff derivations).
     // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
     const allNames = allIidNames(game.ctx);
@@ -817,11 +877,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
     // A starved dispatch may have rolled back past its cuts: then the single before/after diff is the trace.
     if (starved === undefined && cut !== undefined && cut.legs.length > 0) {
-      events.push(...cut.legs, ...deriveMoved(cut.start, afterState, revealedSince, wholeDeckShufflePending(game.state)));
+      events.push(...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, wholeDeckShufflePending(game.state)));
     } else {
-      events.push(...deriveMoved(beforeState, afterState, revealedSince, wholeDeckShufflePending(game.state)));
+      events.push(...deriveMoved(movedBefore, movedAfter, revealedSince, wholeDeckShufflePending(game.state)));
     }
     revealedSince.clear();
+    // TA-590: a held pick the engine has taken out of the deck is placed; the trace has its leg.
+    for (const [card, h] of held) { if (!h.source.cards.includes(card)) { held.delete(card); } }
     if (starved !== undefined) { throw starved; }
   };
 
@@ -830,7 +892,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // consumed before the failure, and the normalized rejection. Non-GameError throws are adapter /
   // contract bugs and keep propagating.
   try {
-    return loop();
+    const done = loop();
+    if (held.size > 0) { done.traceBoard = traceProject(); }
+    return done;
   } catch (err) {
     // Store.reduce restores a pre-dispatch CLONE on a throw, so store.state and the driver's
     // game.state alias diverge (game.state keeps any partial mutations). Resync before projecting.
@@ -847,12 +911,18 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         actor: 'system', descriptor: 'Coin flip',
         legalActions: [{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }],
       };
-      return { events, pending: toWirePending(flipPending), applied: cursor.i };
+      return { events, pending: toWirePending(flipPending), applied: cursor.i, traceBoard: held.size > 0 ? traceProject() : undefined };
     }
     const rejection = mapRejection(err);
     if (rejection === undefined) {
       throw err;
     }
+    // TA-590: a rejection reports the board before the open decision's picks (step() re-projects the open prompt with
+    // none) and a held pick still in the deck there: its lift leg leaves the trace with it.
+    const drop = new Set<NeutralEvent>();
+    for (const [card, h] of held) { if (h.source.cards.includes(card)) { h.legs.forEach(l => drop.add(l)); } }
+    for (let i = events.length - 1; i >= 0 && drop.size > 0; i--) { if (drop.has(events[i])) { events.splice(i, 1); } }
+    held.clear();
     // The cursor is advanced past an action before it is dispatched, so on a rejection it points one
     // past the offending action; `applied` is therefore the count of actions applied before it.
     return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection };
@@ -1025,7 +1095,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // would otherwise read the stale pre-action zone (`hand`) instead of its current one (`deck`).
         // The cards have not moved yet at this point (the dispatch below is what runs the card code),
         // so this still reports the SOURCE zone a within-resolution search relocates from (TA-373 intact).
-        actionStartZones = snapshotCardZones(game.state);
+        actionStartZones = snapshotZones();
         // B.80: remember a completed SEARCH (a non-discard, non-secret ChooseCards over a settled deck or
         // discard pile) so a later pause in this step can project its still-in-zone selections in transit.
         if (prompt instanceof ChooseCardsPrompt && Array.isArray(result) && result.length > 0
@@ -1105,6 +1175,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // decomposer's take-immediately fix-up (CF-1).
         return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum }, completedSearches };
       }
+      // TA-590: a pause the replay runs through: the search's picks so far are in transit here.
+      liftPausedSearchPicks(prompt, accum);
       // R1 (next-action-completes): if the next action is not one of this decision's pick types and
       // the decision permits stopping (its internal `endChoice` marker is present), synthesize the
       // terminator and finalize on the next iteration — without consuming the action.
@@ -1212,7 +1284,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // single system flip pause. See the outer catch and dispatchAndCollect above.
       // TA-373: snapshot pre-action card zones so a reveal fired inside this action's effect reports
       // each card's SOURCE zone, not the zone a mid-effect search moved it into.
-      actionStartZones = snapshotCardZones(game.state);
+      actionStartZones = snapshotZones();
       revealedThisAction = new Set<string>();
       // CF-65 sub-shape 3: a new top-level action closes whatever attack was in flight; a `declareAttack`
       // opens one (see `InFlightAttack`). Resolution failures are the dispatch's to report, not this note's.
@@ -1282,7 +1354,7 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   if (initial.phase === 'setup') {
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
-  const { events, pending, applied, rejection, midPrompt, completedSearches } = runLoop(game, actions);
+  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard } = runLoop(game, actions);
   // B.81: the board as the engine holds it, before the fix-ups below re-home picks already made; the legs between
   // this and the fixed-up board are the pause's own `moved` events (appended after the dispatch legs).
   const raw = projectGame(game);
@@ -1343,7 +1415,7 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   // cost discard already in the pile): their legs close the trace so the harness's replay (initialState + legs)
   // lands on this board. A rejection's state is the rolled-back board and emits none.
   if (rejection === undefined) {
-    events.push(...deriveMoved(raw, state));
+    events.push(...deriveMoved(traceBoard ?? raw, state));
   }
   // CF-65 sub-shape 3 (2026-09-11): while an attack is in flight and the response pauses inside it, project
   // the DECLARED attack (with its declaration turn) as the attacker's last attack — the engine's record is
