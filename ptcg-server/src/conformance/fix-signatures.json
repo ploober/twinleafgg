@@ -11541,6 +11541,516 @@
       "fixes": [
         "FX-0422"
       ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/galvantula.ts",
+      "signatures": [
+        "const lightningEnergies = checkProvidedEnergy.energyMap.filter(e => StateUtils.providesMatchesType(e.provides, CardType.LIGHTNING));"
+      ],
+      "note": "batch 5 (FX-0427, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0427"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/gothita.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/tranquill.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/mcs-hype-up.ts",
+      "signatures": [
+        "public regulationMark: string = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/other-prints.ts",
+      "signatures": [
+        "export class EmceesHype2DRI extends EmceesHypeDRI163 { public setNumber = '220'; public regulationMark = 'I'; public fullName: string = 'Emcee\\'s Hype2 DRI'; public set = 'DRI';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-journey-together/dudunsparce-ex.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-journey-together/other-prints.ts",
+      "signatures": [
+        "export class DudunsparceexFA extends Dudunsparceex { public regulationMark = 'I'; public fullName = 'Dudunsparce exFA JTG'; public setNumber = '178';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-journey-together/toedscool.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/dartrix.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/decidueye-ex.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/patrol-cap.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/rowlet.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/toxel.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/glimmet-2.ts",
+      "signatures": [
+        "// TA-250 / B.33: the search whiffs on an empty deck, but \"Then, shuffle your deck\" names an object that survives,"
+      ],
+      "note": "batch 5 (FX-0428, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0428"
+      ]
+    },
+    {
+      "file": "set-paldean-fates/haunter.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/crocalor.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/orthworm.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/porygon.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {"
+      ],
+      "note": "batch 5 (FX-0425, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0425"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/skeledirge-ex.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/abra.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/eevee.ts",
+      "signatures": [
+        "// is still owed. This threw CANNOT_PLAY_THIS_CARD, the Trainer answer (#840)."
+      ],
+      "note": "batch 5 (FX-0428, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0428"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/hitmonlee.ts",
+      "signatures": [
+        "public regulationMark: string = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/protective-goggles.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/seaking.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/spearow.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet-promos/other-prints.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/bisharp.ts",
+      "signatures": [
+        "public regulationMark: string = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/greedent.ts",
+      "signatures": [
+        "public regulationMark = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/kingambit.ts",
+      "signatures": [
+        "public regulationMark: string = 'G';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/youngster.ts",
+      "signatures": [
+        "if (RECYCLE_RETURNS_EVERY_CARD(player.deck.cards.length, player.hand.cards.filter(c => c !== this).length, 5)) {"
+      ],
+      "note": "batch 5 (FX-0428, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0428"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/electabuzz.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/blitzle.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/exeggutor.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/meddling-memo.ts",
+      "signatures": [
+        "if (RECYCLE_RETURNS_EVERY_CARD(opponent.deck.cards.length, opponent.hand.cards.length, opponent.hand.cards.length)) {"
+      ],
+      "note": "batch 5 (FX-0428, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0428"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/adversity-policy.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/ange-floette.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/other-prints.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/prism-tower.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-perfect-order/hole-digging-shovel.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/other-prints.ts",
+      "signatures": [
+        "public regulationMark = 'I';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pitch-black/other-prints.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "batch 5 (FX-0426, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "set-pitch-black/shieldon.ts",
+      "signatures": [
+        "// TA-494 / B.84 (1), #77: the choice is asked where it was (B.84 (3) is undecided); the Energy is discarded after"
+      ],
+      "note": "batch 5 (FX-0425, 2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0425"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/blaziken.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-494 (2026-10-06): TA-494 family A, the in-pool members still open: Trubbish cri-056 Acid Spray and Porygon par-142 Data Displacement flip ",
+      "fixes": [
+        "FX-0425"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/black-kyurem-ex.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "TA-637 (2026-10-06): 49 SV / ME printings carry their printed regulation mark (own class or reprint override); Black Kyurem ex ssp-048 gets i",
+      "fixes": [
+        "FX-0426"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "const probe = new CheckMoveOpponentEnergyEffect(effect, energy, cardList);"
+      ],
+      "note": "TA-169, TA-162 (2026-10-06): TA-169: Elgyem blk-040 Slight Shift no longer offers an Energy whose move a protection (Mist) would prevent (read-only C",
+      "fixes": [
+        "FX-0427"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "export function RECYCLE_RETURNS_EVERY_CARD(deckSize: number, moved: number, draw: number): boolean {"
+      ],
+      "note": "TA-250, TA-308 (2026-10-06): TA-250: the owed 'Then, shuffle your deck' on an empty deck for 8 in-pool printings outside the attack census (Glimmet, ",
+      "fixes": [
+        "FX-0428"
+      ]
+    },
+    {
+      "file": "set-journey-together/magearna.ts",
+      "signatures": [
+        "if (effect instanceof AttachEnergyEffect && effect.fromHand && effect.player.active.cards.includes(this)) {"
+      ],
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "fixes": [
+        "FX-0429"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/calamitous-snowy-mountain.ts",
+      "signatures": [
+        "if (effect instanceof AttachEnergyEffect && effect.fromHand && StateUtils.getStadiumCard(state) === this) {"
+      ],
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "fixes": [
+        "FX-0429"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/gengar-ex.ts",
+      "signatures": [
+        "if (effect instanceof AttachEnergyEffect && effect.fromHand) {"
+      ],
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "fixes": [
+        "FX-0429"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/minun.ts",
+      "signatures": [
+        "if (effect instanceof AttachEnergyEffect && effect.fromHand) {"
+      ],
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "fixes": [
+        "FX-0429"
+      ]
+    },
+    {
+      "file": "game/store/effects/play-card-effects.ts",
+      "signatures": [
+        "this.fromHand = player.hand.cards.includes(energyCard);"
+      ],
+      "note": "TA-641 (2026-10-06): Attach triggers printed 'attaches an Energy card from (your / their) hand' need an attach from the hand: AttachEnergyEff",
+      "fixes": [
+        "FX-0429"
+      ]
     }
   ]
 }
