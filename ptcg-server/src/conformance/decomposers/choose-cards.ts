@@ -144,7 +144,22 @@ export function isDiscardPick(prompt: ChooseCardsPrompt): boolean {
  *                            now `min: 0`, so `min >= |eligible|` cannot hold and the collapse cannot reach
  *                            it. That is the only in-pool deck-sourced site of this message.
  *
- * The other 38 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. Any
+ *   CHOOSE_CARD_TO_EVOLVE  — added 2026-10-06 (TA-619) on driven cells, Rare Candy svi-191 onto Pidgey mew-016:
+ *                            ONE fitting Stage 2 in hand (obf-164) -> roto COLLAPSES and evolves, twinleaf surfaced
+ *                            choose{obf-164}; TWO (obf-164 + mew-018) -> BOTH surface the WHICH pick. The source is
+ *                            the acting player's own HAND, a zone they see, so the #903 hidden-zone hazard does not
+ *                            reach it. Census of the in-pool sites of this message (2026-10-06): forced-capable
+ *                            (`min: 1, allowCancel: false`, hand) are Rare Candy svi-191 / svi-256 HR / paf-089 (the
+ *                            svi class) and Phantump cri-038's Ability pick of an evolution from hand -- both collapse
+ *                            at one fitting card. Rare Candy meg-125 / meg-175 / "Rare Candy2" svi-256 run the Holon
+ *                            Phantoms class (`allowCancel: true`), so they cannot. Every in-pool DECK-sourced site
+ *                            (Finizen, Palafin, Pidove, Duosion, Reuniclus, Exeggcute, Misdreavus, Team Rocket's
+ *                            Nidorina, Grand Tree, Technical Machine: Evolution; Salvatore, Glimmet, Team Rocket's
+ *                            Pupitar, Dwebble) is `min: 0` or `allowCancel: true`, so `min >= |eligible|` or the
+ *                            non-cancel term fails and a deck search is never forced (out-of-pool Vivillion ssp-007
+ *                            and Sandshrew M6-035 have the same shape).
+ *
+ * The other 37 messages are UNMEASURED, which is not the same as judged-unsafe or judged-safe. Any
  * candidate needs the same cells driven before it is added, because "obviously the same shape" is how
  * the zone rule this change removes got written in the first place.
  *
@@ -182,6 +197,7 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
   GameMessage.CHOOSE_CARD_TO_SHUFFLE,
   GameMessage.CHOOSE_CARD_TO_DECK,
   GameMessage.CHOOSE_CARD_TO_ATTACH,
+  GameMessage.CHOOSE_CARD_TO_EVOLVE,
 ]);
 
 /**

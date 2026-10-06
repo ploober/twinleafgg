@@ -2,10 +2,10 @@ import { PlayPokemonEffect } from '../effects/play-card-effects';
 import { GameError } from '../../game-error';
 import { GameMessage, GameLog } from '../../game-message';
 import { Effect } from '../effects/effect';
-import { BoardEffect, Stage, SuperType } from '../card/card-types';
+import { Stage, SuperType } from '../card/card-types';
 import { State } from '../state/state';
 import { StoreLike } from '../store-like';
-import { CheckPokemonPlayedTurnEffect, CheckSpecialConditionRemovalEffect } from '../effects/check-effects';
+import { CheckPokemonPlayedTurnEffect } from '../effects/check-effects';
 import { EvolveEffect } from '../effects/game-effects';
 import { PowerType } from '../card/pokemon-types';
 
@@ -119,26 +119,10 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
 
       const evolveEffect = new EvolveEffect(effect.player, effect.target, effect.pokemonCard);
       store.reduceEffect(state, evolveEffect);
-      clearUntilLeavesPlay(effect.pokemonCard);
-      effect.pokemonCard.marker.markers = [];
-
-      // Check which special conditions should be preserved during evolution
-      const checkRemovalEffect = new CheckSpecialConditionRemovalEffect(effect.player, effect.target);
-      store.reduceEffect(state, checkRemovalEffect);
-      effect.target._preservedConditionsDuringEvolution = checkRemovalEffect.preservedConditions;
-
-      effect.player.removePokemonEffects(effect.target);
-
-      // Clear the preserved conditions after evolution is complete
-      effect.target._preservedConditionsDuringEvolution = undefined;
-
-      effect.target.marker.markers = [];
-      effect.target.showBasicAnimation = false;
-      effect.target.triggerEvolutionAnimation = true;
-
-      if (effect.target.boardEffect.includes(BoardEffect.ABILITY_USED)) {
-        effect.target.removeBoardEffect(BoardEffect.ABILITY_USED);
-      }
+      // TA-620: the evolve-time clean-up (untilLeavesPlay fields, markers, Special Conditions via
+      // CheckSpecialConditionRemovalEffect + removePokemonEffects, animation flags, ABILITY_USED) now runs inside the
+      // EvolveEffect reduce (game-effect.ts APPLY_EVOLUTION_CLEANUP), so Rare Candy and every direct EvolveEffect
+      // site gets it too. It is not repeated here.
 
       // Emit evolution animation event
       emitAnimationEvent(store, 'evolution', {

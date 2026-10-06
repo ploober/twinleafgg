@@ -10,7 +10,8 @@ import {
   CheckAttackCostEffect,
   CheckPokemonStatsEffect,
   CheckPokemonTypeEffect,
-  CheckProvidedEnergyEffect
+  CheckProvidedEnergyEffect,
+  CheckSpecialConditionRemovalEffect
 } from '../effects/check-effects';
 import { Effect } from '../effects/effect';
 import {
@@ -1008,6 +1009,8 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
       effect.target.abilityLockActivationOrder = 0;
       STAMP_ABILITY_LOCK_ACTIVATION(state, effect.target, effect.pokemonCard);
     }
+
+    APPLY_EVOLUTION_CLEANUP(store, state, effect);
   }
 
   if (effect instanceof MoveCardsEffect) {
@@ -1179,5 +1182,38 @@ function applyWhileInPlayOpponentWeakness(
   store.reduceEffect(state, canApply);
   if (canApply.target) {
     effect.weakness = [{ type: source.whileInPlayOpponentWeakness }];
+  }
+}
+
+/**
+ * TA-620: what evolving does to the evolved Pokemon, applied at the EvolveEffect choke point so EVERY evolution gets
+ * it, not only the drag-from-hand path. Rare Candy svi-191 (and every card that dispatches an EvolveEffect itself)
+ * used to skip it, so the Stage 2 stayed Asleep. Compendium #1132: "This counts as evolving that Pokémon" means it
+ * "counts towards the one evolution per turn for that Pokémon ... and removes Special Conditions on that Pokémon";
+ * #287: the phrase "refers to evolution rules that remove Special Conditions on that Pokémon".
+ *
+ * This is the block that play-pokemon-effect.ts ran after its own EvolveEffect, moved here verbatim and in the same
+ * order (it now runs inside the reduce, after the card moves and the ability-lock stamp, exactly where drag-evolve ran
+ * it); drag-evolve no longer runs it, so nothing is applied twice. Damage counters stay. Conditions a card preserves
+ * through evolution (CheckSpecialConditionRemovalEffect: Full Flame, Muk, Sea of Nothingness) are honoured on every
+ * path.
+ */
+function APPLY_EVOLUTION_CLEANUP(store: StoreLike, state: State, effect: EvolveEffect): void {
+  const evolved = effect.pokemonCard;
+  evolved.cannotUseAttackUntilLeavesPlay = undefined;
+  evolved.whileInPlayOpponentWeakness = undefined;
+  evolved.marker.markers = [];
+
+  const checkRemovalEffect = new CheckSpecialConditionRemovalEffect(effect.player, effect.target);
+  store.reduceEffect(state, checkRemovalEffect);
+  effect.target._preservedConditionsDuringEvolution = checkRemovalEffect.preservedConditions;
+  effect.player.removePokemonEffects(effect.target);
+  effect.target._preservedConditionsDuringEvolution = undefined;
+
+  effect.target.marker.markers = [];
+  effect.target.showBasicAnimation = false;
+  effect.target.triggerEvolutionAnimation = true;
+  if (effect.target.boardEffect.includes(BoardEffect.ABILITY_USED)) {
+    effect.target.removeBoardEffect(BoardEffect.ABILITY_USED);
   }
 }
