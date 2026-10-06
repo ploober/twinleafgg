@@ -17,8 +17,8 @@ import {
  * transit: both engines say deck -> hand and from: deck (the control below).
  *
  * Mutation guards: drop the mid-decision lift in driver.ts (`liftPausedSearchPicks`) and the [TA-590] cells red
- * (six of them, measured on c6ea52669); skip the rejection path's removal of a held pick's lift leg and the rejection
- * cell reds (the trace lifts a card the rolled-back board shows in the deck).
+ * (six of them, measured on c6ea52669); the rejection cell now pins the
+ * applied prefix's response (TA-639), so it reds if a rejection at the pause drops the pick's lift or its board.
  */
 
 type Moved = Extract<NeutralEvent, { kind: 'moved' }>;
@@ -165,11 +165,16 @@ describe('TA-590: a search pick paused in transit is revealed from transit (Gimm
     expect(replays(initial, res)).toEqual([]);
   });
 
-  it('a rejected action after the pick: the board is the pre-pick board and the trace carries no lift [TA-590 ssp-097]', () => {
+  // TA-639 (2026-10-06) supersedes this cell's earlier "pre-pick board, no lift": a rejection reports `applied` = the
+  // prefix, so its board and trace are that prefix's response (the pick in transit, its lift leg), as rotomancer answers
+  // (driven on :8099 2026-10-06: invalidAction applied 2, transit [ad1], moved ad1 deck -> transit).
+  it('a rejected action after the pick: the board and trace are the pick pause\'s (TA-639) and still replay [TA-590 ssp-097]', () => {
     const initial = board();
+    const atPick = step(initial, [ATTACK, choose('ad1')]);
     const res = step(initial, [ATTACK, choose('ad1'), { actor: A, type: 'endTurn' } as never]);
     expect(res.status).toBe('invalidAction');
-    expect(legs(res.events, 'ad1')).toEqual([]);
+    expect(legs(res.events, 'ad1')).toEqual(['deck>transit:owner']);
+    expect(res.state).toEqual(atPick.state);
     expect(replays(initial, res)).toEqual([]);
   });
 
