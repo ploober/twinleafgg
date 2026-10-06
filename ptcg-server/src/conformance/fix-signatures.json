@@ -10886,6 +10886,276 @@
       "fixes": [
         "FX-0404"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/hydreigon.ts",
+      "signatures": [
+        "// TA-538: \"Discard the other cards\" -- iterate a copy: MOVE_CARDS removes from temp, and iterating temp itself"
+      ],
+      "note": "class-D ability/state batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/technical-machine-evolution.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false, blocked: blocked2 } // TA-553: an attack's \"up to 2\" is 0..2 (#2301)"
+      ],
+      "note": "class-D gating batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/toedscool.ts",
+      "signatures": [
+        "// TA-534: the heal is Absorb's (index 1, \"Heal 20 damage from this Pokémon.\"); Kick (index 0) has no text."
+      ],
+      "note": "class-D ability/state batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/toedscool2.ts",
+      "signatures": [
+        "// TA-517: no Benched Pokemon means there is nowhere to attach; the attack does nothing."
+      ],
+      "note": "class-D gating batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/wimpod.ts",
+      "signatures": [
+        "// TA-525: the discard happens only on heads; the `return` inside the flip callback did not gate a prompt"
+      ],
+      "note": "class-D gating batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/bulbasaur.ts",
+      "signatures": [
+        "const healEffect = new HealEffect(player, effect.player.active, 20); // TA-547: printed 20"
+      ],
+      "note": "class-D damage batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0415"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/fearow.ts",
+      "signatures": [
+        "// TA-537: a search for any card, unspecified kind, must take at least 1 (#2301 exception); the prefab whiffs an"
+      ],
+      "note": "class-D gating batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/giovannis-charisma.ts",
+      "signatures": [
+        "// TA-533: \"If you do, attach an Energy card from your hand to your Active Pokemon\" is an instruction, not an"
+      ],
+      "note": "class-D gating batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/venusaur-ex.ts",
+      "signatures": [
+        "// TA-526: \"if this Pokémon is in the Active Spot\" -- the Pokémon on top of the Active stack, not the Basic at"
+      ],
+      "note": "class-D ability/state batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/arcanine-ex.ts",
+      "signatures": [
+        "// TA-540: `damage` is already in HP (one counter = 10), so 10 per counter is the damage itself."
+      ],
+      "note": "class-D damage batch (2026-10-06); validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0415"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/other-prints.ts",
+      "signatures": [
+        "public regulationMark = 'H';"
+      ],
+      "note": "TA-630 (2026-10-06): printed regulation mark; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0413"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "function APPLY_EVOLUTION_CLEANUP(store: StoreLike, state: State, effect: EvolveEffect): void {"
+      ],
+      "note": "TA-619, TA-620 (2026-10-06): Rare Candy's one fitting Stage 2 collapses (CHOOSE_CARD_TO_EVOLVE on the CF-14 allow-list) and every EvolveEffect clears",
+      "fixes": [
+        "FX-0408"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "let attackDeferPrev = state.deferAfterDamage;"
+      ],
+      "note": "TA-562 (2026-10-06): The CF-74 damage-response hold-back is armed before the attack's own effect (and in both copy-attack runners), so a dama",
+      "fixes": [
+        "FX-0409"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/orthworm-ex.ts",
+      "signatures": [
+        "const putCountersEffect = new PutCountersEffect(effect, 20 * energyCount);"
+      ],
+      "note": "TA-634 (2026-10-06): Orthworm ex scr-162 Pummeling Payback reacts once per attack, after the attack's effects, only when this Pokémon (Active",
+      "fixes": [
+        "FX-0411"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/geeta.ts",
+      "signatures": [
+        "// TA-632: \"During this turn, your Pokémon can't attack\" does not depend on the search, so it is set on every"
+      ],
+      "note": "TA-632 (2026-10-06): Geeta obf-188 is playable with no Benched Pokémon (the Active can take the Energy) and its can't-attack lock is set on e",
+      "fixes": [
+        "FX-0412"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/waitress.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-630 (2026-10-06): Twelve Ascended Heroes printings carry their printed regulation mark (overrides in other-prints.ts; Miraidon ex asc-073 ",
+      "fixes": [
+        "FX-0413"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/chien-pao-ex.ts",
+      "signatures": [
+        "const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {"
+      ],
+      "note": "TA-636, TA-497 (2026-10-06): Chien-Pao ex pal-061 Shivery Chill shuffles once, after the move, and also when 0 cards are taken [TA-636, TA-497]",
+      "fixes": [
+        "FX-0414"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/tangrowth.ts",
+      "signatures": [
+        "if (HAS_EXTRA_ENERGY_BEYOND_ATTACK_COST(store, state, effect.player, this.attacks[1], 2)) {"
+      ],
+      "note": "TA-522, TA-523, TA-536, TA-540, TA-547 (2026-10-06): Class-D damage batch: Pupitar obf-106 Blasting Tackle hits its own Bench; Tangrowth meg-007 Pumped-Up Whip measures extr",
+      "fixes": [
+        "FX-0415"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/nacli.ts",
+      "signatures": [
+        "if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }"
+      ],
+      "note": "TA-517, TA-518, TA-525, TA-533, TA-537, TA-553 (2026-10-06): Class-D gating batch: Toedscool par-015 Clinging Spore's attach is mandatory; Nacli pal-121 Salt Coating heals only a da",
+      "fixes": [
+        "FX-0416"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/articuno.ts",
+      "signatures": [
+        "if (checkProvidedEnergy.energyMap.some(energy => energy.provides.includes(CardType.WATER) || energy.provides.includes(CardType.ANY))) {"
+      ],
+      "note": "TA-526, TA-530, TA-531, TA-534, TA-538, TA-545, TA-552 (2026-10-06): Class-D ability/state batch: Venusaur ex mew-003 Tranquil Flower on an evolved Active; Articuno mew-144 / Moltres mew-14",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/pupitar.ts",
+      "signatures": [
+        "const hasBenched = player.bench.some(b => b.cards.length > 0);"
+      ],
+      "note": "class-D damage batch (2026-10-06)",
+      "fixes": [
+        "FX-0415"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/latios.ts",
+      "signatures": [
+        "state = DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 3);"
+      ],
+      "note": "class-D damage batch (2026-10-06)",
+      "fixes": [
+        "FX-0415"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/moltres.ts",
+      "signatures": [
+        "if (player.active.getPokemonCard() !== this) {"
+      ],
+      "note": "class-D ability/state batch (2026-10-06)",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/alakazam.ts",
+      "signatures": [
+        "ABILITY_USED(player, this);"
+      ],
+      "note": "class-D ability/state batch (2026-10-06)",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-venusaur-ex.ts",
+      "signatures": [
+        "if (cardList.cards.some(c => c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.name === 'Grass Energy')) {"
+      ],
+      "note": "class-D ability/state batch (2026-10-06)",
+      "fixes": [
+        "FX-0417"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/copy-attack-delegation.ts",
+      "signatures": [
+        "const prevPreDamage = state.preDamageAttack;"
+      ],
+      "note": "TA-562 (2026-10-06): hold-back armed before the attack effect",
+      "fixes": [
+        "FX-0409"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/miraidon-ex.ts",
+      "signatures": [
+        "public regulationMark = 'J';"
+      ],
+      "note": "TA-630 (2026-10-06): printed regulation mark",
+      "fixes": [
+        "FX-0413"
+      ]
     }
   ]
 }
