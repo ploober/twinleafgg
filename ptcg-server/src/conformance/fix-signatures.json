@@ -10816,6 +10816,66 @@
       "fixes": [
         "FX-0402"
       ]
+    },
+    {
+      "file": "set-dragons-exalted/tool-scrapper.ts",
+      "signatures": [
+        "MOVE_CARDS(store, state, bearer, owner.discard, { cards: [tool], sourceCard: effect.trainerCard });"
+      ],
+      "note": "TA-627 (2026-10-05): Tool Scrapper (DRX class; asc-212, wht-085, cri-115 and the RCL prints inherit) chooses the Pokémon Tools themselves, 1 ",
+      "fixes": [
+        "FX-0403"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/geeta.ts",
+      "signatures": [
+        "const shuffle = () => {"
+      ],
+      "note": "TA-629 (2026-10-05): Geeta obf-188 raises its ShuffleDeckPrompt inside the search callbacks on every branch (empty pick, cancelled Pokémon ch",
+      "fixes": [
+        "FX-0404"
+      ]
+    },
+    {
+      "file": "set-journey-together/spiky-energy.ts",
+      "signatures": [
+        "pre.afterDamageMoves.push(react);"
+      ],
+      "note": "TA-628 (2026-10-05): Spiky Energy jtg-159 / jtg-190 reacts on AfterDamageEffect, only to damage placed, and only if still attached to that Po",
+      "fixes": [
+        "FX-0405"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/meowscarada.ts",
+      "signatures": [
+        "{ afterDamage: true }"
+      ],
+      "note": "TA-633 (2026-10-05): Trick Cape (Meowscarada svi-015) and Eerie Tentacles (Toedscruel svi-026) move the opponent's Energy after the damage (#",
+      "fixes": [
+        "FX-0406"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/toedscruel.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-633 (2026-10-05): Eerie Tentacles moves the opponent's Energy after the damage (#77, B.84 (1))",
+      "fixes": [
+        "FX-0406"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "options?: { count?: number, afterDamage?: boolean }"
+      ],
+      "note": "TA-633 (2026-10-05): PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND opt-in afterDamage (Trick Cape)",
+      "fixes": [
+        "FX-0406"
+      ]
     }
   ]
 }
