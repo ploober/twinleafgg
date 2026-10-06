@@ -1,5 +1,5 @@
 import { TrainerCard, TrainerType, Stage, CardType, PokemonType, CardTag, Power, PowerType, StoreLike, State, Player, GameLog, StateUtils, GameError, GameMessage, PokemonCard, GamePhase } from "../../../game";
-import { AddSpecialConditionsEffect, PutDamageEffect } from "../../../game/store/effects/attack-effects";
+import { AddSpecialConditionsEffect, DealDamageEffect, PutDamageEffect } from "../../../game/store/effects/attack-effects";
 import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from "../../../game/store/effects/effect";
 import { RetreatEffect } from "../../../game/store/effects/game-effects";
@@ -105,31 +105,24 @@ export class AntiqueJawFossil extends TrainerCard {
       effect.preventDefault = true;
     }
 
-    // Reduce damage by 30 when active
-    if (effect instanceof PutDamageEffect && effect.target.cards.includes(this)) {
-      const pokemonCard = effect.target.getPokemonCard();
-      if (pokemonCard !== this) {
+    // TA-616 / TA-624: "As long as this Pokemon is in the Active Spot, attacks used by your opponent's Active Pokemon do 30
+    // less damage (before applying Weakness and Resistance)." Every damage placement of that attack is reduced once,
+    // whatever its target: a DealDamageEffect (before W/R), or a PutDamageEffect placed DIRECTLY by the attack (Bench
+    // damage; weaknessApplied false). It used to reduce only the damage done to the Fossil, after W/R.
+    if ((effect instanceof DealDamageEffect || (effect instanceof PutDamageEffect && !effect.weaknessApplied))
+      && effect.damage > 0 && state.phase === GamePhase.ATTACK) {
+      const owner = state.players.find(p => p.active.getPokemonCard() === this);
+      if (owner === undefined) {
         return state;
       }
-
-      // It's not an attack
-      if (state.phase !== GamePhase.ATTACK) {
+      const opponent = StateUtils.getOpponent(state, owner);
+      if (effect.source !== opponent.active) {
         return state;
       }
-
-      const player = StateUtils.findOwner(state, effect.target);
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // Only reduce damage if this is active and opponent's active is attacking
-      if (effect.target !== player.active || effect.source !== opponent.active) {
-        return state;
-      }
-
       // Try to reduce PowerEffect, to check if something is blocking our ability
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+      if (IS_ABILITY_BLOCKED(store, state, owner, this)) {
         return state;
       }
-
       effect.damage = Math.max(0, effect.damage - 30);
     }
 
