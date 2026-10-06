@@ -49,7 +49,7 @@ export class Palkia extends PokemonCard {
       let energyCount = 0;
       checkProvidedEnergyEffect.energyMap.forEach(em => {
         if (em.card.energyType === EnergyType.BASIC) {
-          energyCount += 1;
+          energyCount += em.provides.length;
         }
       });
       effect.damage = energyCount * 40;
