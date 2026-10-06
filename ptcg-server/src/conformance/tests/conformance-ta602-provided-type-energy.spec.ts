@@ -10,8 +10,9 @@ import {
  * ("Grass Energy" / "Water Energy"), so neither was offered nor counted. The TA-571 pattern (the energy map of
  * CheckProvidedEnergyEffect) replaces the name test.
  *
- * TA-621: Gorebyss's "Before doing damage, you may attach as many Basic [W] Energy cards as you like from your hand"
- * was counted as soon as the confirm was raised, so the Energy it attached added nothing.
+ * TA-520: Gorebyss's "Before doing damage, you may attach as many Basic [W] Energy cards as you like from your hand"
+ * was gated by a separate confirm and counted as soon as that confirm was raised, so the Energy it attached added
+ * nothing. The any-number attach (min 0) is the decision; stopping it is the decline.
  *
  * Controls: a Basic Energy of another type is neither offered (Sinistcha) nor counted (Gorebyss).
  */
@@ -82,7 +83,7 @@ describe('TA-602: Sinistcha twm-022 Spill the Tea discards every attached Energy
   });
 });
 
-describe('TA-602 / TA-621: Gorebyss dri-056 Crescendo Wave counts every [W] Energy attached, after its own attach', () => {
+describe('TA-602 / TA-520: Gorebyss dri-056 Crescendo Wave counts every [W] Energy attached, after its own attach', () => {
   it('Basic Water + Legacy Energy, nothing in hand: 60 [TA-602]', () => {
     expect(dealtToB1(step(board('dri-056', [WATER, LEGACY]), [attack('Crescendo Wave')]).events)).toBe(60);
   });
@@ -91,13 +92,15 @@ describe('TA-602 / TA-621: Gorebyss dri-056 Crescendo Wave counts every [W] Ener
     expect(dealtToB1(step(board('dri-056', [WATER, GRASS]), [attack('Crescendo Wave')]).events)).toBe(30);
   });
 
-  it('attaching the Basic Water from hand before the damage counts it: 90 [TA-621]', () => {
-    const r = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave'), confirm(true), attach('ah0')]);
+  it('attaching the Basic Water from hand before the damage counts it: 90 [TA-520]', () => {
+    const r = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave'), attach('ah0')]);
     expect(r.state.players.A.active?.energy.length).toBe(3);
     expect(dealtToB1(r.events)).toBe(90);
   });
 
-  it('declining the attach counts what is attached: 60 [TA-621]', () => {
+  it('declining the attach counts what is attached: 60, and no separate confirm comes first [TA-520]', () => {
+    const first = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave')]);
+    expect((first.pending?.legalActions ?? []).map(a => a.type).sort()).toEqual(['attachEnergy', 'confirm']);
     const r = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave'), confirm(false)]);
     expect(dealtToB1(r.events)).toBe(60);
   });

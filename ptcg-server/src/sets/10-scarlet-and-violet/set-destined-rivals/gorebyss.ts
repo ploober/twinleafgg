@@ -3,7 +3,7 @@ import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import {CONFIRMATION_PROMPT, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Gorebyss extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -32,7 +32,7 @@ export class Gorebyss extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // TA-602 / TA-621: "30 damage for each [W] Energy attached" counts every Energy PROVIDING [W] (Legacy / Luminous
+      // TA-602 / TA-520: "30 damage for each [W] Energy attached" counts every Energy PROVIDING [W] (Legacy / Luminous
       // Energy provide every type while attached, #443), and it is counted AFTER the optional attach, which happens
       // "Before doing damage" -- the count used to run as soon as the confirm was raised, before any answer.
       const setDamage = () => {
@@ -52,27 +52,21 @@ export class Gorebyss extends PokemonCard {
         return state;
       }
 
-      CONFIRMATION_PROMPT(store, state, effect.player, result => {
-        if (!result) {
-          setDamage();
-          return;
+      // TA-520: the any-number attach (min 0) is itself the "you may" -- no separate confirm before it.
+      return store.prompt(state, new AttachEnergyPrompt(
+        player.id,
+        GameMessage.ATTACH_ENERGY_TO_ACTIVE,
+        player.hand,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.ACTIVE],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
+        { allowCancel: false, min: 0 }
+      ), transfers => {
+        for (const transfer of transfers || []) {
+          const target = StateUtils.getTarget(state, player, transfer.to);
+          MOVE_CARDS(store, state, player.hand, target, { cards: [transfer.card], sourceCard: this });
         }
-
-        state = store.prompt(state, new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_TO_ACTIVE,
-          player.hand,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.ACTIVE],
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
-          { allowCancel: false, min: 0 }
-        ), transfers => {
-          for (const transfer of transfers || []) {
-            const target = StateUtils.getTarget(state, player, transfer.to);
-            MOVE_CARDS(store, state, player.hand, target, { cards: [transfer.card], sourceCard: this });
-          }
-          setDamage();
-        });
+        setDamage();
       });
     }
 
