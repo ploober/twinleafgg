@@ -35,7 +35,8 @@ export class Meowscarada extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      return PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(store, state, effect);
+      // TA-494 / B.84 (1), #77: the choice is asked where it was; the Energy goes to the hand after the damage.
+      return PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(store, state, effect, { afterDamage: true });
     }
     return state;
   }

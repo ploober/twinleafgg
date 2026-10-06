@@ -779,7 +779,7 @@ export function PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(
   store: StoreLike,
   state: State,
   effect: AttackEffect,
-  options?: { count?: number }
+  options?: { count?: number, afterDamage?: boolean }
 ): State {
   const count = options?.count ?? 1;
   const player = effect.player;
@@ -808,10 +808,21 @@ export function PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(
         { allowCancel: false }
       ), energy => {
         const cards = (energy || []).slice(0, selectCount).map(e => e.card);
-        if (cards.length > 0) {
-          const toHandEffect = new CardsToHandEffect(effect, cards);
-          toHandEffect.target = opponent.active;
-          store.reduceEffect(state, toHandEffect);
+        const target = opponent.active;
+        const move = () => {
+          const still = cards.filter(c => target.cards.includes(c));
+          if (still.length > 0) {
+            const toHandEffect = new CardsToHandEffect(effect, still);
+            toHandEffect.target = target;
+            store.reduceEffect(state, toHandEffect);
+          }
+        };
+        // TA-494 / B.84 (1), #77: `afterDamage` keeps the choice where it is asked and moves the chosen Energy after the
+        // attack's damage (AttackEffect.afterDamageMoves), so the damage reads it attached. Opt-in per card (svi-015).
+        if (options?.afterDamage === true) {
+          effect.afterDamageMoves.push(move);
+        } else {
+          move();
         }
       });
     }
