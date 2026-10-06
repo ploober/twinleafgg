@@ -10830,7 +10830,7 @@
     {
       "file": "set-obsidian-flames/geeta.ts",
       "signatures": [
-        "const shuffle = () => {"
+        "const shuffle = (then?: () => void) => {"
       ],
       "note": "TA-629 (2026-10-05): Geeta obf-188 raises its ShuffleDeckPrompt inside the search callbacks on every branch (empty pick, cancelled Pokémon ch",
       "fixes": [
