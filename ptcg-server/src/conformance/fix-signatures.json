@@ -10411,16 +10411,6 @@
       ]
     },
     {
-      "file": "set-perfect-order/mega-skarmory-ex.ts",
-      "signatures": [
-        "effect.afterDamageMoves.push(() => {"
-      ],
-      "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
-      "fixes": [
-        "FX-0390"
-      ]
-    },
-    {
       "file": "set-phantasmal-flames/rotom-ex.ts",
       "signatures": [
         "effect.afterDamageMoves.push(() => {"
@@ -10436,6 +10426,16 @@
         "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, self));"
       ],
       "note": "TA-613 (2026-10-05; B.76, #2031): an attack that moves ALL its own Energy moves it after the damage (afterDamageMoves), so Double Turbo Energy still reduces it and no target pick or shuffle pauses with the Energy gone [TA-613]",
+      "fixes": [
+        "FX-0390"
+      ]
+    },
+    {
+      "file": "set-perfect-order/mega-skarmory-ex.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-613 (2026-10-05): An attack that moves ALL its own Energy moves it after the damage (afterDamageMoves): 23 in-pool card files, 50 printing",
       "fixes": [
         "FX-0390"
       ]
