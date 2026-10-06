@@ -99,13 +99,12 @@ export class Spidopsex extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const opponentActiveCard = opponent.active.getPokemonCard();
-      if (opponentActiveCard) {
-        const retreatCost = opponentActiveCard.retreat.filter(
-          (c) => c === CardType.COLORLESS,
-        ).length;
-
-        effect.damage += retreatCost * 30;
+      // TA-513: the opponent's Active's current Retreat Cost, with every modifier (Trap Territory itself included;
+      // #71, #1970, #2113), not the printed one. CheckRetreatCostEffect(player) reads player.active.
+      if (opponent.active.getPokemonCard()) {
+        const check = new CheckRetreatCostEffect(opponent);
+        store.reduceEffect(state, check);
+        effect.damage += check.cost.filter((c) => c === CardType.COLORLESS).length * 30;
       }
       return state;
     }

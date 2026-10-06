@@ -28,7 +28,7 @@ export class Kilowattrel extends PokemonCard {
       name: 'United Thunder',
       cost: [CardType.COLORLESS],
       damage: 0,
-      text: 'This attack does 10 damage to 1 of your opponent\'s Benched Pokémon for each Pokémon in your discard pile that has the United Wings attack. (Don\'t apply Weakness and Resistance for Benched Pokémon.) '
+      text: 'This attack does 10 damage for each Pokémon in your discard pile that has the United Wings attack to 1 of your opponent\'s Benched Pokémon. (Don\'t apply Weakness and Resistance for Benched Pokémon.)'
     },
     {
       name: 'Speed Wing',
@@ -57,10 +57,6 @@ export class Kilowattrel extends PokemonCard {
       const opponent = StateUtils.getOpponent(state, player);
       const hasBench = opponent.bench.some(b => b.cards.length > 0);
 
-      if (!hasBench) {
-        return state;
-      }
-
       let pokemonCount = 0;
       player.discard.cards.forEach(c => {
         if (c instanceof PokemonCard && c.attacks.some(a => a.name === 'United Wings')) {
@@ -68,12 +64,18 @@ export class Kilowattrel extends PokemonCard {
         }
       });
 
+      // TA-512: the target is "1 of your opponent's Benched Pokémon" (never the Active), and at 0 damage every target
+      // leaves the same board, so there is no pick (CF-14 / CF-33).
+      if (!hasBench || pokemonCount === 0) {
+        return state;
+      }
+
       state = store.prompt(state, new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
-        [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false },
+        [SlotType.BENCH],
+        { allowCancel: false, min: 1, max: 1 },
       ), selected => {
         const targets = selected || [];
         targets.forEach(target => {

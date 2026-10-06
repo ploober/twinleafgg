@@ -8,6 +8,7 @@ import { NEXT_TURN_ATTACK_BONUS } from '../../../game/store/prefabs/attack-effec
 import { PowerType, StateUtils } from '../../../game';
 import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
+import { GameLog } from '../../../game/game-message';
 
 export class Hitmonchan extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -52,6 +53,17 @@ export class Hitmonchan extends PokemonCard {
       store.reduceEffect(state, damageEffect);
       if (damageEffect.target) {
         damageEffect.target.damage += 30;
+        // TA-511: log the placement like every engine counter placement (PutCountersEffect / Maractus TA-577): the game
+        // log shows it, and the conformance events read it to attribute the 30 when a Knock Out leaves no damage to diff.
+        const attacker = damageEffect.target.getPokemonCard();
+        if (attacker !== undefined) {
+          store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {
+            name: player.name,
+            damage: 30,
+            target: attacker.name,
+            effect: this.powers[0].name,
+          });
+        }
       }
     }
 

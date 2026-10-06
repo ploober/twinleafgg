@@ -47,7 +47,8 @@ export class Arbokex extends PokemonCard {
 
       if (opponent.hand.cards.length <= 2) {
         const cards = opponent.hand.cards;
-        MOVE_CARDS(store, state, opponent.hand, player.discard, { cards: cards, sourceCard: this });
+        // TA-515: the opponent discards, so the cards go to their own discard pile.
+        MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards.slice(), sourceCard: this });
         return state;
       }
 

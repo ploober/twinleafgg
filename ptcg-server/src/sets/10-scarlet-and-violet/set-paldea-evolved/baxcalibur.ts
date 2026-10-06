@@ -71,7 +71,8 @@ export class Baxcalibur extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
-        { allowCancel: false }
+        // TA-516 / B.46: a used Ability attaches "a Basic [W] Energy card": one per use, no post-activation decline.
+        { allowCancel: false, min: 1, max: 1 }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {

@@ -1,6 +1,7 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import {
+  CardTarget,
   ChoosePokemonPrompt,
   GameMessage,
   PlayerType,
@@ -48,12 +49,23 @@ export class Vespiquenex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
+      // TA-514 (as TA-518 Nacli / TA-311 Dolliv): only a damaged Pokémon can be healed (#1085). With none damaged the
+      // attack is still used and heals nothing (#1661); a single damaged Pokémon collapses (CF-14).
+      const blocked: CardTarget[] = [];
+      let hasDamaged = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+        if (cardList.damage > 0) { hasDamaged = true; } else { blocked.push(target); }
+      });
+      if (!hasDamaged) {
+        return state;
+      }
+
       return store.prompt(state, new ChoosePokemonPrompt(
         player.id,
-        GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
+        GameMessage.CHOOSE_POKEMON_TO_HEAL,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { operation: 'placeCounters', allowCancel: false }
+        { allowCancel: false, blocked }
       ), targets => {
         if (!targets || targets.length === 0) {
           return;
