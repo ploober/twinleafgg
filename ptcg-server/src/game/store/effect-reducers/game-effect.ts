@@ -774,7 +774,10 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
         }
       }
 
-      store.log(state, GameLog.LOG_POKEMON_KO, { name: card.name });
+      // TA-264 / TA-495: `damage` = the Knocked Out Pokemon's damage at its Knock Out, so the conformance event
+      // derivation can emit the lethal placement's `damaged` whatever wrote it (a card's raw counter placement, the
+      // Confusion self-damage), not only the sources that log an amount.
+      store.log(state, GameLog.LOG_POKEMON_KO, { name: card.name, damage: effect.target.damage });
 
       const knockedOutOwner = effect.player;
       const attacker = StateUtils.getOpponent(state, knockedOutOwner);
