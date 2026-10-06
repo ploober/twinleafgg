@@ -287,6 +287,23 @@ export class MoveOpponentEnergyEffect extends AbstractAttackEffect implements Ef
   }
 }
 
+/**
+ * TA-169: a read-only probe of whether moving `card` off `source` by this attack would be prevented (Mist Energy
+ * tef-161, preventEffectsOfAttacksNextTurn), dispatched before the source is offered. The CHECK_ type keeps the
+ * auto-log from recording it, and no core reducer acts on it, so nothing moves.
+ */
+export class CheckMoveOpponentEnergyEffect extends AbstractAttackEffect implements Effect {
+  readonly type: string = 'CHECK_MOVE_OPPONENT_ENERGY_EFFECT';
+  public preventDefault = false;
+  public card: Card;
+
+  constructor(base: AttackEffect, card: Card, source: PokemonCardList) {
+    super(base);
+    this.card = card;
+    this.target = source;
+  }
+}
+
 export class AddMarkerEffect extends AbstractAttackEffect implements Effect {
   readonly type: string = AttackEffects.ADD_MARKER_EFFECT;
   public preventDefault = false;

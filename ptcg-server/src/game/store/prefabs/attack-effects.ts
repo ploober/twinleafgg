@@ -2,7 +2,7 @@ import { Card, CardTarget, ChooseCardsPrompt, ChooseEnergyPrompt, ChoosePokemonP
 import { CardType, SpecialCondition, SuperType, TrainerType } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
 import { PokemonCard } from '../card/pokemon-card';
-import { AddSpecialConditionsEffect, AfterDamageEffect, ApplyWeaknessEffect, CardsToHandEffect, DealDamageEffect, DiscardCardsEffect, DiscardCardsFromOpponentsActivePokemonEffect, DiscardDefendingPokemonEffect, HealTargetEffect, KnockOutOpponentEffect, KnockOutPlayerEffect, MoveOpponentEnergyEffect, PutCountersEffect, PutDamageEffect } from '../effects/attack-effects';
+import { AddSpecialConditionsEffect, AfterDamageEffect, ApplyWeaknessEffect, CardsToHandEffect, DealDamageEffect, DiscardCardsEffect, DiscardCardsFromOpponentsActivePokemonEffect, DiscardDefendingPokemonEffect, HealTargetEffect, KnockOutOpponentEffect, KnockOutPlayerEffect, MoveOpponentEnergyEffect, CheckMoveOpponentEnergyEffect, PutCountersEffect, PutDamageEffect } from '../effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../effects/check-effects';
 import { AttackEffect } from '../effects/game-effects';
 import { AfterAttackEffect, BeforeDoingDamageEffect, EndTurnEffect } from '../effects/game-phase-effects';
@@ -13,7 +13,7 @@ import { PendingEndOfTurnEffect, PendingEndOfTurnEffectBase } from '../state/pen
 import { Player } from '../state/player';
 import { FLIP_UNTIL_TAILS_AND_COUNT_HEADS, MOVE_POKEMON_OFF_BOARD, ADD_MARKER, HAS_MARKER, REMOVE_MARKER } from './prefabs';
 import { CoinFlipEffect } from '../effects/play-card-effects';
-import { scheduleDefendingPokemonEndOfTurnEffect, nextTurnAttackDamageBonusEffect, armNextTurnAttackDamageBonus, nextTurnAttackBaseDamageEffect } from '../effects/effect-of-attack-effects';
+import { scheduleDefendingPokemonEndOfTurnEffect, nextTurnAttackDamageBonusEffect, armNextTurnAttackDamageBonus, nextTurnAttackBaseDamageEffect, shouldPreventAttackEffects } from '../effects/effect-of-attack-effects';
 import { GameError } from '../../game-error';
 import { CardTag } from '../card/card-types';
 import { Attack } from '../card/pokemon-types';
@@ -867,11 +867,23 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
 
   let hasEnergy = false;
   let pokemonCount = 0;
+  // TA-169 (#2375): a Pokemon whose Energy this attack cannot move (Mist Energy tef-161 prevents the attack's
+  // effects on it) is not a source; offering it was an inert decision (CF-33). Probed per source, read-only.
+  const preventedFrom: CardTarget[] = [];
 
-  opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+  opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, _pokemonCard, target) => {
     pokemonCount += 1;
-    const energyAttached = cardList.cards.some(c => c instanceof EnergyCard);
-    hasEnergy = hasEnergy || energyAttached;
+    const energy = cardList.cards.find(c => c instanceof EnergyCard);
+    if (energy === undefined) {
+      return;
+    }
+    const probe = new CheckMoveOpponentEnergyEffect(effect, energy, cardList);
+    store.reduceEffect(state, probe);
+    if (probe.preventDefault || shouldPreventAttackEffects(state, probe)) {
+      preventedFrom.push(target);
+      return;
+    }
+    hasEnergy = true;
   });
 
   if (!hasEnergy || pokemonCount <= 1) {
@@ -881,7 +893,7 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
   const min = options?.min ?? 1;
   const max = options?.max ?? 1;
   const allowCancel = options?.allowCancel ?? false;
-  const blockedFrom = options?.blockedFrom ?? [];
+  const blockedFrom = [...(options?.blockedFrom ?? []), ...preventedFrom];
   const blockedTo = options?.blockedTo ?? [];
 
   return store.prompt(state, new MoveEnergyPrompt(
