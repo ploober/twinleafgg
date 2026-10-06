@@ -1,4 +1,6 @@
 import { Card } from '../game/store/card/card';
+import { StateLog } from '../game/store/state/state-log';
+import { deepClone } from '../utils/utils';
 import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
@@ -764,10 +766,24 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const beforeNames = basicIidDisplayNames(game.state, game.ctx);
     let starved: FlipStarvation | undefined;
     let cut: { start: NeutralState; legs: NeutralEvent[] } | undefined;
+    // TA-576: a prompt answer the resolving card refuses (a GameError from its continuation) is a rejected action,
+    // and a rejection reports the board before it. Store.reduce restores its own snapshot for a top-level action;
+    // Store.reducePrompt cannot (the continuation has run and is consumed when the card throws, so what it moved
+    // first stays moved: Custom Catcher lot-171 discarded its second copy, then refused). Snapshot before an
+    // answer and restore it on that throw. The replay ends at a rejection, so the restored store is only projected.
+    // A FlipStarvation is not a rejection and keeps what committed (see below).
+    const answerBackup: State | undefined = game.store.state.prompts.some(p => p.result === undefined)
+      ? deepClone(game.store.state, [Card, StateLog]) : undefined;
     try {
       fire();
     } catch (err) {
-      if (!(err instanceof FlipStarvation)) { throw err; }
+      if (!(err instanceof FlipStarvation)) {
+        if (answerBackup !== undefined && err instanceof GameError) {
+          game.store.state = answerBackup;
+          game.state = answerBackup;
+        }
+        throw err;
+      }
       // A coin flip ran past the log mid-dispatch. If it fired in the attack effect (WAS_ATTACK_USED)
       // Store.reduce restored its clone, so nothing committed and afterState == beforeState. If it
       // fired in an after-attack effect reached through a prompt-resolution continuation (AFTER_ATTACK),
@@ -810,7 +826,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   };
 
   // A GameError from any dispatch (top-level action OR a prompt resolution) means the engine rejected
-  // the move; the Store rolls its state back, so we report the events applied so far, the actions
+  // the move; the Store rolls a top-level action back and dispatchAndCollect restores a prompt answer (TA-576), so we report the events applied so far, the actions
   // consumed before the failure, and the normalized rejection. Non-GameError throws are adapter /
   // contract bugs and keep propagating.
   try {
@@ -1344,7 +1360,8 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     }
   }
   if (rejection !== undefined) {
-    // The engine rejected an action; the Store rolled back, so `state` is the pre-action projection.
+    // The engine rejected an action; the Store rolled back (a top-level action) or the loop restored its snapshot
+    // (a prompt answer, TA-576), so `state` is the pre-action projection.
     // The cursor advances past an action before dispatch, so `applied` is the offending action's index.
     return {
       schemaVersion: SCHEMA_VERSION, status: 'invalidAction', applied, index: applied,
