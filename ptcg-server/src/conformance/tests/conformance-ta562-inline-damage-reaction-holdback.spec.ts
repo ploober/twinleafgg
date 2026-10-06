@@ -75,7 +75,7 @@ const discardA = (target: string) => act({ actor: 'A', type: 'discard', owner: '
 type Damaged = { kind: string; target?: string; hp?: number };
 const dealt = (events: NeutralEvent[], iid: string) => (events as Damaged[])
   .filter(e => e.kind === 'damaged' && e.target === iid).reduce((n, e) => n + (e.hp ?? 0), 0);
-const rejected = (r: ReturnType<typeof step>) => (r as unknown as { rejection?: unknown }).rejection;
+const rejected = (r: ReturnType<typeof step>) => r.status === 'invalidAction' ? r : undefined;
 function legal(r: ReturnType<typeof step>): string[] {
   const p = (r as any).pending;
   return p ? p.legalActions.map((a: any) => [a.actor, a.type, a.target].filter(x => x !== undefined && x !== null).join(':')).sort() : [];
