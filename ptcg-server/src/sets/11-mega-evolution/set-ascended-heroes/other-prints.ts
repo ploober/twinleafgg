@@ -269,6 +269,7 @@ export class TynamoASC extends Tynamo {
 
 export class EelektrikASC extends Eelektrik {
   public setNumber = '60';
+  public regulationMark = 'I';
   public fullName: string = 'Eelektrik ASC';
   public set = 'ASC';
 }
@@ -539,6 +540,7 @@ export class TerapagosexASC extends Terapagosex {
 
 export class AirBalloonASC extends AirBalloon {
   public setNumber = '181';
+  public regulationMark = 'I';
   public fullName: string = 'Air Balloon ASC';
   public set = 'ASC';
 }
@@ -558,6 +560,7 @@ export class BuddyBuddyPoffinASC extends BuddyBuddyPoffin {
 
 export class CounterGainASC extends CounterGain {
   public setNumber = '186';
+  public regulationMark = 'H';
   public fullName: string = 'Counter Gain ASC';
   public set = 'ASC';
 }
@@ -678,18 +681,21 @@ export class TeamRocketsWatchtowerASC extends TeamRocketsWatchtower {
 
 export class ToolScrapperASC extends ToolScrapper {
   public setNumber = '212';
+  public regulationMark = 'I';
   public fullName: string = 'Tool Scrapper ASC';
   public set = 'ASC';
 }
 
 export class UltraBallASC extends UltraBall {
   public setNumber = '213';
+  public regulationMark = 'I';
   public fullName: string = 'Ultra Ball ASC';
   public set = 'ASC';
 }
 
 export class PrismEnergyASC extends PrismEnergy {
   public setNumber = '216';
+  public regulationMark = 'I';
   public fullName: string = 'Prism Energy ASC';
   public set = 'ASC';
 }
@@ -894,6 +900,7 @@ export class BlackBeltsTrainingASC extends BlackBeltsTraining {
 
 export class BossOrders2ASC extends BossOrdersPAL172 {
   public setNumber = '256';
+  public regulationMark = 'I';
   public fullName: string = 'Boss\'s Orders2 ASC';
   public set = 'ASC';
 }
@@ -906,12 +913,14 @@ export class Canari2ASC extends CanariASC185 {
 
 export class CherenASC extends Cheren {
   public setNumber = '258';
+  public regulationMark = 'I';
   public fullName: string = 'Cheren ASC';
   public set = 'ASC';
 }
 
 export class CounterGain2ASC extends CounterGainLOT170 {
   public setNumber = '259';
+  public regulationMark = 'H';
   public fullName: string = 'Counter Gain2 ASC';
   public set = 'ASC';
 }
@@ -942,6 +951,7 @@ export class TeamRocketsTransceiver2ASC extends TeamRocketsTransceiverDRI178 {
 
 export class UltraBall2ASC extends UltraBallSVI196 {
   public setNumber = '264';
+  public regulationMark = 'I';
   public fullName: string = 'Ultra Ball2 ASC';
   public set = 'ASC';
 }

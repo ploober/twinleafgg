@@ -28,6 +28,7 @@ export class Miraidonex extends PokemonCard {
     },
   ];
 
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '73';

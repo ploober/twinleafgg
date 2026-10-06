@@ -6,6 +6,7 @@ import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
 export class Waitress extends TrainerCard {
   public trainerType: TrainerType = TrainerType.SUPPORTER;
+  public regulationMark = 'J';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '215';
