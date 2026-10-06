@@ -209,7 +209,8 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
  * the collapse site in `next()` for the measurement that retired both.
  */
 function forcedPickIndices(prompt: ChooseCardsPrompt, state: State | undefined): number[] | null {
-  if (!(COLLAPSIBLE_PICK_MESSAGES.has(prompt.message) || orderFollowsActiveSelection(prompt, state))
+  if (!(COLLAPSIBLE_PICK_MESSAGES.has(prompt.message) || orderFollowsActiveSelection(prompt, state)
+    || prompt.deferredMove === true)
     || prompt.options.allowCancel !== false || prompt.options.isSecret === true) {
     return null;
   }
@@ -418,7 +419,17 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
    * from the zone it was taken out of, `destination` absent — this prompt does not carry it, and a guess
    * keyed on the message is the TA-142 mistake.
    */
+  /** B.82 / CF-93 (TA-651): the cards an attack's pre-damage choice of its own cards in play picked (the prompt is
+   *  `deferredMove`); a forced pick (no picks, every eligible card) names the forced set. They stay where they are
+   *  until after the damage; the adapter records them as `chosen`. */
+  pickedCards(prompt, picks, _ctx, state) {
+    const rp = realPicks(picks) as Array<{ index: number }>;
+    const indices = rp.length > 0 ? rp.map(p => p.index) : (forcedPickIndices(prompt, state) ?? []);
+    return indices.map(i => prompt.cards.cards[i]).filter((c): c is Card => c !== undefined);
+  },
+
   fixupProjection(prompt, picks, ctx, _state, projected) {
+    if (prompt.deferredMove === true) { return; }   // B.82: a pre-damage choice; the picked cards stay where they are
     const discard = isDiscardPick(prompt);
     for (const p of realPicks(picks) as Array<{ index: number }>) {
       const card = prompt.cards.cards[p.index];

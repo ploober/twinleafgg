@@ -1,27 +1,20 @@
 import {
-  AttachEnergyPrompt,
   CardTag,
   CardType,
-  GameMessage,
   GamePhase,
   PlayerType,
   PokemonCard,
   PowerType,
-  SlotType,
   Stage,
   State,
   StateUtils,
   StoreLike,
-  SuperType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
-import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
-import {ADD_MARKER,
-  HAS_MARKER,
-  IS_ABILITY_BLOCKED,
-  REMOVE_MARKER_AT_END_OF_TURN,
-  WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED,
+  WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 
 export class MegaGengarex extends PokemonCard {
@@ -57,7 +50,6 @@ export class MegaGengarex extends PokemonCard {
   public name: string = 'Mega Gengar ex';
   public fullName: string = 'Mega Gengar ex MBG';
 
-  private readonly VOID_GALE_MARKER = 'VOID_GALE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof KnockOutEffect) {
@@ -107,45 +99,11 @@ export class MegaGengarex extends PokemonCard {
       }
     }
 
+    // Void Gale
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      ADD_MARKER(this.VOID_GALE_MARKER, effect.player, this);
-      return state;
+      // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
-
-    if (
-      effect instanceof AfterAttackEffect &&
-      HAS_MARKER(this.VOID_GALE_MARKER, effect.player, this)
-    ) {
-      const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
-      // Then prompt for energy movement
-      return store.prompt(
-        state,
-        new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_TO_BENCH,
-          player.active,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH],
-          { superType: SuperType.ENERGY },
-          { allowCancel: false, min: 1, max: 1 },
-        ),
-        (transfers) => {
-          transfers = transfers || [];
-          for (const transfer of transfers) {
-            const target = StateUtils.getTarget(state, player, transfer.to);
-            MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-          }
-        },
-      );
-    }
-
-    REMOVE_MARKER_AT_END_OF_TURN(effect, this.VOID_GALE_MARKER, this);
 
     return state;
   }

@@ -18,8 +18,9 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { MovedToActiveEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import { ABILITY_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, MOVED_TO_ACTIVE_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Yanmegaex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -119,26 +120,11 @@ export class Yanmegaex extends PokemonCard {
       });
     }
 
+    // Jet Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
-      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
-      const player = effect.player;
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 3, max: 3, sameTarget: true }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-        }
-      });
+      // TA-651 / B.82 (1), B.85 (1)(c): the 3 Energy are chosen before the damage, one per pick (recorded as `chosen`),
+      // and move after it to 1 Benched Pokémon (asked at the move). Replaces the TA-258 damage-first order.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this, { count: 3 });
     }
     return state;
   }

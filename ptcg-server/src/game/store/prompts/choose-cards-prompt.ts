@@ -144,6 +144,14 @@ export class ChooseCardsPrompt extends Prompt<Card[]> {
    */
   public orderFollows?: boolean;
 
+  /**
+   * B.82 (conformance projection; inert for gameplay): set by an attack prefab that asks this choice of the attacker's
+   * own cards in play BEFORE the attack's damage and moves them after it (AttackEffect.afterDamageMoves; TA-651's
+   * MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST). The adapter leaves the picks where they are and records them
+   * as `chosen`.
+   */
+  public deferredMove?: boolean;
+
   constructor(
     player: Player,
     public message: GameMessage,

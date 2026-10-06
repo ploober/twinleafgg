@@ -1,10 +1,11 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, PowerType, EnergyCard, AttachEnergyPrompt, GameMessage, PlayerType, SlotType, ConfirmPrompt, GameLog } from '../../../game';
+import { Stage, CardType } from '../../../game/store/card/card-types';
+import { StoreLike, State, PowerType, GameMessage, PlayerType, ConfirmPrompt, GameLog } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Togekiss extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -82,43 +83,10 @@ export class Togekiss extends PokemonCard {
 
     // Power Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const hasBench = player.bench.some(b => b.cards.length > 0);
-
-      const hasEnergy = player.active.cards.some(c => {
-        return c instanceof EnergyCard;
-      });
-
-      if (hasBench === false || hasEnergy === false) {
-        return state;
-      }
-
-      const prompt = new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 1, max: 1 }
-      );
-      // B.82 (3) / CF-93: a pre-damage choice of the attacker's own card in play; the adapter records the pick as
-      // `chosen` and leaves it attached until the move below runs after the damage.
-      (prompt as AttachEnergyPrompt & { deferredMove?: boolean }).deferredMove = true;
-      return store.prompt(state, prompt, transfers => {
-        transfers = transfers || [];
-        // TA-494 / B.82 (1) (#1834, #2002): the Energy is chosen before the damage and moves after it
-        // (AttackEffect.afterDamageMoves), so the damage reads it attached (Double Turbo Energy's 20 less).
-        const source = player.active;
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          effect.afterDamageMoves.push(() => {
-            if (source.cards.includes(transfer.card)) {
-              MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
-            }
-          });
-        }
-      });
+      // TA-494 / TA-651, B.82 (1), B.85 (1)(c) (#1834, #2002): the Energy is chosen before the damage (recorded as
+      // `chosen`), the damage reads it attached (Double Turbo Energy's 20 less), and it moves after the damage; the
+      // Benched Pokémon is asked at the move (TA-651 split the joint pre-damage moveEnergy pick).
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 
     return state;

@@ -1,4 +1,4 @@
-import { Card, CardTarget, ChooseCardsPrompt, ChooseEnergyPrompt, ChoosePokemonPrompt, ConfirmPrompt, DamageMap, GameMessage, MoveEnergyPrompt, PlayerType, PutDamagePrompt, ShuffleDeckPrompt, SlotType, State, StateUtils, StoreLike } from '../..';
+import { AttachEnergyPrompt, Card, CardTarget, ChooseCardsPrompt, ChooseEnergyPrompt, ChoosePokemonPrompt, ConfirmPrompt, DamageMap, GameMessage, MoveEnergyPrompt, PlayerType, PutDamagePrompt, ShuffleDeckPrompt, SlotType, State, StateUtils, StoreLike } from '../..';
 import { CardType, SpecialCondition, SuperType, TrainerType } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
 import { PokemonCard } from '../card/pokemon-card';
@@ -11,7 +11,7 @@ import { PokemonCardList } from '../state/pokemon-card-list';
 import { AttachEnergyEffect } from '../effects/play-card-effects';
 import { PendingEndOfTurnEffect, PendingEndOfTurnEffectBase } from '../state/pending-end-of-turn-effects';
 import { Player } from '../state/player';
-import { FLIP_UNTIL_TAILS_AND_COUNT_HEADS, MOVE_POKEMON_OFF_BOARD, ADD_MARKER, HAS_MARKER, REMOVE_MARKER } from './prefabs';
+import { FLIP_UNTIL_TAILS_AND_COUNT_HEADS, MOVE_POKEMON_OFF_BOARD, ADD_MARKER, HAS_MARKER, REMOVE_MARKER, MOVE_CARDS } from './prefabs';
 import { CoinFlipEffect } from '../effects/play-card-effects';
 import { scheduleDefendingPokemonEndOfTurnEffect, nextTurnAttackDamageBonusEffect, armNextTurnAttackDamageBonus, nextTurnAttackBaseDamageEffect, shouldPreventAttackEffects } from '../effects/effect-of-attack-effects';
 import { GameError } from '../../game-error';
@@ -885,6 +885,85 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
       const destination = StateUtils.getTarget(state, player, transfer.to);
       const moveEffect = new MoveOpponentEnergyEffect(effect, transfer.card, source, destination);
       store.reduceEffect(state, moveEffect);
+    });
+  });
+}
+
+/**
+ * TA-651 / B.82 (1), B.85 (1)(c) (#2002, #1834): "Move [an / 3] Energy from this Pokémon to 1 of your Benched Pokémon."
+ * Call from the attack's own effect (WAS_ATTACK_USED, before its damage). The Energy is CHOSEN here, one card per pick
+ * (`deferredMove`: the adapter records each pick as `chosen` and leaves it attached), the damage reads it still
+ * attached, and it MOVES after the damage (AttackEffect.afterDamageMoves). The destination is not a card the attack
+ * moves and the damage does not read it, so it is asked at the move, after the damage (one Benched Pokémon: forced);
+ * every chosen Energy goes to the same Benched Pokémon. No Benched Pokémon or no eligible Energy: nothing is asked.
+ * `eligible` narrows the pool (Cold Cyclone's [W], read off the provided-energy map at the choice).
+ */
+export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  sourceCard: Card,
+  options: { count?: number; eligible?: (card: Card) => boolean } = {},
+): State {
+  const player = effect.player;
+  const source = player.active;
+  if (!player.bench.some(b => b.cards.length > 0)) {
+    return state;
+  }
+  const blocked: number[] = [];
+  let eligibleCount = 0;
+  source.cards.forEach((card, index) => {
+    if (card.superType !== SuperType.ENERGY) {
+      return;
+    }
+    if (options.eligible !== undefined && !options.eligible(card)) {
+      blocked.push(index);
+    } else {
+      eligibleCount++;
+    }
+  });
+  const count = Math.min(options.count ?? 1, eligibleCount);
+  if (count === 0) {
+    return state;
+  }
+  const prompt = new ChooseCardsPrompt(
+    player,
+    GameMessage.MOVE_ENERGY_TO_BENCH,
+    source,
+    { superType: SuperType.ENERGY },
+    { min: count, max: count, allowCancel: false, blocked },
+  );
+  prompt.deferredMove = true;
+  return store.prompt(state, prompt, selected => {
+    const chosen = selected || [];
+    if (chosen.length === 0) {
+      return;
+    }
+    effect.afterDamageMoves.push(() => {
+      const still = chosen.filter(c => source.cards.includes(c));
+      if (still.length === 0 || !player.bench.some(b => b.cards.length > 0)) {
+        return;
+      }
+      const notChosen: number[] = [];
+      source.cards.forEach((card, index) => {
+        if (card.superType === SuperType.ENERGY && !still.includes(card)) {
+          notChosen.push(index);
+        }
+      });
+      store.prompt(state, new AttachEnergyPrompt(
+        player.id,
+        GameMessage.ATTACH_ENERGY_TO_BENCH,
+        source,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.BENCH],
+        { superType: SuperType.ENERGY },
+        { allowCancel: false, min: still.length, max: still.length, blocked: notChosen, sameTarget: true },
+      ), transfers => {
+        for (const transfer of transfers || []) {
+          const target = StateUtils.getTarget(state, player, transfer.to);
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard });
+        }
+      });
     });
   });
 }

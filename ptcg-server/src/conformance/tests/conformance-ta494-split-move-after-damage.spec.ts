@@ -152,7 +152,7 @@ describe('TA-494 pbl-061 Shieldon Smithereen Smash: the Energy is discarded afte
 describe('TA-494 obf-085 Togekiss Power Cyclone: its own Energy moves after the damage (B.82)', () => {
   const TOGEKISS = ['obf-083', 'obf-084', 'obf-085'];
   const s = (energy: string[]) => board(mon('a1', TOGEKISS, energy), [mon('a2', [DONDOZO])], mon('b1', [BIG]));
-  const move = (card: string) => act({ actor: 'A', type: 'moveEnergy', card, source: 'a1', target: 'a2' });
+  const choose = (card: string) => act({ actor: 'A', type: 'choose', target: card });
   it('moving the Double Turbo Energy: its 20 less still applies, 90 damage [TA-494 obf-085]', () => {
     const r = step(s([DTE]), [attack('Power Cyclone')]); // one Energy, one Benched: forced
     expect(rejected(r)).toBeUndefined();
@@ -161,11 +161,12 @@ describe('TA-494 obf-085 Togekiss Power Cyclone: its own Energy moves after the 
     expect(order(r, 'b1', ['a1e0'])).toEqual(['d', 'm']);
     expect(evs(r).filter(e => e.kind === 'chosen').map(e => e.card)).toEqual(['a1e0']);
   });
+  // TA-651: the Energy choice before the damage is a `choose`; the Benched Pokémon is asked at the move (one here: forced).
   it('control: the choice is asked before the damage, then 110 and the move [TA-494 obf-085]', () => {
     const r0 = step(s([GRASS, GRASS]), [attack('Power Cyclone')]);
-    expect(acts(r0).filter(a => a.type === 'moveEnergy').length).toBe(2);
+    expect(acts(r0).filter(a => a.type === 'choose').length).toBe(2);
     expect(dealt(r0.events, 'b1')).toBe(0);
-    const r = step(s([GRASS, GRASS]), [attack('Power Cyclone'), move('a1e1')]);
+    const r = step(s([GRASS, GRASS]), [attack('Power Cyclone'), choose('a1e1')]);
     expect(dealt(r.events, 'b1')).toBe(110);
     // B.82 (3): the pick is recorded as `chosen` (the card still attached), then the damage, then its `moved` leg.
     const seq = evs(r).filter(e => e.kind === 'chosen' || (e.kind === 'damaged' && e.target === 'b1')

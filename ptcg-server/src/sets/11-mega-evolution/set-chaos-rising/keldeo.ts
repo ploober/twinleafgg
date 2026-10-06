@@ -1,4 +1,4 @@
-import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
+import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import {
   PokemonCard,
@@ -11,8 +11,8 @@ import {
   SlotType,
 } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { AFTER_ATTACK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
-import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Keldeo extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -70,32 +70,10 @@ export class Keldeo extends PokemonCard {
         );
       }
     }
-    // TA-365 (Step F, #543/#649): post-damage hook — see braixen.ts.
-    if (AFTER_ATTACK(effect, 1, this)) {
-      const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-      const hasEnergy = player.active.cards.some((c) => c.superType === SuperType.ENERGY);
-      if (hasBench && hasEnergy) {
-        return store.prompt(
-          state,
-          new AttachEnergyPrompt(
-            player.id,
-            GameMessage.ATTACH_ENERGY_TO_BENCH,
-            player.active,
-            PlayerType.BOTTOM_PLAYER,
-            [SlotType.BENCH],
-            { superType: SuperType.ENERGY },
-            { allowCancel: false, min: 1, max: 1 },
-          ),
-          (transfers) => {
-            const list = transfers || [];
-            for (const t of list) {
-              const target = StateUtils.getTarget(state, player, t.to);
-              MOVE_CARDS(store, state, player.active, target, { cards: [t.card], sourceCard: this });
-            }
-          },
-        );
-      }
+    // Reflect Energy
+    if (WAS_ATTACK_USED(effect, 1, this)) {
+      // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
     return state;
   }

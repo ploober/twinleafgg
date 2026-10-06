@@ -1,13 +1,14 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, BoardEffect, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, GameError, GameMessage, PlayerType, AttachEnergyPrompt, SlotType } from '../../../game';
+import { Stage, CardType, BoardEffect } from '../../../game/store/card/card-types';
+import { StoreLike, State, StateUtils, GameError, GameMessage, PlayerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PowerType } from '../../../game/store/card/pokemon-types';
-import { EndTurnEffect, AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
+import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { DRAW_CARDS, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
+import { DRAW_CARDS, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Frosmoth extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -40,7 +41,6 @@ export class Frosmoth extends PokemonCard {
   public fullName: string = 'Frosmoth M2a';
 
   public readonly INVITING_WINGS_MARKER = 'INVITING_WINGS_MARKER';
-  private readonly COLD_CYCLONE_MARKER = 'COLD_CYCLONE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Reset marker when Pokemon is played
@@ -95,19 +95,9 @@ export class Frosmoth extends PokemonCard {
       });
     }
 
+    // Cold Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      ADD_MARKER(this.COLD_CYCLONE_MARKER, effect.player, this);
-      return state;
-    }
-
-    if (effect instanceof AfterAttackEffect && HAS_MARKER(this.COLD_CYCLONE_MARKER, effect.player, this)) {
       const player = effect.player;
-      const hasBench = player.bench.some(b => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
       // TA-383 (the F-026 class, second carrier). A movable "[W] Energy" is any Energy that PROVIDES a
       // [W]-ish type RIGHT NOW. A Special Energy can carry a static `provides` that says nothing about
       // its real type — Legacy Energy `twm-167` is `[COLORLESS]` statically and `[ANY]` only via
@@ -116,14 +106,11 @@ export class Frosmoth extends PokemonCard {
       // ("Rainbow Energy counts as all types of energy when in play") and #383 (an all-types Energy
       // SATISFIES a type-specific condition) put it beyond doubt, and rotomancer already offers it.
       //
-      // Express the restriction as `blocked` (an index list), NOT as `validCardTypes`: that option is
-      // filtered against the STATIC `provides` array in BOTH the prompt's `validate()`
-      // (`attach-energy-prompt.ts`) and the conformance legalActions menu
-      // (`decomposers/attach-energy.ts`), which would drop the Special Energy right back out.
+      // Express the restriction as an eligibility test over the dynamic map (the prefab blocks the rest by index),
+      // NOT as a static-type filter, which would drop the Special Energy right back out.
       //
-      // Clamping `min`/`max` to what actually qualifies matters as much as the pool: with the Special
-      // Energy wrongly excluded the lone basic left made `min = max = 1` collapse, so the move was
-      // applied with NO prompt and the player never chose which Energy left.
+      // The count is clamped to what actually qualifies (the prefab): with the Special Energy wrongly
+      // excluded the lone basic left made the pick collapse, and the player never chose which Energy left.
       // Upstream 9e6e302fd deleted the WLFM/GRW/LPM/FDY/GRPD pseudo-CardTypes: a blend/unit Energy
       // now reports its REAL types in `provides` and StateUtils treats a multi-type provides as one
       // choosable unit, so [WATER, ANY] already matches a WLFM blend. Nothing to enumerate.
@@ -135,36 +122,10 @@ export class Frosmoth extends PokemonCard {
           .filter(em => em.provides.some(t => validTypes.includes(t)))
           .map(em => em.card)
       );
-      const blocked: number[] = [];
-      player.active.cards.forEach((card, index) => {
-        if (card.superType === SuperType.ENERGY && !providesValidType.has(card)) {
-          blocked.push(index);
-        }
-      });
-      const numToMove = Math.min(1, providesValidType.size);
-      if (numToMove === 0) {
-        return state;
-      }
-
-      // Then prompt for energy movement
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: numToMove, max: numToMove, blocked }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-        }
-      });
+      // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this,
+        { eligible: card => providesValidType.has(card) });
     }
-
-    REMOVE_MARKER_AT_END_OF_TURN(effect, this.COLD_CYCLONE_MARKER, this);
 
     return state;
   }

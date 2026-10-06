@@ -3,17 +3,13 @@ import {
   Stage,
   CardType,
   CardTag,
-  SuperType,
   SpecialCondition,
 } from '../../../game/store/card/card-types';
 import {
   StoreLike,
   State,
   PowerType,
-  AttachEnergyPrompt,
   GameMessage,
-  PlayerType,
-  SlotType,
   StateUtils,
   GameError,
 } from '../../../game';
@@ -22,7 +18,8 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
+import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Volcanionex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -98,36 +95,11 @@ export class Volcanionex extends PokemonCard {
     }
 
     // Heat Cyclone
+    // Scorching Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      // TA-258 / TA-79 second wave: the damage step (F) precedes effect application (#543, #649).
-      // Land the base damage BEFORE the rider's pending so the defender's dmg is visible there.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
-      const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
-      // TA-259: the move's destination is "1 of YOUR Benched Pokemon" — BOTTOM_PLAYER, as Yanmega's
-      // Jet Cyclone already does. TOP_PLAYER pointed the transfer at the OPPONENT's bench, and the
-      // malformed prompt shape also made the decomposer surface `discard` picks instead of
-      // CF-34's moveEnergy.
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 1, max: 1 }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-        }
-      });
+      // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it
+      // to 1 of YOUR Benched Pokémon (TA-259), asked at the move. Replaces the TA-258 damage-first order.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 
     if (effect instanceof EndTurnEffect) {

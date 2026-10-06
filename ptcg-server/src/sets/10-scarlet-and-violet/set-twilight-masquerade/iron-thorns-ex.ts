@@ -1,20 +1,17 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
+import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import {
   PowerType,
   StoreLike,
   State,
   GameMessage,
-  AttachEnergyPrompt,
-  PlayerType,
-  SlotType,
   StateUtils,
   PokemonCardList,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
-import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
-import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 import {
   CAN_APPLY_LOCK_TO_TARGET,
@@ -109,33 +106,10 @@ export class IronThornsex extends PokemonCard {
       },
     );
 
-    if (effect instanceof AfterAttackEffect && effect.attack === this.attacks[0]) {
-      const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
-      return store.prompt(
-        state,
-        new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_TO_BENCH,
-          player.active,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH],
-          { superType: SuperType.ENERGY },
-          { allowCancel: false, min: 1, max: 1 },
-        ),
-        (transfers) => {
-          transfers = transfers || [];
-          for (const transfer of transfers) {
-            const target = StateUtils.getTarget(state, player, transfer.to);
-            MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-          }
-        },
-      );
+    // Volt Cyclone
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it.
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 
     return state;
