@@ -7,6 +7,7 @@ import {
   PlayerType,
   SlotType,
   SuperType,
+  EnergyCard,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
@@ -28,7 +29,8 @@ function* moveEnergy(
   let pokemonInPlay = 0;
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
     pokemonInPlay++;
-    if (cardList.cards.some(c => c.superType === SuperType.ENERGY)) {
+    // TA-545 (B.29): the operand is "a Basic [G] Energy" -- the same filter as the prompt below -- not any Energy.
+    if (cardList.cards.some(c => c instanceof EnergyCard && c.energyType === EnergyType.BASIC && c.name === 'Grass Energy')) {
       pokemonWithEnergy++;
     }
   });
@@ -40,11 +42,7 @@ function* moveEnergy(
   // offered Solar Transfer and rotomancer withheld it; adding a second Pokemon to the Bench made
   // both offer it.
   //
-  // Deliberately NOT touching the energy test in the same edit: the prompt below filters to a Basic
-  // Grass Energy by name while this guard accepts ANY Energy, so a board holding only (say) a Water
-  // Energy still passes the guard and then offers an empty prompt. That is a real-looking second
-  // defect, but it is unproven -- no repro discriminates it yet -- so it stays unfixed rather than
-  // fixed on inspection.
+  // The SOURCE test is TA-545's: only a Pokemon holding a Basic Grass Energy is a source.
   if (!pokemonWithEnergy || pokemonInPlay < 2) {
     throw new GameError(GameMessage.CANNOT_USE_POWER);
   }

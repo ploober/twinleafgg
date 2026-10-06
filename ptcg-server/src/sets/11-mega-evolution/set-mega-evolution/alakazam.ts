@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { CONFIRMATION_PROMPT, DRAW_CARDS, IS_ABILITY_BLOCKED, JUST_EVOLVED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, CONFIRMATION_PROMPT, DRAW_CARDS, IS_ABILITY_BLOCKED, JUST_EVOLVED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { PowerType, StoreLike, State, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PUT_X_DAMAGE_COUNTERS_ON_YOUR_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
@@ -17,7 +17,7 @@ export class Alakazam extends PokemonCard {
   public powers = [{
     name: 'Psychic Draw',
     powerType: PowerType.ABILITY,
-    text: 'When you play this Pokémon from your hand to evolve 1 of your Pokémon during your turn, you may draw 3 cards.'
+    text: 'Once during your turn, when you play this Pokémon from your hand to evolve 1 of your Pokémon, you may use this Ability. Draw 3 cards.'
   }];
 
   public attacks = [{
@@ -45,6 +45,8 @@ export class Alakazam extends PokemonCard {
 
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (result) {
+          // TA-531 (CF-77): an accepted once-per-turn trigger carries its abilitiesUsedThisTurn label (the FX-0325 shape).
+          ABILITY_USED(player, this);
           DRAW_CARDS(store, state, player, 3);
         }
       }, GameMessage.WANT_TO_USE_ABILITY);

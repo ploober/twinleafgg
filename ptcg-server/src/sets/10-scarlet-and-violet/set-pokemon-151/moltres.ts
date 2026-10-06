@@ -44,25 +44,18 @@ export class Moltres extends PokemonCard {
         return state;
       }
 
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-        if (cardList.getPokemonCard() === this) {
+      // TA-552: "If this Pokémon has any [...] Energy attached, it has no Retreat Cost" -- only this Pokémon's own
+      // Retreat Cost. CheckRetreatCostEffect is always the Active's, so it applies only while this Pokémon is the Active.
+      if (player.active.getPokemonCard() !== this) {
+        return state;
+      }
 
-          const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, cardList);
-          state = store.reduceEffect(state, checkProvidedEnergy);
+      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
+      state = store.reduceEffect(state, checkProvidedEnergy);
 
-          checkProvidedEnergy.energyMap.forEach(energy => {
-            if (energy.provides.includes(CardType.FIRE)) {
-              effect.cost = [];
-              return state;
-            }
-
-            if (energy.provides.includes(CardType.ANY)) {
-              effect.cost = [];
-              return state;
-            }
-          });
-        }
-      });
+      if (checkProvidedEnergy.energyMap.some(energy => energy.provides.includes(CardType.FIRE) || energy.provides.includes(CardType.ANY))) {
+        effect.cost = [];
+      }
     }
 
 

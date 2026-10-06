@@ -45,7 +45,8 @@ export class Toedscool extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // TA-534: the heal is Absorb's (index 1, "Heal 20 damage from this Pokémon."); Kick (index 0) has no text.
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
       const healEffect = new HealEffect(player, effect.player.active, 20);

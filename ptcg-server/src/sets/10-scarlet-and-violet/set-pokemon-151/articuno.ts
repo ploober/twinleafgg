@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { PlayerType, PowerType, State, StoreLike } from '../../../game';
+import { PowerType, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect, CheckRetreatCostEffect } from '../../../game/store/effects/check-effects';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
@@ -44,25 +44,18 @@ export class Articuno extends PokemonCard {
         return state;
       }
 
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-        if (cardList.getPokemonCard() === this) {
+      // TA-530: "If this Pokémon has any [...] Energy attached, it has no Retreat Cost" -- only this Pokémon's own
+      // Retreat Cost. CheckRetreatCostEffect is always the Active's, so it applies only while this Pokémon is the Active.
+      if (player.active.getPokemonCard() !== this) {
+        return state;
+      }
 
-          const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, cardList);
-          state = store.reduceEffect(state, checkProvidedEnergy);
+      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
+      state = store.reduceEffect(state, checkProvidedEnergy);
 
-          checkProvidedEnergy.energyMap.forEach(energy => {
-            if (energy.provides.includes(CardType.WATER)) {
-              effect.cost = [];
-              return state;
-            }
-
-            if (energy.provides.includes(CardType.ANY)) {
-              effect.cost = [];
-              return state;
-            }
-          });
-        }
-      });
+      if (checkProvidedEnergy.energyMap.some(energy => energy.provides.includes(CardType.WATER) || energy.provides.includes(CardType.ANY))) {
+        effect.cost = [];
+      }
     }
 
 

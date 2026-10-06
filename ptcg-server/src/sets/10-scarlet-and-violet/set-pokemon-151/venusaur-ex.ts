@@ -85,7 +85,9 @@ export class Venusaurex extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      if (player.active.cards[0] !== this || !pokemonInPlayWithDamage) {
+      // TA-526: "if this Pokémon is in the Active Spot" -- the Pokémon on top of the Active stack, not the Basic at
+      // its bottom (cards[0]), so an evolved Venusaur ex qualifies.
+      if (player.active.getPokemonCard() !== this || !pokemonInPlayWithDamage) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 

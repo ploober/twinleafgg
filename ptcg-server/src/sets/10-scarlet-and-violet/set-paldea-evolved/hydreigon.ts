@@ -108,8 +108,10 @@ export class Hydreigon extends PokemonCard {
               const target = StateUtils.getTarget(state, player, transfer.to);
               MOVE_CARDS(store, state, temp, target, { cards: [transfer.card], sourceCard: this }); // Move card to target
             }
-            temp.cards.forEach(card => {
-              MOVE_CARDS(store, state, temp, player.discard, { cards: [card], sourceCard: this }); // Move card to hand
+            // TA-538: "Discard the other cards" -- iterate a copy: MOVE_CARDS removes from temp, and iterating temp itself
+            // skipped every other leftover.
+            temp.cards.slice().forEach(card => {
+              MOVE_CARDS(store, state, temp, player.discard, { cards: [card], sourceCard: this });
               player.marker.addMarker(this.TRI_HOWL_MARKER, this);
             });
           }
