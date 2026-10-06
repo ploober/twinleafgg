@@ -3,7 +3,7 @@ import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card
 import { StoreLike, State, StateUtils, CardList, GameLog, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckHpEffect, CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, IS_ABILITY_BLOCKED, WAS_ATTACK_USED, COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS, FLIP_UNTIL_TAILS_AND_COUNT_HEADS } from '../../../game/store/prefabs/prefabs';
 
 export class Tyrantrum extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -59,7 +59,7 @@ export class Tyrantrum extends PokemonCard {
       }
     }
 
-    // Attack: Flip coins until tails, discard top card for each heads
+    // Attack: flip until tails, then discard the top card of the opponent's deck for each heads
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // TA-258/TA-79 damage-ordering: the base 160 is Step F and must land BEFORE the coin-flip
       // rider pends (rotomancer/rulebook emit `damaged:160` up front; without this twinleaf deferred
@@ -69,27 +69,19 @@ export class Tyrantrum extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      const flipCoins = (s: State): State => {
-        if (opponent.deck.cards.length === 0) {
-          return s;
+      // TA-625: "For each heads" is counted when the tails ends the sequence; the cards move once, after the flips.
+      return FLIP_UNTIL_TAILS_AND_COUNT_HEADS(store, state, player, heads => {
+        const count = Math.min(heads, opponent.deck.cards.length);
+        if (count === 0) {
+          return;
         }
-
-        return COIN_FLIP_PROMPT(store, s, player, result => {
-          if (result === true) {
-            // Heads - discard top card
-            const deckTop = new CardList();
-            MOVE_CARDS(store, state, opponent.deck, deckTop, { count: 1, sourceCard: this });
-            if (deckTop.cards.length > 0) {
-              store.log(s, GameLog.LOG_PLAYER_DISCARDS_CARD, { name: opponent.name, card: deckTop.cards[0].name, effectName: 'Wreak Havoc' });
-              MOVE_CARDS(store, state, deckTop, opponent.discard, { sourceCard: this });
-            }
-            // Continue flipping
-            flipCoins(s);
-          }
+        const deckTop = new CardList();
+        MOVE_CARDS(store, state, opponent.deck, deckTop, { count, sourceCard: this });
+        deckTop.cards.forEach(card => {
+          store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD, { name: opponent.name, card: card.name, effectName: 'Wreak Havoc' });
         });
-      };
-
-      return flipCoins(state);
+        MOVE_CARDS(store, state, deckTop, opponent.discard, { sourceCard: this });
+      });
     }
 
     return state;
