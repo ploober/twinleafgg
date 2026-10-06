@@ -1,7 +1,7 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StateUtils, StoreLike, State } from '../../../game';
-import { ChooseCardsPrompt, GameMessage } from '../../../game';
+import { ChooseCardsPrompt, GameMessage, ShowCardsPrompt } from '../../../game';
 import {
   MOVE_CARDS,
   MULTIPLE_COIN_FLIPS_PROMPT,
@@ -46,16 +46,27 @@ export class Watchog extends PokemonCard {
       const opponent = StateUtils.getOpponent(state, player);
       return MULTIPLE_COIN_FLIPS_PROMPT(store, state, player, 3, (results) => {
         const heads = results.filter((r) => r).length;
-        if (heads > 0 && opponent.hand.cards.length > 0) {
-          const maxChoose = Math.min(heads, opponent.hand.cards.length);
+        if (heads === 0 || opponent.hand.cards.length === 0) {
+          return state;
+        }
+        // TA-411: "If any of them are heads, your opponent reveals their hand." A public reveal (CF-18).
+        return store.prompt(state, new ShowCardsPrompt(
+          player.id,
+          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+          opponent.hand.cards,
+        ), () => {
+          // TA-411: "For each heads, choose a card you find there and shuffle it into your opponent's deck."
+          // Compendium #2356: "You have to do as much as you can." So the pick is exactly min(heads, hand) with no
+          // stop, and it is a move to the DECK (CHOOSE_CARD_TO_DECK), not a discard.
+          const count = Math.min(heads, opponent.hand.cards.length);
           return store.prompt(
             state,
             new ChooseCardsPrompt(
               player,
-              GameMessage.CHOOSE_CARD_TO_DISCARD,
+              GameMessage.CHOOSE_CARD_TO_DECK,
               opponent.hand,
               {},
-              { min: 0, max: maxChoose, allowCancel: false },
+              { min: count, max: count, allowCancel: false },
             ),
             (selected) => {
               const cards = selected || [];
@@ -69,8 +80,7 @@ export class Watchog extends PokemonCard {
               }
             },
           );
-        }
-        return state;
+        });
       });
     }
     return state;

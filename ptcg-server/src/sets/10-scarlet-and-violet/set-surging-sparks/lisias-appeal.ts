@@ -1,11 +1,11 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { SpecialCondition, Stage, TrainerType } from '../../../game/store/card/card-types';
+import { Stage, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { CardTarget, GameError, GameMessage, Player, PlayerType, SlotType, StateUtils } from '../../../game';
-import { SWITCH_IN_OPPONENT_BENCHED_POKEMON, TRAINER_TARGET_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { ADD_CONFUSION_TO_PLAYER_ACTIVE, SWITCH_IN_OPPONENT_BENCHED_POKEMON, TRAINER_TARGET_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class LisiasAppeal extends TrainerCard {
   public regulationMark = 'H';
@@ -57,7 +57,10 @@ export class LisiasAppeal extends TrainerCard {
         sourceCard: this,   // TA-388: a benched Antique Sail Fossil vetoes this opponent-Supporter gust
         onSwitched: () => {
           if (!TRAINER_TARGET_BLOCKED(store, state, player, this, opponent.active)) {
-            opponent.active.addSpecialCondition(SpecialCondition.CONFUSED);
+            // TA-389: Confuse through the reduced AddSpecialConditionsPowerEffect (as Dark Bell does), not a raw
+            // addSpecialCondition, so a target that "can't be affected by any Special Conditions" (the Antique
+            // Fossils) can prevent it.
+            ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, opponent, this);
           }
         }
       });

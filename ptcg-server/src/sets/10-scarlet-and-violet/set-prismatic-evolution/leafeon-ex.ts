@@ -29,13 +29,13 @@ export class Leafeonex extends PokemonCard {
       name: 'Verdant Storm',
       cost: [G, C],
       damage: 60,
-      text: "This attack foes 60 damage for each Energy attached to all of your opponent's Pokémon.",
+      text: "This attack does 60 damage for each Energy attached to all of your opponent's Pokémon.",
     },
     {
       name: 'Moss Agate',
       cost: [G, R, W],
       damage: 230,
-      text: 'Heal 100 damage from each of your Benched Pokemon.',
+      text: 'Heal 100 damage from each of your Benched Pokémon.',
     },
   ];
 
