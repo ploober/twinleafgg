@@ -12111,6 +12111,16 @@
       "fixes": [
         "FX-0433"
       ]
+    },
+    {
+      "file": "set-shrouded-fable/dangerous-laser.ts",
+      "signatures": [
+        "ADD_SPECIAL_CONDITIONS_TO_PLAYER_ACTIVE(store, state, opponent, this, [SpecialCondition.BURNED, SpecialCondition.CONFUSED]);"
+      ],
+      "note": "TA-644 (2026-10-06): Dangerous Laser sfa-058 applies Burned and Confused through AddSpecialConditionsPowerEffect, so a Pokemon that can't be ",
+      "fixes": [
+        "FX-0434"
+      ]
     }
   ]
 }
