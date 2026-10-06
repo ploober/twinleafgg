@@ -94,14 +94,14 @@ describe('TA-645 (B.85 (3)(a)): the pick of the opponent\'s Energy is asked afte
     ['pbl-061', 'Smithereen Smash', [METAL, METAL], 50],
   ];
   for (const [id, name, energy, dmg] of discarders) {
-    it(`${id} ${name}: at the Energy pick the ${dmg} damage is done and both Energy are attached [TA-645 ${id}]`, () => {
+    it(`${id} ${name}: at the Energy pick the ${dmg} damage is done and both Energy are attached (${id}) [TA-645]`, () => {
       const r = step(board(id, energy), [attack(name)]);
       expect(rejected(r)).toBeUndefined();
       expect(acts(r).filter(a => a.type === 'discard').map(a => a.target).sort()).toEqual(['b1e0', 'b1e1']);
       expect(dealt(r, 'b1')).toBe(dmg);
       expect(energyOf(r, 'active')).toEqual(['b1e0', 'b1e1']);
     });
-    it(`${id} ${name}: damage, then the discard; no chosen event [TA-645 ${id}]`, () => {
+    it(`${id} ${name}: damage, then the discard; no chosen event (${id}) [TA-645]`, () => {
       const r = step(board(id, energy), [attack(name), discard('b1e1')]);
       expect(rejected(r)).toBeUndefined();
       expect(order(r, ['b1e'])).toEqual(['d', 'm']);
@@ -159,7 +159,7 @@ describe('TA-646 (B.85 (3)(a)): the opponent\'s hand is discarded after the dama
     ['cri-102', 'Ghostly Touch', [PSYCHIC, PSYCHIC], 140],
   ];
   for (const [id, name, energy, dmg] of random) {
-    it(`${id} ${name}: one card in hand: ${dmg} damage, then the card is discarded [TA-646 ${id}]`, () => {
+    it(`${id} ${name}: one card in hand: ${dmg} damage, then the card is discarded (${id}) [TA-646]`, () => {
       const r = step(board(id, energy, [WATER]), [attack(name)]);
       expect(rejected(r)).toBeUndefined();
       expect(dealt(r, 'b1')).toBe(dmg);
@@ -169,7 +169,7 @@ describe('TA-646 (B.85 (3)(a)): the opponent\'s hand is discarded after the dama
   }
 
   for (const id of ['asc-135', 'asc-270', 'asc-285']) {
-    it(`${id} Outlaw Leg: 160 damage, then the hand card, then the top card of the deck [TA-646 ${id}]`, () => {
+    it(`${id} Outlaw Leg: 160 damage, then the hand card, then the top card of the deck (${id}) [TA-646]`, () => {
       const r = step(board(id, [DARK, DARK, DARK], [WATER]), [attack('Outlaw Leg')]);
       expect(rejected(r)).toBeUndefined();
       expect(dealt(r, 'b1')).toBe(160);
@@ -179,14 +179,14 @@ describe('TA-646 (B.85 (3)(a)): the opponent\'s hand is discarded after the dama
   }
 
   for (const id of ['mew-024', 'mew-185']) {
-    it(`${id} Menacing Fangs: three cards in hand: at the opponent's pick the 150 damage is done [TA-646 ${id}]`, () => {
+    it(`${id} Menacing Fangs: three cards in hand: at the opponent's pick the 150 damage is done (${id}) [TA-646]`, () => {
       const r = step(board(id, [DARK, DARK, DARK], [GRASS, FIRE, WATER]), [attack('Menacing Fangs')]);
       expect(rejected(r)).toBeUndefined();
       expect(acts(r).filter(a => a.actor === 'B').length).toBe(3);
       expect(dealt(r, 'b1')).toBe(150);
       expect(r.state.players.B.hand.length).toBe(3);
     });
-    it(`${id} Menacing Fangs: two cards in hand: 150 damage, then both are discarded [TA-646 ${id}]`, () => {
+    it(`${id} Menacing Fangs: two cards in hand: 150 damage, then both are discarded (${id}) [TA-646]`, () => {
       const r = step(board(id, [DARK, DARK, DARK], [GRASS, FIRE]), [attack('Menacing Fangs')]);
       expect(rejected(r)).toBeUndefined();
       expect(dealt(r, 'b1')).toBe(150);
