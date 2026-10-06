@@ -292,6 +292,8 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
 
   const copycatCard = attackingPokemon.getPokemonCard();
   const delegateFrom = effect instanceof UseAttackEffect ? effect.delegateFrom : undefined;
+  let attackDeferPrev = state.deferAfterDamage;
+  let attackDrainStart = state.pendingAfterDamage.length;
 
   if (delegateFrom && copycatCard) {
     state = yield* runDelegatedCopiedAttackGenerator(next, {
@@ -309,7 +311,23 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
   } else {
     const prevPreDamage = state.preDamageAttack;
     state.preDamageAttack = attackEffect;   // B.82: until the damage step starts (below)
-    state = store.reduceEffect(state, attackEffect);
+    // TA-562 / §B.53: arm the damage-response deferral BEFORE the attack's own effect runs, not only for the damage step
+    // below. An attack that deals its damage inline from inside its effect (APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, or a
+    // hand-rolled DealDamageEffect before its prompt: Crunch twm-094 and ~40 in-pool printings) otherwise raised its
+    // AfterDamageEffect while the flag was still off, so "when damaged by an attack" reactions (Needly Armor, Automated
+    // Combat, Spiky Energy...) resolved before the attack's remaining effects (#2172, E-03). The queue it fills is the
+    // same one the damage step fills; both are drained together after AfterAttackEffect.
+    attackDeferPrev = state.deferAfterDamage;
+    attackDrainStart = state.pendingAfterDamage.length;
+    state.deferAfterDamage = true;
+    try {
+      state = store.reduceEffect(state, attackEffect);
+    } catch (error) {
+      state.deferAfterDamage = attackDeferPrev;
+      state.pendingAfterDamage.splice(attackDrainStart);
+      state.preDamageAttack = prevPreDamage;
+      throw error;
+    }
 
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
@@ -394,8 +412,9 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     // effects (e.g. Strafe's "you may switch") → damage-response Abilities (Shell Spikes) → KO
     // (Advanced Rulebook II E-03, #2172). `drainStart`/`prevDefer` make it nesting-safe: a copied
     // attack re-entering an attack pipeline drains only what it queued and restores the outer flag.
-    const prevDefer = state.deferAfterDamage;
-    const drainStart = state.pendingAfterDamage.length;
+    // TA-562: armed above, before the attack's own effect (attackDeferPrev / attackDrainStart).
+    const prevDefer = attackDeferPrev;
+    const drainStart = attackDrainStart;
     state.deferAfterDamage = true;
 
     const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);

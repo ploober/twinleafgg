@@ -337,17 +337,25 @@ export function runDelegatedCopiedAttack(ctx: DelegatedCopiedAttackContext): Sta
 
   // Fan-out while copycat still has its printed attacks (no index leak).
   // Session hook after propagateEffect runs source as .call(copycat).
-  const prevPreDamage = state.preDamageAttack;
-  state.preDamageAttack = attackEffect;   // B.82
-  state = store.reduceEffect(state, attackEffect);
-  state.preDamageAttack = prevPreDamage;
-
   // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack too
   // (see game-effect.ts useAttack for the rationale). This synchronous variant drains without yielding;
   // its caller pumps any prompts a response opens, as it already does for AfterAttackEffect here.
+  // TA-562: armed before the attack's own effect, so damage it deals inline is held back too.
   const prevDefer = state.deferAfterDamage;
   const drainStart = state.pendingAfterDamage.length;
   state.deferAfterDamage = true;
+
+  const prevPreDamage = state.preDamageAttack;
+  state.preDamageAttack = attackEffect;   // B.82
+  try {
+    state = store.reduceEffect(state, attackEffect);
+  } catch (error) {
+    state.deferAfterDamage = prevDefer;
+    state.pendingAfterDamage.splice(drainStart);
+    state.preDamageAttack = prevPreDamage;
+    throw error;
+  }
+  state.preDamageAttack = prevPreDamage;
 
   const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);
   state = store.reduceEffect(state, beforeDoingDamageEffect);
@@ -420,19 +428,28 @@ export function* runDelegatedCopiedAttackGenerator(
   const attackEffect = new AttackEffect(player, opponent, clonedAttack);
   attackEffect.source = sourceSlot ?? player.active;
 
+  // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack (see
+  // game-effect.ts useAttack). Nesting-safe via drainStart/prevDefer.
+  // TA-562: armed before the attack's own effect, so damage it deals inline is held back too.
+  const prevDefer = state.deferAfterDamage;
+  const drainStart = state.pendingAfterDamage.length;
+  state.deferAfterDamage = true;
+
   const prevPreDamage = state.preDamageAttack;
   state.preDamageAttack = attackEffect;   // B.82: until the damage step starts
-  state = store.reduceEffect(state, attackEffect);
+  try {
+    state = store.reduceEffect(state, attackEffect);
+  } catch (error) {
+    state.deferAfterDamage = prevDefer;
+    state.pendingAfterDamage.splice(drainStart);
+    state.preDamageAttack = prevPreDamage;
+    throw error;
+  }
 
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());
   }
   state.preDamageAttack = prevPreDamage;
-
-  // CF-74 / §B.53: defer the damage-response window past AfterAttackEffect for the copied attack (see
-  // game-effect.ts useAttack). Nesting-safe via drainStart/prevDefer.
-  const prevDefer = state.deferAfterDamage;
-  const drainStart = state.pendingAfterDamage.length;
   state.deferAfterDamage = true;
 
   const beforeDoingDamageEffect = new BeforeDoingDamageEffect(attackEffect);
