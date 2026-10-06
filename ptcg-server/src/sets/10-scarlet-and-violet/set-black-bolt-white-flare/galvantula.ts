@@ -1,4 +1,4 @@
-import { Card, State, StoreLike } from '../../../game';
+import { Card, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
@@ -37,7 +37,9 @@ export class Galvantula extends PokemonCard {
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
       state = store.reduceEffect(state, checkProvidedEnergy);
 
-      const lightningEnergies = checkProvidedEnergy.energyMap.filter(e => e.provides.includes(CardType.LIGHTNING));
+      // TA-162: an Energy that provides every type while attached (Legacy Energy: [ANY] in the energy map) is a [L]
+      // Energy for this effect too (#687), as it is for the cost; providesMatchesType is the cost path's reading.
+      const lightningEnergies = checkProvidedEnergy.energyMap.filter(e => StateUtils.providesMatchesType(e.provides, CardType.LIGHTNING));
       const cards: Card[] = lightningEnergies.map(e => e.card);
       const discardEnergy = new DiscardCardsEffect(effect, cards);
       discardEnergy.target = player.active;
