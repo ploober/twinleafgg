@@ -43,7 +43,7 @@ export class Unfezant extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       const source = opponent.active;
-      const available = source.cards.filter(c => c.superType === SuperType.ENERGY).length;
+      const available = opponent.active.cards.filter(c => c.superType === SuperType.ENERGY).length;
       if (available === 0) {
         return state;
       }
