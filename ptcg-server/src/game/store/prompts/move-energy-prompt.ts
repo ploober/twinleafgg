@@ -28,6 +28,9 @@ export interface MoveEnergyOptions {
 
 export class MoveEnergyPrompt extends Prompt<CardTransfer[]> {
 
+  /** B.89 (5) / TA-661: an attack's Step-D choice: the adapter records the pick as `chosen` and the card stays put. */
+  public deferredMove?: boolean;
+
   readonly type: string = MoveEnergyPromptType;
 
   public options: MoveEnergyOptions;

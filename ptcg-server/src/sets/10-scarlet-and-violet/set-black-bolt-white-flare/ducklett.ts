@@ -1,11 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, Card, ChooseEnergyPrompt } from '../../../game';
+import { StoreLike, State } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
-import { GameMessage } from '../../../game/game-message';
-import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
+import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Ducklett extends PokemonCard {
@@ -37,29 +35,11 @@ export class Ducklett extends PokemonCard {
   public setNumber: string = '25';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Firefighting. TA-661 / B.89 (5): "Discard a [R] Energy from your opponent's Active Pokémon." The pick is made first
+    // (recorded `chosen` among two or more, B.93; one [R] Energy is applied with no pending, CF-14) and discarded after.
+    // It read every Energy on the opponent's side (CheckProvidedEnergyEffect(opponent)); the text names the Active.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = effect.opponent;
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(opponent);
-      state = store.reduceEffect(state, checkProvidedEnergy);
-
-      const energyList: CardType[] = [];
-      for (let i = 0; i < 1; i++) {
-        energyList.push(CardType.FIRE);
-      }
-
-      state = store.prompt(state, new ChooseEnergyPrompt(
-        player.id,
-        GameMessage.CHOOSE_ENERGIES_TO_DISCARD,
-        checkProvidedEnergy.energyMap,
-        energyList,
-        { allowCancel: false }
-      ), energy => {
-        const cards: Card[] = (energy || []).map(e => e.card);
-        const discardEnergy = new DiscardCardsEffect(effect, cards);
-        discardEnergy.target = opponent.active;
-        return store.reduceEffect(state, discardEnergy);
-      });
+      return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, [CardType.FIRE], 1, true);
     }
     return state;
   }

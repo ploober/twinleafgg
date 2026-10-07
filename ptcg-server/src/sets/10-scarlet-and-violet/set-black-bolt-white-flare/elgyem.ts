@@ -36,7 +36,8 @@ export class Elgyem extends PokemonCard {
     // Attack 1: Slight Shift
     // Ref: set-unbroken-bonds/tentacruel.ts (Wicked Tentacles)
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      return MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(store, state, effect);
+      // TA-661 / B.89 (5): the Energy and its destination are chosen first (recorded `chosen`), then it moves.
+      return MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(store, state, effect, { chooseFirst: true });
     }
 
     return state;

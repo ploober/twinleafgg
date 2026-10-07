@@ -1,3 +1,4 @@
+import { Card } from '../../game/store/card/card';
 import { MoveEnergyPrompt } from '../../game/store/prompts/move-energy-prompt';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
@@ -180,7 +181,16 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
 
   /** B.80: a `moveEnergy` pick PLACES the Energy on its target at once (the player moves the card); the
    *  projection shows it there before the next pick. The engine applies the whole list on resolve. */
+  /** B.89 (5) / TA-661: the Energy an attack's Step-D move picked (the prompt is `deferredMove`); they stay attached
+   *  until the attack's effects apply, and the adapter records them as `chosen`. */
+  pickedCards(prompt, picks, _ctx, state) {
+    const player = promptPlayer(state, prompt.playerId);
+    return (realPicks(picks) as Array<{ from: CardTarget; index: number }>)
+      .map(p => StateUtils.getTarget(state, player, p.from).cards[p.index]).filter((c): c is Card => c !== undefined);
+  },
+
   fixupProjection(prompt, picks, ctx, state, projected) {
+    if (prompt.deferredMove === true) { return; }   // B.89 (5): a Step-D choice; the picked Energy stays attached
     const player = promptPlayer(state, prompt.playerId);
     for (const p of realPicks(picks) as Array<{ from: CardTarget; to: CardTarget; index: number }>) {
       const list = StateUtils.getTarget(state, player, p.from);

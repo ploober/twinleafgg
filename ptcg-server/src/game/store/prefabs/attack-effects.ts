@@ -874,6 +874,8 @@ export interface MoveOpponentEnergyOptions {
   allowCancel?: boolean;
   blockedFrom?: CardTarget[];
   blockedTo?: CardTarget[];
+  /** TA-661 / B.89 (1), (5): the pick is the attacker's Step-D choice (recorded `chosen`); the move applies after the damage. */
+  chooseFirst?: boolean;
 }
 
 /**
@@ -920,21 +922,34 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
   const blockedFrom = [...(options?.blockedFrom ?? []), ...preventedFrom];
   const blockedTo = options?.blockedTo ?? [];
 
-  return store.prompt(state, new MoveEnergyPrompt(
+  const prompt = new MoveEnergyPrompt(
     player.id,
     GameMessage.MOVE_ENERGY_CARDS,
     PlayerType.TOP_PLAYER,
     [SlotType.ACTIVE, SlotType.BENCH],
     { superType: SuperType.ENERGY },
     { min, max, allowCancel, blockedFrom, blockedTo }
-  ), result => {
+  );
+  const deferred = options?.chooseFirst === true;
+  if (deferred) {
+    prompt.deferredMove = true;   // B.89 (5): chosen at Step D, moved when the attack's effects apply
+  }
+  return store.prompt(state, prompt, result => {
     const transfers = result || [];
-    transfers.forEach(transfer => {
+    const move = () => transfers.forEach(transfer => {
       const source = StateUtils.getTarget(state, player, transfer.from);
       const destination = StateUtils.getTarget(state, player, transfer.to);
+      if (!source.cards.includes(transfer.card)) {
+        return;
+      }
       const moveEffect = new MoveOpponentEnergyEffect(effect, transfer.card, source, destination);
       store.reduceEffect(state, moveEffect);
     });
+    if (deferred) {
+      effect.afterDamageMoves.push(move);
+    } else {
+      move();
+    }
   });
 }
 

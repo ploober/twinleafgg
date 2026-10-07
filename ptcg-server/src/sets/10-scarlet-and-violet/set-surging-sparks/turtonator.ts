@@ -1,11 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, GameMessage } from '../../../game';
+import { StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
-import { SuperType } from '../../../game/store/card/card-types';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
+import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 import { CardTag } from '../../../game/store/card/card-types';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -52,25 +50,9 @@ export class Turtonator extends PokemonCard {
       if (!activeCard || !activeCard.hasTag(CardTag.POKEMON_ex)) {
         return state;
       }
-      // Check for any energy attached
-      const energyCards = opponentActive.cards.filter(c => c.superType === SuperType.ENERGY);
-      if (energyCards.length === 0) {
-        return state;
-      }
-      return store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        opponentActive,
-        { superType: SuperType.ENERGY },
-        { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-        if (selected && selected.length > 0) {
-          const discardEffect = new DiscardCardsEffect(effect, selected);
-          discardEffect.target = opponentActive;
-          store.reduceEffect(state, discardEffect);
-        }
-        return state;
-      });
+      // TA-661 / B.89 (5): a no-damage attack still makes its Step-D choice first (recorded `chosen` when there are two or
+      // more Energy, B.93), then discards it.
+      return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
     }
     return state;
   }
