@@ -509,9 +509,13 @@
       "file": "set-temporal-forces/minccino.ts",
       "signatures": [
         "if (WAS_ATTACK_USED(effect, 1, this)) {",
-        "const generator = useCleaningUp(() => generator.next(), store, state, effect);"
+        "const generator = useCleaningUp(() => generator.next(), store, state, effect);",
+        "prompt.deferredMove = true;"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0441"
+      ]
     },
     {
       "file": "set-temporal-forces/miraidon.ts",
@@ -587,7 +591,10 @@
       "signatures": [
         "// PASSIVE, always-on cost reduction (compendium #2311"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-mega-evolution/latios.ts",
@@ -665,7 +672,8 @@
       ],
       "state": "guarding",
       "fixes": [
-        "FX-0206"
+        "FX-0206",
+        "FX-0440"
       ],
       "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
     },
@@ -676,7 +684,8 @@
       ],
       "state": "guarding",
       "fixes": [
-        "FX-0206"
+        "FX-0206",
+        "FX-0440"
       ],
       "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
     },
@@ -857,7 +866,10 @@
         "return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
+      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-black-bolt-white-flare/duosion.ts",
@@ -2048,11 +2060,13 @@
       "signatures": [
         "base, [SpecialCondition.ASLEEP]",
         "base, [SpecialCondition.POISONED]",
-        "if (item.wasActive && item.target !== effect.player.active) {"
+        "if (item.wasActive && item.target !== effect.player.active) {",
+        "const target = StateUtils.getTarget(state, player, chosen[0].to);"
       ],
       "note": "TA-289's copied-attack AfterAttackEffect moved into the shared game/store/prefabs/copy-attack-delegation.ts when upstream 3ee8aac13 routed every copy prefab through runDelegatedCopiedAttackGenerator; it is signature-protected there.",
       "fixes": [
-        "FX-0005"
+        "FX-0005",
+        "FX-0441"
       ],
       "state": "guarding"
     },
@@ -4351,7 +4365,10 @@
         "const placeCounters = new PlaceDamageCountersEffect(player, cardList, 20, this);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-weezing.ts",
@@ -6881,7 +6898,10 @@
         "return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
+      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-surging-sparks/togepi.ts",
@@ -7316,7 +7336,10 @@
         "return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
+      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-temporal-forces/unfezant.ts",
@@ -7325,7 +7348,10 @@
         "const available = opponent.active.cards.filter(c => c.superType === SuperType.ENERGY).length;"
       ],
       "state": "guarding",
-      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
+      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
+      "fixes": [
+        "FX-0440"
+      ]
     },
     {
       "file": "set-temporal-forces/gastly.ts",
@@ -8667,7 +8693,8 @@
       ],
       "state": "guarding",
       "fixes": [
-        "FX-0290"
+        "FX-0290",
+        "FX-0440"
       ],
       "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)"
     },
@@ -10888,7 +10915,8 @@
       ],
       "note": "TA-633 (2026-10-05): Trick Cape (Meowscarada svi-015) and Eerie Tentacles (Toedscruel svi-026) move the opponent's Energy after the damage (# | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied) | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
       "fixes": [
-        "FX-0406"
+        "FX-0406",
+        "FX-0440"
       ]
     },
     {
@@ -10898,7 +10926,8 @@
       ],
       "note": "TA-633 (2026-10-05): Eerie Tentacles moves the opponent's Energy after the damage (#77, B.84 (1)) | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied) | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
       "fixes": [
-        "FX-0406"
+        "FX-0406",
+        "FX-0440"
       ]
     },
     {
@@ -11990,7 +12019,8 @@
       ],
       "note": "batch 5 (FX-0425, 2026-10-06); validated present@HEAD absent@merge-base | retargeted 2026-10-06 (B.85 / TA-645: the line evolved; signature moved to the new line, not reapplied) | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
       "fixes": [
-        "FX-0425"
+        "FX-0425",
+        "FX-0440"
       ]
     },
     {
@@ -12060,7 +12090,8 @@
       ],
       "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
       "fixes": [
-        "FX-0429"
+        "FX-0429",
+        "FX-0440"
       ]
     },
     {
@@ -12160,7 +12191,8 @@
       ],
       "note": "TA-645, TA-646 (2026-10-06): B.85 (3)(a): attack effects on the opponent's cards in play and hand, decision and move, come after the damage (Demoliti | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
       "fixes": [
-        "FX-0435"
+        "FX-0435",
+        "FX-0440"
       ]
     },
     {
@@ -12251,6 +12283,46 @@
       "note": "TA-651 (2026-10-06, B.82 (1)): the attacker's own Energy is chosen before the damage and moved after (choose-first prefab).",
       "fixes": [
         "FX-0439"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "export function MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST("
+      ],
+      "note": "TA-655, TA-652 (2026-10-06): B.89 Step D: the attacker's choice of the opponent's Active Energy (and a move's Benched destination, after a standalone",
+      "fixes": [
+        "FX-0440"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "{ allowCancel: false, min: count, max: count, blocked, sameTarget: true },"
+      ],
+      "note": "TA-653, TA-654 (2026-10-06): B.89 Step D: the own-Energy movers ask the Energy and its Benched destination together before the damage (joint moveEner",
+      "fixes": [
+        "FX-0441"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/select.ts",
+      "signatures": [
+        "atomicResolvable: () => true,"
+      ],
+      "note": "TA-656 (2026-10-06): A Choose-1 menu left with one option is applied with no pending (CF-14): the Select / SelectOption decomposers implement",
+      "fixes": [
+        "FX-0442"
+      ]
+    },
+    {
+      "file": "game/store/prompts/attach-energy-prompt.ts",
+      "signatures": [
+        "public deferredMove?: boolean;"
+      ],
+      "note": "B.89 (2026-10-06): Step-D choices recorded as chosen before the damage / effects (TA-653, TA-654).",
+      "fixes": [
+        "FX-0441"
       ]
     }
   ]
