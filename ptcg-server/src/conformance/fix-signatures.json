@@ -5933,10 +5933,14 @@
       "file": "game/store/prompts/shuffle-prompt.ts",
       "signatures": [
         "s.sort((a, b) => a - b);",
-        "public bottomCount?: number;"
+        "public bottomCount?: number;",
+        "public alsoShuffles?: number[];"
       ],
       "note": "numeric comparator; default lexicographic sort rejected every shuffle of a deck > 10 cards",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0443"
+      ]
     },
     {
       "file": "game/store/state/state.ts",
@@ -12323,6 +12327,16 @@
       "note": "B.89 (2026-10-06): Step-D choices recorded as chosen before the damage / effects (TA-653, TA-654).",
       "fixes": [
         "FX-0441"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "prompt.alsoShuffles = included.slice(i + 1).map(q => q.id); // TA-657: the shuffles this effect still owes"
+      ],
+      "note": "TA-657 (2026-10-06): Both hands shuffled in by one effect are recorded at deck:any from the first pause: EACH_PLAYER_SHUFFLE_HAND_INTO_DECK n",
+      "fixes": [
+        "FX-0443"
       ]
     }
   ]
