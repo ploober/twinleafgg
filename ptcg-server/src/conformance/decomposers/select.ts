@@ -14,6 +14,10 @@ import { PromptDecomposer, realPicks, buildPending } from './decomposer';
 export const selectDecomposer: PromptDecomposer<SelectPrompt> = {
   type: 'Select',
 
+  // TA-656 (CF-14): a "Choose 1" menu raised with one value (Kieran with no Benched Pokemon: the Switch mode is
+  // withheld, B.91) has one resolution, so it is applied with no pending; the mode's own later prompts still surface.
+  atomicResolvable: () => true,
+
   next(prompt, picks, _ctx, state) {
     if (realPicks(picks).length >= 1) {
       return null; // single option chosen
