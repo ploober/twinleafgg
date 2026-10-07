@@ -12370,6 +12370,16 @@
       "fixes": [
         "FX-0446"
       ]
+    },
+    {
+      "file": "conformance/decomposers/choose-cards.ts",
+      "signatures": [
+        "TA-660 / B.93: a forced pick (no picks, every eligible card) is no decision and names nothing: no `chosen`."
+      ],
+      "note": "TA-660 (2026-10-07): a wholly forced ChooseCards pick (Crunch with one Energy left) records no chosen (B.93).",
+      "fixes": [
+        "FX-0446"
+      ]
     }
   ]
 }

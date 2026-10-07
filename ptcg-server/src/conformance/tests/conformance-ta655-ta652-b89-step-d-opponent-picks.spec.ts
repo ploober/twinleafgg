@@ -135,10 +135,10 @@ describe('TA-655 (B.89 (1)): "Discard an Energy from your opponent\'s Active Pok
     });
   }
 
-  it('twm-094 Crunch into Rock Armor with one Energy: the forced pick is chosen, the damage reads it attached (90), then it is discarded [TA-655]', () => {
+  it('twm-094 Crunch into Rock Armor with one Energy: the forced pick records no chosen (B.93 / TA-660), the damage reads it attached (90), then it is discarded [TA-655]', () => {
     const r = step(board('twm-094', [PSYCHIC, PSYCHIC, PSYCHIC], [WATER], REGIROCK), [attack('Crunch')]);
     expect(rejected(r)).toBeUndefined();
-    expect(seq(r)).toEqual(['chosen b1e0', 'damaged', 'moved b1e0']);
+    expect(seq(r)).toEqual(['damaged', 'moved b1e0']);
     expect(dealt(r)).toBe(90);
     expect(r.state.players.B.discard.map(c => c.iid)).toEqual(['b1e0']);
   });

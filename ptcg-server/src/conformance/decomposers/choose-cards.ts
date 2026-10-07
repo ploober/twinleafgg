@@ -420,12 +420,11 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
    * keyed on the message is the TA-142 mistake.
    */
   /** B.82 / CF-93 (TA-651): the cards an attack's pre-damage choice of its own cards in play picked (the prompt is
-   *  `deferredMove`); a forced pick (no picks, every eligible card) names the forced set. They stay where they are
-   *  until after the damage; the adapter records them as `chosen`. */
-  pickedCards(prompt, picks, _ctx, state) {
+   *  `deferredMove`). They stay where they are until after the damage; the adapter records them as `chosen`.
+   *  TA-660 / B.93: a forced pick (no picks, every eligible card) is no decision and names nothing: no `chosen`. */
+  pickedCards(prompt, picks) {
     const rp = realPicks(picks) as Array<{ index: number }>;
-    const indices = rp.length > 0 ? rp.map(p => p.index) : (forcedPickIndices(prompt, state) ?? []);
-    return indices.map(i => prompt.cards.cards[i]).filter((c): c is Card => c !== undefined);
+    return rp.map(p => prompt.cards.cards[p.index]).filter((c): c is Card => c !== undefined);
   },
 
   fixupProjection(prompt, picks, ctx, _state, projected) {
