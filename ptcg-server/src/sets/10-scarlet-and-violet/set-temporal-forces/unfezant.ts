@@ -54,7 +54,7 @@ export class Unfezant extends PokemonCard {
         }
         const prompt = new ChooseCardsPrompt(
           player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          GameMessage.CHOOSE_CARD_TO_HAND, // TA-658: the Energy goes to the opponent's hand (CF-32: a choose, not a discard)
           source,
           { superType: SuperType.ENERGY },
           { min: Math.min(2, available), max: 2, allowCancel: false },

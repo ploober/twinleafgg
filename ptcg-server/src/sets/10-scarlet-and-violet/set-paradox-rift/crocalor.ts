@@ -28,22 +28,31 @@ export class Crocalor extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
+    // Rolling Fireball. TA-658 / B.89 (1), (4): the pick of the Energy is the attacker's Step-D choice, asked before the
+    // damage (recorded `chosen`; a `choose`, not a `discard`: it goes to the hand, CF-32), and the Energy goes to the
+    // hand after the damage.
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-
-      let card: Card;
-
-      return store.prompt(state, new ChooseCardsPrompt(
+      const source = player.active;
+      const prompt = new ChooseCardsPrompt(
         player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        player.active,
+        GameMessage.CHOOSE_CARD_TO_HAND,
+        source,
         { superType: SuperType.ENERGY },
         { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-        card = selected[0];
-
-        MOVE_CARDS(store, state, player.active, player.hand, { cards: [card], sourceCard: this });
-        return state;
+      );
+      prompt.deferredMove = true;
+      return store.prompt(state, prompt, selected => {
+        const cards: Card[] = selected || [];
+        if (cards.length === 0) {
+          return;
+        }
+        effect.afterDamageMoves.push(() => {
+          const still = cards.filter(c => source.cards.includes(c));
+          if (still.length > 0) {
+            MOVE_CARDS(store, state, source, player.hand, { cards: still, sourceCard: this });
+          }
+        });
       });
     }
 
