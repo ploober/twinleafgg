@@ -5017,10 +5017,13 @@
     {
       "file": "set-twilight-masquerade/dragapult-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';"
+        "// TA-668 / B.98: where the 6 counters go is chosen before the 200 (Step D); they go on after it (TA-128, #649)."
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-668 (2026-10-07): B.98 evolves TA-128's AFTER_ATTACK rider into a Step-D pick placed after the damage (afterDamageMoves); the signed line evolved.",
+      "state": "guarding",
+      "fixes": [
+        "FX-0453"
+      ]
     },
     {
       "file": "set-twilight-masquerade/farigiraf.ts",
@@ -7367,10 +7370,9 @@
     {
       "file": "set-temporal-forces/gastly.ts",
       "signatures": [
-        "text: 'Flip a coin. If heads, discard an Energy from your opponent\\'s Active Pokémon.'",
-        "DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);"
+        "text: 'Flip a coin. If heads, discard an Energy from your opponent\\'s Active Pokémon.'"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-661 (2026-10-07): B.89 (5) choose first.",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-661 (2026-10-07): B.89 (5) choose first. | TA-666 (2026-10-07): B.99 (owner) reverts the TA-661 choose-first line for this flip-gated pick (its signature moved to the TA-666 entry).",
       "state": "guarding",
       "fixes": [
         "FX-0447"
@@ -12420,6 +12422,66 @@
       "note": "TA-661 (2026-10-07): no-damage attacks choose first and record chosen (B.89 (5), B.93).",
       "fixes": [
         "FX-0447"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/gothitelle.ts",
+      "signatures": [
+        "// TA-663 / B.97: the card becomes public by being discarded; there is no separate reveal."
+      ],
+      "note": "TA-663 (2026-10-07): reveal only when hidden cards become visible (B.97): no reveal for public cards (Sonar, Night Stretcher) or an empty sho",
+      "fixes": [
+        "FX-0448"
+      ]
+    },
+    {
+      "file": "game/store/effects/game-effects.ts",
+      "signatures": [
+        "MoveDamageCountersEffect.observed?.(player);"
+      ],
+      "note": "TA-664 (2026-10-07): a dispatch that moved damage counters heals nothing: Adrena-Brain counters that Battle Cage keeps off the Bench vanish w",
+      "fixes": [
+        "FX-0449"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const liftedOffDeck = new Map<Card, Player>();"
+      ],
+      "note": "TA-665 (2026-10-07): cards lifted off the top of a deck into a closure pile and back by the end of the dispatch emit deck > transit > deck le",
+      "fixes": [
+        "FX-0450"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/gastly.ts",
+      "signatures": [
+        "// TA-666 / B.99: the pick waits on the flip and is part of the effect: the Energy is discarded at the pick, with"
+      ],
+      "note": "TA-666 (2026-10-07): Mysterious Beam picks and discards together after heads, no chosen (B.99: a flip-gated pick is part of the effect; rever",
+      "fixes": [
+        "FX-0451"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/luxray-ex.ts",
+      "signatures": [
+        "// TA-667 / B.97: \"Your opponent reveals their hand\": the whole hand is shown before the pick."
+      ],
+      "note": "TA-667 (2026-10-07): Piercing Gaze reveals the opponent's whole hand before the discard pick (B.97: \"Your opponent reveals their hand\") [TA-6",
+      "fixes": [
+        "FX-0452"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "const stepD = effect instanceof AttackEffect && state.preDamageAttack === effect;"
+      ],
+      "note": "TA-668 (2026-10-07): an attack's counter placements are picked at Step D and placed after the damage, nothing placed between picks (B.98): ev",
+      "fixes": [
+        "FX-0453"
       ]
     }
   ]
