@@ -140,11 +140,11 @@ describe('TA-494 pbl-061 Shieldon Smithereen Smash: the Energy is discarded afte
     expect(r.state.players.B.discard.map(c => c.iid)).toEqual(['b1e0']);
     expect(order(r, 'b1', ['b1e0'])).toEqual(['d', 'm']);
   });
-  it('control: the choice is asked after the damage (B.85 (3)(a), TA-645) [TA-494 pbl-061]', () => {
+  it('control: the choice is asked before the damage (B.89 Step D, TA-655; the discard still follows the damage) [TA-494 pbl-061]', () => {
     const st = board(mon('a1', SHIELDON, [METAL, METAL]), [], mon('b1', [BIG], [GRASS, GRASS]));
     const r = step(st, [attack('Smithereen Smash')]);
     expect(acts(r).filter(a => a.type === 'discard').length).toBe(2);
-    expect(dealt(r.events, 'b1')).toBe(50);
+    expect(dealt(r.events, 'b1')).toBe(0);
   });
 });
 

@@ -3747,9 +3747,10 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(three.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Strong Volt / Bulky Bump ask their own-Energy pick BEFORE the damage (B.82); Hyper Beam keeps damage-first [TA-417 asc-056]', () => {
+  it('Strong Volt / Bulky Bump / Hyper Beam ask their Energy pick BEFORE the damage (B.82, B.89) [TA-417 asc-056]', () => {
     // B.82 (owner 2026-10-05, #1834 / #2002): a choice of the attacker's OWN Energy comes before the damage; TA-417 had
-    // put the damage first (B.76, withdrawn). Hyper Beam's pick is the opponent's Energy, which B.82 does not move here.
+    // put the damage first (B.76, withdrawn). B.89 (owner 2026-10-06, TA-655): the attacker's choice of the OPPONENT's
+    // Energy (Hyper Beam) is a Step-D choice too, asked before the damage; the discard still follows the damage.
     // Strong Volt: two [L] attached -> a real 1-of-2 pick, paused at 0
     const sv = step(board(
       player({ active: inPlay('A-act', ['asc-056'], [...en(LIGHT, 2, 'a'), ...en(PSY, 1, 'x')]) }),
@@ -3757,13 +3758,13 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     ), [attack('A-act', 'Strong Volt')]);
     expect(hasType(sv, 'discard')).toBe(true);
     expect(sv.state.players.B.active!.damage).toBe(0);
-    // Hyper Beam: the pick is on the OPPONENT's Energy, paused with the 70 applied
+    // Hyper Beam: the pick is on the OPPONENT's Energy, paused at 0 (B.89)
     const hb = step(board(
       player({ active: inPlay('A-act', ['pfl-074'], en(METAL, 3, 'a')) }),
       player({ active: inPlay('B-act', [LATIAS], en(WATER, 2, 'b')) }),
     ), [attack('A-act', 'Hyper Beam')]);
     expect(hasType(hb, 'discard')).toBe(true);
-    expect(hb.state.players.B.active!.damage).toBe(70);
+    expect(hb.state.players.B.active!.damage).toBe(0);
     // Bulky Bump: 3-of-4 discard pick surfaced at 0
     const bb = step(board(
       player({ active: inPlay('A-act', ['asc-120'], en(FIGHT, 4, 'a')) }),

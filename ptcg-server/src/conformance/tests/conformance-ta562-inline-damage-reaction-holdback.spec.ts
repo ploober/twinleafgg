@@ -108,10 +108,12 @@ describe('TA-562: a reaction to an attack\'s inline damage resolves after the at
     expect(r.state.players.A.active?.damage).toBe(30);
   });
 
+  // B.89 (TA-655): Crunch's pick is now a Step-D choice, asked before the damage, so this pending no longer sits after an
+  // inline damage; it still pins that no reaction has fired at the open pick.
   it('Crunch into Iron Jugulis: at the open discard pick no counters on Scream Tail yet [TA-562]', () => {
     const r = step(crunchBoard(JUGULIS, [PSYCHIC, PSYCHIC]), [attack('Crunch')]);
     expect(legal(r)).toEqual(['A:discard:b1e0', 'A:discard:b1e1']);
-    expect(dealt(r.events, 'b1')).toBe(120);
+    expect(dealt(r.events, 'b1')).toBe(0);
     expect(dealt(r.events, 'a1')).toBe(0);
     expect(r.state.players.A.active?.damage).toBe(0);
   });

@@ -86,7 +86,12 @@ function energyOf(r: ReturnType<typeof step>, slot: 'active' | 0): string[] {
 }
 
 // ================================================================ TA-645: the opponent's cards in play
-describe('TA-645 (B.85 (3)(a)): the pick of the opponent\'s Energy is asked after the damage, and moves at the pick', () => {
+// B.89 (owner 2026-10-06) supersedes B.85 (3)(a) for the ATTACKER's choices: the pick (and a "you may" gate, and a move's
+// destination) is made at rulebook Step D, before the damage, recorded as `chosen`; the card still moves after the damage
+// (TA-655). These cells pinned the B.85 order (damage, then the pick, the move at the pick, no chosen) and were rewritten
+// to B.89; conformance-ta655-ta652-b89-step-d-opponent-picks.spec.ts holds the full set. The TA-646 hand cells below
+// (random picks and the opponent's own choice, B.89 (3)) are unchanged.
+describe('TA-645 under B.89: the pick of the opponent\'s Energy is asked before the damage (chosen), the move comes after it', () => {
   const discard = (target: string) => act({ actor: 'A', type: 'discard', owner: 'B', target, op: 'discard', destination: 'discardPile' });
 
   const discarders: Array<[string, string, string[], number]> = [
@@ -94,31 +99,32 @@ describe('TA-645 (B.85 (3)(a)): the pick of the opponent\'s Energy is asked afte
     ['pbl-061', 'Smithereen Smash', [METAL, METAL], 50],
   ];
   for (const [id, name, energy, dmg] of discarders) {
-    it(`${id} ${name}: at the Energy pick the ${dmg} damage is done and both Energy are attached (${id}) [TA-645]`, () => {
+    it(`${id} ${name}: at the Energy pick no damage is done yet and both Energy are attached (${id}) [TA-645]`, () => {
       const r = step(board(id, energy), [attack(name)]);
       expect(rejected(r)).toBeUndefined();
       expect(acts(r).filter(a => a.type === 'discard').map(a => a.target).sort()).toEqual(['b1e0', 'b1e1']);
-      expect(dealt(r, 'b1')).toBe(dmg);
+      expect(dealt(r, 'b1')).toBe(0);
       expect(energyOf(r, 'active')).toEqual(['b1e0', 'b1e1']);
     });
-    it(`${id} ${name}: damage, then the discard; no chosen event (${id}) [TA-645]`, () => {
+    it(`${id} ${name}: chosen, then the ${dmg} damage, then the discard (${id}) [TA-645]`, () => {
       const r = step(board(id, energy), [attack(name), discard('b1e1')]);
       expect(rejected(r)).toBeUndefined();
       expect(order(r, ['b1e'])).toEqual(['d', 'm']);
-      expect(chosen(r)).toEqual([]);
+      expect(chosen(r).map(e => e.card)).toEqual(['b1e1']);
+      expect(dealt(r, 'b1')).toBe(dmg);
       expect(r.state.players.B.discard.map(c => c.iid)).toEqual(['b1e1']);
       expect(energyOf(r, 'active')).toEqual(['b1e0']);
     });
   }
 
-  it('svi-015 Trick Cape: at the "you may" the 40 damage is done [TA-645 svi-015]', () => {
+  it('svi-015 Trick Cape: at the "you may" no damage is done yet [TA-645 svi-015]', () => {
     const r = step(board('svi-015', [GRASS]), [attack('Trick Cape')]);
     expect(rejected(r)).toBeUndefined();
     expect(acts(r).some(a => a.type === 'confirm')).toBe(true);
-    expect(dealt(r, 'b1')).toBe(40);
+    expect(dealt(r, 'b1')).toBe(0);
     expect(energyOf(r, 'active')).toEqual(['b1e0', 'b1e1']);
   });
-  it('svi-015 Trick Cape: damage, then the Energy to the hand; no chosen event [TA-645 svi-015]', () => {
+  it('svi-015 Trick Cape: chosen, then the damage, then the Energy to the hand [TA-645 svi-015]', () => {
     const st = board('svi-015', [GRASS]);
     let r = step(st, [attack('Trick Cape'), act({ actor: 'A', type: 'confirm', value: true })]);
     const done: NeutralAction[] = [attack('Trick Cape'), act({ actor: 'A', type: 'confirm', value: true })];
@@ -126,23 +132,28 @@ describe('TA-645 (B.85 (3)(a)): the pick of the opponent\'s Energy is asked afte
     if (pick) { done.push(act(pick)); r = step(st, done); }
     expect(rejected(r)).toBeUndefined();
     expect(order(r, ['b1e'])).toEqual(['d', 'm']);
-    expect(chosen(r)).toEqual([]);
+    expect(chosen(r).map(e => e.card)).toEqual(['b1e1']);
     expect(r.state.players.B.hand.some(c => c.iid === 'b1e1')).toBe(true);
   });
 
-  it('svi-026 Eerie Tentacles: at the move pick the 30 damage is done [TA-645 svi-026]', () => {
-    const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles')]);
+  // TA-652 (CF-32): the "you may" is a standalone confirm, then the move (Energy and destination), all before the damage.
+  it('svi-026 Eerie Tentacles: at the gate and at the move pick no damage is done yet [TA-645 svi-026]', () => {
+    const r0 = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles')]);
+    expect(rejected(r0)).toBeUndefined();
+    expect(acts(r0).map(a => a.type)).toEqual(['confirm', 'confirm']);
+    expect(dealt(r0, 'b1')).toBe(0);
+    const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles'), act({ actor: 'A', type: 'confirm', value: true })]);
     expect(rejected(r)).toBeUndefined();
     expect(acts(r).some(a => a.type === 'moveEnergy')).toBe(true);
-    expect(dealt(r, 'b1')).toBe(30);
+    expect(dealt(r, 'b1')).toBe(0);
     expect(energyOf(r, 'active')).toEqual(['b1e0', 'b1e1']);
   });
-  it('svi-026 Eerie Tentacles: damage, then the Energy to the Bench; no chosen event [TA-645 svi-026]', () => {
-    const r = step(board('svi-026', [GRASS]),
-      [attack('Eerie Tentacles'), act({ actor: 'A', type: 'moveEnergy', card: 'b1e1', source: 'b1', target: 'b2' })]);
+  it('svi-026 Eerie Tentacles: chosen, then the damage, then the Energy to the Bench [TA-645 svi-026]', () => {
+    const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles'), act({ actor: 'A', type: 'confirm', value: true }),
+      act({ actor: 'A', type: 'moveEnergy', card: 'b1e1', source: 'b1', target: 'b2' })]);
     expect(rejected(r)).toBeUndefined();
     expect(order(r, ['b1e'])).toEqual(['d', 'm']);
-    expect(chosen(r)).toEqual([]);
+    expect(chosen(r).map(e => e.card)).toEqual(['b1e1']);
     expect(energyOf(r, 0)).toEqual(['b1e1']);
   });
 });
@@ -214,19 +225,19 @@ describe('B.85 (3)(a) through a copied attack: Mew ex mew-151 Genome Hacking ("C
     expect(order(r, ['bh'])).toEqual(['d', 'm', 'm']);
     expect(r.state.players.B.discard.map(c => c.iid).sort()).toEqual(['bh0', 'bh1']);
   });
-  it('copied Demolition Tackle dri-096 (its only attack, no attack pick): at the Energy pick the 180 damage is done; then the discard [TA-645 dri-096]', () => {
+  it('copied Demolition Tackle dri-096 (its only attack, no attack pick): at the Energy pick no damage is done yet (B.89); chosen, damage, discard, Knock Out [TA-645 dri-096]', () => {
     const st = copyBoard('dri-096', [FIGHTING, WATER], []);
     const r0 = step(st, [hack]);
     expect(rejected(r0)).toBeUndefined();
     expect(acts(r0).filter(a => a.type === 'discard').map(a => a.target).sort()).toEqual(['b1e0', 'b1e1']);
-    expect(dealt(r0, 'b1')).toBe(180);
+    expect(dealt(r0, 'b1')).toBe(0);
     const r = step(st, [hack,
       act({ actor: 'A', type: 'discard', owner: 'B', target: 'b1e1', op: 'discard', destination: 'discardPile' })]);
     expect(rejected(r)).toBeUndefined();
-    // 180 Knocks Out the 180-HP Tyranitar: damage, the picked Energy discarded, then the Knock Out (B.85 (5)).
-    const seq = evs(r).filter(e => (e.kind === 'damaged' && e.target === 'b1') || (e.kind === 'moved' && e.card === 'b1e1')
-      || e.kind === 'ko').map(e => e.kind);
-    expect(seq).toEqual(['damaged', 'moved', 'ko']);
+    // 180 Knocks Out the 180-HP Tyranitar: the Step-D pick, the damage, the picked Energy discarded, then the Knock Out.
+    const seq = evs(r).filter(e => e.kind === 'chosen' || (e.kind === 'damaged' && e.target === 'b1')
+      || (e.kind === 'moved' && e.card === 'b1e1') || e.kind === 'ko').map(e => e.kind);
+    expect(seq).toEqual(['chosen', 'damaged', 'moved', 'ko']);
     expect(r.state.players.B.discard.map(c => c.iid)[0]).toBe('b1e1');
   });
 });

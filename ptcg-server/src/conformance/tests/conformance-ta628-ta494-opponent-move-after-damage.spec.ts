@@ -8,8 +8,10 @@ import {
  * attack discards energy from the Defending Pokemon, the damage reduction happens first and then apply any attack
  * effects") and before Knock Outs are checked; a card the effect moved does not react to that attack's damage (#674,
  * Dangerous Energy: "You would not receive the 2 damage counters"; #2012). B.84 (3), WHEN the choice is asked, is not
- * decided: these cells pinned only the move and the reaction. B.85 (3)(a) (2026-10-06, TA-645) since places the choice
- * after the damage too; the two "asked before the damage" cells were rewritten to "asked after the damage".
+ * decided: these cells pinned only the move and the reaction. B.85 (3)(a) (2026-10-06, TA-645) placed the choice after the
+ * damage; B.89 (owner 2026-10-06, TA-655) puts the attacker's choice at rulebook Step D, before the damage (`chosen`), and
+ * keeps the move after it, so the cells that pin WHEN the choice is asked now say "before the damage", and Eerie
+ * Tentacles asks its "you may" as a standalone confirm first (TA-652, CF-32).
  *
  * TA-628 Spiky Energy jtg-159 / jtg-190 ("If the Pokémon this card is attached to is in the Active Spot and is damaged by
  * an attack from your opponent's Pokémon (even if it is Knocked Out), put 2 damage counters on the Attacking Pokémon"):
@@ -76,7 +78,8 @@ const attack = (name: string) => act({ actor: 'A', type: 'declareAttack', source
 const discard = (target: string) => act({ actor: 'A', type: 'discard', owner: 'B', target, op: 'discard', destination: 'discardPile' });
 const yes = act({ actor: 'A', type: 'confirm', value: true });
 const no = act({ actor: 'A', type: 'confirm', value: false });
-const tentacles = act({ actor: 'A', type: 'moveEnergy', card: 'b1e0', source: 'b1', target: 'b2' });
+// Eerie Tentacles: the gate (TA-652), then the move; one Energy and one Benched Pokémon here, so the move collapses (CF-14).
+const tentacles = yes;
 
 type Damaged = { kind: string; target?: string; hp?: number };
 const dealt = (events: NeutralEvent[], iid: string) => (events as Damaged[])
@@ -128,10 +131,10 @@ describe('TA-628: Spiky Energy discarded by the attack\'s own effect does not re
     expect(r.state.players.A.active?.damage).toBe(0);
   });
 
-  it('the Crunch pick is still asked after the damage, with Spiky Energy attached (choice timing unchanged) [TA-628]', () => {
+  it('the Crunch pick is asked before the damage (B.89 Step D, TA-655), with Spiky Energy attached [TA-628]', () => {
     const r = step(crunchBoard(), [attack('Crunch')]);
     expect(legal(r)).toEqual(['A:discard:b1e0', 'A:discard:b1e1']);
-    expect(dealt(r.events, 'b1')).toBe(120);
+    expect(dealt(r.events, 'b1')).toBe(0);
     expect(energyOf(r, 'b1')).toEqual(['b1e0', 'b1e1']);
   });
 
@@ -154,10 +157,10 @@ describe('TA-628: Spiky Energy discarded by the attack\'s own effect does not re
 describe('TA-494: Trick Cape and Eerie Tentacles move the opponent\'s Energy after the damage (#77, B.84 (1))', () => {
   const rock = [{ iid: 'b1e0', printing: WATER }];
 
-  it('svi-015 Trick Cape: the confirm is asked after the damage (B.85 (3)(a), TA-645) [TA-494 svi-015]', () => {
+  it('svi-015 Trick Cape: the confirm is asked before the damage (B.89 Step D, TA-655) [TA-494 svi-015]', () => {
     const r = step(riderBoard(true, REGIROCK, rock), [attack('Trick Cape')]);
     expect(legal(r)).toEqual(['A:confirm:false', 'A:confirm:true']);
-    expect(dealt(r.events, 'b1')).toBe(50);
+    expect(dealt(r.events, 'b1')).toBe(0);
     expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
@@ -177,10 +180,10 @@ describe('TA-494: Trick Cape and Eerie Tentacles move the opponent\'s Energy aft
     expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
-  it('svi-026 Eerie Tentacles: the move is offered after the damage (B.85 (3)(a), TA-645) [TA-494 svi-026]', () => {
+  it('svi-026 Eerie Tentacles: the "you may" is a standalone confirm, asked before the damage (B.89 Step D, TA-652 / TA-655) [TA-494 svi-026]', () => {
     const r = step(riderBoard(false, REGIROCK, rock), [attack('Eerie Tentacles')]);
-    expect(legal(r)).toEqual(['A:confirm:false', 'A:moveEnergy:b1e0:b2']);
-    expect(dealt(r.events, 'b1')).toBe(30);
+    expect(legal(r)).toEqual(['A:confirm:false', 'A:confirm:true']);
+    expect(dealt(r.events, 'b1')).toBe(0);
     expect(energyOf(r, 'b1')).toEqual(['b1e0']);
   });
 
