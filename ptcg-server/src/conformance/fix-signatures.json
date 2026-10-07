@@ -12338,6 +12338,27 @@
       "fixes": [
         "FX-0443"
       ]
+    },
+    {
+      "file": "set-temporal-forces/unfezant.ts",
+      "signatures": [
+        "GameMessage.CHOOSE_CARD_TO_HAND, // TA-658: the Energy goes to the opponent's hand (CF-32: a choose, not a discard)"
+      ],
+      "note": "TA-658 (2026-10-06): Opposing Winds and Rolling Fireball label their Energy pick as a move to the hand, so it is offered as choose, not disca",
+      "fixes": [
+        "FX-0444"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/crocalor.ts",
+      "signatures": [
+        "GameMessage.CHOOSE_CARD_TO_HAND,",
+        "prompt.deferredMove = true;"
+      ],
+      "note": "TA-658 (2026-10-06): Rolling Fireball par-024 picks its Energy as a choose (to the hand) before the damage and moves it after (B.89 (1), (4)).",
+      "fixes": [
+        "FX-0444"
+      ]
     }
   ]
 }
