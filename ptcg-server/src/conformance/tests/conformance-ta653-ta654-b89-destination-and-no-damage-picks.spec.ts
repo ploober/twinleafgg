@@ -251,10 +251,11 @@ describe('TA-653 controls (CF-14 collapses, #570 / #2118)', () => {
     expect(dealt(r)).toBe(0);
   });
   // Togekiss pays Power Cyclone's [C][C] with one Double Turbo Energy (110 - 20 = 90).
-  it('control: one Energy, one Benched (obf-085): nothing to decide; chosen, 90, moved [TA-653]', () => {
+  // TA-660 / B.93: a forced pick (CF-14) is no decision, so no `chosen`; the move still comes after the damage.
+  it('control: one Energy, one Benched (obf-085): nothing to decide; 90, then moved, no chosen [TA-653]', () => {
     const r = step(board(['obf-083', 'obf-084', 'obf-085'], [DTE], 1), [attack('Power Cyclone')]);
     expect(rejected(r)).toBeUndefined();
-    expect(seq(r)).toEqual(['chosen a1e0', 'damaged', 'moved a1e0']);
+    expect(seq(r)).toEqual(['damaged', 'moved a1e0']);
     expect(dealt(r)).toBe(90);
     expect(moveOffers(r)).toEqual([]);   // the next pending is Precious Gift's end-of-turn confirm
   });

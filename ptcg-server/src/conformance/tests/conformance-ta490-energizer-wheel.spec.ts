@@ -58,9 +58,11 @@ describe('TA-490 Morpeko Energizer Wheel', () => {
     expect(r.state.players.A.bench[0].energy.map(e => e.iid).sort()).toEqual(['a1e0', 'a1e1']);
   });
 
-  it('the 70 is dealt before the move decision [TA-490 par-121]', () => {
+  // TA-659 / B.89 (1): the Energy and the Benched Pokémon are chosen before the damage (rulebook Step D); the move
+  // still comes after it. Supersedes TA-490's "70 before the move decision".
+  it('the move decision is asked before the 70 [TA-490 par-121, TA-659]', () => {
     const r = step(board([DARK, DARK, WATER], 2), [wheel]);
-    expect(r.state.players.B.active!.damage).toBe(70);
+    expect(r.state.players.B.active!.damage).toBe(0);
   });
 
   it('only [D] Energy is offered, and the non-[D] stays on Morpeko [TA-490 par-121]', () => {

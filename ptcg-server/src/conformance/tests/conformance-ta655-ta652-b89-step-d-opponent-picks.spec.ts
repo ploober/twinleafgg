@@ -208,10 +208,10 @@ describe('TA-655 (B.89 (1)): "You may move an Energy from your opponent\'s Activ
     expect(dealt(r)).toBe(30);
   });
 
-  it('cri-037 Tricky Steps into Rock Armor, one Energy, one Benched: yes collapses the move; chosen, 50 (Rock Armor reads it), then moved [TA-655]', () => {
+  it('cri-037 Tricky Steps into Rock Armor, one Energy, one Benched: yes collapses the move (no chosen, B.93 / TA-660); 50 (Rock Armor reads it), then moved [TA-655]', () => {
     const r = step(board('cri-037', [PSYCHIC, PSYCHIC], [WATER], REGIROCK), [attack('Tricky Steps'), yes]);
     expect(rejected(r)).toBeUndefined();
-    expect(seq(r)).toEqual(['chosen b1e0', 'damaged', 'moved b1e0']);
+    expect(seq(r)).toEqual(['damaged', 'moved b1e0']);
     expect(dealt(r)).toBe(50);
     expect(energyOf(r, 0)).toEqual(['b1e0']);
   });

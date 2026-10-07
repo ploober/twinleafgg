@@ -159,7 +159,8 @@ describe('TA-494 obf-085 Togekiss Power Cyclone: its own Energy moves after the 
     expect(dealt(r.events, 'b1')).toBe(90);
     expect(r.state.players.A.bench[0].energy.map(e => e.iid)).toEqual(['a1e0']);
     expect(order(r, 'b1', ['a1e0'])).toEqual(['d', 'm']);
-    expect(evs(r).filter(e => e.kind === 'chosen').map(e => e.card)).toEqual(['a1e0']);
+    // TA-660 / B.93: the pick is forced (one Energy, one Benched), so it is no decision and records no `chosen`.
+    expect(evs(r).filter(e => e.kind === 'chosen').map(e => e.card)).toEqual([]);
   });
   // TA-653 / B.89 (1): the Energy and its Benched Pokémon are one joint moveEnergy pick before the damage (TA-494's shape,
   // restored; TA-651 had split off the destination to after the damage). One Benched Pokémon here: two offers.

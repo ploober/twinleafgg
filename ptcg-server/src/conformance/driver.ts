@@ -358,7 +358,7 @@ interface LoopResult {
   rejection?: RejectionInfo;
   /** Set when the log ran dry MID-decomposition: the open prompt + the picks made so far. Lets the
    *  projection apply the decomposer's take-immediately fix-up (CF-1). */
-  midPrompt?: { prompt: Prompt<any>; picks: WirePick[] };
+  midPrompt?: { prompt: Prompt<any>; picks: WirePick[]; decided?: WirePick[] };
   /**
    * B.80: searches COMPLETED during this step whose chosen cards the engine still holds in the source zone
    * (Burning Charge: the ChooseCardsPrompt over the deck resolves, the card code keeps the two Energy in
@@ -732,6 +732,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const events: NeutralEvent[] = [];
   const cursor = { i: 0 };          // shared with the flip provider below
   let accum: WirePick[] = [];
+  // TA-660 / B.93: picks the adapter applied with no pending (CF-14 collapses): not decisions, so never `chosen`.
+  const forcedPicks = new WeakSet<object>();
   const completedSearches: Array<{ cards: Card[]; source: CardList }> = [];
   // (Removed 2026-07-24, TA-129/CF-12: `turnEndedBy` tracked the actor whose turn was auto-ended by
   // their own declareAttack, so the driver could absorb that player's redundant trailing `endTurn`.
@@ -1140,7 +1142,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // B.82 / CF-93: the picks of an attack's pre-damage Energy choice (the engine marked it deferredMove) are
         // chosen, not moved: record them while they are still on the stack; their legs come after the damage.
         if ((prompt as { deferredMove?: boolean }).deferredMove) {
-          for (const c of dec.pickedCards?.(prompt, accum, game.ctx, game.state) ?? []) {
+          // TA-660 / B.93: `chosen` records a decision; a pick applied with no pending (CF-14) is none.
+          const decided = accum.filter(p => !forcedPicks.has(p as object));
+          for (const c of dec.pickedCards?.(prompt, decided, game.ctx, game.state) ?? []) {
             const e = chosenEvent(game, c);
             if (e !== undefined) { events.push(e); }
           }
@@ -1191,7 +1195,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         || dec.atomicStep?.(prompt, accum, game.state) === true
       );
       if (collapses) {
-        accum.push(dec.toPick(prompt, { actor: sub.actor, ...forced[0] } as NeutralAction, game.ctx, game.state, accum));
+        const pick = dec.toPick(prompt, { actor: sub.actor, ...forced[0] } as NeutralAction, game.ctx, game.state, accum);
+        forcedPicks.add(pick as object);
+        accum.push(pick);
         continue;
       }
       // CF-14 addendum (2026-09-09): N-of-exactly-N — every remaining candidate is forced, so the whole
@@ -1199,7 +1205,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // guard; the decomposer decides from its own min/max whether the remaining picks equal the pool.
       if (forced.length > 1 && !canStopNow && dec.collapseWholeSet?.(prompt, accum, game.state, forced.length) === true) {
         for (const f of forced) {
-          accum.push(dec.toPick(prompt, { actor: sub.actor, ...f } as NeutralAction, game.ctx, game.state, accum));
+          const pick = dec.toPick(prompt, { actor: sub.actor, ...f } as NeutralAction, game.ctx, game.state, accum);
+          forcedPicks.add(pick as object);
+          accum.push(pick);
         }
         continue;
       }
@@ -1207,7 +1215,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       if (nextAction === undefined) {
         // Log dry mid-decision: carry the open prompt + picks so the projection can apply the
         // decomposer's take-immediately fix-up (CF-1).
-        return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum }, completedSearches };
+        return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum, decided: accum.filter(p => !forcedPicks.has(p as object)) }, completedSearches };
       }
       // TA-590: a pause the replay runs through: the search's picks so far are in transit here.
       liftPausedSearchPicks(prompt, accum);
@@ -1419,7 +1427,8 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
     }
     // B.82 / CF-93: picks 1..k of an attack's pre-damage choice stay where they are and are recorded as `chosen`.
     if ((midPrompt.prompt as { deferredMove?: boolean }).deferredMove && rejection === undefined) {
-      for (const c of dec.pickedCards?.(midPrompt.prompt, midPrompt.picks, game.ctx, game.state) ?? []) {
+      // TA-660 / B.93: only the picks the player made (not the CF-14 collapses) are `chosen`.
+      for (const c of dec.pickedCards?.(midPrompt.prompt, midPrompt.decided ?? midPrompt.picks, game.ctx, game.state) ?? []) {
         const e = chosenEvent(game, c);
         if (e !== undefined) { events.push(e); }
       }
