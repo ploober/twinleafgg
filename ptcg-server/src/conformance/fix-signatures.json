@@ -9697,12 +9697,13 @@
       "file": "set-paradox-rift/morpeko.ts",
       "signatures": [
         "name: 'In a Hungry Hurry',",
-        "      if (AFTER_ATTACK(effect, 0, this)) {"
+        "{ count: 2, eligible: card => dark.has(card) });"
       ],
-      "note": "TA-489 (2026-09-30): Morpeko par-121/par-206's Ability was named 'In A Hungry Hurry'; printed 'In a Hungry Hurry'. | TA-490 (2026-09-30): Energizer Wheel built `blocked` from card ids where AttachEnergyPrompt reads source-list indices, so a forced move failed the prompt's validate (HTTP 500) and non-[D] Energy could be moved; and the move ran before the 70 damage. Now indices, AFTER_ATTACK, and min(2, [D] available).",
+      "note": "TA-489 (2026-09-30): Morpeko par-121/par-206's Ability was named 'In A Hungry Hurry'; printed 'In a Hungry Hurry'. | TA-490 (2026-09-30): Energizer Wheel built `blocked` from card ids where AttachEnergyPrompt reads source-list indices, so a forced move failed the prompt's validate (HTTP 500) and non-[D] Energy could be moved; and the move ran before the 70 damage. Now indices, AFTER_ATTACK, and min(2, [D] available). | TA-659 (2026-10-06): Energizer Wheel moved onto MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST (B.89: choose before the damage, move after); the TA-490 AFTER_ATTACK line is retargeted to the prefab call, which keeps the move after the damage and blocks by source-list index.",
       "fixes": [
         "FX-0355",
-        "FX-0356"
+        "FX-0356",
+        "FX-0445"
       ]
     },
     {
