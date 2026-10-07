@@ -712,7 +712,8 @@ function chosenEvent(game: ImportedGame, card: Card): NeutralEvent | undefined {
     const p = players[i];
     const lists: Array<[PokemonCardList, 'active' | 'bench']> = [[p.active, 'active'], ...p.bench.map(b => [b, 'bench'] as [PokemonCardList, 'bench'])];
     for (const [list, section] of lists) {
-      if (!list.cards.includes(card)) { continue; }
+      // TA-654 / B.89 (5): a Pokémon Tool sits in the bearer's `tools`, not its `cards` (Cleaning Up's chosen Tools).
+      if (!list.cards.includes(card) && !list.tools.includes(card)) { continue; }
       const basic = game.ctx.cardToIid.get(list.getPokemons()[0]);
       if (basic === undefined) { return undefined; }
       const role = card.superType === SuperType.ENERGY ? 'energy' : card.superType === SuperType.TRAINER ? 'tool' : 'pokemon';

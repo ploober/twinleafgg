@@ -84,8 +84,8 @@ export class Togekiss extends PokemonCard {
     // Power Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // TA-494 / TA-651, B.82 (1), B.85 (1)(c) (#1834, #2002): the Energy is chosen before the damage (recorded as
-      // `chosen`), the damage reads it attached (Double Turbo Energy's 20 less), and it moves after the damage; the
-      // Benched Pokémon is asked at the move (TA-651 split the joint pre-damage moveEnergy pick).
+      // `chosen`), the damage reads it attached (Double Turbo Energy's 20 less), and it moves after the damage. TA-653 /
+      // B.89 (1): the Benched Pokémon is a Step-D choice too, asked with the Energy (the joint pre-damage moveEnergy).
       return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 

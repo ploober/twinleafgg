@@ -123,7 +123,8 @@ export class Yanmegaex extends PokemonCard {
     // Jet Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // TA-651 / B.82 (1), B.85 (1)(c): the 3 Energy are chosen before the damage, one per pick (recorded as `chosen`),
-      // and move after it to 1 Benched Pokémon (asked at the move). Replaces the TA-258 damage-first order.
+      // and move after it to 1 Benched Pokémon (TA-653 / B.89 (1): chosen with the first Energy, before the damage).
+      // Replaces the TA-258 damage-first order.
       return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this, { count: 3 });
     }
     return state;

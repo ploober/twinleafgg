@@ -38,6 +38,14 @@ export class AttachEnergyPrompt extends Prompt<CardAssign[]> {
 
   public options: AttachEnergyOptions;
 
+  /**
+   * B.82 / B.89 (conformance projection; inert for gameplay): set by an attack prefab that asks this joint (Energy,
+   * destination) choice of the attacker's own Energy BEFORE the attack's damage and moves it after it
+   * (AttackEffect.afterDamageMoves; MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST). The adapter leaves the picks
+   * attached and records them as `chosen`.
+   */
+  public deferredMove?: boolean;
+
   constructor(
     playerId: number,
     public message: GameMessage,

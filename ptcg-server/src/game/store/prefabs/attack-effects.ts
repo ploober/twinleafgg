@@ -890,13 +890,14 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
 }
 
 /**
- * TA-651 / B.82 (1), B.85 (1)(c) (#2002, #1834): "Move [an / 3] Energy from this Pokémon to 1 of your Benched Pokémon."
- * Call from the attack's own effect (WAS_ATTACK_USED, before its damage). The Energy is CHOSEN here, one card per pick
- * (`deferredMove`: the adapter records each pick as `chosen` and leaves it attached), the damage reads it still
- * attached, and it MOVES after the damage (AttackEffect.afterDamageMoves). The destination is not a card the attack
- * moves and the damage does not read it, so it is asked at the move, after the damage (one Benched Pokémon: forced);
- * every chosen Energy goes to the same Benched Pokémon. No Benched Pokémon or no eligible Energy: nothing is asked.
- * `eligible` narrows the pool (Cold Cyclone's [W], read off the provided-energy map at the choice).
+ * TA-651 / TA-653 (B.82 (1), B.89 (1); rulebook Step D; #2002, #1834): "Move [an / 3] Energy from this Pokémon to 1 of
+ * your Benched Pokémon." Call from the attack's own effect (WAS_ATTACK_USED, before its damage). Every choice the
+ * attacker makes is made here, at Step D: the Energy AND the Benched Pokémon that receives it, as one joint pick per
+ * Energy (an AttachEnergyPrompt over this Pokémon: the adapter offers `moveEnergy {card, source, target}`, records each
+ * pick as `chosen` and leaves it attached, `deferredMove`). The damage reads the Energy still attached, and it MOVES
+ * after the damage (AttackEffect.afterDamageMoves). "to 1 of your Benched Pokémon": every Energy goes to the same
+ * Benched Pokémon (`sameTarget`, so the first pick fixes it). No Benched Pokémon or no eligible Energy: nothing is
+ * asked. `eligible` narrows the pool (Cold Cyclone's [W], read off the provided-energy map at the choice).
  */
 export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
   store: StoreLike,
@@ -926,44 +927,30 @@ export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
   if (count === 0) {
     return state;
   }
-  const prompt = new ChooseCardsPrompt(
-    player,
+  const prompt = new AttachEnergyPrompt(
+    player.id,
     GameMessage.MOVE_ENERGY_TO_BENCH,
     source,
+    PlayerType.BOTTOM_PLAYER,
+    [SlotType.BENCH],
     { superType: SuperType.ENERGY },
-    { min: count, max: count, allowCancel: false, blocked },
+    { allowCancel: false, min: count, max: count, blocked, sameTarget: true },
   );
   prompt.deferredMove = true;
-  return store.prompt(state, prompt, selected => {
-    const chosen = selected || [];
+  return store.prompt(state, prompt, transfers => {
+    const chosen = transfers || [];
     if (chosen.length === 0) {
       return;
     }
+    const target = StateUtils.getTarget(state, player, chosen[0].to);
     effect.afterDamageMoves.push(() => {
-      const still = chosen.filter(c => source.cards.includes(c));
-      if (still.length === 0 || !player.bench.some(b => b.cards.length > 0)) {
+      const still = chosen.map(t => t.card).filter(c => source.cards.includes(c));
+      if (still.length === 0 || target.cards.length === 0 || !player.bench.includes(target)) {
         return;
       }
-      const notChosen: number[] = [];
-      source.cards.forEach((card, index) => {
-        if (card.superType === SuperType.ENERGY && !still.includes(card)) {
-          notChosen.push(index);
-        }
-      });
-      store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        source,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: still.length, max: still.length, blocked: notChosen, sameTarget: true },
-      ), transfers => {
-        for (const transfer of transfers || []) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard });
-        }
-      });
+      for (const card of still) {
+        MOVE_CARDS(store, state, source, target, { cards: [card], sourceCard });
+      }
     });
   });
 }

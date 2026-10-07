@@ -38,13 +38,18 @@ function* useCleaningUp(next: Function, store: StoreLike, state: State,
   const toolList = new CardList();
   toolList.cards = tools;
   let selected: Card[] = [];
-  yield store.prompt(state, new ChooseCardsPrompt(
+  const prompt = new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_DISCARD,
     toolList,
     {},
     { min: 0, max: Math.min(2, tools.length), allowCancel: false }
-  ), results => {
+  );
+  // TA-654 / B.89 (5) (rulebook Step D): an attack that does no damage still makes its choices first. Each Tool picked
+  // is chosen (the adapter records a `chosen` event and leaves it attached); the chosen Tools are discarded together
+  // when the picking ends (both picked, or the stop).
+  prompt.deferredMove = true;
+  yield store.prompt(state, prompt, results => {
     selected = results || [];
     next();
   });
