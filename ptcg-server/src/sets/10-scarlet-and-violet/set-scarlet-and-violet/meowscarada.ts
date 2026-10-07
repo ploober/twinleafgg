@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { StoreLike, State } from '../../../game';
-import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND } from '../../../game/store/prefabs/attack-effects';
 
 export class Meowscarada extends PokemonCard {
@@ -34,10 +34,11 @@ export class Meowscarada extends PokemonCard {
   public fullName: string = 'Meowscarada SVI';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // TA-645 / B.85 (3)(a): the "you may", the pick and the move to the hand come after the damage (AfterAttackEffect),
-    // so the damage reads the Energy attached (#77) and the picked Energy moves at the pick.
-    if (AFTER_ATTACK(effect, 0, this)) {
-      return PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(store, state, effect);
+    // Trick Cape. TA-655 / B.89 (1), (4): the "you may" and the Energy pick are the attacker's Step-D choices, asked
+    // before the damage (the Energy recorded as `chosen`); the damage reads it still attached (#77) and it goes to the
+    // hand after the damage, before damage reactions and the Knock Out check.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(store, state, effect, { chooseFirst: true });
     }
     return state;
   }

@@ -1,9 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, Card, ChooseCardsPrompt, GameMessage } from '../../../game';
+import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
+import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 
 export class MarniesScraggy extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -30,33 +30,11 @@ export class MarniesScraggy extends PokemonCard {
   public fullName: string = "Marnie's Scraggy DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Crunch. TA-655 / B.89 (1), (4): the attacker chooses the opponent's Energy at Step D, before the damage (recorded as
+    // `chosen`); the damage reads it still attached (#77) and it is discarded after the damage, before damage reactions
+    // and the Knock Out check.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // If defending Pokemon has no energy cards attached, return early
-      if (!opponent.active.cards.some((c) => c.superType === SuperType.ENERGY)) {
-        return state;
-      }
-
-      // Rulebook step F / compendium #543/#649: apply damage before the discard rider.
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
-
-      let card: Card;
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
-          opponent.active,
-          { superType: SuperType.ENERGY },
-          { min: 1, max: 1, allowCancel: false },
-        ),
-        (selected) => {
-          card = selected[0];
-          return store.reduceEffect(state, new DiscardCardsEffect(effect, [card]));
-        },
-      );
+      return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
     }
     return state;
   }

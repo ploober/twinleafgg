@@ -12,7 +12,7 @@ import {
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckAttackCostEffect } from '../../../game/store/effects/check-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import {AFTER_ATTACK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Decidueyeex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -67,32 +67,38 @@ export class Decidueyeex extends PokemonCard {
       }
     }
 
-    // Attack: Discard an Energy from opponent's Active Pokemon
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Crushing Arrow. TA-655 / B.89 (1), (4): the attacker chooses the opponent's Energy at Step D, before the damage (recorded as
+    // `chosen`); the damage reads it still attached (#77) and it is discarded after the damage, before damage reactions
+    // and the Knock Out check.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+      const source = opponent.active;
 
-      if (opponent.active.energies.cards.length === 0) {
+      if (source.energies.cards.length === 0) {
         return state;
       }
 
-      const blocked: number[] = [];
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
-          opponent.active,
-          { superType: SuperType.ENERGY },
-          { min: 1, max: 1, allowCancel: false, blocked },
-        ),
-        (selected) => {
-          const cards = selected || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, opponent.active, opponent.discard, { cards: cards, sourceCard: this });
-          }
-        },
+      const prompt = new ChooseCardsPrompt(
+        player,
+        GameMessage.CHOOSE_CARD_TO_DISCARD,
+        source,
+        { superType: SuperType.ENERGY },
+        { min: 1, max: 1, allowCancel: false, blocked: [] },
       );
+      prompt.deferredMove = true;
+      return store.prompt(state, prompt, (selected) => {
+        const cards = selected || [];
+        if (cards.length === 0) {
+          return;
+        }
+        effect.afterDamageMoves.push(() => {
+          const still = cards.filter(c => source.cards.includes(c));
+          if (still.length > 0) {
+            MOVE_CARDS(store, state, source, opponent.discard, { cards: still, sourceCard: this });
+          }
+        });
+      });
     }
 
     if (

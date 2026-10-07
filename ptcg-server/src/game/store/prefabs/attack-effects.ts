@@ -11,7 +11,7 @@ import { PokemonCardList } from '../state/pokemon-card-list';
 import { AttachEnergyEffect } from '../effects/play-card-effects';
 import { PendingEndOfTurnEffect, PendingEndOfTurnEffectBase } from '../state/pending-end-of-turn-effects';
 import { Player } from '../state/player';
-import { FLIP_UNTIL_TAILS_AND_COUNT_HEADS, MOVE_POKEMON_OFF_BOARD, ADD_MARKER, HAS_MARKER, REMOVE_MARKER, MOVE_CARDS } from './prefabs';
+import { FLIP_UNTIL_TAILS_AND_COUNT_HEADS, MOVE_POKEMON_OFF_BOARD, ADD_MARKER, HAS_MARKER, REMOVE_MARKER, MOVE_CARDS, CONFIRMATION_PROMPT } from './prefabs';
 import { CoinFlipEffect } from '../effects/play-card-effects';
 import { scheduleDefendingPokemonEndOfTurnEffect, nextTurnAttackDamageBonusEffect, armNextTurnAttackDamageBonus, nextTurnAttackBaseDamageEffect, shouldPreventAttackEffects } from '../effects/effect-of-attack-effects';
 import { GameError } from '../../game-error';
@@ -722,12 +722,21 @@ export function DISCARD_CARDS_FROM_OPPONENTS_ACTIVE_POKEMON(
   return store.reduceEffect(state, discardEffect);
 }
 
+/**
+ * "Discard an Energy from your opponent's Active Pokémon." `chooseFirst` (TA-655 / B.89 (1), (4)): call from the attack's
+ * own effect (WAS_ATTACK_USED, before its damage) for an UNCONDITIONAL discard: the Energy is chosen at Step D (the
+ * prompt is `deferredMove`, the adapter records each pick as `chosen`), the damage reads it still attached (#77), and it
+ * is discarded after the damage (AttackEffect.afterDamageMoves), before damage reactions and the Knock Out check.
+ * Without it the pick and the discard happen where the caller is (a coin-gated "If heads, discard ..." waits for its
+ * flip, B.89 (2)).
+ */
 export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   store: StoreLike,
   state: State,
   effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too (TA-417)
   allowedEnergyTypes?: CardType[],
   count = 1,
+  chooseFirst = false,
 ) {
   // The DiscardCardsEffect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
   const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
@@ -755,18 +764,35 @@ export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
   }
 
   const cardsToDiscard = Math.min(count, energyCards.length);
-  return store.prompt(state, new ChooseCardsPrompt(
+  const prompt = new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_DISCARD,
     opponent.active,
     { superType: SuperType.ENERGY },
     { min: cardsToDiscard, max: cardsToDiscard, allowCancel: false, blocked }
-  ), selected => {
+  );
+  const deferred = chooseFirst && effect instanceof AttackEffect;
+  if (deferred) {
+    prompt.deferredMove = true;   // B.89 (1): chosen at Step D, discarded after the damage
+  }
+  return store.prompt(state, prompt, selected => {
     const cards = selected || [];
-    if (cards.length > 0) {
-      const discardEnergy = new DiscardCardsEffect(base, cards);
-      discardEnergy.target = opponent.active;
-      store.reduceEffect(state, discardEnergy);
+    if (cards.length === 0) {
+      return;
+    }
+    const target = opponent.active;
+    const discard = () => {
+      const still = cards.filter(c => target.cards.includes(c));
+      if (still.length > 0) {
+        const discardEnergy = new DiscardCardsEffect(base, still);
+        discardEnergy.target = target;
+        store.reduceEffect(state, discardEnergy);
+      }
+    };
+    if (deferred) {
+      base.afterDamageMoves.push(discard);
+    } else {
+      discard();
     }
   });
 }
@@ -775,11 +801,17 @@ export function DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(
  * You may put up to X Energy attached to your opponent's Active Pokémon into their hand.
  * Uses CardsToHandEffect (AbstractAttackEffect) so abilities like Charmeleon's Flare Veil can block it.
  */
+/**
+ * `chooseFirst` (TA-655 / B.89 (1), (4)): call from the attack's own effect (WAS_ATTACK_USED, before its damage): the
+ * "you may" gate and the Energy pick are Step-D choices of the attacker, asked before the damage (the pick is
+ * `deferredMove`, recorded as `chosen`); the damage reads the Energy still attached and it goes to the hand after the
+ * damage (AttackEffect.afterDamageMoves). Caller: Trick Cape svi-015.
+ */
 export function PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(
   store: StoreLike,
   state: State,
-  effect: AttackEffect | AfterAttackEffect,   // B.85 (3)(a): called from AFTER_ATTACK by Trick Cape svi-015 (TA-645)
-  options?: { count?: number }
+  effect: AttackEffect | AfterAttackEffect,
+  options?: { count?: number; chooseFirst?: boolean }
 ): State {
   const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
   const count = options?.count ?? 1;
@@ -801,18 +833,35 @@ export function PUT_ENERGY_FROM_OPPONENTS_ACTIVE_INTO_THEIR_HAND(
   ), wantToUse => {
     if (wantToUse) {
       const selectCount = Math.min(count, checkEnergy.energyMap.length);
-      store.prompt(state, new ChooseEnergyPrompt(
+      const prompt = new ChooseEnergyPrompt(
         player.id,
         GameMessage.CHOOSE_ENERGIES_TO_HAND,
         checkEnergy.energyMap,
         cost.slice(0, selectCount),
         { allowCancel: false }
-      ), energy => {
+      );
+      const deferred = options?.chooseFirst === true && effect instanceof AttackEffect;
+      if (deferred) {
+        prompt.deferredMove = true;   // B.89 (1): chosen at Step D, moved after the damage
+      }
+      store.prompt(state, prompt, energy => {
         const cards = (energy || []).slice(0, selectCount).map(e => e.card);
-        if (cards.length > 0) {
-          const toHandEffect = new CardsToHandEffect(base, cards);
-          toHandEffect.target = opponent.active;
-          store.reduceEffect(state, toHandEffect);
+        if (cards.length === 0) {
+          return;
+        }
+        const target = opponent.active;
+        const toHand = () => {
+          const still = cards.filter(c => target.cards.includes(c));
+          if (still.length > 0) {
+            const toHandEffect = new CardsToHandEffect(base, still);
+            toHandEffect.target = target;
+            store.reduceEffect(state, toHandEffect);
+          }
+        };
+        if (deferred) {
+          base.afterDamageMoves.push(toHand);
+        } else {
+          toHand();
         }
       });
     }
@@ -885,6 +934,61 @@ export function MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(
       const destination = StateUtils.getTarget(state, player, transfer.to);
       const moveEffect = new MoveOpponentEnergyEffect(effect, transfer.card, source, destination);
       store.reduceEffect(state, moveEffect);
+    });
+  });
+}
+
+/**
+ * TA-655 / TA-652 / B.89 (1), (4): "You may move an Energy from your opponent's Active Pokémon to 1 of their Benched
+ * Pokémon." (Tricky Steps cri-037 / tef-104, Jamming Wing dri-070, Eerie Tentacles svi-026). Call from the attack's own
+ * effect (WAS_ATTACK_USED, before its damage). Every part of it is the attacker's Step-D choice, asked before the damage:
+ * the "you may" (CF-32: a count-1 may has no inherent zero, so it is a standalone confirm), then the Energy and the
+ * Benched Pokémon that receives it, together (`deferredMove`: the adapter records the Energy as `chosen` and leaves it
+ * attached). The damage reads the Energy still attached (#77); it moves after the damage (AttackEffect.afterDamageMoves),
+ * before damage reactions and the Knock Out check. No Benched Pokémon or no Energy on the opponent's Active: the may can
+ * achieve nothing and nothing is asked (CF-33; both zones are public).
+ */
+export function MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  sourceCard: Card,
+): State {
+  const player = effect.player;
+  const opponent = StateUtils.getOpponent(state, player);
+  const source = opponent.active;
+  if (!opponent.bench.some(b => b.cards.length > 0) || !source.cards.some(c => c.superType === SuperType.ENERGY)) {
+    return state;
+  }
+  return CONFIRMATION_PROMPT(store, state, player, wantToMove => {
+    if (!wantToMove) {
+      return;
+    }
+    const prompt = new AttachEnergyPrompt(
+      player.id,
+      GameMessage.ATTACH_ENERGY_TO_BENCH,
+      source,
+      PlayerType.TOP_PLAYER,
+      [SlotType.BENCH],
+      { superType: SuperType.ENERGY },
+      { allowCancel: false, min: 1, max: 1 },
+    );
+    prompt.deferredMove = true;
+    store.prompt(state, prompt, transfers => {
+      const chosen = transfers || [];
+      if (chosen.length === 0) {
+        return;
+      }
+      effect.afterDamageMoves.push(() => {
+        for (const transfer of chosen) {
+          if (!source.cards.includes(transfer.card)) {
+            continue;
+          }
+          // TA-147: the destination is in the PROMPT's frame (player.id + TOP_PLAYER): resolve it with `player`.
+          const target = StateUtils.getTarget(state, player, transfer.to);
+          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard });
+        }
+      });
     });
   });
 }

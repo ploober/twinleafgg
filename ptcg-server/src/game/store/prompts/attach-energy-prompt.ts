@@ -41,7 +41,8 @@ export class AttachEnergyPrompt extends Prompt<CardAssign[]> {
   /**
    * B.82 / B.89 (conformance projection; inert for gameplay): set by an attack prefab that asks this joint (Energy,
    * destination) choice of the attacker's own Energy BEFORE the attack's damage and moves it after it
-   * (AttackEffect.afterDamageMoves; MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST). The adapter leaves the picks
+   * (AttackEffect.afterDamageMoves; MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST). Also set by the opponent-Energy prefab MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST (Tricky Steps,
+   * Jamming Wing, Eerie Tentacles: the opponent's Energy and its Benched destination together, TA-655). The adapter leaves the picks
    * attached and records them as `chosen`.
    */
   public deferredMove?: boolean;

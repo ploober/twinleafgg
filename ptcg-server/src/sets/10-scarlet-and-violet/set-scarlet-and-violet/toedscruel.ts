@@ -1,9 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, StateUtils, AttachEnergyPrompt, PlayerType, SlotType } from '../../../game';
+import { Stage, CardType } from '../../../game/store/card/card-types';
+import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { AFTER_ATTACK, WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Toedscruel extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -37,34 +38,12 @@ export class Toedscruel extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    // TA-645 / B.85 (3)(a): the pick of the opponent's Energy and its move come after the damage (AfterAttackEffect), so
-    // the damage reads the Energy attached (#77) and the picked Energy moves at the pick.
-    if (AFTER_ATTACK(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        opponent.active,
-        PlayerType.TOP_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0, max: 1 }
-      ), transfers => {
-        transfers = transfers || [];
-        const source = opponent.active;
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
-        }
-      });
-
+    // Eerie Tentacles. TA-655 / TA-652 / B.89 (1), (4): the "you may" is a standalone confirm (CF-32: a count-1 may has
+    // no inherent zero; it was folded into the move menu as a decline), then the Energy and its Benched destination, all
+    // Step-D choices asked before the damage (the Energy recorded as `chosen`); the damage reads the Energy still attached
+    // and it moves after the damage. No Energy or no Bench: nothing is asked (CF-33).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

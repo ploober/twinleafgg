@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 
 export class Shieldon extends PokemonCard {
@@ -32,10 +32,11 @@ export class Shieldon extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Ref: set-ancient-origins/registeel.ts (Forbidden Iron Hammer)
-    // TA-645 / B.85 (3)(a): the pick of the opponent's Energy and its discard come after the damage (AfterAttackEffect),
-    // so the damage reads the Energy attached (#77) and the picked Energy is discarded at the pick.
-    if (AFTER_ATTACK(effect, 0, this)) {
-      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+    // Smithereen Smash. TA-655 / B.89 (1), (4): the attacker chooses the opponent's Energy at Step D, before the damage (recorded as
+    // `chosen`); the damage reads it still attached (#77) and it is discarded after the damage, before damage reactions
+    // and the Knock Out check.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
     }
     return state;
   }

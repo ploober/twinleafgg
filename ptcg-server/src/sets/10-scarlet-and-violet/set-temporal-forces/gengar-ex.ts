@@ -1,9 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, PowerType, AttachEnergyPrompt } from '../../../game';
+import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
+import { StoreLike, State, PlayerType, StateUtils, PowerType } from '../../../game';
 import { Effect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
-import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Gengarex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -40,57 +41,11 @@ export class Gengarex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (AFTER_ATTACK(effect, 0, this)) {
-      // TA-307 / TA-128 family A. Rulebook attack step F, compendium #543 ("Do damage first,
-      // then apply effects") and #649 ("Like all attacks that don't explicitly say otherwise, the
-      // effects of attacks are not applied until after damage is done", TPCi Rules Team 2015-05-07):
-      // this rider PAUSES, so the base damage must already be on the board when it does. Written on
-      // WAS_ATTACK_USED the rider ran inside the pre-damage block and the game paused showing the
-      // defender at dmg=0 -- a mid-resolution divergence the end board never shows, which is why
-      // nothing downstream reported it. AFTER_ATTACK is dispatched by the attack pipeline AFTER
-      // DealDamage and BEFORE the KO sweep (game-effect.ts), which is exactly step F's order --
-      // so this does not trade TA-79 (damage deferred) for TA-123 (rider dropped past the KO).
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      // CF-32 second class (PINNED 2026-07-28), the count-1 arm. This card prints the SAME rider as
-      // `dri-070` Jamming Wing, which the pin names as its worked example -- *"a fixed count-1, the gate
-      // is the only decline… which is exactly why BOTH engines already externalise it there"* -- and
-      // which is already written this way in this repo. This card was not, so twinleaf inlined the
-      // decline as a `confirm{false}` inside a flat min:0 pick while rotomancer externalised the gate.
-      //
-      // ⚠️ The Energy guard is NEW, and its absence was a latent CF-33 defect independent of the shape:
-      // this card checked only `hasBench`, so on an opposing Active with NO Energy attached it offered a
-      // `may` that could achieve nothing. `dri-070` and `cri-037` both check BOTH conditions. With the
-      // gate externalised the inner pick is min:1, so the guard is also load-bearing here. Both zones are
-      // public to the acting player, so suppressing on them leaks nothing -- CF-33 Boundary 1.
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
-      const hasEnergy = opponent.active.cards.some(c => c.superType === SuperType.ENERGY);
-
-      if (!hasBench || !hasEnergy) {
-        return state;
-      }
-
-      CONFIRMATION_PROMPT(store, state, player, result => {
-        if (result) {
-          return store.prompt(state, new AttachEnergyPrompt(
-            player.id,
-            GameMessage.ATTACH_ENERGY_TO_BENCH,
-            opponent.active,
-            PlayerType.TOP_PLAYER,
-            [SlotType.BENCH],
-            { superType: SuperType.ENERGY },
-            { allowCancel: false, min: 1, max: 1 }
-          ), transfers => {
-            transfers = transfers || [];
-            for (const transfer of transfers) {
-              // TA-147: resolve the destination in the PROMPT's frame (`player`), not `opponent` --
-              // the prompt is built player.id + TOP_PLAYER, so a second flip steals the Energy.
-              const target = StateUtils.getTarget(state, player, transfer.to);
-              MOVE_CARDS(store, state, opponent.active, target, { cards: [transfer.card], sourceCard: this });
-            }
-          });
-        }
-      });
+    // Tricky Steps. TA-655 / B.89 (1), (4): the "you may" (CF-32: a standalone confirm), the Energy and its Benched
+    // destination are Step-D choices, asked before the damage (the Energy recorded as `chosen`); the damage reads the
+    // Energy still attached and it moves after the damage. No Energy or no Bench: nothing is asked (CF-33).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);
     }
 
     // TA-641: "attaches an Energy card from their hand" -- an attach from the discard (Eelektrik asc-060 Dynamotor)

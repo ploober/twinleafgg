@@ -240,10 +240,13 @@ describe('TA-655 (B.89 (1)): "You may put [an / 2] Energy attached to your oppon
     expect(dealt(r)).toBe(40);
     expect(r.state.players.B.hand.some(c => c.iid === 'b1e1')).toBe(true);
   });
-  it('svi-015 Trick Cape into Rock Armor, one Energy: yes, the forced pick is chosen, 50 (Grass Weakness, Rock Armor reads it), then to the hand [TA-655 svi-015]', () => {
+  // One Energy: the pick is forced and collapses (CF-14). The ChooseEnergyPrompt decomposer names no card for a forced
+  // full pick (as Topaz Bolt ssp-057's discard-all, on both engines), so no `chosen` here, unlike the ChooseCardsPrompt
+  // forced pick (Crunch above, TA-651's Power Cyclone); the order of the damage and the move is what this cell pins.
+  it('svi-015 Trick Cape into Rock Armor, one Energy: yes, the forced pick collapses, 50 (Grass Weakness, Rock Armor reads it), then to the hand [TA-655 svi-015]', () => {
     const r = step(board('svi-015', [GRASS], [WATER], REGIROCK), [attack('Trick Cape'), yes]);
     expect(rejected(r)).toBeUndefined();
-    expect(seq(r)).toEqual(['chosen b1e0', 'damaged', 'moved b1e0']);
+    expect(seq(r).filter(e => !e.startsWith('chosen'))).toEqual(['damaged', 'moved b1e0']);
     expect(dealt(r)).toBe(50);
     expect(r.state.players.B.hand.some(c => c.iid === 'b1e0')).toBe(true);
   });

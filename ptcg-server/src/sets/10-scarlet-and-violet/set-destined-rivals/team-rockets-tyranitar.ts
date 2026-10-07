@@ -1,20 +1,17 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, CardTag, SuperType } from '../../../game/store/card/card-types';
+import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import {
   StoreLike,
   State,
-  ChooseCardsPrompt,
-  GameMessage,
-  Card,
   PowerType,
   StateUtils,
   PlayerType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON } from '../../../game/store/prefabs/attack-effects';
 import { BetweenTurnsEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
-import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 
 export class TeamRocketsTyranitar extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -76,30 +73,11 @@ export class TeamRocketsTyranitar extends PokemonCard {
       return state;
     }
 
-    // Demolition Tackle. TA-645 / B.85 (3)(a): an effect on the opponent's cards in play, the pick and the discard,
-    // comes after the attack's damage (AfterAttackEffect), and the picked Energy is discarded at the pick.
-    if (AFTER_ATTACK(effect, 0, this)) {
-      const opponent = effect.opponent;
-
-      if (!opponent.active.cards.some((c) => c.superType === SuperType.ENERGY)) {
-        return state;
-      }
-
-      let card: Card;
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          effect.player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
-          opponent.active,
-          { superType: SuperType.ENERGY },
-          { min: 1, max: 1, allowCancel: false },
-        ),
-        (selected) => {
-          card = selected[0];
-          return store.reduceEffect(state, new DiscardCardsEffect(effect.attackEffect, [card]));
-        },
-      );
+    // Demolition Tackle. TA-655 / B.89 (1), (4): the attacker chooses the opponent's Energy at Step D, before the damage (recorded as
+    // `chosen`); the damage reads it still attached (#77) and it is discarded after the damage, before damage reactions
+    // and the Knock Out check.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
     }
 
     return state;
