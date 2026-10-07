@@ -461,9 +461,14 @@
     {
       "file": "set-surging-sparks/turtonator.ts",
       "signatures": [
-        "cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],"
+        "cost: [CardType.FIGHTING, CardType.COLORLESS, CardType.COLORLESS],",
+        "return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0447"
+      ],
+      "note": " | TA-661 (2026-10-07): B.89 (5) choose first."
     },
     {
       "file": "set-surging-sparks/terapagos.ts",
@@ -2061,12 +2066,14 @@
         "base, [SpecialCondition.ASLEEP]",
         "base, [SpecialCondition.POISONED]",
         "if (item.wasActive && item.target !== effect.player.active) {",
-        "const target = StateUtils.getTarget(state, player, chosen[0].to);"
+        "const target = StateUtils.getTarget(state, player, chosen[0].to);",
+        "prompt.deferredMove = true;   // B.89 (5): chosen at Step D, moved when the attack's effects apply"
       ],
-      "note": "TA-289's copied-attack AfterAttackEffect moved into the shared game/store/prefabs/copy-attack-delegation.ts when upstream 3ee8aac13 routed every copy prefab through runDelegatedCopiedAttackGenerator; it is signature-protected there.",
+      "note": "TA-289's copied-attack AfterAttackEffect moved into the shared game/store/prefabs/copy-attack-delegation.ts when upstream 3ee8aac13 routed every copy prefab through runDelegatedCopiedAttackGenerator; it is signature-protected there. | TA-661 (2026-10-07): B.89 (5) choose first.",
       "fixes": [
         "FX-0005",
-        "FX-0441"
+        "FX-0441",
+        "FX-0447"
       ],
       "state": "guarding"
     },
@@ -7360,10 +7367,14 @@
     {
       "file": "set-temporal-forces/gastly.ts",
       "signatures": [
-        "text: 'Flip a coin. If heads, discard an Energy from your opponent\\'s Active Pokémon.'"
+        "text: 'Flip a coin. If heads, discard an Energy from your opponent\\'s Active Pokémon.'",
+        "DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-661 (2026-10-07): B.89 (5) choose first.",
+      "state": "guarding",
+      "fixes": [
+        "FX-0447"
+      ]
     },
     {
       "file": "set-chaos-rising/espurr.ts",
@@ -12379,6 +12390,36 @@
       "note": "TA-660 (2026-10-07): a wholly forced ChooseCards pick (Crunch with one Energy left) records no chosen (B.93).",
       "fixes": [
         "FX-0446"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/ducklett.ts",
+      "signatures": [
+        "return DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, [CardType.FIRE], 1, true);"
+      ],
+      "note": "TA-661 (2026-10-07): No-damage attacks choose first and record chosen (B.89 (5), B.93): Slight Shift, Fully Singe, Mysterious Beam, Firefight",
+      "fixes": [
+        "FX-0447"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/elgyem.ts",
+      "signatures": [
+        "return MOVE_AN_ENERGY_FROM_OPPONENTS_POKEMON_TO_ANOTHER(store, state, effect, { chooseFirst: true });"
+      ],
+      "note": "TA-661 (2026-10-07): no-damage attacks choose first and record chosen (B.89 (5), B.93).",
+      "fixes": [
+        "FX-0447"
+      ]
+    },
+    {
+      "file": "game/store/prompts/move-energy-prompt.ts",
+      "signatures": [
+        "public deferredMove?: boolean;"
+      ],
+      "note": "TA-661 (2026-10-07): no-damage attacks choose first and record chosen (B.89 (5), B.93).",
+      "fixes": [
+        "FX-0447"
       ]
     }
   ]
