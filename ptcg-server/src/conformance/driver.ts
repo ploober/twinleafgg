@@ -1016,6 +1016,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // and the second show (cards now in a temp list) read the wrong owner.
   let revealedThisAction = new Set<string>();
   for (;;) {
+    // TA-669 (B.80): a completed search holds its pick in transit only while the card has stayed in the searched zone.
+    // One that left it (Sonar's discard-pile pick went to the hand) and came back (played, then discarded) is settled.
+    for (let i = completedSearches.length - 1; i >= 0; i--) {
+      const search = completedSearches[i];
+      search.cards = search.cards.filter(c => search.source.cards.includes(c));
+      if (search.cards.length === 0) { completedSearches.splice(i, 1); }
+    }
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
     if (prompt !== undefined) {
