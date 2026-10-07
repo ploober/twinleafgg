@@ -6,6 +6,7 @@ import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
 import { PokemonCardList } from '../game/store/state/pokemon-card-list';
 import { CardList } from '../game/store/state/card-list';
+import { MoveDamageCountersEffect } from '../game/store/effects/game-effects';
 import { ChooseCardsPrompt } from '../game/store/prompts/choose-cards-prompt';
 import { isDiscardPick } from './decomposers/choose-cards';
 import { liftToTransit, locationOfTag } from './transit-projection';
@@ -623,6 +624,15 @@ function snapshotCardZones(state: State): Map<Card, string> {
  * already sees their own cards), so every ShowCardsPrompt is a public reveal. Audience-scoped shows
  * (`to:<player>`) and private looks (eventless) are the other CF-18 arms — not raised by this prompt.
  */
+/** TA-665: whether `list` is one of the player's zones (a pile that is none of them is a lifted, closure-local pile). */
+function isZoneOf(p: Player, list: CardList): boolean {
+  return list === p.deck || list === p.hand || list === p.discard || list === p.lostzone || list === p.active
+    || p.bench.includes(list as PokemonCardList) || p.prizes.includes(list) || list === p.stadium;
+}
+
+/** B.97: zones whose cards every player already sees (snapshotCardZones labels). */
+const PUBLIC_ZONES = new Set(['discardPile', 'lostZone', 'active', 'bench']);
+
 function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZones: Map<Card, string>): NeutralEvent | null {
   const cards = prompt.cards;
   // Owner fallback for a show we cannot locate by card: the prompt's playerId is the AUDIENCE, so the
@@ -631,27 +641,17 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
   const fallbackOwner = audience === 'A' ? 'B' : 'A';
 
   if (cards.length === 0) {
-    // TA-153: an EMPTY show is still a reveal. "Your opponent reveals their hand" EXECUTES over an
-    // empty hand — the attacker learns it is empty, which is real information (it is why the attack
-    // then does 0 damage). Same discriminator as CF-9/TA-126 (the instruction executes even over zero
-    // objects), and the cross-engine shape rotomancer emits (`cards: []`; the harness eventKey omits
-    // an empty cards list, so both spellings key identically). Suppressing the event is what kept
-    // xfz-wht-005 diverging the day the CF-18 gate first fired (RE-73 fold).
-    //
-    // `from` cannot be located from a card (there is none). Attribute by which of the shower's
-    // ordered public-ish zones is empty — today's only empty-show families are whole-zone reveals
-    // ("reveals their hand") and empty-window deck reveals (RE-68 family), and an ambiguous board
-    // (both empty) reads 'hand' first, matching the dominant family. 'unknown' when neither is empty
-    // (an empty show of a non-empty zone would be a card bug worth seeing on the wire, not hiding).
-    const shower = game.state.players.find(p => playerIdToActor(game.state, p.id) === fallbackOwner);
-    const from = shower === undefined ? 'unknown'
-      : shower.hand.cards.length === 0 ? 'hand'
-        : shower.deck.cards.length === 0 ? 'deck'
-          : 'unknown';
-    return { kind: 'reveal', owner: fallbackOwner, cards: [], from, to: 'all' };
+    // B.97 (TA-663, supersedes TA-153's empty reveal): a reveal is emitted only when hidden cards become visible. An
+    // empty show makes nothing visible (a zone's size is public), so it is no event: Haughty Order dri-150 against an
+    // empty deck, "your opponent reveals their hand" over an empty hand.
+    return null;
   }
+  // B.97 (TA-663): a card that was already public at the start of the action (in play, the discard pile, the Lost
+  // Zone) is never revealed: Sonar and Night Stretcher show their discard-pile pick to the opponent, which tells the
+  // opponent nothing the board did not.
+  const hidden = cards.filter(c => !PUBLIC_ZONES.has(sourceZones.get(c) ?? ''));
   const iids: string[] = [];
-  for (const c of cards) {
+  for (const c of hidden) {
     const iid = game.ctx.cardToIid.get(c);
     if (iid !== undefined) {
       iids.push(iid);
@@ -660,7 +660,7 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
   if (iids.length === 0) {
     return null;
   }
-  const loc = locateCard(game.state, cards[0]);
+  const loc = locateCard(game.state, hidden[0]);
   // Owner = the located zone's owner; fall back to the non-audience player (see above).
   const owner = loc !== null ? playerIdToActor(game.state, loc.owner.id) : fallbackOwner;
   // TA-373 / §B.34: `from` is the SOURCE zone — where the card was at the START of this action, before
@@ -669,8 +669,8 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
   // B.80 / B.34 amended: a card absent from EVERY settled zone at the start of the action was LIFTED (on
   // the table, in a pile) — it was in `transit`, so that is its `from` (Tyme's face-down Pokémon revealed
   // during the opponent's guess). The located zone is the fallback only for a card the game did not know.
-  const from = sourceZones.get(cards[0])
-    ?? (game.ctx.cardToIid.has(cards[0]) ? 'transit' : (loc !== null ? loc.zone : 'unknown'));
+  const from = sourceZones.get(hidden[0])
+    ?? (game.ctx.cardToIid.has(hidden[0]) ? 'transit' : (loc !== null ? loc.zone : 'unknown'));
   return { kind: 'reveal', owner, cards: iids, from, to: 'all' };
 }
 
@@ -816,6 +816,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // TA-593: every positional take from a player's own deck into that player's own hand is a draw. Live identity
   // only (a probe's cloned lists never match), cleared when the loop ends; a dispatch that throws drops its draws.
   const drawOps: Array<{ player: NeutralPlayerId; count: number }> = [];
+  const liftedOffDeck = new Map<Card, Player>();
   CardList.topTake = (from: CardList, to: CardList, count: number): void => {
     const players = game.store.state.players;
     for (let i = 0; i < players.length; i++) {
@@ -823,7 +824,22 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         drawOps.push({ player: i === 0 ? 'A' : 'B', count });
         return;
       }
+      // TA-665 (B.80 / B.81): a take off the top of a deck into a pile that is no zone of the game lifts those cards
+      // (Destructo-Press tef-062 reveals the top 5, discards the Future cards and shuffles the rest back, all inside one
+      // dispatch). Remember them: one that is back in the same deck when the dispatch ends made a round trip the board
+      // diff cannot see.
+      if (players[i].deck === from && !players.some(p => isZoneOf(p, to))) {
+        for (const c of to.cards.slice(-count)) { liftedOffDeck.set(c, players[i]); }
+        return;
+      }
     }
+  };
+
+  // TA-664 (#1995, #2257): a counter moved off a Pokemon is not healed, even when its placement is prevented and it
+  // vanishes (Adrena-Brain under Battle Cage). Live identity only (a probe's clone constructs the effect too).
+  let countersMoved = false;
+  MoveDamageCountersEffect.observed = (who: unknown): void => {
+    if (game.store.state.players.some(p => p === who)) { countersMoved = true; }
   };
 
   // B.81: a switch is an ordering point. The engine calls CardList.legCut once an Active / Bench swap completes;
@@ -839,6 +855,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   const dispatchAndCollect = (fire: () => void): void => {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
+    liftedOffDeck.clear();
     const beforeState = projectState(game.state, game.ctx);
     // TA-590: the legs run between the trace's boards (held search picks in transit); every other derivation reads
     // the engine's own.
@@ -885,7 +902,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const allNames = allIidNames(game.ctx);
     const draws = drawOps.splice(beforeDraws);
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
-      draws));
+      draws, countersMoved));
+    countersMoved = false;
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
     // TA-591: a card shown by a ShowCardsPrompt still open at the end of this dispatch was revealed by it — the
     // engine raises the show and moves the card in one callback (SEARCH_DECK_FOR_CARDS_TO_HAND: "reveal it, and put
@@ -904,6 +922,27 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       ? [...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, shuffledIn)]
       : deriveMoved(movedBefore, movedAfter, revealedSince, shuffledIn);
     events.push(...legs);
+    // TA-665: a card lifted off its deck and back in that deck by the end of the dispatch went deck -> transit -> deck.
+    const returned = new Map<Player, Card[]>();
+    for (const [card, p] of liftedOffDeck) {
+      const iid = game.ctx.cardToIid.get(card);
+      if (iid === undefined || !p.deck.cards.includes(card) || legs.some(l => (l as { card?: string }).card === iid)) { continue; }
+      returned.set(p, [...(returned.get(p) ?? []), card]);
+    }
+    liftedOffDeck.clear();
+    for (const [p, back] of returned) {
+      const owner = playerIdToActor(game.state, p.id);
+      const n = back.length;
+      for (const card of back) {
+        const iid = game.ctx.cardToIid.get(card)!;
+        const at = p.deck.cards.indexOf(card);
+        const position = shuffledIn.has(owner) ? 'any' : at < n ? 'top' : at >= p.deck.cards.length - n ? 'bottom' : 'any';
+        const visibility = revealedSince.has(iid) ? 'public' : 'owner';
+        events.push(
+          { kind: 'moved', owner, card: iid, origin: { zone: 'deck' }, destination: { zone: 'transit' }, visibility } as NeutralEvent,
+          { kind: 'moved', owner, card: iid, origin: { zone: 'transit' }, destination: { zone: 'deck', position }, visibility } as NeutralEvent);
+      }
+    }
     // B.87 / TA-643: a deck leg held over a non-decision wait (below) whose deck the effect now shuffles or searches was
     // shuffled in. Drasna ssp-173 puts the hand into the deck, parks on the hand-to-deck animation wait, and raises the
     // shuffle only when that wait is acknowledged — the next dispatch.
@@ -965,6 +1004,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
+    MoveDamageCountersEffect.observed = undefined;
   }
 
   function loop(): LoopResult {
@@ -1001,8 +1041,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             events.push(revealEvent);
           }
           // TA-605: a repeat is no new event, but the cards are still being shown: a card that moves at this ack
-          // (Haughty Order puts the ten back at the second audience's) is identifiable by both players.
-          shown.forEach(c => revealedSince.add(c));
+          // (Haughty Order puts the ten back at the second audience's) is identifiable by both players. Every shown card
+          // counts, including the public ones B.97 leaves out of the event.
+          for (const c of (prompt as ShowCardsPrompt).cards) {
+            const iid = game.ctx.cardToIid.get(c);
+            if (iid !== undefined) { revealedSince.add(iid); }
+          }
         }
         // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
         // SETUP_PLAYER_NO_BASIC, and the opponent's). Emit one `mulliganRevealed` per hand, from the owner's

@@ -29,6 +29,9 @@ export interface PutDamageOptions {
 
 export class PutDamagePrompt extends Prompt<DamageMap[]> {
 
+  /** B.98 / TA-668: an attack's Step-D choice of where its counters go: nothing is placed until after the damage. */
+  public deferredMove?: boolean;
+
   readonly type: string = PutDamagePromptType;
 
   public options: PutDamageOptions;

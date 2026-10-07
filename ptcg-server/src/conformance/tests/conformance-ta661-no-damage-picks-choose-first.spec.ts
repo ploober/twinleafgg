@@ -29,11 +29,11 @@ describe('TA-661: no-damage attacks choose first, recorded chosen (B.89 (5), B.9
     const r = step(TURTONATOR, [atk('Fully Singe'), { actor: 'A', type: 'discard', owner: 'B', target: 'b1e0' } as never]);
     expect(evs(r)).toEqual(['chosen b1e0', 'moved b1e0']);
   });
-  it('Mysterious Beam: heads, then chosen, then discarded [TA-661]', () => {
+  it('Mysterious Beam: heads, then discarded at the pick, no chosen (B.99: a flip-gated pick is part of the effect) [TA-666]', () => {
     const r0 = step(GASTLY, [atk('Mysterious Beam')]);
     const heads = legal(r0).find(a => a.type === 'flip' && (a.value === 'heads' || a.value === true)) || legal(r0)[0];
     const r = step(GASTLY, [atk('Mysterious Beam'), heads as never, { actor: 'A', type: 'discard', owner: 'B', target: 'b1e0' } as never]);
-    expect(evs(r)).toEqual(['chosen b1e0', 'moved b1e0']);
+    expect(evs(r)).toEqual(['moved b1e0']);
   });
   it('Firefighting with one [R] Energy: no pending, no chosen, discarded (CF-14, B.93) [TA-661]', () => {
     const r = step(DUCKLETT_ONE, [atk('Firefighting')]);

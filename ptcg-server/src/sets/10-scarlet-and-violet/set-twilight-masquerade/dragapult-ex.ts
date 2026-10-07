@@ -6,7 +6,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
 import { SlotType } from '../../../game/store/actions/play-card-action';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { AFTER_ATTACK } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
 
 export class Dragapultex extends PokemonCard {
@@ -55,8 +55,8 @@ export class Dragapultex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    // Post-damage bench-counter rider (family A): the 6 counters go on AFTER the 200 lands (TA-128).
-    if (AFTER_ATTACK(effect, 1, this)) {
+    // TA-668 / B.98: where the 6 counters go is chosen before the 200 (Step D); they go on after it (TA-128, #649).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(6, store, state, effect, [SlotType.BENCH]);
     }
 

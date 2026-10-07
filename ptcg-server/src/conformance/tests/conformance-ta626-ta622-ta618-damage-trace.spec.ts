@@ -96,7 +96,7 @@ describe('TA-626: damage placed and healed inside one step is still a damaged ev
   });
 });
 
-// ── TA-622 ────────────────────────────────────────────────────────────────
+// ── TA-622 / TA-668 ────────────────────────────────────────────────────────────────
 
 function sinistchaBoard(): NeutralState {
   return base(
@@ -106,23 +106,22 @@ function sinistchaBoard(): NeutralState {
 const cursedDrop = { actor: 'A', type: 'declareAttack', source: 'a1', name: 'Cursed Drop' } as never;
 const place = (target: string) => ({ actor: 'A', type: 'placeCounter', target } as never);
 
-describe('TA-622: a counter placed at a mid-decision pause is in the trace', () => {
-  it('Cursed Drop, first pick: the counter on b1 is projected AND emitted as damaged 10 [TA-622]', () => {
+describe('TA-668 / B.98 (supersedes TA-622 for attacks): an attack\'s counter picks place nothing until its effects apply', () => {
+  it('Cursed Drop, first pick: nothing is placed and no damaged is emitted at the pause [TA-668]', () => {
     const r = step(sinistchaBoard(), [cursedDrop, place('b1')]);
     expect(r.pending?.legalActions.some(a => a.type === 'placeCounter')).toBe(true);
-    expect(r.state.players.B.active?.damage).toBe(10);
-    expect(sums(r.events, 'damaged')).toEqual({ b1: 10 });
+    expect(r.state.players.B.active?.damage).toBe(0);
+    expect(sums(r.events, 'damaged')).toEqual({});
   });
 
-  it('Cursed Drop, three picks over two Pokémon: one damaged per counter, summed b1 20, bb1 10 [TA-622]', () => {
+  it('Cursed Drop, three picks over two Pokémon: still nothing placed [TA-668]', () => {
     const r = step(sinistchaBoard(), [cursedDrop, place('b1'), place('bb1'), place('b1')]);
-    expect(r.state.players.B.active?.damage).toBe(20);
-    expect(r.state.players.B.bench[0].damage).toBe(10);
-    expect(r.events.filter(e => e.kind === 'damaged').length).toBe(3);
-    expect(sums(r.events, 'damaged')).toEqual({ b1: 20, bb1: 10 });
+    expect(r.state.players.B.active?.damage).toBe(0);
+    expect(r.state.players.B.bench[0].damage).toBe(0);
+    expect(r.events.filter(e => e.kind === 'damaged').length).toBe(0);
   });
 
-  it('Cursed Drop, all four picks: the close trace sums to the board, no pause events left over [TA-622]', () => {
+  it('Cursed Drop, all four picks: the counters land together, one damaged per Pokémon placement [TA-668]', () => {
     const r = step(sinistchaBoard(), [cursedDrop, place('b1'), place('bb1'), place('b1'), place('b1')]);
     expect(r.state.players.B.active?.damage).toBe(30);
     expect(r.state.players.B.bench[0].damage).toBe(10);
@@ -159,5 +158,12 @@ describe('TA-618: a moved counter Battle Cage keeps off the Bench is never proje
     const r = step(munkidoriBoard(), [adrena, place('bb1'), { actor: 'A', type: 'confirm', value: false } as never]);
     expect(r.state.players.A.active?.damage).toBe(20);
     expect(r.state.players.B.bench[0].damage).toBe(0);
+  });
+
+  it('a moved counter is not healed, at the pause or at the close, even when it vanishes (#1995, #2257) [TA-664]', () => {
+    expect(sums(step(munkidoriBoard(), [adrena, place('bb1')]).events, 'healed')).toEqual({});
+    const r = step(munkidoriBoard(), [adrena, place('bb1'), { actor: 'A', type: 'confirm', value: false } as never]);
+    expect(sums(r.events, 'healed')).toEqual({});
+    expect(sums(step(munkidoriBoard(), [adrena, place('b1')]).events, 'healed')).toEqual({});
   });
 });

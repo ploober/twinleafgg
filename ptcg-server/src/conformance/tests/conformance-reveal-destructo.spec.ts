@@ -67,6 +67,27 @@ describe('Conformance — CF-18 reveal: Iron Thorns "Destructo-Press" (first cro
     ]);
   });
 
+  it('the revealed cards are lifted and the others shuffled back: deck -> transit -> deck any, Future cards to the discard pile (B.80 / B.81) [TA-665]', () => {
+    const top5: CardRef[] = [
+      { iid: 'A-d0', printing: IRON_THORNS },
+      { iid: 'A-d1', printing: WATER },
+      { iid: 'A-d2', printing: WATER },
+      { iid: 'A-d3', printing: WATER },
+      { iid: 'A-d4', printing: WATER },
+    ];
+    const res = step(boardWithTop5(top5),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Destructo-Press' }]);
+    type Leg = { card: string; origin: { zone: string }; destination: { zone: string; position?: string } };
+    const legs = res.events.filter(e => e.kind === 'moved') as unknown as Leg[];
+    const path = (iid: string) => legs.filter(l => l.card === iid)
+      .map(l => `${l.origin.zone}>${l.destination.zone}${l.destination.position ? ':' + l.destination.position : ''}`);
+    for (const iid of ['A-d1', 'A-d2', 'A-d3', 'A-d4']) {
+      expect(path(iid)).toEqual(['deck>transit', 'transit>deck:any']);
+    }
+    expect(path('A-d0')).toEqual(['deck>discardPile']);   // a Future card: discarded, one leg
+    expect(path('A-d5')).toEqual([]);   // not revealed, never lifted
+  });
+
   it('still applies the damage (70 × Future count) through the deferred reveal callback', () => {
     // Deck = 2 Future + 1 non-Future (only 3 cards): reveal all 3 from deck, damage 70×2=140. After
     // discarding the 2 Future, exactly 1 card remains → CF-11 collapses the shuffle (no pending), so
@@ -122,15 +143,9 @@ describe('Conformance — CF-18 reveal: an EMPTY hand reveal is still a reveal [
     return step(st, [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Wondrous Cotton' }]);
   }
 
-  it('empty opponent hand: emits reveal{owner B, cards [], from hand, to all}', () => {
+  it('empty opponent hand: no reveal, nothing hidden becomes visible (B.97; supersedes TA-153) [TA-663]', () => {
     const r = wondrousCotton([]);
-    const reveals = r.events.filter(e => e.kind === 'reveal');
-    expect(reveals.length).toBe(1);                    // pre-fix: 0 — the event was suppressed
-    const rev = reveals[0] as { owner: string; cards: string[]; from: string; to: string };
-    expect(rev.owner).toBe('B');
-    expect(rev.cards).toEqual([]);
-    expect(rev.from).toBe('hand');
-    expect(rev.to).toBe('all');
+    expect(r.events.filter(e => e.kind === 'reveal')).toEqual([]);
   });
 
   it('populated opponent hand: unchanged — one reveal carrying the iids', () => {

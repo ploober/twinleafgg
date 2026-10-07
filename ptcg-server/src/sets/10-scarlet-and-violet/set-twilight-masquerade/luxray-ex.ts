@@ -2,7 +2,7 @@ import { CardTag, CardType, Stage } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { Card, ChooseCardsPrompt, GameMessage, PokemonCard, StateUtils } from '../../../game';
+import { Card, ChooseCardsPrompt, GameMessage, PokemonCard, ShowCardsPrompt, StateUtils } from '../../../game';
 
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
@@ -62,21 +62,28 @@ export class Luxrayex extends PokemonCard {
         return state;
       }
 
-      // "Discard 1 card you find there" is mandatory when the opponent has cards (guarded above) —
-      // min:1, not min:0 (which let the attacker skip the discard).
-      return store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        opponent.hand,
-        {},
-        { allowCancel: false, min: 1, max: 1 }
-      ), selectedCard => {
-        const selected = selectedCard || [];
-        if (selected.length === 0) {
-          return;
-        }
+      // TA-667 / B.97: "Your opponent reveals their hand": the whole hand is shown before the pick.
+      return store.prompt(state, new ShowCardsPrompt(
+        player.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        opponent.hand.cards
+      ), () => {
+        // "Discard 1 card you find there" is mandatory when the opponent has cards (guarded above) —
+        // min:1, not min:0 (which let the attacker skip the discard).
+        store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          opponent.hand,
+          {},
+          { allowCancel: false, min: 1, max: 1 }
+        ), selectedCard => {
+          const selected = selectedCard || [];
+          if (selected.length === 0) {
+            return;
+          }
 
-        MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [selected[0]], sourceCard: this });
+          MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [selected[0]], sourceCard: this });
+        });
       });
     }
 

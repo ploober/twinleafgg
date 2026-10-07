@@ -113,7 +113,9 @@ describe('WS1 batch 1a — bench-snipe / spread riders fire AFTER base damage la
     return [pip('B-b0', BENCHMON), pip('B-b1', BENCHMON), pip('B-b2', BENCHMON)];
   }
 
-  it('Phantom Dive: 200 lands on the Active, then 6 counters go on the Bench [twm-130 dragapult-ex]', () => {
+  it('Phantom Dive: the 6 counters are picked before the 200 (Step D, B.98) and placed after it [twm-130 dragapult-ex, TA-668]', () => {
+    // TA-668 / B.98 supersedes the original "200 first, then the pick": the pick is a Step-D choice; the counters still
+    // land after the 200 (TA-128), which conformance-ta668-counter-placements-step-d.spec.ts drives to the end.
     const res = step(
       board(
         player({ active: pip('A-act', DRAGAPULT, [{ iid: 'r', printing: FIRE }, { iid: 'p', printing: PSY }]) }),
@@ -122,7 +124,7 @@ describe('WS1 batch 1a — bench-snipe / spread riders fire AFTER base damage la
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Phantom Dive' }],
     );
     expect(res.status).toBe('awaitingAction');        // paused for the counter placement
-    expect(res.state.players.B.active!.damage).toBe(200);
+    expect(res.state.players.B.active!.damage).toBe(0);
   });
 
   it('Obsidian: 130 lands on the Active, then the 130-to-2-Bench spread is offered [ssp-119 hydreigon-ex]', () => {

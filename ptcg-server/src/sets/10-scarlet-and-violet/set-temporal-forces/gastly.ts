@@ -38,8 +38,9 @@ export class Gastly extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       COIN_FLIP_PROMPT(store, state, effect.player, result => {
         if (result) {
-          // TA-661 / B.89 (2), (5): the pick waits on the flip, is recorded `chosen` (B.93: among two or more), then discards.
-          DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
+          // TA-666 / B.99: the pick waits on the flip and is part of the effect: the Energy is discarded at the pick, with
+          // no `chosen` (B.89 (5)'s choose-first covers only choices known before the attack resolves).
+          DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
         }
       });
     }

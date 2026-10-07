@@ -428,7 +428,12 @@ export function PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(
     maxAllowedDamage.push({ target, damage: 9999 });
   });
 
-  return store.prompt(state, new PutDamagePrompt(
+  // TA-668 / B.98 (B.89 (1), (4); #649, #543): asked from the attack's own effect, before its damage, where the counters
+  // go is a Step-D choice: it is made now, and the counters are placed after the damage (AttackEffect.afterDamageMoves),
+  // before damage reactions and the Knock Out check. Nothing is placed between picks. From AFTER_ATTACK (or outside an
+  // attack) the counters are placed at once, as before.
+  const stepD = effect instanceof AttackEffect && state.preDamageAttack === effect;
+  const prompt = new PutDamagePrompt(
     effect.player.id,
     GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
     PlayerType.TOP_PLAYER,
@@ -436,13 +441,24 @@ export function PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE(
     10 * x,
     maxAllowedDamage,
     { allowCancel: false }
-  ), targets => {
+  );
+  if (stepD) {
+    prompt.deferredMove = true;
+  }
+  return store.prompt(state, prompt, targets => {
     const results = targets || [];
-    for (const result of results) {
-      const target = StateUtils.getTarget(state, player, result.target);
-      const putCountersEffect = new PutCountersEffect(base, result.damage);
-      putCountersEffect.target = target;
-      store.reduceEffect(state, putCountersEffect);
+    const place = () => {
+      for (const result of results) {
+        const target = StateUtils.getTarget(state, player, result.target);
+        const putCountersEffect = new PutCountersEffect(base, result.damage);
+        putCountersEffect.target = target;
+        store.reduceEffect(state, putCountersEffect);
+      }
+    };
+    if (stepD) {
+      (effect as AttackEffect).afterDamageMoves.push(place);
+    } else {
+      place();
     }
   });
 }

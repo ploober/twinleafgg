@@ -102,19 +102,32 @@ describe('Conformance — ShowCardsPrompt auto-resolve + ConfirmPrompt decompose
     ]);
   });
 
-  it('CF-18: an empty ShowCardsPrompt emits reveal{cards: []} — the empty show IS observable [TA-153]', () => {
-    // SUPERSEDES the original "(nothing observable)" pin, which was asserted, not adjudicated. An
-    // empty show is observable: the audience learns the zone is EMPTY, which is real information
-    // ("reveals their hand" then doing 0 damage is *why*). Same discriminator as CF-9/TA-126 — the
-    // instruction executes even over zero objects — and the shape rotomancer emits (measured on
-    // Wondrous Cotton wht-005 the day the CF-18 gate first fired). The harness eventKey omits an
-    // empty cards list, so `cards: []` keys identically to roto's absent-cards spelling.
+  it('B.97: an empty ShowCardsPrompt emits no reveal: no hidden card becomes visible [TA-663, supersedes TA-153]', () => {
+    // B.97 (owner 2026-10-07): a reveal is emitted only when cards in a hidden zone become visible. An empty show makes
+    // nothing visible (a zone's size is public), as rotomancer measured on Haughty Order dri-150 against an empty deck.
     const game = importState(board()); // board() hands are empty
     const a = game.state.players[0];
     game.store.prompt(game.state, new ShowCardsPrompt(game.state.players[1].id,
       GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, a.hand.cards), () => { });
-    expect(replay(game, []).events.filter(e => e.kind === 'reveal')).toEqual([
-      { kind: 'reveal', owner: 'A', cards: [], from: 'hand', to: 'all' },
+    expect(replay(game, []).events.filter(e => e.kind === 'reveal')).toEqual([]);
+  });
+
+  it('B.97: a shown card that was already public (in the discard pile, in play) is not revealed [TA-663]', () => {
+    const b = board();
+    b.players.A.discard = [{ iid: 'A-x0', printing: WATER }];
+    b.players.A.hand = [{ iid: 'A-h0', printing: WATER }];
+    const only = importState(b);
+    const pa = only.state.players[0];
+    only.store.prompt(only.state, new ShowCardsPrompt(only.state.players[1].id,
+      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, [pa.discard.cards[0], pa.active.cards[0]]), () => { });
+    expect(replay(only, []).events.filter(e => e.kind === 'reveal')).toEqual([]);
+
+    const mixed = importState(b);
+    const pm = mixed.state.players[0];
+    mixed.store.prompt(mixed.state, new ShowCardsPrompt(mixed.state.players[1].id,
+      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, [pm.discard.cards[0], pm.hand.cards[0]]), () => { });
+    expect(replay(mixed, []).events.filter(e => e.kind === 'reveal')).toEqual([
+      { kind: 'reveal', owner: 'A', cards: ['A-h0'], from: 'hand', to: 'all' },
     ]);
   });
 

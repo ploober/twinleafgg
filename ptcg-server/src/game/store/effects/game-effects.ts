@@ -413,12 +413,15 @@ export class PlaceDamageCountersEffect implements Effect {
 }
 
 export class MoveDamageCountersEffect implements Effect {
+  /** Conformance hook (TA-664): told of every counter move, so a counter moved off a Pokemon is not read as a heal. */
+  public static observed?: (player: Player) => void;
   readonly type: string = GameEffects.MOVE_DAMAGE_COUNTERS_EFFECT;
   public preventDefault = false;
   public player: Player;
 
   constructor(player: Player) {
     this.player = player;
+    MoveDamageCountersEffect.observed?.(player);
   }
 }
 

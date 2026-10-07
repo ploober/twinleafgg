@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, PowerType, ChooseCardsPrompt, GameMessage, ShowCardsPrompt, StateUtils, GameError, CardList, Card } from '../../../game';
+import { StoreLike, State, PowerType, ChooseCardsPrompt, GameMessage, StateUtils, GameError, CardList, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {ABILITY_USED, ADD_MARKER, HAS_MARKER, REMOVE_MARKER_AT_END_OF_TURN, AFTER_ATTACK, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
@@ -94,12 +94,7 @@ export class Gothitelle extends PokemonCard {
       ), cards => {
         cards = cards || [];
 
-        store.prompt(state, new ShowCardsPrompt(
-          player.id,
-          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-          cards
-        ), () => []);
-
+        // TA-663 / B.97: the card becomes public by being discarded; there is no separate reveal.
         MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards, sourceCard: this });
       });
     }

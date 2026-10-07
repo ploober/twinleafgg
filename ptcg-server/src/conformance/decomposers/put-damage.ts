@@ -168,7 +168,8 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
    * once (#2161 Oil Salvo — the spec cell "applies NO damage until every choice is made" guards it).
    */
   fixupProjection(prompt, picks, ctx, state, projected) {
-    if (verbFor(prompt) !== 'placeCounter') {
+    // TA-668 / B.98: an attack's Step-D counter choice places nothing until after the damage.
+    if (verbFor(prompt) !== 'placeCounter' || prompt.deferredMove === true) {
       return;
     }
     const unit = unitOf(prompt);
@@ -184,7 +185,7 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
    * Not the `dealDamage` family: nothing lands before the attack resolves (the fix-up above leaves those boards alone).
    */
   pauseEvents(prompt, picks, ctx, state, projected): NeutralEvent[] {
-    if (verbFor(prompt) !== 'placeCounter') {
+    if (verbFor(prompt) !== 'placeCounter' || prompt.deferredMove === true) {
       return [];
     }
     const unit = unitOf(prompt);
