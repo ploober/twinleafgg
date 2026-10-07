@@ -12360,6 +12360,16 @@
       "fixes": [
         "FX-0444"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const decided = accum.filter(p => !forcedPicks.has(p as object));"
+      ],
+      "note": "TA-660 (2026-10-07): A pick the adapter applies with no pending (CF-14 collapse, whole or remainder) records no chosen (B.93) [TA-660]",
+      "fixes": [
+        "FX-0446"
+      ]
     }
   ]
 }
