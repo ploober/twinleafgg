@@ -1,12 +1,12 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
+import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckRetreatCostEffect, CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { AttachEnergyPrompt, GameMessage, PlayerType, SlotType, StateUtils } from '../../../game';
-import {IS_ABILITY_BLOCKED, AFTER_ATTACK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Morpeko extends PokemonCard {
 
@@ -69,48 +69,19 @@ export class Morpeko extends PokemonCard {
       }
     }
 
-    // TA-490: the move runs AFTER_ATTACK, so the 70 damage lands first (#649 / #543).
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Energizer Wheel. TA-659 / B.89 (1), (4) (rulebook Step D): the 2 [D] Energy and the Benched Pokémon are the
+    // attacker's choices, made before the damage (one joint `moveEnergy` pick per Energy, each recorded `chosen`, the
+    // first fixing the Benched Pokémon); the 70 reads them still attached and they move after it (#649 / #543). An
+    // Energy that provides [D] (an all-types Energy included) is eligible; the rest are blocked (TA-490).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const hasBench = player.bench.some(b => b.cards.length > 0);
-
-      if (hasBench === false) {
-        return state;
-      }
-
       const checkProvidedEnergy = new CheckProvidedEnergyEffect(player, player.active);
       state = store.reduceEffect(state, checkProvidedEnergy);
-      // TA-490: `blocked` holds indices into the source list (it held card ids, so the collapsed move failed validate).
-      const blocked: number[] = [];
-      let dark = 0;
-      player.active.cards.forEach((card, index) => {
-        const em = checkProvidedEnergy.energyMap.find(e => e.card === card);
-        if (em && (em.provides.includes(CardType.DARK) || em.provides.includes(CardType.ANY))) {
-          dark++;
-        } else {
-          blocked.push(index);
-        }
-      });
-      const count = Math.min(2, dark);
-      if (count === 0) {
-        return state;
-      }
-
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { allowCancel: false, min: count, max: count, sameTarget: true, blocked }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          MOVE_CARDS(store, state, player.active, target, { cards: [transfer.card], sourceCard: this });
-        }
-      });
+      const dark = new Set(checkProvidedEnergy.energyMap
+        .filter(em => em.provides.includes(CardType.DARK) || em.provides.includes(CardType.ANY))
+        .map(em => em.card));
+      return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this,
+        { count: 2, eligible: card => dark.has(card) });
     }
     return state;
   }
