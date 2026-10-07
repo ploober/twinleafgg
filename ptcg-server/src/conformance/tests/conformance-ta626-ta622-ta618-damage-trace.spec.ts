@@ -121,7 +121,7 @@ describe('TA-668 / B.98 (supersedes TA-622 for attacks): an attack\'s counter pi
     expect(r.events.filter(e => e.kind === 'damaged').length).toBe(0);
   });
 
-  it('Cursed Drop, all four picks: the counters land together, one damaged per Pokémon placement [TA-668]', () => {
+  it('Cursed Drop, all four picks: the counters land together and the close trace sums to the board [TA-622]', () => {
     const r = step(sinistchaBoard(), [cursedDrop, place('b1'), place('bb1'), place('b1'), place('b1')]);
     expect(r.state.players.B.active?.damage).toBe(30);
     expect(r.state.players.B.bench[0].damage).toBe(10);

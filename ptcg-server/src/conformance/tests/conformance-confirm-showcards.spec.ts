@@ -102,7 +102,7 @@ describe('Conformance — ShowCardsPrompt auto-resolve + ConfirmPrompt decompose
     ]);
   });
 
-  it('B.97: an empty ShowCardsPrompt emits no reveal: no hidden card becomes visible [TA-663, supersedes TA-153]', () => {
+  it('B.97: an empty ShowCardsPrompt emits no reveal: no hidden card becomes visible (supersedes TA-153) [TA-663]', () => {
     // B.97 (owner 2026-10-07): a reveal is emitted only when cards in a hidden zone become visible. An empty show makes
     // nothing visible (a zone's size is public), as rotomancer measured on Haughty Order dri-150 against an empty deck.
     const game = importState(board()); // board() hands are empty
