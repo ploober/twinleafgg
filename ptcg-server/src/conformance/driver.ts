@@ -695,6 +695,11 @@ function shuffledInDecks(state: State): Set<NeutralPlayerId> {
     if ((q.bottomCount ?? 0) > 0 || (q.zone ?? 'deck') !== 'deck') { continue; }
     const i = state.players.findIndex(pl => pl.id === p.playerId);
     if (i >= 0) { out.add(i === 0 ? 'A' : 'B'); }
+    // TA-657 (B.87 / B.90): a shuffle the same effect still owes (EACH_PLAYER_SHUFFLE_HAND_INTO_DECK, one at a time).
+    for (const id of (p as unknown as { alsoShuffles?: number[] }).alsoShuffles ?? []) {
+      const j = state.players.findIndex(pl => pl.id === id);
+      if (j >= 0) { out.add(j === 0 ? 'A' : 'B'); }
+    }
   }
   return out;
 }

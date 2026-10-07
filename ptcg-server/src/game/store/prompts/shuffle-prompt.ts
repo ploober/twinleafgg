@@ -15,6 +15,13 @@ export class ShuffleDeckPrompt extends Prompt<number[]> {
   public bottomCount?: number;
 
   /**
+   * TA-657 (B.87; conformance projection, inert for gameplay): the ids of the OTHER players whose whole deck the same
+   * effect shuffles after this one (EACH_PLAYER_SHUFFLE_HAND_INTO_DECK raises one shuffle at a time). Their hand cards
+   * were shuffled in, so the adapter records them at deck position `any` from this pause on (B.90).
+   */
+  public alsoShuffles?: number[];
+
+  /**
    * B.66 / TA-462 (2026-09-27): WHICH pile this prompt shuffles, declared by the card. The wire's
    * `shuffled` event is zone-qualified — `deck` means the deck's resting order is randomised (the only
    * case `shuffled ≺ draw` applies to); `hand` is a hand-to-bottom ("shuffles their hand and puts it on

@@ -1697,7 +1697,9 @@ export function EACH_PLAYER_SHUFFLE_HAND_INTO_DECK(
       return state;
     }
     const p = included[i];
-    return store.prompt(state, new ShuffleDeckPrompt(p.id), (order: number[]) => {
+    const prompt = new ShuffleDeckPrompt(p.id);
+    prompt.alsoShuffles = included.slice(i + 1).map(q => q.id); // TA-657: the shuffles this effect still owes
+    return store.prompt(state, prompt, (order: number[]) => {
       p.deck.applyOrder(order);
       shuffleFrom(i + 1);
     });
