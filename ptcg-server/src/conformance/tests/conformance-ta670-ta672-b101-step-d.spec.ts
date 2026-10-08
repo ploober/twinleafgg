@@ -178,3 +178,21 @@ describe('TA-671 / B.89 (1): Flame Surge chooses its Benched Pokemon before the 
     expect(damaged(r.events)).toEqual([]);
   });
 });
+
+describe('TA-673 / B.89 (5), B.98: Phantasmal Barrage (no damage) picks its counter target before it discards its Energy', () => {
+  const row: Row = { printing: 'asc-098', attack: 'Phantasmal Barrage', energy: 'PPP' };
+  const place = (target: string) => ({ actor: 'A', type: 'placeCounter', target } as never);
+
+  it('the placeCounter pick is asked with every Energy still attached [TA-673]', () => {
+    const r = step(board(row), [declare(row)]);
+    expect(r.pending?.legalActions.every(a => a.type === 'placeCounter')).toBe(true);
+    expect(r.state.players.A.active?.energy.length).toBe(3);
+    expect(r.events.filter(e => e.kind === 'moved')).toEqual([]);
+  });
+
+  it('after the pick: the Energy is discarded, then the 12 counters land [TA-673]', () => {
+    const r = step(board(row), [declare(row), place('b1')]);
+    expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['a1e0', 'a1e1', 'a1e2']);
+    expect(r.state.players.B.active?.damage).toBe(120);
+  });
+});

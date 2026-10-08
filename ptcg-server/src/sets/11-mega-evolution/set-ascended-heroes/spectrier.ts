@@ -35,8 +35,9 @@ export class Spectrier extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
+    // TA-673 (B.89 (5), B.98): the attack does no damage, but its Step-D choice still comes first: the counters' target
+    // is picked with the Energy still attached; then, in printed order, the Energy is discarded and the counters placed.
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
       const player = effect.player;
 
       return store.prompt(state, new ChoosePokemonPrompt(
@@ -49,9 +50,13 @@ export class Spectrier extends PokemonCard {
         if (!targets || targets.length === 0) {
           return;
         }
-        const damageEffect = new PutCountersEffect(effect, 120);
-        damageEffect.target = targets[0];
-        store.reduceEffect(state, damageEffect);
+        const target = targets[0];
+        effect.afterDamageMoves.push(() => {
+          DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+          const damageEffect = new PutCountersEffect(effect, 120);
+          damageEffect.target = target;
+          store.reduceEffect(state, damageEffect);
+        });
       });
     }
 
