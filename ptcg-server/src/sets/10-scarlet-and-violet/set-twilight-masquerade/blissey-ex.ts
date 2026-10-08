@@ -10,7 +10,6 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import {
-  ConfirmPrompt,
   EnergyCard,
   GameError,
   GameMessage,
@@ -24,7 +23,8 @@ import {
 
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { AFTER_ATTACK, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MAY_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Blisseyex extends PokemonCard {
 
@@ -135,41 +135,19 @@ export class Blisseyex extends PokemonCard {
       effect.player.marker.removeMarker(this.BLISSFUL_SWAP_MARKER, this);
     }
 
-    // Post-damage draw rider (family A) — "You may draw …" runs AFTER the 180 lands (TA-128).
-    if (AFTER_ATTACK(effect, 0, this)) {
-
+    // Return. TA-670 (B.101 (4)): the "you may" is asked at Step D, before the damage; the draw is after it (#649).
+    // It had been keyed on AFTER_ATTACK (TA-128). CF-33: a may that can achieve nothing asks nothing; the condition reads the player's own hand and deck, which the damage
+    // does not change.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-
-      // CF-33 (pinned 2026-07-29): a `may` whose effect can achieve NOTHING presents NO decision —
-      // both branches leave an identical board, so by CF-14 it has exactly one resolution and collapses.
-      // Rotomancer suppresses; twinleaf was offering a phantom `confirm{true,false}`. The condition
-      // reads the acting player's OWN hand and deck, which are open to them, so suppressing on it leaks
-      // nothing (CF-33 Boundary 1). BOTH arms are needed: at hand >= target there is nothing to draw
-      // toward, and at deck 0 there is nothing to draw. Shape copied from `cynthias-garchomp-ex.ts`
-      // Corkscrew Dive, which already carries it and is the in-class positive control — the correct
-      // form is expressible, so this is a per-card omission and not a framework gap.
-      // Found by the mandated TA-307 re-fuzz: the step-F fix let the walk past the first attack, and
-      // the SECOND use (hand already at 6) is where it showed. [[collapse-fix-widens-fuzzer-reach]]
       if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {
         return state;
       }
-
-      state = store.prompt(state, new ConfirmPrompt(
-        effect.player.id,
-        GameMessage.WANT_TO_DRAW_UNTIL_6,
-      ), wantToUse => {
-        if (wantToUse) {
-
-          while (player.hand.cards.length < 6) {
-            if (player.deck.cards.length === 0) {
-              break;
-            }
-            MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
-          }
+      return MAY_CHOOSE_FIRST(store, state, effect, () => {
+        while (player.hand.cards.length < 6 && player.deck.cards.length > 0) {
+          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
         }
-
-      });
-
+      }, GameMessage.WANT_TO_DRAW_UNTIL_6);
     }
     return state;
   }

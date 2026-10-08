@@ -1090,6 +1090,87 @@ export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
   });
 }
 
+/**
+ * TA-672 (B.101 (3), B.89 (1); rulebook Step D; #352, #1846): "[You may] switch this Pokémon with 1 of your Benched
+ * Pokémon." Call from the attack's own effect (WAS_ATTACK_USED, before its damage). The Benched Pokémon that becomes
+ * Active is the destination of a move, so it is chosen now, at Step D (with the "you may" confirm first, `may`); the
+ * switch itself happens after the damage (AttackEffect.afterDamageMoves), then `afterSwitch` ("If you do, ..."). No
+ * candidate: nothing is asked. Outside the pre-damage window (a copied attack resolving late) the switch is at once.
+ */
+export function SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  options: { may?: boolean; blocked?: CardTarget[]; message?: GameMessage; afterSwitch?: () => void } = {},
+): State {
+  const player = effect.player;
+  const blocked = options.blocked ?? [];
+  if (!player.bench.some((b, index) => b.cards.length > 0 && !blocked.some(t => t.index === index))) {
+    return state;
+  }
+  const stepD = state.preDamageAttack === effect;
+  const choose = (): State => store.prompt(state, new ChoosePokemonPrompt(
+    player.id,
+    options.message ?? GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
+    PlayerType.BOTTOM_PLAYER,
+    [SlotType.BENCH],
+    { allowCancel: false, blocked },
+  ), selected => {
+    const target = (selected || [])[0];
+    if (target === undefined) {
+      return;
+    }
+    const source = player.active;
+    const doSwitch = () => {
+      if (player.active !== source || !player.bench.includes(target) || target.cards.length === 0) {
+        return;
+      }
+      player.switchPokemon(target, store, state);
+      options.afterSwitch?.();
+    };
+    if (stepD) {
+      effect.afterDamageMoves.push(doSwitch);
+    } else {
+      doSwitch();
+    }
+  });
+  if (!options.may) {
+    return choose();
+  }
+  return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_SWITCH_POKEMON), wantToSwitch => {
+    if (wantToSwitch) {
+      choose();
+    }
+  });
+}
+
+/**
+ * TA-670 (B.101 (4), B.89 (1); rulebook Step D): a "you may" that CF-32 asks as a standalone confirm is a Step-D
+ * choice. Call from the attack's own effect (WAS_ATTACK_USED, before its damage): the confirm is asked now; on yes,
+ * `apply` runs after the damage (AttackEffect.afterDamageMoves), before damage reactions and the Knock Out check.
+ * Outside the pre-damage window `apply` runs at once. Not for "After doing damage, you may ..." (Iron-Clad Roll
+ * paf-066), whose text puts the decision itself after the damage (B.101 (4)).
+ */
+export function MAY_CHOOSE_FIRST(
+  store: StoreLike,
+  state: State,
+  effect: AttackEffect,
+  apply: () => void,
+  message: GameMessage = GameMessage.WANT_TO_USE_ABILITY,
+): State {
+  const stepD = state.preDamageAttack === effect;
+  return store.prompt(state, new ConfirmPrompt(effect.player.id, message), result => {
+    if (!result) {
+      return;
+    }
+    if (stepD) {
+      effect.afterDamageMoves.push(apply);
+    } else {
+      apply();
+    }
+  });
+}
+
 // =============================================================================
 // Next-turn attack bonuses / copy attacks
 // =============================================================================

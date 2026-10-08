@@ -2,7 +2,8 @@ import { ConfirmPrompt, GameMessage, PowerType, State, StoreLike } from '../../.
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, JUST_EVOLVED, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
+import { JUST_EVOLVED, SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Ninjask extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -49,8 +50,9 @@ export class Ninjask extends PokemonCard {
       });
     }
 
-    if (AFTER_ATTACK(effect, 0, this)) {
-      SWITCH_ACTIVE_WITH_BENCHED(store, state, effect.player);
+    // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);
     }
 
     return state;

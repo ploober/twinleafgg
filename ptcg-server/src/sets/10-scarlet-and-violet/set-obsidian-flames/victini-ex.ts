@@ -4,10 +4,9 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import {
-  CONFIRMATION_PROMPT,
-  SWITCH_ACTIVE_WITH_BENCHED,
   WAS_ATTACK_USED,
 } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Victiniex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -40,14 +39,9 @@ export class Victiniex extends PokemonCard {
   public fullName: string = 'Victini ex OBF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // TA-672 (B.101 (3)): the "you may" and the new Active are chosen at Step D, before the damage; the switch is after it.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-
-      CONFIRMATION_PROMPT(store, state, player, (result) => {
-        if (result) {
-          SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
-        }
-      });
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });
     }
 
     // Victory Flame

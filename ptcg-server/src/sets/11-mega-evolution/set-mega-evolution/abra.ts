@@ -2,7 +2,8 @@ import { State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Abra extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -28,8 +29,9 @@ export class Abra extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    if (AFTER_ATTACK(effect, 0, this)) {
-      SWITCH_ACTIVE_WITH_BENCHED(store, state, effect.player);
+    // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);
     }
 
     return state;

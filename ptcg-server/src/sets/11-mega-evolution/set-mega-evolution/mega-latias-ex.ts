@@ -1,12 +1,12 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, ConfirmPrompt, GameMessage, Card } from '../../../game';
+import { StoreLike, State, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
-import { SWITCH_ACTIVE_WITH_BENCHED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MegaLatiasex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -37,35 +37,11 @@ export class MegaLatiasex extends PokemonCard {
   public name: string = 'Mega Latias ex';
   public fullName: string = 'Mega Latias ex M1S';
 
-  public strafeUsed: boolean = false;
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // TA-672 (B.101 (3)): the "you may" and the new Active are chosen at Step D, before the damage; the switch is after
+    // it (#352). TA-200: with no Benched Pokemon nothing is asked (the prefab's occupancy test, CF-14).
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      this.strafeUsed = true;
-    }
-
-    if (effect instanceof AfterAttackEffect && this.strafeUsed) {
-      this.strafeUsed = false;
-      const player = effect.player;
-      // TA-200: `player.bench` is a fixed SLOT array (empty slots are still entries), so
-      // `player.bench.length > 0` is ALWAYS true and this guard never fired -- Strafe pended a
-      // WANT_TO_SWITCH_POKEMON confirm even with a completely empty Bench, where answering either
-      // way does nothing. Measured live: twinleaf pended the confirm, rotomancer advanced the turn.
-      // The occupancy test is `.some(b => b.cards.length > 0)`, which is what the rest of the
-      // codebase uses. Compendium #622 ("if there are no Benched Pokemon you just do as much as you
-      // can") and #428 (Morpeko V "stays in the Active Spot") confirm the switch simply does not
-      // happen, and #389 confirms the damage still does -- so the RULES outcome already matched;
-      // what diverged was surfacing a decision node with no decision behind it (CF-14).
-      if (player.bench.some(b => b.cards.length > 0)) {
-        store.prompt(state, new ConfirmPrompt(
-          player.id,
-          GameMessage.WANT_TO_SWITCH_POKEMON
-        ), wantToSwitch => {
-          if (wantToSwitch) {
-            SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
-          }
-        });
-      }
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

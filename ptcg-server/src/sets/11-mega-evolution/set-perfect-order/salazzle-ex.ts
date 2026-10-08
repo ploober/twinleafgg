@@ -1,7 +1,6 @@
-import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt, ChoosePokemonPrompt, PlayerType, SlotType } from '../../../game';
+import { PokemonCard, Stage, CardTag, CardType, StoreLike, State, ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
-import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Salazzleex extends PokemonCard {
@@ -89,33 +88,8 @@ export class Salazzleex extends PokemonCard {
       // Burn and prevented only the Poison. One attack, one target, one instant, two outcomes.
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(store, state, effect);
-    }
-
-    // Fatal Nail - Switch (after attack)
-    if (effect instanceof AfterAttackEffect && effect.attack === this.attacks[1]) {
-      const player = effect.player;
-
-      // Switch this Pokemon with benched Pokemon
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-      if (hasBench) {
-        return store.prompt(
-          state,
-          new ChoosePokemonPrompt(
-            player.id,
-            GameMessage.CHOOSE_POKEMON_TO_SWITCH,
-            PlayerType.BOTTOM_PLAYER,
-            [SlotType.BENCH],
-            { allowCancel: false },
-          ),
-          (selected) => {
-            const targets = selected || [];
-            if (targets.length > 0) {
-              player.active.clearEffects();
-              player.switchPokemon(targets[0]);
-            }
-          },
-        );
-      }
+      // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { message: GameMessage.CHOOSE_POKEMON_TO_SWITCH });
     }
 
     return state;

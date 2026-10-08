@@ -20,26 +20,16 @@ import {
 
 import { Effect } from '../../../game/store/effects/effect';
 import { GameMessage } from '../../../game/game-message';
-import { AFTER_ATTACK, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { Player } from '../../../game/store/state/player';
 
-// TA-472: the rider runs AFTER_ATTACK, so the 100 base damage lands first (#649 / #543).
-// TA-478: two printed decisions - the recipients (up to 3 Benched, a CF-4 aggregate), then for each recipient
+// TA-472 / TA-478: two printed decisions - the recipients (up to 3 Benched, a CF-4 aggregate), then for each recipient
 // its own search with the target fixed (min 0: the search may fail to find). B.44: zero recipients = no search =
 // no shuffle; any performed search owes the one closing shuffle.
-function* flameSurge(next: Function, store: StoreLike, state: State, player: Player, self: ChiYuex): IterableIterator<State> {
-  let recipients: PokemonCardList[] = [];
-  yield store.prompt(state, new ChoosePokemonPrompt(
-    player.id,
-    GameMessage.ATTACH_ENERGY_TO_BENCH,
-    PlayerType.BOTTOM_PLAYER,
-    [SlotType.BENCH],
-    { min: 0, max: 3, allowCancel: false },
-  ), selected => {
-    recipients = selected || [];
-    next();
-  });
-
+// TA-671 (B.89 (1), B.101 (2)): "Choose up to 3 of your Benched Pokemon" is a Step-D choice, made before the 100; the
+// searches (an effect on a hidden zone) and the attaches come after the damage (#649 / #543).
+function* flameSurge(next: Function, store: StoreLike, state: State, player: Player, self: ChiYuex,
+  recipients: PokemonCardList[]): IterableIterator<State> {
   if (recipients.length === 0) {
     return state;
   }
@@ -124,13 +114,27 @@ export class ChiYuex extends PokemonCard {
       });
     }
 
-    if (AFTER_ATTACK(effect, 1, this)) {
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
       if (!player.bench.some(b => b.cards.length > 0)) {
         return state;
       }
-      const generator = flameSurge(() => generator.next(), store, state, player, this);
-      return generator.next().value;
+      return store.prompt(state, new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.ATTACH_ENERGY_TO_BENCH,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.BENCH],
+        { min: 0, max: 3, allowCancel: false },
+      ), selected => {
+        const recipients = selected || [];
+        if (recipients.length === 0) {
+          return;
+        }
+        effect.afterDamageMoves.push(() => {
+          const generator = flameSurge(() => generator.next(), store, state, player, this, recipients);
+          generator.next();
+        });
+      });
     }
     return state;
   }

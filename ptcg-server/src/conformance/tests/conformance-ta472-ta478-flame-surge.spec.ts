@@ -60,10 +60,14 @@ function energyOf(r: ReturnType<typeof step>, iid: string): string[] {
 }
 
 describe('TA-472 / TA-478 Chi-Yu ex Flame Surge', () => {
-  it('the 100 base damage is dealt before the first rider decision [TA-472 pal-040]', () => {
+  it('the recipients are chosen before the 100 (Step D); the searches come after it [TA-671 pal-040, supersedes TA-472]', () => {
+    // TA-671 / B.89 (1), B.101 (2): "Choose up to 3 of your Benched Pokemon" is a Step-D choice; TA-472's "damage before
+    // the first rider decision" still holds for the searches.
     const r = step(board(), [attack]);
     expect(r.status).toBe('awaitingAction');
-    expect(r.state.players.B.active!.damage).toBe(100);
+    expect(r.state.players.B.active!.damage).toBe(0);
+    const r2 = step(board(), [attack, choose('bb0'), choose('bb1')]);
+    expect(r2.state.players.B.active!.damage).toBe(100);
   });
 
   it('the first rider decision is the recipient pick: choose a Benched Pokemon or stop [TA-478 pal-040]', () => {

@@ -65,9 +65,11 @@ function board(A: PlayerState, B: PlayerState): NeutralState {
   };
 }
 
-describe('WS1 batch 1c — draw riders fire AFTER damage lands', () => {
+describe('WS1 batch 1c — draw riders: the "you may" is asked before the damage (Step D, B.101 (4)), the draw after it', () => {
+  // TA-670 / B.101 (4) supersedes the original "damage first, then the confirm": the gate is a Step-D choice; the
+  // cards are still drawn after the damage, which conformance-ta670-ta672-b101-step-d.spec.ts drives to the end.
 
-  it('Corkscrew Dive: 100 lands, then "draw until 6" is offered [dri-104 cynthias-garchomp-ex]', () => {
+  it('Corkscrew Dive: the confirm is asked with the Defending Pokemon undamaged; after yes, 100 lands [dri-104 cynthias-garchomp-ex, TA-670]', () => {
     const res = step(
       board(
         player({ active: pip('A-act', GARCHOMP, [{ iid: 'f0', printing: FIGHT }]), deck: deckOf(10, 'A-d') }),
@@ -77,10 +79,19 @@ describe('WS1 batch 1c — draw riders fire AFTER damage lands', () => {
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);   // draw offered
-    expect(res.state.players.B.active!.damage).toBe(100);                            // damage already landed
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const yes = step(
+      board(
+        player({ active: pip('A-act', GARCHOMP, [{ iid: 'f0', printing: FIGHT }]), deck: deckOf(10, 'A-d') }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Corkscrew Dive' },
+        { actor: 'A', type: 'confirm', value: true }],
+    );
+    expect(yes.state.players.B.active!.damage).toBe(100);
   });
 
-  it('Return: 180 lands, then "draw until 6" is offered [twm-134 blissey-ex]', () => {
+  it('Return: the confirm is asked with the Defending Pokemon undamaged; after yes, 180 lands [twm-134 blissey-ex, TA-670]', () => {
     const res = step(
       board(
         player({ active: pip('A-act', BLISSEY, [{ iid: 'c0', printing: COLOR }, { iid: 'c1', printing: COLOR }, { iid: 'c2', printing: COLOR }]), deck: deckOf(10, 'A-d') }),
@@ -90,10 +101,19 @@ describe('WS1 batch 1c — draw riders fire AFTER damage lands', () => {
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);
-    expect(res.state.players.B.active!.damage).toBe(180);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const yes = step(
+      board(
+        player({ active: pip('A-act', BLISSEY, [{ iid: 'c0', printing: COLOR }, { iid: 'c1', printing: COLOR }, { iid: 'c2', printing: COLOR }]), deck: deckOf(10, 'A-d') }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Return' },
+        { actor: 'A', type: 'confirm', value: true }],
+    );
+    expect(yes.state.players.B.active!.damage).toBe(180);
   });
 
-  it('Zircon Road: 180 lands, then "may draw 5" is offered [ssp-159 cyclizar-ex]', () => {
+  it('Zircon Road: the confirm is asked with the Defending Pokemon undamaged; after yes, 180 lands [ssp-159 cyclizar-ex, TA-670]', () => {
     const res = step(
       board(
         player({ active: pip('A-act', CYCLIZAR, [{ iid: 'g0', printing: GRASS }, { iid: 'r0', printing: FIRE }, { iid: 'p0', printing: PSY }]), deck: deckOf(10, 'A-d') }),
@@ -103,7 +123,16 @@ describe('WS1 batch 1c — draw riders fire AFTER damage lands', () => {
     );
     expect(res.status).toBe('awaitingAction');
     expect(res.pending!.legalActions.some(a => a.type === 'confirm')).toBe(true);
-    expect(res.state.players.B.active!.damage).toBe(180);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const yes = step(
+      board(
+        player({ active: pip('A-act', CYCLIZAR, [{ iid: 'g0', printing: GRASS }, { iid: 'r0', printing: FIRE }, { iid: 'p0', printing: PSY }]), deck: deckOf(10, 'A-d') }),
+        player({ active: pip('B-act', DEFENDER) }),
+      ),
+      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Zircon Road' },
+        { actor: 'A', type: 'confirm', value: true }],
+    );
+    expect(yes.state.players.B.active!.damage).toBe(180);
   });
 });
 

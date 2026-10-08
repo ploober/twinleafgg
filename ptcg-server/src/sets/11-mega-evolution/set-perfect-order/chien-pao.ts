@@ -5,15 +5,12 @@ import {
   CardTag,
   StoreLike,
   State,
-  GameMessage,
-  ConfirmPrompt,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {
-  AFTER_ATTACK,
-  SWITCH_ACTIVE_WITH_BENCHED,
   WAS_ATTACK_USED,
 } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class ChienPao extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -47,17 +44,9 @@ export class ChienPao extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Strafe - optional switch
-    if (AFTER_ATTACK(effect, 0, this)) {
-      const player = effect.player;
-      state = store.prompt(
-        state,
-        new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_SWITCH_POKEMON),
-        (wantToUse) => {
-          if (wantToUse) {
-            SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
-          }
-        },
-      );
+    // TA-672 (B.101 (3)): the "you may" and the new Active are chosen at Step D, before the damage; the switch is after it.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });
     }
 
     // Rising Blade - extra damage vs ex Pokemon

@@ -5,8 +5,8 @@ import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 
-import { DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND } from '../../../game/store/prefabs/attack-effects';
-import { AFTER_ATTACK, CONFIRMATION_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND, MAY_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class CynthiasGarchompex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -40,26 +40,17 @@ export class CynthiasGarchompex extends PokemonCard {
   public fullName: string = "Cynthia's Garchomp ex DRI";
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
-    // Post-damage draw rider (family A) — "You may draw …" must run AFTER the 100 lands (rulebook
-    // step F), so it is keyed on AFTER_ATTACK, not the before-damage WAS_ATTACK_USED (TA-128).
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Corkscrew Dive. TA-670 (B.101 (4)): the "you may" is asked at Step D, before the damage; the draw is after it
+    // (#649). It had been keyed on AFTER_ATTACK (TA-128). CF-33: a may that can achieve nothing asks nothing; the condition reads the player's own hand and deck, which the damage
+    // does not change.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-
       if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {
         return state;
       }
-
-      CONFIRMATION_PROMPT(
-        store,
-        state,
-        player,
-        (result) => {
-          if (result) {
-            DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND(6, effect, state);
-          }
-        },
-        GameMessage.WANT_TO_DRAW_UNTIL_6,
-      );
+      return MAY_CHOOSE_FIRST(store, state, effect, () => {
+        DRAW_CARDS_UNTIL_YOU_HAVE_X_CARDS_IN_HAND(6, effect, state);
+      }, GameMessage.WANT_TO_DRAW_UNTIL_6);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

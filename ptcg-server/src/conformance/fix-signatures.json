@@ -421,9 +421,10 @@
     {
       "file": "set-surging-sparks/gholdengo.ts",
       "signatures": [
-        "const damageEffect = new DealDamageEffect(effect, effect.damage);"
+        "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-670 (2026-10-07): B.101 (4) asks Surf Back's may at Step D and shuffles after the damage; the inline-damage line it guarded is superseded."
     },
     {
       "file": "set-surging-sparks/koraidon.ts",
@@ -4033,9 +4034,10 @@
     {
       "file": "set-destined-rivals/cynthias-garchomp-ex.ts",
       "signatures": [
-        "import { AFTER_ATTACK, CONFIRMATION_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';"
+        "if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {",
+        "}, GameMessage.WANT_TO_DRAW_UNTIL_6);"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Corkscrew Dive's may from AFTER_ATTACK to Step D (draw after the damage); the signed import evolved.",
       "state": "guarding"
     },
     {
@@ -4432,9 +4434,10 @@
     {
       "file": "set-journey-together/accelgor.ts",
       "signatures": [
-        "import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED, YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects'; import { CardType, PokemonCard, Stage, State, StoreLike } from '../../../game';"
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);",
+        "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-672 (2026-10-07): B.101 (3) adds the Step-D switch prefab to the signed import; the guarded calls are signed instead.",
       "state": "guarding"
     },
     {
@@ -4836,10 +4839,10 @@
     {
       "file": "set-surging-sparks/cyclizar-ex.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 1, this)) {",
-        "if (player.deck.cards.length === 0) {"
+        "if (player.deck.cards.length === 0) {",
+        "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Zircon Road's may from AFTER_ATTACK to Step D (draw after the damage).",
       "state": "guarding"
     },
     {
@@ -5000,10 +5003,10 @@
     {
       "file": "set-twilight-masquerade/blissey-ex.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 0, this)) {",
-        "if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {"
+        "if (player.hand.cards.length >= 6 || player.deck.cards.length === 0) {",
+        "}, GameMessage.WANT_TO_DRAW_UNTIL_6);"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Return's may from AFTER_ATTACK to Step D (draw after the damage).",
       "state": "guarding"
     },
     {
@@ -6299,9 +6302,9 @@
     {
       "file": "set-mega-evolution/mega-latias-ex.ts",
       "signatures": [
-        "if (player.bench.some(b => b.cards.length > 0)) {"
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });"
       ],
-      "note": "TA-200 — player.bench is a fixed SLOT array so `.length > 0` is always true; the empty-Bench guard never fired and Strafe pended a vacuous WANT_TO_SWITCH_POKEMON confirm",
+      "note": "TA-200 — player.bench is a fixed SLOT array so `.length > 0` is always true; the empty-Bench guard never fired and Strafe pended a vacuous WANT_TO_SWITCH_POKEMON confirm | TA-672 (2026-10-07): B.101 (3) asks Strafe at Step D through SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST, which carries TA-200's occupancy test (nothing asked with an empty Bench).",
       "fixes": [
         "FX-0087"
       ],
@@ -6697,10 +6700,11 @@
     {
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
-        "// TA-232: clear the flag UNCONDITIONALLY, before prompting — the safe idiom Mega Latias's",
-        "if (player.active.getPokemonCard() !== this) {"
+        "if (player.active.getPokemonCard() !== this) {",
+        "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-670 (2026-10-07): B.101 (4) asks Assassin's Return at Step D inside the attack's own effect; TA-232's cross-attack flag no longer exists."
     },
     {
       "file": "set-surging-sparks/turtonator.ts",
@@ -7339,10 +7343,11 @@
     {
       "file": "set-chaos-rising/deoxys-4.ts",
       "signatures": [
-        "if (AFTER_ATTACK(effect, 0, this)) {",
-        "if (player.hand.cards.length >= 5 || player.deck.cards.length === 0) {"
+        "if (player.hand.cards.length >= 5 || player.deck.cards.length === 0) {",
+        "return MAY_CHOOSE_FIRST(store, state, effect, () => DRAW_CARDS_UNTIL_CARDS_IN_HAND(player, 5), GameMessage.WANT_TO_DRAW_CARDS);"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-670 (2026-10-07): B.101 (4) moves Psyspeed's may from AFTER_ATTACK to Step D (draw after the damage)."
     },
     {
       "file": "set-chaos-rising/meowstic.ts",
@@ -8645,9 +8650,10 @@
     {
       "file": "set-ascended-heroes/vikavolt.ts",
       "signatures": [
-        "const hasLightningBench = player.bench.some((bench, index) => {"
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { blocked });",
+        "if (!checkType.cardTypes.includes(CardType.LIGHTNING)) {"
       ],
-      "note": "TA-418 (2026-09-14): Volt Switch: no confirm (the text has no 'may'), the switch whiffs with no Benched [L] and is mandatory (type-filtered) ",
+      "note": "TA-418 (2026-09-14): Volt Switch: no confirm (the text has no 'may'), the switch whiffs with no Benched [L] and is mandatory (type-filtered)  | TA-672 (2026-10-07): B.101 (3) asks Volt Switch at Step D; the [L] filter is passed to the prefab as `blocked`, which skips the prompt with no candidate.",
       "fixes": [
         "FX-0291"
       ]
@@ -9466,9 +9472,10 @@
     {
       "file": "set-paldea-evolved/chi-yu-ex.ts",
       "signatures": [
-        "    if (AFTER_ATTACK(effect, 1, this)) {"
+        "effect.afterDamageMoves.push(() => {",
+        "recipients: PokemonCardList[]): IterableIterator<State> {"
       ],
-      "note": "TA-472, TA-478 (2026-09-29): TA-472/TA-478: Chi-Yu ex pal-040 Flame Surge - rider AFTER_ATTACK (damage first); recipients chosen first (up to 3 Bench",
+      "note": "TA-472, TA-478 (2026-09-29): TA-472/TA-478: Chi-Yu ex pal-040 Flame Surge - rider AFTER_ATTACK (damage first); recipients chosen first (up to 3 Bench | TA-671 (2026-10-07): B.89 (1) / B.101 (2): the recipients are chosen at Step D; the searches run after the damage (afterDamageMoves).",
       "fixes": [
         "FX-0344"
       ]

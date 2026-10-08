@@ -3,9 +3,8 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 import { Effect } from '../../../game/store/effects/effect';
 import {
   WAS_ATTACK_USED,
-  AFTER_ATTACK,
-  SWITCH_ACTIVE_WITH_BENCHED,
 } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Laprasex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -55,13 +54,8 @@ export class Laprasex extends PokemonCard {
           effect.damage = waterEnergyCount * 30;
         }
       });
-      return state;
-    }
-
-    if (AFTER_ATTACK(effect, 0, this)) {
-      const player = effect.player;
-      SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
-      return state;
+      // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);
     }
 
     return state;

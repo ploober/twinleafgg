@@ -90,14 +90,16 @@ describe('Conformance — evolution-coverage fix regression guards', () => {
     expect(res.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Gholdengo "Surf Back" places its 100 BEFORE the optional-shuffle confirm [TA-62 ssp-131]', () => {
-    const res = step(
-      board(player({ active: inPlay('A-act', ['meg-067', 'ssp-131'], en(WATER, 3, 'a')) }),
-            player({ active: inPlay('B-act', [TANKY]) })),
-      [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Surf Back' }],
-    );
+  it('Gholdengo "Surf Back" asks its optional shuffle before the 100 (Step D) and places the 100 before the shuffle [TA-670 ssp-131, supersedes TA-62]', () => {
+    // TA-670 / B.101 (4): the "you may" is a Step-D choice; TA-62's "the 100 before the shuffle" still holds for the move.
+    const b = () => board(player({ active: inPlay('A-act', ['meg-067', 'ssp-131'], en(WATER, 3, 'a')) }),
+      player({ active: inPlay('B-act', [TANKY]) }));
+    const res = step(b(), [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Surf Back' }]);
     expect(res.status).toBe('awaitingAction');
-    expect(res.state.players.B.active!.damage).toBe(100);
+    expect(res.state.players.B.active!.damage).toBe(0);
+    const yes = step(b(), [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Surf Back' },
+      { actor: 'A', type: 'confirm', value: true }]);
+    expect(yes.state.players.B.active!.damage).toBe(100);
   });
 
   it('Aggron offers "Angry Slam" with no Bench (a legal 0-damage whiff) [TA-63 twm-122]', () => {

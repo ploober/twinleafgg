@@ -14,7 +14,7 @@ import {
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
-import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
+import { MAY_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import {
   CONFIRMATION_PROMPT,
@@ -55,7 +55,6 @@ export class TeamRocketsCrobatex extends PokemonCard {
   public name: string = "Team Rocket's Crobat ex";
   public fullName: string = "Team Rocket's Crobat ex DRI";
 
-  public usedAssassinsReturn = false;
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Bite About
@@ -96,34 +95,19 @@ export class TeamRocketsCrobatex extends PokemonCard {
       return state;
     }
 
-    // Assassin's Return
+    // Assassin's Return. TA-670 (B.101 (4)): the "you may" is asked at Step D, before the damage; this Pokemon goes to
+    // the hand after it (#649). (TA-232's flag, which let the rider leak into the next attack, is gone with it.)
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      this.usedAssassinsReturn = true;
-    }
-
-    if (effect instanceof AfterAttackEffect && this.usedAssassinsReturn) {
-      // TA-232: clear the flag UNCONDITIONALLY, before prompting — the safe idiom Mega Latias's
-      // Strafe already uses. It was cleared only inside `if (result)`, so a DECLINE left it set for
-      // the rest of the game and the next AfterAttackEffect — including the OPPONENT'S attack —
-      // re-surfaced the confirm bound to `effect.player` (whoever attacked next) and bounced THEIR
-      // Active with its cards discarded. Two players' effects crossed wires.
-      this.usedAssassinsReturn = false;
-
       const player = effect.player;
-      // Belt and braces: even with the flag discipline fixed, this rider belongs to the Pokémon
-      // that used Assassin's Return — never execute it for a player whose Active is not this card.
-      if (player.active.getPokemonCard() !== this) {
-        return state;
-      }
-
-      CONFIRMATION_PROMPT(store, state, player, (result) => {
-        if (result) {
-          MOVE_POKEMON_OFF_BOARD(store, state, player.active, {
-            pokemonDestination: player.hand,
-            attachedDestination: player.discard,
-            sourceCard: this,
-          });
+      return MAY_CHOOSE_FIRST(store, state, effect, () => {
+        if (player.active.getPokemonCard() !== this) {
+          return;
         }
+        MOVE_POKEMON_OFF_BOARD(store, state, player.active, {
+          pokemonDestination: player.hand,
+          attachedDestination: player.discard,
+          sourceCard: this,
+        });
       });
     }
     return state;

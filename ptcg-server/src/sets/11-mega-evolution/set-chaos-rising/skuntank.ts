@@ -1,7 +1,8 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State } from '../../../game';
-import { AFTER_ATTACK, SWITCH_ACTIVE_WITH_BENCHED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Skuntank extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -34,12 +35,9 @@ export class Skuntank extends PokemonCard {
   public fullName: string = 'Skuntank M4';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (AFTER_ATTACK(effect, 1, this)) {
-      const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-      if (hasBench) {
-        SWITCH_ACTIVE_WITH_BENCHED(store, state, player);
-      }
+    // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);
     }
     return state;
   }

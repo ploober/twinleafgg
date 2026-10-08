@@ -6,14 +6,11 @@ import {
   SuperType,
   State,
   StoreLike,
-  ChoosePokemonPrompt,
   GameMessage,
-  PlayerType,
-  SlotType,
   ChooseEnergyPrompt,
   Card,
 } from '../../../game';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import {SWITCH_OUT_OPPONENT_ACTIVE_POKEMON,
@@ -52,35 +49,16 @@ export class Quaquavalex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Attack 1: Exciting Dance
-    // Ref: set-mega-evolution/bayleef.ts (SWITCH_OUT_OPPONENT_ACTIVE_POKEMON after self-switch)
-    if (effect instanceof AfterDamageEffect && effect.attack === this.attacks[0]) {
+    // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; after the damage the switch happens,
+    // then ("If you do") the opponent switches out their Active and chooses its replacement (#1846, #1990).
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      const hasBench = player.bench.some((b) => b.cards.length > 0);
-
-      if (!hasBench) {
-        return state;
-      }
-
-      return store.prompt(
-        state,
-        new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_SWITCH,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH],
-          { allowCancel: false },
-        ),
-        (results) => {
-          if (!results || results.length === 0) {
-            return;
-          }
-
-          player.switchPokemon(results[0], store, state);
-          SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, player, {
-            sourceEffect: effect.attackEffect,
-          });
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, {
+        message: GameMessage.CHOOSE_POKEMON_TO_SWITCH,
+        afterSwitch: () => {
+          SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, player, { sourceEffect: effect });
         },
-      );
+      });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

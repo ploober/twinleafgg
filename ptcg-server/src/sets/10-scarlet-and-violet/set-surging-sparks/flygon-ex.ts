@@ -1,11 +1,6 @@
 import { CardTag, CardType, Stage } from '../../../game/store/card/card-types';
 import {
-  ChoosePokemonPrompt,
-  ConfirmPrompt,
-  GameMessage,
-  PlayerType,
   PokemonCard,
-  SlotType,
   State,
   StateUtils,
   StoreLike,
@@ -13,7 +8,7 @@ import {
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Flygonex extends PokemonCard {
@@ -58,48 +53,11 @@ export class Flygonex extends PokemonCard {
 
   public fullName: string = 'Flygon ex SSP';
 
-  public stormBug: boolean = false;
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Reversing Storm. TA-672 (B.101 (3)): the "you may" and the new Active are chosen at Step D, before the damage;
+    // the switch is after it (#352). It had waited for the end of the turn, past the Knock Out check.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      this.stormBug = true;
-    }
-
-    if (effect instanceof EndTurnEffect && this.stormBug == true) {
-      const player = effect.player;
-      const hasBenched = player.bench.some((b) => b.cards.length > 0);
-
-      if (!hasBenched) {
-        return state;
-      }
-
-      this.stormBug = false;
-
-      state = store.prompt(
-        state,
-        new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_SWITCH_POKEMON),
-        (wantToUse) => {
-          if (wantToUse) {
-            return store.prompt(
-              state,
-              new ChoosePokemonPrompt(
-                player.id,
-                GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
-                PlayerType.BOTTOM_PLAYER,
-                [SlotType.BENCH],
-                { allowCancel: false },
-              ),
-              (selected) => {
-                if (!selected || selected.length === 0) {
-                  return state;
-                }
-                const target = selected[0];
-                player.switchPokemon(target);
-              },
-            );
-          }
-        },
-      );
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

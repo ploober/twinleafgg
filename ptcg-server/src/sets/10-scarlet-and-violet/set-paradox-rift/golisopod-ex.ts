@@ -3,10 +3,7 @@ import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
 import {
   Card,
   ChooseEnergyPrompt,
-  ChoosePokemonPrompt,
   GameMessage,
-  PlayerType,
-  SlotType,
   State,
   StoreLike,
   SuperType,
@@ -15,6 +12,7 @@ import { Effect } from '../../../game/store/effects/effect';
 
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Golisopodex extends PokemonCard {
@@ -74,26 +72,11 @@ export class Golisopodex extends PokemonCard {
           const discardEnergy = new DiscardCardsEffect(effect, cards);
           discardEnergy.target = player.active;
           store.reduceEffect(state, discardEnergy);
-        },
-      );
-
-      const hasBenched = player.bench.some((b) => b.cards.length > 0);
-      if (!hasBenched) {
-        return state;
-      }
-
-      return store.prompt(
-        state,
-        new ChoosePokemonPrompt(
-          player.id,
-          GameMessage.CHOOSE_POKEMON_TO_SWITCH,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH],
-          { allowCancel: false },
-        ),
-        (result) => {
-          const cardList = result[0];
-          player.switchPokemon(cardList);
+          // TA-672 (B.101 (3)): "If you do, switch it": the new Active is chosen at Step D too, right after the Energy;
+          // the switch is after the damage, after the discard (#352).
+          if (cards.length > 0) {
+            SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { message: GameMessage.CHOOSE_POKEMON_TO_SWITCH });
+          }
         },
       );
     }

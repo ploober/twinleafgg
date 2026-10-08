@@ -1,8 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
-import { StoreLike, State, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
+import { StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class Murkrow extends PokemonCard {
 
@@ -49,27 +50,9 @@ export class Murkrow extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
+    // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-
-      const hasBenched = player.bench.some(b => b.cards.length > 0);
-      if (!hasBenched) {
-        return state;
-      }
-
-      return store.prompt(state, new ChoosePokemonPrompt(
-        player.id,
-        GameMessage.CHOOSE_NEW_ACTIVE_POKEMON,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { allowCancel: false },
-      ), selected => {
-        if (!selected || selected.length === 0) {
-          return state;
-        }
-        const target = selected[0];
-        player.switchPokemon(target);
-      });
+      return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
