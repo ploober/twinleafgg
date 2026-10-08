@@ -424,7 +424,10 @@
         "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
       "state": "guarding",
-      "note": "TA-670 (2026-10-07): B.101 (4) asks Surf Back's may at Step D and shuffles after the damage; the inline-damage line it guarded is superseded."
+      "note": "TA-670 (2026-10-07): B.101 (4) asks Surf Back's may at Step D and shuffles after the damage; the inline-damage line it guarded is superseded.",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-surging-sparks/koraidon.ts",
@@ -4038,7 +4041,10 @@
         "}, GameMessage.WANT_TO_DRAW_UNTIL_6);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Corkscrew Dive's may from AFTER_ATTACK to Step D (draw after the damage); the signed import evolved.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-destined-rivals/cynthias-milotic.ts",
@@ -4438,7 +4444,10 @@
         "YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-672 (2026-10-07): B.101 (3) adds the Step-D switch prefab to the signed import; the guarded calls are signed instead.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0455"
+      ]
     },
     {
       "file": "set-journey-together/blaziken-ex.ts",
@@ -4843,7 +4852,10 @@
         "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Zircon Road's may from AFTER_ATTACK to Step D (draw after the damage).",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-surging-sparks/eternatus.ts",
@@ -5007,7 +5019,10 @@
         "}, GameMessage.WANT_TO_DRAW_UNTIL_6);"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | TA-670 (2026-10-07): B.101 (4) moves Return's may from AFTER_ATTACK to Step D (draw after the damage).",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-twilight-masquerade/brute-bonnet.ts",
@@ -6704,7 +6719,10 @@
         "return MAY_CHOOSE_FIRST(store, state, effect, () => {"
       ],
       "state": "guarding",
-      "note": "TA-670 (2026-10-07): B.101 (4) asks Assassin's Return at Step D inside the attack's own effect; TA-232's cross-attack flag no longer exists."
+      "note": "TA-670 (2026-10-07): B.101 (4) asks Assassin's Return at Step D inside the attack's own effect; TA-232's cross-attack flag no longer exists.",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-surging-sparks/turtonator.ts",
@@ -7347,7 +7365,10 @@
         "return MAY_CHOOSE_FIRST(store, state, effect, () => DRAW_CARDS_UNTIL_CARDS_IN_HAND(player, 5), GameMessage.WANT_TO_DRAW_CARDS);"
       ],
       "state": "guarding",
-      "note": "TA-670 (2026-10-07): B.101 (4) moves Psyspeed's may from AFTER_ATTACK to Step D (draw after the damage)."
+      "note": "TA-670 (2026-10-07): B.101 (4) moves Psyspeed's may from AFTER_ATTACK to Step D (draw after the damage).",
+      "fixes": [
+        "FX-0456"
+      ]
     },
     {
       "file": "set-chaos-rising/meowstic.ts",
@@ -12489,6 +12510,126 @@
       "note": "TA-668 (2026-10-07): an attack's counter placements are picked at Step D and placed after the damage, nothing placed between picks (B.98): ev",
       "fixes": [
         "FX-0453"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "export function SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST("
+      ],
+      "note": "TA-672 (2026-10-07): the attacker's switch-out chooses the new Active (and a 'you may switch' gate) at Step D and switches after the damage (",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "export function MAY_CHOOSE_FIRST("
+      ],
+      "note": "TA-670 (2026-10-07): a CF-32 standalone 'you may' is asked at Step D, its option applied after the damage (B.101 (4)): MAY_CHOOSE_FIRST on Ps",
+      "fixes": [
+        "FX-0456"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/chi-yu-ex.ts",
+      "signatures": [
+        "const generator = flameSurge(() => generator.next(), store, state, player, this, recipients);"
+      ],
+      "note": "TA-671 (2026-10-07): Flame Surge chooses its Benched Pokemon at Step D, before the 100; the searches and attaches stay after the damage (B.89",
+      "fixes": [
+        "FX-0457"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/victini-ex.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/murkrow.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/quaquaval-ex.ts",
+      "signatures": [
+        "afterSwitch: () => {"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/golisopod-ex.ts",
+      "signatures": [
+        "SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { message: GameMessage.CHOOSE_POKEMON_TO_SWITCH });"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/croconaw.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/skuntank.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/abra.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-perfect-order/chien-pao.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { may: true });"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
+      ]
+    },
+    {
+      "file": "set-pitch-black/mega-zeraora-ex.ts",
+      "signatures": [
+        "return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect);"
+      ],
+      "note": "TA-672 (2026-10-07): B.101 (3): the new Active is chosen at Step D, the switch after the damage (SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST)",
+      "fixes": [
+        "FX-0455"
       ]
     }
   ]
