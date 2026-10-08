@@ -90,7 +90,7 @@ describe('Conformance — evolution-coverage fix regression guards', () => {
     expect(res.state.players.B.active!.damage).toBe(0);
   });
 
-  it('Gholdengo "Surf Back" asks its optional shuffle before the 100 (Step D) and places the 100 before the shuffle [TA-670 ssp-131, supersedes TA-62]', () => {
+  it('Gholdengo "Surf Back" asks its optional shuffle before the 100 (Step D) and places the 100 before the shuffle [TA-62 ssp-131] [TA-670 ssp-131]', () => {
     // TA-670 / B.101 (4): the "you may" is a Step-D choice; TA-62's "the 100 before the shuffle" still holds for the move.
     const b = () => board(player({ active: inPlay('A-act', ['meg-067', 'ssp-131'], en(WATER, 3, 'a')) }),
       player({ active: inPlay('B-act', [TANKY]) }));

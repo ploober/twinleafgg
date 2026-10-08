@@ -128,6 +128,21 @@ describe('TA-672 / B.101 (3): switching the attacker out chooses the new Active 
   }
 });
 
+describe('TA-672 / #649: a switch-out attack\'s Special Conditions are applied after the damage, not at the Step-D pick', () => {
+  const rows: Array<[Row, string[]]> = [
+    [{ printing: 'por-016', attack: 'Dire Nails', energy: 'RRR' }, ['burned', 'poisoned']],
+    [{ printing: 'jtg-013', attack: 'Poisonous Ploy', energy: 'GGG' }, ['confused', 'poisoned']],
+  ];
+  for (const [row, want] of rows) {
+    it(`${row.printing} ${row.attack}: no condition at the pick; both after the damage [TA-672]`, () => {
+      const pick = step(board(row), [declare(row)]);
+      expect(pick.state.players.B.active?.conditions).toEqual([]);
+      const done = step(board(row), [declare(row), promote('ab2')]);
+      expect([...(done.state.players.B.active?.conditions ?? [])].map(String).sort()).toEqual(want);
+    });
+  }
+});
+
 const GATES: Row[] = [
   { printing: 'asc-111', attack: 'Corkscrew Dive', energy: 'FF' },
   { printing: 'cri-034', attack: 'Psyspeed', energy: 'PP' },

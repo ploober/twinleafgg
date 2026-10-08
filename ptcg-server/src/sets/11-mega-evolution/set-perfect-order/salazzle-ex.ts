@@ -86,9 +86,12 @@ export class Salazzleex extends PokemonCard {
       // route. ADD_BURN_TO_PLAYER_ACTIVE builds an AddSpecialConditionsPowerEffect, which carries no
       // attack identity — so "prevent all effects of attacks" guards (Mist Energy) could not see the
       // Burn and prevented only the Poison. One attack, one target, one instant, two outcomes.
-      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
-      YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(store, state, effect);
-      // TA-672 (B.101 (3)): the new Active is chosen at Step D, before the damage; the switch is after it (#352).
+      // TA-672 (#649, B.101 (3)): the conditions are applied after the damage, then the switch, in printed order; the
+      // new Active is chosen now, at Step D. Applied here they showed on the Defending Pokemon at the pick.
+      effect.afterDamageMoves.push(() => {
+        YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect);
+        YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_BURNED(store, state, effect);
+      });
       return SWITCH_THIS_POKEMON_WITH_BENCHED_CHOOSE_FIRST(store, state, effect, { message: GameMessage.CHOOSE_POKEMON_TO_SWITCH });
     }
 

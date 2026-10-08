@@ -60,7 +60,7 @@ function energyOf(r: ReturnType<typeof step>, iid: string): string[] {
 }
 
 describe('TA-472 / TA-478 Chi-Yu ex Flame Surge', () => {
-  it('the recipients are chosen before the 100 (Step D); the searches come after it [TA-671 pal-040, supersedes TA-472]', () => {
+  it('the recipients are chosen before the 100 (Step D); the searches come after it [TA-472 pal-040] [TA-671 pal-040]', () => {
     // TA-671 / B.89 (1), B.101 (2): "Choose up to 3 of your Benched Pokemon" is a Step-D choice; TA-472's "damage before
     // the first rider decision" still holds for the searches.
     const r = step(board(), [attack]);
