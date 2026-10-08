@@ -12631,6 +12631,16 @@
       "fixes": [
         "FX-0455"
       ]
+    },
+    {
+      "file": "set-ascended-heroes/spectrier.ts",
+      "signatures": [
+        "// TA-673 (B.89 (5), B.98): the attack does no damage, but its Step-D choice still comes first: the counters' target"
+      ],
+      "note": "TA-673 (2026-10-07): Phantasmal Barrage picks its counter target with the Energy still attached, then discards the Energy and places the 12 c",
+      "fixes": [
+        "FX-0458"
+      ]
     }
   ]
 }
