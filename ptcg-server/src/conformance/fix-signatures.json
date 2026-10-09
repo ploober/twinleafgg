@@ -12641,6 +12641,67 @@
       "fixes": [
         "FX-0458"
       ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Attach energy') {"
+      ],
+      "note": "TA-674, TA-675 (2026-10-09): B.102 - B.105: an attack's Energy attach from its own discard pile, or move between its own Pokemon, is chosen at Step D",
+      "fixes": [
+        "FX-0459"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/mewtwo-ex.ts",
+      "signatures": [
+        "        [SlotType.ACTIVE, SlotType.BENCH],"
+      ],
+      "note": "TA-676 (2026-10-09): Transfer Charge par-058 attaches to any of your Pokemon, chosen at Step D [TA-676]",
+      "fixes": [
+        "FX-0460"
+      ]
+    },
+    {
+      "file": "set-paldean-fates/tropius.ts",
+      "signatures": [
+        "    // TA-677 (B.89 (1), B.105): the Benched Pokémon is the destination of a move, a Step-D choice; the Energy moves"
+      ],
+      "note": "TA-677 (2026-10-09): Tropic Breeze pal-007 asks its Benched Pokemon at Step D, moves after the damage [TA-677]",
+      "fixes": [
+        "FX-0461"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/magnemite.ts",
+      "signatures": [
+        "        { allowCancel: false, min: 0, max: 2 }"
+      ],
+      "note": "TA-678, TA-679 (2026-10-09): Magnetic Charge pal-065 offers its stop; Techno Turbo obf-079 offers none and asks nothing with no Benched Pokemon [TA-6",
+      "fixes": [
+        "FX-0462"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "const own = (l: CardList) => l instanceof PokemonCardList && (pre?.player.active === l || pre?.player.bench.includes(l) === true);"
+      ],
+      "note": "TA-674, TA-675 (2026-10-09): MOVE_CARDS queues an Energy attach from the attacker's discard pile, or a move between its own Pokemon, chosen at Step D, until after the damage",
+      "fixes": [
+        "FX-0459"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/miraidon-ex.ts",
+      "signatures": [
+        "          { allowCancel: false, min: 1, max: 1 },",
+        "      if (!hasEnergyInDiscard || !player.bench.some(b => b.cards.length > 0)) {"
+      ],
+      "note": "TA-679 (2026-10-09): Techno Turbo obf-079 is a mandatory attach (min 1) and asks nothing with no Benched Pokemon",
+      "fixes": [
+        "FX-0462"
+      ]
     }
   ]
 }
