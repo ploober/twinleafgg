@@ -219,3 +219,25 @@ describe('TA-680 / B.82: Spiral Shot chooses its 2 Energy before the 230 and ret
     expect(r.state.players.A.hand.map(c => c.iid)).toContain('a1e0');
   });
 });
+
+describe('TA-681: Magma Purge discards up to 4 Energy (0 included), 60 for each', () => {
+  const disc = (target: string) => A({ type: 'discard', owner: 'A', target });
+  const stop = A({ type: 'confirm', value: false });
+
+  it('par-093 Magma Purge offers the stop [TA-681]', () => {
+    const r = step(board('par-093', 'FFF', ''), [declare('Magma Purge')]);
+    expect(r.pending?.legalActions.some(a => a.type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(true);
+  });
+
+  it('par-093 Magma Purge: stopping at 0 does no damage [TA-681]', () => {
+    const r = step(board('par-093', 'FFF', ''), [declare('Magma Purge'), stop]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.B.active?.damage).toBe(0);
+  });
+
+  it('par-093 Magma Purge: two discarded do 120 [TA-681]', () => {
+    const r = step(board('par-093', 'FFF', ''), [declare('Magma Purge'), disc('a1e0'), disc('a1e1'), stop]);
+    expect(r.state.players.B.active?.damage).toBe(120);
+    expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['a1e0', 'a1e1']);
+  });
+});

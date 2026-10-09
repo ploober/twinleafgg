@@ -91,23 +91,14 @@ export class Groudon extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],// Card source is target Pokemon
         { superType: SuperType.ENERGY },
-        { min: 1, max: 4, allowCancel: false }
+        // TA-681: 'up to 4' includes none (#2301); 60 for each card discarded, so none does no damage.
+        { min: 0, max: 4, allowCancel: false }
       ), transfers => {
-
-        if (transfers === null) {
-          return;
-        }
-
-        for (const transfer of transfers) {
-          let totalDiscarded = 0;
-
+        const chosen = transfers || [];
+        effect.damage = chosen.length * 60;
+        for (const transfer of chosen) {
           const source = StateUtils.getTarget(state, player, transfer.from);
-          const target = player.discard;
-          MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
-
-          totalDiscarded = transfers.length;
-
-          effect.damage = totalDiscarded * 60;
+          MOVE_CARDS(store, state, source, player.discard, { cards: [transfer.card], sourceCard: this });
         }
       });
     }
