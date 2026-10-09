@@ -436,12 +436,13 @@ function resolveSelectOptionLabel(legalActions: LegalAction[], action: NeutralAc
 }
 
 /**
- * TA-662 / B.95 (owner 2026-10-07): the fields of an offered entry an answer need not repeat. The registered gates
- * (contract 0.15.0: CF-70's `op` / `amount` / `destination`, CF-38's `subject`), template-only descriptions
- * (`enterNumber`'s `min` / `max` / `step`, `shuffle`'s `deck`, `playItem`'s `candidates` / `counts`), and `label`,
- * which CF-59 lets an answer give instead of `option` (compared below when both carry it).
+ * TA-662 / B.95 (owner 2026-10-07): the fields of an offered entry an answer need not repeat. CF-70's `op` / `amount` /
+ * `destination` (a registered gate, contract 0.15.0: only twinleaf's templates carry them, so B.95 left them to the
+ * gate work), template-only descriptions (`enterNumber`'s `min` / `max` / `step`, `shuffle`'s `deck`, `playItem`'s
+ * `candidates` / `counts`), and `label`, which CF-59 lets an answer give instead of `option` (compared below when both
+ * carry it). CF-38's `subject` IS compared: both engines carry it on `resolveNext`.
  */
-const NOT_ANSWER_FIELDS = new Set(['actor', 'type', 'op', 'amount', 'destination', 'subject', 'min', 'max', 'step', 'deck',
+const NOT_ANSWER_FIELDS = new Set(['actor', 'type', 'op', 'amount', 'destination', 'min', 'max', 'step', 'deck',
   'candidates', 'counts', 'label']);
 
 function present(v: unknown): boolean {
