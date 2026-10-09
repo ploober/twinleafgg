@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, AttachEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import {AFTER_ATTACK, HEAL_X_DAMAGE_FROM_THIS_POKEMON, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { HEAL_X_DAMAGE_FROM_THIS_POKEMON, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Tropius extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -37,7 +37,9 @@ export class Tropius extends PokemonCard {
       HEAL_X_DAMAGE_FROM_THIS_POKEMON(effect, store, state, 20);
     }
 
-    if (AFTER_ATTACK(effect, 1, this)) {
+    // TA-677 (B.89 (1), B.105): the Benched Pokémon is the destination of a move, a Step-D choice; the Energy moves
+    // after the damage (the attacker's own-Energy attach is deferred by MOVE_CARDS).
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
       const hasBench = player.bench.some(b => b.cards.length > 0);
@@ -50,7 +52,7 @@ export class Tropius extends PokemonCard {
         return card.superType === SuperType.ENERGY;
       });
 
-      store.prompt(state, new AttachEnergyPrompt(
+      return store.prompt(state, new AttachEnergyPrompt(
         player.id,
         GameMessage.ATTACH_ENERGY_TO_BENCH,
         player.active,

@@ -10,7 +10,9 @@ import {
   StoreLike,
   State,
   PlayerType,
-  ChooseCardsPrompt,
+  AttachEnergyPrompt,
+  SlotType,
+  EnergyCard,
   GameMessage,
   StateUtils,
 } from '../../../game';
@@ -52,31 +54,33 @@ export class Mewtwoex extends PokemonCard {
   public fullName: string = 'Mewtwo ex PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // TA-676 (card text; B.89 (5), B.102): "to your Pokémon in any way you like": each Energy and the Pokémon it goes to
+    // are chosen together at Step D (it attached them all to this Pokémon); they attach after the picks (MOVE_CARDS).
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-
-      const cardList = StateUtils.findCardList(state, this);
-      if (cardList === undefined) {
+      const blocked: number[] = [];
+      player.discard.cards.forEach((card, index) => {
+        if (!(card instanceof EnergyCard) || card.energyType !== EnergyType.BASIC || !card.provides.includes(CardType.PSYCHIC)) {
+          blocked.push(index);
+        }
+      });
+      if (blocked.length === player.discard.cards.length) {
         return state;
       }
-
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.discard,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Psychic Energy' },
-          { min: 0, max: 2, allowCancel: true },
-        ),
-        (cards) => {
-          cards = cards || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, player.discard, cardList, { cards: cards, sourceCard: this });
-          }
-          return state;
-        },
-      );
+      return store.prompt(state, new AttachEnergyPrompt(
+        player.id,
+        GameMessage.ATTACH_ENERGY_CARDS,
+        player.discard,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.ACTIVE, SlotType.BENCH],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { allowCancel: false, min: 0, max: 2, blocked },
+      ), transfers => {
+        for (const transfer of transfers || []) {
+          const target = StateUtils.getTarget(state, player, transfer.to);
+          MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card], sourceCard: this });
+        }
+      });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

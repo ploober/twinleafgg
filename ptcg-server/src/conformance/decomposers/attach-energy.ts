@@ -5,7 +5,7 @@ import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
 import { LegalAction } from '../neutral-types';
 import {
-  PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE,
+  PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot } from '../iid-targets';
@@ -228,10 +228,23 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
 
   /** B.82 / CF-93: the cards an attack's pre-damage choice picked (the engine marked the prompt `deferredMove`: Power
    *  Cyclone obf-085 moving its own Energy to the Bench). They stay attached until after the damage; the adapter
-   *  records them as `chosen`. */
-  pickedCards(prompt, picks) {
-    return (realPicks(picks) as Array<{ index: number }>).map(p => prompt.cardList.cards[p.index])
-      .filter((c): c is Card => c !== undefined);
+   *  records them as `chosen`.
+   *  TA-674 / TA-675 (B.103, B.105): a card the player had to take is not a card choice, even when its destination was
+   *  chosen (Iron Roar with one [M]; Genome Spiral's "Move all"): no stop was offered and no more cards were left
+   *  than the picks still owed. */
+  pickedCards(prompt, picks, ctx, state) {
+    const rp = realPicks(picks) as Array<{ index: number }>;
+    const out: Card[] = [];
+    rp.forEach((p, i) => {
+      const card = prompt.cardList.cards[p.index];
+      if (card === undefined) { return; }
+      const offered = attachEnergyDecomposer.next(prompt, rp.slice(0, i) as WirePick[], ctx, state)?.legalActions ?? [];
+      const canStop = offered.some(a => a.type === 'endChoice');
+      const cardsLeft = new Set(offered.filter(a => a.type !== 'endChoice').map(a => (a as { card?: string }).card)).size;
+      if (!canStop && cardsLeft <= prompt.options.min - i) { return; }
+      out.push(card);
+    });
+    return out;
   },
 
   fixupProjection(prompt, picks, ctx, state, projected) {

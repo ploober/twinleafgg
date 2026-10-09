@@ -707,7 +707,8 @@ function shuffledInDecks(state: State): Set<NeutralPlayerId> {
 /**
  * B.82 / CF-93: the `chosen` event for a card IN PLAY an attack chose before its damage: its owner, its place on the
  * stack (the card stays there until the effect moves it after the damage), visibility `public` (a card in play).
- * Undefined for a card not on a Pokémon in play: the contract allows `chosen` only there.
+ * TA-674 (B.102): or a card in a discard pile (public), origin `discardPile`. Undefined for a card in a hidden zone
+ * (the hand, the deck): never `chosen` (B.82 (2), B.101 (1)).
  */
 function chosenEvent(game: ImportedGame, card: Card): NeutralEvent | undefined {
   const iid = game.ctx.cardToIid.get(card);
@@ -715,6 +716,9 @@ function chosenEvent(game: ImportedGame, card: Card): NeutralEvent | undefined {
   const players = game.store.state.players;
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
+    if (p.discard.cards.includes(card)) {
+      return { kind: 'chosen', owner: i === 0 ? 'A' : 'B', card: iid, origin: { zone: 'discardPile' }, visibility: 'public' };
+    }
     const lists: Array<[PokemonCardList, 'active' | 'bench']> = [[p.active, 'active'], ...p.bench.map(b => [b, 'bench'] as [PokemonCardList, 'bench'])];
     for (const [list, section] of lists) {
       // TA-654 / B.89 (5): a Pokémon Tool sits in the bearer's `tools`, not its `cards` (Cleaning Up's chosen Tools).

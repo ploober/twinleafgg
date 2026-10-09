@@ -392,6 +392,17 @@ export class Store implements StoreLike {
           && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
         p.deferredMove = true;
       }
+      // TA-674 / TA-675 (B.102, B.105, B.89 (1)): an Energy attach the attacker chooses before the damage from its own
+      // discard pile (Iron Roar, Motivate) or off its own Pokemon (Genome Spiral) is a Step-D choice; MOVE_CARDS
+      // queues the attach until after the damage. Not the hand or the deck (B.106, B.101 (1): part of the effect).
+      if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Attach energy') {
+        const attacker = pre.player as Player;
+        const from = (p as unknown as { cardList?: CardList }).cardList;
+        if (from !== undefined && (from === attacker.discard || from === attacker.active
+          || attacker.bench.some(b => b === from))) {
+          p.deferredMove = true;
+        }
+      }
 
       state.prompts.push(prompts[i]);
       this.stampTrainerPrompt(prompts[i].id);

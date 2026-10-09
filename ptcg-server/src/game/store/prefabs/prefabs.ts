@@ -1967,6 +1967,23 @@ export function MOVE_CARDS(
     pre.afterDamageMoves.push(() => { state = store.reduceEffect(state, new MoveCardsEffect(source, destination, options)); });
     return state;
   }
+  // TA-674 / TA-675 (B.102, B.105, B.89 (1), (4)): Energy the attack chose at Step D to attach from its own discard pile
+  // (Iron Roar, Motivate) or to move between its own Pokémon (Genome Spiral) attaches after the damage. Nothing moves
+  // between picks. A card that has left its source, or a recipient that has left play, by then is skipped.
+  const own = (l: CardList) => l instanceof PokemonCardList && (pre?.player.active === l || pre?.player.bench.includes(l) === true);
+  if (pre !== undefined && state.inChosenCallback === true && options.cards !== undefined && options.cards.length > 0
+      && options.cards.every(c => c.superType === SuperType.ENERGY)
+      && (source === pre.player.discard || own(source)) && own(destination) && source !== destination) {
+    const chosen = options.cards;
+    pre.afterDamageMoves.push(() => {
+      const still = chosen.filter(c => source.cards.includes(c));
+      if (still.length === 0 || !own(destination) || (source !== pre.player.discard && !own(source))) {
+        return;
+      }
+      state = store.reduceEffect(state, new MoveCardsEffect(source, destination, { ...options, cards: still }));
+    });
+    return state;
+  }
   return store.reduceEffect(state, new MoveCardsEffect(source, destination, options));
 }
 
