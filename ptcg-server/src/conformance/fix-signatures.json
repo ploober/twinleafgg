@@ -12712,6 +12712,26 @@
       "fixes": [
         "FX-0463"
       ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "      if (pre?.player !== undefined && p.playerId === pre.player.id"
+      ],
+      "note": "TA-680 (2026-10-09): B.82: every attacker Energy choice before the damage is deferredMove, whatever its message (Spiral Shot pal-052) [TA-680",
+      "fixes": [
+        "FX-0464"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/groudon.ts",
+      "signatures": [
+        "        effect.damage = chosen.length * 60;"
+      ],
+      "note": "TA-681 (2026-10-09): Magma Purge par-093 offers its stop and does 60 per card discarded, none for none [TA-681]",
+      "fixes": [
+        "FX-0465"
+      ]
     }
   ]
 }
