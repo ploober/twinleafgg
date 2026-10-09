@@ -12702,6 +12702,16 @@
       "fixes": [
         "FX-0462"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const NOT_ANSWER_FIELDS = new Set(['actor', 'type', 'op', 'amount', 'destination', 'min', 'max', 'step', 'deck',"
+      ],
+      "note": "TA-662 (2026-10-09): B.95 strict pick matching: a decomposed pick carries every field the offered entry carries, with its value (CF-70 op / a",
+      "fixes": [
+        "FX-0463"
+      ]
     }
   ]
 }
