@@ -194,7 +194,7 @@ describe('WS1 batch 1b — self-energy-discard: the choice comes before the dama
     expect(res.state.players.B.active!.damage).toBe(0);
     const done = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })), [
       { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Ryuno Glide' },
-      { actor: 'A', type: 'discard', target: 'l0' } as never, { actor: 'A', type: 'discard', target: 'l1' } as never]);
+      { actor: 'A', type: 'discard', owner: 'A', target: 'l0' } as never, { actor: 'A', type: 'discard', owner: 'A', target: 'l1' } as never]);
     expect(done.state.players.B.active!.damage).toBe(330);
     expect(done.state.players.A.active!.energy.map(e => e.iid)).toEqual(['w']);
   });
@@ -206,7 +206,7 @@ describe('WS1 batch 1b — self-energy-discard: the choice comes before the dama
     expect(res.status).toBe('awaitingAction');
     expect(res.state.players.B.active!.damage).toBe(0);
     const done = step(board(attacker(), player({ active: pip('B-act', BIGDEF) })), [
-      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }, { actor: 'A', type: 'discard', target: 'c0' } as never]);
+      { actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Great Swing' }, { actor: 'A', type: 'discard', owner: 'A', target: 'c0' } as never]);
     expect(done.state.players.B.active!.damage).toBe(280);
     expect(done.state.players.A.active!.energy.map(e => e.iid)).toEqual(['c1']);
   });

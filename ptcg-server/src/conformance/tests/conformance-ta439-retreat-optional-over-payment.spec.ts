@@ -65,7 +65,7 @@ function board(): NeutralState {
 }
 
 const retreat: NeutralAction = { actor: 'A', type: 'retreat', to: 0 } as unknown as NeutralAction;
-const discard = (iid: string): NeutralAction => ({ actor: 'A', type: 'discard', target: iid } as unknown as NeutralAction);
+const discard = (iid: string): NeutralAction => ({ actor: 'A', type: 'discard', owner: 'A', target: iid } as unknown as NeutralAction);
 const stop: NeutralAction = { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction;
 
 type Offer = { type: string; target?: string; value?: boolean };

@@ -105,12 +105,12 @@ describe('TA-496 Blastoise ex Twin Cannons discards up to 2 Basic Water Energy',
     expect(r.state.players.A.hand.map(c => c.iid)).toEqual(['ah0', 'ah1']);
   });
   it('control: two Water discarded do 280 [TA-496]', () => {
-    const r = run(s([WATER, WATER, GRASS]), [ATK, A({ type: 'discard', target: 'ah0' }), A({ type: 'discard', target: 'ah1' })]);
+    const r = run(s([WATER, WATER, GRASS]), [ATK, A({ type: 'discard', owner: 'A', target: 'ah0' }), A({ type: 'discard', owner: 'A', target: 'ah1' })]);
     expect(r.state.players.B.active!.damage).toBe(280);
     expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['ah0', 'ah1']);
   });
   it('control: one Water discarded then stop does 140 [TA-496]', () => {
-    const r = run(s([WATER, WATER]), [ATK, A({ type: 'discard', target: 'ah0' }), STOP]);
+    const r = run(s([WATER, WATER]), [ATK, A({ type: 'discard', owner: 'A', target: 'ah0' }), STOP]);
     expect(r.state.players.B.active!.damage).toBe(140);
     expect(r.state.players.A.hand.map(c => c.iid)).toEqual(['ah1']);
   });

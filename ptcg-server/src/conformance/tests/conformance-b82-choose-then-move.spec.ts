@@ -54,7 +54,7 @@ const indexOfKind = (events: NeutralEvent[], kind: string) => events.findIndex(e
 
 describe('B.82: an attack chooses its in-play cards first, damages, then moves them', () => {
   const attack = (name: string) => ({ actor: 'A', type: 'declareAttack', source: 'a1', name } as never);
-  const discard = (card: string) => ({ actor: 'A', type: 'discard', target: card } as never);
+  const discard = (card: string) => ({ actor: 'A', type: 'discard', owner: 'A', target: card } as never);
   const choose = (target: string) => ({ actor: 'A', type: 'choose', target } as never);
 
   describe('Mirage Barrage twm-106 (#2002) [TA-610]', () => {

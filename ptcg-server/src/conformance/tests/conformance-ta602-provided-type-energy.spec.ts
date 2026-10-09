@@ -56,7 +56,7 @@ function board(attacker: string, energy: string[], hand: string[] = []): Neutral
 }
 
 const attack = (name: string) => ({ actor: 'A', type: 'declareAttack', source: 'a1', name } as never);
-const discard = (target: string) => ({ actor: 'A', type: 'discard', target } as never);
+const discard = (target: string) => ({ actor: 'A', type: 'discard', owner: 'A', target } as never);
 const confirm = (value: boolean) => ({ actor: 'A', type: 'confirm', value } as never);
 const attach = (card: string) => ({ actor: 'A', type: 'attachEnergy', card, target: 'a1' } as never);
 

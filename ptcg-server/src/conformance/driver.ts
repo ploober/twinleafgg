@@ -395,43 +395,6 @@ function toWirePending(p: PendingDecision): WirePending {
 }
 
 /**
- * TA-205 / SD-14: the IDENTITY fields of a pick — the ones that name *which* candidate was chosen.
- *
- * Membership in the offered menu is decided on these alone, deliberately not on whole-object equality.
- * Two field classes are excluded and each exclusion is load-bearing:
- *
- *  - `owner` / `name` on `choose`/`discard` are ADVISORY annotations, not identity. `owner` in
- *    particular is known-unreliable in different sub-cases on BOTH engines (the CF-26 proposal is to
- *    normalize it out of the compared vocabulary entirely), so matching on it would reject valid logs
- *    over a field we do not even trust.
- *  - `source` on `moveEnergy` is DERIVABLE — `attach-energy`'s own `toPick` accepts the action with it
- *    absent and only cross-checks it when present ("claimedSource !== undefined && ..."). Requiring it
- *    here would reject exactly the looser form that decomposer documents as legal.
- *
- * `shuffle` is absent by design: a deck order is a permutation the system supplies, not a menu pick,
- * and its legality is adjudicated by the prompt.
- */
-const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
-  choose: ['target'],
-  placeCounter: ['target'],
-  promoteBench: ['target'],
-  discard: ['target'],
-  pick: ['target'],
-  moveEnergy: ['card', 'target'],
-  attachEnergy: ['card', 'target'],
-  takePrize: ['index'],
-  confirm: ['value'],
-  selectOption: ['option'],
-  // CF-38: `source` names the CARD the effect comes from, `kind` the sort of effect, and `ability`
-  // disambiguates two effects on ONE card. All three are identity. `ability` is absent on every
-  // `cardTextEffect` candidate, and the comparison below skips a field the OFFER leaves undefined,
-  // so including it costs nothing there and buys strictness where the offer does carry it.
-  // `subject` (v0.7.2) is the fourth: the KO'd victim that instantiated this occurrence.
-  resolveNext: ['source', 'kind', 'ability', 'subject'],
-  flip: ['face'],
-};
-
-/**
  * Does the pending actually OFFER this action? (TA-205)
  *
  * The driver previously checked only that the action's TYPE appeared among the offered picks, so an
@@ -441,9 +404,7 @@ const PICK_IDENTITY_FIELDS: { [type: string]: string[] } = {
  * Rotomancer refuses it at an explicit gate (`sim:refuseGate`, "no option matches target iid …") and
  * returns `invalidAction`; the contract has a status for this and we were returning the wrong one.
  *
- * Unknown verbs return true — this gate narrows an existing acceptance path and must never be the
- * thing that rejects a pick type it has no identity rule for. Adding a verb to the table is what
- * extends coverage; the default stays permissive so a gap here is a missed catch, never a false reject.
+ * Matching rule: B.95 (TA-662) — every field the offered entry carries, with its value; see NOT_ANSWER_FIELDS.
  */
 /** CF-59 label equality: casefold, collapse runs of non-alphanumerics to one space, trim. */
 export function normalizeOptionLabel(s: string): string {
@@ -474,9 +435,21 @@ function resolveSelectOptionLabel(legalActions: LegalAction[], action: NeutralAc
   }
 }
 
+/**
+ * TA-662 / B.95 (owner 2026-10-07): the fields of an offered entry an answer need not repeat. The registered gates
+ * (contract 0.15.0: CF-70's `op` / `amount` / `destination`, CF-38's `subject`), template-only descriptions
+ * (`enterNumber`'s `min` / `max` / `step`, `shuffle`'s `deck`, `playItem`'s `candidates` / `counts`), and `label`,
+ * which CF-59 lets an answer give instead of `option` (compared below when both carry it).
+ */
+const NOT_ANSWER_FIELDS = new Set(['actor', 'type', 'op', 'amount', 'destination', 'subject', 'min', 'max', 'step', 'deck',
+  'candidates', 'counts', 'label']);
+
+function present(v: unknown): boolean {
+  return v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0);
+}
+
 function offersAction(legalActions: LegalAction[], action: NeutralAction): boolean {
-  const fields = PICK_IDENTITY_FIELDS[action.type];
-  if (fields === undefined) {
+  if (action.type === 'shuffle') {
     return true;
   }
   const submitted = action as unknown as { [k: string]: unknown };
@@ -485,7 +458,22 @@ function offersAction(legalActions: LegalAction[], action: NeutralAction): boole
       return false;
     }
     const offered = la as unknown as { [k: string]: unknown };
-    return fields.every(f => offered[f] === undefined || offered[f] === submitted[f]);
+    // TA-662 / B.95: every field the offered entry carries, with the same value (it replaced TA-205's per-verb
+    // identity table, which let `owner`, `name` and `moveEnergy.source` be omitted or wrong).
+    for (const [k, v] of Object.entries(offered)) {
+      if (NOT_ANSWER_FIELDS.has(k) || !present(v)) {
+        continue;
+      }
+      if (JSON.stringify(submitted[k]) !== JSON.stringify(v)) {
+        return false;
+      }
+    }
+    // B.100: a label that names another option is not this entry.
+    if (typeof submitted.label === 'string' && typeof offered.label === 'string'
+        && normalizeOptionLabel(submitted.label) !== normalizeOptionLabel(offered.label)) {
+      return false;
+    }
+    return true;
   });
 }
 

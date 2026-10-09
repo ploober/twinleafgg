@@ -65,7 +65,7 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
   it('pays the cost with the chosen energy and completes the retreat', () => {
     const res = step(retreatBoard(), [
       { actor: 'A', type: 'retreat', to: 0 },
-      { actor: 'A', type: 'discard', target: 'e1' }, // pay [C] by discarding the Water energy
+      { actor: 'A', type: 'discard', owner: 'A', target: 'e1' }, // pay [C] by discarding the Water energy
     ]);
 
     expect(res.status).toBe('awaitingAction');
@@ -80,7 +80,7 @@ describe('ChooseEnergyPrompt decomposer — retreat payment', () => {
   it('replays the retreat-payment deterministically', () => {
     const actions: NeutralAction[] = [
       { actor: 'A', type: 'retreat', to: 0 },
-      { actor: 'A', type: 'discard', target: 'e0' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'e0' },
     ];
     const a = step(retreatBoard(), actions);
     const b = step(retreatBoard(), actions);

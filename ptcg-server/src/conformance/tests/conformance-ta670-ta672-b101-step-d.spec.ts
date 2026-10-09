@@ -71,7 +71,7 @@ function board(row: Row): NeutralState {
 const declare = (row: Row) => ({ actor: 'A', type: 'declareAttack', source: 'a1', name: row.attack } as never);
 const yes = { actor: 'A', type: 'confirm', value: true } as never;
 const promote = (target: string) => ({ actor: 'A', type: 'promoteBench', target } as never);
-const discard = (target: string) => ({ actor: 'A', type: 'discard', target } as never);
+const discard = (target: string) => ({ actor: 'A', type: 'discard', owner: 'A', target } as never);
 
 /** The events after `attackUsed`, without `chosen` (a Step-D pick may record one, B.89 (1)). */
 function afterAttack(events: NeutralEvent[]): NeutralEvent[] {

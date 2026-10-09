@@ -742,7 +742,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
         active: inPlay('A-act', [RALTS], en(WATER, 1, 'act')),
         bench: [inPlay('A-mlx', ['meg-100']), inPlay('A-src', [RALTS], en(PSY, 2, 'src')), inPlay('A-latios', ['meg-101'])],
       }), player({ active: inPlay('B-act', [RALTS]) })),
-      [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'acte0' }]);
+      [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', owner: 'A', target: 'acte0' }]);
     expect(promote.state.players.A.active!.stack[0].iid).toBe('A-mlx'); // Mega Latias ex promoted
     expect(types(promote)).toContain('confirm');                        // Lustrous Assist fired (was dead pre-fix)
   });
@@ -1015,7 +1015,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(r2.state.activePlayer).toBe('B');
 
     // (c) taking the pick discards the bench Tool — the fix must not have broken the 1-option itself.
-    const r3 = step(bd(), [declare, { actor: 'A', type: 'discard', target: 'b-tool', owner: 'B' } as never]);
+    const r3 = step(bd(), [declare, { actor: 'A', type: 'discard', owner: 'A', target: 'b-tool', owner: 'B' } as never]);
     expect(r3.state.players.B.bench[0].tools.length).toBe(0);
     expect(r3.state.players.B.discard.map(c => c.printing)).toContain('asc-181');
   });
@@ -3260,7 +3260,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const one = step(board(
       player({ active: inPlay('A-act', ['twm-022'], en(GRASS, 1, 'a')) }),
       player({ active: inPlay('B-act', [TANKY]) }),
-    ), [attack('A-act', 'Spill the Tea'), { actor: 'A', type: 'discard', target: 'ae0' } as unknown as NeutralAction]);
+    ), [attack('A-act', 'Spill the Tea'), { actor: 'A', type: 'discard', owner: 'A', target: 'ae0' } as unknown as NeutralAction]);
     expect(one.state.players.B.active!.damage).toBe(70);
   });
 
@@ -3593,7 +3593,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const r = step(board(
       player({ active: inPlay('A-act', ['meg-010'], [...en(GRASS, 2, 'g'), ...en(WATER, 2, 'w')]), bench: [inPlay('A-b0', [RALTS])] }),
       player({ active: inPlay('B-act', [TANKY]) }),
-    ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'we0' }] as unknown as NeutralAction[]);
+    ), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', owner: 'A', target: 'we0' }] as unknown as NeutralAction[]);
     const offered = (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'discard').map(a => (a as { target: string }).target).sort();
     expect(offered).toEqual(['ge0', 'ge1', 'we1']);
     // and paying with the [G][G] alone (over-providing by one unit) is accepted. Since TA-439 (#2127:
@@ -3603,10 +3603,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['meg-010'], [...en(GRASS, 2, 'g'), ...en(WATER, 2, 'w')]), bench: [inPlay('A-b0', [RALTS])] }),
       player({ active: inPlay('B-act', [TANKY]) }),
     );
-    const paid = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }] as unknown as NeutralAction[]);
+    const paid = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', owner: 'A', target: 'ge0' }] as unknown as NeutralAction[]);
     expect(paid.status).toBe('awaitingAction');
     expect(types(paid)).withContext('the stop is offered once the cost is covered (TA-439)').toContain('confirm');
-    const done = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', target: 'ge0' }, { actor: 'A', type: 'confirm', value: false }] as unknown as NeutralAction[]);
+    const done = step(paidBoard(), [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', owner: 'A', target: 'ge0' }, { actor: 'A', type: 'confirm', value: false }] as unknown as NeutralAction[]);
     expect(done.status).toBe('awaitingAction');
     expect(done.state.players.A.active!.stack[0].printing).toBe('sit-067');
     expect(done.state.players.A.discard.map(c => c.iid)).toEqual(['ge0']);        // one card paid a two-unit cost

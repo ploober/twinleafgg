@@ -97,8 +97,8 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     expect((la[0] as any).owner).toBe('A');
 
     const res = replay(game, [
-      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
-      { actor: 'A', type: 'discard', target: 'h1', owner: 'A' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h1', owner: 'A' },
     ]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY, WATER]);
     expect(res.pending!.descriptor).toBe('main'); // resolved → back to A's main-phase menu (M5)
@@ -121,14 +121,14 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     // After one pick (min satisfied, max not reached) the decision offers more `discard` picks PLUS
     // the advertised explicit stop `confirm{value:false}` (CF-4). The internal `endChoice` marker is
     // never on the wire — it surfaces as `confirm`.
-    const d2 = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }]).pending!.legalActions;
+    const d2 = replay(game, [{ actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' }]).pending!.legalActions;
     expect(d2.some(a => (a as { type: string }).type === 'endChoice')).toBe(false);
     expect(d2.some(a => a.type === 'discard')).toBe(true);
     expect(d2.some(a => a.type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(true);
 
     // CF-4/CF-12: the explicit stop finalizes the "up to 2" at one pick -> [PSY]; both actions consumed.
     const res = replay(game, [
-      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' },
       { actor: 'A', type: 'confirm', value: false },
     ]);
     expect(captured.map((c: any) => c.fullName)).toEqual([PSY]);
@@ -137,7 +137,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     // CF-12 (R1 deprecated): a non-pick, non-stop action (endTurn) is not offered here, so it is
     // rejected rather than implicitly completing the decision.
     const rej = replay(game, [
-      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' },
       { actor: 'A', type: 'endTurn' },
     ]);
     expect(rej.rejection).toBeDefined();
@@ -266,7 +266,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     const targets = firstDecision(game).filter(a => a.type === 'discard').map(a => (a as any).target).sort();
     expect(targets).toEqual(['e0', 'e1']);
 
-    replay(game, [{ actor: 'A', type: 'discard', target: 'e1' }]);
+    replay(game, [{ actor: 'A', type: 'discard', owner: 'A', target: 'e1' }]);
     expect(captured!.length).toBe(1);
     expect(captured![0].card.fullName).toBe(PSY);
   });
@@ -360,7 +360,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       game.store.prompt(game.state, new ShuffleDeckPrompt(p.id), (order: number[]) => { p.deck.applyOrder(order); });
     });
 
-    const res = replay(game, [{ actor: 'A', type: 'discard', target: 'h0', owner: 'A' }]);
+    const res = replay(game, [{ actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' }]);
     expect(res.pending).not.toBeNull();
     expect(res.pending!.actor).toBe('system');
     expect(res.pending!.legalActions[0].type).toBe('shuffle');
@@ -383,7 +383,7 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
     });
 
     const res = replay(game, [
-      { actor: 'A', type: 'discard', target: 'h0', owner: 'A' },
+      { actor: 'A', type: 'discard', owner: 'A', target: 'h0', owner: 'A' },
       { actor: 'system', type: 'shuffle', order: ['d1', 'd0'] },
     ]);
     expect(res.events.some(e => e.kind === 'shuffled' && e.player === 'A')).toBe(true);
