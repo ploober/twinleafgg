@@ -179,3 +179,24 @@ describe('TA-677: Tropic Breeze chooses its Benched Pokemon before the damage, m
     expect(r.state.players.A.bench[1].energy.map(c => c.iid).sort()).toEqual(['a1e0', 'a1e1', 'a1e2']);
   });
 });
+
+describe('TA-678 / TA-679: the stop of a discard-pile attach follows the printed text', () => {
+  it('pal-065 Magnetic Charge ("up to 2") offers the stop [TA-678]', () => {
+    const r = step(board('pal-065', 'L', 'L'), [declare('Magnetic Charge')]);
+    expect(r.pending?.legalActions.some(a => a.type === 'confirm' && (a as { value?: boolean }).value === false)).toBe(true);
+  });
+
+  it('obf-079 Techno Turbo ("Attach a ...") offers no stop [TA-679]', () => {
+    const r = step(board('obf-079', 'LLL', 'LL'), [declare('Techno Turbo')]);
+    expect(r.pending?.legalActions.length).toBe(4);
+    expect(r.pending?.legalActions.every(a => a.type === 'attachEnergy')).toBe(true);
+  });
+
+  it('obf-079 Techno Turbo with no Benched Pokemon asks nothing and does its 150 [TA-679]', () => {
+    const b = board('obf-079', 'LLL', 'LL');
+    b.players.A.bench = [];
+    const r = step(b, [declare('Techno Turbo')]);
+    expect(r.pending?.actor).not.toBe('A' as never);
+    expect(r.events.some(e => e.kind === 'damaged')).toBe(true);
+  });
+});

@@ -60,7 +60,8 @@ export class Magnemite extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Lightning Energy' },
-        { allowCancel: true, min: 1, max: 2 }
+        // TA-678: 'up to 2' includes none (#2301): the CF-4 stop is offered.
+        { allowCancel: false, min: 0, max: 2 }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user

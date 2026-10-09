@@ -65,7 +65,8 @@ export class Miraidonex extends PokemonCard {
           c.provides.includes(CardType.LIGHTNING)
         );
       });
-      if (!hasEnergyInDiscard) {
+      // TA-679: nothing to attach to, nothing is asked (the attach is mandatory once it can be done).
+      if (!hasEnergyInDiscard || !player.bench.some(b => b.cards.length > 0)) {
         return state;
       }
 
@@ -78,7 +79,8 @@ export class Miraidonex extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Lightning Energy' },
-          { allowCancel: false, min: 0, max: 1 },
+          // TA-679: 'Attach a ...' is mandatory when it can be done; no stop.
+          { allowCancel: false, min: 1, max: 1 },
         ),
         (transfers) => {
           transfers = transfers || [];
