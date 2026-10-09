@@ -200,3 +200,22 @@ describe('TA-678 / TA-679: the stop of a discard-pile attach follows the printed
     expect(r.events.some(e => e.kind === 'damaged')).toBe(true);
   });
 });
+
+describe('TA-680 / B.82: Spiral Shot chooses its 2 Energy before the 230 and returns them after it', () => {
+  const pick = (target: string) => A({ type: 'choose', target });
+
+  it('pal-052 Spiral Shot: the first pick leaves the Energy attached and records chosen [TA-680]', () => {
+    const r = step(board('pal-052', 'WWW', ''), [declare('Spiral Shot'), pick('a1e0')]);
+    expect(r.events.filter(e => e.kind === 'moved')).toEqual([]);
+    expect(r.state.players.A.active?.energy.length).toBe(3);
+    expect(chosenCards(attackEvents(r.events))).toEqual(['a1e0']);
+  });
+
+  it('pal-052 Spiral Shot: chosen x2, the 230, then both Energy to the hand [TA-680]', () => {
+    const r = step(board('pal-052', 'WWW', ''), [declare('Spiral Shot'), pick('a1e0'), pick('a1e1')]);
+    const ev = attackEvents(r.events);
+    expect(chosenCards(ev)).toEqual(['a1e0', 'a1e1']);
+    expect(idx(ev, 'damaged')).toBeLessThan(idx(ev, 'moved'));
+    expect(r.state.players.A.hand.map(c => c.iid)).toContain('a1e0');
+  });
+});

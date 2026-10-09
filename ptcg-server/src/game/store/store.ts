@@ -383,12 +383,12 @@ export class Store implements StoreLike {
       }
 
       // B.82: an Energy choice the attacker is asked before the attack's damage chooses cards that move after it
-      // (the DiscardCardsEffect reducer queues the move); the adapter leaves its picks attached as `chosen`.
+      // (the DiscardCardsEffect reducer / MOVE_CARDS queues the move); the adapter leaves its picks attached as `chosen`.
+      // TA-680: keyed on the prompt type alone. It was keyed on three messages too, and Spiral Shot pal-052 asks with
+      // CHOOSE_CARD_TO_HAND, so its Energy went to the hand at the pick, before the damage.
       const pre = state.preDamageAttack as { player?: { id: number } } | undefined;
       const p = prompts[i] as Prompt<any> & { deferredMove?: boolean; message?: unknown };
-      const moveMessages: unknown[] = [GameMessage.CHOOSE_ENERGIES_TO_DISCARD, GameMessage.CHOOSE_ENERGIES_TO_HAND,
-        GameMessage.CHOOSE_ENERGIES_TO_DECK];
-      if (pre?.player !== undefined && p.playerId === pre.player.id && moveMessages.includes(p.message)
+      if (pre?.player !== undefined && p.playerId === pre.player.id
           && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
         p.deferredMove = true;
       }
