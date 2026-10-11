@@ -161,3 +161,34 @@ describe('TA-AUD1-2: Kingdra ex sfa-012 King\'s Order ("Put up to 3 [Water] Pok�
   });
 });
 
+
+describe('TA-AUD1-4: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy cards from your hand. This attack does 60 damage to 1 of your opponent\'s Pokémon for each Energy card you discarded in this way. (Don\'t apply Weakness and Resistance for Benched Pokémon.)")', () => {
+  // Wiglett svi-056 is the Basic under Wugtrio ex; three Basic Energy in the hand.
+  const b = () => board(['svi-056', 'tef-060'], 'W', { hand: [E.W, E.L, E.G] });
+
+  it('tef-060 Tricolor Pump offers the three Energy and the stop at the first pick [TA-AUD1-4]', () => {
+    const r = step(b(), [declare('Tricolor Pump')]);
+    expect(offered(r, 'discard')).toEqual(['ah0', 'ah1', 'ah2']);
+    expect(offersStop(r)).toBe(true);
+  });
+
+  it('tef-060 Tricolor Pump: 0 Energy discarded asks for no target and does no damage [TA-AUD1-4]', () => {
+    const r = step(b(), [declare('Tricolor Pump'), stop]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.pending?.actor).not.toBe('A' as never);
+    expect(offered(r, 'choose')).toEqual([]);
+    expect(r.state.players.B.active?.damage).toBe(0);
+    expect(r.state.players.B.bench.map(p => p.damage)).toEqual([0, 0]);
+    expect(r.state.players.A.hand.map(c => c.iid).sort()).toEqual(['ah0', 'ah1', 'ah2']);
+  });
+
+  it('tef-060 Tricolor Pump: 2 Energy discarded, then the target pick over every opposing Pokémon, does 120 to the chosen one [TA-AUD1-4]', () => {
+    const mid = step(b(), [declare('Tricolor Pump'), disc('ah0'), disc('ah1'), stop]);
+    expect(offered(mid, 'choose')).toEqual(['b1', 'bb1', 'bb2']);
+    const r = step(b(), [declare('Tricolor Pump'), disc('ah0'), disc('ah1'), stop, choose('b1')]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.B.active?.damage).toBe(120);
+    expect(r.state.players.B.bench.map(p => p.damage)).toEqual([0, 0]);
+    expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['ah0', 'ah1']);
+  });
+});
