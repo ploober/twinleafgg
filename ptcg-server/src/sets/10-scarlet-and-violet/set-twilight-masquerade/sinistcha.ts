@@ -1,8 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, PlayerType, GameMessage, SlotType, DiscardEnergyPrompt, CardTarget } from '../../../game';
+import { Card, StoreLike, State, StateUtils, PlayerType, GameMessage, SlotType, DiscardEnergyPrompt, CardTarget, PokemonCardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
+import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 
 import { PUT_X_DAMAGE_COUNTERS_IN_ANY_WAY_YOU_LIKE } from '../../../game/store/prefabs/attack-effects';
 import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
@@ -86,11 +87,19 @@ export class Sinistcha extends PokemonCard {
         // TA-392: "70 damage for each card you discarded in this way" — the multiplier was assigned
         // INSIDE the transfer loop, so with zero cards chosen the printed base 70 was never zeroed and
         // the attack dealt 70 for nothing (rotomancer: 0). Count first, then move.
+        // TA-AUD2-3 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
+        // moveCardTo discarded them at the pick. DiscardCardsEffect per source Pokémon: its reducer queues the move.
         const discarded = transfers || [];
+        const grouped = new Map<PokemonCardList, Card[]>();
         for (const transfer of discarded) {
           const source = StateUtils.getTarget(state, player, transfer.from);
-          source.moveCardTo(transfer.card, player.discard);
+          grouped.set(source, [...(grouped.get(source) ?? []), transfer.card]);
         }
+        grouped.forEach((cards, source) => {
+          const discardEnergy = new DiscardCardsEffect(effect, cards);
+          discardEnergy.target = source;
+          state = store.reduceEffect(state, discardEnergy);
+        });
         effect.damage = discarded.length * 70;
         return state;
       });

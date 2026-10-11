@@ -1,4 +1,5 @@
 import {
+  Card,
   CardTag,
   CardType,
   DiscardEnergyPrompt,
@@ -6,6 +7,7 @@ import {
   GameMessage,
   PlayerType,
   PokemonCard,
+  PokemonCardList,
   SlotType,
   Stage,
   State,
@@ -15,6 +17,7 @@ import {
 } from '../../../game';
 import { CardTarget } from '../../../game/store/actions/play-card-action';
 import { Effect } from '../../../game/store/effects/effect';
+import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MegaCharizardXex extends PokemonCard {
@@ -96,10 +99,18 @@ export class MegaCharizardXex extends PokemonCard {
           return state;
         }
 
+        // TA-AUD2-3 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
+        // moveCardTo discarded them at the pick. DiscardCardsEffect per source Pokémon: its reducer queues the move.
+        const grouped = new Map<PokemonCardList, Card[]>();
         for (const transfer of transfers) {
           const source = StateUtils.getTarget(state, player, transfer.from);
-          source.moveCardTo(transfer.card, player.discard);
+          grouped.set(source, [...(grouped.get(source) ?? []), transfer.card]);
         }
+        grouped.forEach((cards, source) => {
+          const discardEnergy = new DiscardCardsEffect(effect, cards);
+          discardEnergy.target = source;
+          state = store.reduceEffect(state, discardEnergy);
+        });
 
         effect.damage = transfers.length * 90;
         return state;
