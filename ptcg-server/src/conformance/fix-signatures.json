@@ -12979,6 +12979,26 @@
         "FX-0476"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "set-journey-together/ns-purrloin.ts",
+      "signatures": [
+        "MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this, toBottom: true });"
+      ],
+      "note": "TA-706 (2026-10-11): Thieving Swipe jtg-096: the chosen card is moved toBottom, so the leg into an empty deck reads bottom (the TA-704 shape)",
+      "fixes": [
+        "FX-0489"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const importOwner = game.ctx.cardOwner.get(hidden[0]);"
+      ],
+      "note": "TA-705 (2026-10-11): Reveal owner: a revealed card no settled zone holds names its import-origin owner, not the non-audience player (Accompan",
+      "fixes": [
+        "FX-0490"
+      ]
     }
   ]
 }
