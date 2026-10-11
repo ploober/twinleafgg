@@ -3,7 +3,6 @@ import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { StateUtils, StoreLike, State, Player, GameError, GameMessage, ShuffleDeckPrompt } from '../../../game';
-import { CardList } from '../../../game/store/state/card-list';
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SpecialRedCard extends TrainerCard {
@@ -47,17 +46,24 @@ export class SpecialRedCard extends TrainerCard {
       if (cardsInHand > 0) {
         // TA-379: "shuffles their hand and puts it on the bottom" — the old code bottomed the hand IN
         // HAND ORDER and drew at once: no shuffle happened, the bottom order was known, and no external
-        // order could ever be supplied (TA-305/TA-370 shape). Externalize it the TA-370 way: stage the
-        // hand INTO the (emptied) deck so the adapter's ShuffleDeckPrompt advertises exactly those cards,
-        // restack the untouched deck on top inside the callback, and only THEN draw.
-        const rest = new CardList();
-        opponent.deck.moveTo(rest);
+        // order could ever be supplied (TA-305/TA-370 shape). Externalize it through a ShuffleDeckPrompt
+        // that advertises exactly those cards, and only THEN draw.
+        // TA-697 / B.80 (TA-598's Grand Wing shape): the hand goes UNDER the untouched deck and only that bottom
+        // segment is shuffled (`bottomCount`), so the pause projects the hand in transit {hand -> deck bottom} and
+        // the deck as it is. The old staging (the deck into a temp list, the hand into the emptied deck) put the
+        // whole deck in transit and the hand on deck:top, and the draws then read transit -> hand.
+        const n = cardsInHand;
         opponent.hand.moveTo(opponent.deck);
         // TA-462 / B.66: the pile is the HAND (a hand-to-bottom), not the deck — declare it so the
         // adapter's `shuffled` carries zone:'hand' and the deck-randomised property is not asserted.
-        return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand' }), order => {
-          opponent.deck.applyOrder(order);
-          rest.moveToTopOfDestination(opponent.deck);
+        return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand', bottomCount: n }), order => {
+          const deck = opponent.deck.cards;
+          const start = deck.length - n;
+          // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+          const segment = order.length === n ? order.map(i => start + i) : order.filter(i => i >= start);
+          if (segment.length === n && new Set(segment).size === n && segment.every(i => i >= start && i < deck.length)) {
+            opponent.deck.cards = [...deck.slice(0, start), ...segment.map(i => deck[i])];
+          }
           DRAW_CARDS(store, state, opponent, Math.min(3, opponent.deck.cards.length));
         });
       }
