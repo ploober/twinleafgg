@@ -652,8 +652,11 @@ function buildRevealEvent(game: ImportedGame, prompt: ShowCardsPrompt, sourceZon
     return null;
   }
   const loc = locateCard(game.state, hidden[0]);
-  // Owner = the located zone's owner; fall back to the non-audience player (see above).
-  const owner = loc !== null ? playerIdToActor(game.state, loc.owner.id) : fallbackOwner;
+  // Owner = the located zone's owner; else the card's import-origin owner (TA-705: Accompanying Flute's five sit in a
+  // prompt pile and are B's, shown to B — the non-audience fallback named A); else the non-audience player (see above).
+  const importOwner = game.ctx.cardOwner.get(hidden[0]);
+  const owner = loc !== null ? playerIdToActor(game.state, loc.owner.id)
+    : importOwner !== undefined ? playerIdToActor(game.state, game.state.players[importOwner].id) : fallbackOwner;
   // TA-373 / §B.34: `from` is the SOURCE zone — where the card was at the START of this action, before
   // any search relocated it — not `loc.zone` (its post-move zone at prompt time). Fall back to the
   // located zone for a card that entered play mid-action (absent from the snapshot).

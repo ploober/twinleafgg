@@ -70,6 +70,17 @@ describe('TA-699 Accompanying Flute twm-142: the OPPONENT shuffles the other car
   describe('no Basic among the five (nothing to bench)', () => {
     const b = board([...E]);   // five Energy on top
 
+    it('the printed reveal of the top five names the cards\' owner B, not the revealing player [TA-705 twm-142]', () => {
+      // TA-705: the five sit in a prompt pile (no settled zone), and the reveal's owner fell back to the non-audience
+      // player — A, who played the Item. The cards are B's: the reveal is {owner B, from deck, to all}.
+      const r = step(b, [play]);
+      const reveals = r.events.filter(e => e.kind === 'reveal') as Array<{ kind: 'reveal'; owner: string; cards: string[]; from: string }>;
+      expect(reveals.length).toBe(1);
+      expect(reveals[0].owner).toBe('B');
+      expect(['deck', 'transit']).toContain(reveals[0].from);   // the five were lifted before the show (B.80: from transit)
+      expect(reveals[0].cards.every(iid => iid.startsWith('bd'))).toBe(true);
+    });
+
     it('the shuffle pending is over the opponent\'s deck, not the player\'s [TA-699]', () => {
       const r = step(b, [play]);
       expect(r.pending?.actor).toBe('system');
