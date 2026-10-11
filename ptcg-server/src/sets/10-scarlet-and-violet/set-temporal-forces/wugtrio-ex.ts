@@ -108,8 +108,9 @@ export class Wugtrioex extends PokemonCard {
       return generator.next().value;
     }
 
-    // Numbing Hold
-    if (WAS_ATTACK_USED(effect, 0, this)) {
+    // Numbing Hold: "During your opponent's next turn, the Defending Pokémon can't retreat." (attack index 1;
+    // it tested index 0, Tricolor Pump's, which the branch above had already returned on, so the block never ran)
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       return BLOCK_RETREAT(store, state, effect, this);
     }
     TERA_RULE(effect, state, this);

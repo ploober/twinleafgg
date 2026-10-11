@@ -44,7 +44,7 @@ function prizes(tag: string, n: number): PrizeRef[] {
  * A's Active is `attacker` (a stack, bottom first) with `energy`; A's discard and hand hold the given
  * printings; two Erika's Bellsprout on each Bench; B's Active is Venusaur ex mew-003.
  */
-function board(attacker: string[], energy: string, opts: { discard?: string[]; hand?: string[] } = {}): NeutralState {
+function board(attacker: string[], energy: string, opts: { discard?: string[]; hand?: string[]; bEnergy?: string } = {}): NeutralState {
   return {
     schemaVersion: SCHEMA_VERSION, format: 'unlimited', turn: 3, activePlayer: 'A', firstPlayer: 'A', phase: 'main', outcome: 'ongoing',
     stadium: null,
@@ -55,7 +55,7 @@ function board(attacker: string[], energy: string, opts: { discard?: string[]; h
         discard: cards('adc', opts.discard ?? []), prizes: prizes('ap', 3),
       }),
       B: player({
-        active: mon('b1', ['mew-003'], 'RL'), bench: [mon('bb1', ['asc-004']), mon('bb2', ['asc-004'])],
+        active: mon('b1', ['mew-003'], opts.bEnergy ?? 'RL'), bench: [mon('bb1', ['asc-004']), mon('bb2', ['asc-004'])],
         hand: cards('bh', [E.G]), deck: cards('bd', Array(10).fill(E.G)), prizes: prizes('bp', 3),
       }),
     },
@@ -190,5 +190,27 @@ describe('TA-AUD1-4: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy c
     expect(r.state.players.B.active?.damage).toBe(120);
     expect(r.state.players.B.bench.map(p => p.damage)).toEqual([0, 0]);
     expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['ah0', 'ah1']);
+  });
+});
+
+describe('TA-AUD1-5: Wugtrio ex tef-060 Numbing Hold ("During your opponent\'s next turn, the Defending Pokémon can\'t retreat.")', () => {
+  // Venusaur ex mew-003 retreats for [C][C][C][C]; B's Active carries four Energy so a retreat is otherwise offered.
+  const b = (hand: string[] = [E.G]) => board(['svi-056', 'tef-060'], 'WW', { hand, bEnergy: 'RLGG' });
+  const types = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []).map(a => a.type);
+
+  it('tef-060 Numbing Hold: on the opponent\'s next turn the Defending Pokémon is not offered a retreat [TA-AUD1-5]', () => {
+    const r = step(b(), [declare('Numbing Hold')]);
+    expect(r.state.players.B.active?.damage).toBe(120);
+    expect(r.state.activePlayer).toBe('B');
+    expect(r.pending?.actor).toBe('B' as never);
+    expect(types(r)).not.toContain('retreat');
+  });
+
+  it('tef-060 Tricolor Pump (the other attack) leaves the opponent\'s retreat offered [TA-AUD1-5]', () => {
+    // One eligible Energy: the pick completes after it (no stop pending), then the target pick.
+    const r = step(b([E.W]), [declare('Tricolor Pump'), disc('ah0'), choose('b1')]);
+    expect(r.state.players.B.active?.damage).toBe(60);
+    expect(r.state.activePlayer).toBe('B');
+    expect(types(r)).toContain('retreat');
   });
 });
