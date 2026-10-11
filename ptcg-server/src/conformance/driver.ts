@@ -373,6 +373,8 @@ interface LoopResult {
    * a pause the replay ran through, still in the deck on the engine side). step()'s closing legs start from it.
    */
   traceBoard?: NeutralState;
+  /** TA-701: the revealed cards still lifted when the replay stopped; step() projects them `public` in transit. */
+  publicInTransit?: ReadonlySet<string>;
 }
 
 /**
@@ -757,6 +759,21 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // on both, 2026-10-11). The memory is cleared when a dispatch starts after the cursor moved (below).
   const revealedSince = new Set<string>();
   let cursorAtLastDispatch = -1;
+  // TA-701 (contract TransitCard.visibility; the TA-605 class): the cards a show has made public that are still LIFTED.
+  // A revealed card the player goes on holding (Crispin's two Energy at the attach pick) is `public` in transit, and so
+  // is the leg that finally places it; the pile projection's default (`owner`, a look) is wrong for it. Every board this
+  // replay projects goes through `seen`; a card the engine's own board no longer holds in transit leaves the set after
+  // the dispatch that placed it.
+  const publicInTransit = new Set<string>();
+  const seen = (board: NeutralState): NeutralState => {
+    if (publicInTransit.size === 0) { return board; }
+    for (const who of ['A', 'B'] as const) {
+      for (const t of board.players[who].transit ?? []) {
+        if (publicInTransit.has(t.iid)) { t.visibility = 'public'; }
+      }
+    }
+    return board;
+  };
   // B.87 / TA-643: deck legs of a dispatch that ended at an auto-acknowledged wait (see dispatchAndCollect).
   let deckLegsAtWait: MovedEvent[] = [];
 
@@ -777,7 +794,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
     return board;
   };
-  const traceProject = (): NeutralState => overlay(projectState(game.store.state, game.ctx));
+  const traceProject = (): NeutralState => overlay(seen(projectState(game.store.state, game.ctx)));
   const liftPausedSearchPicks = (prompt: Prompt<any>, picks: WirePick[]): void => {
     if (!isDeckSearch(prompt)) { return; }
     const fresh: Card[] = [];
@@ -792,7 +809,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       held.set(card, { iid, source: deck, legs: [] });
     }
     if (fresh.length === 0) { return; }
-    const before = projectState(game.store.state, game.ctx);
+    const before = seen(projectState(game.store.state, game.ctx));
     for (const card of held.keys()) {
       if (!fresh.includes(card)) { const h = held.get(card)!; if (h.source.cards.includes(card)) { liftToTransit(before, h.iid, { visibility: 'owner', origin: { zone: 'deck' } }); } }
     }
@@ -879,7 +896,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // TA-698: the cards physically in each deck now (a bottom segment under an open shuffle projects in transit).
     const inDeckAtStart = new Map<Card, Player>();
     for (const p of game.state.players) { for (const c of p.deck.cards) { inDeckAtStart.set(c, p); } }
-    const beforeState = projectState(game.state, game.ctx);
+    const beforeState = seen(projectState(game.state, game.ctx));
     // TA-590: the legs run between the trace's boards (held search picks in transit); every other derivation reads
     // the engine's own.
     const movedBefore = held.size > 0 ? traceProject() : beforeState;
@@ -918,8 +935,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       cut = segment;
       segment = undefined;
     }
-    const afterState = projectState(game.state, game.ctx);
-    const movedAfter = held.size > 0 ? overlay(projectState(game.state, game.ctx)) : afterState;
+    // TA-701: a revealed card the engine's board has placed (out of transit) is no longer held in public view.
+    if (publicInTransit.size > 0) {
+      const raw = projectState(game.state, game.ctx);
+      const lifted = new Set<string>();
+      for (const who of ['A', 'B'] as const) { for (const t of raw.players[who].transit ?? []) { lifted.add(t.iid); } }
+      for (const iid of publicInTransit) { if (!lifted.has(iid)) { publicInTransit.delete(iid); } }
+    }
+    const afterState = seen(projectState(game.state, game.ctx));
+    const movedAfter = held.size > 0 ? overlay(seen(projectState(game.state, game.ctx))) : afterState;
     // All-card iid -> name (energy/tool/evolution names for the observed-tier state-diff derivations).
     // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
     const allNames = allIidNames(game.ctx);
@@ -935,7 +959,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       if (p.result === undefined && p.type === 'Show cards') {
         for (const c of (p as ShowCardsPrompt).cards) {
           const iid = game.ctx.cardToIid.get(c);
-          if (iid !== undefined) { revealedSince.add(iid); }
+          if (iid !== undefined) { revealedSince.add(iid); publicInTransit.add(iid); }
         }
       }
     }
@@ -1026,6 +1050,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   try {
     const done = loop();
     if (held.size > 0) { done.traceBoard = traceProject(); }
+    done.publicInTransit = publicInTransit;
     return done;
   } catch (err) {
     // Store.reduce restores a pre-dispatch CLONE on a throw, so store.state and the driver's
@@ -1043,7 +1068,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         actor: 'system', descriptor: 'Coin flip',
         legalActions: [{ type: 'flip', face: 'heads' }, { type: 'flip', face: 'tails' }],
       };
-      return { events, pending: toWirePending(flipPending), applied: cursor.i, traceBoard: held.size > 0 ? traceProject() : undefined };
+      return { events, pending: toWirePending(flipPending), applied: cursor.i, traceBoard: held.size > 0 ? traceProject() : undefined,
+        publicInTransit };
     }
     const rejection = mapRejection(err);
     if (rejection === undefined) {
@@ -1110,7 +1136,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           // counts, including the public ones B.97 leaves out of the event.
           for (const c of (prompt as ShowCardsPrompt).cards) {
             const iid = game.ctx.cardToIid.get(c);
-            if (iid !== undefined) { revealedSince.add(iid); }
+            // TA-701: a shown card still held after the ack is public in transit until it is placed.
+            if (iid !== undefined) { revealedSince.add(iid); publicInTransit.add(iid); }
           }
         }
         // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
@@ -1505,7 +1532,7 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   if (initial.phase === 'setup') {
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
-  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard } = runLoop(game, actions);
+  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard, publicInTransit } = runLoop(game, actions);
   if (rejection !== undefined && applied < actions.length && game.state.prompts.some(p => p.result === undefined)) {
     // TA-639: refused at a pause. `applied` names the prefix the response stands on, so its board and trace are that
     // prefix's response: the open decision's fix-ups (CF-1 / B.80: picks already made read as applied) and the
@@ -1577,6 +1604,16 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   // into a settled zone, leaving it in both. Drop the resolving copy — the settled zone wins. Runs
   // after every fixup so the wire state never duplicates an iid. (G-44 look-pile projection.)
   pruneResolvingDuplicates(state);
+  // TA-701: a revealed card still lifted at this pause is public in transit (Crispin's two Energy at the attach pick);
+  // the pile projection and the fix-ups above default a held card to `owner`. Applied to the fixed-up board only — a
+  // visibility is no place, so the closing legs below are unaffected except in what they say of a lifted revealed card.
+  if (publicInTransit !== undefined && publicInTransit.size > 0) {
+    for (const who of ['A', 'B'] as const) {
+      for (const t of state.players[who].transit ?? []) {
+        if (publicInTransit.has(t.iid)) { t.visibility = 'public'; }
+      }
+    }
+  }
   // B.81 / CF-92: the fix-ups above are physical moves the engine has not made yet (a pick lifted into transit, a
   // cost discard already in the pile): their legs close the trace so the harness's replay (initialState + legs)
   // lands on this board. A rejection's state is the rolled-back board and emits none.
