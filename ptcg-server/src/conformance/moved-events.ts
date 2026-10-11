@@ -19,7 +19,7 @@ import { NeutralState, NeutralPlayerId, NeutralEvent, Location, TransitVisibilit
  */
 
 /** One card's place on a board, keyed the way the harness keys it. */
-interface Place {
+export interface Place {
   owner: NeutralPlayerId;
   loc: Location;
 }
@@ -84,7 +84,7 @@ const FACE_UP: ReadonlySet<string> = new Set(['discardPile', 'lostZone', 'active
  * the owner. `hidden` is never guessed here: it comes only from a transit entry that says so (B.81 §4: a card
  * its owner has seen is never hidden).
  */
-function visibilityOf(from: Place, to: Place, iid: string, before: Board, after: Board, revealed: ReadonlySet<string>): TransitVisibility {
+export function visibilityOf(from: Place, to: Place, iid: string, before: Board, after: Board, revealed: ReadonlySet<string>): TransitVisibility {
   if (revealed.has(iid) || FACE_UP.has(from.loc.zone) || FACE_UP.has(to.loc.zone)) {
     return 'public';
   }

@@ -1112,6 +1112,7 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
     const liftToTop = (moved: Card[]) => {
       const landed = moved.filter(card => destination.cards.includes(card));
       destination.cards = [...landed, ...destination.cards.filter(card => !landed.includes(card))];
+      if (landed.length > 0 && destination.zoneTag === 'deck') { CardList.deckPut?.(destination, landed, 'top'); }   // TA-698 (conformance; inert)
     };
     // TA-704 (conformance; inert for gameplay): a card placed in a deck remembers the end the effect declared.
     const destinationOwner = getOwner(destination);

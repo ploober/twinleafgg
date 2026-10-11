@@ -10,7 +10,7 @@ import { MoveDamageCountersEffect } from '../game/store/effects/game-effects';
 import { ChooseCardsPrompt } from '../game/store/prompts/choose-cards-prompt';
 import { isDiscardPick } from './decomposers/choose-cards';
 import { liftToTransit, locationOfTag } from './transit-projection';
-import { deriveMoved } from './moved-events';
+import { deriveMoved, board as boardOf, visibilityOf, Place } from './moved-events';
 import { State, GameWinner } from '../game/store/state/state';
 import { SuperType } from '../game/store/card/card-types';
 import { setupGame } from '../game/store/reducers/setup-reducer';
@@ -833,6 +833,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
   };
 
+  // TA-698 (B.81): every put of cards into a settled deck this dispatch, with its end (CardList.deckPut). Live identity
+  // only; cleared per dispatch. A card out of that deck again when the dispatch ends made a stop the board diff cannot see.
+  const deckPuts = new Map<Card, { player: Player; end: 'top' | 'bottom' }>();
+  CardList.deckPut = (deck: CardList, cards: Card[], end: 'top' | 'bottom'): void => {
+    const p = game.store.state.players.find(pl => pl.deck === deck);
+    if (p === undefined) { return; }
+    for (const c of cards) { deckPuts.set(c, { player: p, end }); }
+  };
+
   // TA-664 (#1995, #2257): a counter moved off a Pokemon is not healed, even when its placement is prevented and it
   // vanishes (Adrena-Brain under Battle Cage). Live identity only (a probe's clone constructs the effect too).
   let countersMoved = false;
@@ -866,6 +875,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
     liftedOffDeck.clear();
+    deckPuts.clear();
+    // TA-698: the cards physically in each deck now (a bottom segment under an open shuffle projects in transit).
+    const inDeckAtStart = new Map<Card, Player>();
+    for (const p of game.state.players) { for (const c of p.deck.cards) { inDeckAtStart.set(c, p); } }
     const beforeState = projectState(game.state, game.ctx);
     // TA-590: the legs run between the trace's boards (held search picks in transit); every other derivation reads
     // the engine's own.
@@ -931,6 +944,41 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const legs = starved === undefined && cut !== undefined && cut.legs.length > 0
       ? [...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, shuffledIn, declaredEnd)]
       : deriveMoved(movedBefore, movedAfter, revealedSince, shuffledIn, declaredEnd);
+    // TA-698 (B.81: one `moved` per physical pluck-and-place). A card that was in a deck — put there this dispatch
+    // (deckPuts: Up-Tempo's cost card to the bottom) or physically there at the start while projected in transit (a
+    // hand pile under its shuffle: Grand Wing) — and is out of it when the dispatch ends made a stop in the deck the
+    // board diff cannot see: it read as no move (hand -> hand) or as transit -> hand. Its leg is split at the deck, at
+    // the end it went to; a card the diff already saw leave the deck, or that is still in one, is left alone. So is a
+    // card that ends the dispatch still LIFTED (projected in transit / resolving): the wire has not placed it yet, and
+    // the engine's own parking of it in the deck meanwhile is staging, not a put (Iono's lockstep, B.74 / TA-556: A's
+    // shuffled block is parked under the deck and lifted out again until B's hand is shuffled).
+    if (starved === undefined && (deckPuts.size > 0 || inDeckAtStart.size > 0)) {
+      const bBefore = boardOf(movedBefore);
+      const bAfter = boardOf(movedAfter);
+      const through = new Map<Card, { player: Player; end?: 'top' | 'bottom' }>();
+      for (const [c, p] of inDeckAtStart) { through.set(c, { player: p }); }
+      for (const [c, put] of deckPuts) { through.set(c, { player: put.player, end: put.end }); }
+      for (const [card, t] of through) {
+        if (t.player.deck.cards.includes(card)) { continue; }
+        const iid = game.ctx.cardToIid.get(card);
+        if (iid === undefined) { continue; }
+        const from = bBefore.at.get(iid);
+        const to = bAfter.at.get(iid);
+        if (from === undefined || to === undefined || from.loc.zone === 'deck' || to.loc.zone === 'deck'
+          || to.loc.zone === 'transit' || to.loc.zone === 'resolving') { continue; }
+        const end = t.end ?? bBefore.transitDeckEnd.get(iid);
+        if (end === undefined) { continue; }
+        const owner = playerIdToActor(game.state, t.player.id);
+        const stop: Place = { owner, loc: { zone: 'deck' } };
+        const into: MovedEvent = { kind: 'moved', owner, card: iid, origin: { ...from.loc },
+          destination: { zone: 'deck', position: shuffledIn.has(owner) ? 'any' : end },
+          visibility: visibilityOf(from, stop, iid, bBefore, bAfter, revealedSince) };
+        const outOf: MovedEvent = { kind: 'moved', owner, card: iid, origin: { zone: 'deck' }, destination: { ...to.loc },
+          visibility: visibilityOf(stop, to, iid, bBefore, bAfter, revealedSince) };
+        const at = legs.findIndex(l => l.kind === 'moved' && l.card === iid);
+        if (at >= 0) { legs.splice(at, 1, into, outOf); } else { legs.push(into, outOf); }
+      }
+    }
     events.push(...legs);
     // TA-665: a card lifted off its deck and back in that deck by the end of the dispatch went deck -> transit -> deck.
     const returned = new Map<Player, Card[]>();
@@ -1013,6 +1061,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
+    CardList.deckPut = undefined;   // TA-698
     MoveDamageCountersEffect.observed = undefined;
   }
 

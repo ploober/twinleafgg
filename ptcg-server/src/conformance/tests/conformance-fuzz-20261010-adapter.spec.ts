@@ -91,7 +91,7 @@ describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense 
     const res = step(game(
       player({ active: mon('a1', JYNX, [{ iid: 'a1e0', printing: E.P }]), deck: cards('ad', Array(6).fill(E.R)), prizes: prizes('ap', 6) }),
       player({ active: mon('b1', WALL), deck: cards('bd', Array(6).fill(E.R)), prizes: prizes('bp', 6) })),
-      [kiss, endB]);
+    [kiss, endB]);
     expect(res.status).toBe('gameOver');
     expect(res.state.players.B.active).toBeNull();
     expect(turnEvents(res.events)).toEqual(['turnEnded A', 'turnStarted B', 'turnEnded B', 'gameOver winA']);
@@ -103,7 +103,7 @@ describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense 
         deck: cards('ad', Array(12).fill(E.R)), prizes: prizes('ap', 6) }),
       player({ active: mon('b1', WALL), bench: [mon('bb1', BELLSPROUT)], hand: cards('bh', [E.R]),
         deck: cards('bd', Array(12).fill(E.R)), prizes: prizes('bp', 6) })),
-      [kiss, endB, { actor: 'B', type: 'promoteBench', target: 'bb1' } as never, kiss, endB]);
+    [kiss, endB, { actor: 'B', type: 'promoteBench', target: 'bb1' } as never, kiss, endB]);
     expect(res.status).toBe('gameOver');
     expect(turnEvents(res.events)).toEqual([
       'turnEnded A', 'turnStarted B', 'turnEnded B', 'turnStarted A', 'turnEnded A', 'turnStarted B', 'turnEnded B', 'gameOver winA']);
@@ -174,7 +174,7 @@ describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight
     const initial = game(
       player({ active: { stack: [{ iid: 'a1', printing: 'ssp-050' }, { iid: 'a1s1', printing: 'ssp-051' }, { iid: 'a1s2', printing: 'ssp-052' }],
         energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
-        hand: cards('ah', [E.W, E.W]), deck: cards('ad', [E.W, E.W, E.W]), prizes: prizes('ap', 6) }),
+      hand: cards('ah', [E.W, E.W]), deck: cards('ad', [E.W, E.W, E.W]), prizes: prizes('ap', 6) }),
       player({ active: mon('b1', 'asc-004'), deck: cards('bd', Array(4).fill(E.W)), prizes: prizes('bp', 6) }));
     const res = step(initial, [
       { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Up-Tempo' } as never,
@@ -190,7 +190,7 @@ describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight
     const initial = game(
       player({ active: { stack: [{ iid: 'a1', printing: 'por-007' }, { iid: 'a1s1', printing: 'por-008' }, { iid: 'a1s2', printing: 'por-009' }],
         energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
-        deck: cards('ad', Array(4).fill(E.G)), prizes: prizes('ap', 6) }),
+      deck: cards('ad', Array(4).fill(E.G)), prizes: prizes('ap', 6) }),
       player({ active: mon('b1', 'asc-004'), hand: cards('bh', [E.G]), deck: cards('bd', [E.G, E.G, E.G]), prizes: prizes('bp', 6) }));
     const res = step(initial, [{ actor: 'A', type: 'useAbility', source: 'a1', ability: 'Grand Wing' } as never]);
     expect(res.pending?.actor).toBe('A');

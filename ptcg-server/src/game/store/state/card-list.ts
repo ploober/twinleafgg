@@ -100,6 +100,15 @@ export class CardList {
    */
   public static legCut?: (player: unknown) => void;
 
+  /**
+   * TA-698 (conformance only, inert for gameplay — unset outside the conformance driver, and called only for a deck the
+   * conformance importer tagged). Called once per put of cards into a settled deck, with the end they went to:
+   * `moveTo` / `moveCardsTo` append (bottom), `moveToTopOfDestination` and MoveCardsEffect's `toTop` lift (top). The
+   * driver uses it for a card that is out of the deck again by the end of the dispatch (Up-Tempo's cost card, drawn
+   * straight back): its deck stop is a physical move the board diff cannot see (B.81).
+   */
+  public static deckPut?: (deck: CardList, cards: Card[], end: 'top' | 'bottom') => void;
+
   private stampMovedCards(cards: Card[], destination: CardList): void {
     if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
     if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }
@@ -157,6 +166,7 @@ export class CardList {
     destination.cards.push(...cards);
     if (cards.length > 0) {
       CardList.topTake?.(this, destination, cards.length);
+      if (destination.zoneTag === 'deck') { CardList.deckPut?.(destination, cards, 'bottom'); }   // TA-698 (conformance; inert)
     }
   }
 
@@ -218,6 +228,7 @@ export class CardList {
       }
     }
     this.stampMovedCards(moved, destination);   // CF-61 residual
+    if (moved.length > 0 && destination.zoneTag === 'deck') { CardList.deckPut?.(destination, moved, 'bottom'); }   // TA-698 (conformance; inert)
   }
 
   public moveCardTo(card: Card, destination: CardList): void {
@@ -230,6 +241,7 @@ export class CardList {
       // (Snack Seek's decline, an OrderCardsPrompt restack) — the stamp must not outlive the pause.
       this.cards.forEach(c => CardList.deckStamp.delete(c));
     }
+    if (this.cards.length > 0 && destination.zoneTag === 'deck') { CardList.deckPut?.(destination, this.cards, 'top'); }   // TA-698 (conformance; inert)
     destination.cards = [...this.cards, ...destination.cards];
   }
 
