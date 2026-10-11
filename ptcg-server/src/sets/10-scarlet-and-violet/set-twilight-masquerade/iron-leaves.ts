@@ -53,6 +53,9 @@ export class IronLeaves extends PokemonCard {
 
       const max = Math.min(2, pokemonCount);
 
+      // "Put up to 2 Pokémon from your discard pile into your hand." — "up to 2" is 0..2 (compendium
+      // #2301; the kind is named, so the "any card you want" min-1 exception does not apply): the
+      // stop is offered at the first pick.
       return store.prompt(
         state,
         [
@@ -61,7 +64,7 @@ export class IronLeaves extends PokemonCard {
             GameMessage.CHOOSE_CARD_TO_HAND,
             player.discard,
             { superType: SuperType.POKEMON },
-            { min: 1, max, allowCancel: false },
+            { min: 0, max, allowCancel: false },
           ),
         ],
         (selected) => {
