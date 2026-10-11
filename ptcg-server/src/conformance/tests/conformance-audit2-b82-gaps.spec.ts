@@ -81,14 +81,14 @@ const energyOn = (s: NeutralState) => (s.players.A.active?.energy ?? []).map(c =
 
 describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the damage and moves after it', () => {
   describe('Landorus por-041 Screw Knuckle [120]: "Put an Energy attached to this Pokémon into your hand."', () => {
-    it('por-041 Screw Knuckle: three Energy attached, the pick is open and nothing has moved [TA-AUD2-1]', () => {
+    it('por-041 Screw Knuckle: three Energy attached, the pick is open and nothing has moved [TA-686]', () => {
       const r = step(board('por-041', 'FFF'), [declare('Screw Knuckle')]);
       expect(r.pending?.legalActions.every(a => a.type === 'choose')).toBe(true);
       expect(energyOn(r.state)).toEqual(['a1e0', 'a1e1', 'a1e2']);
       expect(kinds(attackEvents(r.events))).toEqual([]);
     });
 
-    it('por-041 Screw Knuckle: chosen, then the 120, then the Energy to the hand [TA-AUD2-1]', () => {
+    it('por-041 Screw Knuckle: chosen, then the 120, then the Energy to the hand [TA-686]', () => {
       const r = step(board('por-041', 'FFF'), [declare('Screw Knuckle'), pick('a1e0')]);
       const ev = attackEvents(r.events);
       expect(chosenCards(ev)).toEqual(['a1e0']);
@@ -101,7 +101,7 @@ describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the 
   });
 
   describe('Mega Greninja ex cri-022 Ninja Spinner [120+]: "You may put a [W] Energy attached to this Pokémon into your hand and have this attack do 80 more damage."', () => {
-    it('cri-022 Ninja Spinner: accept, chosen, then the 200, then the Energy to the hand [TA-AUD2-2]', () => {
+    it('cri-022 Ninja Spinner: accept, chosen, then the 200, then the Energy to the hand [TA-687]', () => {
       const r = step(board('cri-022', 'WWW'), [declare('Ninja Spinner'), yes, pick('a1e0')]);
       const ev = attackEvents(r.events);
       expect(chosenCards(ev)).toEqual(['a1e0']);
@@ -114,7 +114,7 @@ describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the 
   });
 
   describe('Mega Charizard X ex pfl-013 Inferno X [90×]: "Discard any amount of [R] Energy from among your Pokémon, and this attack does 90 damage for each card you discarded in this way."', () => {
-    it('pfl-013 Inferno X: the first pick leaves the Energy attached, chosen, no damage yet [TA-AUD2-3]', () => {
+    it('pfl-013 Inferno X: the first pick leaves the Energy attached, chosen, no damage yet [TA-688]', () => {
       const r = step(board('pfl-013', 'RRR'), [declare('Inferno X'), disc('a1e0')]);
       expect(energyOn(r.state)).toEqual(['a1e0', 'a1e1', 'a1e2']);
       expect(chosenCards(r.events)).toEqual(['a1e0']);
@@ -122,7 +122,7 @@ describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the 
       expect(idx(r.events, 'damaged')).toBe(-1);
     });
 
-    it('pfl-013 Inferno X: chosen x2, the 180, then both to the discard pile [TA-AUD2-3]', () => {
+    it('pfl-013 Inferno X: chosen x2, the 180, then both to the discard pile [TA-688]', () => {
       const r = step(board('pfl-013', 'RRR'), [declare('Inferno X'), disc('a1e0'), disc('a1e1'), stop]);
       const ev = attackEvents(r.events);
       expect(chosenCards(ev)).toEqual(['a1e0', 'a1e1']);
@@ -134,7 +134,7 @@ describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the 
   });
 
   describe('Sinistcha twm-022 Spill the Tea [70×]: "Discard up to 3 [G] Energy cards from your Pokémon. This attack does 70 damage for each card you discarded in this way."', () => {
-    it('twm-022 Spill the Tea: the first pick leaves the Energy attached, chosen, no damage yet [TA-AUD2-3]', () => {
+    it('twm-022 Spill the Tea: the first pick leaves the Energy attached, chosen, no damage yet [TA-688]', () => {
       const r = step(board('twm-022', 'GGG'), [declare('Spill the Tea'), disc('a1e0')]);
       expect(energyOn(r.state)).toEqual(['a1e0', 'a1e1', 'a1e2']);
       expect(chosenCards(r.events)).toEqual(['a1e0']);
@@ -142,7 +142,7 @@ describe('Audit 2 / B.82: an attacker\'s own-Energy choice is chosen before the 
       expect(idx(r.events, 'damaged')).toBe(-1);
     });
 
-    it('twm-022 Spill the Tea: chosen x2, the 140, then both to the discard pile [TA-AUD2-3]', () => {
+    it('twm-022 Spill the Tea: chosen x2, the 140, then both to the discard pile [TA-688]', () => {
       const r = step(board('twm-022', 'GGG'), [declare('Spill the Tea'), disc('a1e0'), disc('a1e1'), stop]);
       const ev = attackEvents(r.events);
       expect(chosenCards(ev)).toEqual(['a1e0', 'a1e1']);

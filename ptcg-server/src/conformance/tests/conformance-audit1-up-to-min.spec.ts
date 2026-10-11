@@ -80,22 +80,22 @@ const offersStop = (r: ReturnType<typeof step>) =>
 const offered = (r: ReturnType<typeof step>, type: string) =>
   (r.pending?.legalActions ?? []).filter(a => a.type === type).map(a => (a as { target?: string }).target).sort();
 
-describe('TA-AUD1-1: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon from your discard pile into your hand.") is 0..2', () => {
+describe('TA-682: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon from your discard pile into your hand.") is 0..2', () => {
   const b = () => board(['twm-019'], 'G', { discard: ['asc-004', 'asc-004'] });
 
-  it('twm-019 Recovery Net with two Pokémon in the discard offers both and the stop at the first pick [TA-AUD1-1]', () => {
+  it('twm-019 Recovery Net with two Pokémon in the discard offers both and the stop at the first pick [TA-682]', () => {
     const r = step(b(), [declare('Recovery Net')]);
     expect(offered(r, 'choose')).toEqual(['adc0', 'adc1']);
     expect(offersStop(r)).toBe(true);
   });
 
-  it('twm-019 Recovery Net: after one pick the stop is still offered [TA-AUD1-1]', () => {
+  it('twm-019 Recovery Net: after one pick the stop is still offered [TA-682]', () => {
     const r = step(b(), [declare('Recovery Net'), choose('adc0')]);
     expect(offered(r, 'choose')).toEqual(['adc1']);
     expect(offersStop(r)).toBe(true);
   });
 
-  it('twm-019 Recovery Net: a card picked out of the discard pile is in transit as public (a public zone), origin discardPile [TA-AUD1-6]', () => {
+  it('twm-019 Recovery Net: a card picked out of the discard pile is in transit as public (a public zone), origin discardPile [TA-689]', () => {
     // Contract (TransitCard.visibility): `public` is "revealed to both players"; a discard pile is public, so a card
     // lifted out of it is public in transit. The mid-pick lift projected every `choose` pick as `owner`.
     const r = step(b(), [declare('Recovery Net'), choose('adc0')]);
@@ -105,14 +105,14 @@ describe('TA-AUD1-1: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon fro
     expect(t[0].visibility).toBe('public');
   });
 
-  it('twm-019 Recovery Net: stopping at 0 takes nothing; both Pokémon stay in the discard [TA-AUD1-1]', () => {
+  it('twm-019 Recovery Net: stopping at 0 takes nothing; both Pokémon stay in the discard [TA-682]', () => {
     const r = step(b(), [declare('Recovery Net'), stop]);
     expect(r.status).not.toBe('invalidAction');
     expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['adc0', 'adc1']);
     expect(r.state.players.A.hand.map(c => c.iid)).toEqual(['ah0']);
   });
 
-  it('twm-019 Recovery Net: one pick then the stop puts that one card into the hand [TA-AUD1-1]', () => {
+  it('twm-019 Recovery Net: one pick then the stop puts that one card into the hand [TA-682]', () => {
     const r = step(b(), [declare('Recovery Net'), choose('adc1'), stop]);
     expect(r.state.players.A.hand.map(c => c.iid).sort()).toEqual(['adc1', 'ah0']);
     expect(r.state.players.A.discard.map(c => c.iid)).toEqual(['adc0']);
@@ -120,16 +120,16 @@ describe('TA-AUD1-1: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon fro
 });
 
 
-describe('TA-AUD1-3: Walking Wake twm-063 Undulating Slice ("Put up to 9 damage counters on this Pokémon. This attack does 20 damage for each damage counter you placed in this way.")', () => {
+describe('Walking Wake calibration: Walking Wake twm-063 Undulating Slice ("Put up to 9 damage counters on this Pokémon. This attack does 20 damage for each damage counter you placed in this way.")', () => {
   const b = () => board(['twm-063'], 'WWG');
 
-  it('twm-063 Undulating Slice offers the stop at the first counter, and only this Pokémon as a target [TA-AUD1-3]', () => {
+  it('twm-063 Undulating Slice offers the stop at the first counter, and only this Pokémon as a target [Walking Wake calibration]', () => {
     const r = step(b(), [declare('Undulating Slice')]);
     expect(offered(r, 'placeCounter')).toEqual(['a1']);
     expect(offersStop(r)).toBe(true);
   });
 
-  it('twm-063 Undulating Slice: 0 counters placed does 0 damage [TA-AUD1-3]', () => {
+  it('twm-063 Undulating Slice: 0 counters placed does 0 damage [Walking Wake calibration]', () => {
     const r = step(b(), [declare('Undulating Slice'), stop]);
     expect(r.status).not.toBe('invalidAction');
     expect(r.state.players.B.active?.damage).toBe(0);
@@ -137,7 +137,7 @@ describe('TA-AUD1-3: Walking Wake twm-063 Undulating Slice ("Put up to 9 damage 
     expect(attackEvents(r.events).filter(e => e.kind === 'damaged' && (e as { hp?: number }).hp !== 0)).toEqual([]);
   });
 
-  it('twm-063 Undulating Slice: 3 counters placed does 60, with 30 damage on Walking Wake [TA-AUD1-3]', () => {
+  it('twm-063 Undulating Slice: 3 counters placed does 60, with 30 damage on Walking Wake [Walking Wake calibration]', () => {
     const r = step(b(), [declare('Undulating Slice'), counter('a1'), counter('a1'), counter('a1'), stop]);
     expect(r.status).not.toBe('invalidAction');
     expect(r.state.players.B.active?.damage).toBe(60);
@@ -146,24 +146,24 @@ describe('TA-AUD1-3: Walking Wake twm-063 Undulating Slice ("Put up to 9 damage 
 });
 
 
-describe('TA-AUD1-2: Kingdra ex sfa-012 King\'s Order ("Put up to 3 [Water] Pokémon from your discard pile onto your Bench.") is 0..3', () => {
+describe('TA-683: Kingdra ex sfa-012 King\'s Order ("Put up to 3 [Water] Pokémon from your discard pile onto your Bench.") is 0..3', () => {
   // Horsea sfa-010 is a Basic [W] Pokémon; two of them in the discard, three Bench slots free.
   const b = () => board(['sfa-010', 'sfa-011', 'sfa-012'], 'W', { discard: ['sfa-010', 'sfa-010'] });
 
-  it('sfa-012 King\'s Order with two Basic [W] Pokémon in the discard offers both and the stop at the first pick [TA-AUD1-2]', () => {
+  it('sfa-012 King\'s Order with two Basic [W] Pokémon in the discard offers both and the stop at the first pick [TA-683]', () => {
     const r = step(b(), [declare('King\'s Order')]);
     expect(offered(r, 'choose')).toEqual(['adc0', 'adc1']);
     expect(offersStop(r)).toBe(true);
   });
 
-  it('sfa-012 King\'s Order: stopping at 0 benches nothing [TA-AUD1-2]', () => {
+  it('sfa-012 King\'s Order: stopping at 0 benches nothing [TA-683]', () => {
     const r = step(b(), [declare('King\'s Order'), stop]);
     expect(r.status).not.toBe('invalidAction');
     expect(r.state.players.A.bench.length).toBe(2);
     expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['adc0', 'adc1']);
   });
 
-  it('sfa-012 King\'s Order: one pick then the stop benches that one [TA-AUD1-2]', () => {
+  it('sfa-012 King\'s Order: one pick then the stop benches that one [TA-683]', () => {
     const r = step(b(), [declare('King\'s Order'), choose('adc0'), stop]);
     expect(r.state.players.A.bench.length).toBe(3);
     expect(r.state.players.A.bench[2].stack.map(c => c.iid)).toEqual(['adc0']);
@@ -172,17 +172,17 @@ describe('TA-AUD1-2: Kingdra ex sfa-012 King\'s Order ("Put up to 3 [Water] Pok�
 });
 
 
-describe('TA-AUD1-4: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy cards from your hand. This attack does 60 damage to 1 of your opponent\'s Pokémon for each Energy card you discarded in this way. (Don\'t apply Weakness and Resistance for Benched Pokémon.)")', () => {
+describe('TA-684: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy cards from your hand. This attack does 60 damage to 1 of your opponent\'s Pokémon for each Energy card you discarded in this way. (Don\'t apply Weakness and Resistance for Benched Pokémon.)")', () => {
   // Wiglett svi-056 is the Basic under Wugtrio ex; three Basic Energy in the hand.
   const b = () => board(['svi-056', 'tef-060'], 'W', { hand: [E.W, E.L, E.G] });
 
-  it('tef-060 Tricolor Pump offers the three Energy and the stop at the first pick [TA-AUD1-4]', () => {
+  it('tef-060 Tricolor Pump offers the three Energy and the stop at the first pick [TA-684]', () => {
     const r = step(b(), [declare('Tricolor Pump')]);
     expect(offered(r, 'discard')).toEqual(['ah0', 'ah1', 'ah2']);
     expect(offersStop(r)).toBe(true);
   });
 
-  it('tef-060 Tricolor Pump: 0 Energy discarded asks for no target and does no damage [TA-AUD1-4]', () => {
+  it('tef-060 Tricolor Pump: 0 Energy discarded asks for no target and does no damage [TA-684]', () => {
     const r = step(b(), [declare('Tricolor Pump'), stop]);
     expect(r.status).not.toBe('invalidAction');
     expect(r.pending?.actor).not.toBe('A' as never);
@@ -192,7 +192,7 @@ describe('TA-AUD1-4: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy c
     expect(r.state.players.A.hand.map(c => c.iid).sort()).toEqual(['ah0', 'ah1', 'ah2']);
   });
 
-  it('tef-060 Tricolor Pump: 2 Energy discarded, then the target pick over every opposing Pokémon, does 120 to the chosen one [TA-AUD1-4]', () => {
+  it('tef-060 Tricolor Pump: 2 Energy discarded, then the target pick over every opposing Pokémon, does 120 to the chosen one [TA-684]', () => {
     const mid = step(b(), [declare('Tricolor Pump'), disc('ah0'), disc('ah1'), stop]);
     expect(offered(mid, 'choose')).toEqual(['b1', 'bb1', 'bb2']);
     const r = step(b(), [declare('Tricolor Pump'), disc('ah0'), disc('ah1'), stop, choose('b1')]);
@@ -203,12 +203,12 @@ describe('TA-AUD1-4: Wugtrio ex tef-060 Tricolor Pump ("Discard up to 3 Energy c
   });
 });
 
-describe('TA-AUD1-5: Wugtrio ex tef-060 Numbing Hold ("During your opponent\'s next turn, the Defending Pokémon can\'t retreat.")', () => {
+describe('TA-685: Wugtrio ex tef-060 Numbing Hold ("During your opponent\'s next turn, the Defending Pokémon can\'t retreat.")', () => {
   // Venusaur ex mew-003 retreats for [C][C][C][C]; B's Active carries four Energy so a retreat is otherwise offered.
   const b = (hand: string[] = [E.G]) => board(['svi-056', 'tef-060'], 'WW', { hand, bEnergy: 'RLGG' });
   const types = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []).map(a => a.type);
 
-  it('tef-060 Numbing Hold: on the opponent\'s next turn the Defending Pokémon is not offered a retreat [TA-AUD1-5]', () => {
+  it('tef-060 Numbing Hold: on the opponent\'s next turn the Defending Pokémon is not offered a retreat [TA-685]', () => {
     const r = step(b(), [declare('Numbing Hold')]);
     expect(r.state.players.B.active?.damage).toBe(120);
     expect(r.state.activePlayer).toBe('B');
@@ -216,7 +216,7 @@ describe('TA-AUD1-5: Wugtrio ex tef-060 Numbing Hold ("During your opponent\'s n
     expect(types(r)).not.toContain('retreat');
   });
 
-  it('tef-060 Tricolor Pump (the other attack) leaves the opponent\'s retreat offered [TA-AUD1-5]', () => {
+  it('tef-060 Tricolor Pump (the other attack) leaves the opponent\'s retreat offered [TA-685]', () => {
     // One eligible Energy: the pick completes after it (no stop pending), then the target pick.
     const r = step(b([E.W]), [declare('Tricolor Pump'), disc('ah0'), choose('b1')]);
     expect(r.state.players.B.active?.damage).toBe(60);

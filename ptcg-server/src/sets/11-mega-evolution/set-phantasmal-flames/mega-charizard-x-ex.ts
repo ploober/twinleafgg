@@ -99,7 +99,7 @@ export class MegaCharizardXex extends PokemonCard {
           return state;
         }
 
-        // TA-AUD2-3 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
+        // TA-688 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
         // moveCardTo discarded them at the pick. DiscardCardsEffect per source Pokémon: its reducer queues the move.
         const grouped = new Map<PokemonCardList, Card[]>();
         for (const transfer of transfers) {

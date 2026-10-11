@@ -392,7 +392,7 @@ export class Store implements StoreLike {
           && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
         p.deferredMove = true;
       }
-      // TA-AUD2-1: a 'Choose cards' prompt asked of the attacker over the Energy of one of its own Pokémon in play
+      // TA-686: a 'Choose cards' prompt asked of the attacker over the Energy of one of its own Pokémon in play
       // (ChooseCardsPrompt(player, ..., player.active, { superType: ENERGY }) — Screw Knuckle por-041) is the same
       // Step-D choice and was never marked, so MOVE_CARDS ran the move at the pick, before the damage. Only for an
       // attack that does damage (B.82's scope): a no-damage attack's text runs its moves in text order inside the

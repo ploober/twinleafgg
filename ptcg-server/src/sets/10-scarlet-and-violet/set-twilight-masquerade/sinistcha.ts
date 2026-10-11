@@ -87,7 +87,7 @@ export class Sinistcha extends PokemonCard {
         // TA-392: "70 damage for each card you discarded in this way" — the multiplier was assigned
         // INSIDE the transfer loop, so with zero cards chosen the printed base 70 was never zeroed and
         // the attack dealt 70 for nothing (rotomancer: 0). Count first, then move.
-        // TA-AUD2-3 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
+        // TA-688 (B.82): the chosen Energy stay attached through the damage and are discarded after it; a raw
         // moveCardTo discarded them at the pick. DiscardCardsEffect per source Pokémon: its reducer queues the move.
         const discarded = transfers || [];
         const grouped = new Map<PokemonCardList, Card[]>();
