@@ -8201,9 +8201,10 @@
     {
       "file": "set-phantasmal-flames/grimsleys-gambit.ts",
       "signatures": [
-        "MOVE_CARDS(store, state, rest, player.deck, { toTop: true });"
+        "state = MOVE_CARDS(store, state, deckTop, player.deck, {});"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "TA-370 span re-targeted 2026-10-11 (TA-702): the remainder goes under the deck as a bottomCount segment; no `rest` pile."
     },
     {
       "file": "set-perfect-order/mega-skarmory-ex.ts",
@@ -8317,13 +8318,12 @@
     {
       "file": "set-chaos-rising/special-red-card.ts",
       "signatures": [
-        "return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand' }), order => {",
-        "rest.moveToTopOfDestination(opponent.deck);"
+        "return store.prompt(state, new ShuffleDeckPrompt(opponent.id, { zone: 'hand', bottomCount: n }), order => {"
       ],
       "absentSignatures": [
         "deckBottom.moveTo(opponent.deck);"
       ],
-      "note": "TA-379 (2026-09-07): the hand-to-bottom is SHUFFLED via an externalized ShuffleDeckPrompt over exactly the moved cards, the untouched deck restacked on top, THEN the draw.",
+      "note": "TA-379 (2026-09-07): the hand-to-bottom is SHUFFLED via an externalized ShuffleDeckPrompt over exactly the moved cards, the untouched deck restacked on top, THEN the draw. Re-targeted 2026-10-11 (TA-697 / FX): the hand stays lifted as a bottomCount segment, no restack line.",
       "fixes": [
         "FX-0015"
       ],
@@ -12811,6 +12811,158 @@
       "note": "TA-689 (2026-10-11): B.80 transit: a card picked out of the discard pile or the Lost Zone is public in transit (the mid-pick lift projected e",
       "fixes": [
         "FX-0473"
+      ]
+    },
+    {
+      "file": "set-journey-together/ns-purrloin.ts",
+      "signatures": [
+        "return store.prompt(state, new ShowCardsPrompt("
+      ],
+      "note": "TA-690 (2026-10-11): 'Your opponent reveals their hand' reveals it before the pick: Thieving Swipe jtg-096, Claw of Darkness meg-086 / meg-16",
+      "fixes": [
+        "FX-0474"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/eevee.ts",
+      "signatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, effect.opponent, cards);"
+      ],
+      "note": "TA-691 (2026-10-11): 'Search your deck for ..., reveal them, and put them into your hand' reveals the picks: Colorful Catch sfa-050, Gather S",
+      "fixes": [
+        "FX-0475"
+      ]
+    },
+    {
+      "file": "set-pitch-black/tropius.ts",
+      "signatures": [],
+      "absentSignatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, player, looked);"
+      ],
+      "note": "TA-692 (2026-10-11): A 'Look at the top N cards' is a private look: Fruity Aroma pbl-001 (and Trick Portal pbl-008) no longer show the looked",
+      "fixes": [
+        "FX-0476"
+      ]
+    },
+    {
+      "file": "set-pitch-black/miraidon.ts",
+      "signatures": [
+        "const byOpponentsAttackDamage = state.phase === GamePhase.ATTACK"
+      ],
+      "note": "TA-695 (2026-10-11): Miraidon pbl-028 Photon Cord fires only on a Knock Out by damage from an attack from the opponent's Pokemon (the engine'",
+      "fixes": [
+        "FX-0477"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/performance-flute.ts",
+      "signatures": [],
+      "absentSignatures": [
+        "return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
+      ],
+      "note": "TA-699 (2026-10-11): Accompanying Flute twm-142: with no Basic among the five the OPPONENT shuffles their deck (it shuffled the player's own ",
+      "fixes": [
+        "FX-0478"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mega-eelektross-ex.ts",
+      "signatures": [
+        "DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2, L, () => {"
+      ],
+      "note": "TA-703 (2026-10-11): Disaster Shock asc-061 / asc-266 / asc-278: the Paralysis rides with the deferred discard after the damage (DISCARD_X_EN",
+      "fixes": [
+        "FX-0479"
+      ]
+    },
+    {
+      "file": "set-perfect-order/energy-swatter.ts",
+      "signatures": [
+        "GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM,"
+      ],
+      "note": "TA-704 (2026-10-11): Energy Swatter por-073: the pick is op moveTo / destination deckBottom (CHOOSE_CARD_TO_PUT_ON_BOTTOM) and the leg into a",
+      "fixes": [
+        "FX-0480"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/move-energy.ts",
+      "signatures": [
+        "pickedCards(prompt, picks, ctx, state) {"
+      ],
+      "note": "TA-693 (2026-10-11): B.103 in the move-energy decomposer: a forced card (no stop offered, as many candidates as the pick still needs) records",
+      "fixes": [
+        "FX-0481"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-phase-effect.ts",
+      "signatures": [
+        "// TA-694: the turn ends HERE, before its end-of-turn effects run. This log used to be written by startNextTurn,"
+      ],
+      "note": "TA-694 (2026-10-11): The turn-end log is written at the top of the EndTurnEffect handler, before the end-of-turn effects and the Knock Out ch",
+      "fixes": [
+        "FX-0482"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/attach-energy.ts",
+      "signatures": [
+        "pauseEvents(prompt, picks, ctx, state) {"
+      ],
+      "note": "TA-696 (2026-10-11): The attach-energy decomposer emits energyAttached at each pause of a batch attach (pauseEvents, the TA-622 pattern), not",
+      "fixes": [
+        "FX-0483"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const deckPuts = new Map<Card, { player: Player; end: 'top' | 'bottom' }>();"
+      ],
+      "note": "TA-698 (2026-10-11): B.81: a card put into the deck and out of it again inside one dispatch keeps its deck stop (hand > deck:bottom, deck > h",
+      "fixes": [
+        "FX-0484"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/special-red-card.ts",
+      "signatures": [
+        "const n = cardsInHand;"
+      ],
+      "note": "TA-697 (2026-10-11): Special Red Card cri-082 / cri-113: the lifted hand is the transit (a bottomCount segment under the untouched deck, the ",
+      "fixes": [
+        "FX-0485"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/grimsleys-gambit.ts",
+      "signatures": [
+        "state = store.prompt(state, new ShuffleDeckPrompt(player.id, { bottomCount: n }), order => {"
+      ],
+      "note": "TA-702 (2026-10-11): Grimsley's Move pfl-090: the looked-at remainder goes under the deck as a bottomCount segment (the seven are the transit",
+      "fixes": [
+        "FX-0486"
+      ]
+    },
+    {
+      "file": "set-plasma-storm/scramble-switch.ts",
+      "signatures": [
+        "const benchIndex = player.bench.indexOf(oldActive);"
+      ],
+      "note": "TA-700 (2026-10-11): Scramble Switch ssp-186 / pls-129: the switch happens FIRST, then a MoveEnergyPrompt from the Benched old Active to the ",
+      "fixes": [
+        "FX-0487"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "const publicInTransit = new Set<string>();"
+      ],
+      "note": "TA-701 (2026-10-11): A card a show has revealed is public in transit until it is placed (publicInTransit, applied to every projected board an",
+      "fixes": [
+        "FX-0488"
       ]
     }
   ]
