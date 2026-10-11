@@ -10,7 +10,6 @@ import {
 import { Effect } from '../../../game/store/effects/effect';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import {WAS_ATTACK_USED,
-  SHOW_CARDS_TO_PLAYER,
   SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class MegaDelphoxex extends PokemonCard {
@@ -57,7 +56,8 @@ export class MegaDelphoxex extends PokemonCard {
       const deckTop = new CardList();
       MOVE_CARDS(store, state, player.deck, deckTop, { count: Math.min(9, player.deck.cards.length), sourceCard: this });
 
-      SHOW_CARDS_TO_PLAYER(store, state, player, deckTop.cards);
+      // TA-692 / B.97 / CF-18: "Look at the top 9 cards" is a private look: the pile is NOT shown (a ShowCardsPrompt is
+      // the public-reveal signal); the player sees it in the pick below.
 
       const openSlots = player.bench.filter((b) => b.cards.length === 0).length;
       const basicCount = deckTop.cards.filter(

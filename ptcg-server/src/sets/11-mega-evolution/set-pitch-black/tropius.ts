@@ -52,9 +52,9 @@ export class Tropius extends PokemonCard {
       const count = Math.min(6, player.deck.cards.length);
       MOVE_CARDS(store, state, player.deck, topCards, { count: count, sourceCard: this });
 
+      // TA-692 / B.97 / CF-18: "Look at the top 6 cards" is a private look: the pile is NOT shown (a ShowCardsPrompt is
+      // the public-reveal signal); the player sees it in the pick below, and only the Pokémon they choose are revealed.
       const looked = [...topCards.cards];
-      SHOW_CARDS_TO_PLAYER(store, state, player, looked);
-      SHOW_CARDS_TO_PLAYER(store, state, opponent, looked);
 
       const pokemonInPreview = looked.filter((c) => c instanceof PokemonCard).length;
 
