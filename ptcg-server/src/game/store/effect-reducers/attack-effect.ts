@@ -518,6 +518,14 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     const target = effect.target;
     const cards = effect.cards;
     const owner = StateUtils.findOwner(state, target);
+    // TA-AUD2-2 (B.82): the same deferral as DiscardCardsEffect above; this reducer moved at once whatever the
+    // prompt's deferredMove said.
+    const pre = state.preDamageAttack as AttackEffect | undefined;
+    if (pre !== undefined && state.inChosenCallback === true && pre === effect.attackEffect && owner === pre.player
+        && cards.length > 0 && cards.every(c => c.superType === SuperType.ENERGY)) {
+      pre.afterDamageMoves.push(() => { target.moveCardsTo(cards.filter(c => target.cards.includes(c)), owner.lostzone); });
+      return state;
+    }
     target.moveCardsTo(cards, owner.lostzone);
     return state;
   }
@@ -526,6 +534,15 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     const target = effect.target;
     const cards = effect.cards;
     const owner = StateUtils.findOwner(state, target);
+    // TA-AUD2-2 (B.82): Energy of the attacker's own Pokémon chosen before the damage (Ninja Spinner cri-022 through
+    // PUT_SPECIFIC_ENERGY_FROM_THIS_POKEMON_INTO_HAND: the prompt was marked, the adapter recorded `chosen`, and this
+    // reducer put the card in the hand at once, before the damage). Queued like DiscardCardsEffect above.
+    const pre = state.preDamageAttack as AttackEffect | undefined;
+    if (pre !== undefined && state.inChosenCallback === true && pre === effect.attackEffect && owner === pre.player
+        && cards.length > 0 && cards.every(c => c.superType === SuperType.ENERGY)) {
+      pre.afterDamageMoves.push(() => { target.moveCardsTo(cards.filter(c => target.cards.includes(c)), owner.hand); });
+      return state;
+    }
     target.moveCardsTo(cards, owner.hand);
     return state;
   }
