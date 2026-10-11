@@ -8204,7 +8204,10 @@
         "state = MOVE_CARDS(store, state, deckTop, player.deck, {});"
       ],
       "state": "guarding",
-      "note": "TA-370 span re-targeted 2026-10-11 (TA-702): the remainder goes under the deck as a bottomCount segment; no `rest` pile."
+      "note": "TA-370 span re-targeted 2026-10-11 (TA-702): the remainder goes under the deck as a bottomCount segment; no `rest` pile.",
+      "fixes": [
+        "FX-0486"
+      ]
     },
     {
       "file": "set-perfect-order/mega-skarmory-ex.ts",
