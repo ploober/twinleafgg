@@ -12732,6 +12732,86 @@
       "fixes": [
         "FX-0465"
       ]
+    },
+    {
+      "file": "set-shrouded-fable/kingdra-ex.ts",
+      "signatures": [
+        "{ min: 0, max, allowCancel: false },"
+      ],
+      "note": "TA-683 (2026-10-11): King's Order sfa-012 / sfa-080 / svp-131: min 0 on an attack's 'up to 3' (#2301); the stop offered at the first pick [TA",
+      "fixes": [
+        "FX-0466"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/wugtrio-ex.ts",
+      "signatures": [
+        "function* useTricolorPump("
+      ],
+      "note": "TA-684 (2026-10-11): Tricolor Pump tef-060: the damage target is asked only when at least one Energy was discarded; a 0-discard does nothing ",
+      "fixes": [
+        "FX-0467"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/wugtrio-ex.ts",
+      "signatures": [
+        "if (WAS_ATTACK_USED(effect, 1, this)) {"
+      ],
+      "note": "TA-685 (2026-10-11): Numbing Hold tef-060: the retreat block keys on attack index 1 (it tested index 0, so it never fired) [TA-685]",
+      "fixes": [
+        "FX-0468"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Choose cards'"
+      ],
+      "note": "TA-686 (2026-10-11): B.82 choke point: a 'Choose cards' prompt the attacker is asked over the Energy of its own Pokemon in play, during an at",
+      "fixes": [
+        "FX-0469"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/attack-effect.ts",
+      "signatures": [
+        "pre.afterDamageMoves.push(() => { target.moveCardsTo(cards.filter(c => target.cards.includes(c)), owner.hand); });"
+      ],
+      "note": "TA-687 (2026-10-11): B.82: CardsToHandEffect and LostZoneCardsEffect defer the move when the attacker's Energy was chosen before the damage (",
+      "fixes": [
+        "FX-0470"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/mega-charizard-x-ex.ts",
+      "signatures": [
+        "const discardEnergy = new DiscardCardsEffect(effect, cards);"
+      ],
+      "note": "TA-688 (2026-10-11): Inferno X pfl-013 and Spill the Tea twm-022 discard the chosen Energy through DiscardCardsEffect, after the damage (the ",
+      "fixes": [
+        "FX-0471"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/iron-leaves.ts",
+      "signatures": [
+        "{ min: 0, max, allowCancel: false },"
+      ],
+      "note": "TA-682 (2026-10-11): Recovery Net twm-019: min 0 on an attack's 'up to 2' (#2301); the stop offered at the first pick [TA-682]",
+      "fixes": [
+        "FX-0472"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/choose-cards.ts",
+      "signatures": [
+        "if (t?.origin !== undefined && (t.origin.zone === 'discardPile' || t.origin.zone === 'lostZone')) {"
+      ],
+      "note": "TA-689 (2026-10-11): B.80 transit: a card picked out of the discard pile or the Lost Zone is public in transit (the mid-pick lift projected e",
+      "fixes": [
+        "FX-0473"
+      ]
     }
   ]
 }
