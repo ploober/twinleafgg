@@ -83,8 +83,11 @@ export class PerformanceFlute extends TrainerCard {
 
             MOVE_CARDS(store, state, deckTop, opponent.deck, { sourceCard: this });
 
-            return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-              player.deck.applyOrder(order);
+            // TA-699: "Your opponent shuffles the other cards back into their deck." This branch shuffled the
+            // PLAYER's deck (ShuffleDeckPrompt(player.id) / player.deck.applyOrder) and left the opponent's five
+            // revealed cards under the opponent's deck in the order both players had just seen.
+            return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+              opponent.deck.applyOrder(order);
               return state;
             });
           });
