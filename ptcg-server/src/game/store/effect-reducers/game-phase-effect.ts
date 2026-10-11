@@ -162,7 +162,6 @@ export function initNextTurn(store: StoreLike, state: State): State {
 
 function startNextTurn(store: StoreLike, state: State): State {
   const player = state.players[state.activePlayer];
-  store.log(state, GameLog.LOG_PLAYER_ENDS_TURN, { name: player.name });
 
   // Remove Paralyzed at the end of the turn
   player.active.removeSpecialCondition(SpecialCondition.PARALYZED);
@@ -258,6 +257,13 @@ export function gamePhaseReducer(store: StoreLike, state: State, effect: Effect)
   if (effect instanceof EndTurnEffect) {
     const player = effect.player;
     const opponent = StateUtils.getOpponent(state, player);
+    // TA-694: the turn ends HERE, before its end-of-turn effects run. This log used to be written by startNextTurn,
+    // after the "at the end of your opponent's next turn" effects (Intense Kiss pbl-032 discards the Defending
+    // Pokemon) and the Knock Out check: when that discard left the player with no Pokemon the game ended inside this
+    // handler, startNextTurn never ran, and the turn that had ended was never logged (the conformance wire derives its
+    // deferred `turnEnded` from this log and emitted gameOver with no turnEnded). The log's reader (the adapter, TA-2)
+    // still defers the event until the turn advances or the game ends, so logging at the top changes no wire order.
+    store.log(state, GameLog.LOG_PLAYER_ENDS_TURN, { name: player.name });
     const lastAttack = state.playerLastAttack?.[player.id];
     player.ancientPokemonAttackedLastTurn = lastAttack?.sourceCard.tags.includes(CardTag.ANCIENT) ?? false;
 

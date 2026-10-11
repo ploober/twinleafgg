@@ -73,3 +73,41 @@ describe('TA-693 / B.103: Slight Shift blk-040 with one movable Energy records n
     expect(kinds(res.events)).not.toContain('chosen');
   });
 });
+
+describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense Kiss pbl-032)', () => {
+  // "At the end of your opponent's next turn, discard the Defending Pokemon and all attached cards." When that discard
+  // leaves the opponent with no Pokemon the game is over, but the turn whose end-of-turn step ran DID end: turnEnded
+  // for that player, then gameOver (rotomancer emits both; twinleaf dropped the turnEnded, reading it from a log the
+  // engine wrote only once the next turn started).
+  const JYNX = 'pbl-032';
+  const WALL = 'meg-181';
+  const BELLSPROUT = 'asc-004';
+  const kiss = { actor: 'A', type: 'declareAttack', source: 'a1', name: 'Intense Kiss' } as never;
+  const endB = { actor: 'B', type: 'endTurn' } as never;
+  const turnEvents = (events: NeutralEvent[]) => events.filter(e => e.kind === 'turnEnded' || e.kind === 'turnStarted' || e.kind === 'gameOver')
+    .map(e => `${e.kind} ${(e as { player?: string }).player ?? (e as { outcome?: string }).outcome}`);
+
+  it('with no Bench: A kisses, B ends the turn, B\'s last Pokemon is discarded: turnEnded B, then gameOver', () => {
+    const res = step(game(
+      player({ active: mon('a1', JYNX, [{ iid: 'a1e0', printing: E.P }]), deck: cards('ad', Array(6).fill(E.R)), prizes: prizes('ap', 6) }),
+      player({ active: mon('b1', WALL), deck: cards('bd', Array(6).fill(E.R)), prizes: prizes('bp', 6) })),
+      [kiss, endB]);
+    expect(res.status).toBe('gameOver');
+    expect(res.state.players.B.active).toBeNull();
+    expect(turnEvents(res.events)).toEqual(['turnEnded A', 'turnStarted B', 'turnEnded B', 'gameOver winA']);
+  });
+
+  it('the filed reproducer: two kisses, the second discard empties B\'s board: turnEnded B x2, the last before gameOver', () => {
+    const res = step(game(
+      player({ active: mon('a1', JYNX, [{ iid: 'a1e0', printing: E.P }]), bench: [mon('ab1', BELLSPROUT)], hand: cards('ah', [E.R]),
+        deck: cards('ad', Array(12).fill(E.R)), prizes: prizes('ap', 6) }),
+      player({ active: mon('b1', WALL), bench: [mon('bb1', BELLSPROUT)], hand: cards('bh', [E.R]),
+        deck: cards('bd', Array(12).fill(E.R)), prizes: prizes('bp', 6) })),
+      [kiss, endB, { actor: 'B', type: 'promoteBench', target: 'bb1' } as never, kiss, endB]);
+    expect(res.status).toBe('gameOver');
+    expect(turnEvents(res.events)).toEqual([
+      'turnEnded A', 'turnStarted B', 'turnEnded B', 'turnStarted A', 'turnEnded A', 'turnStarted B', 'turnEnded B', 'gameOver winA']);
+    const last = res.events.length - 1 - [...res.events].reverse().findIndex(e => e.kind === 'turnEnded');
+    expect(last).toBeLessThan(res.events.findIndex(e => e.kind === 'gameOver'));
+  });
+});
