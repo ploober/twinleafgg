@@ -135,3 +135,29 @@ describe('TA-AUD1-3: Walking Wake twm-063 Undulating Slice ("Put up to 9 damage 
   });
 });
 
+
+describe('TA-AUD1-2: Kingdra ex sfa-012 King\'s Order ("Put up to 3 [Water] Pokémon from your discard pile onto your Bench.") is 0..3', () => {
+  // Horsea sfa-010 is a Basic [W] Pokémon; two of them in the discard, three Bench slots free.
+  const b = () => board(['sfa-010', 'sfa-011', 'sfa-012'], 'W', { discard: ['sfa-010', 'sfa-010'] });
+
+  it('sfa-012 King\'s Order with two Basic [W] Pokémon in the discard offers both and the stop at the first pick [TA-AUD1-2]', () => {
+    const r = step(b(), [declare('King\'s Order')]);
+    expect(offered(r, 'choose')).toEqual(['adc0', 'adc1']);
+    expect(offersStop(r)).toBe(true);
+  });
+
+  it('sfa-012 King\'s Order: stopping at 0 benches nothing [TA-AUD1-2]', () => {
+    const r = step(b(), [declare('King\'s Order'), stop]);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.state.players.A.bench.length).toBe(2);
+    expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['adc0', 'adc1']);
+  });
+
+  it('sfa-012 King\'s Order: one pick then the stop benches that one [TA-AUD1-2]', () => {
+    const r = step(b(), [declare('King\'s Order'), choose('adc0'), stop]);
+    expect(r.state.players.A.bench.length).toBe(3);
+    expect(r.state.players.A.bench[2].stack.map(c => c.iid)).toEqual(['adc0']);
+    expect(r.state.players.A.discard.map(c => c.iid)).toEqual(['adc1']);
+  });
+});
+
