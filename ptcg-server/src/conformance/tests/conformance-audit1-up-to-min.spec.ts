@@ -95,6 +95,16 @@ describe('TA-AUD1-1: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon fro
     expect(offersStop(r)).toBe(true);
   });
 
+  it('twm-019 Recovery Net: a card picked out of the discard pile is in transit as public (a public zone), origin discardPile [TA-AUD1-6]', () => {
+    // Contract (TransitCard.visibility): `public` is "revealed to both players"; a discard pile is public, so a card
+    // lifted out of it is public in transit. The mid-pick lift projected every `choose` pick as `owner`.
+    const r = step(b(), [declare('Recovery Net'), choose('adc0')]);
+    const t = r.state.players.A.transit ?? [];
+    expect(t.map(e => e.iid)).toEqual(['adc0']);
+    expect(t[0].origin).toEqual({ zone: 'discardPile' });
+    expect(t[0].visibility).toBe('public');
+  });
+
   it('twm-019 Recovery Net: stopping at 0 takes nothing; both Pokémon stay in the discard [TA-AUD1-1]', () => {
     const r = step(b(), [declare('Recovery Net'), stop]);
     expect(r.status).not.toBe('invalidAction');

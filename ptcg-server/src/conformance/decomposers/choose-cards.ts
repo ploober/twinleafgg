@@ -436,8 +436,13 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
       if (iid === undefined) { continue; }
       if (discard) {
         placeInDiscard(projected, iid);
-      } else {
-        liftToTransit(projected, iid, { visibility: 'owner' });
+      } else if (liftToTransit(projected, iid, { visibility: 'owner' })) {
+        // TA-AUD1-6: a card lifted out of a PUBLIC zone (the discard pile, the Lost Zone) is `public` in transit
+        // (TransitCard.visibility: "revealed to both players"); `owner` is for a hand or deck pick nobody else has seen.
+        const t = [projected.players.A, projected.players.B].flatMap(pl => pl.transit ?? []).find(e => e.iid === iid);
+        if (t?.origin !== undefined && (t.origin.zone === 'discardPile' || t.origin.zone === 'lostZone')) {
+          t.visibility = 'public';
+        }
       }
     }
   },
