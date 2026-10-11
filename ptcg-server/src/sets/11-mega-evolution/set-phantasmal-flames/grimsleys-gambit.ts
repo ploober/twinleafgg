@@ -76,15 +76,21 @@ export class GrimsleysGambit extends TrainerCard {
         // TA-370: "Shuffle the OTHER cards and put them on the bottom" permutes only the looked-at
         // remainder; the un-looked deck keeps its order. The old code bottomed deckTop
         // SYNCHRONOUSLY after store.prompt, so the order callback hit an emptied list — NO shuffle
-        // happened and the bottom cards stayed in the order the player had just seen. The adapter
-        // projects a ShuffleDeckPrompt over player.deck, so stage the remainder INTO the deck for
-        // the shuffle, then restack the untouched cards on top.
-        const rest = new CardList();
-        state = MOVE_CARDS(store, state, player.deck, rest, {});
+        // happened and the bottom cards stayed in the order the player had just seen.
+        // TA-702 / B.80 (TA-598's shape): the remainder goes UNDER the untouched deck and only that bottom segment
+        // is shuffled (`bottomCount`), so the pause projects the looked-at cards in transit {deck -> deck bottom} and
+        // the deck as it is. The old staging (the untouched deck into a temp list, the remainder into the emptied
+        // deck) lifted the WHOLE deck into transit and showed the remainder as the deck — the inverse of B.80.
+        const n = deckTop.cards.length;
         state = MOVE_CARDS(store, state, deckTop, player.deck, {});
-        state = store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
-          MOVE_CARDS(store, state, rest, player.deck, { toTop: true });
+        state = store.prompt(state, new ShuffleDeckPrompt(player.id, { bottomCount: n }), order => {
+          const deck = player.deck.cards;
+          const start = deck.length - n;
+          // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+          const segment = order.length === n ? order.map(i => start + i) : order.filter(i => i >= start);
+          if (segment.length === n && new Set(segment).size === n && segment.every(i => i >= start && i < deck.length)) {
+            player.deck.cards = [...deck.slice(0, start), ...segment.map(i => deck[i])];
+          }
           MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [effect.trainerCard] });
         });
         return state;

@@ -3851,21 +3851,23 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     expect(r.state.playerLastAttack?.A).toEqual({ source: 'sfa-015', name: 'Shattering Speed', turn: 3 });
   });
 
-  it('a deck-look pile no prompt references projects in `transit` in original order (B.80; CF-61 residual amended) [CF-61 pfl-090]', () => {
+  it('the looked-at seven are the transit at the shuffle pause, in original order; the un-looked deck projects as it is (B.80) [CF-61 pfl-090; TA-702]', () => {
     // Grimsley's Move: top 7 into a temp pile (no [D] Pokemon among 15 filler Energy -> zero-candidate
-    // pick auto-completes), then the card RESTAGES the looked-at 7 into the deck for the shuffle and
-    // detaches the un-looked 8 into a closure-local `rest` no prompt references. CF-61 (2026-09-14) put
-    // those 8 back into `deck` by their deck stamps. B.80 (2026-10-04): a pile lifted off the deck is in
-    // TRANSIT, in the order it left the deck (the stamps), `origin: deck`. Residual: this pile sits under
-    // an open shuffle, so `hidden` would be more exact than the orphan pass's `owner` (TA-590 census).
+    // pick auto-completes), then the shuffle of the remainder. The card USED to restage the looked-at 7 into
+    // the emptied deck and detach the un-looked 8 into a closure-local `rest` no prompt references: CF-61
+    // (2026-09-14) put those 8 back into `deck` by their deck stamps, and this cell then asserted the 8 in
+    // transit — the whole deck lifted and the sub-pile shown as the deck, the inverse of B.80 (TA-702, the
+    // TA-598 shape). Now the 7 go UNDER the untouched deck and only that bottom segment is shuffled: the 7 are
+    // the transit {deck -> deck bottom, owner}, in the order they left the deck, and the 8 are the deck.
     const r = step(board(
       player({ active: inPlay('A-act', [RALTS]), hand: [{ iid: 'sup', printing: 'pfl-090' }], deck: fillerDeck('A', 15) }),
       player({ active: inPlay('B-act', [LATIAS]) }),
     ), [{ actor: 'A', type: 'playSupporter', card: 'sup' } as unknown as NeutralAction]);
     expect(types(r)).toContain('shuffle');
-    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(Array.from({ length: 7 }, (_, i) => `A-dk${i}`));
-    expect((r.state.players.A.transit ?? []).map(c => c.iid)).toEqual(Array.from({ length: 8 }, (_, i) => `A-dk${i + 7}`));
-    expect((r.state.players.A.transit ?? []).every(c => c.origin?.zone === 'deck')).toBe(true);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(Array.from({ length: 8 }, (_, i) => `A-dk${i + 7}`));
+    expect((r.state.players.A.transit ?? []).map(c => c.iid)).toEqual(Array.from({ length: 7 }, (_, i) => `A-dk${i}`));
+    expect((r.state.players.A.transit ?? []).every(c => c.origin?.zone === 'deck' && c.visibility === 'owner'
+      && c.destination?.zone === 'deck' && c.destination.position === 'bottom')).toBe(true);
     expect((r.state.players.A.resolving ?? []).map(c => c.iid)).toEqual(['sup']);
   });
 
