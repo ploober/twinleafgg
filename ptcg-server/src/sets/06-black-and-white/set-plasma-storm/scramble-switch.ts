@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { PlayerType, SlotType, GameError, PokemonCardList, ChooseCardsPrompt } from '../../../game';
+import { PlayerType, SlotType, GameError, PokemonCardList, MoveEnergyPrompt, CardTarget, StateUtils } from '../../../game';
 import { GameMessage } from '../../../game/game-message';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
@@ -47,29 +47,43 @@ function* playCard(
   }
 
   const target = targets[0];
-  const hasEnergies = player.active.cards.some((c) => c.superType === SuperType.ENERGY);
 
-  if (hasEnergies) {
+  // TA-700 / B.80 / B.81: the text switches FIRST ("Switch your Active Pokémon with 1 of your Benched Pokémon. If you
+  // do, you may move any amount of Energy from the Pokémon you moved to your Bench to the new Active Pokémon"). The
+  // old code raised the Energy prompt over the still-Active old Pokémon and switched only at its close, so the wire
+  // projected the PRE-switch board at the Energy-move pending (the Energy addressed on A.active, no `moved` legs).
+  // Switch, then offer the move from the Benched old Active to the new Active as a MoveEnergyPrompt — a relocation
+  // is `moveEnergy` (CF-34), which is what rotomancer offers; the old ChooseCardsPrompt surfaced as `choose`.
+  const oldActive = player.active;
+  player.switchPokemon(target);
+  const benchIndex = player.bench.indexOf(oldActive);
+  const hasEnergies = oldActive.cards.some((c) => c.superType === SuperType.ENERGY);
+
+  if (hasEnergies && benchIndex !== -1) {
+    const at = (slot: SlotType, index: number): CardTarget => ({ player: PlayerType.BOTTOM_PLAYER, slot, index });
+    // Source: only the Pokémon that was just moved to the Bench. Destination: only the new Active.
+    const blockedFrom: CardTarget[] = [at(SlotType.ACTIVE, 0), ...player.bench.map((_, i) => i).filter(i => i !== benchIndex).map(i => at(SlotType.BENCH, i))];
+    const blockedTo: CardTarget[] = player.bench.map((_, i) => at(SlotType.BENCH, i));
     yield store.prompt(
       state,
-      new ChooseCardsPrompt(
-        player,
-        GameMessage.ATTACH_ENERGY_TO_BENCH,
-        player.active,
+      new MoveEnergyPrompt(
+        player.id,
+        GameMessage.MOVE_ENERGY_TO_ACTIVE,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.ACTIVE, SlotType.BENCH],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 0 },
+        { allowCancel: false, min: 0, blockedFrom, blockedTo },
       ),
-      (selected) => {
-        selected = selected || [];
-        MOVE_CARDS(store, state, player.active, target, { cards: selected, sourceCard: effect.trainerCard });
+      (transfers) => {
+        for (const transfer of transfers || []) {
+          const from = StateUtils.getTarget(state, player, transfer.from);
+          MOVE_CARDS(store, state, from, player.active, { cards: [transfer.card], sourceCard: effect.trainerCard });
+        }
         next();
       },
     );
   }
 
-  // Discard trainer only when user selected a Pokemon
-
-  player.switchPokemon(targets[0]);
   return state;
 }
 
