@@ -240,13 +240,20 @@ export function DISCARD_UP_TO_X_TYPE_ENERGY_FROM_YOUR_POKEMON(
  * Discards an exact amount of Energy from this Pokémon.
  *
  * This helper is preserved for compatibility with existing exact-cost logic.
+ *
+ * TA-703 (B.82): `onDiscarded` runs in the SAME step as the discard, right after it, with the cards discarded — the
+ * place for a rider the text ties to the discard ("discard 2 [L] Energy from this Pokémon AND make your opponent's
+ * Active Pokémon Paralyzed", Disaster Shock asc-061). From the attack's own effect that step is after the damage;
+ * a rider applied at the call site instead lands before the pick and before the damage. Not called when nothing
+ * was discarded.
  */
 export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
   store: StoreLike,
   state: State,
   effect: AttackEffect | AfterAttackEffect,   // usable from the AFTER_ATTACK (post-damage) phase too
   amount: number,
-  type: CardType = CardType.COLORLESS
+  type: CardType = CardType.COLORLESS,
+  onDiscarded?: (cards: Card[]) => void
 ): State {
   // The DiscardCardsEffect needs the originating AttackEffect (source/target); AFTER_ATTACK carries it.
   const base = effect instanceof AfterAttackEffect ? effect.attackEffect : effect;
@@ -270,6 +277,9 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     const discardEnergy = new DiscardCardsEffect(base, cards);
     discardEnergy.target = player.active;
     state = store.reduceEffect(state, discardEnergy);
+    if (onDiscarded !== undefined && cards.length > 0) {
+      onDiscarded(cards);   // TA-703: the rider rides with the discard, in its step
+    }
   };
   if (eligible.length <= amount) {
     if (eligible.length > 0) {

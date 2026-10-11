@@ -62,8 +62,13 @@ export class MegaEelektrossex extends PokemonCard {
 
       CONFIRMATION_PROMPT(store, state, player, result => {
         if (result) {
-          DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2, L);
-          YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
+          // TA-703 (B.82): "discard 2 [L] Energy from this Pokémon AND make your opponent's Active Pokémon
+          // Paralyzed" — the Paralysis rides with the discard: after the damage, in the discard's step, and only
+          // when Energy was discarded. Applied here at the call site it landed while the which-2 pick was still
+          // open (before the pick, before the 190): B's Active was Paralyzed at the pick.
+          DISCARD_X_ENERGY_FROM_THIS_POKEMON(store, state, effect, 2, L, () => {
+            YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_PARALYZED(store, state, effect);
+          });
         }
       }, GameMessage.WANT_TO_USE_EFFECT_OF_ATTACK);
     }
