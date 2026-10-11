@@ -108,7 +108,8 @@ function visibilityOf(from: Place, to: Place, iid: string, before: Board, after:
  * Maker's remainder) is not in `shuffledIn`: those cards do go to the bottom.
  */
 export function deriveMoved(beforeState: NeutralState, afterState: NeutralState, revealed: ReadonlySet<string> = new Set(),
-    shuffledIn: ReadonlySet<NeutralPlayerId> = new Set()): NeutralEvent[] {
+    shuffledIn: ReadonlySet<NeutralPlayerId> = new Set(),
+    declaredEnd: (iid: string) => 'top' | 'bottom' | undefined = () => undefined): NeutralEvent[] {
   const before = board(beforeState);
   const after = board(afterState);
   const moved: Array<{ iid: string; from: Place; to: Place }> = [];
@@ -137,7 +138,10 @@ export function deriveMoved(beforeState: NeutralState, afterState: NeutralState,
     }
     // The landed cards ARE the whole deck: top and bottom coincide. Their declared end decides (Iono's block, lifted
     // `-> {deck, bottom}`, under a deck its own draws then emptied: rotomancer cuts before the draws and says bottom).
-    if (deck.length > 0 && deck.every(iid => landed.has(iid)) && deck.every(iid => before.transitDeckEnd.get(iid) === 'bottom')) {
+    // TA-704: or the end the engine's placement declared (`toBottom`; CardList.deckEnd) — Energy Swatter por-073 puts
+    // the chosen Energy "on the bottom of their deck" with no pause in transit.
+    if (deck.length > 0 && deck.every(iid => landed.has(iid))
+        && deck.every(iid => (before.transitDeckEnd.get(iid) ?? declaredEnd(iid)) === 'bottom')) {
       for (const iid of deck) { position.set(iid, 'bottom'); bottomOrder.push(iid); }
       continue;
     }

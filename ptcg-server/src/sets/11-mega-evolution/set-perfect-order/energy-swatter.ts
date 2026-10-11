@@ -48,9 +48,12 @@ export class EnergySwatter extends TrainerCard {
         return state;
       }
 
+      // TA-704 (CF-70 / B.81): "put it on the bottom of their deck" — the pick was asked as CHOOSE_CARD_TO_DISCARD,
+      // which the wire offers as a discard to the discard pile; and the move said nothing about the deck end, so on an
+      // empty deck the leg read top.
       return store.prompt(state, new ChooseCardsPrompt(
         player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
+        GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM,
         opponent.hand,
         { superType: SuperType.ENERGY },
         { min: 1, max: 1, allowCancel: false }
@@ -58,7 +61,7 @@ export class EnergySwatter extends TrainerCard {
         const cards = selected || [];
         if (cards.length > 0) {
           // Put on bottom of deck
-          MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: [cards[0]], sourceCard: this });
+          MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: [cards[0]], sourceCard: this, toBottom: true });
         }
       });
     }

@@ -843,10 +843,16 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // B.81: a switch is an ordering point. The engine calls CardList.legCut once an Active / Bench swap completes;
   // the legs up to that board are derived then, and the dispatch's board diff runs on from it. Live identity only.
   let segment: { start: NeutralState; legs: NeutralEvent[] } | undefined;
+  // TA-704 / B.81: the deck end the engine's placement declared for a card (CardList.deckEnd), for a leg into an
+  // empty deck, where the board alone cannot say top from bottom.
+  const declaredEnd = (iid: string): 'top' | 'bottom' | undefined => {
+    const card = game.ctx.iidToCard.get(iid);
+    return card === undefined ? undefined : CardList.deckEnd.get(card);
+  };
   CardList.legCut = (who: unknown): void => {
     if (segment === undefined || !game.store.state.players.some(p => p === who)) { return; }
     const now = traceProject();
-    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, shuffledInDecks(game.store.state)));
+    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, shuffledInDecks(game.store.state), declaredEnd));
     segment.start = now;
   };
 
@@ -923,8 +929,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // A starved dispatch may have rolled back past its cuts: then the single before/after diff is the trace.
     const shuffledIn = shuffledInDecks(game.state);
     const legs = starved === undefined && cut !== undefined && cut.legs.length > 0
-      ? [...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, shuffledIn)]
-      : deriveMoved(movedBefore, movedAfter, revealedSince, shuffledIn);
+      ? [...cut.legs, ...deriveMoved(cut.start, movedAfter, revealedSince, shuffledIn, declaredEnd)]
+      : deriveMoved(movedBefore, movedAfter, revealedSince, shuffledIn, declaredEnd);
     events.push(...legs);
     // TA-665: a card lifted off its deck and back in that deck by the end of the dispatch went deck -> transit -> deck.
     const returned = new Map<Player, Card[]>();

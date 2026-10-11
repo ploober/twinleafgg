@@ -209,7 +209,10 @@ const COLLAPSIBLE_PICK_MESSAGES: ReadonlySet<GameMessage> = new Set([
  * the collapse site in `next()` for the measurement that retired both.
  */
 function forcedPickIndices(prompt: ChooseCardsPrompt, state: State | undefined): number[] | null {
-  if (!(COLLAPSIBLE_PICK_MESSAGES.has(prompt.message) || orderFollowsActiveSelection(prompt, state)
+  // TA-704: a ONE-card put-on-the-bottom pick (Energy Swatter por-073, asked as CHOOSE_CARD_TO_DISCARD until then and
+  // collapsing as one) has no order content; the multi-card message stays off the list (pick order = bottom order).
+  const singleBottomPick = prompt.message === GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM && prompt.options.max === 1;
+  if (!(COLLAPSIBLE_PICK_MESSAGES.has(prompt.message) || singleBottomPick || orderFollowsActiveSelection(prompt, state)
     || prompt.deferredMove === true)
     || prompt.options.allowCancel !== false || prompt.options.isSecret === true) {
     return null;
@@ -379,6 +382,10 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
           // reuses this message with the Active already placed, so every pick there is a Bench pick.
           const toActive = rp.length === 0 && prompt.player.active.cards.length === 0;
           legalActions.push({ type: 'choose', target: iid, op: 'moveTo', destination: toActive ? 'active' : 'bench' } as LegalAction);
+        } else if (prompt.message === GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM) {
+          // TA-704 / CF-70: a pick the text puts on the bottom of a deck (Energy Swatter por-073: "put it on the
+          // bottom of their deck"). Every raiser of this message bottoms the chosen card.
+          legalActions.push({ type: 'choose', target: iid, op: 'moveTo', destination: 'deckBottom' } as LegalAction);
         } else {
           legalActions.push({ type: 'choose', target: iid });
         }

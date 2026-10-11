@@ -73,6 +73,14 @@ export class CardList {
    * stamped cards by it.
    */
   public static readonly transit = new WeakMap<Card, { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden'; order?: number }>();
+
+  /**
+   * TA-704 / B.81 (conformance projection; inert for gameplay). The deck end a MoveCardsEffect declared (`toBottom` /
+   * `toTop`) for a card it placed in a deck; cleared by a placement that declared none. Read by the `moved` leg
+   * derivation only where the board cannot tell: a card landed in an EMPTY deck is its top and its bottom at once,
+   * and the leg says the end the text named (Energy Swatter por-073: "put it on the bottom of their deck").
+   */
+  public static readonly deckEnd = new WeakMap<Card, 'top' | 'bottom'>();
   private static deckStampSeq = 0;
 
   /**

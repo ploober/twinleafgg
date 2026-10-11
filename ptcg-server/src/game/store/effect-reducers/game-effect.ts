@@ -1113,12 +1113,29 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
       const landed = moved.filter(card => destination.cards.includes(card));
       destination.cards = [...landed, ...destination.cards.filter(card => !landed.includes(card))];
     };
+    // TA-704 (conformance; inert for gameplay): a card placed in a deck remembers the end the effect declared.
+    const destinationOwner = getOwner(destination);
+    const stampDeckEnd = (moved: Card[]) => {
+      if (destinationOwner === undefined || destinationOwner.deck !== destination) {
+        return;
+      }
+      for (const card of moved) {
+        if (effect.toBottom) {
+          CardList.deckEnd.set(card, 'bottom');
+        } else if (effect.toTop) {
+          CardList.deckEnd.set(card, 'top');
+        } else {
+          CardList.deckEnd.delete(card);
+        }
+      }
+    };
 
     if (effect.cards) {
       moveWithPrismStarCheck(effect.cards, source, destination);
       if (effect.toTop) {
         liftToTop(effect.cards);
       }
+      stampDeckEnd(effect.cards);
     }
     else if (effect.count !== undefined) {
       const cards = source.cards.slice(0, effect.count);
@@ -1129,6 +1146,7 @@ export function gameReducer(store: StoreLike, state: State, effect: Effect): Sta
       if (effect.toTop) {
         liftToTop(cards);
       }
+      stampDeckEnd(cards);
     }
     // Move all cards
     else {
