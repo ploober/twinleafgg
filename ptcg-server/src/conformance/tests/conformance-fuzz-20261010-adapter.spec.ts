@@ -60,13 +60,13 @@ describe('TA-693 / B.103: Slight Shift blk-040 with one movable Energy records n
   const attack = { actor: 'B', type: 'declareAttack', source: 'b1', name: 'Slight Shift' } as never;
   const move = { actor: 'B', type: 'moveEnergy', card: 'a2e0', source: 'a2', target: 'a1' } as never;
 
-  it('the pending offers the one movable Energy for each of the two destinations', () => {
+  it('the pending offers the one movable Energy for each of the two destinations [TA-693]', () => {
     const res = step(initial(), [attack]);
     expect(res.pending?.legalActions.map(a => `${a.type} ${(a as { card?: string }).card}>${(a as { target?: string }).target}`).sort())
       .toEqual(['moveEnergy a2e0>a1', 'moveEnergy a2e0>a3']);
   });
 
-  it('after the move: the Energy is on the chosen Pokemon with its leg, and no chosen is recorded', () => {
+  it('after the move: the Energy is on the chosen Pokemon with its leg, and no chosen is recorded [TA-693]', () => {
     const res = step(initial(), [attack, move]);
     expect((res.state.players.A.active?.energy ?? []).map(c => c.iid)).toEqual(['a1e0', 'a1e1', 'a2e0']);
     expect(legs(res.events, 'a2e0')).toEqual(['bench:a2:energy>active:a1:energy']);
@@ -87,7 +87,7 @@ describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense 
   const turnEvents = (events: NeutralEvent[]) => events.filter(e => e.kind === 'turnEnded' || e.kind === 'turnStarted' || e.kind === 'gameOver')
     .map(e => `${e.kind} ${(e as { player?: string }).player ?? (e as { outcome?: string }).outcome}`);
 
-  it('with no Bench: A kisses, B ends the turn, B\'s last Pokemon is discarded: turnEnded B, then gameOver', () => {
+  it('with no Bench: A kisses, B ends the turn, B\'s last Pokemon is discarded: turnEnded B, then gameOver [TA-694]', () => {
     const res = step(game(
       player({ active: mon('a1', JYNX, [{ iid: 'a1e0', printing: E.P }]), deck: cards('ad', Array(6).fill(E.R)), prizes: prizes('ap', 6) }),
       player({ active: mon('b1', WALL), deck: cards('bd', Array(6).fill(E.R)), prizes: prizes('bp', 6) })),
@@ -97,7 +97,7 @@ describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense 
     expect(turnEvents(res.events)).toEqual(['turnEnded A', 'turnStarted B', 'turnEnded B', 'gameOver winA']);
   });
 
-  it('the filed reproducer: two kisses, the second discard empties B\'s board: turnEnded B x2, the last before gameOver', () => {
+  it('the filed reproducer: two kisses, the second discard empties B\'s board: turnEnded B x2, the last before gameOver [TA-694]', () => {
     const res = step(game(
       player({ active: mon('a1', JYNX, [{ iid: 'a1e0', printing: E.P }]), bench: [mon('ab1', BELLSPROUT)], hand: cards('ah', [E.R]),
         deck: cards('ad', Array(12).fill(E.R)), prizes: prizes('ap', 6) }),
@@ -131,7 +131,7 @@ describe('TA-696: Inferno Fandango wht-013 emits energyAttached in the step of e
   const attached = (events: NeutralEvent[]) => events.filter(e => e.kind === 'energyAttached')
     .map(e => `${(e as { player: string }).player} ${(e as { pokemon: string }).pokemon}`);
 
-  it('after the first attach (the loop still open): the Energy is on Emboar, its leg is there, and so is energyAttached', () => {
+  it('after the first attach (the loop still open): the Energy is on Emboar, its leg is there, and so is energyAttached [TA-696]', () => {
     const res = step(initial(), [fandango, attach('ah0', 'a1')]);
     expect([...new Set(res.pending?.legalActions.map(a => a.type))].sort()).toEqual(['attachEnergy', 'confirm']);
     expect((res.state.players.A.active?.energy ?? []).map(c => c.iid)).toContain('ah0');
@@ -139,12 +139,12 @@ describe('TA-696: Inferno Fandango wht-013 emits energyAttached in the step of e
     expect(attached(res.events)).toEqual(['A a1']);
   });
 
-  it('two attaches, one to the Bench: two energyAttached, each on its own Pokemon', () => {
+  it('two attaches, one to the Bench: two energyAttached, each on its own Pokemon [TA-696]', () => {
     const res = step(initial(), [fandango, attach('ah0', 'a1'), attach('ah1', 'ab1')]);
     expect(attached(res.events)).toEqual(['A a1', 'A ab1']);
   });
 
-  it('at the close nothing is emitted twice: one energyAttached per attach', () => {
+  it('at the close nothing is emitted twice: one energyAttached per attach [TA-696]', () => {
     const one = step(initial(), [fandango, attach('ah0', 'a1'), stop]);
     expect(one.pending?.actor).toBe('A');
     expect(attached(one.events)).toEqual(['A a1']);
@@ -170,7 +170,7 @@ describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight
   const draws = (events: NeutralEvent[], who: string) => events.filter(e => e.kind === 'draw' && (e as { player: string }).player === who)
     .reduce((n, e) => n + (e as { count: number }).count, 0);
 
-  it('Up-Tempo ssp-052: the cost card goes hand > deck:bottom, then deck > hand with the last draw (4 draws, 4 cards with legs)', () => {
+  it('Up-Tempo ssp-052: the cost card goes hand > deck:bottom, then deck > hand with the last draw (4 draws, 4 cards with legs) [TA-698]', () => {
     const initial = game(
       player({ active: { stack: [{ iid: 'a1', printing: 'ssp-050' }, { iid: 'a1s1', printing: 'ssp-051' }, { iid: 'a1s2', printing: 'ssp-052' }],
         energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
@@ -186,7 +186,7 @@ describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight
     for (const c of ['ad0', 'ad1', 'ad2']) { expect(legs(res.events, c)).toEqual(['A.deck>A.hand']); }
   });
 
-  it('Grand Wing por-009 on a one-card hand: the bottomed card goes hand > deck:bottom, then deck > hand (collapsed over its shuffle stop)', () => {
+  it('Grand Wing por-009 on a one-card hand: the bottomed card goes hand > deck:bottom, then deck > hand (collapsed over its shuffle stop) [TA-698]', () => {
     const initial = game(
       player({ active: { stack: [{ iid: 'a1', printing: 'por-007' }, { iid: 'a1s1', printing: 'por-008' }, { iid: 'a1s2', printing: 'por-009' }],
         energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
