@@ -277,13 +277,15 @@ export function DISCARD_X_ENERGY_FROM_THIS_POKEMON(
     const discardEnergy = new DiscardCardsEffect(base, cards);
     discardEnergy.target = player.active;
     state = store.reduceEffect(state, discardEnergy);
-    if (onDiscarded !== undefined && cards.length > 0) {
-      onDiscarded(cards);   // TA-703: the rider rides with the discard, in its step
+    if (onDiscarded !== undefined) {
+      onDiscarded(cards);   // TA-703: the rider rides with the discard, in its step (also when nothing could be discarded)
     }
   };
   if (eligible.length <= amount) {
-    if (eligible.length > 0) {
-      const cards = eligible.map(em => em.card);
+    // Nothing eligible: the discard whiffs but the rider still runs ("do as much as you can"; a copied Disaster Shock
+    // with no [L] attached still Paralyzes — ta289, rotomancer agrees), after the damage when deferred.
+    const cards = eligible.map(em => em.card);
+    if (cards.length > 0 || onDiscarded !== undefined) {
       if (deferred) {
         (effect as AttackEffect).afterDamageMoves.push(() => discard(cards));
       } else {

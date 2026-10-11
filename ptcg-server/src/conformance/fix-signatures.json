@@ -12964,6 +12964,18 @@
       "fixes": [
         "FX-0488"
       ]
+    },
+    {
+      "file": "set-pitch-black/mega-delphox-ex.ts",
+      "signatures": [],
+      "absentSignatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, player, deckTop.cards);"
+      ],
+      "note": "TA-692 (2026-10-11, FX-0476): Trick Portal's look is private; the show of the nine to the player before the pick is removed.",
+      "fixes": [
+        "FX-0476"
+      ],
+      "state": "guarding"
     }
   ]
 }
