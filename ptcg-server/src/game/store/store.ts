@@ -392,6 +392,21 @@ export class Store implements StoreLike {
           && (p.type === 'Choose energy' || p.type === 'Discard energy')) {
         p.deferredMove = true;
       }
+      // TA-AUD2-1: a 'Choose cards' prompt asked of the attacker over the Energy of one of its own Pokémon in play
+      // (ChooseCardsPrompt(player, ..., player.active, { superType: ENERGY }) — Screw Knuckle por-041) is the same
+      // Step-D choice and was never marked, so MOVE_CARDS ran the move at the pick, before the damage. Only for an
+      // attack that does damage (B.82's scope): a no-damage attack's text runs its moves in text order inside the
+      // callback (Evil Incineration dri-031 discards its Energy, then the opponent's Active), which a deferral would invert.
+      if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Choose cards'
+          && (pre as { damage?: number }).damage !== undefined && (pre as { damage?: number }).damage! > 0) {
+        const attacker = pre.player as Player;
+        const from = (p as unknown as { cards?: CardList }).cards;
+        const filter = (p as unknown as { filter?: { superType?: SuperType } }).filter;
+        if (from !== undefined && filter?.superType === SuperType.ENERGY
+          && (from === attacker.active || attacker.bench.some(b => b === from))) {
+          p.deferredMove = true;
+        }
+      }
       // TA-674 / TA-675 (B.102, B.105, B.89 (1)): an Energy attach the attacker chooses before the damage from its own
       // discard pile (Iron Roar, Motivate) or off its own Pokemon (Genome Spiral) is a Step-D choice; MOVE_CARDS
       // queues the attach until after the damage. Not the hand or the deck (B.106, B.101 (1): part of the effect).
