@@ -5,7 +5,7 @@ import { CardTarget } from '../../game/store/actions/play-card-action';
 import { StateUtils } from '../../game/store/state-utils';
 import { LegalAction } from '../neutral-types';
 import {
-  PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter, enumerateTargets, targetKey
+  PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE, matchesFilter, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 import { placeOnPokemon } from '../transit-projection';
@@ -182,11 +182,24 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
   /** B.80: a `moveEnergy` pick PLACES the Energy on its target at once (the player moves the card); the
    *  projection shows it there before the next pick. The engine applies the whole list on resolve. */
   /** B.89 (5) / TA-661: the Energy an attack's Step-D move picked (the prompt is `deferredMove`); they stay attached
-   *  until the attack's effects apply, and the adapter records them as `chosen`. */
-  pickedCards(prompt, picks, _ctx, state) {
+   *  until the attack's effects apply, and the adapter records them as `chosen`.
+   *  TA-693 (B.103; the rule attach-energy got in TA-675): a card the player had to take is not a card choice, even
+   *  when its destination was chosen (Slight Shift blk-040 with one movable Energy beside a Mist Energy and two
+   *  destinations): no stop was offered and no more distinct cards were left than the picks still owed. */
+  pickedCards(prompt, picks, ctx, state) {
     const player = promptPlayer(state, prompt.playerId);
-    return (realPicks(picks) as Array<{ from: CardTarget; index: number }>)
-      .map(p => StateUtils.getTarget(state, player, p.from).cards[p.index]).filter((c): c is Card => c !== undefined);
+    const rp = realPicks(picks) as Array<{ from: CardTarget; to: CardTarget; index: number }>;
+    const out: Card[] = [];
+    rp.forEach((p, i) => {
+      const card = StateUtils.getTarget(state, player, p.from).cards[p.index];
+      if (card === undefined) { return; }
+      const offered = moveEnergyDecomposer.next(prompt, rp.slice(0, i) as WirePick[], ctx, state)?.legalActions ?? [];
+      const canStop = offered.some(a => a.type === 'endChoice');
+      const cardsLeft = new Set(offered.filter(a => a.type !== 'endChoice').map(a => (a as { card?: string }).card)).size;
+      if (!canStop && cardsLeft <= prompt.options.min - i) { return; }
+      out.push(card);
+    });
+    return out;
   },
 
   fixupProjection(prompt, picks, ctx, state, projected) {
