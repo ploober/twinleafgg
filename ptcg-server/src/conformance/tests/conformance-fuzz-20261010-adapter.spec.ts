@@ -111,3 +111,92 @@ describe('TA-694: a game-ending end-of-turn effect still ends the turn (Intense 
     expect(last).toBeLessThan(res.events.findIndex(e => e.kind === 'gameOver'));
   });
 });
+
+describe('TA-696: Inferno Fandango wht-013 emits energyAttached in the step of each attach, not at the loop\'s close', () => {
+  // "As often as you like during your turn, you may attach a Basic [R] Energy card from your hand to 1 of your Pokemon."
+  // The engine asks one batch prompt; each pick places its Energy at once (B.80: the state and the `moved` leg show
+  // it), so the `energyAttached` belongs to the same step (B.81 (6): an event belongs in the step whose pause first
+  // shows its effect). It used to wait for the prompt's close, one pause later.
+  const EMBOAR = ['asc-029', 'asc-030', 'wht-013'];
+  const initial = () => game(
+    player({
+      active: { stack: EMBOAR.map((p, i) => ({ iid: i === 0 ? 'a1' : `a1s${i}`, printing: p })),
+        energy: [...cards('a1e', [E.R, E.R, E.R]), { iid: 'a1e3', printing: E.W }], tools: [], damage: 0, conditions: [], markers: markers() },
+      bench: [mon('ab1', 'asc-004')], hand: cards('ah', [E.R, E.R]), deck: cards('ad', Array(6).fill(E.R)), prizes: prizes('ap', 6),
+    }),
+    player({ active: mon('b1', 'meg-181'), deck: cards('bd', Array(6).fill(E.R)), prizes: prizes('bp', 6) }));
+  const fandango = { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Inferno Fandango' } as never;
+  const attach = (card: string, target: string) => ({ actor: 'A', type: 'attachEnergy', card, target } as never);
+  const stop = { actor: 'A', type: 'confirm', value: false } as never;
+  const attached = (events: NeutralEvent[]) => events.filter(e => e.kind === 'energyAttached')
+    .map(e => `${(e as { player: string }).player} ${(e as { pokemon: string }).pokemon}`);
+
+  it('after the first attach (the loop still open): the Energy is on Emboar, its leg is there, and so is energyAttached', () => {
+    const res = step(initial(), [fandango, attach('ah0', 'a1')]);
+    expect([...new Set(res.pending?.legalActions.map(a => a.type))].sort()).toEqual(['attachEnergy', 'confirm']);
+    expect((res.state.players.A.active?.energy ?? []).map(c => c.iid)).toContain('ah0');
+    expect(legs(res.events, 'ah0')).toEqual(['A.hand>active:a1:energy']);
+    expect(attached(res.events)).toEqual(['A a1']);
+  });
+
+  it('two attaches, one to the Bench: two energyAttached, each on its own Pokemon', () => {
+    const res = step(initial(), [fandango, attach('ah0', 'a1'), attach('ah1', 'ab1')]);
+    expect(attached(res.events)).toEqual(['A a1', 'A ab1']);
+  });
+
+  it('at the close nothing is emitted twice: one energyAttached per attach', () => {
+    const one = step(initial(), [fandango, attach('ah0', 'a1'), stop]);
+    expect(one.pending?.actor).toBe('A');
+    expect(attached(one.events)).toEqual(['A a1']);
+    const two = step(initial(), [fandango, attach('ah0', 'a1'), attach('ah1', 'ab1'), stop]);
+    expect(attached(two.events)).toEqual(['A a1', 'A ab1']);
+  });
+});
+
+describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight back keeps both deck legs', () => {
+  // One `moved` per physical pluck-and-place: the bottomed card went hand -> deck (bottom) -> hand inside one
+  // dispatch, which a before/after board diff reads as no move at all (Up-Tempo) or as a transit stop with no deck
+  // between (Grand Wing: the hand pile is in transit at its shuffle). The compare collapses transit stops only.
+  const collapsed = (ls: string[]): string[] => {
+    const out: string[] = [];
+    for (const l of ls) {
+      const [from, to] = l.split('>');
+      const prev = out[out.length - 1];
+      if (prev !== undefined && prev.endsWith('>' + from) && from.endsWith('.transit')) { out[out.length - 1] = prev.split('>')[0] + '>' + to; continue; }
+      out.push(`${from}>${to}`);
+    }
+    return out;
+  };
+  const draws = (events: NeutralEvent[], who: string) => events.filter(e => e.kind === 'draw' && (e as { player: string }).player === who)
+    .reduce((n, e) => n + (e as { count: number }).count, 0);
+
+  it('Up-Tempo ssp-052: the cost card goes hand > deck:bottom, then deck > hand with the last draw (4 draws, 4 cards with legs)', () => {
+    const initial = game(
+      player({ active: { stack: [{ iid: 'a1', printing: 'ssp-050' }, { iid: 'a1s1', printing: 'ssp-051' }, { iid: 'a1s2', printing: 'ssp-052' }],
+        energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
+        hand: cards('ah', [E.W, E.W]), deck: cards('ad', [E.W, E.W, E.W]), prizes: prizes('ap', 6) }),
+      player({ active: mon('b1', 'asc-004'), deck: cards('bd', Array(4).fill(E.W)), prizes: prizes('bp', 6) }));
+    const res = step(initial, [
+      { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Up-Tempo' } as never,
+      { actor: 'A', type: 'discard', owner: 'A', target: 'ah0' } as never]);
+    expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ah1', 'ad0', 'ad1', 'ad2', 'ah0']);
+    expect(res.state.players.A.deck).toEqual([]);
+    expect(draws(res.events, 'A')).toBe(4);
+    expect(legs(res.events, 'ah0')).toEqual(['A.hand>A.deck:bottom', 'A.deck>A.hand']);
+    for (const c of ['ad0', 'ad1', 'ad2']) { expect(legs(res.events, c)).toEqual(['A.deck>A.hand']); }
+  });
+
+  it('Grand Wing por-009 on a one-card hand: the bottomed card goes hand > deck:bottom, then deck > hand (collapsed over its shuffle stop)', () => {
+    const initial = game(
+      player({ active: { stack: [{ iid: 'a1', printing: 'por-007' }, { iid: 'a1s1', printing: 'por-008' }, { iid: 'a1s2', printing: 'por-009' }],
+        energy: [], tools: [], damage: 0, conditions: [], markers: markers() },
+        deck: cards('ad', Array(4).fill(E.G)), prizes: prizes('ap', 6) }),
+      player({ active: mon('b1', 'asc-004'), hand: cards('bh', [E.G]), deck: cards('bd', [E.G, E.G, E.G]), prizes: prizes('bp', 6) }));
+    const res = step(initial, [{ actor: 'A', type: 'useAbility', source: 'a1', ability: 'Grand Wing' } as never]);
+    expect(res.pending?.actor).toBe('A');
+    expect(res.state.players.B.hand.map(c => c.iid)).toEqual(['bd0', 'bd1', 'bd2', 'bh0']);
+    expect(draws(res.events, 'B')).toBe(4);
+    expect(collapsed(legs(res.events, 'bh0'))).toEqual(['B.hand>B.deck:bottom', 'B.deck>B.hand']);
+    for (const c of ['bd0', 'bd1', 'bd2']) { expect(legs(res.events, c)).toEqual(['B.deck>B.hand']); }
+  });
+});

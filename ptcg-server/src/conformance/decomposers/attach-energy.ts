@@ -3,12 +3,12 @@ import { EnergyCard } from '../../game/store/card/energy-card';
 import { Card } from '../../game/store/card/card';
 import { SuperType } from '../../game/store/card/card-types';
 import { CardTarget } from '../../game/store/actions/play-card-action';
-import { LegalAction } from '../neutral-types';
+import { LegalAction, NeutralEvent } from '../neutral-types';
 import {
   PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot } from '../iid-targets';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot, playerIdToActor } from '../iid-targets';
 import { placeOnPokemon } from '../transit-projection';
 
 /**
@@ -262,6 +262,27 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       if (iid === undefined) { continue; }
       placeOnPokemon(projected, iid, pokemonTargetToIid(state, player, ctx, p.to));
     }
+  },
+
+  /**
+   * TA-696 (B.81 (6): an event belongs in the step whose pause first shows its effect). Each `assign` pick already
+   * made has PLACED its Energy (the fix-up above; the state and the `moved` leg show it), so its `energyAttached` is
+   * this pause's too. The engine logs the attach only when the whole prompt resolves (Inferno Fandango wht-013's
+   * "as often as you like" loop: the event lagged the board by one pause). A relocation (a candidate that sits on an
+   * in-play Pokemon, CF-34 `moveEnergy`) emits none, as the dispatch's log-derived event never does. A replay that runs
+   * on past this pause emits the engine's own event at the close instead, so nothing is counted twice in one trace.
+   */
+  pauseEvents(prompt, picks, ctx, state) {
+    if ((prompt as { deferredMove?: boolean }).deferredMove) { return []; }
+    const player = promptPlayer(state, prompt.playerId);
+    const actor = playerIdToActor(state, prompt.playerId);
+    const out: NeutralEvent[] = [];
+    for (const p of realPicks(picks) as Array<{ to: CardTarget; index: number }>) {
+      const card = prompt.cardList.cards[p.index];
+      if (card === undefined || findPokemonSlot(state, card) !== undefined) { continue; }
+      out.push({ kind: 'energyAttached', player: actor, card: card.name, pokemon: pokemonTargetToIid(state, player, ctx, p.to) });
+    }
+    return out;
   },
 
 };
