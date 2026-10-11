@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
 import { Card, ChooseCardsPrompt, EnergyCard, GameError, GameMessage, ShuffleDeckPrompt, State, StoreLike } from '../../../game';
 import { AttackEffect, Effect } from '../../../game/store/effects/game-effects';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, MOVE_CARDS, SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
 
 function* useColorfulCatch(next: Function, store: StoreLike, state: State, effect: AttackEffect): IterableIterator<State> {
   const player = effect.player;
@@ -32,6 +32,9 @@ function* useColorfulCatch(next: Function, store: StoreLike, state: State, effec
         throw new GameError(GameMessage.CAN_ONLY_SELECT_TWO_DIFFERENT_ENERGY_TYPES);
       }
     }
+
+    // TA-691 / B.97: "reveal them": the picks are shown to the opponent before they go to the hand (Gimmighoul ssp-097).
+    SHOW_CARDS_TO_PLAYER(store, state, effect.opponent, cards);
 
     MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.source.getPokemonCard()! });
     next();

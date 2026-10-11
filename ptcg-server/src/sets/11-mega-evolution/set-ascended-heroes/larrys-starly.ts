@@ -11,7 +11,7 @@ import {
   EnergyType,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import {WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS, SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
 
 export class LarrysStarly extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -59,6 +59,8 @@ export class LarrysStarly extends PokemonCard {
         ),
         (selected) => {
           const cards = selected || [];
+          // TA-691 / B.97: "reveal them": the picks are shown to the opponent before they go to the hand (Gimmighoul ssp-097).
+          SHOW_CARDS_TO_PLAYER(store, state, effect.opponent, cards);
           cards.forEach((card) => {
             MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: this });
           });

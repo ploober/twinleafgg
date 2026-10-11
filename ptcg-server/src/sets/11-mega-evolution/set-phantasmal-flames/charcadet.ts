@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChooseCardsPrompt, GameMessage, ShuffleDeckPrompt } from '../../../game';
-import { MOVE_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Charcadet extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -40,7 +40,16 @@ export class Charcadet extends PokemonCard {
 
       // TA-131: declarable with an empty deck (rulebook p.20). The search whiffs and the trailing
       // shuffle ("Then, shuffle your deck") still fires (CF-9/TA-126).
-      state = store.prompt(state, new ChooseCardsPrompt(
+      if (player.deck.cards.length === 0) {
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
+      }
+
+      // TA-691 / B.97: "reveal them": the picks are shown to the opponent before they go to the hand, and the shuffle
+      // is raised inside the pick callback so the reveal precedes it (Gimmighoul ssp-097, TA-542 / TA-582: raised
+      // beside the open pick, the shuffle resolved first and the show after it).
+      return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
@@ -49,12 +58,13 @@ export class Charcadet extends PokemonCard {
       ), cards => {
         cards = cards || [];
         if (cards.length > 0) {
+          SHOW_CARDS_TO_PLAYER(store, state, effect.opponent, cards);
           MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
         }
-      });
 
-      return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-        player.deck.applyOrder(order);
+        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+        });
       });
     }
 
