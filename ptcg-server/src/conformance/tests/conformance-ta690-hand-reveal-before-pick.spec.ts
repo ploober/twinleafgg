@@ -84,6 +84,16 @@ describe('TA-690 / B.97: Thieving Swipe (N\'s Purrloin jtg-096) reveals the oppo
     expect(legs(r.events, 'bh1')).toEqual(['hand>deck:bottom:owner']);
   });
 
+  it('an EMPTY deck: the chosen card still goes to the bottom, and the leg says bottom, not top [TA-706 jtg-096]', () => {
+    // TA-706: the MOVE_CARDS carried no toBottom, so the leg derivation had no declared end and the whole-deck-landed
+    // rule read the lone card as deck:top; rotomancer says bottom (the TA-704 shape).
+    const b = board(bHand); b.players.B.deck = [];
+    const r = step(b, [swipe, { actor: 'A', type: 'choose', target: 'bh1' } as never]);
+    // The attack ends A's turn and B draws the lone card straight back: the two legs stay (B.81).
+    expect(legs(r.events, 'bh1')).toEqual(['hand>deck:bottom:owner', 'deck>hand:owner']);
+    expect(r.state.players.B.hand.map(c => c.iid)).toContain('bh1');
+  });
+
   it('one card in hand: revealed, then put on the bottom with no pick (CF-14); the leg is public [TA-690 jtg-096]', () => {
     const r = step(board([bHand[0]]), [swipe]);
     expect(reveals(r.events)).toEqual([{ kind: 'reveal', owner: 'B', cards: ['bh0'], from: 'hand', to: 'all' } as NeutralEvent]);

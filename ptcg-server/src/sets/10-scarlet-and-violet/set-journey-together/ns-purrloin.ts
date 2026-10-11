@@ -60,7 +60,7 @@ export class NsPurrloin extends PokemonCard {
           ),
           (selected) => {
             cards = selected || [];
-            MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this });
+            MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this, toBottom: true });
           },
         );
       });
