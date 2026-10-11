@@ -10,6 +10,7 @@ import {
   State,
 } from '../../../game';
 import { Card } from '../../../game/store/card/card';
+import { GamePhase } from '../../../game/store/state/state';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
@@ -72,7 +73,16 @@ export class Miraidon extends PokemonCard {
         return state;
       }
 
-      if (!player.marker.hasMarker(player.DAMAGE_DEALT_MARKER)) {
+      // TA-695: "Knocked Out by damage from an attack from your OPPONENT's Pokémon". This read the player-level
+      // DAMAGE_DEALT_MARKER alone, which this Pokémon's own recoil sets too (Thunder: "This Pokémon also does 30
+      // damage to itself", during its owner's attack), so Photon Cord fired on a self Knock Out. The engine's own
+      // per-Pokémon KO cause (TA-573, game-effect.ts): the opponent is the attacker, and THIS Pokémon took the
+      // attack's damage this turn.
+      const opponent = StateUtils.getOpponent(state, player);
+      const byOpponentsAttackDamage = state.phase === GamePhase.ATTACK
+        && state.players[state.activePlayer] === opponent
+        && effect.target.attackDamagedOnTurn === state.turn;
+      if (!byOpponentsAttackDamage) {
         return state;
       }
 
