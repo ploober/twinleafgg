@@ -750,8 +750,13 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // Cross-batch turn-boundary memory for the deferred `turnEnded` (TA-2/TA-8) — one per replay.
   const turnCarry: TurnCarry = {};
 
-  // B.81: the cards a `reveal` named since the last dispatch — their next leg is `public`.
+  // B.81: the cards a `reveal` named since the last CLIENT action — their next leg is `public`.
+  // TA-690: the memory used to end at every dispatch, but the loop's own dispatches (a show's ack, a CF-14 collapse, a
+  // forced shuffle) are no pause: a hand revealed by Thieving Swipe and put under the deck by the collapsed one-card
+  // pick moves `public`, while the same pick made at a surfaced pending is a new action and moves `owner` (rotomancer
+  // on both, 2026-10-11). The memory is cleared when a dispatch starts after the cursor moved (below).
   const revealedSince = new Set<string>();
+  let cursorAtLastDispatch = -1;
   // B.87 / TA-643: deck legs of a dispatch that ended at an auto-acknowledged wait (see dispatchAndCollect).
   let deckLegsAtWait: MovedEvent[] = [];
 
@@ -846,6 +851,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   };
 
   const dispatchAndCollect = (fire: () => void): void => {
+    // TA-690 / B.81: a client action was consumed since the last dispatch (a top-level action, an answered pick, a
+    // flip, a shuffle): the reveal memory ends there, not at the loop's own dispatches.
+    if (cursor.i !== cursorAtLastDispatch) {
+      revealedSince.clear();
+      cursorAtLastDispatch = cursor.i;
+    }
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
     liftedOffDeck.clear();
@@ -949,7 +960,6 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       ? [...deckLegsAtWait, ...legs].filter((e): e is MovedEvent => e.kind === 'moved' && e.destination.zone === 'deck'
         && e.destination.position !== 'any')
       : [];
-    revealedSince.clear();
     // TA-590: a held pick the engine has taken out of the deck is placed; the trace has its leg.
     for (const [card, h] of held) { if (!h.source.cards.includes(card)) { held.delete(card); } }
     if (starved !== undefined) { throw starved; }

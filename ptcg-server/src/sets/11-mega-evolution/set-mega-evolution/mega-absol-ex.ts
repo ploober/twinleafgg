@@ -2,7 +2,7 @@ import { CardTag, CardType, Stage } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { ChooseCardsPrompt, GameMessage, PokemonCard, StateUtils } from '../../../game';
+import { ChooseCardsPrompt, GameMessage, PokemonCard, ShowCardsPrompt, StateUtils } from '../../../game';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
@@ -58,24 +58,31 @@ export class MegaAbsolex extends PokemonCard {
         return state;
       }
 
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
-          opponent.hand,
-          {},
-          { allowCancel: false, min: 1, max: 1 },
-        ),
-        (selectedCard) => {
-          const selected = selectedCard || [];
-          if (selectedCard === null || selected.length === 0) {
-            return;
-          }
+      // TA-690 / B.97 (the TA-667 shape): "Your opponent reveals their hand": the whole hand is shown before the pick.
+      return store.prompt(state, new ShowCardsPrompt(
+        player.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        opponent.hand.cards
+      ), () => {
+        store.prompt(
+          state,
+          new ChooseCardsPrompt(
+            player,
+            GameMessage.CHOOSE_CARD_TO_DISCARD,
+            opponent.hand,
+            {},
+            { allowCancel: false, min: 1, max: 1 },
+          ),
+          (selectedCard) => {
+            const selected = selectedCard || [];
+            if (selectedCard === null || selected.length === 0) {
+              return;
+            }
 
-          MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [selected[0]], sourceCard: this });
-        },
-      );
+            MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [selected[0]], sourceCard: this });
+          },
+        );
+      });
     }
 
     return state;

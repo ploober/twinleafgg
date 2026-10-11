@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, Card, GameMessage, ChooseCardsPrompt } from '../../../game';
+import { StoreLike, State, StateUtils, Card, GameMessage, ChooseCardsPrompt, ShowCardsPrompt } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -42,21 +42,28 @@ export class NsPurrloin extends PokemonCard {
         return state;
       }
 
-      let cards: Card[] = [];
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_DECK,
-          opponent.hand,
-          {},
-          { min: 1, max: 1, allowCancel: false },
-        ),
-        (selected) => {
-          cards = selected || [];
-          MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this });
-        },
-      );
+      // TA-690 / B.97 (the TA-667 shape): "Your opponent reveals their hand": the whole hand is shown before the pick.
+      return store.prompt(state, new ShowCardsPrompt(
+        player.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        opponent.hand.cards
+      ), () => {
+        let cards: Card[] = [];
+        store.prompt(
+          state,
+          new ChooseCardsPrompt(
+            player,
+            GameMessage.CHOOSE_CARD_TO_DECK,
+            opponent.hand,
+            {},
+            { min: 1, max: 1, allowCancel: false },
+          ),
+          (selected) => {
+            cards = selected || [];
+            MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this });
+          },
+        );
+      });
     }
 
     return state;
