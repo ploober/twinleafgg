@@ -862,6 +862,21 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     for (const c of cards) { deckPuts.set(c, { player: p, end }); }
   };
 
+  // TA-708 (B.81): every Energy put onto a Pokemon in play this dispatch, with that Pokemon's basic iid and section.
+  // Live identity only; cleared per dispatch. An Energy off every Pokemon again when the dispatch ends (its Pokemon was
+  // Knocked Out in the same step) was attached and left, which the board diff cannot see.
+  const attachPuts = new Map<Card, { player: Player; basic: string; section: 'active' | 'bench' }>();
+  CardList.attachPut = (slot: CardList, cards: Card[]): void => {
+    const p = game.store.state.players.find(pl => pl.active === slot || pl.bench.includes(slot as PokemonCardList));
+    if (p === undefined) { return; }
+    const bottom = (slot as PokemonCardList).getPokemons()[0];
+    const basic = bottom === undefined ? undefined : game.ctx.cardToIid.get(bottom);
+    if (basic === undefined) { return; }
+    for (const c of cards) {
+      if (c.superType === SuperType.ENERGY) { attachPuts.set(c, { player: p, basic, section: p.active === slot ? 'active' : 'bench' }); }
+    }
+  };
+
   // TA-664 (#1995, #2257): a counter moved off a Pokemon is not healed, even when its placement is prevented and it
   // vanishes (Adrena-Brain under Battle Cage). Live identity only (a probe's clone constructs the effect too).
   let countersMoved = false;
@@ -896,6 +911,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const beforeDraws = drawOps.length;
     liftedOffDeck.clear();
     deckPuts.clear();
+    attachPuts.clear();   // TA-708
     // TA-698: the cards physically in each deck now (a bottom segment under an open shuffle projects in transit).
     const inDeckAtStart = new Map<Card, Player>();
     for (const p of game.state.players) { for (const c of p.deck.cards) { inDeckAtStart.set(c, p); } }
@@ -951,6 +967,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // CF-60 forbids minting, so this is stable; built per dispatch for simplicity, it is a cheap copy.
     const allNames = allIidNames(game.ctx);
     const draws = drawOps.splice(beforeDraws);
+    const derivedAt = events.length;   // TA-708: this dispatch's derived events start here
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
       draws, countersMoved));
     countersMoved = false;
@@ -1006,6 +1023,50 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         if (at >= 0) { legs.splice(at, 1, into, outOf); } else { legs.push(into, outOf); }
       }
     }
+    // TA-708 (B.81 (1); TA-412's silent attach): an Energy attached this dispatch that is on no Pokemon when it ends
+    // went onto the Pokemon and off it again with it (attach, then that Pokemon Knocked Out). The board diff saw neither
+    // the attach (TA-412 synthesizes a silent attach from the AFTER board) nor the stop. Its leg is split at the
+    // Pokemon, and its energyAttached is added unless the engine logged that attach (an AttachEnergyEffect does; TA-415
+    // resolves it to the departed Pokemon), counted per (player, Pokemon, card name).
+    if (starved === undefined && attachPuts.size > 0) {
+      const bBefore = boardOf(movedBefore);
+      const bAfter = boardOf(movedAfter);
+      const onPokemon = new Set<Card>();
+      for (const p of game.state.players) {
+        for (const slot of [p.active, ...p.bench]) { for (const c of slot.cards) { onPokemon.add(c); } }
+      }
+      const owed = new Map<string, number>();
+      const firstOf = new Map<string, { player: NeutralPlayerId; card: string; pokemon: string }>();
+      for (const [card, put] of attachPuts) {
+        if (onPokemon.has(card)) { continue; }
+        const iid = game.ctx.cardToIid.get(card);
+        if (iid === undefined) { continue; }
+        const owner = playerIdToActor(game.state, put.player.id);
+        const key = `${owner}|${put.basic}|${card.name}`;
+        owed.set(key, (owed.get(key) ?? 0) + 1);
+        firstOf.set(key, { player: owner, card: card.name, pokemon: put.basic });
+        const from = bBefore.at.get(iid);
+        const to = bAfter.at.get(iid);
+        if (from === undefined || to === undefined) { continue; }
+        const stop: Place = { owner, loc: { zone: put.section, pokemon: put.basic, role: 'energy' } };
+        const into: MovedEvent = { kind: 'moved', owner, card: iid, origin: { ...from.loc }, destination: { ...stop.loc },
+          visibility: visibilityOf(from, stop, iid, bBefore, bAfter, revealedSince) };
+        const outOf: MovedEvent = { kind: 'moved', owner, card: iid, origin: { ...stop.loc }, destination: { ...to.loc },
+          visibility: visibilityOf(stop, to, iid, bBefore, bAfter, revealedSince) };
+        const at = legs.findIndex(l => l.kind === 'moved' && l.card === iid);
+        if (at >= 0) { legs.splice(at, 1, into, outOf); } else { legs.push(into, outOf); }
+      }
+      for (const [key, n] of owed) {
+        const e = firstOf.get(key)!;
+        const logged = events.slice(derivedAt).filter(x => x.kind === 'energyAttached' && x.player === e.player
+          && (x as { pokemon?: string }).pokemon === e.pokemon && (x as { card?: string }).card === e.card).length;
+        const ko = events.findIndex((x, i) => i >= derivedAt && x.kind === 'ko' && (x as { target?: string }).target === e.pokemon);
+        const add: NeutralEvent[] = Array.from({ length: Math.max(0, n - logged) },
+          () => ({ kind: 'energyAttached', player: e.player, card: e.card, pokemon: e.pokemon }));
+        if (ko >= 0) { events.splice(ko, 0, ...add); } else { events.push(...add); }
+      }
+    }
+    attachPuts.clear();
     events.push(...legs);
     // TA-665: a card lifted off its deck and back in that deck by the end of the dispatch went deck -> transit -> deck.
     const returned = new Map<Player, Card[]>();
@@ -1091,6 +1152,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
     CardList.deckPut = undefined;   // TA-698
+    CardList.attachPut = undefined;   // TA-708
     MoveDamageCountersEffect.observed = undefined;
   }
 

@@ -109,6 +109,14 @@ export class CardList {
    */
   public static deckPut?: (deck: CardList, cards: Card[], end: 'top' | 'bottom') => void;
 
+  /**
+   * TA-708 (conformance only, inert for gameplay — unset outside the conformance driver). Called once per put of cards
+   * onto a Pokémon in play (`moveTo` / `moveCardsTo` into a PokemonCardList). The driver uses it for an Energy that is
+   * off that Pokémon again by the end of the dispatch (Overvolt Discharge attaches, then Knocks Out its own Magneton):
+   * its attach and its stop on the Pokémon are physical moves the board diff cannot see (B.81).
+   */
+  public static attachPut?: (slot: CardList, cards: Card[]) => void;
+
   private stampMovedCards(cards: Card[], destination: CardList): void {
     if (destination.zoneTag !== undefined) { return; }   // re-entering the settled deck: stamps kept
     if (this.zoneTag !== 'deck' && this.fromZoneTag !== 'deck') { return; }
@@ -167,6 +175,7 @@ export class CardList {
     if (cards.length > 0) {
       CardList.topTake?.(this, destination, cards.length);
       if (destination.zoneTag === 'deck') { CardList.deckPut?.(destination, cards, 'bottom'); }   // TA-698 (conformance; inert)
+      if ('energies' in destination) { CardList.attachPut?.(destination, cards); }   // TA-708 (conformance; inert)
     }
   }
 
@@ -229,6 +238,7 @@ export class CardList {
     }
     this.stampMovedCards(moved, destination);   // CF-61 residual
     if (moved.length > 0 && destination.zoneTag === 'deck') { CardList.deckPut?.(destination, moved, 'bottom'); }   // TA-698 (conformance; inert)
+    if (moved.length > 0 && 'energies' in destination) { CardList.attachPut?.(destination, moved); }   // TA-708 (conformance; inert)
   }
 
   public moveCardTo(card: Card, destination: CardList): void {
