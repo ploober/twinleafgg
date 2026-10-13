@@ -13009,6 +13009,16 @@
       "fixes": [
         "FX-0491"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "  CardList.attachPut = (slot: CardList, cards: Card[]): void => {"
+      ],
+      "note": "TA-708 (2026-10-12): An Energy attached to a Pokémon that leaves play in the same step keeps its energyAttached and its legs: CardList.attach",
+      "fixes": [
+        "FX-0492"
+      ]
     }
   ]
 }
