@@ -77,7 +77,7 @@ describe('TA-699 Accompanying Flute twm-142: the OPPONENT shuffles the other car
       const reveals = r.events.filter(e => e.kind === 'reveal') as Array<{ kind: 'reveal'; owner: string; cards: string[]; from: string }>;
       expect(reveals.length).toBe(1);
       expect(reveals[0].owner).toBe('B');
-      expect(['deck', 'transit']).toContain(reveals[0].from);   // the five were lifted before the show (B.80: from transit)
+      expect(reveals[0].from).toBe('deck');   // TA-707: the zone at the start of the action, not the prompt pile
       expect(reveals[0].cards.every(iid => iid.startsWith('bd'))).toBe(true);
     });
 

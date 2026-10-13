@@ -63,7 +63,14 @@ export class PerformanceFlute extends TrainerCard {
       const deckTop = new CardList();
       MOVE_CARDS(store, state, opponent.deck, deckTop, { count: 5, sourceCard: this });
 
-      return store.prompt(state, new ChooseCardsPrompt(
+      // TA-707: "Reveal the top 5 cards of your opponent's deck." The reveal comes FIRST, to the opponent (the player
+      // sees them through the choice below), on every branch. It used to be raised only when nothing was chosen, after
+      // the choice, so a benched Basic left the opponent never having seen the five.
+      return store.prompt(state, new ShowCardsPrompt(
+        opponent.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        deckTop.cards
+      ), () => store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         deckTop,
@@ -72,24 +79,15 @@ export class PerformanceFlute extends TrainerCard {
       ), selected => {
         const cards = selected || [];
 
-        // Operation canceled by the user
         if (cards.length === 0) {
+          MOVE_CARDS(store, state, deckTop, opponent.deck, { sourceCard: this });
 
-          return store.prompt(state, new ShowCardsPrompt(
-            opponent.id,
-            GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-            deckTop.cards
-          ), () => {
-
-            MOVE_CARDS(store, state, deckTop, opponent.deck, { sourceCard: this });
-
-            // TA-699: "Your opponent shuffles the other cards back into their deck." This branch shuffled the
-            // PLAYER's deck (ShuffleDeckPrompt(player.id) / player.deck.applyOrder) and left the opponent's five
-            // revealed cards under the opponent's deck in the order both players had just seen.
-            return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
-              opponent.deck.applyOrder(order);
-              return state;
-            });
+          // TA-699: "Your opponent shuffles the other cards back into their deck." This branch shuffled the
+          // PLAYER's deck (ShuffleDeckPrompt(player.id) / player.deck.applyOrder) and left the opponent's five
+          // revealed cards under the opponent's deck in the order both players had just seen.
+          return store.prompt(state, new ShuffleDeckPrompt(opponent.id), order => {
+            opponent.deck.applyOrder(order);
+            return state;
           });
         }
 
@@ -104,7 +102,7 @@ export class PerformanceFlute extends TrainerCard {
           opponent.deck.applyOrder(order);
           return state;
         });
-      });
+      }));
 
     }
     return state;
