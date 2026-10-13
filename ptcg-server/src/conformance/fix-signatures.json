@@ -12999,6 +12999,16 @@
       "fixes": [
         "FX-0490"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/performance-flute.ts",
+      "signatures": [
+        "      ), () => store.prompt(state, new ChooseCardsPrompt("
+      ],
+      "note": "TA-707 (2026-10-12): Accompanying Flute twm-142 reveals the top five to the opponent first, on every branch; the late show only on the nothin",
+      "fixes": [
+        "FX-0491"
+      ]
     }
   ]
 }
