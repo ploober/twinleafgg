@@ -13019,6 +13019,19 @@
       "fixes": [
         "FX-0492"
       ]
+    },
+    {
+      "file": "set-phantasmal-flames/oricorio-ex.ts",
+      "signatures": [
+        "{ allowCancel: false, blockedTo: blocked, min: 1, max: 1 },"
+      ],
+      "absentSignatures": [
+        "const hasMegaEvolutionPokemonInPlay = player.active.cards.some((c) => {"
+      ],
+      "note": "TA-709 (2026-10-17): Excited Turbo pfl-018 searches every in-play Pokémon for the [R] Mega Evolution Pokémon ex (it read the Active Spot only",
+      "fixes": [
+        "FX-0493"
+      ]
     }
   ]
 }
