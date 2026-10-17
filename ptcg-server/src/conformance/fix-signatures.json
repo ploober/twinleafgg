@@ -10099,7 +10099,10 @@
     {
       "file": "set-scarlet-and-violet/revavroom.ts",
       "signatures": [
-        "      if (player.deck.cards.length === 0) {"
+        "{ allowCancel: false, min: 1, max: 1 }   // TA-572: the cost of an Ability already activated has no decline (B.46)"
+      ],
+      "absentSignatures": [
+        "{ allowCancel: true, min: 1, max: 1 }"
       ],
       "note": "TA-572 (2026-10-04): Revavroom svi-142 Rumbling Engine is refused with an empty deck (#169, #13), and its Energy cost is not cancellable (B.4",
       "fixes": [
@@ -12861,7 +12864,7 @@
       "file": "set-twilight-masquerade/performance-flute.ts",
       "signatures": [],
       "absentSignatures": [
-        "return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {"
+        "new ShuffleDeckPrompt(player.id)"
       ],
       "note": "TA-699 (2026-10-11): Accompanying Flute twm-142: with no Basic among the five the OPPONENT shuffles their deck (it shuffled the player's own ",
       "fixes": [
