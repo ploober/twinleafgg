@@ -59,13 +59,16 @@ export class Oricorioex extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasMegaEvolutionPokemonInPlay = player.active.cards.some((c) => {
-        return (
-          c instanceof PokemonCard &&
-          c.hasTag(CardTag.POKEMON_ex) &&
-          c.hasTag(CardTag.POKEMON_SV_MEGA) &&
-          pokemonHasCardType(c, CardType.FIRE)
-        );
+      // TA-709: "in play" is the Active Spot and the Bench.
+      let hasMegaEvolutionPokemonInPlay = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card) => {
+        if (
+          card.hasTag(CardTag.POKEMON_ex) &&
+          card.hasTag(CardTag.POKEMON_SV_MEGA) &&
+          pokemonHasCardType(card, CardType.FIRE)
+        ) {
+          hasMegaEvolutionPokemonInPlay = true;
+        }
       });
       if (!hasMegaEvolutionPokemonInPlay) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
@@ -107,7 +110,7 @@ export class Oricorioex extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-          { allowCancel: false, blockedTo: blocked },
+          { allowCancel: false, blockedTo: blocked, min: 1, max: 1 },
         ),
         (transfers) => {
           transfers = transfers || [];
