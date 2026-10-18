@@ -66,12 +66,13 @@ export class Clavell extends TrainerCard {
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,
         { superType: SuperType.POKEMON, stage: Stage.BASIC },
-        { min: 0, max: 3, allowCancel: false }
+        { min: 0, max: 3, allowCancel: false, blocked }   // TA-714: 120 HP or less
       ), selectedCards => {
         cards = selectedCards || [];
 
         MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
+        // TA-712 (#916): no self-discard here: Clavell is still resolving (its shuffle is owed). The generic
+        // finalizeTrainerCleanup discards it once no prompt is open, i.e. after the shuffle.
 
         state = store.prompt(state, new ShowCardsPrompt(
           opponent.id,

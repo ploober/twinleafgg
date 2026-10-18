@@ -38,6 +38,8 @@ function* playCard(
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
+  // TA-712 (#916 / B.80): the played Supporter is on the playing field while it resolves.
+  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
 
   yield store.prompt(
     state,
@@ -55,7 +57,8 @@ function* playCard(
   );
 
   MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
-  MOVE_CARDS(store, state, player.hand, player.discard, { cards: [effect.trainerCard], sourceCard: self });
+  // TA-712 (#916): no self-discard here: Cyrano is still resolving (its shuffle is owed). The generic
+  // finalizeTrainerCleanup discards it once no prompt is open, i.e. after the shuffle.
 
   if (cards.length > 0) {
     yield store.prompt(
