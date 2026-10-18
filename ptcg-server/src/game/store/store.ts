@@ -419,6 +419,15 @@ export class Store implements StoreLike {
         }
       }
 
+      // TA-710 (B.89 (5), B.102): a 'Choose cards' prompt asked of the attacker over its own discard pile (King's Order
+      // sfa-012, Recovery Net twm-019) is a Step-D choice too: each pick is `chosen` and stays in the discard pile until
+      // the effect moves it. Damage or none: a no-damage attack still makes its Step-D choices first. Only the adapter
+      // reads the mark here; MOVE_CARDS still moves these cards in the callback, after the last pick.
+      if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Choose cards'
+          && (p as unknown as { cards?: CardList }).cards === (pre.player as Player).discard) {
+        p.deferredMove = true;
+      }
+
       state.prompts.push(prompts[i]);
       this.stampTrainerPrompt(prompts[i].id);
     }

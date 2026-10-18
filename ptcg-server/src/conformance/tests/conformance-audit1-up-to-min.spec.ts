@@ -95,10 +95,21 @@ describe('TA-682: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon from y
     expect(offersStop(r)).toBe(true);
   });
 
-  it('twm-019 Recovery Net: a card picked out of the discard pile is in transit as public (a public zone), origin discardPile [TA-689]', () => {
+  it('twm-019 Recovery Net: the first pick is chosen and stays in the discard pile (B.102) [TA-710]', () => {
+    // TA-710 supersedes this cell's TA-689 reading for an ATTACK's pick: a Step-D choice from the discard pile records
+    // `chosen` and the card stays there until the effect moves it (rotomancer RE-241). TA-689's law (a card lifted
+    // out of a discard pile is public in transit) is held below on a Trainer's pick, which is no Step-D choice.
+    const r = step(b(), [declare('Recovery Net'), choose('adc0')]);
+    expect(r.state.players.A.transit ?? []).toEqual([]);
+    expect(r.state.players.A.discard.map(c => c.iid)).toEqual(['adc0', 'adc1']);
+    expect(r.events.filter(e => e.kind === 'chosen').map(e => (e as { card: string }).card)).toEqual(['adc0']);
+  });
+
+  it('Energy Retrieval svi-171: a card picked out of the discard pile is in transit as public (a public zone), origin discardPile [TA-689]', () => {
     // Contract (TransitCard.visibility): `public` is "revealed to both players"; a discard pile is public, so a card
     // lifted out of it is public in transit. The mid-pick lift projected every `choose` pick as `owner`.
-    const r = step(b(), [declare('Recovery Net'), choose('adc0')]);
+    const r = step(board(['twm-019'], 'G', { discard: [E.G, E.R], hand: ['svi-171'] }), [A({ type: 'playItem', card: 'ah0' }), choose('adc0')]);
+    expect(r.pending?.actor).toBe('A');
     const t = r.state.players.A.transit ?? [];
     expect(t.map(e => e.iid)).toEqual(['adc0']);
     expect(t[0].origin).toEqual({ zone: 'discardPile' });
