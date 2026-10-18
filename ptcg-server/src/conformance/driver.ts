@@ -762,6 +762,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // on both, 2026-10-11). The memory is cleared when a dispatch starts after the cursor moved (below).
   const revealedSince = new Set<string>();
   let cursorAtLastDispatch = -1;
+  // TA-713 / B.109 (owner 2026-10-17): a revealed card put into a deck is hidden information again. Its leg into the deck
+  // is public; the memory ends there, so its next leg out of the deck (a draw) is owner unless an effect reveals it then.
+  const concealInDeck = (legs: NeutralEvent[]): void => {
+    for (const l of legs) { if (l.kind === 'moved' && l.destination.zone === 'deck') { revealedSince.delete(l.card); } }
+  };
   // TA-701 (contract TransitCard.visibility; the TA-605 class): the cards a show has made public that are still LIFTED.
   // A revealed card the player goes on holding (Crispin's two Energy at the attach pick) is `public` in transit, and so
   // is the leg that finally places it; the pile projection's default (`owner`, a look) is wrong for it. Every board this
@@ -896,7 +901,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   CardList.legCut = (who: unknown): void => {
     if (segment === undefined || !game.store.state.players.some(p => p === who)) { return; }
     const now = traceProject();
-    segment.legs.push(...deriveMoved(segment.start, now, revealedSince, shuffledInDecks(game.store.state), declaredEnd));
+    const cutLegs = deriveMoved(segment.start, now, revealedSince, shuffledInDecks(game.store.state), declaredEnd);
+    concealInDeck(cutLegs);
+    segment.legs.push(...cutLegs);
     segment.start = now;
   };
 
@@ -1018,7 +1025,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           destination: { zone: 'deck', position: shuffledIn.has(owner) ? 'any' : end },
           visibility: visibilityOf(from, stop, iid, bBefore, bAfter, revealedSince) };
         const outOf: MovedEvent = { kind: 'moved', owner, card: iid, origin: { zone: 'deck' }, destination: { ...to.loc },
-          visibility: visibilityOf(stop, to, iid, bBefore, bAfter, revealedSince) };
+          visibility: visibilityOf(stop, to, iid, bBefore, bAfter, new Set()) };   // TA-713: hidden again in the deck
         const at = legs.findIndex(l => l.kind === 'moved' && l.card === iid);
         if (at >= 0) { legs.splice(at, 1, into, outOf); } else { legs.push(into, outOf); }
       }
@@ -1068,6 +1075,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
     attachPuts.clear();
     events.push(...legs);
+    concealInDeck(legs);
     // TA-665: a card lifted off its deck and back in that deck by the end of the dispatch went deck -> transit -> deck.
     const returned = new Map<Player, Card[]>();
     for (const [card, p] of liftedOffDeck) {
