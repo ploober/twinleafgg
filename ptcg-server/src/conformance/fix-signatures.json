@@ -13035,6 +13035,65 @@
       "fixes": [
         "FX-0493"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "  const concealInDeck = (legs: NeutralEvent[]): void => {"
+      ],
+      "note": "TA-713 (2026-10-17): A revealed card put back into the deck is hidden again: the reveal memory ends at its leg into the deck, so its draw mov",
+      "fixes": [
+        "FX-0494"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/brilliant-blender.ts",
+      "signatures": [
+        "  // TA-711 (B.97): the searched cards are not revealed; they become public by going to the discard pile."
+      ],
+      "absentSignatures": [
+        "import { Player, ShowCardsPrompt, StateUtils } from '../../../game';"
+      ],
+      "note": "TA-711 (2026-10-17): Brilliant Blender ssp-164 discards the searched cards with no reveal (it showed them to the opponent first) [TA-711]",
+      "fixes": [
+        "FX-0495"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/cyrano.ts",
+      "signatures": [
+        "  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });"
+      ],
+      "absentSignatures": [
+        "  MOVE_CARDS(store, state, player.hand, player.discard, { cards: [effect.trainerCard], sourceCard: self });"
+      ],
+      "note": "TA-712 (2026-10-17): Cyrano ssp-170 and Clavell pal-177 stay on the field (resolving) through their own shuffle; Cyrano now moves itself onto",
+      "fixes": [
+        "FX-0496"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/clavell.ts",
+      "signatures": [
+        "        { min: 0, max: 3, allowCancel: false, blocked }   // TA-714: 120 HP or less"
+      ],
+      "absentSignatures": [
+        "        { min: 0, max: 3, allowCancel: false }"
+      ],
+      "note": "TA-714 (2026-10-17): Clavell pal-177 passes its '120 HP or less' blocked list to the pick (it built it and never used it) [TA-714]",
+      "fixes": [
+        "FX-0497"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "          && (p as unknown as { cards?: CardList }).cards === (pre.player as Player).discard) {"
+      ],
+      "note": "TA-710 (2026-10-17): An attack's pick from its own discard pile is a Step-D choice: store.prompt marks the attacker's 'Choose cards' over its",
+      "fixes": [
+        "FX-0498"
+      ]
     }
   ]
 }
