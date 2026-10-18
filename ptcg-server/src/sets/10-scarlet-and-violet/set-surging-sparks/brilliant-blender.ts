@@ -9,7 +9,7 @@ import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
-import { Player, ShowCardsPrompt, StateUtils } from '../../../game';
+import { Player } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(
@@ -19,7 +19,6 @@ function* playCard(
   effect: TrainerEffect,
 ): IterableIterator<State> {
   const player = effect.player;
-  const opponent = StateUtils.getOpponent(state, player);
   let cards: Card[] = [];
 
   if (player.deck.cards.length === 0) {
@@ -52,14 +51,7 @@ function* playCard(
     });
   });
 
-  if (cards.length > 0) {
-    yield store.prompt(
-      state,
-      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
-      () => next(),
-    );
-  }
-
+  // TA-711 (B.97): the searched cards are not revealed; they become public by going to the discard pile.
   MOVE_CARDS(store, state, player.deck, player.discard, { cards: cards, sourceCard: effect.trainerCard });
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
