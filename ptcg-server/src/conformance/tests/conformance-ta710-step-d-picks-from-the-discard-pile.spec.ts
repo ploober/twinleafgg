@@ -55,12 +55,18 @@ const legs = (events: NeutralEvent[], iid: string) =>
   events.filter((e): e is Moved => e.kind === 'moved' && e.card === iid).map(e => `${e.origin.zone}>${e.destination.zone}`);
 const ids = (cs: Array<{ iid: string }> | undefined) => (cs ?? []).map(c => c.iid);
 
-for (const printing of ['sfa-012', 'sfa-080', 'svp-131']) {
+// Cell labels per printing (literal, so the registry can link them).
+const KO: Record<string, [string, string]> = {
+  'sfa-012': ['[TA-710 sfa-012]', '[TA-710 sfa-012 last]'],
+  'sfa-080': ['[TA-710 sfa-080]', '[TA-710 sfa-080 last]'],
+  'svp-131': ['[TA-710 svp-131]', '[TA-710 svp-131 last]'],
+};
+for (const printing of Object.keys(KO)) {
   describe(`TA-710 / B.102: King's Order (${printing}) chooses from the discard pile before anything moves`, () => {
     const declare = { actor: 'A', type: 'declareAttack', source: 'a1', name: 'King\'s Order' } as never;
     const discard = [...cards('adc', 2, HORSEA), { iid: 'adx0', printing: BASIC }];
 
-    it(`the first pick: chosen, and the card stays in the discard pile [TA-710 ${printing}]`, () => {
+    it(`the first pick: chosen, and the card stays in the discard pile ${KO[printing][0]}`, () => {
       const r = step(board(printing, WATER, discard), [declare, choose('adc0')]);
       expect(r.pending?.actor).toBe('A');
       expect(chosen(r.events)).toEqual(['adc0:discardPile']);
@@ -69,7 +75,7 @@ for (const printing of ['sfa-012', 'sfa-080', 'svp-131']) {
       expect(legs(r.events, 'adc0')).toEqual([]);
     });
 
-    it(`the last pick: both chosen, then both go to the Bench [TA-710 ${printing}]`, () => {
+    it(`the last pick: both chosen, then both go to the Bench ${KO[printing][1]}`, () => {
       const r = step(board(printing, WATER, discard), [declare, choose('adc0'), choose('adc1')]);
       expect(chosen(r.events)).toEqual(['adc0:discardPile', 'adc1:discardPile']);
       expect(legs(r.events, 'adc0')).toEqual(['discardPile>bench']);

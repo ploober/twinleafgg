@@ -95,7 +95,7 @@ describe('TA-682: Iron Leaves twm-019 Recovery Net ("Put up to 2 Pokémon from y
     expect(offersStop(r)).toBe(true);
   });
 
-  it('twm-019 Recovery Net: the first pick is chosen and stays in the discard pile (B.102) [TA-710]', () => {
+  it('twm-019 Recovery Net: the first pick is chosen and stays in the discard pile (B.102) [TA-710 twm-019 audit]', () => {
     // TA-710 supersedes this cell's TA-689 reading for an ATTACK's pick: a Step-D choice from the discard pile records
     // `chosen` and the card stays there until the effect moves it (rotomancer RE-241). TA-689's law (a card lifted
     // out of a discard pile is public in transit) is held below on a Trainer's pick, which is no Step-D choice.

@@ -49,18 +49,23 @@ const stop = { actor: 'A', type: 'confirm', value: false } as never;
 const resolving = (s: NeutralState) => (s.players.A.resolving ?? []).map(c => c.iid);
 const discard = (s: NeutralState) => s.players.A.discard.map(c => c.iid);
 
+// Cell labels per printing (literal, so the registry can link them).
+const TAG: Record<string, [string, string, string]> = {
+  [CYRANO]: ['[TA-712 ssp-170]', '[TA-712 ssp-170 pick]', '[TA-712 ssp-170 after]'],
+  [CLAVELL]: ['[TA-712 pal-177]', '[TA-712 pal-177 pick]', '[TA-712 pal-177 after]'],
+};
 for (const [name, printing] of [['Cyrano', CYRANO], ['Clavell', CLAVELL]] as const) {
   describe(`TA-712 / #916: ${name} (${printing}) stays on the field through its own shuffle`, () => {
     const deck = [{ iid: 'ax0', printing: LATIAS }, { iid: 'as0', printing: SMALL }, ...cards('ag', 4, GRASS)];
 
-    it(`nothing taken: at the shuffle pause ${name} is resolving, not in the discard pile [TA-712 ${printing}]`, () => {
+    it(`nothing taken: at the shuffle pause ${name} is resolving, not in the discard pile ${TAG[printing][0]}`, () => {
       const r = step(board(printing, deck), [play, stop]);
       expect(r.pending?.actor).toBe('system');
       expect(resolving(r.state)).toEqual(['ah0']);
       expect(discard(r.state)).not.toContain('ah0');
     });
 
-    it(`one card taken: ${name} is still resolving at the shuffle pause [TA-712 ${printing}]`, () => {
+    it(`one card taken: ${name} is still resolving at the shuffle pause ${TAG[printing][1]}`, () => {
       const target = printing === CYRANO ? 'ax0' : 'as0';
       // The only eligible card: taking it ends the pick (nothing is left to choose), so there is no stop.
       const r = step(board(printing, deck), [play, choose(target)]);
@@ -70,7 +75,7 @@ for (const [name, printing] of [['Cyrano', CYRANO], ['Clavell', CLAVELL]] as con
       expect(discard(r.state)).not.toContain('ah0');
     });
 
-    it(`after the shuffle ${name} is in the discard pile [TA-712 ${printing}]`, () => {
+    it(`after the shuffle ${name} is in the discard pile ${TAG[printing][2]}`, () => {
       const shuffle = { actor: 'system', type: 'shuffle', order: deck.map(c => c.iid) } as never;
       const r = step(board(printing, deck), [play, stop, shuffle]);
       expect(r.applied).toBe(3);
