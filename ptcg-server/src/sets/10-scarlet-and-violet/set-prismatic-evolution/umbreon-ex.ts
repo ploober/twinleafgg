@@ -90,5 +90,5 @@ export class Umbreonex extends PokemonCard {
       effect.preventDefault = true;
     }
     return state;
-   }
+  }
 }
