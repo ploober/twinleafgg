@@ -13094,6 +13094,16 @@
       "fixes": [
         "FX-0498"
       ]
+    },
+    {
+      "file": "set-prismatic-evolution/umbreon-ex.ts",
+      "signatures": [
+        "      // TA-715 / B.110: the Prize is named at Step D (B.89 (5)), before the Energy is discarded."
+      ],
+      "note": "TA-715 (2026-10-19): Onyx (Umbreon ex pre-060 / pre-161 / svp-176) names its Prize at Step D before the Energy is discarded, and the named Pr",
+      "fixes": [
+        "FX-0499"
+      ]
     }
   ]
 }
