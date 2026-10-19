@@ -13104,6 +13104,19 @@
       "fixes": [
         "FX-0499"
       ]
+    },
+    {
+      "file": "set-prismatic-evolution/umbreon-ex.ts",
+      "signatures": [
+        "      // TA-715 / B.110: the Prize is named at Step D (B.89 (5)), before the Energy is discarded."
+      ],
+      "absentSignatures": [
+        "  shuffleFaceDownPrizeCards(array: CardList[]): CardList[] {"
+      ],
+      "note": "TA-716 (2026-10-19): Umbreon ex pre-060: the uncalled Math.random method removed, so the card is no longer flagged nondeterministic and its a",
+      "fixes": [
+        "FX-0500"
+      ]
     }
   ]
 }
