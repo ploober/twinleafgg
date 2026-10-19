@@ -63,15 +63,16 @@ export class Umbreonex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 1, this)) {
       const player = effect.player;
 
-      const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
-      state = store.reduceEffect(state, checkProvidedEnergy);
+      // TA-715 / B.110: the Prize is named at Step D (B.89 (5)), before the Energy is discarded.
+      return TAKE_X_PRIZES(store, state, player, 1, {}, () => {
+        const checkProvidedEnergy = new CheckProvidedEnergyEffect(player);
+        state = store.reduceEffect(state, checkProvidedEnergy);
 
-      const cards: Card[] = checkProvidedEnergy.energyMap.map((e) => e.card);
-      const discardEnergy = new DiscardCardsEffect(effect, cards);
-      discardEnergy.target = player.active;
-      store.reduceEffect(state, discardEnergy);
-
-      return TAKE_X_PRIZES(store, state, player, 1);
+        const cards: Card[] = checkProvidedEnergy.energyMap.map((e) => e.card);
+        const discardEnergy = new DiscardCardsEffect(effect, cards);
+        discardEnergy.target = player.active;
+        store.reduceEffect(state, discardEnergy);
+      });
     }
 
     if (

@@ -2,6 +2,7 @@ import { ChoosePrizePrompt, ChoosePrizePromptType } from '../../game/store/promp
 import { State } from '../../game/store/state/state';
 import { Player } from '../../game/store/state/player';
 import { CardList } from '../../game/store/state/card-list';
+import { Card } from '../../game/store/card/card';
 import { LegalAction, NeutralState } from '../neutral-types';
 import { PromptDecomposer, WirePick, realPicks, buildPending } from './decomposer';
 import { playerIdToActor } from '../iid-targets';
@@ -140,6 +141,20 @@ export const choosePrizeDecomposer: PromptDecomposer<ChoosePrizePrompt> = {
 
   assemble(_prompt, picks): number[] {
     return (realPicks(picks) as Array<{ kind: 'prize'; index: number }>).map(p => p.index);
+  },
+
+  /** TA-715 / B.110: the Prize an attack's Step-D take named (the prompt is `deferredMove`: Onyx). A one-Prize menu is no
+   *  decision (B.93): a pick with no more piles left than picks still owed names nothing. */
+  pickedCards(prompt, picks, _ctx, state) {
+    const prizes = nonEmptyPrizes(prompt, state);
+    const rp = realPicks(picks) as Array<{ kind: 'prize'; index: number }>;
+    const out: Card[] = [];
+    rp.forEach((p, i) => {
+      if (prizes.length - i <= prompt.options.count - i) { return; }
+      const card = prizes[p.index]?.cards[0];
+      if (card !== undefined) { out.push(card); }
+    });
+    return out;
   },
 
   /** CF-1 take-immediately: project already-picked prizes as taken (pile → destination zone). */

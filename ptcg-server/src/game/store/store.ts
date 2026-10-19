@@ -428,6 +428,14 @@ export class Store implements StoreLike {
         p.deferredMove = true;
       }
 
+      // TA-715 (B.110): an attack's TAKE of one of the attacker's own Prize cards (Onyx pre-060) is a Step-D choice: the
+      // named Prize is `chosen`. Not Crescent Purge's face-up pick (a different message; nothing moves, so no chosen).
+      if (pre?.player !== undefined && p.playerId === pre.player.id && p.type === 'Choose prize'
+          && p.message === GameMessage.CHOOSE_PRIZE_CARD
+          && (p as unknown as { options?: { useOpponentPrizes?: boolean } }).options?.useOpponentPrizes !== true) {
+        p.deferredMove = true;
+      }
+
       state.prompts.push(prompts[i]);
       this.stampTrainerPrompt(prompts[i].id);
     }
