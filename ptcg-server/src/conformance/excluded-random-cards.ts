@@ -85,7 +85,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Thwackey CRE",
   "Trevenant V EVS",
   "Umbreon Star P5",
-  "Umbreon ex PRE",
   "Watchog PLS",
   "Whismur PLS",
   "Wonder Platinum DPt-P",

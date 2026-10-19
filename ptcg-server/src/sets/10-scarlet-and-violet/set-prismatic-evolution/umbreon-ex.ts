@@ -8,7 +8,6 @@ import {
   StoreLike,
   SpecialCondition,
   Card,
-  CardList,
   StateUtils,
 } from '../../../game';
 import {
@@ -91,29 +90,5 @@ export class Umbreonex extends PokemonCard {
       effect.preventDefault = true;
     }
     return state;
-  }
-
-  shuffleFaceDownPrizeCards(array: CardList[]): CardList[] {
-    const faceDownPrizeCards = array.filter((p) => p.isSecret && p.cards.length > 0);
-
-    for (let i = faceDownPrizeCards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const temp = faceDownPrizeCards[i];
-      faceDownPrizeCards[i] = faceDownPrizeCards[j];
-      faceDownPrizeCards[j] = temp;
-    }
-
-    const prizePositions = [];
-
-    for (let i = 0; i < array.length; i++) {
-      if (array[i].cards.length === 0 || !array[i].isSecret) {
-        prizePositions.push(array[i]);
-        continue;
-      }
-
-      prizePositions.push(faceDownPrizeCards.splice(0, 1)[0]);
-    }
-
-    return prizePositions;
-  }
+   }
 }
