@@ -13117,6 +13117,16 @@
       "fixes": [
         "FX-0500"
       ]
+    },
+    {
+      "file": "conformance/state-adapter.ts",
+      "signatures": [
+        "    ...(player.stadiumUsedTurn === turn && stadiumInPlay ? { stadiumUsedThisTurn: true } : {}),"
+      ],
+      "note": "TA-726 (2026-10-20): stadiumUsedThisTurn projected only while a Stadium is in play, so a used Stadium leaving play resets it [TA-726, B.111]",
+      "fixes": [
+        "FX-0501"
+      ]
     }
   ]
 }
