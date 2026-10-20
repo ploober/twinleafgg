@@ -13137,6 +13137,16 @@
       "fixes": [
         "FX-0502"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "  const turnEnded = state.logs.some(l => l.id > lastLogId && l.message === GameLog.LOG_PLAYER_ENDS_TURN);"
+      ],
+      "note": "TA-718 (2026-10-20): A once-per-turn Ability whose body ends the turn is not marked used after the end-of-turn clear, so its label does not s",
+      "fixes": [
+        "FX-0503"
+      ]
     }
   ]
 }
