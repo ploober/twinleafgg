@@ -537,7 +537,7 @@ function projectPip(ctx: IidContext, state: State, slot: PokemonCardList, player
   return pip;
 }
 
-function projectFlags(player: Player, turn: number): PlayerFlags {
+function projectFlags(player: Player, turn: number, stadiumInPlay: boolean): PlayerFlags {
   return {
     // `supporterTurn` is a per-turn COUNTER (0 = none played this turn; += 1 on each Supporter play;
     // reset to 0 each turn; the one-per-turn rule gates on `=== 0`) — NOT a turn number like the other
@@ -547,7 +547,9 @@ function projectFlags(player: Player, turn: number): PlayerFlags {
     stadiumPlayedThisTurn: player.stadiumPlayedTurn === turn,
     // CF-37: emitted only when spent (optional field — same omit-the-default treatment as
     // `prizesTaken`, so the pre-CF-37 fixtures round-trip unchanged).
-    ...(player.stadiumUsedTurn === turn ? { stadiumUsedThisTurn: true } : {}),
+    // CF-102 / B.111: the cap rides on the physical card, so the use is spent only while a Stadium is in play; the
+    // engine resets stadiumUsedTurn on a Stadium play, but a Stadium a card discards (Blowtorch) leaves it set.
+    ...(player.stadiumUsedTurn === turn && stadiumInPlay ? { stadiumUsedThisTurn: true } : {}),
     retreatedThisTurn: player.retreatedTurn === turn,
     cardsPlayedThisTurn: 0, // deferred: no twinleaf per-turn counter yet
     prizesTakenThisTurn: player.prizesTakenThisTurn,
@@ -657,7 +659,7 @@ function projectPlayer(ctx: IidContext, state: State, player: Player, turn: numb
     // then a bottom segment being shuffled. Decomposer fix-ups (step()) add the picks already made inside an
     // open decision; projectOrphans adds closure-local piles no prompt references (Tyme's face-down Pokémon).
     transit: [...liftedKept, ...inFlight],
-    flags: projectFlags(player, turn),
+    flags: projectFlags(player, turn, StateUtils.getStadiumCard(state) !== undefined),
   };
 }
 
