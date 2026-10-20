@@ -4,7 +4,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { ChooseCardsPrompt, GameError, GameMessage, Player, StateUtils } from '../../../game';
+import { ChooseCardsPrompt, GameError, GameMessage, Player, ShowCardsPrompt, StateUtils } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Eri extends TrainerCard {
@@ -48,7 +48,7 @@ export class Eri extends TrainerCard {
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      return store.prompt(state, new ChooseCardsPrompt(
+      const pick = () => store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         opponent.hand,
@@ -65,6 +65,17 @@ export class Eri extends TrainerCard {
 
         });
       });
+
+      // TA-720 / B.97 (TA-690's shape): "Your opponent reveals their hand": the whole hand is shown before the pick,
+      // whether or not it holds an Item.
+      if (opponent.hand.cards.length === 0) {
+        return pick();
+      }
+      return store.prompt(state, new ShowCardsPrompt(
+        player.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        opponent.hand.cards
+      ), () => { pick(); });
     }
     return state;
   }
