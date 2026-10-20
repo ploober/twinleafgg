@@ -13167,6 +13167,16 @@
       "fixes": [
         "FX-0505"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/superior-energy-retrieval.ts",
+      "signatures": [
+        "  // TA-721 / B.30, B.80 (5): the 2 cards are the cost, picked from the hand itself (this card is already in play, staged"
+      ],
+      "note": "TA-721 (2026-10-20): Superior Energy Retrieval pal-189 / pal-277 discards its 2 cost cards from the hand before the retrieval pick, and the r",
+      "fixes": [
+        "FX-0506"
+      ]
     }
   ]
 }
