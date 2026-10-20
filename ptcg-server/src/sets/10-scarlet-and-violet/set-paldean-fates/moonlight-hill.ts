@@ -28,6 +28,13 @@ export class MoonlightHill extends TrainerCard {
       if (!hasPsychicBasic) {
         throw new GameError(GameMessage.CANNOT_USE_STADIUM);
       }
+      // TA-723 / B.29, B.47: the discard is only the price of the heal; with no damage on any of this player's Pokémon
+      // the heal does nothing, so the Stadium cannot be used.
+      let anyDamaged = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => { anyDamaged = anyDamaged || cardList.damage > 0; });
+      if (!anyDamaged) {
+        throw new GameError(GameMessage.CANNOT_USE_STADIUM);
+      }
 
       return store.prompt(state, new ChooseCardsPrompt(
         player,
