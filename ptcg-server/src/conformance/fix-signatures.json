@@ -13157,6 +13157,16 @@
       "fixes": [
         "FX-0504"
       ]
+    },
+    {
+      "file": "set-temporal-forces/eri.ts",
+      "signatures": [
+        "      // TA-720 / B.97 (TA-690's shape): \"Your opponent reveals their hand\": the whole hand is shown before the pick,"
+      ],
+      "note": "TA-720 (2026-10-20): Eri tef-146 / pre-136 reveals the opponent's whole hand before the Item pick, with or without an Item there [TA-720]",
+      "fixes": [
+        "FX-0505"
+      ]
     }
   ]
 }
