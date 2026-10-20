@@ -1,0 +1,32 @@
+import { step } from '../driver';
+import { NeutralState, NeutralAction } from '../neutral-types';
+
+/**
+ * TA-724: the move-damage decomposer counted a source's movable counters as damage − counters moved FROM it, reading the
+ * prompt-open damage and never adding counters moved TO it. B.80 (5) defines the board between the picks: after one
+ * transfer the counter is on the Benched Pokémon, so it is a legal source for the next. Alakazam twm-082 Strange Hacking
+ * ("You may move any number of damage counters from your opponent's Pokémon to their other Pokémon in any way you like.")
+ * applies its transfers one at a time on the live board. Board: the Unlimited fuzz row atk-twm-082-psychic (B's Active
+ * 30 damage, B's Bench bb1s0 none); rotomancer 936314650 offers bb1s0 after the first transfer.
+ */
+
+const BOARD = {"schemaVersion": "0.1", "format": "unlimited", "turn": 3, "activePlayer": "A", "firstPlayer": "A", "phase": "main", "outcome": "ongoing", "players": {"A": {"active": {"stack": [{"iid": "a1s0", "printing": "meg-054"}, {"iid": "a1s1", "printing": "meg-055"}, {"iid": "a1s2", "printing": "twm-082"}], "energy": [{"iid": "a1e0", "printing": "sve-005"}], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}, "bench": [{"stack": [{"iid": "ab1s0", "printing": "asc-004"}], "energy": [], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}], "hand": [{"iid": "ah1", "printing": "sve-002"}], "deck": [{"iid": "ad1", "printing": "sve-002"}, {"iid": "ad2", "printing": "sve-002"}, {"iid": "ad3", "printing": "sve-002"}, {"iid": "ad4", "printing": "sve-002"}, {"iid": "ad5", "printing": "sve-002"}, {"iid": "ad6", "printing": "sve-002"}, {"iid": "ad7", "printing": "sve-002"}, {"iid": "ad8", "printing": "sve-002"}, {"iid": "ad9", "printing": "sve-002"}, {"iid": "ad10", "printing": "sve-002"}, {"iid": "ad11", "printing": "sve-002"}, {"iid": "ad12", "printing": "sve-002"}], "discard": [], "lostZone": [], "prizes": [{"iid": "ap1", "printing": "sve-002", "faceUp": false}, {"iid": "ap2", "printing": "sve-002", "faceUp": false}, {"iid": "ap3", "printing": "sve-002", "faceUp": false}, {"iid": "ap4", "printing": "sve-002", "faceUp": false}, {"iid": "ap5", "printing": "sve-002", "faceUp": false}, {"iid": "ap6", "printing": "sve-002", "faceUp": false}], "flags": {"supporterPlayedThisTurn": false, "energyAttachedThisTurn": false, "stadiumPlayedThisTurn": false, "retreatedThisTurn": false, "cardsPlayedThisTurn": 0, "prizesTakenThisTurn": 0, "prizesTakenLastTurn": 0, "vstarUsed": false}}, "B": {"active": {"stack": [{"iid": "b1s0", "printing": "meg-181"}], "energy": [], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}, "bench": [{"stack": [{"iid": "bb1s0", "printing": "asc-004"}], "energy": [], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}], "hand": [{"iid": "bh1", "printing": "sve-002"}], "deck": [{"iid": "bd1", "printing": "sve-002"}, {"iid": "bd2", "printing": "sve-002"}, {"iid": "bd3", "printing": "sve-002"}, {"iid": "bd4", "printing": "sve-002"}, {"iid": "bd5", "printing": "sve-002"}, {"iid": "bd6", "printing": "sve-002"}, {"iid": "bd7", "printing": "sve-002"}, {"iid": "bd8", "printing": "sve-002"}, {"iid": "bd9", "printing": "sve-002"}, {"iid": "bd10", "printing": "sve-002"}, {"iid": "bd11", "printing": "sve-002"}, {"iid": "bd12", "printing": "sve-002"}], "discard": [], "lostZone": [], "prizes": [{"iid": "bp1", "printing": "sve-002", "faceUp": false}, {"iid": "bp2", "printing": "sve-002", "faceUp": false}, {"iid": "bp3", "printing": "sve-002", "faceUp": false}, {"iid": "bp4", "printing": "sve-002", "faceUp": false}, {"iid": "bp5", "printing": "sve-002", "faceUp": false}, {"iid": "bp6", "printing": "sve-002", "faceUp": false}], "flags": {"supporterPlayedThisTurn": false, "energyAttachedThisTurn": false, "stadiumPlayedThisTurn": false, "retreatedThisTurn": false, "cardsPlayedThisTurn": 0, "prizesTakenThisTurn": 0, "prizesTakenLastTurn": 0, "vstarUsed": false}}}, "activeEffects": []} as unknown as NeutralState;
+const ACTIONS = [{"actor": "A", "type": "declareAttack", "source": "a1s0", "name": "Strange Hacking"}, {"actor": "B", "type": "attachEnergy", "card": "bh1", "target": "b1s0"}, {"actor": "B", "type": "declareAttack", "source": "b1s0", "name": "Strafe"}, {"actor": "system", "type": "flip", "face": "tails"}, {"actor": "A", "type": "declareAttack", "source": "a1s0", "name": "Strange Hacking"}, {"actor": "A", "type": "choose", "target": "b1s0"}] as unknown as NeutralAction[];
+const sources = (r: ReturnType<typeof step>) =>
+  r.pending!.legalActions.filter(a => a.type === 'choose').map(a => (a as { target: string }).target).sort();
+
+describe('TA-724 move-damage: a Pokémon that received a counter in this move is offered as a source', () => {
+  it('[TA-724 twm-082 control] before any transfer only the damaged Active is a source', () => {
+    const r = step(BOARD, ACTIONS.slice(0, ACTIONS.length - 1));
+    expect(sources(r)).toEqual(['b1s0']);
+  });
+
+  it('[TA-724 twm-082] after b1s0 > bb1s0 both are sources, and moving the counter back is applied', () => {
+    const r = step(BOARD, ACTIONS);
+    expect(r.state.players.B.bench[0].damage).toBe(10);
+    expect(sources(r)).toEqual(['b1s0', 'bb1s0']);
+    const back = step(BOARD, [...ACTIONS, { actor: 'A', type: 'choose', target: 'bb1s0' } as unknown as NeutralAction]);
+    expect(back.state.players.B.active!.damage).toBe(30);
+    expect(back.state.players.B.bench[0].damage).toBe(0);
+  });
+});
