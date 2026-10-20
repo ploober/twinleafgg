@@ -9134,7 +9134,7 @@
     {
       "file": "game/store/effect-reducers/game-effect.ts",
       "signatures": [
-        "  if (/once during your turn/i.test(power.text ?? '')) {"
+        "  if (/once during your turn/i.test(power.text ?? '') && !turnEnded) {"
       ],
       "note": "TA-453 (2026-09-20): usePower flags the slot ABILITY_USED after the card PowerEffect returns without throwing when the power text says \"Once ",
       "fixes": [
@@ -13129,7 +13129,7 @@
       ]
     },
     {
-      "file": "sets/10-scarlet-and-violet/set-journey-together/other-prints.ts",
+      "file": "set-journey-together/other-prints.ts",
       "signatures": [
         "function* playSuperPotionJTG(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {"
       ],
@@ -13206,6 +13206,16 @@
       "note": "TA-724 (2026-10-20): move-damage source step counts counters moved onto a Pokémon earlier in the same move (Strange Hacking twm-082) [TA-724]",
       "fixes": [
         "FX-0509"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "      const offered = mainMenu === null || mainMenu.actor !== action.actor || offersAction(mainMenu.legalActions, action);"
+      ],
+      "note": "TA-725 (2026-10-20): A main-menu action the adapter's menu does not offer is invalidAction (the engine judges it first, so its own refusal re",
+      "fixes": [
+        "FX-0510"
       ]
     }
   ]
