@@ -13,13 +13,13 @@ const BOARD: NeutralState = {"schemaVersion": "0.1", "format": "unlimited", "tur
 const ACTIONS: NeutralAction[] = [{"actor": "A", "type": "useStadium"}, {"actor": "system", "type": "shuffle", "order": ["ad0", "ad1", "ad2", "ad3", "ad4", "ad5", "ad6", "ad7"]}, {"actor": "A", "type": "playItem", "card": "ah0"}, {"actor": "A", "type": "discard", "target": "st0", "owner": "B", "op": "discard", "destination": "discardPile"}];
 
 describe('CF-102 / B.111: stadiumUsedThisTurn resets when the used Stadium leaves play', () => {
-  it('after using Artazon, the flag is up while Artazon is in play', () => {
+  it('[TA-726 pfl-086 control] after using Artazon, the flag is up while Artazon is in play', () => {
     const r = step(BOARD, ACTIONS.slice(0, 2));
     expect(r.state.stadium).not.toBeNull();
     expect(r.state.players.A.flags.stadiumUsedThisTurn).toBe(true);
   });
 
-  it('Blowtorch discards Artazon: no Stadium in play, A.flags.stadiumUsedThisTurn is false', () => {
+  it('[TA-726 pfl-086] Blowtorch discards Artazon: no Stadium in play, A.flags.stadiumUsedThisTurn is false', () => {
     const r = step(BOARD, ACTIONS);
     expect(r.applied).toBe(ACTIONS.length);
     expect(r.state.stadium).toBeNull();
