@@ -13147,6 +13147,16 @@
       "fixes": [
         "FX-0503"
       ]
+    },
+    {
+      "file": "set-paradox-rift/scream-tail.ts",
+      "signatures": [
+        "      if (damageOutput === 0) {"
+      ],
+      "note": "TA-719 (2026-10-20): Roaring Scream par-086 asks no target when Scream Tail has no damage counters [TA-719]",
+      "fixes": [
+        "FX-0504"
+      ]
     }
   ]
 }
