@@ -1,3 +1,12 @@
+import { StoreLike } from '../../../game/store/store-like';
+import { State } from '../../../game/store/state/state';
+import { Effect } from '../../../game/store/effects/effect';
+import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import { HealEffect } from '../../../game/store/effects/game-effects';
+import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { SuperType } from '../../../game/store/card/card-types';
+import { PlayerType, SlotType, CardTarget, GameError, GameMessage, PokemonCardList, Card, ChooseCardsPrompt } from '../../../game';
 import { SuperPotion } from '../../07-x-and-y/set-x-and-y/super-potion';
 import { BlackBeltsTraining } from '../set-prismatic-evolution/black-belts-training';
 import { ProfessorsResearch } from '../set-scarlet-and-violet/professors-research';
@@ -24,12 +33,77 @@ import { Wailord } from './wailord';
 
 // MARK: Trainer Reprints
 
+// TA-717: the JTG text heals FIRST and discards an Energy only if it healed; the inherited XY effect made the discard a
+// cost (Energy required, asked before the heal). Own effect here; the XY card keeps its own.
+function* playSuperPotionJTG(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+  const player = effect.player;
+  const blocked: CardTarget[] = [];
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+    if (cardList.damage === 0) {
+      blocked.push(target);
+    }
+  });
+  let damaged = false;
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => { damaged = damaged || cardList.damage > 0; });
+  if (!damaged) {
+    throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+  }
+  // We will discard this card after prompt confirmation
+  effect.preventDefault = true;
+
+  let targets: PokemonCardList[] = [];
+  yield store.prompt(state, new ChoosePokemonPrompt(
+    player.id,
+    GameMessage.CHOOSE_POKEMON_TO_HEAL,
+    PlayerType.BOTTOM_PLAYER,
+    [SlotType.ACTIVE, SlotType.BENCH],
+    { allowCancel: false, blocked }
+  ), results => {
+    targets = results || [];
+    next();
+  });
+  if (targets.length === 0) {
+    return state;
+  }
+
+  const target = targets[0];
+  const before = target.damage;
+  store.reduceEffect(state, new HealEffect(player, target, 60));
+  if (target.damage >= before || !target.cards.some(c => c.superType === SuperType.ENERGY)) {
+    return state;
+  }
+
+  let cards: Card[] = [];
+  yield store.prompt(state, new ChooseCardsPrompt(
+    player,
+    GameMessage.CHOOSE_CARD_TO_DISCARD,
+    target,
+    { superType: SuperType.ENERGY },
+    { min: 1, max: 1, allowCancel: false }
+  ), selected => {
+    cards = selected || [];
+    next();
+  });
+  MOVE_CARDS(store, state, target, player.discard, { cards, sourceCard: effect.trainerCard });
+  return state;
+}
+
 export class SuperPotionJTG extends SuperPotion {
   public setNumber = '158';
   public fullName: string = 'Super Potion JTG';
   public set = 'JTG';
   public regulationMark = 'I';
   public legacyFullName = 'Super Potion MC';
+  public text: string =
+    'Heal 60 damage from 1 of your Pokémon. If you healed any damage in this way, discard an Energy from that Pokémon.';
+
+  public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+      const generator = playSuperPotionJTG(() => generator.next(), store, state, effect);
+      return generator.next().value;
+    }
+    return state;
+  }
 }
 
 export class MaractusIR extends Maractus {
