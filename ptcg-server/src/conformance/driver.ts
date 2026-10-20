@@ -357,6 +357,8 @@ interface LoopResult {
   applied: number;
   /** Set when a dispatched action was rejected by the engine (M6). */
   rejection?: RejectionInfo;
+  /** TA-725: the rejection is a main-menu action the engine ACCEPTED but the menu does not offer (no Store rollback). */
+  notOffered?: boolean;
   /** Set when the log ran dry MID-decomposition: the open prompt + the picks made so far. Lets the
    *  projection apply the decomposer's take-immediately fix-up (CF-1). */
   midPrompt?: { prompt: Prompt<any>; picks: WirePick[]; decided?: WirePick[] };
@@ -478,6 +480,13 @@ function offersAction(legalActions: LegalAction[], action: NeutralAction): boole
     }
     return true;
   });
+}
+
+/** TA-725: a main-menu action the engine accepted that the menu does not offer (CF-12 / B.95: invalidAction). */
+class NotOffered extends GameError {
+  constructor() {
+    super(GameMessage.ILLEGAL_ACTION);
+  }
 }
 
 /** A system pending (shuffle / coin flip) surfaced when its action isn't yet in the log. */
@@ -1153,6 +1162,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     if (rejection === undefined) {
       throw err;
     }
+    const notOffered = err instanceof NotOffered;
     // TA-590: a rejection reports the board before the open decision's picks (step() re-projects the open prompt with
     // none) and a held pick still in the deck there: its lift leg leaves the trace with it.
     const drop = new Set<NeutralEvent>();
@@ -1161,7 +1171,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     held.clear();
     // The cursor is advanced past an action before it is dispatched, so on a rejection it points one
     // past the offending action; `applied` is therefore the count of actions applied before it.
-    return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection };
+    return { events, pending: null, applied: Math.max(0, cursor.i - 1), rejection, notOffered };
   } finally {
     CardList.topTake = undefined;   // TA-593: the draw listener lives only as long as this replay
     CardList.legCut = undefined;
@@ -1559,7 +1569,19 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           }
         } catch { /* an unresolvable source: dispatchDeclareAttack rejects it below */ }
       }
+      // TA-725 (CF-12 / B.95): a main-menu action must be one the menu OFFERS. The legality gates that live in the
+      // menu (TA-280's deck-0 gate, B.29 / B.47's operand tests) bind the play only if the dispatch checks the offer;
+      // the engine's own reducers accept a play those gates withhold (Geeta obf-188 at deck 0). An action by a player
+      // whose turn it is not is the engine's to refuse (TA-129), so it is not judged against this menu.
+      // The engine still sees the action first, so a refusal it would make anyway keeps its own reason
+      // (notEnoughEnergy, alreadyAttachedEnergy, …); only an action it ACCEPTS is refused here, and step() rebuilds
+      // the board from the prefix (the TA-639 path), because the Store rolls back only an action that throws.
+      const mainMenu = topLevelMenu(game);
+      const offered = mainMenu === null || mainMenu.actor !== action.actor || offersAction(mainMenu.legalActions, action);
       dispatchAndCollect(() => dispatchAction(game, action));
+      if (!offered) {
+        throw new NotOffered();
+      }
       continue;
     }
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
@@ -1611,8 +1633,9 @@ export function step(initial: NeutralState, actions: NeutralAction[]): StepRespo
   if (initial.phase === 'setup') {
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
-  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard, publicInTransit } = runLoop(game, actions);
-  if (rejection !== undefined && applied < actions.length && game.state.prompts.some(p => p.result === undefined)) {
+  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard, publicInTransit, notOffered } = runLoop(game, actions);
+  if (rejection !== undefined && applied < actions.length
+      && (notOffered === true || game.state.prompts.some(p => p.result === undefined))) {
     // TA-639: refused at a pause. `applied` names the prefix the response stands on, so its board and trace are that
     // prefix's response: the open decision's fix-ups (CF-1 / B.80: picks already made read as applied) and the
     // pause's own events and moved legs (TA-622, B.81), which the rolled-back store below cannot rebuild (its picks

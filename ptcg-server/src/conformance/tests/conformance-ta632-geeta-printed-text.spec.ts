@@ -112,11 +112,12 @@ describe('TA-632: Geeta obf-188 needs no Bench and always locks attacks this tur
     expect(types(r)).not.toContain('declareAttack');
   });
 
-  it('an empty deck: no attack this turn [TA-632]', () => {
-    const r = run(board({ deck: [] }), [play]);
-    expect(r.status).toBe('awaitingAction');
-    expect(r.state.players.A.discard.map(c => c.iid)).toContain('g');
-    expect(types(r)).not.toContain('declareAttack');
+  // B.47 (2026-10-20, RE-259 / TA-725): at deck 0 the search and attach provably do nothing and the attack lock is a
+  // drawback, so Geeta is not playable; this cell asserted the play before TA-725 made the driver check the offer.
+  it('an empty deck: Geeta is not offered and playing it is refused (B.47) [TA-632]', () => {
+    const r = step(board({ deck: [] }), [play]);
+    expect(r.status).toBe('invalidAction');
+    expect(r.state.players.A.hand.map(c => c.iid)).toContain('g');
   });
 
   it('control: 2 Energy attached to the Benched Pokémon, no attack this turn [TA-632]', () => {

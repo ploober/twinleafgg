@@ -119,13 +119,13 @@ describe('TA-250 the owed "Then, shuffle your deck" on an empty deck — attacks
 
 // ---------------------------------------------------------------- TA-250 Trainer / Tool / Ability / Energy
 describe('TA-250 the owed shuffle on an empty deck — Trainer, Tool, Ability and Energy text', () => {
-  it('Geeta played with an empty deck shuffles, goes to the discard pile and still locks attacks [TA-250 obf-188]', () => {
+  // B.47 (2026-10-20, RE-259 / TA-725): Geeta's attack lock is a drawback, so at deck 0 (its search and attach provably
+  // empty) the card is not playable at all; the owed-shuffle question this cell asked does not arise for Geeta.
+  it('Geeta with an empty deck is not playable (B.47), so no shuffle is owed [TA-250 obf-188]', () => {
     const r = step(board({ active: mon('a1', [BELLSPROUT], [GRASS]), bench: benchOf(1), hand: ['obf-188'], deck: 0 }, B_WALL),
       [{ actor: 'A', type: 'playSupporter', card: 'ah0' }] as never);
-    expect(r.status).not.toBe('invalidAction');
-    expect(shuffles(r)).toBe(true);
-    expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah0');
-    expect(acts(r).some(a => a.type === 'declareAttack')).toBe(false);
+    expect(r.status).toBe('invalidAction');
+    expect(r.state.players.A.hand.map(c => c.iid)).toContain('ah0');
   });
   it('Amulet of Hope: its Pokémon is Knocked Out with an empty deck, the deck is still shuffled [TA-250 ssp-162]', () => {
     // "If the Pokémon this card is attached to is Knocked Out by damage from an attack from your opponent's Pokémon,
