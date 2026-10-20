@@ -13127,6 +13127,16 @@
       "fixes": [
         "FX-0501"
       ]
+    },
+    {
+      "file": "sets/10-scarlet-and-violet/set-journey-together/other-prints.ts",
+      "signatures": [
+        "function* playSuperPotionJTG(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {"
+      ],
+      "note": "TA-717 (2026-10-20): Super Potion jtg-158 heals first and discards an Energy only if it healed; offered on a damaged Pokémon with no Energy",
+      "fixes": [
+        "FX-0502"
+      ]
     }
   ]
 }
