@@ -51,6 +51,11 @@ export class ScreamTail extends PokemonCard {
 
       const damageCounters = effect.player.active.damage;
       const damageOutput = damageCounters * 2;
+      // TA-719: with no damage counters on this Pokémon the attack does 0 to any target, so there is no pick (B.25 at
+      // Step D, as TA-512 for United Thunder).
+      if (damageOutput === 0) {
+        return state;
+      }
 
       const max = Math.min(1);
       return store.prompt(
