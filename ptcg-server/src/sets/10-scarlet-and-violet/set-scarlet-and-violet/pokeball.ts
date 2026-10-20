@@ -53,6 +53,10 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     }
 
     MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
+  } else {
+    // TA-722 / B.44 (TA-397 (b)'s fix, which reached only the Jungle class): on tails no search is performed, and
+    // "Then, shuffle your deck" rides on the search having happened, so no shuffle is owed.
+    return state;
   }
 
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order: any[]) => {
