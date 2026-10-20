@@ -664,6 +664,7 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   // Run after the board animation so ability prompts are not shown on top of the overlay.
   // Validation errors (e.g. POWER_ALREADY_USED) are raised here; store.reducePrompt cleans up
   // any open prompts when those errors propagate.
+  const lastLogId = state.logs.length > 0 ? state.logs[state.logs.length - 1].id : 0;
   state = store.reduceEffect(state, new PowerEffect(player, power, card, effect.benchTarget));
   // TA-453 / B.57 (a): "Once during your turn" is used at the ANNOUNCEMENT. The card's PowerEffect has
   // returned without throwing — its preconditions passed and its body is either done or pending a
@@ -673,7 +674,11 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   // the TA-452 reducer check and the G-59 label derivation already read; cards that set it (or a
   // marker) themselves are unaffected (addBoardEffect dedups). Text-keyed like the TA-280 empty-deck
   // gate: powers without the once-per-turn wording (as often as you like) are not touched.
-  if (/once during your turn/i.test(power.text ?? '')) {
+  // TA-718 / B.92: an Ability whose body ends the turn ("If you use this Ability, your turn ends": Dino Cry) has already
+  // run the end-of-turn clear (EndTurnEffect logs LOG_PLAYER_ENDS_TURN first); the turn number advances only once its
+  // prompt resolves. The use belonged to the turn that ended, so nothing is marked.
+  const turnEnded = state.logs.some(l => l.id > lastLogId && l.message === GameLog.LOG_PLAYER_ENDS_TURN);
+  if (/once during your turn/i.test(power.text ?? '') && !turnEnded) {
     const slot = StateUtils.findCardList(state, card);
     if (slot instanceof PokemonCardList) {
       slot.addBoardEffect(BoardEffect.ABILITY_USED);
