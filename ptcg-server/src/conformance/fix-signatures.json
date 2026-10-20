@@ -13187,6 +13187,16 @@
       "fixes": [
         "FX-0507"
       ]
+    },
+    {
+      "file": "set-paldean-fates/moonlight-hill.ts",
+      "signatures": [
+        "      // TA-723 / B.29, B.47: the discard is only the price of the heal; with no damage on any of this player's Pokémon"
+      ],
+      "note": "TA-723 (2026-10-20): Moonlit Hill paf-081 cannot be used when none of the player's Pokémon has damage [TA-723]",
+      "fixes": [
+        "FX-0508"
+      ]
     }
   ]
 }
