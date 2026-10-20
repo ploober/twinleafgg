@@ -13177,6 +13177,16 @@
       "fixes": [
         "FX-0506"
       ]
+    },
+    {
+      "file": "set-scarlet-and-violet/pokeball.ts",
+      "signatures": [
+        "    // TA-722 / B.44 (TA-397 (b)'s fix, which reached only the Jungle class): on tails no search is performed, and"
+      ],
+      "note": "TA-722 (2026-10-20): Poké Ball svi-185 shuffles only after a search: no shuffle on tails [TA-722, B.44]",
+      "fixes": [
+        "FX-0507"
+      ]
     }
   ]
 }
