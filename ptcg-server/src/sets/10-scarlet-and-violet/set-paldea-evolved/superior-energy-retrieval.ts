@@ -9,7 +9,6 @@ import { GameMessage } from '../../../game/game-message';
 import { Player } from '../../../game';
 import { Card } from '../../../game/store/card/card';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
-import { CardList } from '../../../game/store/state/card-list';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 function* playCard(next: Function, store: StoreLike, state: State,
@@ -36,16 +35,15 @@ function* playCard(next: Function, store: StoreLike, state: State,
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  // prepare card list without Self
-  const handTemp = new CardList();
-  handTemp.cards = player.hand.cards.filter(c => c !== self);
-
+  // TA-721 / B.30, B.80 (5): the 2 cards are the cost, picked from the hand itself (this card is already in play, staged
+  // by the play reducer) and discarded before the retrieval is asked.
+  const blocked = player.hand.cards.map((c, i) => (c === self ? i : -1)).filter(i => i >= 0);
   yield store.prompt(state, new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_DISCARD,
-    handTemp,
+    player.hand,
     {},
-    { min: 2, max: 2, allowCancel: false }
+    { min: 2, max: 2, allowCancel: false, blocked }
   ), selected => {
     cards = selected || [];
     next();
@@ -55,6 +53,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
   if (cards.length === 0) {
     return state;
   }
+  MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: self });
 
   let recovered: Card[] = [];
   yield store.prompt(state, new ChooseCardsPrompt(
@@ -62,7 +61,8 @@ function* playCard(next: Function, store: StoreLike, state: State,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.discard,
     { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-    { min: 1, max: 4, allowCancel: false }
+    // "You can't choose a card you discarded with the effect of this card."
+    { min: 1, max: 4, allowCancel: false, blocked: player.discard.cards.map((c, i) => (cards.includes(c) ? i : -1)).filter(i => i >= 0) }
   ), selected => {
     recovered = selected || [];
     next();
@@ -73,7 +73,6 @@ function* playCard(next: Function, store: StoreLike, state: State,
     return state;
   }
 
-  MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: self });
   MOVE_CARDS(store, state, player.discard, player.hand, { cards: recovered, sourceCard: self });
 
   return state;
