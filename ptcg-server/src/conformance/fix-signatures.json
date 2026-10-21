@@ -13779,6 +13779,38 @@
       "fixes": [
         "FX-0520"
       ]
+    },
+    {
+      "file": "set-chaos-rising/ho-oh.ts",
+      "signatures": [
+        "              // TA-735: put onto the Bench as a played-from-discard Pokemon, so Bench triggers (Risky Ruins) see it."
+      ],
+      "note": "TA-735 (2026-10-21): Ho-Oh cri-010, Kingdra ex sfa-012, Duskull pre-035 put the revived Pokemon onto the Bench via PlayPokemonFromDiscardEffe",
+      "fixes": [
+        "FX-0521"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/kingdra-ex.ts",
+      "signatures": [
+        "    // TA-735: put onto the Bench as a played-from-discard Pokemon, so Bench triggers (Risky Ruins) see it."
+      ],
+      "note": "TA-735 (2026-10-21): the revived Pokemon is put onto the Bench through PlayPokemonFromDiscardEffect (Risky Ruins #2233); same fix as ho-oh.ts.",
+      "fixes": [
+        "FX-0521"
+      ],
+      "state": "guarding"
+    },
+    {
+      "file": "set-shrouded-fable/duskull.ts",
+      "signatures": [
+        "    // TA-735: put onto the Bench as a played-from-discard Pokemon, so Bench triggers (Risky Ruins) see it."
+      ],
+      "note": "TA-735 (2026-10-21): the revived Pokemon is put onto the Bench through PlayPokemonFromDiscardEffect (Risky Ruins #2233); same fix as ho-oh.ts.",
+      "fixes": [
+        "FX-0521"
+      ],
+      "state": "guarding"
     }
   ]
 }
