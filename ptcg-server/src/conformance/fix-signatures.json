@@ -13811,6 +13811,16 @@
         "FX-0521"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "conformance/events.ts",
+      "signatures": [
+        "  // TA-736: a Pokemon that ENTERS play in this dispatch already damaged took that damage as it entered (Risky Ruins"
+      ],
+      "note": "TA-736 (2026-10-21): events: a Pokemon that enters play already damaged emits damaged for that damage [TA-736]",
+      "fixes": [
+        "FX-0522"
+      ]
     }
   ]
 }
