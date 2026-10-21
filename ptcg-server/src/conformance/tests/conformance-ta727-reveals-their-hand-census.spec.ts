@@ -60,3 +60,37 @@ describe('TA-727 "your opponent reveals their hand" reveals it before the pick',
     expect(reveals(r)).toEqual([]);
   });
 });
+
+// TA-729: Look-Alike Show uses a Supporter's effect; it does not play the card (compendium #660, #493, #2225, #2226), so
+// the one-Supporter-per-turn guard does not apply, and a copied effect that does nothing (Professor's Research with an
+// empty deck) is a null effect, not a refused attack. Board: TA-727's, B's hand Professor's Research svi-189 + a Basic.
+describe('TA-729 Look-Alike Show uses the copied Supporter\'s effect', () => {
+  const mime = (edit: (s: NeutralState) => void = () => undefined) => board(s => {
+    s.players.A.active!.stack = [{ iid: 'mm', printing: 'tef-063' }];
+    s.players.A.active!.energy = [{ iid: 'me0', printing: 'sve-005' }];
+    s.players.B.hand = [{ iid: 'bh1', printing: 'svi-189' }, { iid: 'bh2', printing: 'asc-004' }];
+    edit(s);
+  });
+  const COPY = [act({ actor: 'A', type: 'declareAttack', source: 'mm', name: 'Look-Alike Show' }), act({ actor: 'A', type: 'choose', target: 'bh1' })];
+
+  it('[TA-729 tef-063] a Supporter already played this turn: Research is copied, A draws 7, the turn passes', () => {
+    const r = step(mime(s => { (s.players.A.flags as { supporterPlayedThisTurn: boolean }).supporterPlayedThisTurn = true; }), COPY);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.applied).toBe(COPY.length);
+    expect(r.state.players.A.hand.length).toBe(7);
+    expect(r.state.activePlayer).toBe('B');
+  });
+
+  it('[TA-729 tef-063 empty deck] Research copied with an empty deck does nothing, and the turn passes', () => {
+    const r = step(mime(s => { s.players.A.deck = []; }), COPY);
+    expect(r.status).not.toBe('invalidAction');
+    expect(r.applied).toBe(COPY.length);
+    expect(r.state.activePlayer).toBe('B');
+  });
+
+  it('[TA-729 tef-063 control] no Supporter played: Research is copied, A draws 7', () => {
+    const r = step(mime(), COPY);
+    expect(r.state.players.A.hand.length).toBe(7);
+    expect(r.state.activePlayer).toBe('B');
+  });
+});

@@ -65,6 +65,7 @@ import {
   CoinFlipEffect,
   CoinFlipSequenceEffect,
   ToolEffect,
+  TrainerEffect,
 } from '../effects/play-card-effects';
 import { GameStatsTracker } from '../game-stats-tracker';
 import { AttachEnergyOptions, AttachEnergyPrompt } from '../prompts/attach-energy-prompt';
@@ -100,6 +101,28 @@ export {
 // =============================================================================
 // Effect type guards / turn hooks
 // =============================================================================
+
+/**
+ * TA-729: use a Supporter's effect without playing it ("You may use the effect of a Supporter card you find there as the
+ * effect of this attack", Mr. Mime tef-063). Using the effect is not playing the card (compendium #660, #493, #2225,
+ * #2226), so the one-Supporter-per-turn guard the Supporter files repeat inside their own effect is lifted for the copy
+ * and restored after. A copied effect that refuses (a GameError from its own guard: Professor's Research with an empty
+ * deck) does nothing; the attack is not refused.
+ */
+export function USE_COPIED_SUPPORTER_EFFECT(store: StoreLike, state: State, player: Player, trainerCard: TrainerCard): State {
+  const supporterTurn = player.supporterTurn;
+  player.supporterTurn = 0;
+  try {
+    store.reduceEffect(state, new TrainerEffect(player, trainerCard));
+  } catch (err) {
+    if (!(err instanceof GameError)) {
+      throw err;
+    }
+  } finally {
+    player.supporterTurn = supporterTurn;
+  }
+  return state;
+}
 
 /**
  * A basic effect for checking the use of attacks.

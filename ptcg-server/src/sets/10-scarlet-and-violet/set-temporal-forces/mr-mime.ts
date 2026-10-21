@@ -2,10 +2,9 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, TrainerType, SpecialCondition } from '../../../game/store/card/card-types';
 import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, ShowCardsPrompt, TrainerCard } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { USE_COPIED_SUPPORTER_EFFECT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class MrMime extends PokemonCard {
 
@@ -73,9 +72,8 @@ export class MrMime extends PokemonCard {
         if (cards === null || cards.length === 0) {
           return;
         }
-        const trainerCard = cards[0] as TrainerCard;
-        const playTrainerEffect = new TrainerEffect(player, trainerCard);
-        store.reduceEffect(state, playTrainerEffect);
+        // TA-729: the effect is used, the card is not played (compendium #660).
+        USE_COPIED_SUPPORTER_EFFECT(store, state, player, cards[0] as TrainerCard);
       }));
     }
 
