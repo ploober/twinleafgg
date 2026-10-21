@@ -13317,6 +13317,16 @@
       "fixes": [
         "FX-0517"
       ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "        // TA-733 / B.95 (CF-12): a system action with no system decision pending was not offered: invalidAction, not"
+      ],
+      "note": "TA-733 (2026-10-20): A system action with no system decision pending is refused as not offered (invalidAction), not an engine fault [TA-733, ",
+      "fixes": [
+        "FX-0518"
+      ]
     }
   ]
 }
