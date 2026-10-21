@@ -1,7 +1,8 @@
+import { PlayPokemonFromDiscardEffect } from '../../../game/store/effects/play-card-effects';
 import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { PokemonCard, StoreLike, State, ChooseCardsPrompt, GameMessage, PokemonCardList } from '../../../game';
-import { WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DISCARD_X_ENERGY_FROM_THIS_POKEMON } from '../../../game/store/prefabs/costs';
 
 export class HoOh extends PokemonCard {
@@ -66,8 +67,8 @@ export class HoOh extends PokemonCard {
           const cards = selected || [];
           cards.forEach((card, index) => {
             if (index < slots.length) {
-              MOVE_CARDS(store, state, player.discard, slots[index], { cards: [card], sourceCard: this });
-              slots[index].pokemonPlayedTurn = state.turn;
+              // TA-735: put onto the Bench as a played-from-discard Pokemon, so Bench triggers (Risky Ruins) see it.
+              store.reduceEffect(state, new PlayPokemonFromDiscardEffect(player, card as PokemonCard, slots[index]));
             }
           });
         },

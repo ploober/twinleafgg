@@ -1,9 +1,10 @@
+import { PlayPokemonFromDiscardEffect } from '../../../game/store/effects/play-card-effects';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike, State, PokemonCardList, Card, ChooseCardsPrompt, GameMessage } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 function* useKingsOrder(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
@@ -37,8 +38,8 @@ function* useKingsOrder(next: Function, store: StoreLike, state: State,
   }
 
   cards.forEach((card, index) => {
-    MOVE_CARDS(store, state, player.discard, slots[index], { cards: [card], sourceCard: effect.source.getPokemonCard()! });
-    slots[index].pokemonPlayedTurn = state.turn;
+    // TA-735: put onto the Bench as a played-from-discard Pokemon, so Bench triggers (Risky Ruins) see it.
+    store.reduceEffect(state, new PlayPokemonFromDiscardEffect(player, card as PokemonCard, slots[index]));
   });
 }
 
