@@ -126,3 +126,22 @@ describe('TA-641: "attaches an Energy card from (your / their) hand" triggers ne
     expect(r.state.players.A.bench[0].damage).toBe(20);
   });
 });
+
+// TA-734: Buddy Pulse's "If you have Plusle in play" is Minun's OWNER's Plusle, Active or Benched. The handler read the
+// ATTACKING player's Bench, and TA-641's board gave both players a Plusle, so it could not tell the sides apart. Found by
+// re-boarding bug report 1344147826434768906 in pool (2026-10-21): rotomancer f3e92fdba puts 20, twinleaf 0.
+describe('TA-734 Buddy Pulse reads Minun\'s owner\'s Plusle', () => {
+  const GOTHITA = 'pal-090';
+  it('[TA-734 par-061] Plusle on Minun\'s owner\'s Bench only: the attached Pokemon takes 2 counters', () => {
+    const r = step(board({ aActive: mon('a1', EELEKTRIK), aBench: mon('a2', GOTHITA), bActive: 'par-061', bBench: [PLUSLE] }), [fromHand]);
+    expect(r.state.players.A.bench[0].damage).toBe(20);
+  });
+  it('[TA-734 par-061 active] Plusle as Minun\'s owner\'s Active (in play) counts: 2 counters', () => {
+    const r = step(board({ aActive: mon('a1', EELEKTRIK), aBench: mon('a2', GOTHITA), bActive: PLUSLE, bBench: ['par-061'] }), [fromHand]);
+    expect(r.state.players.A.bench[0].damage).toBe(20);
+  });
+  it('[TA-734 par-061 control] Plusle on the attaching player\'s side only: no counters', () => {
+    const r = step(board({ aActive: mon('a1', EELEKTRIK), aBench: mon('a2', PLUSLE), bActive: 'par-061' }), [fromHand]);
+    expect(r.state.players.A.bench[0].damage).toBe(0);
+  });
+});

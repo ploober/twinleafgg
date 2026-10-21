@@ -51,12 +51,19 @@ export class Minun extends PokemonCard {
         return state;
       }
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+      // TA-734: "If YOU have Plusle in play" is Minun's owner (the opponent of the attaching player), Active or
+      // Benched; the Ability that might be blocked is Minun's owner's too.
+      if (IS_ABILITY_BLOCKED(store, state, opponent, this)) {
         return state;
       }
 
-      const plusleIsOnBench = player.bench.some(c => c.cards.some(card => card.name === 'Plusle'));
-      if (!plusleIsOnBench) {
+      let plusleInPlay = false;
+      opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+        if (card.name === 'Plusle') {
+          plusleInPlay = true;
+        }
+      });
+      if (!plusleInPlay) {
         return state;
       }
 
