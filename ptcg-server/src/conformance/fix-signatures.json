@@ -13769,6 +13769,16 @@
         "FX-0519"
       ],
       "state": "guarding"
+    },
+    {
+      "file": "set-paradox-rift/minun.ts",
+      "signatures": [
+        "      // TA-734: \"If YOU have Plusle in play\" is Minun's owner (the opponent of the attaching player), Active or"
+      ],
+      "note": "TA-734 (2026-10-21): Minun par-061 Buddy Pulse reads Minun's owner's Plusle (Active or Bench) and the owner's ability lock [TA-734]",
+      "fixes": [
+        "FX-0520"
+      ]
     }
   ]
 }
