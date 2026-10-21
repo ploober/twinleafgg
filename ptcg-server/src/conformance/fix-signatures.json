@@ -13217,6 +13217,16 @@
       "fixes": [
         "FX-0510"
       ]
+    },
+    {
+      "file": "set-pokemon-151/grabber.ts",
+      "signatures": [
+        "      // TA-727 / B.97 (TA-690's shape): \"Your opponent reveals their hand\": the whole hand is shown before the pick."
+      ],
+      "note": "TA-727 (2026-10-20): Erika's Invitation, Grabber, Mr. Mime Look-Alike Show and Lillie's Ribombee Inviting Wink reveal the opponent's hand bef",
+      "fixes": [
+        "FX-0511"
+      ]
     }
   ]
 }
