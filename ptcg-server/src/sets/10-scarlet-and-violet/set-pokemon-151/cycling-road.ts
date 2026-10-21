@@ -1,7 +1,7 @@
 import { GameMessage } from '../../../game/game-message';
 import { StateUtils } from '../../../game/store/state-utils';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { SuperType, TrainerType } from '../../../game/store/card/card-types';
+import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { UseStadiumEffect } from '../../../game/store/effects/game-effects';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
@@ -37,8 +37,9 @@ export class CyclingRoad extends TrainerCard {
   useStadium(store: StoreLike, state: State, effect: UseStadiumEffect): State {
 
     const player = effect.player;
+    // TA-731: "a Basic Energy card"; a Special Energy is not one.
     const hasEnergyInHand = player.hand.cards.some(c => {
-      return c instanceof EnergyCard;
+      return c instanceof EnergyCard && c.energyType === EnergyType.BASIC;
     });
     if (!hasEnergyInHand) {
       throw new GameError(GameMessage.CANNOT_USE_POWER);
@@ -48,8 +49,9 @@ export class CyclingRoad extends TrainerCard {
       player,
       GameMessage.CHOOSE_CARD_TO_DISCARD,
       player.hand,
-      { superType: SuperType.ENERGY },
-      { allowCancel: true, min: 1, max: 1 }
+      { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+      // TA-731 / B.46: the use is the commitment, so the discard cannot be declined once the Stadium is used.
+      { allowCancel: false, min: 1, max: 1 }
     ), cards => {
       cards = cards || [];
       if (cards.length === 0) {

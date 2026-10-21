@@ -1,0 +1,34 @@
+import { step } from '../driver';
+import { NeutralState, NeutralAction } from '../neutral-types';
+
+/**
+ * TA-731: Cycling Road mew-157 ("Once during each player's turn, that player may discard a Basic Energy card from their
+ * hand in order to draw a card.") opened its discard pick with allowCancel: true and filtered any Energy. Using the
+ * Stadium is the commitment (B.46: no decline after the activation), so with one Basic Energy in hand the discard is a
+ * forced pick and collapses (CF-14); a Special Energy is not a Basic Energy card. Re-fuzz
+ * results/fuzz-20261020-graviton-unlimited-refuzz (85a60e9e5 x f3e92fdba), fz-enum-mew-157-divergence-3ece31: rotomancer
+ * discards the only Basic Energy, draws, and returns to A's main menu.
+ */
+
+const BOARD = {"schemaVersion": "0.1", "format": "unlimited", "turn": 3, "activePlayer": "A", "firstPlayer": "A", "phase": "main", "outcome": "ongoing", "players": {"A": {"active": {"stack": [{"iid": "a1s0", "printing": "asc-004"}], "energy": [{"iid": "a1e1", "printing": "sve-003"}], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}, "bench": [{"stack": [{"iid": "ab1s0", "printing": "asc-004"}], "energy": [], "tools": [], "damage": 30, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}, {"stack": [{"iid": "ab2s0", "printing": "asc-004"}], "energy": [], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}], "hand": [{"iid": "ah2", "printing": "mew-157"}, {"iid": "ah3", "printing": "sve-001"}, {"iid": "ah4", "printing": "sve-005"}], "deck": [{"iid": "ad5", "printing": "sve-003"}, {"iid": "ad6", "printing": "sve-001"}, {"iid": "ad7", "printing": "sve-005"}, {"iid": "ad8", "printing": "asc-001"}, {"iid": "ad9", "printing": "asc-002"}, {"iid": "ad10", "printing": "asc-216"}, {"iid": "ad11", "printing": "asc-184"}, {"iid": "ad12", "printing": "asc-182"}, {"iid": "ad13", "printing": "asc-188"}, {"iid": "ad14", "printing": "sve-001"}, {"iid": "ad15", "printing": "sve-005"}, {"iid": "ad16", "printing": "sve-002"}, {"iid": "ad17", "printing": "sve-003"}, {"iid": "ad18", "printing": "sve-001"}, {"iid": "ad19", "printing": "sve-005"}, {"iid": "ad20", "printing": "sve-002"}, {"iid": "ad21", "printing": "sve-003"}, {"iid": "ad22", "printing": "sve-001"}], "discard": [{"iid": "ax23", "printing": "sve-002"}, {"iid": "ax24", "printing": "sve-004"}], "lostZone": [], "prizes": [{"iid": "ap0", "printing": "sve-003", "faceUp": false}, {"iid": "ap1", "printing": "sve-003", "faceUp": false}, {"iid": "ap2", "printing": "sve-003", "faceUp": false}, {"iid": "ap3", "printing": "sve-003", "faceUp": false}, {"iid": "ap4", "printing": "sve-003", "faceUp": false}, {"iid": "ap5", "printing": "sve-003", "faceUp": false}], "flags": {"supporterPlayedThisTurn": false, "energyAttachedThisTurn": false, "stadiumPlayedThisTurn": false, "retreatedThisTurn": false, "cardsPlayedThisTurn": 0, "prizesTakenThisTurn": 0, "prizesTakenLastTurn": 0, "vstarUsed": false}}, "B": {"active": {"stack": [{"iid": "b1s0", "printing": "asc-004"}], "energy": [{"iid": "b1e1", "printing": "sve-003"}], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}, "bench": [{"stack": [{"iid": "bb1s0", "printing": "asc-004"}], "energy": [], "tools": [], "damage": 0, "conditions": [], "poisonDamagePerTurn": 10, "markers": {"playedOnTurn": 1, "movedToActiveOnTurn": -1, "damageTakenThisTurn": 0, "abilitiesUsedThisTurn": [], "cannotAttackNextTurn": false}, "faceDown": false}], "hand": [{"iid": "bh2", "printing": "sve-001"}, {"iid": "bh3", "printing": "sve-005"}], "deck": [{"iid": "bd4", "printing": "sve-003"}, {"iid": "bd5", "printing": "sve-001"}, {"iid": "bd6", "printing": "sve-005"}, {"iid": "bd7", "printing": "asc-001"}, {"iid": "bd8", "printing": "asc-002"}, {"iid": "bd9", "printing": "asc-216"}, {"iid": "bd10", "printing": "asc-184"}, {"iid": "bd11", "printing": "asc-182"}, {"iid": "bd12", "printing": "asc-188"}, {"iid": "bd13", "printing": "sve-001"}, {"iid": "bd14", "printing": "sve-005"}, {"iid": "bd15", "printing": "sve-002"}, {"iid": "bd16", "printing": "sve-003"}, {"iid": "bd17", "printing": "sve-001"}, {"iid": "bd18", "printing": "sve-005"}, {"iid": "bd19", "printing": "sve-002"}, {"iid": "bd20", "printing": "sve-003"}, {"iid": "bd21", "printing": "sve-001"}], "discard": [], "lostZone": [], "prizes": [{"iid": "bp0", "printing": "sve-003", "faceUp": false}, {"iid": "bp1", "printing": "sve-003", "faceUp": false}, {"iid": "bp2", "printing": "sve-003", "faceUp": false}, {"iid": "bp3", "printing": "sve-003", "faceUp": false}, {"iid": "bp4", "printing": "sve-003", "faceUp": false}, {"iid": "bp5", "printing": "sve-003", "faceUp": false}], "flags": {"supporterPlayedThisTurn": false, "energyAttachedThisTurn": false, "stadiumPlayedThisTurn": false, "retreatedThisTurn": false, "cardsPlayedThisTurn": 0, "prizesTakenThisTurn": 0, "prizesTakenLastTurn": 0, "vstarUsed": false}}}, "activeEffects": []} as unknown as NeutralState;
+const ACTIONS = [{"actor": "A", "type": "playStadium", "card": "ah2"}, {"actor": "A", "type": "attachEnergy", "card": "ah3", "target": "a1s0"}, {"actor": "A", "type": "useStadium"}] as unknown as NeutralAction[];
+const discards = (r: ReturnType<typeof step>) =>
+  (r.pending?.legalActions ?? []).filter(a => a.type === 'discard').map(a => (a as { target: string }).target);
+
+describe('TA-731 Cycling Road discards a Basic Energy, and the use commits it', () => {
+  it('[TA-731 mew-157] one Basic Energy in hand: it is discarded and a card drawn, with no pick', () => {
+    const r = step(BOARD, ACTIONS);
+    expect(r.applied).toBe(ACTIONS.length);
+    expect(discards(r)).toEqual([]);
+    expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah4');
+    expect(r.state.players.A.hand.length).toBe(1);
+  });
+
+  it('[TA-731 mew-157 special] a Special Energy beside it is not a candidate', () => {
+    const b = JSON.parse(JSON.stringify(BOARD)) as NeutralState;
+    b.players.A.hand.push({ iid: 'ah9', printing: 'pal-192' } as never);
+    const r = step(b, ACTIONS);
+    expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah4');
+    expect(r.state.players.A.hand.map(c => c.iid)).toContain('ah9');
+  });
+});
