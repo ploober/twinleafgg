@@ -38,3 +38,13 @@ describe('TA-735 a Pokemon revived onto the Bench is put onto the Bench (Risky R
     expect(benched(r)).toEqual([['ac0', 20]]);
   });
 });
+
+// TA-736: Risky Ruins placed its counters with no log, so the adapter emitted no `damaged` event for them; rotomancer
+// f3e92fdba emits damaged {target: ac0, hp: 20} (the re-boarded report row, 2026-10-21).
+describe('TA-736 Risky Ruins\' counters are reported as damage', () => {
+  it('[TA-736 meg-127] the revived Basic\'s 2 counters emit damaged {target, hp: 20}', () => {
+    const r = step(withAttacker('cri-010', 'sve-002', 'asc-004'), revive('Flames of Revival'));
+    const dmg = r.events.filter(e => e.kind === 'damaged').map(e => [(e as { target?: string }).target, (e as { hp?: number }).hp]);
+    expect(dmg).toEqual([['ac0', 20]]);
+  });
+});
