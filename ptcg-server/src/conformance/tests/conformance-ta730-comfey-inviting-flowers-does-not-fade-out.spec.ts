@@ -56,3 +56,34 @@ describe('TA-733 a system action with no system decision pending is refused', ()
     expect(r.state.activePlayer).toBe('B');
   });
 });
+
+// TA-730's census (2026-10-21): two more in-pool cards arm a field on themselves when an attack is used. Both leaked under
+// a menu probe before the fix (driven against the pre-fix store.ts) and are clean with it.
+describe('TA-730 census: a probe does not arm Mimikyu ex or Ting-Lu', () => {
+  const ENERGY = ['sve-006', 'sve-006', 'sve-003', 'sve-004', 'sve-005'].map((p, i) => ({ iid: 'e' + i, printing: p }));
+  const with_ = (active: string, edit: (s: NeutralState) => void = () => undefined): NeutralState => {
+    const s = JSON.parse(JSON.stringify(FINIZEN)) as NeutralState;
+    s.players.A.active!.stack = [{ iid: 'x', printing: active }];
+    s.players.A.active!.energy = ENERGY as never;
+    edit(s);
+    return s;
+  };
+
+  it('[TA-730 svp-004] Mimikyu ex ends its turn without attacking: no Void Return switch is asked', () => {
+    const r = step(with_('svp-004'), [{ actor: 'A', type: 'endTurn' } as unknown as NeutralAction]);
+    expect(r.state.activePlayer).toBe('B');
+    expect(r.pending?.actor).toBe('B');
+  });
+
+  it('[TA-730 twm-110] Ting-Lu Hammer In with a Stadium in play: the Stadium stays (Ground Crasher was not used)', () => {
+    const r = step(with_('twm-110', s => { s.players.A.hand.push({ iid: 'st', printing: 'mew-157' } as never); }), [
+      { actor: 'A', type: 'playStadium', card: 'st' },
+      { actor: 'A', type: 'declareAttack', source: 'x', name: 'Hammer In' },
+      { actor: 'A', type: 'takePrize', index: 0 },
+      { actor: 'B', type: 'promoteBench', target: 'bb1s0' },
+    ] as unknown as NeutralAction[]);
+    expect(r.applied).toBe(4);
+    expect(r.state.activePlayer).toBe('B');
+    expect((r.state as unknown as { stadium: { iid: string } | null }).stadium?.iid).toBe('st');
+  });
+});
