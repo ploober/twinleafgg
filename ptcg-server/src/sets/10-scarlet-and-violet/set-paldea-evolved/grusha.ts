@@ -1,11 +1,10 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
-import { TrainerType } from '../../../game/store/card/card-types';
+import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import { GameError, GameMessage, Player } from '../../../game';
+import { GameError, GameMessage, Player, PlayerType } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Grusha extends TrainerCard {
@@ -49,11 +48,13 @@ export class Grusha extends TrainerCard {
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      const checkProvidedEnergyEffect = new CheckProvidedEnergyEffect(player);
-      store.reduceEffect(state, checkProvidedEnergyEffect);
-      const energyCount = checkProvidedEnergyEffect.energyMap.reduce((left, p) => left + p.provides.length, 0);
+      // TA-732: "none of your Pokémon have any Energy attached" — every Pokémon in play, not the Active alone.
+      let energyAttached = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, list => {
+        if (list.cards.some(c => c.superType === SuperType.ENERGY)) { energyAttached = true; }
+      });
 
-      if (energyCount === 0) {
+      if (!energyAttached) {
 
         while (player.hand.cards.length < 7) {
           if (player.deck.cards.length === 0) {
