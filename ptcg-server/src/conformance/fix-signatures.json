@@ -13327,6 +13327,16 @@
       "fixes": [
         "FX-0518"
       ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "export function USE_COPIED_SUPPORTER_EFFECT(store: StoreLike, state: State, player: Player, trainerCard: TrainerCard): State {"
+      ],
+      "note": "TA-729 (2026-10-21): A copied Supporter's effect is used, not played: USE_COPIED_SUPPORTER_EFFECT lifts supporterTurn for the copy and treats",
+      "fixes": [
+        "FX-0519"
+      ]
     }
   ]
 }
