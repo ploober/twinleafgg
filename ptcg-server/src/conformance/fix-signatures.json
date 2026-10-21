@@ -13237,6 +13237,36 @@
       "fixes": [
         "FX-0512"
       ]
+    },
+    {
+      "file": "set-pokemon-151/erikas-invitation.ts",
+      "signatures": [
+        "  // TA-727 / B.97 (TA-690's shape): \"Your opponent reveals their hand\": the whole hand is shown before the pick."
+      ],
+      "note": "TA-727 (2026-10-20): the opponent's hand is shown before the pick (B.97)",
+      "fixes": [
+        "FX-0511"
+      ]
+    },
+    {
+      "file": "set-journey-together/lillies-ribombee.ts",
+      "signatures": [
+        "            // TA-727 / B.97 (TA-690's shape): \"Your opponent reveals their hand\": the whole hand is shown before the pick."
+      ],
+      "note": "TA-727 (2026-10-20): the opponent's hand is shown before the pick (B.97)",
+      "fixes": [
+        "FX-0511"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/mr-mime.ts",
+      "signatures": [
+        "      // TA-727 / B.97 (TA-690's shape): \"Your opponent reveals their hand\": the whole hand is shown before the pick."
+      ],
+      "note": "TA-727 (2026-10-20): the opponent's hand is shown before the pick (B.97)",
+      "fixes": [
+        "FX-0511"
+      ]
     }
   ]
 }
