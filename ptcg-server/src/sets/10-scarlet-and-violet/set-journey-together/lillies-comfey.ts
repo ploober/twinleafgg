@@ -12,7 +12,7 @@ import {
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
-import { AfterAttackEffect, EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
+import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND } from '../../../game/store/prefabs/attack-effects';
 import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -109,8 +109,6 @@ export class LilliesComfey extends PokemonCard {
 
   public fullName: string = "Lillie's Comfey JTG";
 
-  private wantsToFadeOut: boolean = false;
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const generator = useCallForFamily(() => generator.next(), store, state, effect);
@@ -120,17 +118,11 @@ export class LilliesComfey extends PokemonCard {
     // Fade Out — "Put this Pokémon and all attached cards into your hand." Runs after damage
     // (AfterAttackEffect), mirroring the Greedent DAA "Smack and Run" idiom. This attack had NO
     // handler before, so the self-bounce never happened.
-    if (WAS_ATTACK_USED(effect, 1, this)) {
-      this.wantsToFadeOut = true;
-    }
-
-    if (effect instanceof AfterAttackEffect && this.wantsToFadeOut) {
-      this.wantsToFadeOut = false;
+    // TA-730: keyed on the attack the AfterAttackEffect carries, not an instance flag: the menu's attack probes share
+    // this Card instance, so a probed Fade Out armed the flag and the next real attack (Inviting Flowers) bounced.
+    if (effect instanceof AfterAttackEffect && effect.attack === this.attacks[1]
+      && effect.player.active.getPokemonCard() === this) {
       PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);
-    }
-
-    if (effect instanceof EndTurnEffect) {
-      this.wantsToFadeOut = false;
     }
 
     return state;

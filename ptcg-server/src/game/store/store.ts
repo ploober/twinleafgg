@@ -173,6 +173,29 @@ export function wireVisibleBoardDiffers(a: State, b: State): boolean {
 
 const CHECK_EFFECT_TYPES: ReadonlySet<string> = new Set<string>(Object.values(CheckEffects));
 
+/** Every Card reachable from `root`, with its own scalar fields as they are now; the returned function puts them back. */
+function snapshotCardScalars(root: unknown): () => void {
+  const seen = new Set<unknown>();
+  const saved: Array<[Card, Record<string, unknown>]> = [];
+  const walk = (v: unknown): void => {
+    if (v === null || typeof v !== 'object' || seen.has(v)) { return; }
+    seen.add(v);
+    if (v instanceof Card) {
+      const fields: Record<string, unknown> = {};
+      for (const [k, x] of Object.entries(v)) {
+        if (x === null || x === undefined || (typeof x !== 'object' && typeof x !== 'function')) { fields[k] = x; }
+      }
+      saved.push([v, fields]);
+      return;
+    }
+    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+      if (k !== 'logs') { walk(x); }
+    }
+  };
+  walk(root);
+  return () => { for (const [card, fields] of saved) { Object.assign(card, fields); } };
+}
+
 export class Store implements StoreLike {
 
   //private effectHistory: Effect[] = [];
@@ -200,7 +223,15 @@ export class Store implements StoreLike {
    * rollback snapshot; handlers calling ordinary dispatch still get their own rollback protection.
    */
   public dispatchProbe(action: Action): State {
-    return this.dispatchWithRollback(action, undefined, false);
+    // TA-730: the clone shares the Card instances with the real board (deepClone skips Card), so a card that arms a
+    // field on itself when an attack is used (Comfey jtg-068 Fade Out, Finizen obf-060 Valiant Evolution) kept it
+    // armed after a menu probe, and its next real attack ran the probed one's effect. Restore the scalars.
+    const restore = snapshotCardScalars(this.state);
+    try {
+      return this.dispatchWithRollback(action, undefined, false);
+    } finally {
+      restore();
+    }
   }
 
   private dispatchWithRollback(action: Action, clientRoleId: number | undefined, rollback: boolean): State {
