@@ -27,4 +27,18 @@ describe('TA-718 Dino Cry: the use label does not survive the turn end the Abili
     const mons = [A.active!, ...A.bench];
     expect(mons.map(m => m.markers.abilitiesUsedThisTurn)).toEqual(mons.map(() => []));
   });
+
+  // Re-fuzz results/fuzz-20261020-graviton-unlimited-refuzz (85a60e9e5 x f3e92fdba), fz-enum-paf-245-divergence-8bfa91:
+  // with two Basic [F] Energy in the discard pile the attach is a real pick, A's turn has not ended, and B.57 (a)
+  // labels the use at the announcement; rotomancer projects [Dino Cry] there.
+  const TWO = ACTIONS.map(a => (a as { target?: string }).target === 'a1e3' ? { ...a, target: 'a1e2' } as NeutralAction : a);
+
+  it('[TA-718 paf-245 open pick] while A picks the Energy, Koraidon ex is labelled with Dino Cry', () => {
+    const r = step(BOARD, TWO);
+    expect(r.applied).toBe(TWO.length);
+    expect(r.state.activePlayer).toBe('A');
+    expect(r.pending?.actor).toBe('A');
+    const koraidon = r.state.players.A.bench.find(m => m.stack.some(c => c.printing === 'paf-245'))!;
+    expect(koraidon.markers.abilitiesUsedThisTurn).toEqual(['Dino Cry']);
+  });
 });

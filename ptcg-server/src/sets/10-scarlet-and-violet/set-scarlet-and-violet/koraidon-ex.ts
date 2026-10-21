@@ -112,18 +112,14 @@ export class Koraidonex extends PokemonCard {
         ),
         (transfers) => {
           transfers = transfers || [];
-          // cancelled by user
-          if (transfers.length === 0) {
-            return;
-          }
           transfers.forEach((transfer) => {
             const target = StateUtils.getTarget(state, player, transfer.to);
             MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card], sourceCard: this });
           });
+          // TA-718 / B.57 (a): the turn ends after the attach, so the use is labelled while the pick is open.
+          store.reduceEffect(state, new EndTurnEffect(player));
         },
       );
-      const endTurnEffect = new EndTurnEffect(player);
-      store.reduceEffect(state, endTurnEffect);
       return state;
     }
 
