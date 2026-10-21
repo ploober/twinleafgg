@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType, TrainerType, SpecialCondition } from '../../../game/store/card/card-types';
-import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, TrainerCard } from '../../../game';
+import { StoreLike, State, StateUtils, GameMessage, ChooseCardsPrompt, ShowCardsPrompt, TrainerCard } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 
@@ -58,7 +58,12 @@ export class MrMime extends PokemonCard {
       // Look-Alike Show is an ATTACK: special conditions (Poison/Burn/Confusion) do NOT prevent
       // attacking — only Asleep/Paralyzed do, which the engine already enforces. The old
       // `specialConditions.length > 0` guard wrongly blocked a Poisoned/Burned Mr. Mime.
-      return store.prompt(state, new ChooseCardsPrompt(
+      // TA-727 / B.97 (TA-690's shape): "Your opponent reveals their hand": the whole hand is shown before the pick.
+      return store.prompt(state, new ShowCardsPrompt(
+        player.id,
+        GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+        opponent.hand.cards
+      ), () => store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_COPY_EFFECT,
         opponent.hand,
@@ -71,7 +76,7 @@ export class MrMime extends PokemonCard {
         const trainerCard = cards[0] as TrainerCard;
         const playTrainerEffect = new TrainerEffect(player, trainerCard);
         store.reduceEffect(state, playTrainerEffect);
-      });
+      }));
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {

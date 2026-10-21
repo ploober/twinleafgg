@@ -11,6 +11,7 @@ import {
   ChooseCardsPrompt,
   PokemonCardList,
 } from '../../../game';
+import { ShowCardsPrompt } from '../../../game/store/prompts/show-cards-prompt';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { PowerEffect } from '../../../game/store/effects/game-effects';
@@ -68,30 +69,37 @@ export class LilliesRibombee extends PokemonCard {
             // Check if bench has open slots
             const openSlots = opponent.bench.filter((b) => b.cards.length === 0);
 
-            let cards: Card[] = [];
-            store.prompt(
-              state,
-              new ChooseCardsPrompt(
-                player,
-                GameMessage.CHOOSE_CARD_TO_HAND,
-                opponent.hand,
-                { superType: SuperType.POKEMON, stage: Stage.BASIC },
-                { min: 0, max: openSlots.length, allowCancel: false },
-              ),
-              (selected) => {
-                cards = selected || [];
+            // TA-727 / B.97 (TA-690's shape): "Your opponent reveals their hand": the whole hand is shown before the pick.
+            store.prompt(state, new ShowCardsPrompt(
+              player.id,
+              GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+              opponent.hand.cards
+            ), () => {
+              let cards: Card[] = [];
+              store.prompt(
+                state,
+                new ChooseCardsPrompt(
+                  player,
+                  GameMessage.CHOOSE_CARD_TO_HAND,
+                  opponent.hand,
+                  { superType: SuperType.POKEMON, stage: Stage.BASIC },
+                  { min: 0, max: openSlots.length, allowCancel: false },
+                ),
+                (selected) => {
+                  cards = selected || [];
 
-                // Operation canceled by the user
-                if (cards.length === 0) {
-                  return state;
-                }
+                  // Operation canceled by the user
+                  if (cards.length === 0) {
+                    return state;
+                  }
 
-                cards.forEach((card, index) => {
-                  MOVE_CARDS(store, state, opponent.hand, slots[index], { cards: [card], sourceCard: this });
-                  slots[index].pokemonPlayedTurn = state.turn;
-                });
-              },
-            );
+                  cards.forEach((card, index) => {
+                    MOVE_CARDS(store, state, opponent.hand, slots[index], { cards: [card], sourceCard: this });
+                    slots[index].pokemonPlayedTurn = state.turn;
+                  });
+                },
+              );
+            });
           }
         },
       );

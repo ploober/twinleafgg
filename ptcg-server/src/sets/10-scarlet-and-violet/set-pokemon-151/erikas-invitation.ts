@@ -2,7 +2,7 @@ import { Card } from '../../../game/store/card/card';
 import { GameError } from '../../../game/game-error';
 import { GameMessage } from '../../../game/game-message';
 import { Effect } from '../../../game/store/effects/effect';
-import { Player, PokemonCardList, StateUtils } from '../../../game';
+import { Player, PokemonCardList, ShowCardsPrompt, StateUtils } from '../../../game';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Stage, TrainerType, SuperType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
@@ -36,6 +36,13 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     // No open slots, throw error
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
+
+  // TA-727 / B.97 (TA-690's shape): "Your opponent reveals their hand": the whole hand is shown before the pick.
+  yield store.prompt(state, new ShowCardsPrompt(
+    player.id,
+    GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
+    opponent.hand.cards
+  ), () => next());
 
   let cards: Card[] = [];
   yield store.prompt(state, new ChooseCardsPrompt(
