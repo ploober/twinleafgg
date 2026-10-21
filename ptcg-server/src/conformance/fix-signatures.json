@@ -13267,6 +13267,56 @@
       "fixes": [
         "FX-0511"
       ]
+    },
+    {
+      "file": "set-scarlet-and-violet/koraidon-ex.ts",
+      "signatures": [
+        "          // TA-718 / B.57 (a): the turn ends after the attach, so the use is labelled while the pick is open."
+      ],
+      "note": "TA-718 (2026-10-20): Dino Cry paf-245 ends the turn inside its attach callback, so the use is labelled while the pick is open [TA-718 re-fuzz",
+      "fixes": [
+        "FX-0513"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/move-damage.ts",
+      "signatures": [
+        "      // TA-724 (re-fuzz): \"any number of damage counters\" counts the counters on the board when the move began (the"
+      ],
+      "note": "TA-724 (2026-10-20): move-damage: the transfers stop at the number of counters on the board when the move began [TA-724 re-fuzz regression]",
+      "fixes": [
+        "FX-0514"
+      ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "    const restore = snapshotCardScalars(this.state);"
+      ],
+      "note": "TA-730 (2026-10-20): A probe restores the scalar fields of the shared Card instances; Comfey jtg-068 Fade Out keyed on the attack [TA-730]",
+      "fixes": [
+        "FX-0515"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/cycling-road.ts",
+      "signatures": [
+        "      // TA-731 / B.46: the use is the commitment, so the discard cannot be declined once the Stadium is used."
+      ],
+      "note": "TA-731 (2026-10-20): Cycling Road mew-157 discards a Basic Energy card, and the use commits the discard (no cancel) [TA-731, B.46, CF-14]",
+      "fixes": [
+        "FX-0516"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/grusha.ts",
+      "signatures": [
+        "      // TA-732: \"none of your Pokémon have any Energy attached\" — every Pokémon in play, not the Active alone."
+      ],
+      "note": "TA-732 (2026-10-20): Grusha pal-184 checks Energy on every Pokemon in play, not the Active alone [TA-732]",
+      "fixes": [
+        "FX-0517"
+      ]
     }
   ]
 }
