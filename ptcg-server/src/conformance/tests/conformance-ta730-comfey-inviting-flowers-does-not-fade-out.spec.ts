@@ -41,3 +41,18 @@ describe('TA-730 a menu probe leaves the shared Card instances as it found them'
     expect(r.state.activePlayer).toBe('B');
   });
 });
+
+// TA-733 (B.95 / CF-12): the Finizen row's corpus script was recorded on the defective trace and carries a `shuffle`
+// after Razor Fin. With no system decision pending that action was not offered: invalidAction, not an engine fault.
+// Rotomancer f3e92fdba answers invalidAction (NOT_YOUR_TURN) at index 1.
+describe('TA-733 a system action with no system decision pending is refused', () => {
+  it('[TA-733 obf-060] Razor Fin then a stray shuffle: invalidAction at index 1', () => {
+    const r = step(FINIZEN, [
+      { actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Razor Fin' },
+      { actor: 'system', type: 'shuffle', order: [] },
+    ] as unknown as NeutralAction[]);
+    expect(r.status).toBe('invalidAction');
+    expect(r.applied).toBe(1);
+    expect(r.state.activePlayer).toBe('B');
+  });
+});

@@ -108,11 +108,15 @@ describe('Conformance M6 — rejection codes', () => {
     expect(res.reasonCode).toBe('EVOLVE_NOT_ELIGIBLE');
   });
 
-  it('a non-GameError (stray system action) still propagates — the boundary catches only GameError', () => {
-    expect(() => step(
+  // TA-733 / B.95 (CF-12): this cell used a stray system action as its example of a non-GameError; that action was
+  // not offered, so it is now refused like any other.
+  it('a stray system action (no system decision pending) → invalidAction at index 0', () => {
+    const res = step(
       board(player({ active: pip('A-act', RALTS) }), player({ active: pip('B-act', RALTS) })),
       [{ actor: 'system', type: 'flip', face: 'heads' }],
-    )).toThrow();
+    );
+    expect(res.status).toBe('invalidAction');
+    expect(res.applied).toBe(0);
   });
 });
 

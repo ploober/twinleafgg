@@ -1535,7 +1535,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     if (cursor.i < actions.length) {
       const action = actions[cursor.i];
       if (action.type === 'flip' || action.type === 'shuffle' || action.type === 'pick') {
-        throw new Error(`[conformance] stray system action '${action.type}' with no pending system decision`);
+        // TA-733 / B.95 (CF-12): a system action with no system decision pending was not offered: invalidAction, not
+        // an engine fault. The cursor steps past it first, as for a dispatched action, so `applied` names the prefix.
+        cursor.i++;
+        throw new NotOffered();
       }
       cursor.i++;
       // TA-129 (CF-12, 2026-07-24): this used to ABSORB the attacker's own trailing `endTurn` as a
