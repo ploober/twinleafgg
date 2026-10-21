@@ -13227,6 +13227,16 @@
       "fixes": [
         "FX-0511"
       ]
+    },
+    {
+      "file": "set-paldea-evolved/delivery-drone.ts",
+      "signatures": [
+        "    // TA-728 / B.44: unless both flips are heads no search is performed, and \"Then, shuffle your deck\" rides on the"
+      ],
+      "note": "TA-728 (2026-10-20): Delivery Drone pal-178 shuffles only after a search: no shuffle unless both flips are heads [TA-728, B.44]",
+      "fixes": [
+        "FX-0512"
+      ]
     }
   ]
 }
