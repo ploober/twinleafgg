@@ -122,6 +122,12 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
             && !(prompt.options.singleDestinationTarget && firstTo !== undefined && targetKey(t) !== firstTo));
       };
       const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
+      // TA-724 (re-fuzz): "any number of damage counters" counts the counters on the board when the move began (the
+      // prompt-open damage), so the transfers stop there, as at `max` above; a counter is not moved twice.
+      const onBoard = sources.reduce((n, s) => n + Math.floor((StateUtils.getTarget(state, player, s)?.damage ?? 0) / COUNTER), 0);
+      if (transfers.length >= onBoard) {
+        return null;
+      }
       for (const source of sources) {
         const k = targetKey(source);
         const cardList = StateUtils.getTarget(state, player, source);
