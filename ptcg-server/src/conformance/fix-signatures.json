@@ -13981,6 +13981,29 @@
       "fixes": [
         "FX-0529"
       ]
+    },
+    {
+      "file": "set-paldean-fates/moonlight-hill.ts",
+      "signatures": [
+        "        { allowCancel: false, min: 1, max: 1 }"
+      ],
+      "note": "TA-744 (2026-10-22): Moonlit Hill paf-081 discards the only Basic Psychic Energy in hand without a pick, then heals (CF-14) [TA-744]",
+      "fixes": [
+        "FX-0530"
+      ]
+    },
+    {
+      "file": "set-paldea-evolved/great-ball.ts",
+      "signatures": [
+        "          MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });\n        }\n\n        if (chosenCards.length > 0) {"
+      ],
+      "absentSignatures": [
+        "MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });"
+      ],
+      "note": "TA-745 (2026-10-22): Great Ball pal-183 stays resolving until its shuffle is done, then goes to the discard pile (B.80) [TA-745]",
+      "fixes": [
+        "FX-0531"
+      ]
     }
   ]
 }
