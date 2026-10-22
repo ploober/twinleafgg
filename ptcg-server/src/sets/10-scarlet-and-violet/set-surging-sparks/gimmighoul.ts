@@ -1,52 +1,34 @@
-import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
-import { Card, ChooseCardsPrompt, ShuffleDeckPrompt } from '../../../game';
-import { StoreLike, State, GameMessage } from '../../../game';
+import { CardType, ChooseCardsPrompt, EnergyType, GameMessage, PokemonCard, Stage, State, StoreLike, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-
-import { SHOW_CARDS_TO_PLAYER, WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Gimmighoul extends PokemonCard {
-
   public stage: Stage = Stage.BASIC;
-
-  public cardType: CardType[] = [P];
-
   public hp: number = 70;
-
+  public cardType: CardType[] = [P];
   public weakness = [{ type: D }];
-
   public resistance = [{ type: F, value: -30 }];
-
   public retreat = [C, C];
 
-  public attacks = [
-    {
-      name: 'Minor Errand-Running',
-      cost: [C],
-      damage: 0,
-      text: 'Search your deck for up to 2 Basic Energy cards, reveal them, and put them into your hand. Then, shuffle your deck.'
-    },
-
-    {
-      name: 'Tackle',
-      cost: [C, C, C],
-      damage: 50,
-      text: ''
-    }
-  ];
+  public attacks = [{
+    name: 'Minor Errand-Running',
+    cost: [C],
+    damage: 0,
+    text: 'Search your deck for up to 2 Basic Energy cards, reveal them, and put them into your hand. Then, shuffle your deck.',
+  },
+  {
+    name: 'Tackle',
+    cost: [C, C, C],
+    damage: 50,
+    text: '',
+  }];
 
   public regulationMark = 'H';
-
-  public setNumber = '97';
-
   public set: string = 'SSP';
-
-  public name: string = 'Gimmighoul';
-
-  public fullName: string = 'Gimmighoul SSP';
-
   public cardImage: string = 'assets/cardback.png';
+  public setNumber = '97';
+  public name: string = 'Gimmighoul';
+  public fullName: string = 'Gimmighoul SSP';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Minor Errand-Running
@@ -54,15 +36,12 @@ export class Gimmighoul extends PokemonCard {
       const player = effect.player;
       const opponent = effect.opponent;
 
-      // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
-      // separate printed instruction whose object survives — so the shuffle is still owed.
       if (player.deck.cards.length === 0) {
+        // TA-250 / B.33: the search whiffs on an empty deck, but *"Then, shuffle your deck"* is a
+        // separate printed instruction whose object survives — so the shuffle is still owed.
         return SHUFFLE_DECK(store, state, player);
       }
 
-      // TA-582: "Then, shuffle your deck" follows the search, so the shuffle is raised inside the pick callback (as
-      // Greninja ex twm-106 Shinobi Blade does). Raised beside the open pick, the live arbiter (Game.handleArbiterPrompts)
-      // answered it first, over the pre-search deck, and the deck stayed in the order the player searched.
       return store.prompt(state, new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
@@ -70,18 +49,14 @@ export class Gimmighoul extends PokemonCard {
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
         { min: 0, max: 2, allowCancel: false }
       ), selected => {
-        const cards: Card[] = selected || [];
-
+        const cards = selected || [];
+        // The reveal comes before the cards change zones (TA-265 / B.34).
         SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
-
-        MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-
-        store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
-        });
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
+        SHUFFLE_DECK(store, state, player);
       });
     }
 
     return state;
   }
-} 
+}

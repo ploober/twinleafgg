@@ -94,8 +94,9 @@ export class Gothitelle extends PokemonCard {
       ), cards => {
         cards = cards || [];
 
-        // TA-663 / B.97: the card becomes public by being discarded; there is no separate reveal.
         MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards, sourceCard: this });
+        // TA-663 / B.97: the card becomes public by being discarded; there is no separate reveal.
+        
       });
     }
 

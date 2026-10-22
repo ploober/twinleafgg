@@ -1,14 +1,12 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
-import { GamePhase, State } from '../../../game/store/state/state';
+import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
-import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { IS_ABILITY_BLOCKED, ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT } from '../../../game/store/prefabs/prefabs';
 import { NEXT_TURN_ATTACK_BONUS } from '../../../game/store/prefabs/attack-effects';
 import { PowerType, StateUtils } from '../../../game';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
-import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
-import { GameLog } from '../../../game/game-message';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 
 export class Hitmonchan extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -39,32 +37,21 @@ export class Hitmonchan extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Counterattack
-    if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this && state.phase === GamePhase.ATTACK) {
-      const player = StateUtils.findOwner(state, effect.target);
-      const opponent = effect.player;
-      if (player === opponent || player.active !== effect.target)
-        return state;
+    if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {
+      const abilityOwner = StateUtils.findOwner(state, effect.target);
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
         return state;
       }
 
-      const damageEffect = new EffectOfAbilityEffect(player, this.powers[0], this, effect.source);
-      store.reduceEffect(state, damageEffect);
-      if (damageEffect.target) {
-        damageEffect.target.damage += 30;
-        // TA-511: log the placement like every engine counter placement (PutCountersEffect / Maractus TA-577): the game
-        // log shows it, and the conformance events read it to attribute the 30 when a Knock Out leaves no damage to diff.
-        const attacker = damageEffect.target.getPokemonCard();
-        if (attacker !== undefined) {
-          store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {
-            name: player.name,
-            damage: 30,
-            target: attacker.name,
-            effect: this.powers[0].name,
-          });
-        }
-      }
+      const placeCounters = new PlaceDamageCountersEffect(
+        abilityOwner,
+        effect.source,
+        30,
+        this,
+        this.powers[0],
+      );
+      store.reduceEffect(state, placeCounters);
     }
 
     // Excited Punch

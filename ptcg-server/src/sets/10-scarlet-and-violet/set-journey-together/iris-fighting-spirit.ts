@@ -8,7 +8,6 @@ import { ChooseCardsPrompt, GameMessage, Player } from '../../../game';
 import {DRAW_CARDS_UNTIL_CARDS_IN_HAND, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class IrisFightingSpirit extends TrainerCard {
-
   public regulationMark = 'I';
 
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -19,9 +18,9 @@ export class IrisFightingSpirit extends TrainerCard {
 
   public setNumber: string = '149';
 
-  public name: string = 'Iris\'s Fighting Spirit';
+  public name: string = "Iris's Fighting Spirit";
 
-  public fullName: string = 'Iris\'s Fighting Spirit JTG';
+  public fullName: string = "Iris's Fighting Spirit JTG";
 
   public text: string =
     'You can use this card only if you discard another card from your hand.' +
@@ -32,7 +31,7 @@ export class IrisFightingSpirit extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
-    if (player.hand.cards.filter(c => c !== this).length === 0) {
+    if (player.hand.cards.filter((c) => c !== this).length === 0) {
       return false;
     }
     // TA-368 (B.41 self-side addendum, TA-349's Lacey pattern; #2042 "you have to be able to
@@ -46,10 +45,11 @@ export class IrisFightingSpirit extends TrainerCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
 
-      state = store.prompt(state, new ChooseCardsPrompt(
+      state = store.prompt(
+        state,
+        new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
@@ -79,7 +79,8 @@ export class IrisFightingSpirit extends TrainerCard {
         }
 
         DRAW_CARDS_UNTIL_CARDS_IN_HAND(player, 6);
-      });
+        },
+      );
 
       return state;
     }

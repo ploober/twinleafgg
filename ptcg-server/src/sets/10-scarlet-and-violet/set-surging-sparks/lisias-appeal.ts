@@ -13,13 +13,14 @@ export class LisiasAppeal extends TrainerCard {
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '179';
-  public name: string = 'Lisia\'s Appeal';
-  public fullName: string = 'Lisia\'s Appeal SSP';
-  public text: string = 'Switch in 1 of your opponent\'s Benched Basic Pokémon to the Active Spot. The new Active Pokémon is now Confused.';
+  public name: string = "Lisia's Appeal";
+  public fullName: string = "Lisia's Appeal SSP";
+  public text: string =
+    "Switch in 1 of your opponent's Benched Basic Pokémon to the Active Spot. The new Active Pokémon is now Confused.";
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     const opponent = StateUtils.getOpponent(state, player);
-    const hasBench = opponent.bench.some(b => b.cards.length > 0);
+    const hasBench = opponent.bench.some((b) => b.cards.length > 0);
     if (!hasBench) {
       return false;
     }
@@ -30,7 +31,7 @@ export class LisiasAppeal extends TrainerCard {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const hasBench = opponent.bench.some(b => b.cards.length > 0);
+      const hasBench = opponent.bench.some((b) => b.cards.length > 0);
 
       if (!hasBench) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
@@ -62,10 +63,9 @@ export class LisiasAppeal extends TrainerCard {
             // Fossils) can prevent it.
             ADD_CONFUSION_TO_PLAYER_ACTIVE(store, state, opponent, this);
           }
-        }
+        },
       });
     }
     return state;
   }
-
 }

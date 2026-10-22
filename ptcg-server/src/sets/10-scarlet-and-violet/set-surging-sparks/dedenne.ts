@@ -53,8 +53,9 @@ export class Dedenne extends PokemonCard {
         { min: 1, max: 1, allowCancel: false }
       ), selected => {
         if (selected) {
-          SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
           MOVE_CARDS(store, state, player.discard, player.hand, { cards: selected });
+          SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
+          
         }
       });
     }

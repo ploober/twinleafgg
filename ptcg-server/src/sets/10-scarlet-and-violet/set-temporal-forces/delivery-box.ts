@@ -4,12 +4,19 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { Card, ChooseCardsPrompt, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import {
+  Card,
+  ChooseCardsPrompt,
+  GameMessage,
+  Player,
+  ShowCardsPrompt,
+  ShuffleDeckPrompt,
+  StateUtils,
+} from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DeliveryBox extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public regulationMark = 'H';
@@ -27,17 +34,18 @@ export class DeliveryBox extends TrainerCard {
   public text: string =
     'Search your deck for up to 2 Item cards, reveal them, and put them into your hand. Then, shuffle your deck. Your turn ends.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return true;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       let cards: Card[] = [];
-      store.prompt(state, new ChooseCardsPrompt(
+      store.prompt(
+        state,
+        new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.deck,

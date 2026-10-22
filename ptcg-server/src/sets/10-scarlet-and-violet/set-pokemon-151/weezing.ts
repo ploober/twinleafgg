@@ -2,6 +2,7 @@ import { CardType, GamePhase, PokemonCard, PowerType, Stage, State, StateUtils, 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { CAN_APPLY_ABILITY_TO_TARGET } from '../../../game/store/prefabs/effect-of-ability-prefabs';
 import { COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Weezing extends PokemonCard {
@@ -37,31 +38,45 @@ export class Weezing extends PokemonCard {
   public fullName: string = 'Weezing MEW';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof KnockOutEffect &&
-      effect.target.getPokemonCard() === this &&
+    // Let's Have a Blast — Ref: set-30th-celebration/gengar-ex.ts
+    if (
+      effect instanceof KnockOutEffect &&
+      effect.target.cards.includes(this) &&
       effect.player.marker.hasMarker(effect.player.DAMAGE_DEALT_MARKER)
     ) {
-      const player = StateUtils.findOwner(state, effect.target);
-      const opponent = StateUtils.getOpponent(state, player);
+      const abilityOwner = effect.player;
+      const attackerOwner = StateUtils.getOpponent(state, abilityOwner);
 
-      // Do not activate between turns, or when it's not opponents turn, or if abilities are blocked.
+      // Do not activate between turns, or when it's not opponents turn, or if not Active
       if (state.phase !== GamePhase.ATTACK ||
-        player.active.getPokemonCard() !== this ||
-        state.players[state.activePlayer] !== opponent ||
-        IS_ABILITY_BLOCKED(store, state, player, this)
-      )
+        abilityOwner.active.getPokemonCard() !== this ||
+        state.players[state.activePlayer] !== attackerOwner
+      ) {
         return state;
+      }
 
-      COIN_FLIP_PROMPT(store, state, player, (result) => {
-        if (!result) {
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
+        return state;
+      }
+
+      COIN_FLIP_PROMPT(store, state, abilityOwner, flipResult => {
+        if (!flipResult) {
+          return;
+        }
+        if (!CAN_APPLY_ABILITY_TO_TARGET(
+          store,
+          state,
+          abilityOwner,
+          this.powers[0],
+          this,
+          attackerOwner.active,
+        )) {
           return;
         }
         // TA-563: the Attacking Pokémon's Knock Out joins Weezing's own Knock Out group (TA-577): the sweep that is
         // resolving Weezing re-collects it, discards BOTH before any Prize card is taken, and pays each player's Prize
-        // once, the next player (Weezing's owner) first (#2026: Prize cards before the replacement Active). It was
-        // dispatched here and its Prize asked at once (TAKE_X_PRIZES), with the Knocked Out Weezing still in the Active
-        // Spot. TA-559's single payment is kept: the sweep is now the only place that pays it.
-        opponent.active.knockedOutByEffect = true;
+        // once, the next player (Weezing's owner) first (#2026). A Knock Out by effect, not 999 damage counters.
+        attackerOwner.active.knockedOutByEffect = true;
       });
     }
 

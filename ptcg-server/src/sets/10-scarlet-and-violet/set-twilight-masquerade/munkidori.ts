@@ -168,14 +168,17 @@ export class Munkidori extends PokemonCard {
                 if (moveEffect.preventDefault) {
                   continue;
                 }
-                source.damage -= damageToMove;
                 const placeCountersEffect = new PlaceDamageCountersEffect(
                   effect.player,
                   target,
                   damageToMove,
-                  this
+                  this,
+                  this.powers[0],
                 );
                 state = store.reduceEffect(state, placeCountersEffect);
+                // TA-618 / #2257 (Adrena-Brain): "The three damage counters are REMOVED from your Pokemon, but since they
+                // cannot be placed onto Benched Pokemon they just vanish from play." A prevented placement still removes.
+                source.damage -= damageToMove;
                 totalDamageMoved += damageToMove;
               }
               if (totalDamageMoved >= 30) break;

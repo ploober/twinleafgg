@@ -1,7 +1,7 @@
-import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
 import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, PowerType, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
+import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import { AFTER_ATTACK, CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -40,7 +40,7 @@ export class TeamRocketsGolbat extends PokemonCard {
   public fullName: string = "Team Rocket's Golbat DRI";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Sneaky Bite
+    // Sneaky Bite — Ref: set-phantom-forces/golbat.ts
     if (effect instanceof PlayPokemonEffect && effect.pokemonCard === this) {
       const player = StateUtils.findOwner(state, effect.target);
 
@@ -48,15 +48,12 @@ export class TeamRocketsGolbat extends PokemonCard {
         return state;
       }
 
-      // TA-347 (the TA-341 shape one stage down): the target prompt belongs INSIDE the "you may" —
-      // a decline used to fall through to it — and the counters go through PutDamageCountersEffect
-      // so a "prevent effects of your opponent's Abilities" protector can intercept them (SD-26);
-      // `target.damage += 20` bypassed every sink AND left no placement log for the event mapper.
-      CONFIRMATION_PROMPT(store, state, player, (result) => {
+      return CONFIRMATION_PROMPT(store, state, player, (result) => {
         if (!result) {
-          return state;
+          return;
         }
-        return store.prompt(
+
+        store.prompt(
           state,
           new ChoosePokemonPrompt(
             player.id,
@@ -68,18 +65,20 @@ export class TeamRocketsGolbat extends PokemonCard {
           ),
           (selected) => {
             const targets = selected || [];
-            targets.forEach((target) => {
-              const powerEffect = new PowerEffect(player, this.powers[0], this, target);
-              store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));
-            });
+            if (targets.length > 0) {
+              store.reduceEffect(
+                state,
+                new PlaceDamageCountersEffect(player, targets[0], 20, this, this.powers[0]),
+              );
+            }
           },
         );
       });
-      return state;
     }
 
     // Confuse Ray
     if (AFTER_ATTACK(effect, 0, this)) {
+      // TA-167: Confuse Ray is an attack effect (protection from attack effects applies), via the attack-effect prefab.
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED(store, state, effect);
     }
     return state;

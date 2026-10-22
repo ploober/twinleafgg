@@ -21,7 +21,8 @@ export class PokemonFlute extends TrainerCard {
 
   public setNumber: string = '86'; // Replace with the appropriate set number
 
-  public text: string = 'Choose 1 Basic Pokémon card from your opponent\'s discard pile and put it onto his or her Bench. (You can\'t play Pokémon Flute if your opponent\'s Bench is full.)';
+  public text: string =
+    "Choose 1 Basic Pokémon card from your opponent's discard pile and put it onto his or her Bench. (You can't play Pokémon Flute if your opponent's Bench is full.)";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
@@ -29,7 +30,7 @@ export class PokemonFlute extends TrainerCard {
       const opponent = StateUtils.getOpponent(state, player);
 
       // Check if opponent's bench is full
-      const openSlots = opponent.bench.filter(b => b.cards.length === 0);
+      const openSlots = opponent.bench.filter((b) => b.cards.length === 0);
 
       if (openSlots.length === 0) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
@@ -39,14 +40,16 @@ export class PokemonFlute extends TrainerCard {
       effect.preventDefault = true;
 
       let cards: Card[] = [];
-      return store.prompt(state, new ChooseCardsPrompt(
+      return store.prompt(
+        state,
+        new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_OPPONENTS_BASIC_POKEMON_TO_BENCH,
         opponent.discard,
         { superType: SuperType.POKEMON, stage: Stage.BASIC },
-        { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-
+          { min: 1, max: 1, allowCancel: false },
+        ),
+        (selected) => {
         cards = selected || [];
 
         if (cards.length > 0) {
@@ -55,7 +58,8 @@ export class PokemonFlute extends TrainerCard {
           MOVE_CARDS(store, state, opponent.discard, slot, { cards: [card], sourceCard: this });
           slot.pokemonPlayedTurn = state.turn;
         }
-      });
+        },
+      );
     }
 
     return state;

@@ -26,7 +26,12 @@ function isMatchingStage2(stage1: PokemonCard[], basic: PokemonCard, stage2: Pok
   return false;
 }
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   // Create list of non - Pokemon SP slots
@@ -36,7 +41,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  const stage2 = player.hand.cards.filter(c => {
+  const stage2 = player.hand.cards.filter((c) => {
     return c instanceof PokemonCard && c.stage === Stage.STAGE_2;
   }) as PokemonCard[];
 
@@ -46,12 +51,12 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   // Look through all known cards to find out if it's a valid Stage 2
   const cm = CardManager.getInstance();
-  const stage1 = cm.getAllCards().filter(c => {
+  const stage1 = cm.getAllCards().filter((c) => {
     return c instanceof PokemonCard && c.stage === Stage.STAGE_1;
   }) as PokemonCard[];
 
   player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
-    if (card.stage === Stage.BASIC && stage2.some(s => isMatchingStage2(stage1, card, s))) {
+    if (card.stage === Stage.BASIC && stage2.some((s) => isMatchingStage2(stage1, card, s))) {
       const playedTurnEffect = new CheckPokemonPlayedTurnEffect(player, list);
       store.reduceEffect(state, playedTurnEffect);
       if (playedTurnEffect.pokemonPlayedTurn < state.turn) {
@@ -72,16 +77,20 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
 
   let targets: PokemonCardList[] = [];
-  yield store.prompt(state, new ChoosePokemonPrompt(
+  yield store.prompt(
+    state,
+    new ChoosePokemonPrompt(
     player.id,
     GameMessage.CHOOSE_POKEMON_TO_EVOLVE,
     PlayerType.BOTTOM_PLAYER,
     [SlotType.ACTIVE, SlotType.BENCH],
-    { allowCancel: false, blocked }
-  ), selection => {
+      { allowCancel: false, blocked },
+    ),
+    (selection) => {
     targets = selection || [];
     next();
-  });
+    },
+  );
 
   if (targets.length === 0) {
     return state; // canceled by user
@@ -101,13 +110,16 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   });
 
   let cards: Card[] = [];
-  return store.prompt(state, new ChooseCardsPrompt(
+  return store.prompt(
+    state,
+    new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_EVOLVE,
     player.hand,
     { superType: SuperType.POKEMON, stage: Stage.STAGE_2 },
-    { min: 1, max: 1, allowCancel: true, blocked: blocked2 }
-  ), selected => {
+      { min: 1, max: 1, allowCancel: true, blocked: blocked2 },
+    ),
+    (selected) => {
     cards = selected || [];
 
     if (cards.length > 0) {
@@ -117,11 +129,11 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
       // Discard trainer only when user selected a Pokemon
     }
-  });
+    },
+  );
 }
 
 export class PokemonBreeder extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'BS';
@@ -145,5 +157,4 @@ export class PokemonBreeder extends TrainerCard {
 
     return state;
   }
-
 }

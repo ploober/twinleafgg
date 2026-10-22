@@ -4,11 +4,18 @@ import { SuperType, TrainerType } from '../../../game/store/card/card-types';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { CardList, ChooseCardsPrompt, GameMessage, Player, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import {
+  CardList,
+  ChooseCardsPrompt,
+  GameMessage,
+  Player,
+  ShowCardsPrompt,
+  ShuffleDeckPrompt,
+  StateUtils,
+} from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DuskBall extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'H';
   public set: string = 'SSP';
@@ -20,13 +27,12 @@ export class DuskBall extends TrainerCard {
   public text: string =
     'Look at the bottom 7 cards of your deck. You may reveal a Pokémon you find there and put it into your hand. Shuffle the other cards back into your deck.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return true;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       const temp = new CardList();
@@ -42,14 +48,16 @@ export class DuskBall extends TrainerCard {
       // the conformance projection can show the window at the top of `deck` during the pause.
       player.deck.moveCardsTo(player.deck.cards.slice(startIndex, startIndex + numCardsToMove), temp);
 
-      return store.prompt(state, new ChooseCardsPrompt(
+      return store.prompt(
+        state,
+        new ChooseCardsPrompt(
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         temp,
         { superType: SuperType.POKEMON },
-        { allowCancel: false, min: 0, max: 1 }
-      ), chosenCards => {
-
+          { allowCancel: false, min: 0, max: 1 },
+        ),
+        (chosenCards) => {
         if (chosenCards.length <= 0) {
           // No Pokemon chosen, shuffle all back
           // TA-378: no self-discard here either — the shuffle below is still owed; the generic cleanup
@@ -65,10 +73,15 @@ export class DuskBall extends TrainerCard {
           // TA-378: self-discard removed — the generic finalizeTrainerCleanup discards after the last prompt.
 
           if (chosenCards.length > 0) {
-            state = store.prompt(state, new ShowCardsPrompt(
+              state = store.prompt(
+                state,
+                new ShowCardsPrompt(
               opponent.id,
               GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-              chosenCards), () => state);
+                  chosenCards,
+                ),
+                () => state,
+              );
           }
         }
         // TA-378: no self-discard here — the Item is still resolving (its shuffle is owed). The generic
@@ -76,7 +89,8 @@ export class DuskBall extends TrainerCard {
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);
         });
-      });
+        },
+      );
     }
     return state;
   }

@@ -14,8 +14,13 @@ import { GameMessage } from '../../../game/game-message';
 import { PokemonCard, Player } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State,
-  self: Dawn, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  self: Dawn,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
   let cards: Card[] = [];
@@ -26,7 +31,10 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
+  MOVE_CARDS(store, state, player.hand, player.supporter, {
+    cards: [effect.trainerCard],
+    sourceCard: self,
+  });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -56,25 +64,29 @@ function* playCard(next: Function, store: StoreLike, state: State,
   const count = maxBasics + maxStage1 + maxStage2;
 
   // Pass max counts to prompt options
-  yield store.prompt(state, new ChooseCardsPrompt(
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.deck,
     {},
-    { min: 0, max: count, allowCancel: false, blocked, maxBasics, maxStage1, maxStage2 }
-  ), selected => {
+      { min: 0, max: count, allowCancel: false, blocked, maxBasics, maxStage1, maxStage2 },
+    ),
+    (selected) => {
     cards = selected || [];
     next();
-  });
+    },
+  );
 
   // TA-364 (TA-265's shape, §B.34): "reveal them, AND PUT THEM into your hand" — the reveal
   // happens from the deck, so show BEFORE moving or the reveal event reports from=hand.
   if (cards.length > 0) {
-    yield store.prompt(state, new ShowCardsPrompt(
-      opponent.id,
-      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-      cards
-    ), () => next());
+    yield store.prompt(
+      state,
+      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
+      () => next(),
+    );
   }
 
   MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });
@@ -93,7 +105,8 @@ export class Dawn extends TrainerCard {
   public name: string = 'Dawn';
   public fullName: string = 'Dawn M2';
 
-  public text: string = 'Search your deck for a Basic Pokémon, a Stage 1 Pokémon, and a Stage 2 Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.';
+  public text: string =
+    'Search your deck for a Basic Pokémon, a Stage 1 Pokémon, and a Stage 2 Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -103,7 +116,6 @@ export class Dawn extends TrainerCard {
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const generator = playCard(() => generator.next(), store, state, this, effect);
       return generator.next().value;

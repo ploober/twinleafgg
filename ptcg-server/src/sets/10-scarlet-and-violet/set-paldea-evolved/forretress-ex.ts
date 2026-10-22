@@ -1,29 +1,13 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import {
-  Stage,
-  CardType,
-  EnergyType,
-  SuperType,
-  CardTag,
-} from '../../../game/store/card/card-types';
-import {
-  StoreLike,
-  State,
-  PowerType,
-  GameMessage,
-  PlayerType,
-  SlotType,
-  AttachEnergyPrompt,
-  StateUtils,
-  GameError,
-  PokemonCardList,
-  ShuffleDeckPrompt,
-} from '../../../game';
+import { Stage, CardType, EnergyType, SuperType, CardTag } from '../../../game/store/card/card-types';
+import { StoreLike, State, PowerType, GameMessage, PlayerType, SlotType, AttachEnergyPrompt, StateUtils, GameError } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
-import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { PokemonCardList } from '../../../game';
+import { ShuffleDeckPrompt } from '../../../game';
 
 export class Forretressex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;

@@ -35,19 +35,23 @@ export class EthansQuilava extends PokemonCard {
 
   public retreat = [C];
 
-  public powers = [{
-    name: 'Bonded by the Journey',
-    powerType: PowerType.ABILITY,
-    useWhenInPlay: true,
-    text: 'Once during your turn, you may search your deck for a Ethan\'s Adventure, reveal it, and put it into your hand. Then, shuffle your deck.'
-  }];
+  public powers = [
+    {
+      name: 'Bonded by the Journey',
+      powerType: PowerType.ABILITY,
+      useWhenInPlay: true,
+      text: "Once during your turn, you may search your deck for a Ethan's Adventure, reveal it, and put it into your hand. Then, shuffle your deck.",
+    },
+  ];
 
-  public attacks = [{
-    name: 'Combustion',
-    cost: [R],
-    damage: 40,
-    text: ''
-  }];
+  public attacks = [
+    {
+      name: 'Combustion',
+      cost: [R],
+      damage: 40,
+      text: '',
+    },
+  ];
 
   public regulationMark = 'I';
 
@@ -83,10 +87,7 @@ export class EthansQuilava extends PokemonCard {
         (cards) => {
           // TA-218 / TA-212's class: the once-per-turn must be consumed by USING the Ability, not by
           // finding something. #127 (Floral Path to the Sky) is explicit -- "since you SEARCHED your
-          // deck the ability is used up for the turn" -- so a fruitless search still spends it. These
-          // two lines used to sit BELOW the early return, so on a deck with no Ethan's Adventure the
-          // marker was never added and twinleaf re-offered the Ability; driven live it accepted a
-          // second use (applied=8) where rotomancer refused it.
+          // deck the ability is used up for the turn" -- so a fruitless search still spends it.
           ADD_MARKER(this.ADVENTURE_BOUND_MARKER, player, this);
           ABILITY_USED(player, this);
 

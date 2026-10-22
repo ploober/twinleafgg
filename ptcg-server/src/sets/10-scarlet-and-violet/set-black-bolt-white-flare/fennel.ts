@@ -38,7 +38,6 @@ export class Fennel extends TrainerCard {
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const player = effect.player;
       const supporterTurn = player.supporterTurn;

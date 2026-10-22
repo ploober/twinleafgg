@@ -31,7 +31,8 @@ export class AntiqueJawFossil extends TrainerCard {
   public evolvesFromBase: string[] = [];
   public maxTools: number = 1;
 
-  public powers: Power[] = [{
+  public powers: Power[] = [
+    {
     name: 'Antique Jaw Fossil',
     text: "Play this card as a 60 HP Basic [C] Pokémon. This card can't be affected by Special Conditions and can't retreat. At any time during your turn, you may discard this card from play.",
     useWhenInPlay: true,
@@ -43,7 +44,8 @@ export class AntiqueJawFossil extends TrainerCard {
     name: 'Intimidating Jaw',
     powerType: PowerType.ABILITY,
     text: "As long as this Pokémon is in the Active Spot, attacks used by your opponent's Active Pokémon do 30 less damage (before applying Weakness and Resistance).",
-  }];
+    },
+  ];
 
   public regulationMark = 'J';
   public set: string = 'POR';

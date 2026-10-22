@@ -3,81 +3,116 @@ import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
-import { DamageMap, MoveDamagePrompt } from '../../../game/store/prompts/move-damage-prompt';
+import { MoveDamagePrompt, DamageMap } from '../../../game/store/prompts/move-damage-prompt';
 import { GameMessage } from '../../../game/game-message';
-import { TrainerCard, TrainerType } from '../../../game';
-import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import {
+  CardTarget,
+  GameError,
+  Player,
+  TrainerCard,
+  TrainerType,
+} from '../../../game';
+import { CheckHpEffect } from '../../../game/store/effects/check-effects';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
 export class Agatha extends TrainerCard {
-
-  public regulationMark = 'E';
-
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
-
+  public regulationMark = 'E';
   public set: string = 'CRE';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '129';
-
   public name: string = 'Agatha';
-
   public fullName: string = 'Agatha CRE';
-
   public text: string =
-    'Move up to 3 damage counters from your Active Pokémon to your opponent\'s Active Pokémon.';
+    "Move up to 3 damage counters from your Active Pokémon to your opponent's Active Pokémon.";
+
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    if (player.supporterTurn > 0) {
+      return false;
+    }
+    // Printed text: the counters move from your ACTIVE Pokémon.
+    return player.active.damage >= 10;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+    if (WAS_TRAINER_USED(effect, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // Nothing to move if your Active Pokemon carries no damage, or the opponent has no Active to receive it.
-      if (player.active.damage <= 0 || opponent.active.cards.length === 0) {
-        return state;
+      if (player.supporterTurn > 0) {
+        throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      // MoveDamagePrompt's `maxAllowedDamage` is the SOURCE set (Pokemon damage moves FROM), capped at the
-      // damage currently on each; `playerType`/`slots` are the DESTINATION set. Agatha moves FROM your
-      // Active TO the opponent's Active, so the source is your Active and the destination is TOP_PLAYER ACTIVE.
-      const maxAllowedDamage: DamageMap[] = [];
-      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-        if (cardList === player.active) {
-          maxAllowedDamage.push({ target, damage: player.active.damage });
-        }
-      });
+      if (!this.canPlay(store, state, player)) {
+        throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+      }
 
-      player.hand.moveCardTo(effect.trainerCard, player.supporter);
-      // We will discard this card after prompt confirmation
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       effect.preventDefault = true;
 
-      // PlayerType.ANY (not TOP_PLAYER): the move is cross-player (your Active -> opponent's Active), and
-      // MoveDamagePrompt.validate rejects a non-ANY playerType unless BOTH ends match it. With ANY + [ACTIVE]
-      // the source is your Active (the sole maxAllowedDamage entry) and the only other Active — the
-      // destination the decomposer offers after excluding the source — is the opponent's.
-      return store.prompt(state, new MoveDamagePrompt(
-        player.id,
-        GameMessage.MOVE_DAMAGE,
-        PlayerType.ANY,
-        [SlotType.ACTIVE],
-        maxAllowedDamage,
-        { min: 0, max: 3, allowCancel: false, singleSourceTarget: true, singleDestinationTarget: true }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const source = StateUtils.getTarget(state, player, transfer.from);
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          if (source.damage >= 10) {
-            source.damage -= 10;
-            target.damage += 10;
-          }
+      const blockedFrom: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, _card, target) => {
+        if (cardList !== player.active || cardList.damage < 10) {
+          blockedFrom.push(target);
         }
-        player.supporter.moveCardTo(this, player.discard);
-        return state;
       });
+
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (_cardList, _card, target) => {
+        blockedTo.push(target);
+      });
+      opponent.bench.forEach((bench, index) => {
+        if (bench.cards.length > 0) {
+          blockedTo.push({ player: PlayerType.TOP_PLAYER, slot: SlotType.BENCH, index });
+        }
+      });
+
+      const maxAllowedDamage: DamageMap[] = [];
+      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, _card, target) => {
+        const checkHpEffect = new CheckHpEffect(opponent, cardList);
+        store.reduceEffect(state, checkHpEffect);
+        maxAllowedDamage.push({ target, damage: checkHpEffect.hp });
+      });
+
+      return store.prompt(
+        state,
+        new MoveDamagePrompt(
+          player.id,
+          GameMessage.MOVE_DAMAGE,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH],
+          maxAllowedDamage,
+          {
+            min: 1,
+            max: 3,
+            allowCancel: false,
+            blockedFrom,
+            blockedTo,
+            singleSourceTarget: true,
+            singleDestinationTarget: true,
+          },
+        ),
+        (transfers) => {
+          if (!transfers || transfers.length === 0) {
+            return;
+          }
+
+          for (const transfer of transfers) {
+            const source = StateUtils.getTarget(state, player, transfer.from);
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            if (source.damage >= 10) {
+              source.damage -= 10;
+              target.damage += 10;
+            }
+          }
+        },
+      );
     }
 
     return state;
   }
-
 }

@@ -6,7 +6,15 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { CardTag, Stage, SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { Card, ChooseCardsPrompt, Player, PokemonCard, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import {
+  Card,
+  ChooseCardsPrompt,
+  Player,
+  PokemonCard,
+  ShowCardsPrompt,
+  ShuffleDeckPrompt,
+  StateUtils,
+} from '../../../game';
 import { MOVE_CARDS, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsGreatBall extends TrainerCard {
@@ -18,8 +26,8 @@ export class TeamRocketsGreatBall extends TrainerCard {
 
   public regulationMark = 'I';
 
-  public name: string = 'Team Rocket\'s Great Ball';
-  public fullName: string = 'Team Rocket\'s Great Ball DRI';
+  public name: string = "Team Rocket's Great Ball";
+  public fullName: string = "Team Rocket's Great Ball DRI";
 
   public text: string =
     'Flip a coin. If heads, search your deck for an Evolution Team Rocket Pokémon, reveal it, and put it into your hand. If tails, search your deck for a Basic Team Rocket Pokémon, reveal it, and put it into your hand. Then, shuffle your deck.';
@@ -40,49 +48,73 @@ export class TeamRocketsGreatBall extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      // heads: an EVOLUTION Team Rocket Pokemon; tails: a BASIC Team Rocket Pokemon.
-      const blockedOnHeads: number[] = [];
-      const blockedOnTails: number[] = [];
+      const blocked: number[] = [];
       player.deck.cards.forEach((card, index) => {
-        if (card instanceof PokemonCard) {
-          if (card.stage === Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET)) {
-            blockedOnHeads.push(index);
-          }
-          if (card.stage !== Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET)) {
-            blockedOnTails.push(index);
-          }
+        if (
+          card instanceof PokemonCard &&
+          (card.stage === Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET))
+        ) {
+          blocked.push(index);
+        }
+      });
+
+      const blocked2: number[] = [];
+      player.deck.cards.forEach((card, index) => {
+        if (
+          card instanceof PokemonCard &&
+          (card.stage !== Stage.BASIC || !card.hasTag(CardTag.TEAM_ROCKET))
+        ) {
+          blocked2.push(index);
         }
       });
 
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      // TA-396(b): the TAILS branch was missing entirely — the flip callback handled heads and fell
-      // through to `return state` on tails, so no Basic search happened and the owed "Then, shuffle
-      // your deck" never ran. Both faces search (with their own filter) and both shuffle, on a whiff
-      // too (#2303).
-      const search = (blocked: number[]): State => store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_HAND,
-        player.deck,
-        { superType: SuperType.POKEMON },
-        { min: 0, max: 1, allowCancel: false, blocked }
-      ), selectedCards => {
-        const cards: Card[] = selectedCards || [];
-        if (cards.length > 0) {
-          state = store.prompt(state, new ShowCardsPrompt(
-            opponent.id,
-            GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-            cards), () => state);
-          MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this });
-        }
-        return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-          player.deck.applyOrder(order);
-        });
-      });
+      return COIN_FLIP_PROMPT(store, state, player, (flipResult) => {
+        // TA-396(b): heads searches for an Evolution Team Rocket Pokémon, tails for a Basic one; both faces
+        // search, and both shuffle, on a whiff too (#2303).
+        {
+          let cards: Card[] = [];
+          return store.prompt(
+            state,
+            new ChooseCardsPrompt(
+              player,
+              GameMessage.CHOOSE_CARD_TO_HAND,
+              player.deck,
+              { superType: SuperType.POKEMON },
+              { min: 0, max: 1, allowCancel: false, blocked: flipResult ? blocked : blocked2 },
+            ),
+            (selectedCards) => {
+              cards = selectedCards || [];
 
-      return COIN_FLIP_PROMPT(store, state, player, flipResult => {
-        search(flipResult ? blockedOnHeads : blockedOnTails);
+              // Operation canceled by the user
+              if (cards.length === 0) {
+                return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+                  player.deck.applyOrder(order);
+                });
+              }
+
+              // The reveal comes before the card changes zones (TA-265 / B.34).
+              if (cards.length > 0) {
+                state = store.prompt(
+                  state,
+                  new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
+                  () => state,
+                );
+              }
+              cards.forEach((card) => {
+                MOVE_CARDS(store, state, player.deck, player.hand, {
+                  cards: [card],
+                  sourceCard: this,
+                });
+              });
+              return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+                player.deck.applyOrder(order);
+              });
+            },
+          );
+        }
       });
     }
     return state;

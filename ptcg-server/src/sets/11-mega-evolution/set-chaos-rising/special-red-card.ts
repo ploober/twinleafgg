@@ -19,7 +19,7 @@ export class SpecialRedCard extends TrainerCard {
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     const opponent = StateUtils.getOpponent(state, player);
-    const prizeCount = opponent.prizes.filter(p => p.cards.length > 0).length;
+    const prizeCount = opponent.prizes.filter((p) => p.cards.length > 0).length;
     if (prizeCount > 3) {
       return false;
     }

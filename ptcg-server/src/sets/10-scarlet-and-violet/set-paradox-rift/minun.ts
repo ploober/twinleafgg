@@ -1,7 +1,7 @@
-import { GameLog, PlayerType, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import { PlayerType, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Effect } from '../../../game/store/effects/effect';
+import { Effect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
@@ -33,45 +33,50 @@ export class Minun extends PokemonCard {
   public fullName: string = 'Minun PAR';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
-    // TA-641: "attaches an Energy card from their hand" -- not an attach from the discard or the deck.
-    if (effect instanceof AttachEnergyEffect && effect.fromHand) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      let hasMinunInPlay = false;
-
-      opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
-        if (card === this) {
-          hasMinunInPlay = true;
-        }
-      });
-
-      if (!hasMinunInPlay) {
+    if (effect instanceof AttachEnergyEffect) {
+      if (effect.buddyPulseSV) {
         return state;
       }
 
-      // TA-734: "If YOU have Plusle in play" is Minun's owner (the opponent of the attaching player), Active or
-      // Benched; the Ability that might be blocked is Minun's owner's too.
-      if (IS_ABILITY_BLOCKED(store, state, opponent, this)) {
+      const attachingPlayer = effect.player;
+      const abilityOwner = StateUtils.getOpponent(state, attachingPlayer);
+
+      if (!StateUtils.isPokemonInPlay(abilityOwner, this)) {
         return state;
       }
 
-      let plusleInPlay = false;
-      opponent.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
+      // TA-641: "attaches an Energy card from their hand" -- not an attach from the discard or the deck. Read from the
+      // attach itself: inside the attach-trigger window (B.52) the card has already left the hand.
+      if (!effect.fromHand) {
+        return state;
+      }
+
+      let hasPlusleInPlay = false;
+      abilityOwner.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         if (card.name === 'Plusle') {
-          plusleInPlay = true;
+          hasPlusleInPlay = true;
         }
       });
-      if (!plusleInPlay) {
+
+      if (!hasPlusleInPlay) {
         return state;
       }
 
-      store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, { name: opponent.name, damage: 20, target: effect.target.getPokemonCard()!.name, effect: this.name });
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
+        return state;
+      }
 
-      effect.target.damage += 20;
-
-      return state;
+      store.reduceEffect(
+        state,
+        new PlaceDamageCountersEffect(
+          abilityOwner,
+          effect.target,
+          20,
+          this,
+          this.powers[0],
+        ),
+      );
+      effect.buddyPulseSV = true;
     }
 
     return state;

@@ -29,10 +29,10 @@
     {
       "file": "set-temporal-forces/iron-jugulis.ts",
       "signatures": [
-        "if (effect instanceof AfterDamageEffect && effect.target.cards.includes(this)) {",
-        "if (effect.damage <= 0 || player === targetPlayer) {"
+        "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
-      "state": "guarding"
+      "state": "absorbed",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
     },
     {
       "file": "set-temporal-forces/iron-thorns.ts",
@@ -1341,13 +1341,13 @@
     {
       "file": "set-evolving-skies/switching-cups.ts",
       "signatures": [
-        "if (effect.player.hand.cards.length === 0) {",
-        "if (cards.length === 0 || player.deck.cards.length === 0) {"
+        "if (effect.player.hand.cards.length === 0 || effect.player.deck.cards.length === 0) {"
       ],
       "fixes": [
         "FX-0147"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
     },
     {
       "file": "set-neo-genesis/mary.ts",
@@ -1400,12 +1400,13 @@
     {
       "file": "set-chilling-reign/agatha.ts",
       "signatures": [
-        "maxAllowedDamage.push({ target, damage: player.active.damage });"
+        "if (cardList !== player.active || cardList.damage < 10) {"
       ],
       "fixes": [
         "FX-0144"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
     },
     {
       "file": "set-black-bolt-white-flare/deino.ts",
@@ -1449,12 +1450,13 @@
     {
       "file": "set-dragons-exalted/tool-scrapper.ts",
       "signatures": [
-        "public canPlay(store: StoreLike, state: State, player: Player): boolean {\n    // Mirrors `playCard`: a Trainer that can have no effect can't be played"
+        "public canPlay(store: StoreLike, state: State, player: Player): boolean { const opponent = StateUtils.getOpponent(state, player); let pokemonsWithTool = 0;"
       ],
       "fixes": [
         "FX-0137"
       ],
-      "state": "guarding"
+      "state": "absorbed",
+      "note": "2026-10-22 merge: absorbed upstream (signature points at upstream's equivalent)"
     },
     {
       "file": "set-stellar-crown/bouffalant.ts",
@@ -2010,10 +2012,11 @@
     {
       "file": "set-perfect-order/turtonator.ts",
       "signatures": [
-        "TA-168",
-        "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this"
+        "return store.prompt(state, new ChooseCardsPrompt( abilityOwner,",
+        "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
-      "state": "guarding"
+      "state": "absorbed",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
     },
     {
       "file": "set-surging-sparks/surfer.ts",
@@ -3601,14 +3604,6 @@
       "state": "guarding"
     },
     {
-      "file": "set-celebrations/venusaur-2.ts",
-      "signatures": [
-        "public evolvesFrom = 'Ivysaur';"
-      ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
-    },
-    {
       "file": "set-chilling-reign/galarian-zapdos-v.ts",
       "signatures": [
         "public hp: number = 200;"
@@ -4377,10 +4372,10 @@
       "file": "set-destined-rivals/team-rockets-tyranitar.ts",
       "signatures": [
         "name: 'Demolition Tackle',",
-        "const placeCounters = new PlaceDamageCountersEffect(player, cardList, 20, this);"
+        "new PlaceDamageCountersEffect(player, cardList, 20, this, this.powers[0]),"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
+      "state": "absorbed",
       "fixes": [
         "FX-0440"
       ]
@@ -6078,10 +6073,10 @@
     {
       "file": "set-twilight-masquerade/handy-fan.ts",
       "signatures": [
-        "const hasBench = player.bench.some(b => b.cards.length > 0);",
+        "const hasBench = player.bench.some((b) => b.cards.length > 0);",
         "{ allowCancel: false, min: 1, max: 1 }"
       ],
-      "note": "TA-187 — Tool damage-reaction; see fix-ledger 2026-08-02",
+      "note": "TA-187 — Tool damage-reaction; see fix-ledger 2026-08-02 | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0095"
       ],
@@ -6225,13 +6220,13 @@
     {
       "file": "set-temporal-forces/iron-jugulis.ts",
       "signatures": [
-        "if (targetPlayer.active !== effect.target) {"
+        "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
-      "note": "TA-193 — the ability is gated on 'is in the Active Spot'; without this a BENCHED Jugulis punished the attacker",
+      "note": "TA-193 — the ability is gated on 'is in the Active Spot'; without this a BENCHED Jugulis punished the attacker | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0088"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-destined-rivals/cynthias-roserade.ts",
@@ -6328,13 +6323,13 @@
     {
       "file": "set-temporal-forces/iron-jugulis.ts",
       "signatures": [
-        "const punish = new PlaceDamageCountersEffect(targetPlayer, effect.source, 30, this);"
+        "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
-      "note": "TA-195 - the punish must be LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`. TA-558 (2026-10-01): it was placed through PutDamageEffect, the attack-damage path, so the attacker's own attack-damage modifiers shrank or cancelled the 3 counters; now the Ability counter placement (logged, no attack modifier). Signature re-pointed from the PutDamageEffect line, which TA-558 replaced.",
+      "note": "TA-195 - the punish must be LOGGED; a raw `.damage +=` broke the projection's pool=dealt-survivorDamage conservation and swallowed the KO'd Pokemon's own `damaged`. TA-558 (2026-10-01): it was placed through PutDamageEffect, the attack-damage path, so the attacker's own attack-damage modifiers shrank or cancelled the 3 counters; now the Ability counter placement (logged, no attack modifier). Signature re-pointed from the PutDamageEffect line, which TA-558 replaced. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0083"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-surging-sparks/jasmines-gaze.ts",
@@ -6413,10 +6408,10 @@
     {
       "file": "set-journey-together/volcanion-ex.ts",
       "signatures": [
-        "if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {",
+        "if (!HAS_MARKER(this.SCORCHING_STEAM, player, this) && opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {",
         "return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
-      "note": "TA-210/B.27 — an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu. | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call)",
+      "note": "TA-210/B.27 — an already-Burned Active cannot be Burned again, so the action cannot be performed (#13); THROW so legal-actions.ts's dry-run probe keeps it out of the menu. | retargeted 2026-10-06 (TA-651: the line evolved into the choose-first prefab call) | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0080"
       ],
@@ -6790,9 +6785,10 @@
     {
       "file": "set-ascended-heroes/numel.ts",
       "signatures": [
-        "if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this) {"
+        "&& effect.target.getPokemonCard() === this) {"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -6930,11 +6926,11 @@
     {
       "file": "set-temporal-forces/gengar-ex.ts",
       "signatures": [
-        "const placeCounters = new PlaceDamageCountersEffect(opponent, effect.target, 20, this);",
+        "new PlaceDamageCountersEffect( abilityOwner, effect.target, 20, this, this.powers[0], ),",
         "return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
-      "state": "guarding",
-      "note": " | retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call)",
+      "state": "absorbed",
+      "note": "retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0440"
       ]
@@ -7318,18 +7314,19 @@
     {
       "file": "set-scarlet-and-violet/energy-search.ts",
       "signatures": [
-        "    ), () => next());\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });"
+        "new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards), () => next(), ); } MOVE_CARDS(store, state, player.deck, player.hand, {"
       ],
       "fixes": [
         "FX-0276"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge: re-applied onto upstream's code (reveal before the move); signature retargeted"
     },
     {
       "file": "set-twilight-masquerade/perrin.ts",
       "signatures": [
-        "  ), () => next());\n\n  // Put Pokemon from hand into the deck\n  MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: effect.trainerCard });",
-        "    ), () => next());\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });",
+        "new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards), () => next(), ); // Put Pokemon from hand into the deck MOVE_CARDS(store, state, player.hand, player.deck, {",
+        "new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards), () => next(), ); } MOVE_CARDS(store, state, player.deck, player.hand, {",
         "'Reveal up to 2 Pokémon in your hand and put them into your deck. If you do, search your deck for up to that many Pokémon, reveal them, and put them into your hand. Then, shuffle your deck.'",
         "    { min: 0, max: minMax, allowCancel: false }"
       ],
@@ -7338,7 +7335,7 @@
         "FX-0311"
       ],
       "state": "guarding",
-      "note": "TA-265/TA-319/TA-423: reveal-before-move (source zone) + secret deck-search whiffable to 0 (min:0, A.9 supersedes TA-319 min:1)"
+      "note": "TA-265/TA-319/TA-423: reveal-before-move (source zone) + secret deck-search whiffable to 0 (min:0, A.9 supersedes TA-319 min:1) | 2026-10-22 merge: re-applied onto upstream's code (reveal before the move); signature retargeted | 2026-10-22 merge: re-applied onto upstream's code (reveal before the move); signature retargeted"
     },
     {
       "file": "set-destined-rivals/team-rockets-ariana.ts",
@@ -7538,9 +7535,9 @@
       "file": "set-surging-sparks/energy-search-pro.ts",
       "signatures": [
         "    next();",
-        "// TA-393: \"put them into your hand\""
+        "SHOW_CARDS_TO_PLAYER(store, state, opponent, cards); MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: effect.trainerCard });"
       ],
-      "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census.",
+      "note": "TA-320/B.33 (2026-08-27): the ChooseCardsPrompt callback did not next(), so the generator never reached the trailing return-ShuffleDeckPrompt and the owed 'Then, shuffle your deck' was skipped. `next();` is the file's only such line; behavioural guard = conformance-cardlogic-regressions.spec [TA-320 ssp-176]. Found by the shuffle-reach enriched census. | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0057"
       ],
@@ -7706,26 +7703,24 @@
     {
       "file": "set-twilight-masquerade/froslass.ts",
       "signatures": [
-        "new PutDamageCountersEffect(powerEffect, 10 * numberOfFroslass)"
+        "10 * numberOfFroslass, this, this.powers[0],"
       ],
-      "note": "TA-334 / SD-26 (2026-08-30): SOURCE half of the two-card fix. Froslass 'Freezing Shroud' checkup counter was dispatched as a RAW PlaceDamageCountersEffect, which carries no EffectOfAbilityEffect wrapper, so NO 'prevent opponent ability effects' protection (Mega Clefable ex por-031 'Luminous Wing', Enamorus V lor-082) could ever intercept it — the ability effect bypassed protection SILENTLY. Migrated both loops (own-side + opponent-side) to the ability-aware PutDamageCountersEffect built from a PowerEffect — the canonical maushold-ex / hisuian-samurott-vstar pattern; the reducer runs effect.effectOfAbility (an EffectOfAbilityEffect) before applying damage, so a protector can now null the target. Reverting to the raw effect re-hides the counter from every protector. svp-117 inherits this (FroslassSVP extends Froslass). Guard: conformance spec por-031 c12/c13 (Froslass-counter-on-Clefable) DIVERGED->PASS; c14 own-side Froslass stays PASS (not over-prevented).",
+      "note": "TA-334 / SD-26 (2026-08-30): SOURCE half of the two-card fix. Froslass 'Freezing Shroud' checkup counter was dispatched as a RAW PlaceDamageCountersEffect, which carries no EffectOfAbilityEffect wrapper, so NO 'prevent opponent ability effects' protection (Mega Clefable ex por-031 'Luminous Wing', Enamorus V lor-082) could ever intercept it — the ability effect bypassed protection SILENTLY. Migrated both loops (own-side + opponent-side) to the ability-aware PutDamageCountersEffect built from a PowerEffect — the canonical maushold-ex / hisuian-samurott-vstar pattern; the reducer runs effect.effectOfAbility (an EffectOfAbilityEffect) before applying damage, so a protector can now null the target. Reverting to the raw effect re-hides the counter from every protector. svp-117 inherits this (FroslassSVP extends Froslass). Guard: conformance spec por-031 c12/c13 (Froslass-counter-on-Clefable) DIVERGED->PASS; c14 own-side Froslass stays PASS (not over-prevented). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0043"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-perfect-order/mega-clefable-ex.ts",
       "signatures": [
-        "effect instanceof EffectOfAbilityEffect",
-        "effect.player === opponent",
-        "if (effect instanceof AddSpecialConditionsPowerEffect && effect.target && effect.target.getPokemonCard() === this) {"
+        "PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES(state, effect, (target) => {"
       ],
-      "note": "TA-334 / SD-26 (2026-08-30): SINK half. 'Luminous Wing' (prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon) had TWO bugs: (1) an always-false owner guard `if (targetOwner === opponent)` where `opponent = getOpponent(targetOwner)` — a player is never their own opponent, so the whole block was dead code; (2) it intercepted only PowerEffect (the ability activation), never the EffectOfAbilityEffect wrapper the reducer runs for ability-aware effects, so even a fixed guard would miss the counter. Rewritten to intercept EffectOfAbilityEffect with the corrected guard `effect.player === opponent` + `effect.target.getPokemonCard() === this`, nulling effect.target (the enamorus-v.ts idiom), preserving IS_ABILITY_BLOCKED for the Iron Thorns ex ability-lock interaction. Reverting either signature restores the dead-code / wrong-effect bug. Guard: por-031 c12/c13 DIVERGED->PASS; c14 (own-side) + c15/c16 (attack effects) stay PASS; twm-077 Iron Thorns ex 11/11 PASS. TA-346 (2026-09-01), condition half: AddSpecialConditionsPowerEffect is reduced RAW (no wrapper), so the class itself is intercepted with the same owner guard and `preventDefault = true` (Enamorus V idiom); Selective Slime no longer burns through Luminous Wing.",
+      "note": "TA-334 / SD-26 (2026-08-30): SINK half. 'Luminous Wing' (prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon) had TWO bugs: (1) an always-false owner guard `if (targetOwner === opponent)` where `opponent = getOpponent(targetOwner)` — a player is never their own opponent, so the whole block was dead code; (2) it intercepted only PowerEffect (the ability activation), never the EffectOfAbilityEffect wrapper the reducer runs for ability-aware effects, so even a fixed guard would miss the counter. Rewritten to intercept EffectOfAbilityEffect with the corrected guard `effect.player === opponent` + `effect.target.getPokemonCard() === this`, nulling effect.target (the enamorus-v.ts idiom), preserving IS_ABILITY_BLOCKED for the Iron Thorns ex ability-lock interaction. Reverting either signature restores the dead-code / wrong-effect bug. Guard: por-031 c12/c13 DIVERGED->PASS; c14 (own-side) + c15/c16 (attack effects) stay PASS; twm-077 Iron Thorns ex 11/11 PASS. TA-346 (2026-09-01), condition half: AddSpecialConditionsPowerEffect is reduced RAW (no wrapper), so the class itself is intercepted with the same owner guard and `preventDefault = true` (Enamorus V idiom); Selective Slime no longer burns through Luminous Wing. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0037"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "game/store/prefabs/trainer-prefabs.ts",
@@ -7796,17 +7791,17 @@
     {
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
-        "store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));",
+        "new PlaceDamageCountersEffect(player, target, 20, this, this.powers[0]),",
         "{ min: 1, max: 2, allowCancel: false, operation: 'placeCounters' },"
       ],
       "absentSignatures": [
         "target.damage += 20;"
       ],
-      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz).",
+      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0032"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-perfect-order/aurorus.ts",
@@ -7895,17 +7890,17 @@
     {
       "file": "set-destined-rivals/team-rockets-golbat.ts",
       "signatures": [
-        "store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));",
+        "new PlaceDamageCountersEffect(player, targets[0], 20, this, this.powers[0]),",
         "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
       ],
       "absentSignatures": [
         "target.damage += 20;"
       ],
-      "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz.",
+      "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0029"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-black-bolt-white-flare/antique-plume-fossil.ts",
@@ -8526,9 +8521,10 @@
       "file": "set-chaos-rising/goodra.ts",
       "signatures": [
         "assertRetreatLegal(store, state, effect);",
-        "player.retreatedTurn = state.turn;"
+        "retreatingPlayer.retreatedTurn = state.turn;"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
     },
     {
       "file": "set-chaos-rising/frogadier.ts",
@@ -8540,12 +8536,13 @@
     {
       "file": "set-destined-rivals/team-rockets-great-ball.ts",
       "signatures": [
-        "search(flipResult ? blockedOnHeads : blockedOnTails);"
+        "{ min: 0, max: 1, allowCancel: false, blocked: flipResult ? blocked : blocked2 },"
       ],
       "fixes": [
         "FX-0003"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
     },
     {
       "file": "game/store/prefabs/shared-attack-prefabs.ts",
@@ -8591,9 +8588,10 @@
     {
       "file": "set-temporal-forces/feraligatr.ts",
       "signatures": [
-        "store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {"
+        "if (placeCounters.preventDefault) {"
       ],
-      "state": "guarding"
+      "state": "absorbed",
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
     },
     {
       "file": "set-ascended-heroes/dustox.ts",
@@ -8677,9 +8675,9 @@
     {
       "file": "set-mega-evolution/tinkatuff.ts",
       "signatures": [
-        "GameMessage.WANT_TO_USE_ABILITY,"
+        "return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {"
       ],
-      "note": "TA-420 (2026-09-14): Haphazard Hammer / Cast-Off Shell: the printed 'you may use this Ability' confirm precedes the flip / search",
+      "note": "TA-420 (2026-09-14): Haphazard Hammer / Cast-Off Shell: the printed 'you may use this Ability' confirm precedes the flip / search | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0293"
       ],
@@ -8733,13 +8731,13 @@
     {
       "file": "set-chaos-rising/chesnaught.ts",
       "signatures": [
-        "targetOwner.active === effect.target &&"
+        "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
-      "note": "TA-425 (2026-09-15): Chesnaught cri-7 Needly Armor: gate on the Active Spot — a benched Chesnaught no longer retaliates when sniped",
+      "note": "TA-425 (2026-09-15): Chesnaught cri-7 Needly Armor: gate on the Active Spot — a benched Chesnaught no longer retaliates when sniped | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0297"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-destined-rivals/arboliva-ex.ts",
@@ -9274,9 +9272,9 @@
     {
       "file": "set-mega-evolution/tinkatuff.ts",
       "signatures": [
-        "        // Mark ability as used — at the accepted \"may\", whatever the coin says (TA-455 / CF-77)"
+        "ABILITY_USED(player, this); return COIN_FLIP_PROMPT(store, state, player, (result) => {"
       ],
-      "note": "TA-455 (2026-09-20): flags ABILITY_USED at the accepted \"may\" so the triggered label is derivable (TA-457 for the move-triggers: no marker on the decline).",
+      "note": "TA-455 (2026-09-20): flags ABILITY_USED at the accepted \"may\" so the triggered label is derivable (TA-457 for the move-triggers: no marker on the decline). | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0325"
       ],
@@ -9975,9 +9973,9 @@
     {
       "file": "set-pokemon-151/weezing.ts",
       "signatures": [
-        "opponent.active.knockedOutByEffect = true;"
+        "attackerOwner.active.knockedOutByEffect = true;"
       ],
-      "note": "TA-559 (2026-10-01): Weezing mew-110 Let's Have a Blast pays the Attacking Pokémon's Prize cards once: the card's KO no longer also lands on  | retargeted 2026-10-06: the fix was extended (class-D batch), not reverted",
+      "note": "TA-559 (2026-10-01): Weezing mew-110 Let's Have a Blast pays the Attacking Pokémon's Prize cards once: the card's KO no longer also lands on  | retargeted 2026-10-06: the fix was extended (class-D batch), not reverted | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0361"
       ],
@@ -10189,13 +10187,13 @@
     {
       "file": "set-pokemon-151/starmie.ts",
       "signatures": [
-        "          const place = new PlaceDamageCountersEffect(player, target, 20, this);"
+        "if (!placeCounters.preventDefault) {"
       ],
-      "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a",
+      "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0377"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-surging-sparks/armarouge.ts",
@@ -10225,13 +10223,13 @@
     {
       "file": "set-paldean-fates/starmie.ts",
       "signatures": [
-        "          const place = new PlaceDamageCountersEffect(player, target, 20, this);"
+        "if (!placeCounters.preventDefault) {"
       ],
-      "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint)",
+      "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0377"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "game/store/effect-reducers/game-effect.ts",
@@ -10743,9 +10741,9 @@
     {
       "file": "set-chaos-rising/garbodor.ts",
       "signatures": [
-        "if ((effect instanceof DealDamageEffect || (effect instanceof PutDamageEffect && !effect.weaknessApplied))"
+        "(effect instanceof DealDamageEffect || (effect instanceof PutDamageEffect && !effect.weaknessApplied)) &&"
       ],
-      "note": "TA-616, TA-623, TA-624 (2026-10-05): Garbodor cri-057 Gloomy Garbage and Antique Jaw Fossil por-068 Intimidating Jaw reduce every damage placement of the opp",
+      "note": "TA-616, TA-623, TA-624 (2026-10-05): Garbodor cri-057 Gloomy Garbage and Antique Jaw Fossil por-068 Intimidating Jaw reduce every damage placement of the opp | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0392"
       ],
@@ -11095,9 +11093,9 @@
     {
       "file": "set-surging-sparks/gimmighoul.ts",
       "signatures": [
-        "// TA-582: \"Then, shuffle your deck\" follows the search, so the shuffle is raised inside the pick callback (as"
+        "SHOW_CARDS_TO_PLAYER(store, state, opponent, cards); MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this }); SHUFFLE_DECK(store, state, player);"
       ],
-      "note": "TA-582 (2026-10-05): Gimmighoul ssp-097 Minor Errand-Running raises its ShuffleDeckPrompt inside the search callback (the Greninja ex twm-106",
+      "note": "TA-582 (2026-10-05): Gimmighoul ssp-097 Minor Errand-Running raises its ShuffleDeckPrompt inside the search callback (the Greninja ex twm-106 | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0400"
       ],
@@ -11350,9 +11348,9 @@
     {
       "file": "set-stellar-crown/orthworm-ex.ts",
       "signatures": [
-        "const putCountersEffect = new PutCountersEffect(effect, 20 * energyCount);"
+        "store.reduceEffect(state, new PlaceDamageCountersEffect(owner, attacker, 20 * energyCount, this, this.powers[0]));"
       ],
-      "note": "TA-634 (2026-10-06): Orthworm ex scr-162 Pummeling Payback reacts once per attack, after the attack's effects, only when this Pokémon (Active",
+      "note": "TA-634 (2026-10-06): Orthworm ex scr-162 Pummeling Payback reacts once per attack, after the attack's effects, only when this Pokémon (Active | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0411"
       ],
@@ -11682,13 +11680,13 @@
     {
       "file": "set-pokemon-151/hitmonchan.ts",
       "signatures": [
-        "store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {"
+        "const placeCounters = new PlaceDamageCountersEffect( abilityOwner, effect.source, 30, this, this.powers[0], );"
       ],
-      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base",
+      "note": "class-D batch 4 (FX-0423, 2026-10-06); validated present@HEAD absent@merge-base | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0423"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-pokemon-151/vileplume.ts",
@@ -12453,9 +12451,9 @@
     {
       "file": "set-temporal-forces/gengar-ex.ts",
       "signatures": [
-        "if (effect instanceof AttachEnergyEffect && effect.fromHand) {"
+        "if (!effect.fromHand) {"
       ],
-      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0429",
         "FX-0440"
@@ -12465,9 +12463,9 @@
     {
       "file": "set-paradox-rift/minun.ts",
       "signatures": [
-        "if (effect instanceof AttachEnergyEffect && effect.fromHand) {"
+        "if (!effect.fromHand) {"
       ],
-      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand",
+      "note": "TA-641 (2026-10-06): attach triggers need an attach from the hand | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0429"
       ],
@@ -13481,12 +13479,12 @@
     {
       "file": "set-paldea-evolved/clavell.ts",
       "signatures": [
-        "        { min: 0, max: 3, allowCancel: false, blocked }   // TA-714: 120 HP or less"
+        "{ min: 0, max: 3, allowCancel: false, blocked }, // TA-714: 120 HP or less"
       ],
       "absentSignatures": [
         "        { min: 0, max: 3, allowCancel: false }"
       ],
-      "note": "TA-714 (2026-10-17): Clavell pal-177 passes its '120 HP or less' blocked list to the pick (it built it and never used it) [TA-714]",
+      "note": "TA-714 (2026-10-17): Clavell pal-177 passes its '120 HP or less' blocked list to the pick (it built it and never used it) [TA-714] | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0497"
       ],
@@ -13773,12 +13771,13 @@
     {
       "file": "set-paradox-rift/minun.ts",
       "signatures": [
-        "      // TA-734: \"If YOU have Plusle in play\" is Minun's owner (the opponent of the attaching player), Active or"
+        "abilityOwner.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {"
       ],
-      "note": "TA-734 (2026-10-21): Minun par-061 Buddy Pulse reads Minun's owner's Plusle (Active or Bench) and the owner's ability lock [TA-734]",
+      "note": "TA-734 (2026-10-21): Minun par-061 Buddy Pulse reads Minun's owner's Plusle (Active or Bench) and the owner's ability lock [TA-734] | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0520"
-      ]
+      ],
+      "state": "absorbed"
     },
     {
       "file": "set-chaos-rising/ho-oh.ts",
@@ -13865,9 +13864,9 @@
     {
       "file": "set-phantasmal-flames/jumbo-ice.ts",
       "signatures": [
-        "  private activeEnergyCount(store: StoreLike, state: State, player: Player): number {"
+        "return checkEnergy.energyMap.reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0);"
       ],
-      "note": "TA-739 (2026-10-21): Jumbo Ice Cream pfl-091 / cri-109 counts the Energy provided (Wild Growth: 2 Basic Grass = 4) in canPlay and in the heal",
+      "note": "TA-739 (2026-10-21): Jumbo Ice Cream pfl-091 / cri-109 counts the Energy provided (Wild Growth: 2 Basic Grass = 4) in canPlay and in the heal | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0526"
       ]
@@ -13965,12 +13964,13 @@
     {
       "file": "set-journey-together/hops-dubwool.ts",
       "signatures": [
-        "      if (!StateUtils.getOpponent(state, player).bench.some((b) => b.cards.length > 0)) {"
+        "if (!opponent.bench.some(b => b.cards.length > 0)) {"
       ],
-      "note": "TA-743 (2026-10-22): Hop's Dubwool jtg-136 Defiant Horn is not offered when the opponent has no Benched Pokemon (B.27) [TA-743]",
+      "note": "TA-743 (2026-10-22): Hop's Dubwool jtg-136 Defiant Horn is not offered when the opponent has no Benched Pokemon (B.27) [TA-743] | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0528"
-      ]
+      ],
+      "state": "absorbed"
     },
     {
       "file": "game/store/prefabs/attack-effects.ts",
@@ -14123,14 +14123,6 @@
         "    if (AFTER_ATTACK(effect, 1, this)) {\n      PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND"
       ],
       "note": "2026-10-22 merge: upstream added Aipom MD calling the AfterAttackEffect prefab from WAS_ATTACK_USED; guarded by AFTER_ATTACK like every other caller (TA-128).",
-      "state": "guarding"
-    },
-    {
-      "file": "set-lost-thunder/custom-catcher.ts",
-      "signatures": [
-        "function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {"
-      ],
-      "note": "2026-10-22 merge: upstream 852e712eb rewrote Custom Catcher (canPlay SM); ours kept because TA-576's spec uses this card as its refused-answer vehicle (out of pool).",
       "state": "guarding"
     },
     {

@@ -1,21 +1,17 @@
-import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike } from '../../../game/store/store-like';
-import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import { GameError, GameMessage, Player, PlayerType, PokemonCardList, State, StateUtils, StoreLike, TrainerCard, ChooseCardsPrompt, Card, CardList } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
-import {
-  PlayerType, StateUtils, GameError, GameMessage,
-  PokemonCardList,
-  ChooseCardsPrompt,
-  Card,
-  CardList,
-  Player
-} from '../../../game';
-
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  self: ToolScrapper,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
@@ -37,7 +33,6 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
   // Compendium #2301 (B.18): a Trainer's "up to X" is 1..X, so at least one Tool is chosen.
@@ -53,7 +48,8 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   ), results => {
     selected = results || [];
     next();
-  });
+    },
+  );
 
   selected.forEach(tool => {
     const bearer = bearerOf.get(tool);
@@ -67,44 +63,38 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 }
 
 export class ToolScrapper extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
-
   public set: string = 'DRX';
-
-  public name: string = 'Tool Scrapper';
-
-  public fullName: string = 'Tool Scrapper DRX';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '116';
-
+  public name: string = 'Tool Scrapper';
+  public fullName: string = 'Tool Scrapper DRX';
   public text: string =
     'Choose up to 2 Pokemon Tool cards attached to Pokemon in play (yours or ' +
-    'your opponent\'s) and discard them.';
+    "your opponent's) and discard them.";
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
-    // Mirrors `playCard`: a Trainer that can have no effect can't be played, so at least one Pokémon
-    // Tool must be attached to a Pokémon in play — yours or your opponent's. Without this gate canPlay
-    // defaulted to playable, so the card was offered in legalActions and then rejected on play.
     const opponent = StateUtils.getOpponent(state, player);
     let pokemonsWithTool = 0;
-    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-      if (cardList.tools.length > 0) { pokemonsWithTool += 1; }
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+      if (cardList.tools.length > 0) {
+        pokemonsWithTool += 1;
+      }
     });
-    opponent.forEachPokemon(PlayerType.TOP_PLAYER, cardList => {
-      if (cardList.tools.length > 0) { pokemonsWithTool += 1; }
+    opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+      if (cardList.tools.length > 0) {
+        pokemonsWithTool += 1;
+      }
     });
     return pokemonsWithTool > 0;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-      const generator = playCard(() => generator.next(), store, state, effect);
+    if (WAS_TRAINER_USED(effect, this)) {
+      const generator = playCard(() => generator.next(), store, state, this, effect);
       return generator.next().value;
     }
+
     return state;
   }
-
 }

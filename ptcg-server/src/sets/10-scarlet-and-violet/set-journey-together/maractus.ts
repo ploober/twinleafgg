@@ -1,8 +1,8 @@
-import { CardType, GameLog, GamePhase, PokemonCard, PokemonCardList, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
-import { Effect } from '../../../game/store/effects/effect';
+import { CardType, GamePhase, PokemonCard, PokemonCardList, PowerType, Stage, State, StateUtils, StoreLike } from '../../../game';
 import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { BeginTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import { KnockOutEffect } from '../../../game/store/effects/game-effects';
+import { Effect } from '../../../game/store/effects/effect';
+import { KnockOutEffect, PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { BLOCK_RETREAT } from '../../../game/store/prefabs/effect-of-attack-prefabs';
 
@@ -119,16 +119,8 @@ export class Maractus extends PokemonCard {
       if (attackerSlot === undefined) {
         return state;
       }
-      attackerSlot.damage += 60;
-      // Log the placement like every engine counter placement (PutCountersEffect): the game log shows it, and the
-      // conformance events read it to attribute the 60 to the Attacking Pokemon when it is Knocked Out in the same
-      // Knock Out group (TA-577) and so leaves no damage to diff.
-      store.log(state, GameLog.LOG_PLAYER_PLACES_DAMAGE_COUNTERS, {
-        name: player.name,
-        damage: 60,
-        target: attacker.name,
-        effect: this.powers[0].name,
-      });
+      // Upstream's Ability-aware placement (logged by the reducer, which TA-577's event attribution reads).
+      store.reduceEffect(state, new PlaceDamageCountersEffect(player, attackerSlot, 60, this, this.powers[0]));
     }
     // Corner
     if (WAS_ATTACK_USED(effect, 0, this)) {

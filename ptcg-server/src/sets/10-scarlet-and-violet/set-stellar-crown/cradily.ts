@@ -1,7 +1,26 @@
-import { PokemonCard, Stage, CardType, PowerType, StoreLike, State, StateUtils, GameMessage, GameError, SpecialCondition, SelectPrompt } from "../../../game";
-import { AddSpecialConditionsPowerEffect } from "../../../game/store/effects/check-effects";
-import { Effect } from "../../../game/store/effects/effect";
-import { WAS_POWER_USED, USE_ABILITY_ONCE_PER_TURN, ABILITY_USED, COIN_FLIP_PROMPT, WAS_ATTACK_USED, REMOVE_MARKER_AT_END_OF_TURN } from "../../../game/store/prefabs/prefabs";
+import {
+  PokemonCard,
+  Stage,
+  CardType,
+  PowerType,
+  StoreLike,
+  State,
+  StateUtils,
+  SpecialCondition,
+  GameError,
+  GameMessage,
+} from '../../../game';
+import { Effect } from '../../../game/store/effects/effect';
+import { CHOOSE_SPECIAL_CONDITION_FROM_ABILITY } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import {
+  WAS_POWER_USED,
+  USE_ABILITY_ONCE_PER_TURN,
+  ABILITY_USED,
+  COIN_FLIP_PROMPT,
+  WAS_ATTACK_USED,
+  REMOVE_MARKER_AT_END_OF_TURN,
+  IS_ABILITY_BLOCKED,
+} from '../../../game/store/prefabs/prefabs';
 
 export class Cradily extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -41,9 +60,12 @@ export class Cradily extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
-      // TA-343 / #2014: "Can I use Selective Slime if my opponent's Active Pokemon is already
-      // Burned, Confused, and Poisoned? — No, you cannot." The effect provably does nothing and the
-      // operand is public (B.41's withhold line), so the ability is not usable at all.
+      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+        throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+      }
+
+      // TA-343 / #2014: "Can I use Selective Slime if my opponent's Active Pokemon is already Burned, Confused, and
+      // Poisoned? — No, you cannot." The effect provably does nothing and the operand is public, so it is not usable.
       const already = opponent.active.specialConditions;
       if ([SpecialCondition.BURNED, SpecialCondition.CONFUSED, SpecialCondition.POISONED].every(c => already.includes(c))) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
@@ -53,24 +75,15 @@ export class Cradily extends PokemonCard {
       ABILITY_USED(player, this);
       COIN_FLIP_PROMPT(store, state, player, result => {
         if (result) {
-          // TA-343: the printed choice is "Burned, Confused, or Poisoned" — no Asleep.
-          const options: { message: GameMessage, value: SpecialCondition }[] = [
-            { message: GameMessage.SPECIAL_CONDITION_BURNED, value: SpecialCondition.BURNED },
-            { message: GameMessage.SPECIAL_CONDITION_CONFUSED, value: SpecialCondition.CONFUSED },
-            { message: GameMessage.SPECIAL_CONDITION_POISONED, value: SpecialCondition.POISONED }
-          ];
-          store.prompt(state, new SelectPrompt(
-            player.id,
-            GameMessage.CHOOSE_SPECIAL_CONDITION,
-            options.map(c => c.message),
-            { allowCancel: false }
-          ), choice => {
-            const option = options[choice];
-            if (option !== undefined) {
-              const specialConditionEffect = new AddSpecialConditionsPowerEffect(player, this, opponent.active, [option.value]);
-              store.reduceEffect(state, specialConditionEffect);
-            }
-          });
+          CHOOSE_SPECIAL_CONDITION_FROM_ABILITY(
+            store,
+            state,
+            player,
+            this.powers[0],
+            this,
+            opponent.active,
+            [SpecialCondition.BURNED, SpecialCondition.CONFUSED, SpecialCondition.POISONED],
+          );
         }
       });
     }
@@ -79,10 +92,8 @@ export class Cradily extends PokemonCard {
 
     // Miasma Wind
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      const specialConditionCount = opponent.active.specialConditions.length;
-      effect.damage = 100 * specialConditionCount;
+      const opponent = StateUtils.getOpponent(state, effect.player);
+      effect.damage = 100 * opponent.active.specialConditions.length;
     }
 
     return state;

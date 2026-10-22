@@ -2,15 +2,10 @@ import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { RetreatEffect } from '../../../game/store/effects/game-effects';
+import { PokemonCard, StateUtils, StoreLike, State } from '../../../game';
+import { CAN_APPLY_ABILITY_TO_TARGET } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import { ADD_MARKER, COIN_FLIP_PROMPT, DISCARD_TOP_X_CARDS_FROM_YOUR_DECK, IS_ABILITY_BLOCKED, REMOVE_MARKER, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { assertRetreatLegal } from '../../../game/store/effect-reducers/retreat-effect';
-import { PokemonCard, PlayerType, StateUtils, StoreLike, State } from '../../../game';
-import {
-  ADD_MARKER,
-  COIN_FLIP_PROMPT,
-  DISCARD_TOP_X_CARDS_FROM_YOUR_DECK,
-  REMOVE_MARKER,
-  WAS_ATTACK_USED,
-} from '../../../game/store/prefabs/prefabs';
 
 const GOODRA_SLIMY_SLIP_ALLOWED = 'GOODRA_SLIMY_SLIP_ALLOWED';
 
@@ -45,40 +40,58 @@ export class Goodra extends PokemonCard {
   public fullName: string = 'Goodra M4';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Slimy Sliding
     if (effect instanceof RetreatEffect) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-      if (player.marker.hasMarker(GOODRA_SLIMY_SLIP_ALLOWED)) {
-        REMOVE_MARKER(GOODRA_SLIMY_SLIP_ALLOWED, player);
+      const retreatingPlayer = effect.player;
+      const abilityOwner = StateUtils.getOpponent(state, retreatingPlayer);
+
+      if (retreatingPlayer.marker.hasMarker(GOODRA_SLIMY_SLIP_ALLOWED)) {
+        REMOVE_MARKER(GOODRA_SLIMY_SLIP_ALLOWED, retreatingPlayer);
         return state;
       }
-      let isGoodraInPlay = false;
-      opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card) => {
-        if (card === this) isGoodraInPlay = true;
-      });
-      if (isGoodraInPlay) {
-        // TA-394 (b): this intercept runs BEFORE the retreat reducer's legality checks, so a retreat the
-        // menu never offered (no Energy for the cost, already retreated this turn, Asleep/Paralyzed…) was
-        // accepted and pended a coin flip. Refuse it exactly as the reducer would, first.
-        assertRetreatLegal(store, state, effect);
-        effect.preventDefault = true;
-        return COIN_FLIP_PROMPT(store, state, player, (result) => {
-          if (!result) {
-            // TA-394 (a): tails is a legal outcome, not an error — "Energy for its Retreat Cost is not
-            // discarded, and they don't switch Pokemon". It still uses up the turn's retreat even though
-            // nothing moved and nothing was paid (compendium #2348, Chaos Rising FAQ 2026-05-21).
-            player.retreatedTurn = state.turn;
-            return;
-          }
-          ADD_MARKER(GOODRA_SLIMY_SLIP_ALLOWED, player, this);
-          effect.preventDefault = false;
-          store.reduceEffect(state, effect);
-        });
+
+      if (!StateUtils.isPokemonInPlay(abilityOwner, this)) {
+        return state;
       }
+
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
+        return state;
+      }
+
+      if (!CAN_APPLY_ABILITY_TO_TARGET(
+        store,
+        state,
+        abilityOwner,
+        this.powers[0],
+        this,
+        retreatingPlayer.active,
+      )) {
+        return state;
+      }
+
+      // TA-394 (b): this intercept runs BEFORE the retreat reducer's legality checks, so a retreat the menu never
+      // offered was accepted and pended a coin flip. Refuse it exactly as the reducer would, first.
+      assertRetreatLegal(store, state, effect);
+
+      effect.preventDefault = true;
+      return COIN_FLIP_PROMPT(store, state, retreatingPlayer, (result) => {
+        if (!result) {
+          // TA-394 (a): tails is a legal outcome, not an error — nothing is paid and nothing switches, but it uses up
+          // the turn's retreat (compendium #2348, Chaos Rising FAQ 2026-05-21).
+          retreatingPlayer.retreatedTurn = state.turn;
+          return;
+        }
+        ADD_MARKER(GOODRA_SLIMY_SLIP_ALLOWED, retreatingPlayer, this);
+        effect.preventDefault = false;
+        store.reduceEffect(state, effect);
+      });
     }
+
+    // Dragon Pulse
     if (WAS_ATTACK_USED(effect, 0, this)) {
       DISCARD_TOP_X_CARDS_FROM_YOUR_DECK(store, state, effect.player, 1, this, effect);
     }
+
     return state;
   }
 }

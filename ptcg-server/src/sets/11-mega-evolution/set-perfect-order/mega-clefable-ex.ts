@@ -13,8 +13,7 @@ import {
 } from '../../../game';
 import { DiscardCardsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
-import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
+import { PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES } from '../../../game/store/prefabs/effect-of-ability-prefabs';
 import { IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class MegaClefableex extends PokemonCard {
@@ -52,34 +51,19 @@ export class MegaClefableex extends PokemonCard {
   public fullName: string = 'Mega Clefable ex M3';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Luminous Wing - Prevent all effects of your opponent's Pokemon's Abilities done to this Pokemon.
-    // Ability effects reach their target through EffectOfAbilityEffect (the ability-aware wrapper);
-    // null its target to prevent. Ref: set-lost-origin/enamorus-v.ts. (TA-334 / SD-26)
-    if (effect instanceof EffectOfAbilityEffect && effect.target && effect.target.getPokemonCard() === this) {
-      const targetOwner = StateUtils.findOwner(state, effect.target);
-      const opponent = StateUtils.getOpponent(state, targetOwner);
-
-      // Only from the opponent's abilities, and only while our own ability is active (not Iron-Thorns-locked).
-      if (effect.player === opponent && !IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
-        effect.target = undefined;
-        return state;
+    // Luminous Wing — Ref: set-unbroken-bonds/stealthy-hood.ts
+    PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES(state, effect, (target) => {
+      if (target.getPokemonCard() !== this) {
+        return false;
       }
-    }
-
-    // TA-346 / SD-26 (condition half): an ability-inflicted Special Condition arrives as
-    // AddSpecialConditionsPowerEffect, which the reducer applies RAW — it carries no
-    // EffectOfAbilityEffect wrapper, so the interceptor above never sees it (Cradily's Selective
-    // Slime burned this Pokémon). Intercept the class itself, as Enamorus V does; same owner guard.
-    if (effect instanceof AddSpecialConditionsPowerEffect && effect.target && effect.target.getPokemonCard() === this) {
-      const targetOwner = StateUtils.findOwner(state, effect.target);
-      const opponent = StateUtils.getOpponent(state, targetOwner);
-      if (effect.player === opponent && !IS_ABILITY_BLOCKED(store, state, targetOwner, this)) {
-        effect.preventDefault = true;
-        return state;
+      const owner = StateUtils.findOwner(state, target);
+      if (IS_ABILITY_BLOCKED(store, state, owner, this, this.powers[0])) {
+        return false;
       }
-    }
+      return true;
+    });
 
-    // Shooting Moon - discard energy from hand for damage
+    // Shooting Moons
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
       const energiesInHand = player.hand.cards.filter(

@@ -9,7 +9,6 @@ import { StoreLike } from '../../../game/store/store-like';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Surfer extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'SSP';
@@ -41,7 +40,6 @@ export class Surfer extends TrainerCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
 
       const supporterTurn = player.supporterTurn;
@@ -50,17 +48,23 @@ export class Surfer extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      return store.prompt(state, new ChoosePokemonPrompt(
+      return store.prompt(
+        state,
+        new ChoosePokemonPrompt(
         player.id,
         GameMessage.CHOOSE_POKEMON_TO_SWITCH,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH],
-        { allowCancel: false }
-      ), result => {
+          { allowCancel: false },
+        ),
+        (result) => {
         const cardList = result[0];
         // TA-171: `switchPokemon` only dispatches MovedToActiveEffect / MovedFromActiveToBenchEffect
         // when it is handed store+state — both are optional parameters, so a call site that omits
@@ -97,10 +101,9 @@ export class Surfer extends TrainerCard {
         }
 
         return state;
-      });
-
+        },
+      );
     }
     return state;
   }
-
 }

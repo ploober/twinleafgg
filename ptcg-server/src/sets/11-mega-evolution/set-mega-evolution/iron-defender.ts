@@ -18,14 +18,14 @@ export class IronDefender extends TrainerCard {
   public name: string = 'Iron Defender';
   public fullName: string = 'Iron Defender M1L';
 
-  public text: string = 'During your opponent\'s next turn, all of your [M] Pokémon take 30 less damage from attacks from your opponent\'s Pokémon (after applying Weakness and Resistance). (This includes new Pokémon that come into play.)';
+  public text: string =
+    "During your opponent's next turn, all of your [M] Pokémon take 30 less damage from attacks from your opponent's Pokémon (after applying Weakness and Resistance). (This includes new Pokémon that come into play.)";
 
   private readonly IRON_DEFENDER_MARKER = 'IRON_DEFENDER_MARKER';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     return true;
   }
-
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
@@ -57,5 +57,4 @@ export class IronDefender extends TrainerCard {
 
     return state;
   }
-
 }

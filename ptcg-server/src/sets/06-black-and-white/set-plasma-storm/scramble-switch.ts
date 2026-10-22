@@ -1,13 +1,13 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { CardTag, SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike } from '../../../game/store/store-like';
-import { State } from '../../../game/store/state/state';
+import { StoreLike, State, GameError, GameMessage, Player, PokemonCardList, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { PlayerType, SlotType, GameError, PokemonCardList, MoveEnergyPrompt, CardTarget, StateUtils } from '../../../game';
-import { GameMessage } from '../../../game/game-message';
+import { MoveEnergyPrompt, CardTarget, StateUtils } from '../../../game';
+
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
 function* playCard(
   next: Function,
@@ -22,7 +22,6 @@ function* playCard(
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  // Do not discard the card yet
   MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: effect.trainerCard });
   effect.preventDefault = true;
 
@@ -88,27 +87,24 @@ function* playCard(
 }
 
 export class ScrambleSwitch extends TrainerCard {
-  protected _tags = [CardTag.ACE_SPEC];
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
-
+  protected _tags = [CardTag.ACE_SPEC];
   public set: string = 'PLS';
-
-  public name: string = 'Scramble Switch';
-
-  public fullName: string = 'Scramble Switch PLS';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '129';
-
+  public name: string = 'Scramble Switch';
+  public fullName: string = 'Scramble Switch PLS';
   public text: string =
     'Switch your Active Pokemon with 1 of your Benched Pokemon. ' +
     'Then, you may move as many Energy attached to the old Active Pokemon ' +
     'to the new Active Pokemon as you like.';
 
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return player.bench.some((b) => b.cards.length > 0);
+  }
+
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+    if (WAS_TRAINER_USED(effect, this)) {
       const generator = playCard(() => generator.next(), store, state, effect);
       return generator.next().value;
     }

@@ -12,7 +12,12 @@ import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prom
 import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const name = effect.trainerCard.name;
 
@@ -26,13 +31,14 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   let playTwoCards = false;
 
   if (count >= 2) {
-    yield store.prompt(state, new ConfirmPrompt(
-      player.id,
-      GameMessage.WANT_TO_PLAY_BOTH_CARDS_AT_ONCE
-    ), result => {
+    yield store.prompt(
+      state,
+      new ConfirmPrompt(player.id, GameMessage.WANT_TO_PLAY_BOTH_CARDS_AT_ONCE),
+      (result) => {
       playTwoCards = result;
       next();
-    });
+      },
+    );
   }
 
   if (playTwoCards === false) {
@@ -42,7 +48,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   }
 
   // Discard second Poke-Drawer +
-  const second = player.hand.cards.find(c => {
+  const second = player.hand.cards.find((c) => {
     return c.name === name && c !== effect.trainerCard;
   });
   if (second !== undefined) {
@@ -50,28 +56,31 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   }
 
   let cards: Card[] = [];
-  yield store.prompt(state, new ChooseCardsPrompt(
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_HAND,
     player.deck,
     {},
-    { min: 0, max: 2, allowCancel: true }
-  ), selected => {
+      { min: 0, max: 2, allowCancel: true },
+    ),
+    (selected) => {
     cards = selected || [];
     next();
-  });
+    },
+  );
 
   // Get selected cards
   MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
 
   // Shuffle the deck
-  return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
   });
 }
 
 export class PokeDrawer extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'SF';
@@ -98,5 +107,4 @@ export class PokeDrawer extends TrainerCard {
 
     return state;
   }
-
 }

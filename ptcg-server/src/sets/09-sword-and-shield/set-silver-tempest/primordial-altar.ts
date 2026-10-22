@@ -12,7 +12,6 @@ import { ConfirmCardsPrompt } from '../../../game/store/prompts/confirm-cards-pr
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PrimordialAltar extends TrainerCard {
-
   protected _trainerType = TrainerType.STADIUM;
 
   public regulationMark = 'F';
@@ -27,7 +26,8 @@ export class PrimordialAltar extends TrainerCard {
 
   public fullName = 'Primordial Altar SIT';
 
-  public text = 'Once during each player\'s turn, that player may look at the top card of their deck. They may discard that card.';
+  public text =
+    "Once during each player's turn, that player may look at the top card of their deck. They may discard that card.";
 
   reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof UseStadiumEffect && StateUtils.getStadiumCard(state) === this) {
@@ -46,7 +46,9 @@ export class PrimordialAltar extends TrainerCard {
     const deckTop = new CardList();
     MOVE_CARDS(store, state, player.deck, deckTop, { count: 1, sourceCard: this });
 
-    return store.prompt(state, new ConfirmCardsPrompt(
+    return store.prompt(
+      state,
+      new ConfirmCardsPrompt(
       player.id,
       GameMessage.TREKKING_SHOES,
       deckTop.cards, // Fix error by changing toArray() to cards
@@ -63,6 +65,7 @@ export class PrimordialAltar extends TrainerCard {
       } else {
         deckTop.moveToTopOfDestination(player.deck); // declined: it goes back on top, face-down
       }
-    });
+      },
+    );
   }
 }

@@ -31,7 +31,7 @@ export class Iono extends TrainerCard {
     }
 
     const opponent = StateUtils.getOpponent(state, player);
-    const otherCardsInHand = player.hand.cards.filter(c => c !== this).length;
+    const otherCardsInHand = player.hand.cards.filter((c) => c !== this).length;
 
     if (otherCardsInHand === 0 && player.deck.cards.length === 0) {
       return false;
@@ -53,7 +53,7 @@ export class Iono extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      const playerCards = player.hand.cards.filter(c => c !== this);
+      const playerCards = player.hand.cards.filter((c) => c !== this);
       const opponentCards = [...opponent.hand.cards];
 
       if (playerCards.length === 0 && player.deck.cards.length === 0) {

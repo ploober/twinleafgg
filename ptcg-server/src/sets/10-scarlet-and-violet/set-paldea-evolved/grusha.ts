@@ -8,7 +8,6 @@ import { GameError, GameMessage, Player, PlayerType } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Grusha extends TrainerCard {
-
   public regulationMark = 'G';
 
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -35,7 +34,6 @@ export class Grusha extends TrainerCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
 
       const supporterTurn = player.supporterTurn;
@@ -44,7 +42,10 @@ export class Grusha extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
@@ -61,17 +62,13 @@ export class Grusha extends TrainerCard {
             break;
           }
           MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
-
         }
-      }
-      else {
-
+      } else {
         while (player.hand.cards.length < 5) {
           if (player.deck.cards.length === 0) {
             break;
           }
           MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
-
         }
         return state;
       }

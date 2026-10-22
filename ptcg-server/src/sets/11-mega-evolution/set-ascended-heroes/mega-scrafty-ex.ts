@@ -1,22 +1,7 @@
-import {
-  CardTag,
-  CardType,
-  PokemonCard,
-  Stage,
-  PowerType,
-  State,
-  StateUtils,
-  StoreLike,
-} from '../../../game';
+import { CardTag, CardType, PokemonCard, Stage, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
-import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
-import { GamePhase } from '../../../game/store/state/state';
-import {
-  AFTER_ATTACK,
-  IS_ABILITY_BLOCKED,
-  MOVE_CARDS,
-} from '../../../game/store/prefabs/prefabs';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
+import { AFTER_ATTACK, IS_ABILITY_BLOCKED, MOVE_CARDS, ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT } from '../../../game/store/prefabs/prefabs';
 
 export class MegaScraftyex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -54,26 +39,21 @@ export class MegaScraftyex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Counter Crest ability
-    if (
-      effect instanceof AfterDamageEffect &&
-      effect.target.getPokemonCard() === this &&
-      state.phase === GamePhase.ATTACK
-    ) {
-      const player = StateUtils.findOwner(state, effect.target);
-      const opponent = effect.player;
-      if (player === opponent || player.active !== effect.target) {
+    if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {
+      const abilityOwner = StateUtils.findOwner(state, effect.target);
+
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
         return state;
       }
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
-        return state;
-      }
-
-      const damageEffect = new EffectOfAbilityEffect(player, this.powers[0], this, effect.source);
-      store.reduceEffect(state, damageEffect);
-      if (damageEffect.target) {
-        damageEffect.target.damage += 50; // 5 damage counters = 50 damage
-      }
+      const placeCounters = new PlaceDamageCountersEffect(
+        abilityOwner,
+        effect.source,
+        50,
+        this,
+        this.powers[0],
+      );
+      store.reduceEffect(state, placeCounters);
     }
 
     // DDC Outlaw Leg attack

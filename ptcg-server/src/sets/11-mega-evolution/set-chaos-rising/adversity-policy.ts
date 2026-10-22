@@ -16,7 +16,8 @@ export class AdversityPolicy extends TrainerCard {
   public name: string = 'Adversity Policy';
   public regulationMark = 'I';
   public fullName: string = 'Adversity Policy CRI';
-  public text: string = 'If the Pokémon this card is attached to has Weakness to your opponent\'s Active Pokémon\'s type, is in the Active Spot, and is damaged by an attack from your opponent\'s Pokémon (even if this Pokémon is Knocked Out), draw 3 cards.';
+  public text: string =
+    "If the Pokémon this card is attached to has Weakness to your opponent's Active Pokémon's type, is in the Active Spot, and is damaged by an attack from your opponent's Pokémon (even if this Pokémon is Knocked Out), draw 3 cards.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof AfterDamageEffect && effect.target.tools.includes(this)) {
@@ -43,7 +44,9 @@ export class AdversityPolicy extends TrainerCard {
       store.reduceEffect(state, checkOpponentType);
       const opponentTypes = checkOpponentType.cardTypes;
 
-      const hasWeaknessToOpponentActiveType = attachedPokemon.weakness.some(w => opponentTypes.includes(w.type));
+      const hasWeaknessToOpponentActiveType = attachedPokemon.weakness.some((w) =>
+        opponentTypes.includes(w.type),
+      );
       if (!hasWeaknessToOpponentActiveType) {
         return state;
       }

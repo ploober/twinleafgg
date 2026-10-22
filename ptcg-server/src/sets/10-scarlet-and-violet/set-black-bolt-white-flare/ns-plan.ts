@@ -4,7 +4,15 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { GameError, GameMessage, MoveEnergyPrompt, Player, StateUtils, PlayerType, SlotType } from '../../../game';
+import {
+  GameError,
+  GameMessage,
+  MoveEnergyPrompt,
+  Player,
+  StateUtils,
+  PlayerType,
+  SlotType,
+} from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class NsPlan extends TrainerCard {
@@ -13,8 +21,8 @@ export class NsPlan extends TrainerCard {
   public set: string = 'BLK';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '83';
-  public name: string = 'N\'s Plan';
-  public fullName: string = 'N\'s Plot SV11B';
+  public name: string = "N's Plan";
+  public fullName: string = "N's Plot SV11B";
   public text: string = 'Move up to 2 Energy from your Benched Pokémon to your Active Pokémon.';
 
   /**
@@ -69,11 +77,14 @@ export class NsPlan extends TrainerCard {
       effect.preventDefault = true;
 
       // Prepare blockedMap for MoveEnergyPrompt
-      const blockedMap: { source: any, blocked: number[] }[] = [];
+      const blockedMap: { source: any; blocked: number[] }[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
         if (target.slot === SlotType.ACTIVE) {
           // Block all energy on Active (can't move from Active)
-          blockedMap.push({ source: target, blocked: Array.from({ length: cardList.cards.length }, (_, i) => i) });
+          blockedMap.push({
+            source: target,
+            blocked: Array.from({ length: cardList.cards.length }, (_, i) => i),
+          });
         }
       });
 
@@ -85,24 +96,31 @@ export class NsPlan extends TrainerCard {
         }
       });
 
-      return store.prompt(state, new MoveEnergyPrompt(
+      return store.prompt(
+        state,
+        new MoveEnergyPrompt(
         player.id,
         GameMessage.MOVE_ENERGY_CARDS,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY },
-        { allowCancel: false, min: 1, max: 2, blockedMap, blockedTo: blockedTargets }
-      ), transfers => {
+          { allowCancel: false, min: 1, max: 2, blockedMap, blockedTo: blockedTargets },
+        ),
+        (transfers) => {
         if (transfers && transfers.length > 0) {
           for (const transfer of transfers) {
             const source = StateUtils.getTarget(state, player, transfer.from);
             if (source) {
               const target = player.active;
-              MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
+                MOVE_CARDS(store, state, source, target, {
+                  cards: [transfer.card],
+                  sourceCard: this,
+      });
+    }
             }
           }
-        }
-      });
+        },
+      );
     }
     return state;
   }

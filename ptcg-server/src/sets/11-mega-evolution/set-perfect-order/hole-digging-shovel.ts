@@ -13,7 +13,8 @@ export class HoleDiggingShovel extends TrainerCard {
   public name: string = 'Hole-Digging Shovel';
   public regulationMark = 'I';
   public fullName: string = 'Hole-Digging Shovel POR';
-  public text: string = 'Discard the top 2 cards of your deck. You may play any number of Item cards during your turn.';
+  public text: string =
+    'Discard the top 2 cards of your deck. You may play any number of Item cards during your turn.';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {

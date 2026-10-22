@@ -51,9 +51,9 @@ function* playCard(
     });
   });
 
-  // TA-711 (B.97): the searched cards are not revealed; they become public by going to the discard pile.
   MOVE_CARDS(store, state, player.deck, player.discard, { cards: cards, sourceCard: effect.trainerCard });
 
+  // TA-711 (B.97): the searched cards are not revealed; they become public by going to the discard pile.
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
   });

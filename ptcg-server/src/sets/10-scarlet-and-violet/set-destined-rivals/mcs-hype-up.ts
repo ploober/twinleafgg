@@ -16,9 +16,10 @@ export class EmceesHype extends TrainerCard {
   public setNumber = '163';
   public cardImage = 'assets/cardback.png';
   public regulationMark: string = 'I';
-  public name: string = 'Emcee\'s Hype';
-  public fullName: string = 'Emcee\'s Hype DRI';
-  public text: string = 'Draw 2 cards. If your opponent has 3 or fewer Prize cards remaining, draw 2 more cards.';
+  public name: string = "Emcee's Hype";
+  public fullName: string = "Emcee's Hype DRI";
+  public text: string =
+    'Draw 2 cards. If your opponent has 3 or fewer Prize cards remaining, draw 2 more cards.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -46,11 +47,10 @@ export class EmceesHype extends TrainerCard {
       }
 
       // Move to supporter pile
-      state = store.reduceEffect(state, new MoveCardsEffect(
-        player.hand,
-        player.supporter,
-        { cards: [effect.trainerCard] }
-      ));
+      state = store.reduceEffect(
+        state,
+        new MoveCardsEffect(player.hand, player.supporter, { cards: [effect.trainerCard] }),
+      );
 
       effect.preventDefault = true;
 
@@ -64,5 +64,4 @@ export class EmceesHype extends TrainerCard {
 
     return state;
   }
-
 }

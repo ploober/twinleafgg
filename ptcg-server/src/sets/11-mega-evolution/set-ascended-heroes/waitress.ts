@@ -13,7 +13,8 @@ export class Waitress extends TrainerCard {
   public name: string = 'Waitress';
   public fullName: string = 'Waitress MC';
 
-  public text: string = 'Look at the top 6 cards of your deck, and attach a Basic Energy you find there to 1 of your Pokémon. Shuffle the other cards back into your deck.';
+  public text: string =
+    'Look at the top 6 cards of your deck, and attach a Basic Energy you find there to 1 of your Pokémon. Shuffle the other cards back into your deck.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -34,7 +35,10 @@ export class Waitress extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       effect.preventDefault = true;
 
       if (player.deck.cards.length === 0) {
@@ -75,8 +79,9 @@ export class Waitress extends TrainerCard {
             PlayerType.BOTTOM_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
             {},
-            { allowCancel: false, min: 1, max: 1 }
-          ), transfers => {
+                { allowCancel: false, min: 1, max: 1 },
+              ),
+              (transfers) => {
             transfers = transfers || [];
             if (transfers.length > 0) {
               for (const transfer of transfers) {
@@ -88,17 +93,16 @@ export class Waitress extends TrainerCard {
             chosen.moveTo(player.deck);
             MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
             SHUFFLE_DECK(store, state, player);
-
-          });
+              },
+            );
         } else {
           // No energy selected, put all cards back
           MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
           SHUFFLE_DECK(store, state, player);
-
         }
-      });
+        },
+      );
     }
     return state;
   }
 }
-

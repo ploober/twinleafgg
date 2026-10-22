@@ -50,8 +50,16 @@ export class PrismTower extends TrainerCard {
             player.stadiumUsedTurn = stadiumUsedTurn;
             return;
           }
-          MOVE_CARDS(store, state, player.hand, player.discard, { cards: selected, sourceCard: this, sourceEffect: this });
-          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this, sourceEffect: this });
+          MOVE_CARDS(store, state, player.hand, player.discard, {
+            cards: selected,
+            sourceCard: this,
+            sourceEffect: this,
+          });
+          MOVE_CARDS(store, state, player.deck, player.hand, {
+            count: 1,
+            sourceCard: this,
+            sourceEffect: this,
+          });
         },
       );
     }

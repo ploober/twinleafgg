@@ -104,7 +104,8 @@ export class BugCatchingSet extends TrainerCard {
   public text: string =
     'Look at the top 7 cards of your deck. You may reveal up to 2 in any combination of [G] Pokémon and Basic [G] Energy cards you find there and put them into your hand. Shuffle the other cards back into your deck.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return true;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

@@ -7,6 +7,7 @@ import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
 import { StateUtils } from '../../../game/store/state-utils';
 import { AttachEnergyPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { ToolEffect } from '../../../game/store/effects/play-card-effects';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class HandyFan extends TrainerCard {
   public regulationMark = 'H';
@@ -17,7 +18,8 @@ export class HandyFan extends TrainerCard {
   public name = 'Handheld Fan';
   public fullName = 'Handheld Fan TWM';
 
-  public text: string = 'If the Pokémon this card is attached to is in the Active Spot and is damaged by an attack from your opponent\'s Pokémon (even if this Pokémon is Knocked Out), move an Energy from the Attacking Pokémon to 1 of your opponent\'s Benched Pokémon.';
+  public text: string =
+    "If the Pokémon this card is attached to is in the Active Spot and is damaged by an attack from your opponent's Pokémon (even if this Pokémon is Knocked Out), move an Energy from the Attacking Pokémon to 1 of your opponent's Benched Pokémon.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof AfterDamageEffect && effect.target.tools.includes(this)) {
@@ -39,17 +41,9 @@ export class HandyFan extends TrainerCard {
       if (state.phase === GamePhase.ATTACK) {
         const player = effect.player;
         const opponent = StateUtils.getOpponent(state, player);
-
-        // TA-187: "move an Energy from the attacking Pokémon to 1 of **your opponent's** Benched
-        // Pokémon". "Your" is the TOOL'S OWNER, so "your opponent" is the ATTACKER — the Energy
-        // moves off the attacking Pokémon and onto the ATTACKER's own Bench. `effect.player` is the
-        // attacking player, so `opponent` here is the Tool's owner, and this guard was checking the
-        // TOOL OWNER's bench for a destination. On any board where the Tool's owner had an empty
-        // Bench the reaction bailed out entirely — even though the attacker had Benched Pokémon
-        // perfectly able to receive the Energy. That is the whole defect: the destination
-        // resolution below was already correct (`getTarget` flips on `TOP_PLAYER`), only the
-        // achievability test looked at the wrong side of the board.
-        const hasBench = player.bench.some(b => b.cards.length > 0);
+        // TA-187: "1 of your opponent's Benched Pokémon" — "your" is the Tool's owner, so the destination is the
+        // ATTACKER's Bench (`player` here is the attacking player).
+        const hasBench = player.bench.some((b) => b.cards.length > 0);
 
         if (hasBench === false) {
           return state;
@@ -61,26 +55,29 @@ export class HandyFan extends TrainerCard {
           return state;
         }
 
-        return store.prompt(state, new AttachEnergyPrompt(
-          opponent.id,
-          GameMessage.ATTACH_ENERGY_TO_BENCH,
-          attackingPokemon,
-          PlayerType.TOP_PLAYER,
-          [SlotType.BENCH],
-          { superType: SuperType.ENERGY },
-          // TA-187: was `min: 0`, which offered a decline. The text is "move an Energy" with no
-          // "may" and no "up to", so the move is MANDATORY once the trigger fires — §B.18/#2301.
-          // Rotomancer offers no `confirm{false}` here either.
-          { allowCancel: false, min: 1, max: 1 }
-        ), transfers => {
-          transfers = transfers || [];
-          for (const transfer of transfers) {
-            // `opponent` is the Tool's owner and `transfer.to.player` is TOP_PLAYER, so getTarget
-            // flips to the ATTACKER's bench — the correct destination.
-            const target = StateUtils.getTarget(state, opponent, transfer.to);
-            attackingPokemon.moveCardTo(transfer.card, target);
-          }
-        });
+        return store.prompt(
+          state,
+          new AttachEnergyPrompt(
+            opponent.id,
+            GameMessage.ATTACH_ENERGY_TO_BENCH,
+            attackingPokemon,
+            PlayerType.TOP_PLAYER,
+            [SlotType.BENCH],
+            { superType: SuperType.ENERGY },
+            // TA-187: "move an Energy" has no "may" and no "up to": mandatory once it triggers (§B.18 / #2301).
+            { allowCancel: false, min: 1, max: 1 },
+          ),
+          (transfers) => {
+            transfers = transfers || [];
+            for (const transfer of transfers) {
+              const target = StateUtils.getTarget(state, opponent, transfer.to);
+              MOVE_CARDS(store, state, attackingPokemon, target, {
+                cards: [transfer.card],
+                sourceCard: this,
+              });
+            }
+          },
+        );
       }
     }
     return state;

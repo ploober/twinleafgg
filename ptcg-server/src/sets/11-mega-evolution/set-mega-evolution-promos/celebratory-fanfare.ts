@@ -1,23 +1,23 @@
-import { GameError, GameMessage, PlayerType, State, StateUtils, StoreLike } from '../../../game';
+import { PlayerType, State, StateUtils, StoreLike } from '../../../game';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealEffect, UseStadiumEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-effect';
+import { GameError } from '../../../game';
+import { GameMessage } from '../../../game';
 
 export class CelebratoryFanfare extends TrainerCard {
   protected _trainerType = TrainerType.STADIUM;
-  // TA-256 (ours) / upstream f0edbdac4: canonically mep-028 "Celebratory Fanfare" (Mega Evolution Promos),
-  // not svp-174. Upstream moved the file here and re-keyed fullName to MEP; regulationMark 'I' matches
-  // canonical card-data/final/mep.json. Registered in the MEP index below (upstream left it orphaned).
   public set = 'MEP';
   public regulationMark = 'I';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '28';
   public name = 'Celebratory Fanfare';
   public fullName = 'Celebration Fanfare MEP';
-  public text = 'Once during each player\'s turn, that player may heal 10 damage from each of their Pokémon. If a player healed any damage in this way, their turn ends.';
+  public text =
+    "Once during each player's turn, that player may heal 10 damage from each of their Pokémon. If a player healed any damage in this way, their turn ends.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof UseStadiumEffect && StateUtils.getStadiumCard(state) === this) {

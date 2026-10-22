@@ -9,7 +9,6 @@ import { CardTarget, EnergyCard, GameError, MoveEnergyPrompt, Player, PlayerType
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Poppy extends TrainerCard {
-
   public regulationMark = 'G';
 
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -25,8 +24,7 @@ export class Poppy extends TrainerCard {
   public fullName: string = 'Poppy OBF';
 
   public text: string =
-    'Move up to 2 Energy from 1 of your Pokémon to another ' +
-    'of your Pokémon.';
+    'Move up to 2 Energy from 1 of your Pokémon to another ' + 'of your Pokémon.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -36,7 +34,7 @@ export class Poppy extends TrainerCard {
     let pokemonCount = 0;
     player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
       pokemonCount += 1;
-      const energyAttached = cardList.cards.some(c => c.superType === SuperType.ENERGY);
+      const energyAttached = cardList.cards.some((c) => c.superType === SuperType.ENERGY);
       hasEnergy = hasEnergy || energyAttached;
     });
     if (!hasEnergy || pokemonCount <= 1) {
@@ -54,7 +52,7 @@ export class Poppy extends TrainerCard {
       let pokemonCount = 0;
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card) => {
         pokemonCount += 1;
-        const energyAttached = cardList.cards.some(c => {
+        const energyAttached = cardList.cards.some((c) => {
           return c instanceof EnergyCard;
         });
         hasEnergy = hasEnergy || energyAttached;
@@ -70,7 +68,10 @@ export class Poppy extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
@@ -124,5 +125,4 @@ export class Poppy extends TrainerCard {
 
     return state;
   }
-
 }

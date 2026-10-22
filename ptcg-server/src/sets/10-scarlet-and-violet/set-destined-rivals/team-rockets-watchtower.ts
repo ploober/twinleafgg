@@ -17,14 +17,16 @@ export class TeamRocketsWatchtower extends TrainerCard {
   protected _trainerType: TrainerType = TrainerType.STADIUM;
   public set: string = 'DRI';
   public regulationMark = 'I';
-  public name: string = 'Team Rocket\'s Watchtower';
-  public fullName: string = 'Team Rocket\'s Watchtower DRI';
+  public name: string = "Team Rocket's Watchtower";
+  public fullName: string = "Team Rocket's Watchtower DRI";
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '180';
-  public text: string = '[C] Pokémon in play (both yours and your opponent\'s) have no Abilities.';
+  public text: string = "[C] Pokémon in play (both yours and your opponent's) have no Abilities.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    HANDLE_ABILITY_LOCK(effect, ({ card }) => {
+    HANDLE_ABILITY_LOCK(
+      effect,
+      ({ card }) => {
       if (StateUtils.getStadiumCard(state) !== this) {
         return false;
       }
@@ -58,11 +60,13 @@ export class TeamRocketsWatchtower extends TrainerCard {
       } catch {
         return lockedByPrintedType();
       }
-    }, {
+      },
+      {
       allowUseFromHand: true,
       allowUseFromDiscard: true,
       error: GameMessage.BLOCKED_BY_EFFECT,
-    });
+      },
+    );
 
     if (effect instanceof UseStadiumEffect && StateUtils.getStadiumCard(state) === this) {
       throw new GameError(GameMessage.CANNOT_USE_STADIUM);

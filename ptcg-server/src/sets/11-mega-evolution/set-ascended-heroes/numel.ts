@@ -1,9 +1,13 @@
-import { GamePhase, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import { PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, SpecialCondition, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { AfterDamageEffect } from '../../../game/store/effects/attack-effects';
+import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
 import { Effect } from '../../../game/store/effects/effect';
-import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { CAN_APPLY_ABILITY_TO_TARGET } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import {
+  IS_ABILITY_BLOCKED,
+  ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT,
+} from '../../../game/store/prefabs/prefabs';
 
 export class Numel extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -34,26 +38,36 @@ export class Numel extends PokemonCard {
   public fullName: string = 'Numel M2a';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // Incandescent Body — Ref: set-twilight-masquerade/heatran.ts
+    // TA-238 / SD-18: only while this card is the TOP of its stack — evolution material has no Abilities.
+    if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })
+      && effect.target.getPokemonCard() === this) {
+      const abilityOwner = StateUtils.findOwner(state, effect.target);
 
-    // TA-238 / SD-18: the guard must be TOP-OF-STACK, not stack membership. `cards.includes(this)`
-    // is true for evolution MATERIAL too, so this passive kept firing from UNDER Mega Camerupt —
-    // an evolved-away Pokémon has no Abilities, and the attacker was Burned by a card not in play
-    // as a Pokémon. `getPokemonCard()` is the current top; only then is Incandescent Body live.
-    if (effect instanceof AfterDamageEffect && effect.target.getPokemonCard() === this) {
-      const player = effect.player;
-      const targetPlayer = StateUtils.findOwner(state, effect.target);
-
-      if (effect.damage <= 0 || player === targetPlayer || targetPlayer.active !== effect.target) {
+      if (IS_ABILITY_BLOCKED(store, state, abilityOwner, this)) {
         return state;
       }
 
-      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+      if (!CAN_APPLY_ABILITY_TO_TARGET(
+        store,
+        state,
+        abilityOwner,
+        this.powers[0],
+        this,
+        effect.source,
+      )) {
         return state;
       }
 
-      if (state.phase === GamePhase.ATTACK) {
-        effect.source.addSpecialCondition(SpecialCondition.BURNED);
-      }
+      store.reduceEffect(
+        state,
+        new AddSpecialConditionsPowerEffect(
+          abilityOwner,
+          this,
+          effect.source,
+          [SpecialCondition.BURNED],
+        ),
+      );
     }
 
     return state;

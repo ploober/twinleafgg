@@ -1,27 +1,10 @@
-import {
-  PokemonCard,
-  Stage,
-  CardType,
-  CardTag,
-  StoreLike,
-  State,
-  PowerType,
-  StateUtils,
-  ChoosePokemonPrompt,
-  GameMessage,
-  PlayerType,
-  SlotType,
-} from '../../../game';
+import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, PowerType, StateUtils, ChoosePokemonPrompt, GameMessage, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { PowerEffect, PutDamageCountersEffect } from '../../../game/store/effects/game-effects';
-import { MAY_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
+import { PlaceDamageCountersEffect } from '../../../game/store/effects/game-effects';
+
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import {
-  CONFIRMATION_PROMPT,
-  IS_ABILITY_BLOCKED,
-  WAS_ATTACK_USED,
-  MOVE_POKEMON_OFF_BOARD,
-} from '../../../game/store/prefabs/prefabs';
+import { CONFIRMATION_PROMPT, IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_POKEMON_OFF_BOARD } from '../../../game/store/prefabs/prefabs';
+import { MAY_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
 
 export class TeamRocketsCrobatex extends PokemonCard {
   public stage: Stage = Stage.STAGE_2;
@@ -33,11 +16,13 @@ export class TeamRocketsCrobatex extends PokemonCard {
   public resistance = [{ type: F, value: -30 }];
   public retreat = [C];
 
-  public powers = [{
-    name: 'Biting Spree',
-    powerType: PowerType.ABILITY,
-    text: 'When you play this Pokémon from your hand to evolve 1 of your Pokémon during your turn, you may put 2 damage counters on 2 of your opponent\'s Pokémon.'
-  }];
+  public powers = [
+    {
+      name: 'Biting Spree',
+      powerType: PowerType.ABILITY,
+      text: "When you play this Pokémon from your hand to evolve 1 of your Pokémon during your turn, you may put 2 damage counters on 2 of your opponent's Pokémon.",
+    },
+  ];
 
   public attacks = [
     {
@@ -57,7 +42,7 @@ export class TeamRocketsCrobatex extends PokemonCard {
 
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    // Bite About
+    // Bite About — Ref: set-phantom-forces/golbat.ts (Sneaky Bite)
     if (effect instanceof PlayPokemonEffect && effect.pokemonCard === this) {
       const player = StateUtils.findOwner(state, effect.target);
 
@@ -65,15 +50,12 @@ export class TeamRocketsCrobatex extends PokemonCard {
         return state;
       }
 
-      // TA-341: the target prompt belongs INSIDE the "you may" — a decline used to fall through
-      // to it anyway. And the counters go through PutDamageCountersEffect (an ability-aware
-      // effect) so a "prevent effects of your opponent's Abilities" protector can intercept them
-      // (SD-26 source half, the TA-334 froslass shape); `target.damage += 20` bypassed every sink.
-      CONFIRMATION_PROMPT(store, state, player, (result) => {
+      return CONFIRMATION_PROMPT(store, state, player, (result) => {
         if (!result) {
-          return state;
+          return;
         }
-        return store.prompt(
+
+        store.prompt(
           state,
           new ChoosePokemonPrompt(
             player.id,
@@ -86,13 +68,14 @@ export class TeamRocketsCrobatex extends PokemonCard {
           (selected) => {
             const targets = selected || [];
             targets.forEach((target) => {
-              const powerEffect = new PowerEffect(player, this.powers[0], this, target);
-              store.reduceEffect(state, new PutDamageCountersEffect(powerEffect, 20));
+              store.reduceEffect(
+                state,
+                new PlaceDamageCountersEffect(player, target, 20, this, this.powers[0]),
+              );
             });
           },
         );
       });
-      return state;
     }
 
     // Assassin's Return. TA-670 (B.101 (4)): the "you may" is asked at Step D, before the damage; this Pokemon goes to

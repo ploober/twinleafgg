@@ -1,10 +1,18 @@
-import { Card, GameError, GameMessage, Player, State, StoreLike, TrainerCard, TrainerType } from '../../../game';
+import {
+  Card,
+  GameError,
+  GameMessage,
+  Player,
+  State,
+  StoreLike,
+  TrainerCard,
+  TrainerType,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class RedeemableTicket extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public regulationMark = 'I';
@@ -32,7 +40,7 @@ export class RedeemableTicket extends TrainerCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const player = effect.player;
-      const prizes = player.prizes.filter(p => p.cards.length > 0);
+      const prizes = player.prizes.filter((p) => p.cards.length > 0);
       const prizeCount = prizes.reduce((sum, p) => sum + p.cards.length, 0);
 
       if (prizeCount === 0) {
@@ -40,11 +48,14 @@ export class RedeemableTicket extends TrainerCard {
       }
 
       // Move the trainer card to discard
-      MOVE_CARDS(store, state, player.hand, player.discard, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.discard, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
 
       // Collect all prize cards
       const allPrizeCards: Card[] = [];
-      prizes.forEach(p => allPrizeCards.push(...p.cards));
+      prizes.forEach((p) => allPrizeCards.push(...p.cards));
 
       // Shuffle the prize cards
       this.shuffleArray(allPrizeCards);
@@ -57,14 +68,14 @@ export class RedeemableTicket extends TrainerCard {
       });
 
       // Clear the prize cards
-      prizes.forEach(p => p.cards = []);
+      prizes.forEach((p) => (p.cards = []));
 
       // Draw cards from the top of the deck to the prize cards. The TOP is index 0, so take with
       // shift (NOT pop, which would draw from the bottom). (TA-328)
       for (let i = 0; i < prizeCount; i++) {
         const card = player.deck.cards.shift();
         if (card) {
-          const prize = player.prizes.find(p => p.cards.length === 0);
+          const prize = player.prizes.find((p) => p.cards.length === 0);
           if (prize) {
             prize.cards.push(card);
           } else {
@@ -74,8 +85,11 @@ export class RedeemableTicket extends TrainerCard {
       }
 
       // Set the new prize cards to be face down
-      player.prizes.forEach(p => p.isSecret = true);
-      MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
+      player.prizes.forEach((p) => (p.isSecret = true));
+      MOVE_CARDS(store, state, player.supporter, player.discard, {
+        cards: [this],
+        sourceCard: this,
+      });
       return state;
     }
 

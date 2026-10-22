@@ -10,7 +10,6 @@ import { ChooseCardsPrompt, EnergyCard, GameError } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class CyclingRoad extends TrainerCard {
-
   protected _trainerType = TrainerType.STADIUM;
 
   public regulationMark = 'G';
@@ -25,7 +24,8 @@ export class CyclingRoad extends TrainerCard {
 
   public fullName = 'Cycling Road MEW';
 
-  public text = 'Once during each player\'s turn, that player may discard a Basic Energy card from their hand in order to draw a card.';
+  public text =
+    "Once during each player's turn, that player may discard a Basic Energy card from their hand in order to draw a card.";
 
   reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof UseStadiumEffect && StateUtils.getStadiumCard(state) === this) {
@@ -35,7 +35,6 @@ export class CyclingRoad extends TrainerCard {
   }
 
   useStadium(store: StoreLike, state: State, effect: UseStadiumEffect): State {
-
     const player = effect.player;
     // TA-731: "a Basic Energy card"; a Special Energy is not one.
     const hasEnergyInHand = player.hand.cards.some(c => {
@@ -45,7 +44,9 @@ export class CyclingRoad extends TrainerCard {
       throw new GameError(GameMessage.CANNOT_USE_POWER);
     }
 
-    state = store.prompt(state, new ChooseCardsPrompt(
+    state = store.prompt(
+      state,
+      new ChooseCardsPrompt(
       player,
       GameMessage.CHOOSE_CARD_TO_DISCARD,
       player.hand,
@@ -60,8 +61,8 @@ export class CyclingRoad extends TrainerCard {
 
       MOVE_CARDS(store, state, player.hand, player.discard, { cards: cards, sourceCard: this });
       MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
-
-    });
+      },
+    );
 
     return state;
   }

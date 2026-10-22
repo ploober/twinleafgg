@@ -4,11 +4,11 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { ChooseCardsPrompt, GameError, GameMessage, Player, ShowCardsPrompt, StateUtils } from '../../../game';
+import { ChooseCardsPrompt, GameError, GameMessage, Player, StateUtils } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ShowCardsPrompt } from '../../../game';
 
 export class Eri extends TrainerCard {
-
   public regulationMark = 'H';
 
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -44,27 +44,42 @@ export class Eri extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
 
-      const pick = () => store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        opponent.hand,
-        { superType: SuperType.TRAINER, trainerType: TrainerType.ITEM },
-        { allowCancel: false, min: 0, max: 2 }
-      ), cards => {
-        if (cards === null || cards.length === 0) {
-          MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
-          return;
-        }
-        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
-        cards.forEach(card => {
-          MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [card], sourceCard: this });
-
-        });
-      });
+      const pick = () => store.prompt(
+        state,
+        new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          opponent.hand,
+          { superType: SuperType.TRAINER, trainerType: TrainerType.ITEM },
+          { allowCancel: false, min: 0, max: 2 },
+        ),
+        (cards) => {
+          if (cards === null || cards.length === 0) {
+            MOVE_CARDS(store, state, player.supporter, player.discard, {
+              cards: [this],
+              sourceCard: this,
+            });
+            return;
+          }
+          MOVE_CARDS(store, state, player.supporter, player.discard, {
+            cards: [this],
+            sourceCard: this,
+          });
+          cards.forEach((card) => {
+            MOVE_CARDS(store, state, opponent.hand, opponent.discard, {
+              cards: [card],
+              sourceCard: this,
+            });
+          });
+        },
+      );
 
       // TA-720 / B.97 (TA-690's shape): "Your opponent reveals their hand": the whole hand is shown before the pick,
       // whether or not it holds an Item.

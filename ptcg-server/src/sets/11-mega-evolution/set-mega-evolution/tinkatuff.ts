@@ -1,9 +1,11 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, Stage, SuperType } from '../../../game/store/card/card-types';
-import { ConfirmPrompt, GameMessage, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import { GameMessage, PowerType, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
-import {ABILITY_USED, COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, JUST_EVOLVED, REMOVE_MARKER_AT_END_OF_TURN, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { CAN_APPLY_ABILITY_TO_TARGET } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import { ABILITY_USED, COIN_FLIP_PROMPT, IS_ABILITY_BLOCKED, JUST_EVOLVED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ConfirmPrompt } from '../../../game';
 
 export class Tinkatuff extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -35,8 +37,6 @@ export class Tinkatuff extends PokemonCard {
   public name: string = 'Tinkatuff';
   public fullName: string = 'Tinkatuff MEG';
 
-  private RUSTLING_WIND_MARKER = 'RUSTLING_WIND_MARKER';
-
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Haphazard Hammer
     if (JUST_EVOLVED(effect, this)) {
@@ -47,51 +47,53 @@ export class Tinkatuff extends PokemonCard {
         return state;
       }
 
-      // Check if ability was already used this turn
-      if (player.marker.hasMarker(this.RUSTLING_WIND_MARKER, this)) {
+      if (!opponent.active.energies.cards.some(card => card.superType === SuperType.ENERGY)) {
         return state;
       }
-      // Check if opponent's active has energy cards
-      const hasEnergy = opponent.active.energies.cards.some(card => card.superType === SuperType.ENERGY);
-      if (!hasEnergy) {
-        return state;
-      }
-      // TA-420: the printed "you may use this Ability" is a DECISION, and it comes before the flip
-      // (a flip is not a decision) — the coin was flipped without ever offering the decline.
-      return store.prompt(state, new ConfirmPrompt(
-        player.id,
-        GameMessage.WANT_TO_USE_ABILITY,
-      ), wantToUse => {
+
+      // TA-420: the printed "you may use this Ability" is a DECISION, and it comes before the flip (a flip is not a
+      // decision). The Ability is used at the accepted "may", whatever the coin says (TA-455 / CF-77).
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
         if (!wantToUse) {
           return state;
         }
-        // Mark ability as used — at the accepted "may", whatever the coin says (TA-455 / CF-77)
-        player.marker.addMarker(this.RUSTLING_WIND_MARKER, this);
         ABILITY_USED(player, this);
-        // Flip coin
-        COIN_FLIP_PROMPT(store, state, player, (result) => {
-          if (result) {
-            // If heads, select and move energy to opponent's discard
-            store.prompt(state, new ChooseCardsPrompt(
-              player,
-              GameMessage.CHOOSE_CARD_TO_DISCARD,
-              opponent.active,
-              { superType: SuperType.ENERGY },
-              { min: 1, max: 1, allowCancel: false }
-            ), selected => {
-              if (selected && selected.length > 0) {
-                const energyCard = selected[0];
-                MOVE_CARDS(store, state, opponent.active, opponent.discard, { cards: [energyCard], sourceCard: this });
-              }
+        return COIN_FLIP_PROMPT(store, state, player, (result) => {
+        if (!result) {
+          return state;
+        }
+
+        if (!CAN_APPLY_ABILITY_TO_TARGET(
+          store,
+          state,
+          player,
+          this.powers[0],
+          this,
+          opponent.active,
+        )) {
+          return state;
+        }
+
+        store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          opponent.active,
+          { superType: SuperType.ENERGY },
+          { min: 1, max: 1, allowCancel: false },
+        ), selected => {
+          if (selected && selected.length > 0) {
+            MOVE_CARDS(store, state, opponent.active, opponent.discard, {
+              cards: selected,
+              sourceCard: this,
+              sourceEffect: this.powers[0],
             });
           }
-          return state;
         });
+
         return state;
       });
+      });
     }
-
-    REMOVE_MARKER_AT_END_OF_TURN(effect, this.RUSTLING_WIND_MARKER, this);
 
     return state;
   }

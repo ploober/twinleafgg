@@ -10,9 +10,14 @@ import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils, ShowCardsPrompt, GameError, Player } from '../../../game';
 
-import {COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
   let coinResult = false;
@@ -24,35 +29,46 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
-  yield COIN_FLIP_PROMPT(store, state, player, result => {
+  yield COIN_FLIP_PROMPT(store, state, player, (result) => {
     coinResult = result;
     next();
   });
 
   if (coinResult) {
     let cards: any[] = [];
-    yield store.prompt(state, new ChooseCardsPrompt(
-      player,
-      GameMessage.CHOOSE_CARD_TO_HAND,
-      player.deck,
-      { superType: SuperType.POKEMON },
-      { min: 0, max: 1, allowCancel: false }),
+    yield store.prompt(
+      state,
+      new ChooseCardsPrompt(
+        player,
+        GameMessage.CHOOSE_CARD_TO_HAND,
+        player.deck,
+        { superType: SuperType.POKEMON },
+        { min: 0, max: 1, allowCancel: false },
+      ),
       (selected: any[]) => {
         cards = selected || [];
         next();
-      });
+      },
+    );
 
     if (cards.length > 0) {
-      MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: effect.trainerCard });
+      MOVE_CARDS(store, state, player.discard, player.deck, {
+        cards: cards,
+        sourceCard: effect.trainerCard,
+      });
       if (cards.length > 0) {
-        state = store.prompt(state, new ShowCardsPrompt(
-          opponent.id,
-          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-          cards), () => state);
+        state = store.prompt(
+          state,
+          new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
+          () => state,
+        );
       }
     }
 
-    MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: effect.trainerCard });
+    MOVE_CARDS(store, state, player.deck, player.hand, {
+      cards: cards,
+      sourceCard: effect.trainerCard,
+    });
   } else {
     // TA-722 / B.44 (TA-397 (b)'s fix, which reached only the Jungle class): on tails no search is performed, and
     // "Then, shuffle your deck" rides on the search having happened, so no shuffle is owed.
@@ -75,7 +91,8 @@ export class Pokeball extends TrainerCard {
   public name = 'Poké Ball';
   public fullName: string = 'Poké Ball SVI';
 
-  public text: string = 'Flip a coin. If heads, search your deck for a Pokémon, reveal it, and put it into your hand. Shuffle your deck afterward.';
+  public text: string =
+    'Flip a coin. If heads, search your deck for a Pokémon, reveal it, and put it into your hand. Shuffle your deck afterward.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.deck.cards.length === 0) {
@@ -91,4 +108,4 @@ export class Pokeball extends TrainerCard {
     }
     return state;
   }
-}                         
+}

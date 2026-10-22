@@ -7,6 +7,8 @@ import { ADD_PARALYZED_TO_PLAYER_ACTIVE, AFTER_ATTACK, COIN_FLIP_PROMPT, IS_POKE
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 import {
+  CAN_APPLY_LOCKER_ABILITY,
+  CAN_APPLY_LOCK_TO_TARGET,
   HANDLE_ABILITY_BLOCK,
   POKEPOWER_TYPES,
 } from '../../../game/store/prefabs/ability-lock';
@@ -75,18 +77,29 @@ export class Lunatone extends PokemonCard {
         return false;
       }
 
+        let isFire = false;
       try {
         const cardList = StateUtils.findCardList(state, card);
         if (cardList instanceof PokemonCardList) {
           const checkPokemonType = new CheckPokemonTypeEffect(cardList);
           store.reduceEffect(state, checkPokemonType);
-          return checkPokemonType.cardTypes.includes(CardType.FIRE);
+            isFire = checkPokemonType.cardTypes.includes(CardType.FIRE);
+          } else {
+            isFire = pokemonHasCardType(card, CardType.FIRE);
         }
       } catch {
         return false;
       }
-      return pokemonHasCardType(card, CardType.FIRE);
-    }, {
+        if (!isFire) {
+          return false;
+        }
+
+        if (!CAN_APPLY_LOCKER_ABILITY(store, state, owner, this, this.powers[0])) {
+          return false;
+        }
+        return CAN_APPLY_LOCK_TO_TARGET(store, state, owner, this, this.powers[0], card);
+      },
+      {
       powerTypes: POKEPOWER_TYPES,
       error: GameMessage.BLOCKED_BY_EFFECT,
     });

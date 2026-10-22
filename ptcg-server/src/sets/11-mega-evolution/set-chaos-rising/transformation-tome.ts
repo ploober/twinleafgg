@@ -2,7 +2,18 @@ import { Stage, SuperType, TrainerType } from '../../../game/store/card/card-typ
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { CardTarget, GameError, GameMessage, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, SlotType, StoreLike, State, Player } from '../../../game';
+import {
+  CardTarget,
+  GameError,
+  GameMessage,
+  ChooseCardsPrompt,
+  ChoosePokemonPrompt,
+  PlayerType,
+  SlotType,
+  StoreLike,
+  State,
+  Player,
+} from '../../../game';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
@@ -19,7 +30,7 @@ export class TransformationTome extends TrainerCard {
     'Choose a Basic Pokémon in your discard pile and switch it with 1 of your Basic Pokémon in play. Any attached cards, damage counters, Special Conditions, turns in play, and any other effects remain on the new Pokémon.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
-    const second = player.hand.cards.find(c => c.name === this.name && c !== this);
+    const second = player.hand.cards.find((c) => c.name === this.name && c !== this);
     if (second === undefined) {
       return false;
     }
@@ -27,7 +38,7 @@ export class TransformationTome extends TrainerCard {
     // a Basic card under an evolution.
     const hasBasicInPlay = [player.active, ...player.bench].some(l => l.getPokemonCard()?.stage === Stage.BASIC);
     const hasBasicInDiscard = player.discard.cards.some(
-      c => c instanceof PokemonCard && c.stage === Stage.BASIC
+      (c) => c instanceof PokemonCard && c.stage === Stage.BASIC,
     );
     if (!hasBasicInPlay || !hasBasicInDiscard) {
       return false;

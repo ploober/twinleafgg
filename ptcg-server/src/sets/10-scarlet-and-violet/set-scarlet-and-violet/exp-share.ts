@@ -6,15 +6,14 @@ import { State, GamePhase } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { KnockOutEffect } from '../../../game/store/effects/game-effects';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
-import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
-import { EnergyCard } from '../../../game/store/card/energy-card';
 import { PlayerType, SlotType, CardTarget } from '../../../game/store/actions/play-card-action';
 import { StateUtils } from '../../../game/store/state-utils';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
-import {IS_TOOL_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { IS_TOOL_BLOCKED } from '../../../game/store/prefabs/prefabs';
+import { ConfirmPrompt } from '../../../game/store/prompts/confirm-prompt';
+import { EnergyCard } from '../../../game/store/card/energy-card';
 
 export class ExpShare extends TrainerCard {
-
   public regulationMark = 'G';
 
   protected _trainerType: TrainerType = TrainerType.TOOL;
@@ -30,20 +29,21 @@ export class ExpShare extends TrainerCard {
   public fullName: string = 'Exp. Share SVI';
 
   public text: string =
-    'When your Active Pokemon is Knocked Out by damage from an opponent\'s ' +
+    "When your Active Pokemon is Knocked Out by damage from an opponent's " +
     'attack, you may move 1 basic Energy card that was attached to that ' +
     'Pokemon to the Pokemon this card is attached to.';
 
   public readonly EXP_SHARE_MARKER: string = 'EXP_SHARE_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof KnockOutEffect && effect.target === effect.player.active) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       const active = effect.target;
 
-      if (IS_TOOL_BLOCKED(store, state, player, this)) { return state; }
+      if (IS_TOOL_BLOCKED(store, state, player, this)) {
+        return state;
+      }
 
       // Do not activate between turns, or when it's not opponents turn.
       if (state.phase !== GamePhase.ATTACK || state.players[state.activePlayer] !== opponent) {
@@ -103,5 +103,4 @@ export class ExpShare extends TrainerCard {
 
     return state;
   }
-
 }

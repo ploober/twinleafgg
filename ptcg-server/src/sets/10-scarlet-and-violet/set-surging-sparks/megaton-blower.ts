@@ -14,7 +14,8 @@ export class MegatonBlower extends TrainerCard {
   public regulationMark = 'H';
   public name: string = 'Megaton Blower';
   public fullName: string = 'Megaton Blower SSP';
-  public text: string = 'Discard all Pokémon Tools and Special Energy from all of your opponent\'s Pokémon, and discard a Stadium in play.';
+  public text: string =
+    "Discard all Pokémon Tools and Special Energy from all of your opponent's Pokémon, and discard a Stadium in play.";
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     // TA-154 / compendium #2064 (this exact card): "You can't play the card for no effect, but if

@@ -9,7 +9,6 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
 export class Judge extends TrainerCard {
-
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'SVI';
@@ -24,8 +23,7 @@ export class Judge extends TrainerCard {
 
   public fullName: string = 'Judge SVI';
 
-  public text: string =
-    'Each player shuffles their hand into their deck and draws 4 cards.';
+  public text: string = 'Each player shuffles their hand into their deck and draws 4 cards.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     if (player.supporterTurn > 0) {
@@ -53,7 +51,10 @@ export class Judge extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      if (player.hand.cards.filter(c => c !== this).length === 0 && player.deck.cards.length === 0) {
+      if (
+        player.hand.cards.filter((c) => c !== this).length === 0 &&
+        player.deck.cards.length === 0
+      ) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
@@ -69,5 +70,4 @@ export class Judge extends TrainerCard {
 
     return state;
   }
-
 }

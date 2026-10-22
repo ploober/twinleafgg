@@ -8,7 +8,6 @@ import { CardList, ChooseCardsPrompt, GameMessage, Player, ShowCardsPrompt, Stat
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Grabber extends TrainerCard {
-
   public regulationMark = 'G';
 
   protected _trainerType: TrainerType = TrainerType.ITEM;
@@ -26,7 +25,8 @@ export class Grabber extends TrainerCard {
   public text: string =
     'Your opponent reveals their hand, and you put a Pokémon you find there on the bottom of their deck.';
 
-  public canPlay(store: StoreLike, state: State, player: Player): boolean {    return true;
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    return true;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
@@ -49,15 +49,22 @@ export class Grabber extends TrainerCard {
         GameMessage.CHOOSE_CARD_TO_DECK,
         opponent.hand,
         { superType: SuperType.POKEMON },
-        { allowCancel: false, min: 0, max: 1 }
-      ), selectedCard => {
+          { allowCancel: false, min: 0, max: 1 },
+        ),
+        (selectedCard) => {
         const selected = selectedCard || [];
         if (selectedCard === null || selected.length === 0) {
-          MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
+            MOVE_CARDS(store, state, player.supporter, player.discard, {
+              cards: [this],
+              sourceCard: this,
+            });
           return;
         }
 
-        MOVE_CARDS(store, state, opponent.hand, deckBottom, { cards: [selected[0]], sourceCard: this });
+          MOVE_CARDS(store, state, opponent.hand, deckBottom, {
+            cards: [selected[0]],
+            sourceCard: this,
+          });
         MOVE_CARDS(store, state, deckBottom, opponent.deck, { sourceCard: this });
 
         MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
@@ -66,5 +73,4 @@ export class Grabber extends TrainerCard {
     }
     return state;
   }
-
 }

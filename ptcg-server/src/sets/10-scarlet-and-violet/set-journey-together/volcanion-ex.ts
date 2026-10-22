@@ -1,25 +1,13 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import {
-  Stage,
-  CardType,
-  CardTag,
-  SpecialCondition,
-} from '../../../game/store/card/card-types';
-import {
-  StoreLike,
-  State,
-  PowerType,
-  GameMessage,
-  StateUtils,
-  GameError,
-} from '../../../game';
+import { Stage, CardType, CardTag, SpecialCondition } from '../../../game/store/card/card-types';
+import { StoreLike, State, PowerType, GameMessage, StateUtils, GameError } from '../../../game';
 
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { AddSpecialConditionsPowerEffect } from '../../../game/store/effects/check-effects';
+import { CAN_APPLY_ABILITY_TO_TARGET } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import { HAS_MARKER, WAS_ATTACK_USED, WAS_POWER_USED, IS_ABILITY_BLOCKED, USE_ABILITY_ONCE_PER_TURN, ABILITY_USED, REMOVE_MARKER_AT_END_OF_TURN } from '../../../game/store/prefabs/prefabs';
 import { MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Volcanionex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex];
@@ -29,12 +17,14 @@ export class Volcanionex extends PokemonCard {
   public weakness = [{ type: CardType.WATER }];
   public retreat = [CardType.COLORLESS, CardType.COLORLESS, CardType.COLORLESS];
 
-  public powers = [{
-    name: 'Scalding Steam',
-    useWhenInPlay: true,
-    powerType: PowerType.ABILITY,
-    text: 'Once during your turn, if this Pokemon is in your Active Spot, you may make your opponent\'s Active Pokémon Burned.'
-  }];
+  public powers = [
+    {
+      name: 'Scalding Steam',
+      useWhenInPlay: true,
+      powerType: PowerType.ABILITY,
+      text: "Once during your turn, if this Pokemon is in your Active Spot, you may make your opponent's Active Pokémon Burned.",
+    },
+  ];
 
   public attacks = [
     {
@@ -59,51 +49,57 @@ export class Volcanionex extends PokemonCard {
       effect.player.marker.removeMarker(this.SCORCHING_STEAM, this);
     }
 
-    // Scorching Steam
+    // Scorching Steam — Ref: set-unbroken-bonds/vileplume.ts + numel Incandescent Body
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
+
+      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+        throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
+      }
 
       if (player.active.getPokemonCard() !== this) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      if (player.marker.hasMarker(this.SCORCHING_STEAM, this)) {
-        // G-59: "already used" must not share a message with "nothing to do" (the target is already
-        // Burned after the use) — the wire label is derived from which refusal the engine gives.
-        throw new GameError(GameMessage.POWER_ALREADY_USED);
-      }
-
-      // TA-210 / B.27: an already-Burned Active cannot be made Burned, so the action cannot be
-      // performed at all and compendium #13 forbids using an Ability for no effect. Throwing (rather
-      // than returning) is what keeps it OUT of the menu: legal-actions.ts probes by dry-run and
-      // offers anything that does not raise a GameError.
-      if (opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {
+      // TA-210 / B.27: an already-Burned Active cannot be made Burned, so the Ability cannot be used at all (#13);
+      // throwing keeps it out of the menu. "Already used" keeps precedence (G-59).
+      if (!HAS_MARKER(this.SCORCHING_STEAM, player, this) && opponent.active.specialConditions.includes(SpecialCondition.BURNED)) {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
-      const specialCondition = new AddSpecialConditionsPowerEffect(
-        opponent,
+      USE_ABILITY_ONCE_PER_TURN(player, this.SCORCHING_STEAM, this);
+      ABILITY_USED(player, this);
+
+      if (!CAN_APPLY_ABILITY_TO_TARGET(
+        store,
+        state,
+        player,
+        this.powers[0],
         this,
         opponent.active,
-        [SpecialCondition.BURNED],
-      );
-      store.reduceEffect(state, specialCondition);
+      )) {
+        return state;
+      }
 
-      player.marker.addMarker(this.SCORCHING_STEAM, this);
-      return store.reduceEffect(state, specialCondition);
+      store.reduceEffect(
+        state,
+        new AddSpecialConditionsPowerEffect(
+          player,
+          this,
+          opponent.active,
+          [SpecialCondition.BURNED],
+        ),
+      );
     }
 
-    // Heat Cyclone
+    REMOVE_MARKER_AT_END_OF_TURN(effect, this.SCORCHING_STEAM, this);
+
     // Scorching Cyclone
     if (WAS_ATTACK_USED(effect, 0, this)) {
       // TA-651 / B.82 (1), B.85 (1)(c): the Energy is chosen before the damage (recorded as `chosen`) and moves after it
-      // to 1 of YOUR Benched Pokémon (TA-259), asked at the move. Replaces the TA-258 damage-first order.
+      // to 1 of YOUR Benched Pokémon (TA-259), asked at the move.
       return MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(store, state, effect, this);
-    }
-
-    if (effect instanceof EndTurnEffect) {
-      effect.player.marker.removeMarker(this.SCORCHING_STEAM, this);
     }
 
     return state;

@@ -15,7 +15,12 @@ import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 import { Player, PokemonCard } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
@@ -52,7 +57,9 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   const count = maxTrainers + maxPokemons;
 
   let cards: Card[] = [];
-  yield store.prompt(state, new ChooseCardsPrompt(
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
     player,
     GameMessage.CHOOSE_CARD_TO_HAND,
     deckTop,
@@ -65,31 +72,32 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
       maxTrainers,
       maxPokemons,
       allowDifferentSuperTypes: true,
-      differentTypes: true
-    }
-  ), selected => {
+        differentTypes: true,
+      },
+    ),
+    (selected) => {
     cards = selected || [];
     next();
-  });
+    },
+  );
 
   MOVE_CARDS(store, state, deckTop, player.hand, { cards: cards, sourceCard: effect.trainerCard });
   MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: effect.trainerCard });
 
   if (cards.length > 0) {
-    yield store.prompt(state, new ShowCardsPrompt(
-      opponent.id,
-      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-      cards
-    ), () => next());
+    yield store.prompt(
+      state,
+      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
+      () => next(),
+    );
   }
 
-  return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
   });
 }
 
 export class Drayton extends TrainerCard {
-
   public regulationMark = 'H';
 
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -125,5 +133,4 @@ export class Drayton extends TrainerCard {
 
     return state;
   }
-
 }

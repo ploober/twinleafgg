@@ -8,8 +8,13 @@ import { TrainerType } from '../../../game/store/card/card-types';
 import { GameError, GameMessage, Player } from '../../../game';
 import { DRAW_CARDS, COIN_FLIP_PROMPT, MOVE_CARDS, EACH_PLAYER_SHUFFLE_HAND_INTO_DECK, RECYCLE_RETURNS_EVERY_CARD } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State,
-  self: Harlequin, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  self: Harlequin,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
 
@@ -19,9 +24,12 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
+  MOVE_CARDS(store, state, player.hand, player.supporter, {
+    cards: [effect.trainerCard],
+    sourceCard: self,
+  });
 
-  const cards = player.hand.cards.filter(c => c !== self);
+  const cards = player.hand.cards.filter((c) => c !== self);
 
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
@@ -39,7 +47,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
   });
 
   let coinResult = false;
-  yield COIN_FLIP_PROMPT(store, state, player, result => {
+  yield COIN_FLIP_PROMPT(store, state, player, (result) => {
     coinResult = result;
     next();
   });
@@ -67,7 +75,6 @@ export class Harlequin extends TrainerCard {
     'Each player shuffles their hand into their deck. Then, flip a coin. If heads, you draw 5 cards, and your opponent draws 3 cards. If tails, you draw 3 cards, and your opponent draws 5 cards.';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
       const generator = playCard(() => generator.next(), store, state, this, effect);
       return generator.next().value;
@@ -92,5 +99,4 @@ export class Harlequin extends TrainerCard {
 
     return true;
   }
-
 }

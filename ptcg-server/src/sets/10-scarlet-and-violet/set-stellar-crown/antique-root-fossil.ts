@@ -31,7 +31,8 @@ export class AntiqueRootFossil extends TrainerCard {
   public evolvesFromBase: string[] = [];
   public maxTools: number = 1;
 
-  public powers: Power[] = [{
+  public powers: Power[] = [
+    {
     name: 'Antique Root Fossil',
     text: "Play this card as a 60 HP Basic [C] Pokémon. This card can't be affected by Special Conditions and can't retreat. At any time during your turn, you may discard this card from play.",
     useWhenInPlay: true,

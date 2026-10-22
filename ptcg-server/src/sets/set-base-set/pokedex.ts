@@ -20,7 +20,8 @@ export class Pokedex extends TrainerCard {
 
   public setNumber: string = '87'; // Replace with the appropriate set number
 
-  public text: string = 'Look at up to 5 cards from the top of your deck and rearrange them as you like.';
+  public text: string =
+    'Look at up to 5 cards from the top of your deck and rearrange them as you like.';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
@@ -35,21 +36,25 @@ export class Pokedex extends TrainerCard {
 
       // We will discard this card after prompt confirmation
       effect.preventDefault = true;
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
 
-      return store.prompt(state, new OrderCardsPrompt(
-        player.id,
-        GameMessage.CHOOSE_CARDS_ORDER,
-        deckTop,
-        { allowCancel: false }
-      ), (rearrangedCards) => {
+      return store.prompt(
+        state,
+        new OrderCardsPrompt(player.id, GameMessage.CHOOSE_CARDS_ORDER, deckTop, {
+          allowCancel: false,
+        }),
+        (rearrangedCards) => {
         if (rearrangedCards === null) {
           return state;
         }
 
         deckTop.applyOrder(rearrangedCards);
         MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
-      });
+        },
+      );
     }
 
     return state;
