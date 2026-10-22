@@ -13821,6 +13821,16 @@
       "fixes": [
         "FX-0522"
       ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "  const play = power?.useFromHand ? undefined : store.pokemonBeingPlayed?.();"
+      ],
+      "note": "TA-737 (2026-10-21): Bench-entry Abilities obey Ability locks: IS_ABILITY_BLOCKED judges the card being played where it is going (the store r",
+      "fixes": [
+        "FX-0523"
+      ]
     }
   ]
 }
