@@ -39,14 +39,20 @@ function board(jumbo: string, meganium: boolean): NeutralState {
 const play = { actor: 'A', type: 'playItem', card: 'ah0' } as never;
 
 describe('TA-739 Jumbo Ice Cream counts the Energy provided', () => {
-  for (const printing of ['pfl-091', 'cri-109']) {
-    it(`[TA-739 ${printing}] 2 Basic Grass under Wild Growth (4 Energy): heals 80`, () => {
-      const r = step(board(printing, true), [play]);
-      expect(r.status).toBe('awaitingAction');
-      expect(r.state.players.A.active!.damage).toBe(20);
-      expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah0');
-    });
-  }
+  it('[TA-739 pfl-091] 2 Basic Grass under Wild Growth (4 Energy): heals 80', () => {
+    const r = step(board('pfl-091', true), [play]);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.active!.damage).toBe(20);
+    expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah0');
+  });
+
+  it('[TA-739 cri-109] 2 Basic Grass under Wild Growth (4 Energy): heals 80', () => {
+    const r = step(board('cri-109', true), [play]);
+    expect(r.status).toBe('awaitingAction');
+    expect(r.state.players.A.active!.damage).toBe(20);
+    expect(r.state.players.A.discard.map(c => c.iid)).toContain('ah0');
+  });
+
   it('[TA-739 pfl-091 control] 2 Basic Grass without Meganium (2 Energy): no heal', () => {
     const r = step(board('pfl-091', false), [play]);
     expect(r.state.players.A.active!.damage).toBe(100);

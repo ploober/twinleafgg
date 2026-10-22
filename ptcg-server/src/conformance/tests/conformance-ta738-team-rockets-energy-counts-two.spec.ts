@@ -44,30 +44,51 @@ function board(attacker: string, energy: string[], tr: boolean): NeutralState {
   } as NeutralState;
 }
 
-// [attacker, name, attack, attached Energy, expected damage to B's Active with Team Rocket's Energy in play]
-const ROWS: [string, string, string, string[], number][] = [
-  ['asc-166', "Delcatty", "Energy Crush", ["sve-003", "sve-003", "sve-003"], 120],
-  ['asc-172', "Mega Audino ex", "Ear Force", ["sve-003", "sve-003", "sve-003", "sve-003"], 260],
-  ['cri-013', "Delphox", "Energized Storm", ["sve-002", "sve-002", "sve-003"], 240],
-  ['cri-031', "Deoxys", "Psychic", ["sve-005", "sve-005", "sve-003", "sve-003"], 140],
-  ['meg-098', "Tinkaton", "Windup Swing", ["sve-008", "sve-003"], 60],
-  ['ssp-061', "Rotom", "Energy Short", ["sve-004", "sve-003"], 60],
-  ['svi-065', "Magnezone ex", "Energy Crush", ["sve-004", "sve-003"], 150],
-  ['svi-085', "Kirlia", "Psychic", ["sve-005", "sve-005", "sve-003", "sve-003"], 120],
-  ['tef-024', "Rabsca", "Psychic", ["sve-001", "sve-003"], 100],
-  ['twm-025', "Teal Mask Ogerpon ex", "Myriad Leaf Shower", ["sve-001", "sve-001", "sve-001", "sve-003"], 240],
-  ['twm-055', "Phione", "Energy Press", ["sve-003", "sve-003"], 60],
-  ['twm-081', "Kadabra", "Psychic", ["sve-005", "sve-003"], 100],
-  ['twm-082', "Alakazam", "Psychic", ["sve-005", "sve-003"], 160],
-];
+function damage(attacker: string, energy: string[], attack: string, tr: boolean): number | undefined {
+  const r = step(board(attacker, energy, tr), [{ actor: 'A', type: 'declareAttack', source: 'a0', name: attack } as never]);
+  return r.state.players.B.active?.damage;
+}
 
 describe('TA-738 Team Rocket\'s Energy counts as 2 Energy in "for each Energy attached"', () => {
-  for (const [printing, name, attack, energy, expected] of ROWS) {
-    it(`[TA-738 ${printing}] ${name} ${attack}: ${expected} with Team Rocket's Energy in play`, () => {
-      const r = step(board(printing, energy, true), [{ actor: 'A', type: 'declareAttack', source: 'a0', name: attack } as never]);
-      expect(r.state.players.B.active!.damage).toBe(expected);
-    });
-  }
+  it('[TA-738 asc-166] Delcatty Energy Crush: 120 with Team Rocket\'s Energy in play', () => {
+    expect(damage('asc-166', ['sve-003', 'sve-003', 'sve-003'], 'Energy Crush', true)).toBe(120);
+  });
+  it('[TA-738 asc-172] Mega Audino ex Ear Force: 260 with Team Rocket\'s Energy in play', () => {
+    expect(damage('asc-172', ['sve-003', 'sve-003', 'sve-003', 'sve-003'], 'Ear Force', true)).toBe(260);
+  });
+  it('[TA-738 cri-013] Delphox Energized Storm: 240 with Team Rocket\'s Energy in play', () => {
+    expect(damage('cri-013', ['sve-002', 'sve-002', 'sve-003'], 'Energized Storm', true)).toBe(240);
+  });
+  it('[TA-738 cri-031] Deoxys Psychic: 140 with Team Rocket\'s Energy in play', () => {
+    expect(damage('cri-031', ['sve-005', 'sve-005', 'sve-003', 'sve-003'], 'Psychic', true)).toBe(140);
+  });
+  it('[TA-738 meg-098] Tinkaton Windup Swing: 60 with Team Rocket\'s Energy in play', () => {
+    expect(damage('meg-098', ['sve-008', 'sve-003'], 'Windup Swing', true)).toBe(60);
+  });
+  it('[TA-738 ssp-061] Rotom Energy Short: 60 with Team Rocket\'s Energy in play', () => {
+    expect(damage('ssp-061', ['sve-004', 'sve-003'], 'Energy Short', true)).toBe(60);
+  });
+  it('[TA-738 svi-065] Magnezone ex Energy Crush: 150 with Team Rocket\'s Energy in play', () => {
+    expect(damage('svi-065', ['sve-004', 'sve-003'], 'Energy Crush', true)).toBe(150);
+  });
+  it('[TA-738 svi-085] Kirlia Psychic: 120 with Team Rocket\'s Energy in play', () => {
+    expect(damage('svi-085', ['sve-005', 'sve-005', 'sve-003', 'sve-003'], 'Psychic', true)).toBe(120);
+  });
+  it('[TA-738 tef-024] Rabsca Psychic: 100 with Team Rocket\'s Energy in play', () => {
+    expect(damage('tef-024', ['sve-001', 'sve-003'], 'Psychic', true)).toBe(100);
+  });
+  it('[TA-738 twm-025] Teal Mask Ogerpon ex Myriad Leaf Shower: 240 with Team Rocket\'s Energy in play', () => {
+    expect(damage('twm-025', ['sve-001', 'sve-001', 'sve-001', 'sve-003'], 'Myriad Leaf Shower', true)).toBe(240);
+  });
+  it('[TA-738 twm-055] Phione Energy Press: 60 with Team Rocket\'s Energy in play', () => {
+    expect(damage('twm-055', ['sve-003', 'sve-003'], 'Energy Press', true)).toBe(60);
+  });
+  it('[TA-738 twm-081] Kadabra Psychic: 100 with Team Rocket\'s Energy in play', () => {
+    expect(damage('twm-081', ['sve-005', 'sve-003'], 'Psychic', true)).toBe(100);
+  });
+  it('[TA-738 twm-082] Alakazam Psychic: 160 with Team Rocket\'s Energy in play', () => {
+    expect(damage('twm-082', ['sve-005', 'sve-003'], 'Psychic', true)).toBe(160);
+  });
   it('[TA-738 cri-013 control] Delphox Energized Storm without Team Rocket\'s Energy: 150 (5 Energy)', () => {
     const r = step(board('cri-013', ['sve-002', 'sve-002', 'sve-003'], false), [{ actor: 'A', type: 'declareAttack', source: 'a0', name: 'Energized Storm' } as never]);
     expect(r.state.players.B.active!.damage).toBe(150);
