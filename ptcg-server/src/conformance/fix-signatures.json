@@ -13841,6 +13841,46 @@
       "fixes": [
         "FX-0523"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/legacy-energy.ts",
+      "signatures": [
+        "      if (effect.target.attackDamagedOnTurn !== state.turn) {"
+      ],
+      "note": "TA-741 (2026-10-21): Legacy Energy twm-167 applies only to a Knock Out by damage from an attack (attackDamagedOnTurn), not to an effect Knock",
+      "fixes": [
+        "FX-0524"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/delphox.ts",
+      "signatures": [
+        "          totalEnergy += StateUtils.getProvidesUnitCount(em.provides);"
+      ],
+      "note": "TA-738 (2026-10-21): 'For each Energy attached' counts Energy provided (StateUtils.getProvidesUnitCount), not provides.length: Team Rocket's ",
+      "fixes": [
+        "FX-0525"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/jumbo-ice.ts",
+      "signatures": [
+        "  private activeEnergyCount(store: StoreLike, state: State, player: Player): number {"
+      ],
+      "note": "TA-739 (2026-10-21): Jumbo Ice Cream pfl-091 / cri-109 counts the Energy provided (Wild Growth: 2 Basic Grass = 4) in canPlay and in the heal",
+      "fixes": [
+        "FX-0526"
+      ]
+    },
+    {
+      "file": "set-perfect-order/rosas-encouragement.ts",
+      "signatures": [
+        "      const blockedTo: CardTarget[] = [];"
+      ],
+      "note": "TA-742 (2026-10-21): Rosa's Encouragement por-084 restricts the attach TARGET to Stage 2 (blockedTo), not the Energy cards; 'up to 2' on a Tr",
+      "fixes": [
+        "FX-0527"
+      ]
     }
   ]
 }
