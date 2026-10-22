@@ -8,6 +8,7 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { Player } from '../../../game/store/state/player';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { StateUtils } from '../../../game/store/state-utils';
 
 export class JumboIce extends TrainerCard {
   public trainerType: TrainerType = TrainerType.ITEM;
@@ -33,12 +34,19 @@ export class JumboIce extends TrainerCard {
     }
 
     // Must have 3 or more Energy attached
-    const energyCount = player.active.energies.cards.length;
-    if (energyCount < 3) {
+    if (this.activeEnergyCount(store, state, player) < 3) {
       return false;
     }
 
     return true;
+  }
+
+  // TA-739: count the Energy PROVIDED, not Energy cards: under Wild Growth a Basic Grass Energy provides two, and that
+  // counts as attached Energy (compendium #2237).
+  private activeEnergyCount(store: StoreLike, state: State, player: Player): number {
+    const checkEnergy = new CheckProvidedEnergyEffect(player, player.active);
+    store.reduceEffect(state, checkEnergy);
+    return checkEnergy.energyMap.reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0);
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
@@ -49,10 +57,7 @@ export class JumboIce extends TrainerCard {
 
       if (activePokemon && player.active.damage > 0) {
         // Check if the Pokemon has 3 or more Energy attached
-        const checkEnergy = new CheckProvidedEnergyEffect(player);
-        store.reduceEffect(state, checkEnergy);
-
-        if (checkEnergy.energyMap.length >= 3) {
+        if (this.activeEnergyCount(store, state, player) >= 3) {
           const healEffect = new HealEffect(player, player.active, 80);
           store.reduceEffect(state, healEffect);
         }
