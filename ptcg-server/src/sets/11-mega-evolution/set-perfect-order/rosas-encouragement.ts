@@ -105,7 +105,8 @@ Attach up to 2 Basic Energy cards from your discard pile to 1 of your Stage 2 Po
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-        { allowCancel: false, min: 0, max: maxToAttach, sameTarget: true, blockedTo }
+        // "up to 2" on a Trainer is 1..2 (compendium #2301): at least one Basic Energy is attached.
+        { allowCancel: false, min: 1, max: maxToAttach, sameTarget: true, blockedTo }
       ), transfers => {
         transfers = transfers || [];
         for (const transfer of transfers) {

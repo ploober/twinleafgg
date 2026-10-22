@@ -44,6 +44,8 @@ describe('TA-742 Rosa\'s Encouragement attaches to a Stage 2 Pokemon', () => {
     let r = step(board(), actions);
     const offered = r.pending?.legalActions ?? [];
     expect(offered.length).toBeGreaterThan(0);
+    // "up to 2" on a Trainer is 1..2 (compendium #2301): no stop before the first attach.
+    expect(offered.some(a => a.type === 'confirm')).toBe(false);
     for (const a of offered) {
       const target = (a as { target?: string }).target;
       if (target !== undefined) { expect(target).toBe('a1'); }
