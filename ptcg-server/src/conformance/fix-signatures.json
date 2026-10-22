@@ -13887,56 +13887,80 @@
       "signatures": [
         "energies += StateUtils.getProvidesUnitCount(energy.provides);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-surging-sparks/rotom.ts",
       "signatures": [
         "        .reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-temporal-forces/rabsca.ts",
       "signatures": [
         ".reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-twilight-masquerade/alakazam.ts",
       "signatures": [
         ".reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-twilight-masquerade/kadabra.ts",
       "signatures": [
         ".reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-twilight-masquerade/phione.ts",
       "signatures": [
         ".reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-chaos-rising/deoxys.ts",
       "signatures": [
         "const energyCount = checkEnergy.energyMap.reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     },
     {
       "file": "set-mega-evolution/tinkaton.ts",
       "signatures": [
         "const totalEnergy = checkEnergy.energyMap.reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0);"
       ],
-      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
+      "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
+      "fixes": [
+        "FX-0525"
+      ]
     }
   ]
 }
