@@ -13961,6 +13961,16 @@
       "fixes": [
         "FX-0525"
       ]
+    },
+    {
+      "file": "set-journey-together/hops-dubwool.ts",
+      "signatures": [
+        "      if (!StateUtils.getOpponent(state, player).bench.some((b) => b.cards.length > 0)) {"
+      ],
+      "note": "TA-743 (2026-10-22): Hop's Dubwool jtg-136 Defiant Horn is not offered when the opponent has no Benched Pokemon (B.27) [TA-743]",
+      "fixes": [
+        "FX-0528"
+      ]
     }
   ]
 }
