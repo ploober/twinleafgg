@@ -60,7 +60,7 @@ function* playCard(
 }
 
 export class BrilliantBlender extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.ACE_SPEC];
   public regulationMark = 'H';
   public set: string = 'SSP';

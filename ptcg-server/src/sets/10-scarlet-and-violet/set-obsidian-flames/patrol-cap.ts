@@ -7,7 +7,7 @@ import { MoveCardsEffect } from '../../../game/store/effects/game-effects';
 import { StateUtils } from '../../../game';
 
 export class PatrolCap extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'OBF';
   public name: string = 'Patrol Cap';
   public regulationMark = 'G';

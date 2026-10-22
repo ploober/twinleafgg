@@ -85,7 +85,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 }
 
 export class Dawn extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'I';
   public set: string = 'PFL';
   public cardImage: string = 'assets/cardback.png';

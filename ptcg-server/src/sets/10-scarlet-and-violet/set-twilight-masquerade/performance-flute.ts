@@ -14,7 +14,7 @@ export class PerformanceFlute extends TrainerCard {
 
   public regulationMark = 'H';
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'TWM';
 

@@ -78,7 +78,7 @@ function* playCard(
 }
 
 export class WallysCompassion extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'MEG';
   public setNumber: string = '132';
   public regulationMark = 'I';

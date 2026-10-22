@@ -13,7 +13,7 @@ import { CardList } from '../../../game/store/state/card-list';
 
 export class WishfulBaton extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
 
   public set: string = 'BUS';
 

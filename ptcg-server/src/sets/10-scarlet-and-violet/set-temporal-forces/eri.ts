@@ -11,7 +11,7 @@ export class Eri extends TrainerCard {
 
   public regulationMark = 'H';
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'TEF';
 

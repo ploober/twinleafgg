@@ -9,7 +9,7 @@ import { StateUtils, GameError, GameMessage, Card, SuperType, Stage } from '../.
 import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
 
 export class PokemonFlute extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'BS'; // Replace with the appropriate set abbreviation
 

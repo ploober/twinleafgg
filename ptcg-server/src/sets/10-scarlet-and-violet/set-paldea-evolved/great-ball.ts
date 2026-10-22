@@ -9,7 +9,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class GreatBall extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public regulationMark = 'G';
 

@@ -4,34 +4,48 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
-import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
-
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import {
-  PlayerType, SlotType, StateUtils, CardTarget,
-  GameMessage, PokemonCardList, ChooseCardsPrompt, Card, GameError, CardList
+  PlayerType,
+  SlotType,
+  StateUtils,
+  CardTarget,
+  GameMessage,
+  ChooseCardsPrompt,
+  EnergyCard,
+  GameError,
+  Player,
 } from '../../../game';
+
 export class FanOfWaves extends TrainerCard {
-
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'E';
-
-  public trainerType: TrainerType = TrainerType.ITEM;
-
   public set: string = 'BST';
-
   public cardImage: string = 'assets/cardback.png';
-
   public setNumber: string = '127';
-
   public name: string = 'Fan of Waves';
-
   public fullName: string = 'Fan of Waves BST';
-
   public text: string =
-    'Put a Special Energy attached to 1 of your opponent\'s Pokémon on the bottom of their deck.';
+    "Put a Special Energy attached to 1 of your opponent's Pokémon on the bottom of their deck.";
+
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    const opponent = StateUtils.getOpponent(state, player);
+    let hasPokemonWithEnergy = false;
+    opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList) => {
+      if (cardList.cards.some((c) => c instanceof EnergyCard && c.energyType === EnergyType.SPECIAL)) {
+        hasPokemonWithEnergy = true;
+      }
+    });
+
+    if (!hasPokemonWithEnergy) {
+      return false;
+    }
+    return true;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+    if (WAS_TRAINER_USED(effect, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
@@ -41,7 +55,7 @@ export class FanOfWaves extends TrainerCard {
       let hasPokemonWithEnergy = false;
       const blocked: CardTarget[] = [];
       opponent.forEachPokemon(PlayerType.TOP_PLAYER, (cardList, card, target) => {
-        if (cardList.cards.some(c => c.superType === SuperType.ENERGY && EnergyType.SPECIAL)) {
+        if (cardList.cards.some((c) => c instanceof EnergyCard && c.energyType === EnergyType.SPECIAL)) {
           hasPokemonWithEnergy = true;
         } else {
           blocked.push(target);
@@ -52,39 +66,41 @@ export class FanOfWaves extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      let targets: PokemonCardList[] = [];
-      state = store.prompt(state, new ChoosePokemonPrompt(
-        player.id,
-        GameMessage.CHOOSE_POKEMON_TO_DISCARD_CARDS,
-        PlayerType.TOP_PLAYER,
-        [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false, blocked }
-      ), results => {
-        targets = results || [];
-      });
+      return store.prompt(
+        state,
+        new ChoosePokemonPrompt(
+          player.id,
+          GameMessage.CHOOSE_POKEMON_TO_DISCARD_CARDS,
+          PlayerType.TOP_PLAYER,
+          [SlotType.ACTIVE, SlotType.BENCH],
+          { allowCancel: false, blocked },
+        ),
+        (results) => {
+          const target = results && results.length > 0 ? results[0] : undefined;
+          if (!target) {
+            return;
+          }
 
-      if (targets.length === 0) {
-        return state;
-      }
-
-      const target = targets[0];
-      state = store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
-        target,
-        { superType: SuperType.ENERGY, energyType: EnergyType.SPECIAL },
-        { min: 1, max: 1, allowCancel: false }
-      ), selected => {
-        const cards = selected as Card[];
-
-        const opponentDeckBottom = new CardList();
-        cards.forEach(card => {
-          MOVE_CARDS(store, state, opponentDeckBottom, opponent.deck, { cards: [card], sourceCard: this });
-        });
-
-        return state;
-      });
-      return state;
+          return store.prompt(
+            state,
+            new ChooseCardsPrompt(
+              player,
+              GameMessage.CHOOSE_CARD_TO_DISCARD,
+              target,
+              { superType: SuperType.ENERGY, energyType: EnergyType.SPECIAL },
+              { min: 1, max: 1, allowCancel: false },
+            ),
+            (selected) => {
+              const cards = selected || [];
+              MOVE_CARDS(store, state, target, opponent.deck, {
+                cards,
+                toBottom: true,
+                sourceCard: this,
+              });
+            },
+          );
+        },
+      );
     }
     return state;
   }

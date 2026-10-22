@@ -7,7 +7,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Clavell extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'PAL';
 

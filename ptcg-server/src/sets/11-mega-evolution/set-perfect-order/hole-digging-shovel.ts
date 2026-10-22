@@ -6,7 +6,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class HoleDiggingShovel extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'POR';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '74';

@@ -13,18 +13,22 @@ export class Slowpoke extends PokemonCard {
   public resistance = [{ type: F, value: -30 }];
   public retreat = [C, C];
 
-  public powers = [{
-    name: 'Dopey Face',
+  public powers = [
+    {
+      name: 'Dopey Face',
     powerType: PowerType.ABILITY,
-    text: 'This Pokemon can\'t be Confused.'
-  }];
+      text: "This Pokemon can't be Confused.",
+    },
+  ];
 
-  public attacks = [{
-    name: 'Super Psy Bolt',
+  public attacks = [
+    {
+      name: 'Super Psy Bolt',
     cost: [P, P, C],
     damage: 50,
-    text: ''
-  }];
+      text: '',
+    },
+  ];
 
   public regulationMark = 'J';
   public set: string = 'MEP';
@@ -35,7 +39,10 @@ export class Slowpoke extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Aloof Face - prevent confusion
-    if (effect instanceof AddSpecialConditionsEffect || effect instanceof AddSpecialConditionsPowerEffect) {
+    if (
+      effect instanceof AddSpecialConditionsEffect ||
+      effect instanceof AddSpecialConditionsPowerEffect
+    ) {
       if (effect.specialConditions.includes(SpecialCondition.CONFUSED)) {
         const targetCard = effect.target.getPokemonCard();
         if (targetCard === this) {

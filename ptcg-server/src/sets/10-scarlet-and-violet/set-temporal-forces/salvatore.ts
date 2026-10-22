@@ -133,7 +133,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 export class Salvatore extends TrainerCard {
 
   public regulationMark = 'H';
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'TEF';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '160';

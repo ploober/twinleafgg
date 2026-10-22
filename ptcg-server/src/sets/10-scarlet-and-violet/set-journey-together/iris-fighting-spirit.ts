@@ -11,7 +11,7 @@ export class IrisFightingSpirit extends TrainerCard {
 
   public regulationMark = 'I';
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'JTG';
 

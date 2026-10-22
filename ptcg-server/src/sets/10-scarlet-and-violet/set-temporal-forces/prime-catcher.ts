@@ -80,7 +80,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
 export class PrimeCatcher extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   protected _tags = [CardTag.ACE_SPEC];
 

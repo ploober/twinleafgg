@@ -27,8 +27,6 @@ function* playGwynn(
   });
 
   const selectableCount = player.hand.cards.length - blocked.length;
-  // "Discard up to 2 Pokémon ..." — 1 discardable Pokémon is enough to play (discard it, draw 3).
-  // The prompt below is already min:1/max:2; only this gate wrongly demanded 2. #2301 up-to floor.
   if (selectableCount < 1) {
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
@@ -54,7 +52,7 @@ function* playGwynn(
 }
 
 export class Gwynn extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark: string = 'J';
   public set: string = 'PBL';
   public setNumber: string = '78';
@@ -88,7 +86,10 @@ export class Gwynn extends TrainerCard {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: this });
+      MOVE_CARDS(store, state, player.hand, player.supporter, {
+        cards: [effect.trainerCard],
+        sourceCard: this,
+      });
       effect.preventDefault = true;
 
       const generator = playGwynn(() => generator.next(), store, state, effect, this);

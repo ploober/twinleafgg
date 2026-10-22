@@ -10,7 +10,7 @@ import { Card, ChooseCardsPrompt, Player, PokemonCard, ShowCardsPrompt, ShuffleD
 import { MOVE_CARDS, COIN_FLIP_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsGreatBall extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'DRI';
   public cardImage: string = 'assets/cardback.png';

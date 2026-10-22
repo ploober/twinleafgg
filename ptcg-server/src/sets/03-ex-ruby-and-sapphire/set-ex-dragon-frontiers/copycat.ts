@@ -13,7 +13,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
-  const cards = player.hand.cards.filter(c => c !== self);
+  const cards = player.hand.cards.filter((c) => c !== self);
 
   MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
   // We will discard this card after prompt confirmation
@@ -23,7 +23,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
     MOVE_CARDS(store, state, player.hand, player.deck, { cards: cards, sourceCard: self });
   }
 
-  yield store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+  yield store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
     next();
   });
@@ -34,7 +34,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 }
 
 export class Copycat extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'DF';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '73';
@@ -42,7 +42,7 @@ export class Copycat extends TrainerCard {
   public fullName: string = 'Copycat DF';
 
   public text: string =
-    'Shuffle your hand into your deck. Then, count the number of cards in your opponent\'s hand and draw that many cards.';
+    "Shuffle your hand into your deck. Then, count the number of cards in your opponent's hand and draw that many cards.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
@@ -52,5 +52,4 @@ export class Copycat extends TrainerCard {
 
     return state;
   }
-
 }

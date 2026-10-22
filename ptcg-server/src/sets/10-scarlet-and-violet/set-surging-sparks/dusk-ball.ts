@@ -9,7 +9,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DuskBall extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'H';
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';

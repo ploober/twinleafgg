@@ -11,7 +11,7 @@ import { HANDLE_ABILITY_LOCK } from '../../../game/store/prefabs/ability-lock';
 import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-effect';
 
 export class PowerPlant extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
   public set: string = 'UNB';
   public name: string = 'Power Plant';
   public fullName: string = 'Power Plant UNB';
@@ -32,13 +32,14 @@ export class PowerPlant extends TrainerCard {
           return false;
         }
         const slot = StateUtils.findPokemonSlot(state, card);
-        if (slot === undefined) {
-          return false;
+        if (slot !== undefined) {
+          const owner = StateUtils.findOwner(state, slot);
+          if (IS_STADIUM_EFFECT_BLOCKED(store, state, owner, slot)) {
+            return false;
+          }
         }
-        const owner = StateUtils.findOwner(state, slot);
-        if (IS_STADIUM_EFFECT_BLOCKED(store, state, owner, slot)) {
-          return false;
-        }
+        // No slot yet (PlayPokemonEffect / EvolveEffect probe before move) — still lock.
+        // True hand/discard Abilities stay usable via allowUseFromHand / allowUseFromDiscard.
         return true;
       },
       {

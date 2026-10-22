@@ -11,7 +11,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class CyclingRoad extends TrainerCard {
 
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
 
   public regulationMark = 'G';
 

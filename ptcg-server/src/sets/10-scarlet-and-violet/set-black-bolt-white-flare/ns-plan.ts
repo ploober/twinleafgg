@@ -8,7 +8,7 @@ import { GameError, GameMessage, MoveEnergyPrompt, Player, StateUtils, PlayerTyp
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class NsPlan extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'I';
   public set: string = 'BLK';
   public cardImage: string = 'assets/cardback.png';

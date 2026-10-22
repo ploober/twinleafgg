@@ -34,7 +34,7 @@ import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class AncientTechnicalMachineRock extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.TECHNICAL_MACHINE];
   public set: string = 'HL';
   public cardImage: string = 'assets/cardback.png';

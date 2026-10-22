@@ -7,7 +7,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class HelperBell extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '165';

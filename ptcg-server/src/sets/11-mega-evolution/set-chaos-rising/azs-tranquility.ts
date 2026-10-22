@@ -13,7 +13,7 @@ import { PlayerType, SlotType } from '../../../game/store/actions/play-card-acti
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class AzsTranquility extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'CRI';
   public regulationMark = 'J';
   public name: string = "AZ's Tranquility";
@@ -27,7 +27,7 @@ export class AzsTranquility extends TrainerCard {
     if (player.supporterTurn > 0) {
       return false;
     }
-    if (!player.bench.some(b => b.cards.length > 0)) {
+    if (!player.bench.some((b) => b.cards.length > 0)) {
       return false;
     }
     return true;

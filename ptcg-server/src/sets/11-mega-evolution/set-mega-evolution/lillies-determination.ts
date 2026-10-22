@@ -9,7 +9,7 @@ import { Player } from '../../../game/store/state/player';
 import { SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
 
 export class LilliesDetermination extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'MEG';
   public regulationMark = 'I';
   public setNumber: string = '119';

@@ -10,9 +10,14 @@ import { State } from '../../game/store/state/state';
 import { StoreLike } from '../../game/store/store-like';
 import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
-  const hasBench = player.bench.some(b => b.cards.length > 0);
+  const hasBench = player.bench.some((b) => b.cards.length > 0);
 
   const checkPokemonTypeEffect = new CheckPokemonTypeEffect(player.active);
   store.reduceEffect(state, checkPokemonTypeEffect);
@@ -31,16 +36,20 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   if (pokemonCard) {
     let targets: PokemonCardList[] = [];
-    yield store.prompt(state, new ChoosePokemonPrompt(
-      player.id,
-      GameMessage.CHOOSE_POKEMON_TO_SWITCH,
-      PlayerType.BOTTOM_PLAYER,
-      [SlotType.BENCH],
-      { allowCancel: false }
-    ), results => {
-      targets = results || [];
-      next();
-    });
+    yield store.prompt(
+      state,
+      new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.CHOOSE_POKEMON_TO_SWITCH,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.BENCH],
+        { allowCancel: false },
+      ),
+      (results) => {
+        targets = results || [];
+        next();
+      },
+    );
 
     if (targets.length === 0) {
       return state;
@@ -57,8 +66,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   return state;
 }
 export class SwitchRaft extends TrainerCard {
-
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'DRM';
 
@@ -80,5 +88,4 @@ export class SwitchRaft extends TrainerCard {
     }
     return state;
   }
-
 }

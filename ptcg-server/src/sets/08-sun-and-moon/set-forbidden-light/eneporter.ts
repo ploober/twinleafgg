@@ -24,7 +24,7 @@ import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Eneporter extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'FLI';
   public setNumber: string = '106';
   public cardImage: string = 'assets/cardback.png';

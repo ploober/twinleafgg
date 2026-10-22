@@ -1,21 +1,38 @@
-import { CardType, GameError, GameLog, GameMessage, PokemonCard, PokemonType, Power, PowerType, Stage, State, StateUtils, StoreLike, TrainerCard, TrainerType } from '../../../game';
+import {
+  CardType,
+  GameError,
+  GameLog,
+  GameMessage,
+  PokemonCard,
+  PokemonType,
+  Power,
+  PowerType,
+  Stage,
+  State,
+  StateUtils,
+  StoreLike,
+  TrainerCard,
+  TrainerType,
+  Player,
+} from '../../../game';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { RetreatEffect } from '../../../game/store/effects/game-effects';
 import { PlayItemEffect, PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class RareFossil extends TrainerCard {
-
-  public trainerType = TrainerType.ITEM;
-
+  protected _trainerType = TrainerType.ITEM;
+  public regulationMark = 'D';
+  public set: string = 'DAA';
+  public cardImage: string = 'assets/cardback.png';
+  public setNumber: string = '167';
+  public name: string = 'Rare Fossil';
+  public fullName: string = 'Rare Fossil DAA';
   public stage: Stage = Stage.BASIC;
-
   public cardType: CardType[] = [CardType.COLORLESS];
   public cardTypez: CardType = CardType.COLORLESS;
-
   public movedToActiveThisTurn = false;
-
   public pokemonType = PokemonType.NORMAL;
   public evolvesFrom = '';
   public cardTag = [];
@@ -33,12 +50,6 @@ export class RareFossil extends TrainerCard {
   public allowSubsequentAttackChoice: boolean = false;
   public evolvesFromBase: string[] = [];
   public maxTools: number = 1;
-  public set: string = 'DAA';
-  public cardImage: string = 'assets/cardback.png';
-  public setNumber: string = '167';
-  public name: string = 'Rare Fossil';
-  public fullName: string = 'Rare Fossil DAA';
-  public regulationMark = 'D';
 
   public powers: Power[] = [
     {
@@ -50,14 +61,18 @@ This card can't be affected by any Special Conditions, and it can't retreat.`,
       exemptFromAbilityLock: true,
       powerType: PowerType.TRAINER_ABILITY,
       isFossil: true,
-    }
+    },
   ];
 
-  // public text =
-  //   'Play this card as if it were a 70-HP Basic [C] Pokémon. At any time during your turn, you may discard this card from play. This card can\'t be affected by any Special Conditions, and it can\'t retreat.';
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    const emptySlots = player.bench.filter((b) => b.cards.length === 0);
+    if (emptySlots.length === 0) {
+      return false;
+    }
+    return true;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-
     if (effect instanceof AddSpecialConditionsEffect && effect.target.getPokemonCard() === this) {
       effect.preventDefault = true;
     }
@@ -65,7 +80,11 @@ This card can't be affected by any Special Conditions, and it can't retreat.`,
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD, { name: player.name, card: this.name, effect: 'Rare Fossil' });
+      store.log(state, GameLog.LOG_PLAYER_DISCARDS_CARD, {
+        name: player.name,
+        card: this.name,
+        effect: 'Rare Fossil',
+      });
 
       const cardList = StateUtils.findCardList(state, this);
       MOVE_CARDS(store, state, cardList, player.discard, { cards: [this], sourceCard: this });
@@ -74,7 +93,7 @@ This card can't be affected by any Special Conditions, and it can't retreat.`,
     if (effect instanceof PlayItemEffect && effect.trainerCard === this) {
       const player = effect.player;
 
-      const emptySlots = player.bench.filter(b => b.cards.length === 0);
+      const emptySlots = player.bench.filter((b) => b.cards.length === 0);
       if (emptySlots.length === 0) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
@@ -89,5 +108,4 @@ This card can't be affected by any Special Conditions, and it can't retreat.`,
 
     return state;
   }
-
 }

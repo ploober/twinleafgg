@@ -33,6 +33,8 @@ export enum PlayCardEffects {
 export class AttachEnergyEffect implements Effect {
   readonly type: string = PlayCardEffects.ATTACH_ENERGY_EFFECT;
   public preventDefault = false;
+  /** Set when Buddy Pulse (Minun) has already applied for this attachment (doesn't stack). */
+  public buddyPulseSV?: boolean;
   public player: Player;
   public energyCard: EnergyCard;
   public target: PokemonCardList;
@@ -200,6 +202,8 @@ export class CoinFlipEffect implements Effect {
   public player: Player;
   public callback?: (result: boolean) => void;
   public result?: boolean;
+  /** When set (e.g. by Malamar Contrary), overrides the random flip. */
+  public forcedResult?: boolean;
   public skipReflipStadium?: boolean;
   public skipReflipTool?: boolean;
 

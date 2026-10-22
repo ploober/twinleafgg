@@ -2,7 +2,7 @@ import { PlayPokemonEffect } from '../effects/play-card-effects';
 import { GameError } from '../../game-error';
 import { GameMessage, GameLog } from '../../game-message';
 import { Effect } from '../effects/effect';
-import { Stage, SuperType } from '../card/card-types';
+import { CardTag, Stage, SuperType } from '../card/card-types';
 import { State } from '../state/state';
 import { StoreLike } from '../store-like';
 import { CheckPokemonPlayedTurnEffect } from '../effects/check-effects';
@@ -81,7 +81,22 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
       return state;
     }
     const player = effect.player;
-    const isEvolved = stage === Stage.STAGE_1 || Stage.STAGE_2;
+    // Include LV_X / BREAK / VMAX / etc. — previously `|| Stage.STAGE_2` was always true
+    // (missing `stage ===`), which accidentally allowed Level-Up; keep that behavior explicitly.
+    const isEvolved =
+      stage === Stage.STAGE_1 ||
+      stage === Stage.STAGE_2 ||
+      stage === Stage.VMAX ||
+      stage === Stage.VSTAR ||
+      stage === Stage.MEGA ||
+      stage === Stage.BREAK ||
+      stage === Stage.LV_X;
+    const isLvX =
+      stage === Stage.LV_X || effect.pokemonCard.hasTag(CardTag.POKEMON_LV_X);
+    // Level-Up Rule: put LV.X only onto the Active Pokémon
+    if (isLvX && effect.target !== player.active) {
+      throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+    }
     const evolvesFrom = effect.pokemonCard.evolvesFrom;
     const pokemonCard = effect.target.getPokemonCard();
     if (pokemonCard === undefined) {
@@ -113,16 +128,21 @@ export function playPokemonReducer(store: StoreLike, state: State, effect: Effec
         throw new GameError(GameMessage.CANNOT_EVOLVE_ON_YOUR_FIRST_TURN);
       }
 
-      if (playedTurnEffect.pokemonPlayedTurn >= state.turn) {
+      if (playedTurnEffect.pokemonPlayedTurn >= state.turn && !effect.target.canEvolveThisTurn) {
         throw new GameError(GameMessage.POKEMON_CANT_EVOLVE_THIS_TURN);
       }
+
+      // Preserve same-turn evolve (Forest of Vitality, etc.) across clearEffects so
+      // playableCardIds still includes the next evolution (React gates on that list).
+      const canEvolveThisTurn = effect.target.canEvolveThisTurn;
 
       const evolveEffect = new EvolveEffect(effect.player, effect.target, effect.pokemonCard);
       store.reduceEffect(state, evolveEffect);
       // TA-620: the evolve-time clean-up (untilLeavesPlay fields, markers, Special Conditions via
       // CheckSpecialConditionRemovalEffect + removePokemonEffects, animation flags, ABILITY_USED) now runs inside the
       // EvolveEffect reduce (game-effect.ts APPLY_EVOLUTION_CLEANUP), so Rare Candy and every direct EvolveEffect
-      // site gets it too. It is not repeated here.
+      // site gets it too. It is not repeated here. (Upstream: restore the same-turn evolve flag that clean-up clears.)
+      effect.target.canEvolveThisTurn = canEvolveThisTurn;
 
       // Emit evolution animation event
       emitAnimationEvent(store, 'evolution', {

@@ -1,14 +1,24 @@
-import { TrainerCard, TrainerType, StoreLike, State, PlayerType, StateUtils, GameError, GameMessage, DamageMap, Player } from '../../../game';
+import {
+  TrainerCard,
+  TrainerType,
+  StoreLike,
+  State,
+  PlayerType,
+  StateUtils,
+  GameError,
+  GameMessage,
+  DamageMap,
+  Player,
+} from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { HealEffect } from '../../../game/store/effects/game-effects';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PicnicBasket extends TrainerCard {
-
   public regulationMark = 'G';
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'SVI';
 
@@ -20,8 +30,7 @@ export class PicnicBasket extends TrainerCard {
 
   public fullName: string = 'Picnic Basket SVI';
 
-  public text: string =
-    'Heal 30 damage from each Pokémon (both yours and your opponent\'s).';
+  public text: string = "Heal 30 damage from each Pokémon (both yours and your opponent's).";
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
     const opponent = StateUtils.getOpponent(state, player);
@@ -51,7 +60,6 @@ export class PicnicBasket extends TrainerCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
       // We will discard this card after prompt confirmation

@@ -62,7 +62,7 @@ export class EnergySearch extends TrainerCard {
 
   public regulationMark = 'G';
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'SVI';
 

@@ -12,7 +12,7 @@ import { StoreLike } from '../../../game/store/store-like';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsGiovanni extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   protected _tags = [CardTag.TEAM_ROCKET];
   public regulationMark = 'I';
   public set: string = 'DRI';

@@ -69,7 +69,7 @@ function* useStadium(
 }
 
 export class UltraSpace extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
 
   public set: string = 'FLI';
 

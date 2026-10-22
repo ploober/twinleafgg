@@ -1,14 +1,20 @@
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike, State, GameMessage, GameError, CardList } from '../../../game';
+import { StoreLike, State, Player, GameMessage, GameError, CardList } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
-import {SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 
-function* playCard(next: Function, store: StoreLike, state: State,
-  self: Janine, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  self: Janine,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   // Move to supporter zone, prevent default discard
@@ -24,16 +30,20 @@ function* playCard(next: Function, store: StoreLike, state: State,
   const maxPick = Math.min(2, topCards.cards.length);
 
   let pickedCards: any[] = [];
-  yield store.prompt(state, new ChooseCardsPrompt(
-    player,
-    GameMessage.CHOOSE_CARD_TO_HAND,
-    topCards,
-    {},
-    { min: maxPick, max: maxPick, allowCancel: false }
-  ), selected => {
-    pickedCards = selected || [];
-    next();
-  });
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
+      player,
+      GameMessage.CHOOSE_CARD_TO_HAND,
+      topCards,
+      {},
+      { min: maxPick, max: maxPick, allowCancel: false },
+    ),
+    (selected) => {
+      pickedCards = selected || [];
+      next();
+    },
+  );
 
   // Put chosen cards into hand
   MOVE_CARDS(store, state, topCards, player.hand, { cards: pickedCards, sourceCard: self });
@@ -45,24 +55,35 @@ function* playCard(next: Function, store: StoreLike, state: State,
 }
 
 export class Janine extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'UNB';
-  public setNumber: string = '176';
   public cardImage: string = 'assets/cardback.png';
+  public setNumber: string = '176';
   public name: string = 'Janine';
   public fullName: string = 'Janine UNB';
-  public text: string = 'Look at the top 4 cards of your deck and put 2 of them into your hand. Shuffle the other cards back into your deck. You may play only 1 Supporter card during your turn (before your attack).';
+  public text: string =
+    'Look at the top 4 cards of your deck and put 2 of them into your hand. Shuffle the other cards back into your deck. You may play only 1 Supporter card during your turn (before your attack).';
+
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    if (player.supporterTurn > 0) {
+      return false;
+    }
+    if (player.deck.cards.length === 0) {
+      return false;
+    }
+    return true;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
-      effect.player.playedJanine = true;
+    if (WAS_TRAINER_USED(effect, this)) {
+      const player = effect.player;
+      player.playedJanine = true;
 
-      const supporterTurn = effect.player.supporterTurn;
-      if (supporterTurn > 0) {
+      if (player.supporterTurn > 0) {
         throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
       }
 
-      if (effect.player.deck.cards.length === 0) {
+      if (player.deck.cards.length === 0) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 

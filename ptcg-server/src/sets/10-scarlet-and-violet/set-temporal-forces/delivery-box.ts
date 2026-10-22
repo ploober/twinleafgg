@@ -10,7 +10,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DeliveryBox extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public regulationMark = 'H';
 

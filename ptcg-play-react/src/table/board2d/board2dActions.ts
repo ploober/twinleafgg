@@ -1,4 +1,5 @@
 import {
+  CardTag,
   PlayerType,
   SlotType,
   Stage,
@@ -9,10 +10,12 @@ import {
   type CardTarget,
   type Player,
   type PokemonCard,
+  type PokemonCardList,
   type TrainerCard,
 } from 'ptcg-server';
 import { cardCanAssembleLegendFromHand, resolveLegendAssemblyBenchTarget } from '../board3d/dual-legend.utils';
 import { cardHasUseFromHandToBenchPower } from '../board3d/board3dMeshIdForPlayTarget';
+import { getInPlayPokemonCard, isValidEvolutionTarget } from '../evolutionTarget';
 import type { LocalGameState } from '../types/localGameState';
 import type { Board3dCardsAdapter } from '../board3d/board3dCardsAdapter';
 import type { Board3dGameActions } from '../board3d/board3dGameActions';
@@ -214,13 +217,15 @@ export async function handleBoard2dStadiumClick(
     });
     return;
   }
+  // Pokemon-as-Stadium (e.g. Dusknoir LV.X) has no Use Stadium action
+  const canUseStadium = card.superType === SuperType.TRAINER;
   const result = await ctx.cardsAdapter.showCardInfo({
     card,
     cardList: stadiumCard,
-    options: { enableTrainer: true },
+    options: canUseStadium ? { enableTrainer: true } : undefined,
     players: players(ctx),
   });
-  if (result?.trainer) {
+  if (result?.trainer && canUseStadium) {
     await ctx.gameActions.stadium(ctx.gameState.gameId);
   }
 }
@@ -417,22 +422,25 @@ export function findAttachTargets(
     card.superType === SuperType.POKEMON &&
     !!(card as PokemonCard).evolvesFrom;
 
+  const isLvX =
+    isEvo &&
+    ((card as PokemonCard).stage === Stage.LV_X ||
+      (card as PokemonCard).tags?.includes(CardTag.POKEMON_LV_X) === true);
+
   const consider = (list: CardList | undefined, index: number, slot: SlotType) => {
     if (!list?.cards?.length) {
       return;
     }
-    const pokemon = (list as { getPokemonCard?: () => Card | undefined }).getPokemonCard?.();
+    // LV.X Level-Up may only target the Active Pokémon.
+    if (isLvX && slot !== SlotType.ACTIVE) {
+      return;
+    }
+    const pokemon = getInPlayPokemonCard(list as PokemonCardList);
     if (!pokemon && (isEnergy || isTool || isEvo)) {
       return;
     }
     if (isEvo) {
-      const evo = card as PokemonCard;
-      const host = pokemon as PokemonCard;
-      if (
-        evo.evolvesFrom === host.name ||
-        host.evolvesTo?.includes(evo.name) ||
-        (evo.evolvesFrom && host.name?.startsWith(`${evo.evolvesFrom} `))
-      ) {
+      if (isValidEvolutionTarget(card as PokemonCard, pokemon as PokemonCard)) {
         targets.push({ player: PlayerType.BOTTOM_PLAYER, slot, index });
       }
       return;

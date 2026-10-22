@@ -8,7 +8,7 @@ export class MoonlightHill extends TrainerCard {
   public regulationMark = 'G';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '81';
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
   public set = 'PAF';
   public name = 'Moonlit Hill';
   public fullName = 'Moonlit Hill PAF';

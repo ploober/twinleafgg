@@ -6,7 +6,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS, RECYCLE_RETURNS_EVERY_CARD } from '../../../game/store/prefabs/prefabs';
 
 export class MeddlingMemo extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '181';

@@ -7,7 +7,7 @@ import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-effect';
 
 export class CelebratoryFanfare extends TrainerCard {
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
   // TA-256 (ours) / upstream f0edbdac4: canonically mep-028 "Celebratory Fanfare" (Mega Evolution Promos),
   // not svp-174. Upstream moved the file here and re-keyed fullName to MEP; regulationMark 'I' matches
   // canonical card-data/final/mep.json. Registered in the MEP index below (upstream left it orphaned).

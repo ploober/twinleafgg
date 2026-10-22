@@ -11,7 +11,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Geeta extends TrainerCard {
   public regulationMark = 'G';
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'OBF';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '188';

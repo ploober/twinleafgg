@@ -81,7 +81,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 export class SuperiorEnergyRetrieval extends TrainerCard {
 
   public regulationMark = 'G';
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'PAL';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '189';

@@ -8,7 +8,7 @@ import { Player } from '../../../game';
 import { COIN_FLIP_PROMPT, DRAW_CARDS, SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
 
 export class Drasna extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'SSP';
   public setNumber = '173';

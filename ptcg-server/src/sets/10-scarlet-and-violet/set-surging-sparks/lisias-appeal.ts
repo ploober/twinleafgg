@@ -9,7 +9,7 @@ import { ADD_CONFUSION_TO_PLAYER_ACTIVE, SWITCH_IN_OPPONENT_BENCHED_POKEMON, TRA
 
 export class LisiasAppeal extends TrainerCard {
   public regulationMark = 'H';
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '179';

@@ -7,7 +7,7 @@ import {WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SnorlaxDoll extends TrainerCard {
 
-  public trainerType = TrainerType.ITEM;
+  protected _trainerType = TrainerType.ITEM;
 
   public stage: Stage = Stage.BASIC;
 

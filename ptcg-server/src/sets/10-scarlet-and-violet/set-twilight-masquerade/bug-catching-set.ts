@@ -93,7 +93,7 @@ function* playCard(
 }
 
 export class BugCatchingSet extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'H';
   public set: string = 'TWM';
   public cardImage: string = 'assets/cardback.png';

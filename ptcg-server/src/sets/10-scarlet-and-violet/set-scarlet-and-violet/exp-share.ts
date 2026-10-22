@@ -17,7 +17,7 @@ export class ExpShare extends TrainerCard {
 
   public regulationMark = 'G';
 
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
 
   public set: string = 'SVI';
 

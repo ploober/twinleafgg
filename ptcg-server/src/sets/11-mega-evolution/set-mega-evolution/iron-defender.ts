@@ -10,7 +10,7 @@ import { PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { Player } from '../../../game';
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 export class IronDefender extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'MEG';
   public setNumber = '118';
   public cardImage = 'assets/cardback.png';

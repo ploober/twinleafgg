@@ -104,7 +104,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 export class Perrin extends TrainerCard {
 
   public regulationMark = 'H';
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'TWM';
   public name: string = 'Perrin';
   public fullName: string = 'Perrin TWM';

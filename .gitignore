@@ -67,9 +67,17 @@ ptcg-server/.nyc_output/processinfo/index.json
 ptcg-server/output
 ptcg-server/dist
 
+# PTCGO local extract dumps / venv (reference only; do not ship)
+tools/ptcgo-extract/.venv/
+tools/ptcgo-extract/out/
+
+# artofpkm/TCGdex scrape cache (derived data; do not ship)
+scripts/jp-card-images/
+
 # Specific Sets
 ptcg-server/src/sets/set-test/
 /.kiro
+/.freebuff
 MEMORY_OPTIMIZATION_GUIDE.md
 frontend-cleanup-report.md
 ptcg-server/implementedCardIds.json

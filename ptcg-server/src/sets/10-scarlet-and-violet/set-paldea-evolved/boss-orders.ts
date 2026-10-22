@@ -13,7 +13,7 @@ export class BossOrders extends TrainerCard {
 
   public regulationMark = 'G';
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'PAL';
 

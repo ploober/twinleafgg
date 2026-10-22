@@ -9,7 +9,7 @@ import { GameError, GameMessage, Player } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Fennel extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'I';
   public set: string = 'BLK';
   public cardImage: string = 'assets/cardback.png';

@@ -11,7 +11,7 @@ import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prom
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PrismTower extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
   public set: string = 'CRI';
   public setNumber: string = '80';
   public name: string = 'Prism Tower';

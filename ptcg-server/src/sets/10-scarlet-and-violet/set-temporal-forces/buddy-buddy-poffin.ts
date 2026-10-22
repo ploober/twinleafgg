@@ -6,7 +6,7 @@ import { PlayPokemonFromDeckEffect, TrainerEffect } from '../../../game/store/ef
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class BuddyBuddyPoffin extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'TEF';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '144';

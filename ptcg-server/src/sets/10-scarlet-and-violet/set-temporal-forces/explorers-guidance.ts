@@ -9,7 +9,7 @@ import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class ExplorersGuidance extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'TEF';
 

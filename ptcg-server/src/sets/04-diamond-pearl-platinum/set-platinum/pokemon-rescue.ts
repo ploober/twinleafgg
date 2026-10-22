@@ -39,7 +39,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
 export class PokemonRescue extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'PL';
 

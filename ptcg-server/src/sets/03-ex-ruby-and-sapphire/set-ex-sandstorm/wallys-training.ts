@@ -13,7 +13,12 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
 
   if (player.deck.cards.length === 0) {
@@ -32,7 +37,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
   // Look through all known cards to find out if Pokemon can evolve
   const cm = CardManager.getInstance();
-  const evolutions = cm.getAllCards().filter(c => {
+  const evolutions = cm.getAllCards().filter((c) => {
     return c instanceof PokemonCard && c.stage !== Stage.BASIC;
   }) as PokemonCard[];
 
@@ -40,7 +45,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   const activeCard = player.active.getPokemonCard();
   const evolutionNames: string[] = [];
   if (activeCard) {
-    evolutions.forEach(e => {
+    evolutions.forEach((e) => {
       if (e.evolvesFrom === activeCard.name && !evolutionNames.includes(e.name)) {
         evolutionNames.push(e.name);
       }
@@ -61,20 +66,23 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   });
 
   let cards: Card[] = [];
-  yield store.prompt(state, new ChooseCardsPrompt(
-    player,
-    GameMessage.CHOOSE_CARD_TO_EVOLVE,
-    player.deck,
-    { superType: SuperType.POKEMON },
-    { min: 1, max: 1, allowCancel: true, blocked }
-  ), selected => {
-    cards = selected || [];
-    next();
-  });
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
+      player,
+      GameMessage.CHOOSE_CARD_TO_EVOLVE,
+      player.deck,
+      { superType: SuperType.POKEMON },
+      { min: 1, max: 1, allowCancel: true, blocked },
+    ),
+    (selected) => {
+      cards = selected || [];
+      next();
+    },
+  );
 
   // Canceled by user, he didn't found the card in the deck
   if (cards.length === 0) {
-
     return state;
   }
 
@@ -92,16 +100,16 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
   targetList.clearEffects();
   targetList.pokemonPlayedTurn = state.turn;
 
-  return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+  return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);
   });
 }
 
 export class WallysTraining extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'SS';
-  public name: string = 'Wally\'s Training';
-  public fullName: string = 'Wally\'s Training SS';
+  public name: string = "Wally's Training";
+  public fullName: string = "Wally's Training SS";
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '89';
 
@@ -116,5 +124,4 @@ export class WallysTraining extends TrainerCard {
 
     return state;
   }
-
 }

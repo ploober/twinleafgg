@@ -11,7 +11,7 @@ export class HeavyBaton extends TrainerCard {
 
   public regulationMark = 'H';
 
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
 
   public set: string = 'TEF';
 

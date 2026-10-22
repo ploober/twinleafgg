@@ -35,10 +35,6 @@ export class Druddigon extends PokemonCard {
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '70';
   public name: string = 'Druddigon';
-  // 2026-09-29 merge: upstream 1e90af6ca split FLF-70 out of its BRS reprint class and copied
-  // `fullName = 'Druddigon BRS'` with it — a duplicate of BRS-113 that makes CardManager.defineSet
-  // throw and silently drop every Brilliant Stars card after #28. FLF-70's served identity was, and
-  // stays, 'Druddigon FLF' (the pre-split DruddigonFLF class).
   public fullName: string = 'Druddigon FLF';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {

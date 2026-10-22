@@ -11,7 +11,7 @@ import { MOVE_CARDS, MOVE_POKEMON_OFF_BOARD } from '../../../game/store/prefabs/
 import { CardTag } from '../../../game/store/card/card-types';
 
 export class ProfessorTurosScenario extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   protected _tags = [CardTag.FUTURE];
   public regulationMark = 'G';
   public set: string = 'PAR';

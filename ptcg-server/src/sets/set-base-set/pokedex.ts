@@ -8,7 +8,7 @@ import { StoreLike } from '../../game/store/store-like';
 import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
 
 export class Pokedex extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public set: string = 'BS'; // Replace with the appropriate set abbreviation
 

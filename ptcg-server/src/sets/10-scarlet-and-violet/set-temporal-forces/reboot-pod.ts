@@ -14,7 +14,7 @@ import { Player } from '../../../game/store/state/player';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class RebootPod extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   protected _tags = [CardTag.ACE_SPEC, CardTag.FUTURE];
 

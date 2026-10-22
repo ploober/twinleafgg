@@ -6,7 +6,7 @@ import { StateUtils, StoreLike, State, Player, GameError, GameMessage, ShuffleDe
 import { DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SpecialRedCard extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'J';
   public set: string = 'CRI';
   public cardImage: string = 'assets/cardback.png';

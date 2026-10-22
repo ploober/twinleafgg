@@ -116,10 +116,14 @@ export function RESOLVE_COIN_FLIP_EFFECT(store: StoreLike, state: State, effect:
   // pausing CoinFlipPrompt: one KO, two flips on the wire. Raising the prompt here is exactly the
   // probe's own "this handler would act" signal (`Store.prompt` refuses to enqueue while probing and
   // never runs the continuation), so declining costs the probe nothing.
-  if (store.isProbing()) {
+  // Upstream (7bb457367): an effect may force the face (forcedResult); that consumes no scripted flip, so it is
+  // honoured first, probing or not.
+  if (effect.forcedResult === undefined && store.isProbing()) {
     return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), () => { });
   }
-  if (typeof flipHandler?.tryScriptedFlip === 'function') {
+  if (effect.forcedResult !== undefined) {
+    result = effect.forcedResult;
+  } else if (typeof flipHandler?.tryScriptedFlip === 'function') {
     const scripted = flipHandler.tryScriptedFlip();
     if (scripted === undefined) {
       return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (r: boolean) => {
@@ -216,7 +220,9 @@ function resolveAttackCoinFlipWithReflipOption(
   // a real pausing prompt (the reflip offer runs in its continuation); production → random.
   const reflipHandler = (store as any).handler;
   let result: boolean;
-  if (typeof reflipHandler?.tryScriptedFlip === 'function') {
+  if (effect.forcedResult !== undefined) {
+    result = effect.forcedResult;
+  } else if (typeof reflipHandler?.tryScriptedFlip === 'function') {
     const scripted = reflipHandler.tryScriptedFlip();
     if (scripted === undefined) {
       return store.prompt(state, new CoinFlipPrompt(player.id, GameMessage.COIN_FLIP), (r: boolean) => {

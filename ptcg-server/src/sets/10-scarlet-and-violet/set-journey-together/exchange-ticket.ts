@@ -5,7 +5,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class RedeemableTicket extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   public regulationMark = 'I';
 

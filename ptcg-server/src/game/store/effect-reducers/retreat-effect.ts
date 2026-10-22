@@ -57,6 +57,8 @@ function promptBenchAndRetreat(store: StoreLike, state: State, player: Player, p
     GameMessage.CHOOSE_POKEMON_TO_SWITCH,
     PlayerType.BOTTOM_PLAYER,
     [SlotType.BENCH],
+    // TA-580: the Bench choice stays cancelable; cancelling pays nothing and keeps the retreat available (the null
+    // answer is handled below). Upstream 0c3c59fb0 made it non-cancelable.
     { min: 1, max: 1, allowCancel: true, blocked: [] }
   );
   prompt.skipSwitchLog = true;
@@ -126,7 +128,7 @@ export function retreatReducer(store: StoreLike, state: State, effect: Effect): 
     }
 
     const sp = player.active.specialConditions;
-    if (sp.includes(SpecialCondition.PARALYZED) || sp.includes(SpecialCondition.ASLEEP)) {
+    if ((sp.includes(SpecialCondition.PARALYZED) || sp.includes(SpecialCondition.ASLEEP)) && !effect.ignoreStatusConditions) {
       throw new GameError(GameMessage.BLOCKED_BY_SPECIAL_CONDITION);
     }
 

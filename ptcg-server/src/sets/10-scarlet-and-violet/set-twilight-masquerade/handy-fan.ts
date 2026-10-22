@@ -10,7 +10,7 @@ import { ToolEffect } from '../../../game/store/effects/play-card-effects';
 
 export class HandyFan extends TrainerCard {
   public regulationMark = 'H';
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'TWM';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '150';

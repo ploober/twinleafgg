@@ -6,7 +6,7 @@ import { HealEffect } from '../../../game/store/effects/game-effects';
 import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { SuperType } from '../../../game/store/card/card-types';
-import { PlayerType, SlotType, CardTarget, GameError, GameMessage, PokemonCardList, Card, ChooseCardsPrompt } from '../../../game';
+import { PlayerType, SlotType, CardTarget, GameError, GameMessage, PokemonCardList, Card, ChooseCardsPrompt, Player } from '../../../game';
 import { SuperPotion } from '../../07-x-and-y/set-x-and-y/super-potion';
 import { BlackBeltsTraining } from '../set-prismatic-evolution/black-belts-training';
 import { ProfessorsResearch } from '../set-scarlet-and-violet/professors-research';
@@ -96,6 +96,14 @@ export class SuperPotionJTG extends SuperPotion {
   public legacyFullName = 'Super Potion MC';
   public text: string =
     'Heal 60 damage from 1 of your Pokémon. If you healed any damage in this way, discard an Energy from that Pokémon.';
+
+  // TA-717: playable with any damaged Pokémon; the Energy is discarded only if one is attached. Upstream's XY canPlay
+  // (e207317b6) requires a damaged Pokémon WITH Energy, which the XY wording's cost reading needs and this one does not.
+  public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    let damaged = false;
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => { damaged = damaged || cardList.damage > 0; });
+    return damaged;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof TrainerEffect && effect.trainerCard === this) {

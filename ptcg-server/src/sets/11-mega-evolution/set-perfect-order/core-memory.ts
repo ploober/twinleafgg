@@ -28,7 +28,7 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: Atta
 }
 
 export class CoreMemory extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public regulationMark = 'J';
   public set: string = 'POR';
   public cardImage: string = 'assets/cardback.png';

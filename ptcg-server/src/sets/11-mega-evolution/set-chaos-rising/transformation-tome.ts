@@ -7,7 +7,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class TransformationTome extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'J';
   public set: string = 'CRI';
   public cardImage: string = 'assets/cardback.png';

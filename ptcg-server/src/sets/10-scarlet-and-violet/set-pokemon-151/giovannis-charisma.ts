@@ -77,7 +77,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 }
 
 export class GiovannisCharisma extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'G';
   public set: string = 'MEW';
   public cardImage: string = 'assets/cardback.png';

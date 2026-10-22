@@ -13,7 +13,7 @@ import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 
 export class Iono extends TrainerCard {
   public regulationMark = 'G';
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'PAL';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '185';

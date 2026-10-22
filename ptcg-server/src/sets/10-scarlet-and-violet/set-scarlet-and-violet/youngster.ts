@@ -9,7 +9,7 @@ import { RECYCLE_RETURNS_EVERY_CARD, SHUFFLE_HAND_INTO_DECK_THEN_DRAW } from '..
 
 export class Youngster extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public regulationMark = 'G';
 

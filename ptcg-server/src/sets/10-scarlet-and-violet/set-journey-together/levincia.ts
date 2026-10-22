@@ -13,7 +13,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Levincia extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
 
   public set: string = 'JTG';
 

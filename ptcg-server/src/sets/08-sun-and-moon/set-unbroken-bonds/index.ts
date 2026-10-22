@@ -159,6 +159,7 @@ import { Wigglytuff } from './wigglytuff';
 import { Wooper } from './wooper';
 import { Zeraora } from './zeraora';
 import { Zubat } from './zubat';
+import { Stakataka } from "./stakataka";
 import { BeastBringer } from './beast-bringer';
 import { ChipChipIceAxe } from './chip-chip-ice-axe';
 import { DevolutionSprayZ } from './devolution-spray-z';
@@ -186,7 +187,6 @@ import { UltraForestKartenvoy } from './ultra-forest-kartenvoy';
 import { TripleAccelerationEnergy } from './triple-acceleration-energy';
 
 import {
-  DedenneGXUNB,
   PheromosaBuzzwoleGX2UNB,
   PheromosaBuzzwoleGX3UNB,
   ReshiramCharizardGX2UNB,
@@ -404,6 +404,7 @@ export const setUnbrokenBonds: Card[] = [
   new Wooper(),
   new Zeraora(),
   new Zubat(),
+  new Stakataka(),
 
   // Trainers
   new BeastBringer(),
@@ -436,7 +437,6 @@ export const setUnbrokenBonds: Card[] = [
   new TripleAccelerationEnergy(),
 
   // Other Prints (Reprints & Alt Arts)
-  new DedenneGXUNB(),
   new PheromosaBuzzwoleGX2UNB(),
   new PheromosaBuzzwoleGX3UNB(),
   new ReshiramCharizardGX2UNB(),

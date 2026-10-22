@@ -9,7 +9,7 @@ import { StateUtils } from '../../../game/store/state-utils';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class AdversityPolicy extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'CRI';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '74';

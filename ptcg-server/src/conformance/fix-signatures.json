@@ -3593,11 +3593,11 @@
       "state": "guarding"
     },
     {
-      "file": "set-celebrations/dark-gyarados.ts",
+      "file": "set-team-rocket/dark-gyarados.ts",
       "signatures": [
         "public evolvesFrom = 'Magikarp';"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-22 merge: upstream c51047b6c moved the class to set-team-rocket (TR 8; CEL now a reprint of it); the evolvesFrom line moved with it — retargeted, not reapplied",
       "state": "guarding"
     },
     {
@@ -8922,9 +8922,9 @@
     {
       "file": "game/store/prefabs/attack-coin-reflip.ts",
       "signatures": [
-        "if (store.isProbing()) {"
+        "if (effect.forcedResult === undefined && store.isProbing()) {"
       ],
-      "note": "TA-440 (2026-09-19): TA-440: the KO-window PROBE no longer consumes the driver's scripted coin flip — one Knock Out, one flip (#2083)",
+      "note": "TA-440 (2026-09-19): TA-440: the KO-window PROBE no longer consumes the driver's scripted coin flip — one Knock Out, one flip (#2083) | 2026-10-22 merge: retargeted — upstream 7bb457367 added CoinFlipEffect.forcedResult, which is honoured before the probe guard (a forced face consumes no scripted flip)",
       "fixes": [
         "FX-0316"
       ],

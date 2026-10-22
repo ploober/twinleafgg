@@ -67,7 +67,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 export class Pokeball extends TrainerCard {
   public regulationMark = 'G';
 
-  public trainerType = TrainerType.ITEM;
+  protected _trainerType = TrainerType.ITEM;
 
   public set = 'SVI';
   public cardImage: string = 'assets/cardback.png';

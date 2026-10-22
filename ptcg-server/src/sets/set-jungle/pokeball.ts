@@ -62,7 +62,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 }
 
 export class PokeBall extends TrainerCard {
-  public trainerType = TrainerType.ITEM;
+  protected _trainerType = TrainerType.ITEM;
 
   public regulationMark = 'G';
 

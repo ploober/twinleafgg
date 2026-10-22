@@ -8,7 +8,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
 export class ProtectiveGoggles extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public set: string = 'MEW';
   public name: string = 'Protective Goggles';
   public regulationMark = 'G';

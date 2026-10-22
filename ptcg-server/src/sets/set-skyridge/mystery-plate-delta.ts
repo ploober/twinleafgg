@@ -30,7 +30,7 @@ import { State } from '../../game/store/state/state';
 import { StoreLike } from '../../game/store/store-like';
 
 export class MysteryPlateDelta extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.TECHNICAL_MACHINE];
   public set: string = 'SK';
   public cardImage: string = 'assets/cardback.png';
@@ -116,8 +116,9 @@ export class MysteryPlateDelta extends TrainerCard {
           ),
           (selected) => {
             if (selected) {
-              SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
               MOVE_CARDS(store, state, player.deck, player.hand, { cards: selected });
+              SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
+              
               SHUFFLE_DECK(store, state, player);
             }
           },

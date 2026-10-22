@@ -12,12 +12,13 @@ import {BLOCK_IF_NO_SLOTS, GET_PLAYER_BENCH_SLOTS, MOVE_CARDS } from '../../../g
 export class StrangeCave extends TrainerCard {
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '77';
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
   public set = 'LM';
   public name = 'Strange Cave';
   public fullName = 'Strange Cave LM';
 
-  public text = 'Once during each player\'s turn, that player may put an Omanyte, Kabuto, Aerodactyl, Aerodactyl ex, Lileep, or Anorith onto his or her Bench from his or her hand. Treat the new Benched Pokémon as Basic Pokémon.';
+  public text =
+    "Once during each player's turn, that player may put an Omanyte, Kabuto, Aerodactyl, Aerodactyl ex, Lileep, or Anorith onto his or her Bench from his or her hand. Treat the new Benched Pokémon as Basic Pokémon.";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof UseStadiumEffect && StateUtils.getStadiumCard(state) === this) {
@@ -28,7 +29,15 @@ export class StrangeCave extends TrainerCard {
 
       const blockedHand: number[] = [];
       player.hand.cards.forEach((card, index) => {
-        if (card instanceof PokemonCard && (card.name === 'Omanyte' || card.name === 'Kabuto' || card.name === 'Aerodactyl' || card.name === 'Aerodactyl ex' || card.name === 'Lileep' || card.name === 'Anorith')) {
+        if (
+          card instanceof PokemonCard &&
+          (card.name === 'Omanyte' ||
+            card.name === 'Kabuto' ||
+            card.name === 'Aerodactyl' ||
+            card.name === 'Aerodactyl ex' ||
+            card.name === 'Lileep' ||
+            card.name === 'Anorith')
+        ) {
           return;
         } else {
           blockedHand.push(index);

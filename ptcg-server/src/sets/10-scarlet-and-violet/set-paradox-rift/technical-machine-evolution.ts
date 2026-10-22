@@ -112,7 +112,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Attac
 
 export class TechnicalMachineEvolution extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public regulationMark = 'G';
   public set: string = 'PAR';
   public cardImage: string = 'assets/cardback.png';

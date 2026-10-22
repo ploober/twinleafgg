@@ -11,7 +11,7 @@ export class CalamitousSnowyMountain extends TrainerCard {
   public regulationMark = 'G';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '174';
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
   public set = 'PAL';
   public name = 'Calamitous Snowy Mountain';
   public fullName = 'Calamitous Snowy Mountain PAL';

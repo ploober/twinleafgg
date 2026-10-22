@@ -60,7 +60,7 @@ function* playCard(next: Function, store: StoreLike, state: State, effect: Train
 
 export class Kofu extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public regulationMark = 'H';
 

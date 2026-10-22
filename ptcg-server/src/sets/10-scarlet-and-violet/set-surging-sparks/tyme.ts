@@ -98,7 +98,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tyme, e
 }
 
 export class Tyme extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'SSP';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '190';

@@ -56,7 +56,7 @@ function* useStadium(next: Function, store: StoreLike, state: State, effect: Use
 
 export class MysteryGarden extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
   public set: string = 'MEG';
   public regulationMark = 'I';
   public setNumber: string = '122';

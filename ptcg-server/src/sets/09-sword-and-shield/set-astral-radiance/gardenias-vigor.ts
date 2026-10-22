@@ -4,29 +4,45 @@ import { EnergyType, SuperType, TrainerType } from '../../../game/store/card/car
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
-import { AttachEnergyEffect, TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
 import { GameMessage } from '../../../game/game-message';
 import { AttachEnergyPrompt } from '../../../game/store/prompts/attach-energy-prompt';
 import { PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
 import { StateUtils } from '../../../game/store/state-utils';
-import { GameError } from '../../../game';
-import {DRAW_CARDS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { GameError, Player } from '../../../game';
+import { DRAW_CARDS, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
 export class GardeniasVigor extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
-  public set: string = 'ASR';
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'F';
+  public set: string = 'ASR';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '143';
-  public name: string = 'Gardenia\'s Vigor';
-  public fullName: string = 'Gardenia\'s Vigor ASR';
-  public text: string = 'Draw 2 cards. If you drew any cards in this way, attach up to 2 [G] Energy cards from your hand to 1 of your Benched Pokémon.';
+  public name: string = "Gardenia's Vigor";
+  public fullName: string = "Gardenia's Vigor ASR";
+  public text: string =
+    'Draw 2 cards. If you drew any cards in this way, attach up to 2 [G] Energy cards from your hand to 1 of your Benched Pokémon.';
+
+  public canPlay(_store: StoreLike, _state: State, player: Player): boolean {
+    if (player.supporterTurn > 0) {
+      return false;
+    }
+    const hasBenched = player.bench.some((b) => b.cards.length > 0);
+    if (!hasBenched) {
+      return false;
+    }
+    if (player.deck.cards.length === 0) {
+      return false;
+    }
+    return true;
+  }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+    if (WAS_TRAINER_USED(effect, this)) {
       const player = effect.player;
 
-      const hasBenched = player.bench.some(b => b.cards.length > 0);
+      const hasBenched = player.bench.some((b) => b.cards.length > 0);
       if (!hasBenched) {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
@@ -47,27 +63,29 @@ export class GardeniasVigor extends TrainerCard {
 
       DRAW_CARDS(store, state, player, 2);
 
-      return store.prompt(state, new AttachEnergyPrompt(
-        player.id,
-        GameMessage.ATTACH_ENERGY_CARDS,
-        player.hand,
-        PlayerType.BOTTOM_PLAYER,
-        [SlotType.BENCH],
-        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
-        { min: 0, max: 2, allowCancel: false, differentTargets: false, sameTarget: true }
-      ), transfers => {
-        transfers = transfers || [];
-        for (const transfer of transfers) {
-          const target = StateUtils.getTarget(state, player, transfer.to);
-          const energyCard = transfer.card as EnergyCard;
-          const attachEnergyEffect = new AttachEnergyEffect(player, energyCard, target);
-          store.reduceEffect(state, attachEnergyEffect);
-        }
-        // Clean up supporter once, after all transfers are done
-      });
+      return store.prompt(
+        state,
+        new AttachEnergyPrompt(
+          player.id,
+          GameMessage.ATTACH_ENERGY_CARDS,
+          player.hand,
+          PlayerType.BOTTOM_PLAYER,
+          [SlotType.BENCH],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
+          { min: 0, max: 2, allowCancel: false, differentTargets: false, sameTarget: true },
+        ),
+        (transfers) => {
+          transfers = transfers || [];
+          for (const transfer of transfers) {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            const energyCard = transfer.card as EnergyCard;
+            const attachEnergyEffect = new AttachEnergyEffect(player, energyCard, target);
+            store.reduceEffect(state, attachEnergyEffect);
+          }
+        },
+      );
     }
 
     return state;
   }
-
 }

@@ -11,7 +11,7 @@ import { Player } from '../../../game';
 
 export class JasminesGaze extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'SSP';
   public setNumber = '178';
   public cardImage = 'assets/cardback.png';

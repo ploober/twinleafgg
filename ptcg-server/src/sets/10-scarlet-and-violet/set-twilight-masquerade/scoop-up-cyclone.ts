@@ -10,7 +10,7 @@ import { Player, PlayerType, SlotType } from '../../../game';
 import { MOVE_POKEMON_OFF_BOARD } from '../../../game/store/prefabs/prefabs';
 
 export class ScoopUpCyclone extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.ACE_SPEC];
   public regulationMark = 'H';
   public set: string = 'TWM';

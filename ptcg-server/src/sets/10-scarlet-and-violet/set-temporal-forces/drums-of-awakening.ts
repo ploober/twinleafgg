@@ -8,7 +8,7 @@ import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class DrumsOfAwakening extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
 
   // TA-260: canonical prints BOTH rule-box tags — `['Ancient', 'ACE SPEC']`. The Ancient half was
   // missing, so this card is invisible to Ancient-counting readers (e.g. Roaring Moon's

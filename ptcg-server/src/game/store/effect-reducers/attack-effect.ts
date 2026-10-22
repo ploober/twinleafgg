@@ -9,8 +9,7 @@ import { Effect } from "../effects/effect";
 import { shouldPreventAttackEffects, shouldPreventAttackDamage, shouldApplyDamageReduction, getActiveSurviveOnTenHpOptions, shouldKnockOutIfDamaged, getActiveRetaliateOnDamage, retaliateDamageEffect, RetaliateDamageEffect, EffectOfAttackEffect } from "../effects/effect-of-attack-effects";
 import { AttackEffect, KnockOutAttackEffect, HealEffect } from "../effects/game-effects";
 import { GameStatsTracker } from "../game-stats-tracker";
-import { MOVE_CARDS, MOVE_POKEMON_OFF_BOARD } from "../prefabs/prefabs";
-import { CoinFlipPrompt } from "../prompts/coin-flip-prompt";
+import { MOVE_CARDS, MOVE_POKEMON_OFF_BOARD, COIN_FLIP_PROMPT } from "../prefabs/prefabs";
 import { StateUtils } from "../state-utils";
 import { State, GamePhase } from "../state/state";
 import { StoreLike } from "../store-like";
@@ -163,14 +162,11 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
       const fullHpOk = !surviveOpts.requireFullHp || target.damage === 0;
       if (wouldKo && fullHpOk) {
         if (surviveOpts.coinFlipOnWouldKo) {
-          return store.prompt(state, new CoinFlipPrompt(
-            StateUtils.findOwner(state, target).id,
-            GameMessage.COIN_FLIP,
-          ), (result) => {
+          return COIN_FLIP_PROMPT(store, state, StateUtils.findOwner(state, target), result => {
             if (result) {
               effect.surviveOnTenHPReason = effect.attack?.name || 'Endure';
             }
-            return applyPutDamage(store, state, effect);
+            applyPutDamage(store, state, effect);
           });
         }
         effect.surviveOnTenHPReason = effect.attack?.name || 'Endure';
@@ -184,14 +180,11 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
       && effect.source
       && StateUtils.findOwner(state, target) !== effect.player) {
       const targetOwner = StateUtils.findOwner(state, target);
-      return store.prompt(state, new CoinFlipPrompt(
-        targetOwner.id,
-        GameMessage.COIN_FLIP,
-      ), (result) => {
+      return COIN_FLIP_PROMPT(store, state, targetOwner, result => {
         if (result) {
           effect.damage = 0;
         }
-        return applyPutDamage(store, state, effect);
+        applyPutDamage(store, state, effect);
       });
     }
 
@@ -206,12 +199,10 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
       && effect.source
       && StateUtils.findOwner(state, target) !== effect.player) {
       const targetOwner = StateUtils.findOwner(state, target);
-      return store.prompt(state, new CoinFlipPrompt(
-        targetOwner.id,
-        GameMessage.COIN_FLIP,
-      ), (result) => {
+      return COIN_FLIP_PROMPT(store, state, targetOwner, result => {
         if (!result) {
-          return applyPutDamage(store, state, effect);
+          applyPutDamage(store, state, effect);
+          return;
         }
 
         let sourceList = effect.target;
@@ -227,7 +218,7 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
         revengeBase.source = sourceList;
         const retaliateEffect = retaliateDamageEffect(revengeBase, coinFlipRetaliate.damage, effect.source);
         retaliateEffect.markerSource = coinFlipRetaliate.sourceCard;
-        return store.reduceEffect(state, retaliateEffect);
+        store.reduceEffect(state, retaliateEffect);
       });
     }
 

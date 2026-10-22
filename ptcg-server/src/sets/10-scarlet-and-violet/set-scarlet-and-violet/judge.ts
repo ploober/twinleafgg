@@ -10,7 +10,7 @@ import { StoreLike } from '../../../game/store/store-like';
 
 export class Judge extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'SVI';
 

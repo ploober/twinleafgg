@@ -18,7 +18,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 
 export class TeamAquaConspirator extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'MA';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '77';
@@ -67,8 +67,9 @@ export class TeamAquaConspirator extends TrainerCard {
         ),
         (selected) => {
           if (selected) {
-            SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
             MOVE_CARDS(store, state, player.deck, player.hand, { cards: selected });
+            SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);
+            
           }
           SHUFFLE_DECK(store, state, player);
         },

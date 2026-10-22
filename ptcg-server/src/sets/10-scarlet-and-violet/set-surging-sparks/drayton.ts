@@ -92,7 +92,7 @@ export class Drayton extends TrainerCard {
 
   public regulationMark = 'H';
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'SSP';
 

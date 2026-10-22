@@ -60,7 +60,7 @@ function* playCard(next: Function, store: StoreLike, state: State,
 }
 
 export class SacredAsh extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'DRI';
   public regulationMark = 'I';
   public name: string = 'Sacred Ash';

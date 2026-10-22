@@ -72,6 +72,19 @@ const MISSING_PREVOLUTION = new Set([
   'Dark Blastoise',
 ]);
 
+/**
+ * Known-unfixable, keyed on the missing PREVOLUTION: the Diamond & Pearl-era Fossil Trainers. The 2026-10-22 upstream
+ * merge added Majestic Dawn and Mysterious Treasures with Cranidos, Shieldon, Aerodactyl, Kabuto and Omanyte evolving
+ * from these Items (played as Basic Pokémon) without the Items themselves. Out of rotomancer's pool; same rule as above.
+ */
+const MISSING_PREVOLUTION_NAMES = new Set([
+  'Skull Fossil',
+  'Armor Fossil',
+  'Old Amber',
+  'Dome Fossil',
+  'Helix Fossil',
+]);
+
 describe('Card structural invariants — every evolution resolves; no card is mis-staged', () => {
   loadAllSets();
   const all = CardManager.getInstance().getAllCards();
@@ -87,7 +100,8 @@ describe('Card structural invariants — every evolution resolves; no card is mi
 
   it('every evolvesFrom resolves to a card that exists in the registry', () => {
     const bad = pokemon
-      .filter(c => c.evolvesFrom && !names.has(c.evolvesFrom) && !MISSING_PREVOLUTION.has(c.name))
+      .filter(c => c.evolvesFrom && !names.has(c.evolvesFrom) && !MISSING_PREVOLUTION.has(c.name)
+        && !MISSING_PREVOLUTION_NAMES.has(c.evolvesFrom))
       .map(c => `${c.fullName} evolvesFrom '${c.evolvesFrom}' — NO SUCH CARD → UNEVOLVABLE`);
     expect(bad).toEqual([]);
   });
@@ -158,7 +172,8 @@ describe('Card structural invariants — every evolution resolves; no card is mi
 
   it('every evolution chain reaches a Basic (a resolvable link can still sit on a broken parent)', () => {
     const bad = pokemon
-      .filter(c => EVOLVED.has(c.stage) && !!c.evolvesFrom && !MISSING_PREVOLUTION.has(c.name))
+      .filter(c => EVOLVED.has(c.stage) && !!c.evolvesFrom && !MISSING_PREVOLUTION.has(c.name)
+        && !MISSING_PREVOLUTION_NAMES.has(c.evolvesFrom))
       .filter(c => !reachesRoot(c))
       .map(c => `${c.fullName} (${Stage[c.stage]}) ← '${c.evolvesFrom}' — chain never reaches a Basic → UNEVOLVABLE`);
     expect(bad).toEqual([]);

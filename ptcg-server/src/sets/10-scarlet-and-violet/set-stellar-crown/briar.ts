@@ -6,7 +6,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Briar extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'H';
   public set: string = 'SCR';
   public cardImage: string = 'assets/cardback.png';

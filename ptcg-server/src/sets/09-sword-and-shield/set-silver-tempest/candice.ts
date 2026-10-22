@@ -1,15 +1,35 @@
-import { Effect } from '../../../game/store/effects/effect';
-import { GameMessage } from '../../../game/game-message';
-import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
-import { State } from '../../../game/store/state/state';
-import { StoreLike } from '../../../game/store/store-like';
-import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { CardType, EnergyType, TrainerType } from '../../../game/store/card/card-types';
-import { Card, CardList, ChooseCardsPrompt, EnergyCard, GameError, PokemonCard, ShowCardsPrompt, ShuffleDeckPrompt, StateUtils, pokemonHasCardType } from '../../../game';
-import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { Effect } from '../../../game/store/effects/effect';
+import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
+import {
+  GameMessage,
+  State,
+  StoreLike,
+  TrainerCard,
+  Card,
+  CardList,
+  ChooseCardsPrompt,
+  EnergyCard,
+  GameError,
+  PokemonCard,
+  Player,
+  StateUtils,
+  pokemonHasCardType,
+} from '../../../game';
+import {
+  MOVE_CARDS,
+  SHOW_CARDS_TO_PLAYER,
+  SHUFFLE_DECK,
+} from '../../../game/store/prefabs/prefabs';
+import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 
-function* playCard(next: Function, store: StoreLike, state: State,
-  self: Candice, effect: TrainerEffect): IterableIterator<State> {
+function* playCard(
+  next: Function,
+  store: StoreLike,
+  state: State,
+  self: Candice,
+  effect: TrainerEffect,
+): IterableIterator<State> {
   const player = effect.player;
   const opponent = StateUtils.getOpponent(state, player);
   let cards: Card[] = [];
@@ -20,7 +40,10 @@ function* playCard(next: Function, store: StoreLike, state: State,
     throw new GameError(GameMessage.SUPPORTER_ALREADY_PLAYED);
   }
 
-  MOVE_CARDS(store, state, player.hand, player.supporter, { cards: [effect.trainerCard], sourceCard: self });
+  MOVE_CARDS(store, state, player.hand, player.supporter, {
+    cards: [effect.trainerCard],
+    sourceCard: self,
+  });
   // We will discard this card after prompt confirmation
   effect.preventDefault = true;
 
@@ -44,60 +67,53 @@ function* playCard(next: Function, store: StoreLike, state: State,
   const maxEnergies = Math.min(energies, 7);
   const count = 7;
 
-  yield store.prompt(state, new ChooseCardsPrompt(
-    player,
-    GameMessage.CHOOSE_CARD_TO_HAND,
-    deckTop,
-    {},
-    { min: 0, max: count, allowCancel: false, blocked, maxPokemons, maxEnergies }
-  ), selected => {
-    cards = selected || [];
-    next();
-  });
+  yield store.prompt(
+    state,
+    new ChooseCardsPrompt(
+      player,
+      GameMessage.CHOOSE_CARD_TO_HAND,
+      deckTop,
+      {},
+      { min: 0, max: count, allowCancel: false, blocked, maxPokemons, maxEnergies },
+    ),
+    (selected) => {
+      cards = selected || [];
+      next();
+    },
+  );
 
   MOVE_CARDS(store, state, deckTop, player.hand, { cards: cards, sourceCard: self });
   MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: self });
 
-  if (cards.length > 0) {
-    yield store.prompt(state, new ShowCardsPrompt(
-      opponent.id,
-      GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
-      cards
-    ), () => next());
-  }
+  SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);
 
-  return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-    player.deck.applyOrder(order);
-  });
+  return SHUFFLE_DECK(store, state, player);
 }
 
 export class Candice extends TrainerCard {
-
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
-
-  public set: string = 'SIT';
-
-  public cardImage: string = 'assets/cardback.png';
-
-  public setNumber: string = '152';
-
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'F';
-
+  public set: string = 'SIT';
+  public cardImage: string = 'assets/cardback.png';
+  public setNumber: string = '152';
   public name: string = 'Candice';
-
   public fullName: string = 'Candice SIT';
-
   public text: string =
     'Look at the top 7 cards of your deck. You may reveal any number of [W] Pokémon and [W] Energy cards you find there and put them into your hand. Shuffle the other cards back into your deck.';
 
-  public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+  public canPlay(_store: StoreLike, _state: State, player: Player): boolean {
+    if (player.supporterTurn > 0) {
+      return false;
+    }
+    return true;
+  }
 
-    if (effect instanceof TrainerEffect && effect.trainerCard === this) {
+  public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    if (WAS_TRAINER_USED(effect, this)) {
       const generator = playCard(() => generator.next(), store, state, this, effect);
       return generator.next().value;
     }
 
     return state;
   }
-
 }

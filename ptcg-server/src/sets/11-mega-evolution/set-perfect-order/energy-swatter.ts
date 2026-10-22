@@ -7,7 +7,7 @@ import { GameError } from '../../../game/game-error';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class EnergySwatter extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'J';
   public set: string = 'POR';
   public cardImage: string = 'assets/cardback.png';

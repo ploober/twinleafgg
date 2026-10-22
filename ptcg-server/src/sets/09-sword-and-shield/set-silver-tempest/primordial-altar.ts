@@ -13,7 +13,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PrimordialAltar extends TrainerCard {
 
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
 
   public regulationMark = 'F';
 

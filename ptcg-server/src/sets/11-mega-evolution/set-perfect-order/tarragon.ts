@@ -67,7 +67,7 @@ function* playCard(next: Function, store: StoreLike, state: State, self: Tarrago
 }
 
 export class Tarragon extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public set: string = 'POR';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '85';

@@ -11,7 +11,7 @@ import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { StateUtils } from '../../../game/store/state-utils';
 
 export class JumboIce extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public regulationMark = 'I';
   public set: string = 'PFL';
   public name: string = 'Jumbo Ice Cream';

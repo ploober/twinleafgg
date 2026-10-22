@@ -12,7 +12,7 @@ export class Agatha extends TrainerCard {
 
   public regulationMark = 'E';
 
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
 
   public set: string = 'CRE';
 

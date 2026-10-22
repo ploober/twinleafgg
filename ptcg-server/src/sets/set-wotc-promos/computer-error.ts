@@ -7,7 +7,7 @@ import { WAS_TRAINER_USED } from '../../game/store/prefabs/trainer-prefabs';
 import { MOVE_CARDS } from '../../game/store/prefabs/prefabs';
 
 export class ComputerError extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.ROCKETS_SECRET_MACHINE];
   public set: string = 'PR';
   public cardImage: string = 'assets/cardback.png';

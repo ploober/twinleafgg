@@ -14,7 +14,7 @@ import { IS_STADIUM_EFFECT_BLOCKED } from '../../../game/store/prefabs/stadium-e
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 
 export class TeamRocketsWatchtower extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.STADIUM;
+  protected _trainerType: TrainerType = TrainerType.STADIUM;
   public set: string = 'DRI';
   public regulationMark = 'I';
   public name: string = 'Team Rocket\'s Watchtower';

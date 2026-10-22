@@ -9,7 +9,7 @@ import { GameError, GameMessage, PowerType, SuperType } from '../../game';
 
 // WIP - requires changing nearly everything to use MoveCardsEffect
 export class PokemonTower extends TrainerCard {
-  public trainerType = TrainerType.STADIUM;
+  protected _trainerType = TrainerType.STADIUM;
   public set = 'PR';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '42';

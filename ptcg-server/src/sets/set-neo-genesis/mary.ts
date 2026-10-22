@@ -10,7 +10,7 @@ import { ChooseCardsPrompt, ShuffleDeckPrompt } from '../../game';
 
 export class Mary extends TrainerCard {
 
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   public set: string = 'N1';
   public cardImage: string = 'assets/cardback.png';
   public setNumber: string = '87';

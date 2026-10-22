@@ -9,7 +9,7 @@ import { CheckPokemonPowersEffect } from '../../../game/store/effects/check-effe
 import { PowerType, StateUtils } from '../../../game';
 
 export class SacredCharm extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.TOOL;
+  protected _trainerType: TrainerType = TrainerType.TOOL;
   public regulationMark = 'I';
   public set: string = 'PFL';
   public name: string = 'Sacred Charm';

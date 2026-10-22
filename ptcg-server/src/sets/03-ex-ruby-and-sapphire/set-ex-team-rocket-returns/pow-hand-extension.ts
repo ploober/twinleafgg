@@ -20,7 +20,7 @@ import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-eff
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class PowHandExtension extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.ITEM;
+  protected _trainerType: TrainerType = TrainerType.ITEM;
   protected _tags = [CardTag.ROCKETS_SECRET_MACHINE];
   public set: string = 'TRR';
   public name: string = 'Pow! Hand Extension';

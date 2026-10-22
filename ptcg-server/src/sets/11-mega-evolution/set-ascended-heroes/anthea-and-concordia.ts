@@ -17,7 +17,7 @@ import { CardTag } from '../../../game/store/card/card-types';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class AntheaAndConcordia extends TrainerCard {
-  public trainerType: TrainerType = TrainerType.SUPPORTER;
+  protected _trainerType: TrainerType = TrainerType.SUPPORTER;
   public regulationMark = 'I';
   public set: string = 'ASC';
   public cardImage: string = 'assets/cardback.png';
