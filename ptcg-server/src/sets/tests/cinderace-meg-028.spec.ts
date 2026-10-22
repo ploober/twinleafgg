@@ -4,7 +4,7 @@ import { useAttack, getDamage } from './card-test-helpers';
 // TA-97 / RE-38 — Cinderace meg-028 "Turbo Flare": "50 damage. Search your deck for up to 3 Basic
 // Energy cards and attach them to your Benched Pokémon... Then, shuffle your deck." An attack is legal
 // whenever its cost is met; the search attaches to the BENCH, so with an empty deck (nothing to find)
-// or no Benched Pokémon (no legal destination, #1108) there is no search and no shuffle — but the 50
+// or no Benched Pokémon (no legal destination, #2171) there is no search and no shuffle — but the 50
 // still lands. twinleaf threw CANNOT_USE_ATTACK on an empty deck (blocked declaration; 50 never landed).
 beforeAll(() => { loadAllSets(); });
 

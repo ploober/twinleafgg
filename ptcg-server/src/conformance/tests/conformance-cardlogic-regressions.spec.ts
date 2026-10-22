@@ -279,7 +279,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // Basic Psychic Pokémon (energy filler) is a zero-take, but the search still EXECUTED (deck
     // non-empty, Bench has room), so the shuffle is owed (B.33/#2171; family of TA-320/TA-322). Pre-fix
     // an `if (validPokemon.length === 0) return state` early-returned on the zero-FIND and dropped the
-    // shuffle (rotomancer shuffled). The bench-full / empty-deck skips (#1108/#840) are preserved.
+    // shuffle (rotomancer shuffled). The bench-full / empty-deck skips (#2171/#840) are preserved.
     const r = step(
       board(player({ active: inPlay('A-act', [RALTS]),
                      hand: [{ iid: 'A-e', printing: 'por-088' }],

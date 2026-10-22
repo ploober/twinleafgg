@@ -350,7 +350,7 @@ function* useAttack(next: Function, store: StoreLike, state: State, effect: UseA
     // SWAPS the list references (`switchPokemon`), leaving `attackingPokemon` pointing at an empty
     // bench list — so re-reading the slot here dropped the record entirely. The record is the
     // PLAYER's and survives the source leaving play (CF-65; effects that end on leaving the Active
-    // Spot are explicitly worded, #6929). The WRITE POINT stays here, after the Confusion/Smokescreen
+    // Spot are explicitly worded, #723). The WRITE POINT stays here, after the Confusion/Smokescreen
     // checks and the attack's own resolution (TA-399/TA-231) — only the card capture moves earlier.
     const lastAttackSource = copycatCard;
     if (lastAttackSource !== undefined) {

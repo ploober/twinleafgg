@@ -39,7 +39,7 @@ export class Clefairy extends PokemonCard {
       if (!hasBench) {
         // No Benched Pokémon to switch in — the attack is still declarable and simply whiffs ("do as
         // much of the attack as you can"). An attack that switches the opponent's Active is never a
-        // play-restriction (that rule is for Trainers). Compendium #8732/#14066/#14808/#15106. (TA-80)
+        // play-restriction (that rule is for Trainers). Compendium #1658/#14066/#14808/#15106. (TA-80)
         return state;
       }
 

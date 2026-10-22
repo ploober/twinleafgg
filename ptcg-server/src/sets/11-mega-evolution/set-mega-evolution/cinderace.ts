@@ -48,7 +48,7 @@ export class Cinderace extends PokemonCard {
       effect.damage = 0;
 
       // TA-97 / RE-38: the energy attaches to "your Benched Pokémon". With an empty deck (nothing to
-      // find) or NO Benched Pokémon (no legal destination, compendium #1108) there is no search — and
+      // find) or NO Benched Pokémon (no legal destination, compendium #2171) there is no search — and
       // therefore no shuffle. Deal the 50 and stop; do NOT block the attack (was: throw
       // CANNOT_USE_ATTACK before the damage even landed).
       // TA-250 / B.33: the two antecedents above are NOT the same question and were conflated into

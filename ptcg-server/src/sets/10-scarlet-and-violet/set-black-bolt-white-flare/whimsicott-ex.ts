@@ -34,7 +34,7 @@ function* useEnergyGift(
   // and you always have an Active, so the search instruction is always executable — you simply looked
   // at zero cards and found nothing, which compendium #2171 handles like a voluntary fail: *"you must
   // search and shuffle your deck."* Distinct from the RE-38/TA-97 over-shuffle case (an attach with no
-  // legal destination, where #1108/RE-32 say no search happens at all).
+  // legal destination, where #2171/RE-32 say no search happens at all).
   if (player.deck.cards.length === 0) {
     return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
       player.deck.applyOrder(order);

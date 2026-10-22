@@ -346,7 +346,7 @@ function attackUnlocked(state: State, source: PokemonCardList, attack: Attack): 
  * invisible to the static `attackUnlocked`/`enoughEnergyFor` checks: a card-imposed "that Pokemon
  * can't use that attack" marker (the ~28-card `OPPONENTS_POKEMON_CANNOT_USE_THAT_ATTACK_MARKER`
  * family — Klefki "Memory Lock", Murkrow "Torment", …) or a printed use-restriction ("You can use
- * this attack only if you go second …" — Illumise "Slowing Perfume", per compendium #4637 / RE-25).
+ * this attack only if you go second …" — Illumise "Slowing Perfume", per compendium #1079 / RE-25).
  * Without probing, the menu offers an attack the engine then rejects — a §10.3 contract violation the
  * fuzzer flags as "rejected its own legalAction". This mirrors exactly what the driver dispatches
  * (`AttackAction(id, name)`), so a `GameError` here = the real declaration would `invalidAction` =

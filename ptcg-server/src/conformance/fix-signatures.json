@@ -7597,7 +7597,7 @@
       "absentSignatures": [
         "if (validPokemon.length === 0) {"
       ],
-      "note": "TA-324/B.33 (2026-08-27): the on-attach search skipped its owed shuffle on a zero-FIND (no Basic Psychic Pokemon in the deck) via `if (validPokemon.length === 0) return state`. A search that can EXECUTE (deck non-empty, Bench has room) owes the shuffle even when it finds nothing (B.33/#2171; family of TA-320/TA-322). Fix guards only on an EMPTY deck (#840) so control falls through to the prefab's unconditional SHUFFLE_DECK (maxToPut computes to 0); the bench-full skip (#1108) is preserved by the separate GET_PLAYER_BENCH_SLOTS guard. Guard = conformance-cardlogic-regressions.spec [TA-324 por-088]. Found by shuffle_reach.py on-attach routing.",
+      "note": "TA-324/B.33 (2026-08-27): the on-attach search skipped its owed shuffle on a zero-FIND (no Basic Psychic Pokemon in the deck) via `if (validPokemon.length === 0) return state`. A search that can EXECUTE (deck non-empty, Bench has room) owes the shuffle even when it finds nothing (B.33/#2171; family of TA-320/TA-322). Fix guards only on an EMPTY deck (#840) so control falls through to the prefab's unconditional SHUFFLE_DECK (maxToPut computes to 0); the bench-full skip (#2171) is preserved by the separate GET_PLAYER_BENCH_SLOTS guard. Guard = conformance-cardlogic-regressions.spec [TA-324 por-088]. Found by shuffle_reach.py on-attach routing.",
       "fixes": [
         "FX-0052"
       ],

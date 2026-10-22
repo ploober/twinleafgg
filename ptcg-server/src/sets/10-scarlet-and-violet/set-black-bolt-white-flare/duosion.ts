@@ -10,13 +10,13 @@ function* useCellularEvolution(next: Function, store: StoreLike, state: State, e
   // degenerate paths owe opposite things and the original order conflated them:
   //
   //   * nothing in play can evolve  ⇒ the search has no valid criterion, so NO search happens and NO
-  //     shuffle is owed (#1108/RE-32; over-shuffling here is the RE-38/TA-97 defect).
+  //     shuffle is owed (#2171/RE-32; over-shuffling here is the RE-38/TA-97 defect).
   //   * a valid recipient exists but the deck is empty ⇒ the search DID happen, over zero cards, and
   //     the trailing shuffle IS owed (#2171: *"you must search and shuffle your deck"*).
   //
   // Checking the deck first returned without shuffling in BOTH cases, which is what lost the shuffle
   // in the blk-038 repro. Note this card already got the ≥1-recipient paths right (the zero-take and
-  // cancel branches below shuffle, citing #1108/#576/#126) — so it was inconsistent with itself, and
+  // cancel branches below shuffle, citing #2171/#576/#126) — so it was inconsistent with itself, and
   // that inconsistency is exactly the "1 shuffle vs roto's 2" the differential reported.
   //
   // Honest caveat: on THIS card the no-recipient branch is unreachable — Duosion is the attacker, so
@@ -76,7 +76,7 @@ function* useCellularEvolution(next: Function, store: StoreLike, state: State, e
   if (cards.length === 0) {
     // Fail-to-find (deck holds no valid evolution) or a voluntary decline. A valid recipient exists
     // (evolutionNames non-empty, checked above), so the deck search was legal and mandatory and owes the
-    // shuffle even when nothing is found — compendium #1108/#576/#126. (TA-82) [conformance]
+    // shuffle even when nothing is found — compendium #2171/#576/#126. (TA-82) [conformance]
     SHUFFLE_DECK(store, state, player);
     return state;
   }

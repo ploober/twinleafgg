@@ -19,7 +19,7 @@ function* useExplosiveAwakening(
   // below in this same file. You searched a deck of zero cards and found nothing; compendium #2171 is
   // dispositive: *"you must search and shuffle your deck."* The evolve destination is this Pokémon
   // itself, so the search instruction is always executable — this is not the RE-38/TA-97 over-shuffle
-  // case (a search whose payload has nowhere to go, where #1108/RE-32 say no search occurs).
+  // case (a search whose payload has nowhere to go, where #2171/RE-32 say no search occurs).
   //
   // Damage is applied here for the same reason the ≥1-card path applies it below: the shuffle
   // externalizes a prompt that pauses the attack, and base damage left to the framework would land

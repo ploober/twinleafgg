@@ -46,7 +46,7 @@ export class Salazzleex extends PokemonCard {
       // shuffle is always owed. Bailing here emitted no `shuffled` at all.
       //
       // This is NOT the RE-38/TA-97 over-shuffle case: that one is a search whose payload has nowhere
-      // to GO (an attach with an empty Bench), where per #1108/RE-32 no search happens and no shuffle
+      // to GO (an attach with an empty Bench), where per #2171/RE-32 no search happens and no shuffle
       // is owed. The discriminator is whether the search instruction can run at all, not whether it
       // finds anything.
       if (player.deck.cards.length === 0) {
