@@ -64,6 +64,11 @@ export class HopsDubwool extends PokemonCard {
     if (effect instanceof PlayPokemonEffect && effect.pokemonCard === this) {
       const player = effect.player;
 
+      // TA-743 (B.27): with no Pokémon on the opponent's Bench the switch cannot be carried out, so it is not offered.
+      if (!StateUtils.getOpponent(state, player).bench.some((b) => b.cards.length > 0)) {
+        return state;
+      }
+
       // Try to reduce PowerEffect, to check if something is blocking our ability
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
