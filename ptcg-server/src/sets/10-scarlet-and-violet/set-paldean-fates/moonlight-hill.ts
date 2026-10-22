@@ -41,7 +41,9 @@ export class MoonlightHill extends TrainerCard {
         GameMessage.CHOOSE_CARD_TO_DISCARD,
         player.hand,
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Psychic Energy' },
-        { allowCancel: true, min: 1, max: 1 }
+        // TA-744 / CF-14: using the Stadium is the "may"; the discard is its price, not a second choice. A cancelable
+        // pick never collapses, so with one Basic [P] Energy in hand the player was asked a pick with one answer.
+        { allowCancel: false, min: 1, max: 1 }
       ), cards => {
         cards = cards || [];
         if (cards.length === 0) {

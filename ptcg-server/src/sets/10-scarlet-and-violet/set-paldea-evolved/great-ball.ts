@@ -57,10 +57,9 @@ export class GreatBall extends TrainerCard {
 
         if (chosenCards.length <= 0) {
           // No Pokemon chosen, shuffle all back
-          temp.cards.forEach(card => {
-            MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
-            MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
-          });
+          // TA-745: no self-discard here — the shuffle below is still owed; the generic cleanup discards the Item
+          // after it (#919, TA-378's shape). (The per-card loop moved the whole pile each pass.)
+          MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
         }
 
         if (chosenCards.length > 0) {
@@ -68,7 +67,7 @@ export class GreatBall extends TrainerCard {
           const pokemon = chosenCards[0];
           MOVE_CARDS(store, state, temp, player.hand, { cards: [pokemon], sourceCard: this });
           MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });
-          MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
+          // TA-745: self-discard removed — the generic finalizeTrainerCleanup discards after the last prompt.
 
           if (chosenCards.length > 0) {
             state = store.prompt(state, new ShowCardsPrompt(
@@ -77,8 +76,8 @@ export class GreatBall extends TrainerCard {
               chosenCards), () => state);
           }
         }
-        MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });
-
+        // TA-745 / B.80: no self-discard here — the Item is still resolving (its shuffle is owed). The generic
+        // finalizeTrainerCleanup discards it once no prompt is open, i.e. after the shuffle (#919).
         return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
           player.deck.applyOrder(order);
         });
