@@ -13971,6 +13971,16 @@
       "fixes": [
         "FX-0528"
       ]
+    },
+    {
+      "file": "game/store/prefabs/attack-effects.ts",
+      "signatures": [
+        "  const minEnergy = Math.min(want, eligibleUnits.reduce((sum, u) => sum + u, 0));"
+      ],
+      "note": "TA-740 (2026-10-22): 'Move N Energy' counts Energy, not cards (B.114): MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST asks between the f",
+      "fixes": [
+        "FX-0529"
+      ]
     }
   ]
 }
