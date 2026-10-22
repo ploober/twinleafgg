@@ -42,6 +42,12 @@ If the Pokémon this card is attached to is Knocked Out by damage from an attack
         return state;
       }
 
+      // TA-741: "Knocked Out by DAMAGE from an attack": the Pokémon must have taken the attack's damage this turn
+      // (TA-573's per-Pokémon fact). A Knock Out the attack causes without damage (Amazing Destruction) does not count.
+      if (effect.target.attackDamagedOnTurn !== state.turn) {
+        return state;
+      }
+
       if (IS_SPECIAL_ENERGY_BLOCKED(store, state, player, this, effect.target)) {
         return state;
       }
