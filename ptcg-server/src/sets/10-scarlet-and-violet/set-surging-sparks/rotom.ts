@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, TrainerType } from '../../../game/store/card/card-types';
-import { StoreLike, State, ShowCardsPrompt, GameMessage, TrainerCard, CardList } from '../../../game';
+import { StoreLike, State, ShowCardsPrompt, GameMessage, TrainerCard, CardList, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
@@ -65,7 +65,7 @@ export class Rotom extends PokemonCard {
       const opponentProvidedEnergy = new CheckProvidedEnergyEffect(opponent);
       store.reduceEffect(state, opponentProvidedEnergy);
       const opponentEnergyCount = opponentProvidedEnergy.energyMap
-        .reduce((left, p) => left + p.provides.length, 0);
+        .reduce((left, p) => left + StateUtils.getProvidesUnitCount(p.provides), 0);
 
       effect.damage = opponentEnergyCount * 20;
     }

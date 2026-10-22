@@ -49,7 +49,7 @@ export class Delcatty extends PokemonCard {
         const checkProvidedEnergyEffect = new CheckProvidedEnergyEffect(opponent, cardList);
         store.reduceEffect(state, checkProvidedEnergyEffect);
         checkProvidedEnergyEffect.energyMap.forEach(energy => {
-          energies += energy.provides.length;
+          energies += StateUtils.getProvidesUnitCount(energy.provides);
         });
       });
 

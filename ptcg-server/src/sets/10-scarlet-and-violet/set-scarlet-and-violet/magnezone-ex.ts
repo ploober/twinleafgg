@@ -60,7 +60,7 @@ export class Magnezoneex extends PokemonCard {
         const checkProvidedEnergyEffect = new CheckProvidedEnergyEffect(player, cardList);
         store.reduceEffect(state, checkProvidedEnergyEffect);
         checkProvidedEnergyEffect.energyMap.forEach((energy) => {
-          energies += energy.provides.length;
+          energies += StateUtils.getProvidesUnitCount(energy.provides);
         });
       });
 

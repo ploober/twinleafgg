@@ -84,7 +84,7 @@ export class Deoxys extends PokemonCard {
       const checkEnergy = new CheckProvidedEnergyEffect(opponent, opponent.active);
       store.reduceEffect(state, checkEnergy);
 
-      const energyCount = checkEnergy.energyMap.reduce((sum, em) => sum + em.provides.length, 0);
+      const energyCount = checkEnergy.energyMap.reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0);
       effect.damage += 20 * energyCount;
     }
 
