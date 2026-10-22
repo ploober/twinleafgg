@@ -12,7 +12,7 @@ import {
   PlaceDamageCountersEffect,
   PowerEffect,
 } from '../../../game/store/effects/game-effects';
-import { ABILITY_USED } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 
 export class Hawlucha extends PokemonCard {
@@ -65,6 +65,11 @@ export class Hawlucha extends PokemonCard {
 
       const hasBenched = opponent.bench.some(b => b.cards.length > 0);
       if (!hasBenched) {
+        return state;
+      }
+
+      // TA-737: ask the lock before offering; the confirm used to open under a lock and then do nothing.
+      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
 

@@ -16,7 +16,7 @@ import {
 import { PowerEffect } from '../../../game/store/effects/game-effects';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import { ABILITY_USED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, WAS_ATTACK_USED, MOVE_CARDS, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 export class IronLeavesex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -54,6 +54,11 @@ export class IronLeavesex extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (effect instanceof PlayPokemonEffect && effect.pokemonCard == this) {
       const player = effect.player;
+
+      // TA-737: ask the lock before offering; the confirm used to open under a lock and then do nothing.
+      if (IS_ABILITY_BLOCKED(store, state, player, this)) {
+        return state;
+      }
 
       state = store.prompt(
         state,

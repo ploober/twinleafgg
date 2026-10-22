@@ -3283,6 +3283,15 @@ export function IS_ABILITY_BLOCKED(
   /** When probing a specific power (e.g. useFromHand), pass it so allowUseFromHand locks match. */
   power?: Partial<Power>,
 ): boolean {
+  // TA-737: a "when you play this Pokémon from your hand" Ability is used by the Pokémon IN PLAY (compendium #1991,
+  // #1536), but its handler runs on PlayPokemonEffect while the card is still in the hand, where no lock reaches it.
+  // Judge it where it is going: on the empty Bench slot, or on top of the Pokémon it evolves. Put back afterwards.
+  const play = power?.useFromHand ? undefined : store.pokemonBeingPlayed?.();
+  const handIndex = play !== undefined && play.pokemonCard === card ? player.hand.cards.indexOf(card) : -1;
+  if (play !== undefined && handIndex >= 0) {
+    player.hand.cards.splice(handIndex, 1);
+    play.target.cards.push(card);
+  }
   // Try to reduce PowerEffect, to check if something is blocking our ability
   try {
     store.reduceEffect(
@@ -3304,6 +3313,11 @@ export function IS_ABILITY_BLOCKED(
     );
   } catch {
     return true;
+  } finally {
+    if (play !== undefined && handIndex >= 0) {
+      play.target.cards.splice(play.target.cards.indexOf(card), 1);
+      player.hand.cards.splice(handIndex, 0, card);
+    }
   }
   return false;
 }

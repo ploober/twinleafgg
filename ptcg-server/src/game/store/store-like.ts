@@ -28,6 +28,13 @@ export interface StoreLike {
    */
   isProbing(): boolean;
 
+  /**
+   * TA-737: the PlayPokemonEffect whose card handlers are running. They see it while the card is still in the
+   * hand (the reducer moves it afterwards), so IS_ABILITY_BLOCKED reads this to judge a "when you play this Pokémon
+   * from your hand" Ability where the card is going. Optional: test doubles of the store need not carry it.
+   */
+  pokemonBeingPlayed?(): { pokemonCard: object; target: { cards: object[] } } | undefined;
+
   prompt<T>(
     state: State, prompt: Prompt<T>,
     then: (result: T) => void): State;

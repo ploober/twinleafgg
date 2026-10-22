@@ -315,6 +315,8 @@ export class Store implements StoreLike {
    * its order against the batch's other triggers can matter.
    */
   private probeDispatched = false;
+  /** TA-737: see `StoreLike.pokemonBeingPlayed`. A stack, because a handler may play another Pokémon. */
+  private playing: PlayPokemonEffect[] = [];
 
   public reduceEffect(state: State, effect: Effect): State {
     if (this.probing && !(effect instanceof PowerEffect) && !(effect instanceof SpecialEnergyEffect)
@@ -330,7 +332,16 @@ export class Store implements StoreLike {
 
     APPLY_ATTACK_EFFECT_ABILITY_LOCKS(state, effect);
 
-    state = this.propagateEffect(state, effect);
+    if (effect instanceof PlayPokemonEffect) {
+      this.playing.push(effect);
+      try {
+        state = this.propagateEffect(state, effect);
+      } finally {
+        this.playing.pop();
+      }
+    } else {
+      state = this.propagateEffect(state, effect);
+    }
     if (!this.calculatingPlayability) {
       logPreventedEffect(this, state, effect);
     }
@@ -591,6 +602,10 @@ export class Store implements StoreLike {
    */
   public isProbing(): boolean {
     return this.probing;
+  }
+
+  public pokemonBeingPlayed(): PlayPokemonEffect | undefined {
+    return this.playing[this.playing.length - 1];
   }
 
   public cleanup(): void {
