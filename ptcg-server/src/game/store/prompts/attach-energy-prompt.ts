@@ -23,6 +23,13 @@ export interface AttachEnergyOptions {
   differentTargets: boolean;
   validCardTypes?: CardType[];
   maxPerType?: number  // Add this new option
+  /**
+   * B.114 (TA-740): "Move N Energy" counts Energy, not cards. When set, the picked cards must provide at least
+   * `minEnergy` Energy (`energyUnits[i]` = what `cardList.cards[i]` provides, Wild Growth included), using between
+   * `min` (the fewest cards that reach it) and `max` (N) cards. Unset: one card is one Energy, as before.
+   */
+  minEnergy?: number;
+  energyUnits?: number[];
 }
 
 export type AttachEnergyResultType = { to: CardTarget, index: number }[];
@@ -106,6 +113,13 @@ export class AttachEnergyPrompt extends Prompt<CardAssign[]> {
     }
     if (result.length < this.options.min || result.length > this.options.max) {
       return false;
+    }
+    if (this.options.minEnergy !== undefined && this.options.energyUnits !== undefined) {
+      const units = this.options.energyUnits;
+      const picked = result.reduce((sum, r) => sum + (units[this.cardList.cards.indexOf(r.card)] ?? 1), 0);
+      if (picked < this.options.minEnergy) {
+        return false;
+      }
     }
     if (result.some(r => this.options.blocked.includes(this.cardList.cards.indexOf(r.card)))) {
       return false;

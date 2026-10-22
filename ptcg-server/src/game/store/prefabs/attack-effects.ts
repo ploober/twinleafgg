@@ -1058,9 +1058,25 @@ export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
       eligibleCount++;
     }
   });
-  const count = Math.min(options.count ?? 1, eligibleCount);
+  // B.114 (TA-740; #2205, #2127): "Move N Energy" counts the Energy each card provides (Wild Growth included), and
+  // uses between the fewest cards that reach N and N cards. With 1-Energy cards both bounds are N, as before.
+  const provided = new CheckProvidedEnergyEffect(player, source);
+  store.reduceEffect(state, provided);
+  const energyUnits = source.cards.map(card => provided.energyMap
+    .filter(em => em.card === card)
+    .reduce((sum, em) => sum + StateUtils.getProvidesUnitCount(em.provides), 0) || 1);
+  const eligibleUnits = source.cards
+    .map((card, index) => (card.superType === SuperType.ENERGY && !blocked.includes(index) ? energyUnits[index] : 0))
+    .sort((a, b) => b - a);
+  const want = options.count ?? 1;
+  const minEnergy = Math.min(want, eligibleUnits.reduce((sum, u) => sum + u, 0));
+  const count = Math.min(want, eligibleCount);
   if (count === 0) {
     return state;
+  }
+  let fewest = 0;
+  for (let reached = 0; reached < minEnergy; fewest++) {
+    reached += eligibleUnits[fewest];
   }
   const prompt = new AttachEnergyPrompt(
     player.id,
@@ -1069,7 +1085,7 @@ export function MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST(
     PlayerType.BOTTOM_PLAYER,
     [SlotType.BENCH],
     { superType: SuperType.ENERGY },
-    { allowCancel: false, min: count, max: count, blocked, sameTarget: true },
+    { allowCancel: false, min: Math.min(fewest, count), max: count, blocked, sameTarget: true, minEnergy, energyUnits },
   );
   prompt.deferredMove = true;
   return store.prompt(state, prompt, transfers => {

@@ -12686,9 +12686,9 @@
     {
       "file": "game/store/prefabs/attack-effects.ts",
       "signatures": [
-        "{ allowCancel: false, min: count, max: count, blocked, sameTarget: true },"
+        "{ allowCancel: false, min: Math.min(fewest, count), max: count, blocked, sameTarget: true, minEnergy, energyUnits },"
       ],
-      "note": "TA-653, TA-654 (2026-10-06): B.89 Step D: the own-Energy movers ask the Energy and its Benched destination together before the damage (joint moveEner",
+      "note": "TA-653, TA-654 (2026-10-06): B.89 Step D: the own-Energy movers ask the Energy and its Benched destination together before the damage (joint moveEner | 2026-10-22 retargeted (TA-740 / B.114 extended the prompt with minEnergy / energyUnits; the fix is intact, not reverted)",
       "fixes": [
         "FX-0441"
       ],

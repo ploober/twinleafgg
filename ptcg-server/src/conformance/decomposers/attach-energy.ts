@@ -172,7 +172,11 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       }
     }
 
-    if (rp.length >= min && max > min) {
+    // B.114 (TA-740): with an Energy requirement the stop also needs the picked cards to provide it.
+    const units = prompt.options.energyUnits;
+    const energyMet = prompt.options.minEnergy === undefined || units === undefined
+      || rp.reduce((sum, p) => sum + (units[p.index] ?? 1), 0) >= prompt.options.minEnergy;
+    if (rp.length >= min && max > min && energyMet) {
       legalActions.push(END_CHOICE);
     }
     if (legalActions.length === 0) {
