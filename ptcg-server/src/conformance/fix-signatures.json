@@ -13831,6 +13831,13 @@
       "fixes": [
         "FX-0523"
       ]
+    },
+    {
+      "file": "set-scarlet-and-violet/hawlucha.ts",
+      "signatures": [
+        "import { ABILITY_USED, IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';"
+      ],
+      "note": "TA-737 (FX-0523): Hawlucha svi-118 asks the lock before offering; bulk-registered 2026-10-21; validated present@HEAD absent@merge-base"
     }
   ]
 }
