@@ -32,7 +32,10 @@
         "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
       "state": "absorbed",
-      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-temporal-forces/iron-thorns.ts",
@@ -2016,7 +2019,10 @@
         "if (ON_DAMAGED_BY_OPPONENT_ATTACK_EVEN_IF_KNOCKED_OUT(state, effect, { source: this })) {"
       ],
       "state": "absorbed",
-      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-surging-sparks/surfer.ts",
@@ -2102,7 +2108,10 @@
         "const attackerPromotion = attackerWasKnockedOut ? null : choosePromotionPrompt(player);",
         "state.playerLastAttack[player.id] = { attack, sourceCard: lastAttackSource, turn: state.turn };"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "game/store/effect-reducers/attack-effect.ts",
@@ -3601,7 +3610,10 @@
         "public evolvesFrom = 'Magikarp';"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-22 merge: upstream c51047b6c moved the class to set-team-rocket (TR 8; CEL now a reprint of it); the evolvesFrom line moved with it — retargeted, not reapplied",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-chilling-reign/galarian-zapdos-v.ts",
@@ -5877,7 +5889,10 @@
         "export function assertRetreatLegal(store: StoreLike, state: State, effect: RetreatEffect): void {"
       ],
       "note": "deletion-type fix (auto-pay shortcut removed) - the comment is the signature",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "game/store/effects/game-effects.ts",
@@ -6788,7 +6803,10 @@
         "&& effect.target.getPokemonCard() === this) {"
       ],
       "state": "guarding",
-      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -8524,7 +8542,10 @@
         "retreatingPlayer.retreatedTurn = state.turn;"
       ],
       "state": "guarding",
-      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted"
+      "note": "2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-chaos-rising/frogadier.ts",
@@ -8591,7 +8612,10 @@
         "if (placeCounters.preventDefault) {"
       ],
       "state": "absorbed",
-      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)"
+      "note": "2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-ascended-heroes/dustox.ts",
@@ -14011,7 +14035,10 @@
         "          new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n          () => next(),\n        );\n      }\n\n      cards.forEach((card, index) => {\n        MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: effect.stadium });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-destined-rivals/tm-machine.ts",
@@ -14019,7 +14046,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-obsidian-flames/togepi.ts",
@@ -14027,7 +14057,10 @@
         "        store.prompt(state, new ShowCardsPrompt(\n          player.id,\n          GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,\n          cards\n        ), () => []);\n\n        MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: cards, sourceCard: this });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-paldea-evolved/super-rod.ts",
@@ -14035,7 +14068,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.discard, player.deck, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-paradox-rift/earthen-vessel.ts",
@@ -14043,7 +14079,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-pokemon-151/magneton.ts",
@@ -14051,7 +14090,10 @@
         "          SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);\n          MOVE_CARDS(store, state, player.discard, player.hand, { cards: selected });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-prismatic-evolution/max-rod.ts",
@@ -14059,7 +14101,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-scarlet-and-violet/energy-retrieval.ts",
@@ -14067,7 +14112,10 @@
         "            new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n            () => state,\n          );\n        }\n      }\n\n      if (cards.length > 0) {\n        // Recover discarded Energy\n        MOVE_CARDS(store, state, player.discard, player.hand, {"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-scarlet-and-violet/rotom.ts",
@@ -14075,7 +14123,10 @@
         "          SHOW_CARDS_TO_PLAYER(store, state, opponent, selected);\n          MOVE_CARDS(store, state, player.discard, player.hand, { cards: selected });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-stellar-crown/fan-rotom.ts",
@@ -14083,7 +14134,10 @@
         "            store.prompt(state, [new ShowCardsPrompt(\n              opponent.id,\n              GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,\n              cards\n            )], () => {\n\n              MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-surging-sparks/miraculous-intercom.ts",
@@ -14091,7 +14145,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  if (cards.length > 0) {\n    MOVE_CARDS(store, state, player.hand, player.discard, { cards: [self], sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-temporal-forces/master-ball.ts",
@@ -14099,7 +14156,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-twilight-masquerade/hyper-aroma.ts",
@@ -14107,7 +14167,10 @@
         "      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),\n      () => next(),\n    );\n  }\n\n  MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-twilight-masquerade/lanas-assistance.ts",
@@ -14115,7 +14178,10 @@
         "  SHOW_CARDS_TO_PLAYER(store, state, opponent, cards);\n  MOVE_CARDS(store, state, player.discard, player.hand, { cards: cards, sourceCard: self });"
       ],
       "note": "2026-10-22 merge: upstream 95313f768 (ShowCardsPrompt animation) moved the reveal after the move; reversed here — the reveal comes before the zone change (TA-265 residual / B.34). Multi-line span: asserts the order.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-majestic-dawn/aipom.ts",
@@ -14123,7 +14189,10 @@
         "    if (AFTER_ATTACK(effect, 1, this)) {\n      PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND"
       ],
       "note": "2026-10-22 merge: upstream added Aipom MD calling the AfterAttackEffect prefab from WAS_ATTACK_USED; guarded by AFTER_ATTACK like every other caller (TA-128).",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "game/store/effect-reducers/retreat-effect.ts",
@@ -14131,7 +14200,10 @@
         "    { min: 1, max: 1, allowCancel: true, blocked: [] }\n  );\n  prompt.skipSwitchLog = true;"
       ],
       "note": "2026-10-22 merge: upstream 0c3c59fb0 made the retreat Bench choice non-cancelable; TA-580 keeps it cancelable (cancelling pays nothing).",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "game/store/effect-reducers/game-effect.ts",
@@ -14139,7 +14211,10 @@
         "    if (effect.source instanceof PokemonCard && effect.sourcePower !== undefined) {"
       ],
       "note": "2026-10-22 merge: PlaceDamageCountersEffect's Ability probe runs only for an explicit sourcePower; upstream inferred one, which made an attack's counters from a Pokemon with an Ability (Sinistcha pbl, Annihilape pbl) an effect of an Ability.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     },
     {
       "file": "set-journey-together/other-prints.ts",
@@ -14147,7 +14222,10 @@
         "  public canPlay(store: StoreLike, state: State, player: Player): boolean {\n    let damaged = false;"
       ],
       "note": "2026-10-22 merge: TA-717 — Super Potion JTG is playable with any damaged Pokemon; upstream e207317b6's XY canPlay (damaged WITH Energy) is overridden.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0532"
+      ]
     }
   ]
 }
