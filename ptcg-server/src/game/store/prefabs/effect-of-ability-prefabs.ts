@@ -88,7 +88,9 @@ export function IS_EFFECT_OF_OPPONENTS_ABILITY_DONE_TO(
     if (effect.player === targetOwner) {
       return false;
     }
-    if (!(effect.source instanceof PokemonCard)) {
+    // TA-746: a placement is an Ability's effect only when it names the Ability, as the engine's own
+    // EffectOfAbilityEffect probe requires; an attack's counters (Sinistcha pbl Matcha Spin) carry no sourcePower.
+    if (!(effect.source instanceof PokemonCard) || effect.sourcePower === undefined) {
       return false;
     }
     const sourceSlot = StateUtils.findPokemonSlot(state, effect.source);
