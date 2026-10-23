@@ -3,7 +3,10 @@ import { TrainerType } from '../../../game/store/card/card-types';
 import { Card, GameError, GameMessage, Player, State, StateUtils, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
-import { COIN_FLIP_PROMPT, DRAW_CARDS, MOVE_HAND_TO_DECK_THEN_DRAW } from '../../../game/store/prefabs/prefabs';
+import { COIN_FLIP_PROMPT, DRAW_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MoveCardsEffect } from '../../../game/store/effects/game-effects';
+import { CardList } from '../../../game/store/state/card-list';
+import { ShuffleDeckPrompt } from '../../../game/store/prompts/shuffle-prompt';
 
 export class Lucian extends TrainerCard {
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -53,67 +56,61 @@ export class Lucian extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
       }
 
-      this.shuffleCards(playerCards);
-      this.shuffleCards(opponentCards);
+      // Each hand was shuffled with an inline PRNG (the card sat in EXCLUDED_RANDOM_CARDS). Iono's shape (TA-608, B.74):
+      // every hand is shuffled, then every hand goes on the bottom of its deck, then each player flips and draws. Each
+      // hand is lifted into a pile (B.80: transit {hand -> deck bottom, owner}); for its shuffle the pile goes under the
+      // deck as the bottom segment of a ShuffleDeckPrompt {zone: hand, bottomCount} and comes back out in the answered
+      // order. A player protected from the Supporter keeps their hand and does not flip.
+      const lift = (who: Player, cards: Card[]): CardList | undefined => {
+        const pile = new CardList();
+        const move = new MoveCardsEffect(who.hand, pile, { cards, sourceCard: this });
+        state = store.reduceEffect(state, move);
+        if (move.preventDefault) { return undefined; }
+        pile.cards.forEach(c => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner' }));
+        return pile;
+      };
+      const piles: Array<[Player, CardList | undefined]> = [[player, lift(player, playerCards)], [opponent, lift(opponent, opponentCards)]];
 
-      const eitherPutCards = playerCards.length > 0 || opponentCards.length > 0;
-
-      const flipAndDraw = (target: Player, afterDraw?: () => void) => {
-        if (!eitherPutCards) {
-          afterDraw?.();
-          return;
-        }
-        COIN_FLIP_PROMPT(store, state, target, (heads) => {
-          DRAW_CARDS(store, state, target, heads ? 6 : 3);
-          afterDraw?.();
+      const flipAndDraw = (i: number): void => {
+        if (i === piles.length) { return; }
+        const [who, pile] = piles[i];
+        if (pile === undefined) { return flipAndDraw(i + 1); }
+        COIN_FLIP_PROMPT(store, state, who, (heads) => {
+          DRAW_CARDS(store, state, who, heads ? 6 : 3);
+          flipAndDraw(i + 1);
         });
       };
 
-      const runOpponent = (): void => {
-        if (opponentCards.length > 0) {
-          MOVE_HAND_TO_DECK_THEN_DRAW(store, state, opponent, {
-            cards: opponentCards,
-            drawCount: 0,
-            sourceCard: this,
-            afterDraw: () => flipAndDraw(opponent),
-            onMovePrevented: () => flipAndDraw(opponent),
-          });
-          return;
+      const shuffle = (i: number): State => {
+        if (i === piles.length) {
+          // Put, then flip and draw.
+          const put = piles.some(([, pile]) => pile !== undefined && pile.cards.length > 0);
+          for (const [who, pile] of piles) {
+            if (pile !== undefined) { pile.cards.forEach(c => CardList.transit.delete(c)); pile.moveTo(who.deck); }
+          }
+          if (put) { flipAndDraw(0); }
+          return state;
         }
-        if (playerCards.length > 0) {
-          flipAndDraw(opponent);
-        }
-      };
-
-      if (playerCards.length > 0) {
-        return MOVE_HAND_TO_DECK_THEN_DRAW(store, state, player, {
-          cards: playerCards,
-          drawCount: 0,
-          sourceCard: this,
-          afterDraw: () => {
-            flipAndDraw(player, () => runOpponent());
-          },
+        const [who, pile] = piles[i];
+        if (pile === undefined) { return shuffle(i + 1); }
+        const n = pile.cards.length;
+        const start = who.deck.cards.length;
+        pile.moveTo(who.deck);
+        return store.prompt(state, new ShuffleDeckPrompt(who.id, { zone: 'hand', bottomCount: n }), order => {
+          const deck = who.deck.cards;
+          // Segment-relative answer (the adapter advertises the segment); a whole-deck answer keeps the segment's order.
+          const segment = order.length === n ? order.map(k => start + k) : order.filter(k => k >= start);
+          const block = segment.length === n && new Set(segment).size === n && segment.every(k => k >= start && k < deck.length)
+            ? segment.map(k => deck[k]) : deck.slice(start);
+          who.deck.cards = deck.slice(0, start);
+          pile.cards = block;
+          block.forEach((c, k) => CardList.transit.set(c, { origin: 'hand', destination: 'deckBottom', visibility: 'owner', order: k }));
+          shuffle(i + 1);
         });
-      }
-
-      return MOVE_HAND_TO_DECK_THEN_DRAW(store, state, opponent, {
-        cards: opponentCards,
-        drawCount: 0,
-        sourceCard: this,
-        afterDraw: () => {
-          flipAndDraw(opponent, () => flipAndDraw(player));
-        },
-        // Opponent put was blocked and player had no cards — no coin flips.
-      });
+      };
+      return shuffle(0);
     }
 
     return state;
-  }
-
-  private shuffleCards(cards: Card[]): void {
-    for (let i = cards.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [cards[i], cards[j]] = [cards[j], cards[i]];
-    }
   }
 }

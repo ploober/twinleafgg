@@ -53,7 +53,6 @@ export const EXCLUDED_RANDOM_CARDS: string[] = [
   "Lileep LA",
   "Litwick NVI 58",
   "Lotad DX",
-  "Lucian TWM",
   "Ludicolo PRC 37",
   "Machamp PLB 50",
   "Mandibuzz ex ASC",
