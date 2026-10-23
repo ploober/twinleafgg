@@ -137,7 +137,10 @@ describe('Tier 1 — projection matches raw State', () => {
 
 describe('Tier 1 — deferred-default fields stay at their documented defaults (no faithful engine source)', () => {
 
-  it('movedToActiveOnTurn stays -1 after promoting a benched Pokemon (engine has only a this-turn boolean)', () => {
+  // Until 2026-10-23 this retreat stopped at the cost pending, so the promotion never happened and the -1 it asserted was
+  // vacuous. B.25 (amended 2026-10-23) collapses the forced one-Energy payment, the retreat completes, and the marker is
+  // the real turn of the move (CF-16 made the engine stamp it).
+  it('movedToActiveOnTurn is the turn a retreat moved the benched Pokemon to the Active Spot', () => {
     const game = check(
       board(
         player({ active: pip('A-act', RALTS, { energy: [{ iid: 'e0', printing: PSY }] }), bench: [pip('A-b0', RALTS)] }),
@@ -145,7 +148,8 @@ describe('Tier 1 — deferred-default fields stay at their documented defaults (
       ),
       [{ actor: 'A', type: 'retreat', to: 0 }],
     );
-    expect(projectGame(game).players.A.active!.markers.movedToActiveOnTurn).toBe(-1);
+    expect(projectGame(game).players.A.active!.stack[0].iid).toBe('A-b0');
+    expect(projectGame(game).players.A.active!.markers.movedToActiveOnTurn).toBe(3);
   });
 
   it('damageTakenThisTurn stays 0 after taking attack damage (engine field is damageTakenLastTurn — TODO candidate)', () => {

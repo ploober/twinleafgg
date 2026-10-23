@@ -742,7 +742,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
         active: inPlay('A-act', [RALTS], en(WATER, 1, 'act')),
         bench: [inPlay('A-mlx', ['meg-100']), inPlay('A-src', [RALTS], en(PSY, 2, 'src')), inPlay('A-latios', ['meg-101'])],
       }), player({ active: inPlay('B-act', [RALTS]) })),
-      [{ actor: 'A', type: 'retreat', to: 0 }, { actor: 'A', type: 'discard', owner: 'A', target: 'acte0' }]);
+      [{ actor: 'A', type: 'retreat', to: 0 }]);   // B.25 amended 2026-10-23: the one-Energy cost is forced and collapses
     expect(promote.state.players.A.active!.stack[0].iid).toBe('A-mlx'); // Mega Latias ex promoted
     expect(types(promote)).toContain('confirm');                        // Lustrous Assist fired (was dead pre-fix)
   });
@@ -3315,7 +3315,9 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(tails.state.players.A.flags.retreatedThisTurn).toBe(true);           // #2348: the retreat is spent
     expect(hasType(tails, 'retreat')).toBe(false);
     const heads = step(b(en(WATER, 1, 'a')), [retreat, flipFace('heads')]);
-    expect(hasType(heads, 'discard')).toBe(true);                               // the cost pick follows
+    // heads pays the cost; one Energy for a cost of 1 is forced and collapses (B.25 amended 2026-10-23)
+    expect(heads.state.players.A.active!.stack[0].iid).toBe('A-b0');
+    expect(heads.state.players.A.discard.length).toBe(1);
     const unpayable = step(b([]), [retreat]);
     expect(unpayable.status).toBe('invalidAction');
   });

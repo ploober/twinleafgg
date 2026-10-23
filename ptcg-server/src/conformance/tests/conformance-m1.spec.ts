@@ -178,15 +178,14 @@ describe('Conformance M1 — action mapper + event mapper (a full no-prompt turn
 
     const actions: NeutralAction[] = [
       { actor: 'A', type: 'attachEnergy', card: 'A-psy', target: 'A-bench0' },  // attach to the retreat target
-      { actor: 'A', type: 'retreat', to: 0 },                                   // paying the cost always prompts
-      { actor: 'A', type: 'discard', owner: 'A', target: 'A-pre' },                         // the retreat-cost discard pick
+      { actor: 'A', type: 'retreat', to: 0 },                                   // B.25 amended 2026-10-23: the one Energy is a forced payment and collapses
       { actor: 'A', type: 'endTurn' },                                          // real PassTurnAction
     ] as NeutralAction[];
 
     const res = step(initial, actions);
 
     expect(res.status).toBe('awaitingAction');
-    expect(res.applied).toBe(4);
+    expect(res.applied).toBe(3);
 
     // the benched Ralts (with its freshly attached energy) is now active
     expect(res.state.players.A.active!.stack).toEqual([{ iid: 'A-bench0', printing: RALTS }]);

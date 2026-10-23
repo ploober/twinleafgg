@@ -48,7 +48,11 @@ function isMovePick(prompt: ChooseEnergyPrompt): boolean {
  * `allowCancel === false`, so comparing against the full offered set is the right test.
  */
 function forcedFullPick(prompt: ChooseEnergyPrompt): boolean {
-  if (prompt.options.allowCancel !== false || prompt.energy.length === 0
+  // B.25 amended 2026-10-23 (owner): a Retreat Cost that needs EVERY attached card is a forced pick and collapses —
+  // it is no longer a structural step. The engine's retreat prompt is cancelable (`allowCancel` defaults to true), but
+  // the wire offers no cancel at that pending (the retreat is already declared), so the decision is still forced.
+  const retreatCost = prompt.message === GameMessage.CHOOSE_ENERGY_TO_PAY_RETREAT_COST;
+  if ((prompt.options.allowCancel !== false && !retreatCost) || prompt.energy.length === 0
     || !StateUtils.checkLegalEnergyPayment(prompt.energy, prompt.cost)) {
     return false;
   }
