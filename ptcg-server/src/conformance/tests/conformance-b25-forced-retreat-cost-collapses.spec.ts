@@ -12,13 +12,19 @@ import {
  * N-of-N discard. "Forced" is `forcedFullPick`'s test — no proper subset of the attached Energy pays the cost — not
  * "card count = cost" (TA-439's Wild Growth board stays a real choice and keeps its own spec).
  *
- * Mutation guard: drop the `retreatCost` exemption in `forcedFullPick` → tests 1 and 2 see a `discard` pending again.
- * Test 3 is the negative control: two Energy for a cost of 1 is a real choice and must still pend.
+ * Mutation guard: drop the `retreatCost` exemption in `forcedFullPick` → tests 1, 2 and 4 see a `discard` pending
+ * again. Test 3 is the negative control: two Energy for a cost of 1 is a real choice and must still pend.
+ *
+ * Tests 4 and 5 measure "forced" against the EFFECTIVE cost, not the printed one: Numel `asc-027` (Retreat Cost 3)
+ * holding Air Balloon `asc-181` ("[C][C] less") pays 1. With one Energy that is forced and collapses (4); with two
+ * it is a choice (5). A test that read the printed 3 would see one Energy as unpayable and two as forced.
  */
 
 const GRASS = 'sve-001', FIRE = 'sve-003';
 const BELLSPROUT = 'asc-004';   // Erika's Bellsprout, Retreat Cost 1 — also B's Active and A's Bench target
 const GRUBBIN = 'asc-017';      // Grubbin, Retreat Cost 2
+const NUMEL = 'asc-027';        // Numel, Retreat Cost 3
+const AIR_BALLOON = 'asc-181';  // Tool: the Retreat Cost of the Pokémon this card is attached to is [C][C] less
 
 function markers(): PokemonMarkers {
   return { playedOnTurn: 1, movedToActiveOnTurn: -1, damageTakenThisTurn: 0, abilitiesUsedThisTurn: [], cannotAttackNextTurn: false };
@@ -26,19 +32,19 @@ function markers(): PokemonMarkers {
 function flags(): PlayerFlags {
   return { supporterPlayedThisTurn: false, energyAttachedThisTurn: false, stadiumPlayedThisTurn: false, retreatedThisTurn: false, cardsPlayedThisTurn: 0, prizesTakenThisTurn: 0, prizesTakenLastTurn: 0, prizesTaken: 0, vstarUsed: false };
 }
-function pip(stack: CardRef[], energy: CardRef[] = []): PokemonInPlay {
-  return { stack, energy, tools: [], damage: 0, conditions: [], markers: markers() };
+function pip(stack: CardRef[], energy: CardRef[] = [], tools: CardRef[] = []): PokemonInPlay {
+  return { stack, energy, tools, damage: 0, conditions: [], markers: markers() };
 }
 function player(over: Partial<PlayerState> = {}): PlayerState {
   return { active: null, bench: [], hand: [], deck: [], discard: [], lostZone: [], prizes: [], flags: flags(), ...over };
 }
-function board(activePrinting: string, energy: CardRef[]): NeutralState {
+function board(activePrinting: string, energy: CardRef[], tools: CardRef[] = []): NeutralState {
   const withZones = (ps: PlayerState, tag: string): PlayerState => ({
     ...ps,
     prizes: Array.from({ length: 6 }, (_, i) => ({ iid: `${tag}p${i}`, printing: GRASS, faceUp: false })),
     deck: Array.from({ length: 6 }, (_, i) => ({ iid: `${tag}d${i}`, printing: GRASS })),
   });
-  const A = player({ active: pip([{ iid: 'a1s0', printing: activePrinting }], energy), bench: [pip([{ iid: 'ab0', printing: BELLSPROUT }])] });
+  const A = player({ active: pip([{ iid: 'a1s0', printing: activePrinting }], energy, tools), bench: [pip([{ iid: 'ab0', printing: BELLSPROUT }])] });
   const B = player({ active: pip([{ iid: 'b0', printing: BELLSPROUT }]) });
   return {
     schemaVersion: SCHEMA_VERSION, turn: 3, activePlayer: 'A', firstPlayer: 'A',
@@ -69,6 +75,23 @@ describe('B.25 (amended 2026-10-23) — a forced Retreat Cost payment collapses'
 
   it('3. negative control: cost 1 with two Energy attached is a real choice and still pends', () => {
     const r = step(board(BELLSPROUT, [{ iid: 'a1e0', printing: GRASS }, { iid: 'a1e1', printing: FIRE }]), [retreat]);
+    const targets = offers(r).filter(o => o.type === 'discard').map(o => o.target).sort();
+    expect(targets).toEqual(['a1e0', 'a1e1']);
+  });
+
+  const balloon = [{ iid: 'a1t0', printing: AIR_BALLOON }];
+
+  it('4. Air Balloon on a Retreat Cost 3: the effective cost 1 with one Energy is forced and collapses', () => {
+    const r = step(board(NUMEL, [{ iid: 'a1e0', printing: GRASS }], balloon), [retreat]);
+    expect(offers(r).some(o => o.type === 'discard')).toBe(false);
+    expect(r.state.players.A.active!.stack.map(c => c.iid)).toEqual(['ab0']);
+    expect(r.state.players.A.discard.map(c => c.iid)).toEqual(['a1e0']);
+    const numel = r.state.players.A.bench.find(p => p.stack[0].iid === 'a1s0')!;
+    expect(numel.tools.map(c => c.iid)).toEqual(['a1t0']);
+  });
+
+  it('5. control: the same Air Balloon board with two Energy is a choice of which one to pay', () => {
+    const r = step(board(NUMEL, [{ iid: 'a1e0', printing: GRASS }, { iid: 'a1e1', printing: FIRE }], balloon), [retreat]);
     const targets = offers(r).filter(o => o.type === 'discard').map(o => o.target).sort();
     expect(targets).toEqual(['a1e0', 'a1e1']);
   });
