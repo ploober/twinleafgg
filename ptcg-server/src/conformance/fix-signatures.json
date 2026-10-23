@@ -14226,6 +14226,16 @@
       "fixes": [
         "FX-0532"
       ]
+    },
+    {
+      "file": "game/store/prefabs/effect-of-ability-prefabs.ts",
+      "signatures": [
+        "if (!(effect.source instanceof PokemonCard) || effect.sourcePower === undefined) {"
+      ],
+      "note": "TA-746 (2026-10-22): An attack's damage counters are not an effect of an Ability: PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES treats a PlaceDamage",
+      "fixes": [
+        "FX-0533"
+      ]
     }
   ]
 }
