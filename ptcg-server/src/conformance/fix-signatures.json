@@ -14236,6 +14236,19 @@
       "fixes": [
         "FX-0533"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/lucian.ts",
+      "signatures": [
+        "return store.prompt(state, new ShuffleDeckPrompt(who.id, { zone: 'hand', bottomCount: n }), order => {"
+      ],
+      "absentSignatures": [
+        "      const j = Math.floor(Math.random() * (i + 1));"
+      ],
+      "note": "TA-748 (2026-10-22): Lucian twm-157 shuffles each hand through a system shuffle (Iono's TA-608 shape: ShuffleDeckPrompt bottom segment per ha",
+      "fixes": [
+        "FX-0534"
+      ]
     }
   ]
 }
