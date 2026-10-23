@@ -1,4 +1,8 @@
 import { step } from '../driver';
+import { ConfirmPrompt, GameError, GameMessage, State, StoreLike } from '../../game';
+import { Effect } from '../../game/store/effects/effect';
+import { WAS_TRAINER_USED } from '../../game/store/prefabs/trainer-prefabs';
+import { PuzzleOfTime } from '../../sets/07-x-and-y/set-breakpoint/puzzle-of-time';
 import {
   NeutralState, PlayerState, PlayerFlags, PokemonInPlay, PokemonMarkers, CardRef, PrizeRef, SCHEMA_VERSION,
 } from '../neutral-types';
@@ -13,6 +17,11 @@ import {
  * OOP-109) with three copies in hand and an opponent's Bench. playItem cc1 opens "play both?"; confirm true moves the
  * second copy to the discard pile and then throws CANNOT_PLAY_THIS_CARD. The rejection used to report cc2 in the
  * discard pile; it must report the board at the confirm: hand [cc2, cc3], cc1 resolving, discard empty.
+ *
+ * Since the 2026-10-22 upstream merge no card refuses an offered answer after moving a card (upstream's Custom Catcher
+ * rewrite, 852e712eb, plays both; a scan of every card's prompt callbacks finds no reachable move-then-throw). The
+ * fix is in the driver, not a card, so the cell injects the refusal: Puzzle of Time bkp-109's handler is replaced by
+ * one that asks a confirm and, on true, moves the second copy to the discard pile and throws.
  */
 
 const FILL = 'sve-003';
@@ -49,25 +58,38 @@ function board(): NeutralState {
   };
 }
 
-const play = { actor: 'A', type: 'playItem', card: 'cc1' } as never;
 const yes = { actor: 'A', type: 'confirm', value: true } as never;
 const iids = (zone: CardRef[] | undefined) => (zone ?? []).map(c => c.iid);
 
 describe('TA-576: a prompt answer the card refuses leaves the board as it was before the answer', () => {
-  // PENDING since the 2026-10-22 upstream merge: upstream rewrote Custom Catcher lot-171 (852e712eb) and no longer refuses
-  // the two-card play (OOP-109 fixed upstream), so this card is no longer a witness of a refused prompt answer. The
-  // engine fix this cell guards (Store.reducePrompt restores the pre-answer board) needs a new witness card.
-  xit('Custom Catcher confirm true refused: the rejection state is the board at the confirm [TA-576]', () => {
-    const before = step(board(), [play]);
+  it('injected refusal: a confirm true that moves a card and then throws is rejected with the board at the confirm [TA-576]', () => {
+    const original = PuzzleOfTime.prototype.reduceEffect;
+    spyOn(PuzzleOfTime.prototype, 'reduceEffect').and.callFake(function (this: PuzzleOfTime, store: StoreLike, state: State, effect: Effect): State {
+      if (!WAS_TRAINER_USED(effect, this)) {
+        return original.call(this, store, state, effect);
+      }
+      const player = effect.player;
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_PLAY_BOTH_CARDS_AT_ONCE), yes => {
+        if (yes) {
+          player.hand.moveCardTo(player.hand.cards[0], player.discard);
+          throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
+        }
+      });
+    });
+    const puzzles = board();
+    puzzles.players.A.hand = [{ iid: 'pt1', printing: 'bkp-109' }, { iid: 'pt2', printing: 'bkp-109' }];
+    const playPuzzle = { actor: 'A', type: 'playItem', card: 'pt1' } as never;
+
+    const before = step(puzzles, [playPuzzle]);
     expect(before.status).toBe('awaitingAction');
     expect(before.pending?.legalActions).toContain(yes);
 
-    const r = step(board(), [play, yes]);
+    const r = step(puzzles, [playPuzzle, yes]);
     expect(r.status).toBe('invalidAction');
     expect(r.index).toBe(1);
-    expect(iids(r.state.players.A.hand)).toEqual(['cc2', 'cc3']);
+    expect(iids(r.state.players.A.hand)).toEqual(['pt2']);
     expect(iids(r.state.players.A.discard)).toEqual([]);
-    expect(iids(r.state.players.A.resolving)).toEqual(['cc1']);
+    expect(iids(r.state.players.A.resolving)).toEqual(['pt1']);
     // The whole rejection state is the pre-answer state, and the refused answer emits nothing of its own.
     expect(r.state).toEqual(before.state);
     expect(r.events).toEqual(before.events);
