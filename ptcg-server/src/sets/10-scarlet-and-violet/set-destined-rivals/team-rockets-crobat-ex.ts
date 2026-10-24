@@ -55,6 +55,12 @@ export class TeamRocketsCrobatex extends PokemonCard {
           return;
         }
 
+        // TA-763: "on 2 of your opponent's Pokémon" is two, not up to two: as many as they have, up to 2, so a pick of
+        // exactly the Pokémon there is forced (CF-14) and the second pick offers no stop.
+        const opponent = StateUtils.getOpponent(state, player);
+        let inPlay = 0;
+        opponent.forEachPokemon(PlayerType.TOP_PLAYER, () => { inPlay++; });
+        const count = Math.min(2, inPlay);
         store.prompt(
           state,
           new ChoosePokemonPrompt(
@@ -63,7 +69,7 @@ export class TeamRocketsCrobatex extends PokemonCard {
             PlayerType.TOP_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
             // CF-32: "put 2 damage counters on each" is counter PLACEMENT — the wire verb is placeCounter.
-            { min: 1, max: 2, allowCancel: false, operation: 'placeCounters' },
+            { min: count, max: count, allowCancel: false, operation: 'placeCounters' },
           ),
           (selected) => {
             const targets = selected || [];
