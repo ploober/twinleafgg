@@ -49,12 +49,12 @@ describe('TA-750 — Up-Tempo ssp-052 offers its cost as a move to the bottom of
   );
   const use = { actor: 'A', type: 'useAbility', source: 'a1s0', ability: 'Up-Tempo' } as unknown as NeutralAction;
 
-  it('the cost pick is choose {op: moveTo, destination: deckBottom}, not discard', () => {
+  it('the cost pick is choose {op: moveTo, destination: deckBottom}, not discard [TA-750 ssp-052]', () => {
     const r = step(upTempo(), [use]);
     expect(offered(r).map(a => `${a.type}:${a.target}:${a.op}:${a.destination}`).sort())
       .toEqual(['choose:ah0:moveTo:deckBottom', 'choose:ah1:moveTo:deckBottom']);
   });
-  it('the chosen card goes to the bottom of the deck, then the draw refills the hand', () => {
+  it('the chosen card goes to the bottom of the deck, then the draw refills the hand [TA-750 ssp-052 bottom]', () => {
     const r = step(upTempo(), [use, { actor: 'A', type: 'choose', target: 'ah0' } as unknown as NeutralAction]);
     const A = r.state.players.A;
     expect(A.discard).toEqual([]);
@@ -71,11 +71,11 @@ describe('TA-756 — Team Star Grunt svi-195 puts the Energy on top of the deck'
   );
   const play = { actor: 'A', type: 'playSupporter', card: 'grunt' } as unknown as NeutralAction;
 
-  it('two Energy: the pick is choose, not discard', () => {
+  it('two Energy: the pick is choose, not discard [TA-756 svi-195]', () => {
     const r = step(grunt([{ iid: 'b1e1', printing: WATER }, { iid: 'b1e2', printing: GRASS }]), [play]);
     expect(offered(r).map(a => `${a.type}:${a.target}`).sort()).toEqual(['choose:b1e1', 'choose:b1e2']);
   });
-  it('one Energy: the pick collapses (A is back at its main) and the Energy is on top of B\'s deck', () => {
+  it('one Energy: the pick collapses (A is back at its main) and the Energy is on top of B\'s deck [TA-756 svi-195 collapse]', () => {
     const r = step(grunt([{ iid: 'b1e1', printing: WATER }]), [play]);
     expect(offered(r).some(a => a.target === 'b1e1')).toBe(false);
     const B = r.state.players.B;

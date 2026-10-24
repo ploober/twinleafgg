@@ -53,9 +53,9 @@ const iids = (cs: CardRef[]): string[] => cs.map(c => c.iid).sort();
 
 describe('TA-749 — a random card from the opponent\'s hand is a system pick', () => {
   const cases: Array<[string, string, string, string[], 'discard' | 'deck']> = [
-    ['Knock Off', 'asc-134', 'Knock Off', [DARK, WATER], 'discard'],
-    ['Astonish (Aipom)', 'pfl-078', 'Astonish', [WATER, WATER], 'deck'],
-    ['Astonish (Snorunt)', 'twm-051', 'Astonish', [WATER, WATER], 'deck'],
+    ['Knock Off [TA-749 asc-134]', 'asc-134', 'Knock Off', [DARK, WATER], 'discard'],
+    ['Astonish (Aipom) [TA-749 pfl-078]', 'pfl-078', 'Astonish', [WATER, WATER], 'deck'],
+    ['Astonish (Snorunt) [TA-749 twm-051]', 'twm-051', 'Astonish', [WATER, WATER], 'deck'],
   ];
   for (const [label, printing, name, energy, to] of cases) {
     it(`${label} ${printing}: the attack pends a system pick over the two hand cards`, () => {
