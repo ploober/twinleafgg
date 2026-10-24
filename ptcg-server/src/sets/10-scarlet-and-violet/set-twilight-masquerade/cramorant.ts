@@ -33,8 +33,10 @@ export class Cramorant extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Spit Shot
+    // TA-755 (B.89, TA-613's shape): the target is chosen first and no card is chosen, so the Energy stays attached
+    // through the pick and the damage and is discarded after it.
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this);
+      effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));
       THIS_ATTACK_DOES_X_DAMAGE_TO_1_OF_YOUR_OPPONENTS_POKEMON(120, effect, store, state);
     }
 
