@@ -177,8 +177,18 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
     throw new Error(`[conformance] MoveDamage expected 'choose'/'placeCounter', got '${action.type}'`);
   },
 
-  /** B.80: a `placeCounter` (destination) pick moves one counter from the last `choose`d source at once. */
+  /**
+   * B.80: a `placeCounter` (destination) pick moves one counter from the last `choose`d source at once — except for an
+   * attack's counter moves. TA-767 / B.118 (owner 2026-10-23, B.98 extended to MOVES): an attack chooses every move
+   * first, and the counters move after the last pick or the stop, all at once (the engine applies the transfers when
+   * the prompt resolves); the board between the picks shows none of them. The attack is the one whose damage step has
+   * not started (`preDamageAttack`, B.82), asked of its attacker.
+   */
   fixupProjection(prompt, picks, ctx, state, projected) {
+    const pre = (state as unknown as { preDamageAttack?: { player?: { id: number } } }).preDamageAttack;
+    if (pre?.player !== undefined && pre.player.id === prompt.playerId) {
+      return;
+    }
     const player = promptPlayer(state, prompt.playerId);
     let source: CardTarget | undefined;
     for (const p of realPicks(picks) as Array<{ kind: string; target: CardTarget }>) {

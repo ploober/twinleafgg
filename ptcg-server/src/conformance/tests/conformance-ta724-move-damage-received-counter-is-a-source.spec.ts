@@ -23,7 +23,9 @@ describe('TA-724 move-damage: a Pokémon that received a counter in this move is
 
   it('[TA-724 twm-082] after b1s0 > bb1s0 both are sources, and moving the counter back is applied', () => {
     const r = step(BOARD, ACTIONS);
-    expect(r.state.players.B.bench[0].damage).toBe(10);
+    // TA-767 / B.118 (owner 2026-10-23): an attack's counter moves are applied after the last pick, so the board between
+    // the picks still shows the counter on the Active (B.80 (5)'s moved board no longer holds for an attack's moves).
+    expect(r.state.players.B.bench[0].damage).toBe(0);
     expect(sources(r)).toEqual(['b1s0', 'bb1s0']);
     const back = step(BOARD, [...ACTIONS, { actor: 'A', type: 'choose', target: 'bb1s0' } as unknown as NeutralAction]);
     expect(back.state.players.B.active!.damage).toBe(30);
