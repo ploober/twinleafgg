@@ -2818,9 +2818,9 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // a raw write — no PutDamageCountersEffect, so no EffectOfAbilityEffect for a protector to catch
     // (SD-26 source half, the TA-334 froslass shape). Rotomancer: decline -> turn menu; accept ->
     // por-031 stays at 0, the Bellsprout takes 20.
-    const crobat = (defender: string) => board(
+    const crobat = (defender: string, third = false) => board(
       player({ active: inPlay('A-act', ['dri-120', 'dri-121']), hand: [{ iid: 'Ah0', printing: 'dri-122' }] }),
-      player({ active: inPlay('B-act', [defender]), bench: [inPlay('B-b0', [RALTS])] }),
+      player({ active: inPlay('B-act', [defender]), bench: [inPlay('B-b0', [RALTS]), ...(third ? [inPlay('B-b1', [RALTS])] : [])] }),
     );
     const evolve = { actor: 'A' as const, type: 'evolve' as const, card: 'Ah0', target: 'A-act' };
     const confirm = (value: boolean) => ({ actor: 'A' as const, type: 'confirm' as const, value });
@@ -2834,13 +2834,16 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // CF-32: "put 2 damage counters" is counter placement — the menu verb is placeCounter, not choose
     // (found by the 2026-09-01 targeted re-fuzz over the sample-batch boards, the first time this
     // board was ever fuzzed; rotomancer offers placeCounter{target}).
-    const menu = step(crobat(TANKY), [evolve, confirm(true)]);
-    expect(placeCounterTargets(menu).sort()).toEqual(['B-act', 'B-b0']);
-    const accepted = step(crobat(TANKY), [evolve, confirm(true), choose('B-act'), choose('B-b0')]);
+    // TA-763 (CF-14): with exactly two opposing Pokémon the 2-of-2 pick is forced and collapses, so the menu is read on
+    // a board with three, and the two-Pokémon boards below place on both with no pick.
+    const menu = step(crobat(TANKY, true), [evolve, confirm(true)]);
+    expect(placeCounterTargets(menu).sort()).toEqual(['B-act', 'B-b0', 'B-b1']);
+    expect(step(crobat(TANKY, true), [evolve, confirm(true), choose('B-act'), choose('B-b0')]).state.players.B.bench[1].damage).toBe(0);
+    const accepted = step(crobat(TANKY), [evolve, confirm(true)]);
     expect(accepted.state.players.B.active!.damage).toBe(20);
     expect(accepted.state.players.B.bench[0].damage).toBe(20);
 
-    const shielded = step(crobat('por-031'), [evolve, confirm(true), choose('B-act'), choose('B-b0')]);
+    const shielded = step(crobat('por-031'), [evolve, confirm(true)]);
     expect(shielded.state.players.B.active!.damage).toBe(0);   // Luminous Wing
     expect(shielded.state.players.B.bench[0].damage).toBe(20);
   });
