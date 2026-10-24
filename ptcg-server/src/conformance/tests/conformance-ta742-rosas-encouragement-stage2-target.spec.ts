@@ -46,12 +46,15 @@ describe('TA-742 Rosa\'s Encouragement attaches to a Stage 2 Pokemon', () => {
     expect(offered.length).toBeGreaterThan(0);
     // "up to 2" on a Trainer is 1..2 (compendium #2301): no stop before the first attach.
     expect(offered.some(a => a.type === 'confirm')).toBe(false);
+    // TA-772 / B.116 (2026-10-24): the Stage 2 (a1) is the only legal target, so the target collapses and each Energy is
+    // asked alone, choose {target: card} op attach; "only onto the Stage 2" is now read off the outcome below and off
+    // a refused pair onto a non-Stage 2 (the pre-fix bug offered a0 / a2 and would bring the pairs back).
     for (const a of offered) {
-      const target = (a as { target?: string }).target;
-      if (target !== undefined) { expect(target).toBe('a1'); }
+      expect(`${a.type}:${(a as { target?: string }).target}:${(a as { op?: string }).op}`).toMatch(/^choose:ax[01]:attach$/);
     }
+    expect(step(board(), [...actions, { actor: 'A', type: 'attachEnergy', card: 'ax0', target: 'a2' } as never]).status).toBe('invalidAction');
     for (let i = 0; i < 4 && r.pending && r.pending.descriptor !== 'main'; i++) {
-      const pick = (r.pending.legalActions ?? []).find(a => (a as { target?: string }).target === 'a1') ?? r.pending.legalActions[0];
+      const pick = r.pending.legalActions[0];
       actions.push(pick as never);
       r = step(board(), actions);
     }

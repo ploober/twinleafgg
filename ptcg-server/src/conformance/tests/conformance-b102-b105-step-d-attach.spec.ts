@@ -108,7 +108,9 @@ describe('B.102 / B.103: an attack\'s discard-pile attach is chosen at Step D an
   });
 
   it('paf-075 Motivate, both cards: chosen x2, the 20, then both attach [TA-674]', () => {
-    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), attach('adc0', 'ab2'), attach('adc1', 'ab2')]);
+    // TA-772 / B.116, B.120: the first card's Pokémon fixes the destination for the second card (one legal target),
+    // so the second pick asks the card alone, choose {target: card}.
+    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), attach('adc0', 'ab2'), A({ type: 'choose', target: 'adc1' })]);
     const ev = attackEvents(r.events);
     expect(chosenCards(ev)).toEqual(['adc0', 'adc1']);
     const firstMove = idx(ev, 'moved');

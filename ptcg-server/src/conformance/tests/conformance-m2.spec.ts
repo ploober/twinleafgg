@@ -229,7 +229,9 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
 
   it('AttachEnergy: surfaces (energy × target) pairs and resolves to a CardAssign', () => {
     const game = importState(board(
-      player({ active: ralts('A-act'), discard: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
+      // TA-772 / B.116: a Benched Pokémon keeps two legal targets, so the decision has both dimensions (pairs, CF-5);
+      // with the Active as the only target the target collapses and the card is asked alone (choose {target: card}).
+      player({ active: ralts('A-act'), bench: [ralts('A-b0')], discard: [{ iid: 'd0', printing: WATER }, { iid: 'd1', printing: PSY }] }),
       player({ active: ralts('B-act') }),
     ));
     const p = game.state.players[0];
@@ -239,10 +241,9 @@ describe('Conformance M2 — prompt decomposers (single-decision granularity)', 
       [SlotType.ACTIVE, SlotType.BENCH], { superType: SuperType.ENERGY }, { min: 1, max: 1 }
     ), (result: CardAssign[]) => { captured = result; });
 
-    // both energies are candidates, each paired with the only target (A-act)
+    // both energies are candidates, each paired with each target (A-act, A-b0)
     const la = firstDecision(game).filter(a => a.type === 'attachEnergy') as any[];
-    expect(la.map(a => a.card).sort()).toEqual(['d0', 'd1']);
-    expect(la.every(a => a.target === 'A-act')).toBe(true);
+    expect(la.map(a => `${a.card}>${a.target}`).sort()).toEqual(['d0>A-act', 'd0>A-b0', 'd1>A-act', 'd1>A-b0']);
 
     replay(game, [{ actor: 'A', type: 'attachEnergy', card: 'd0', target: 'A-act' }]);
     expect(captured!.length).toBe(1);

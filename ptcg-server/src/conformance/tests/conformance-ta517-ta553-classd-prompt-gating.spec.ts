@@ -35,7 +35,8 @@ describe('TA-517: Toedscool Clinging Spore attach is mandatory (no "may" / "up t
     const s = clone(TOED);
     s.players.A.hand.push({ iid: 'ah9', printing: 'sve-001' } as never);
     const res = step(s, [ATK]);
-    expect(legal(res).filter((a: any) => a.type === 'attachEnergy').length).toBe(2);
+    // TA-772 / B.116: one Benched Pokémon is the only target, so each card is asked alone (choose op attach).
+    expect(legal(res).filter((a: any) => a.type === 'choose' && a.op === 'attach').length).toBe(2);
     expect(hasStop(res)).toBe(false);
   });
   it('control: no Benched Pokemon: the attack does nothing and the turn passes [TA-517]', () => {
@@ -98,7 +99,8 @@ describe('TA-533: Giovanni\'s Charisma "If you do, attach" is mandatory', () => 
   });
   it('two Energy in hand: the attach is offered with no confirm:false [TA-533]', () => {
     const res = step(GIO, [A({ type: 'playSupporter', card: 'ah2' })]);
-    expect(legal(res).filter((a: any) => a.type === 'attachEnergy').length).toBe(2);
+    // TA-772 / B.116: the Active is the only target, so each card is asked alone (choose op attach).
+    expect(legal(res).filter((a: any) => a.type === 'choose' && a.op === 'attach').length).toBe(2);
     expect(hasStop(res)).toBe(false);
   });
   it('control: no Energy in hand: the Energy still goes to the opponent\'s hand and nothing is attached [TA-533]', () => {

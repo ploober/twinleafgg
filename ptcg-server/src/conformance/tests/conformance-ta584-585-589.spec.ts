@@ -1145,11 +1145,12 @@ const types = (r: { pending?: { legalActions?: unknown[] } | null }) =>
 describe('TA-584 / TA-585 / TA-589', () => {
   it('Prism Charge: after a Grass is attached the second Grass is not offered [TA-584]', () => {
     const atk = { actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Prism Charge' } as never;
-    const first = types(step(PRISM, [atk])).find(a => a.type === 'attachEnergy' && a.card === 'ad1');
+    // TA-772 / B.116: one Tera Pokémon is the only target, so each card is asked alone (choose {target: card}).
+    const first = types(step(PRISM, [atk])).find(a => a.type === 'choose' && a.target === 'ad1');
     expect(first).toBeDefined();
     const after = types(step(PRISM, [atk, { ...first, actor: 'A' } as never]));
-    expect(after.some(a => a.type === 'attachEnergy' && a.card === 'ad2')).toBe(false);
-    expect(after.some(a => a.type === 'attachEnergy' && a.card === 'ad3')).toBe(true);
+    expect(after.some(a => a.type === 'choose' && a.target === 'ad2')).toBe(false);
+    expect(after.some(a => a.type === 'choose' && a.target === 'ad3')).toBe(true);
   });
   it('Great Haul Net: no stop before the first pick (floor 1) [TA-585]', () => {
     const r = types(step(HAUL, [{ actor: 'A', type: 'playItem', card: 'ah4' } as never]));

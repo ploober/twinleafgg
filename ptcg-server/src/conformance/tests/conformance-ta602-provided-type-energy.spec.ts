@@ -58,7 +58,8 @@ function board(attacker: string, energy: string[], hand: string[] = []): Neutral
 const attack = (name: string) => ({ actor: 'A', type: 'declareAttack', source: 'a1', name } as never);
 const discard = (target: string) => ({ actor: 'A', type: 'discard', owner: 'A', target } as never);
 const confirm = (value: boolean) => ({ actor: 'A', type: 'confirm', value } as never);
-const attach = (card: string) => ({ actor: 'A', type: 'attachEnergy', card, target: 'a1' } as never);
+// TA-772 / B.116: "attach it to this Pokémon" has one legal target, so the card is asked alone (choose {target: card}).
+const attach = (card: string) => ({ actor: 'A', type: 'choose', target: card } as never);
 
 const dealtToB1 = (events: NeutralEvent[]) => (events as Array<{ kind: string; target?: string; hp?: number }>)
   .filter(e => e.kind === 'damaged' && e.target === 'b1').reduce((n, e) => n + (e.hp ?? 0), 0);
@@ -100,7 +101,7 @@ describe('TA-602 / TA-520: Gorebyss dri-056 Crescendo Wave counts every [W] Ener
 
   it('declining the attach counts what is attached: 60, and no separate confirm comes first [TA-520]', () => {
     const first = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave')]);
-    expect((first.pending?.legalActions ?? []).map(a => a.type).sort()).toEqual(['attachEnergy', 'confirm']);
+    expect((first.pending?.legalActions ?? []).map(a => a.type).sort()).toEqual(['choose', 'confirm']);
     const r = step(board('dri-056', [WATER, LEGACY], [WATER]), [attack('Crescendo Wave'), confirm(false)]);
     expect(dealtToB1(r.events)).toBe(60);
   });

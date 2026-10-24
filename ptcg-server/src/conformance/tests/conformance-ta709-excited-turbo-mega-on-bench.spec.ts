@@ -81,8 +81,9 @@ describe('TA-709 Excited Turbo pfl-018: a [R] Mega Evolution Pokémon ex anywher
 
   it('two Fire Energy in hand: the pick offers no decline and attaches exactly one ("a Basic [Fire] Energy card") [TA-709 pfl-018]', () => {
     const r = step(board(true, 2), [use]) as unknown as Resp & { pending: { legalActions: NeutralAction[] } };
-    expect(r.pending.legalActions.map(a => a.type)).toEqual(['attachEnergy', 'attachEnergy']);
-    const pick = { actor: 'A', type: 'attachEnergy', card: 'ah2', target: 'ab2' } as NeutralAction;
+    // TA-772 / B.116: Mega Camerupt is the only [R] Mega ex, so each Fire is asked alone (choose {target: card}).
+    expect(r.pending.legalActions.map(a => a.type)).toEqual(['choose', 'choose']);
+    const pick = { actor: 'A', type: 'choose', target: 'ah2' } as unknown as NeutralAction;
     const r2 = step(board(true, 2), [use, pick]) as unknown as Resp & { pending: { descriptor: string } };
     expect(r2.pending.descriptor).toBe('main');
     const camerupt = (r2.state.players.A.bench as Slot[]).find(s => s.stack.some(c => c.iid === 'ab3'));

@@ -44,14 +44,15 @@ const types = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []).ma
 describe('TA-468 Assemble Alloy: the accepted may floors "up to 2" at 1 (B.18)', () => {
   it('two Basic [M] in the discard: the first attach pick offers no zero-stop [TA-468 ssp-130]', () => {
     const r = step(board(2), [evolve, accept]);
-    expect(types(r)).toContain('attachEnergy');
+    // TA-772 / B.116: Archaludon ex is the only target ("this Pokémon"), so each card is asked alone (choose).
+    expect(types(r)).toContain('choose');
     expect(types(r)).not.toContain('confirm');
   });
 
   it('after one attach the stop is legal (control)', () => {
-    const r = step(board(2), [evolve, accept, act({ actor: 'A', type: 'attachEnergy', card: 'dc0', target: 'a1' })]);
+    const r = step(board(2), [evolve, accept, act({ actor: 'A', type: 'choose', target: 'dc0' })]);
     expect(types(r)).toContain('confirm');   // stop now legal…
-    expect((r.pending?.legalActions ?? []).some(a => a.type === 'attachEnergy' && (a as { card?: string }).card === 'dc1')).toBe(true); // …or attach the second
+    expect((r.pending?.legalActions ?? []).some(a => a.type === 'choose' && (a as { target?: string }).target === 'dc1')).toBe(true); // …or attach the second
   });
 
   it('one Basic [M] in the discard: the single forced attach is applied (CF-14)', () => {

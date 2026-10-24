@@ -120,7 +120,9 @@ describe('Conformance — engine fix regression guards (all-time backfill)', () 
     // the non-Future picks (offer-then-reject). And the 40 is placed before the deck-search pause (TA-31).
     const r = step(
       board(player({ active: inPlay('A-act', ['tef-121'], [{ iid: 'c0', printing: WATER }]),
-                     bench: [inPlay('A-b', [RALTS])],
+                     // TA-772 / B.116: a second Future Pokémon (A-b2) keeps the target a real choice — with Miraidon the
+                     // only legal target the attach collapses to choose {target: card} and the menu has no targets to read.
+                     bench: [inPlay('A-b', [RALTS]), inPlay('A-b2', ['tef-121'])],
                      deck: [{ iid: 'be0', printing: GRASS }, { iid: 'be1', printing: WATER }, { iid: 'A-d2', printing: WATER }] }),
             player({ active: inPlay('B-act', [TANKY]) })),
       [{ actor: 'A', type: 'declareAttack', source: 'A-act', name: 'Peak Acceleration' }],
@@ -129,6 +131,7 @@ describe('Conformance — engine fix regression guards (all-time backfill)', () 
     expect(r.state.players.B.active!.damage).toBe(40);   // damage-before-prompt
     const attachTargets = targetsOf(r, 'attachEnergy');
     expect(attachTargets).toContain('A-act');            // Future Miraidon is a valid target
+    expect(attachTargets).toContain('A-b2');             // and so is the Benched Future Miraidon
     expect(attachTargets).not.toContain('A-b');          // the non-Future bench is NOT offered
   });
 

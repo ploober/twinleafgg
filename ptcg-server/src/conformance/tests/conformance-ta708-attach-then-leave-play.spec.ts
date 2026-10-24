@@ -64,7 +64,8 @@ function board(pile: number): NeutralState {
 }
 
 const use: NeutralAction = { actor: 'A', type: 'useAbility', source: 'a1s0', ability: 'Overvolt Discharge' } as NeutralAction;
-const attach = (card: string): NeutralAction => ({ actor: 'A', type: 'attachEnergy', card, target: 'a1s0' } as NeutralAction);
+// TA-772 / B.116: Magneton is the only [L] Pokémon, so the card is asked alone (choose {target: card}).
+const attach = (card: string): NeutralAction => ({ actor: 'A', type: 'choose', target: card } as unknown as NeutralAction);
 
 type Ev = { kind: string; card?: string; pokemon?: string; player?: string; origin?: { zone: string; pokemon?: string; role?: string }; destination?: { zone: string; pokemon?: string; role?: string } };
 const attaches = (r: { events: Ev[] }) => r.events.filter(e => e.kind === 'energyAttached');

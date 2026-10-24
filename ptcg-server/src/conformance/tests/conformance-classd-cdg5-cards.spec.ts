@@ -126,12 +126,16 @@ describe('TA-546 Teal Mask Ogerpon ex Teal Dance offers the attach as attachEner
   it('two Basic Grass Energy in hand: Teal Dance pends attachEnergy{card, target: this Ogerpon} per Energy [TA-546]', () => {
     const s = board(OGERPON, [mon('a2', [BELLSPROUT])], { hand: [GRASS, GRASS, WATER] });
     const m = menu(s, [USE]);
-    expect(m.filter(a => a.type === 'attachEnergy').map(a => `${a.card}->${a.target}`).sort()).toEqual(['ah0->a1', 'ah1->a1']);
-    expect(m.some(a => a.type === 'choose')).toBe(false);
+    // TA-772 / B.116 (owner 2026-10-23, overrides the CF-5 pairs this cell pinned): this Ogerpon is the only legal target,
+    // so the target collapses and each Grass is asked alone, choose {target: card} op attach; a pair onto the Benched
+    // Bellsprout is refused.
+    expect(m.filter(a => a.type === 'choose').map(a => `${a.target}:${a.op}`).sort()).toEqual(['ah0:attach', 'ah1:attach']);
+    expect(m.some(a => a.type === 'attachEnergy')).toBe(false);
+    expect(step(s, [USE, { actor: 'A', type: 'attachEnergy', card: 'ah0', target: 'a2' }] as never).status).toBe('invalidAction');
   });
   it('two Basic Grass Energy: attaching one puts it on Ogerpon and draws a card [TA-546]', () => {
     const s = board(OGERPON, [mon('a2', [BELLSPROUT])], { hand: [GRASS, GRASS, WATER] });
-    const r = run(s, [USE, { actor: 'A', type: 'attachEnergy', card: 'ah1', target: 'a1' }]);
+    const r = run(s, [USE, { actor: 'A', type: 'choose', target: 'ah1' }]);   // TA-772 / B.116: the card alone
     expect(r.state.players.A.active!.energy.map(c => c.iid)).toEqual(['ah1']);
     expect(r.state.players.A.hand.length).toBe(3);
     expect(r.state.players.A.bench[0].energy.length).toBe(0);

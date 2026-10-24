@@ -76,11 +76,13 @@ describe('TA-472 / TA-478 Chi-Yu ex Flame Surge', () => {
   });
 
   it('each chosen recipient gets its own search, target fixed, and the search may fail to find [TA-478 pal-040]', () => {
+    // TA-772 / B.116: each search's target is fixed (one legal target), so the card is asked alone, choose {target: card}.
     const r = step(board(), [attack, choose('bb0'), choose('bb1')]);
-    expect(legal(r)).toEqual(['attachEnergy:ad0:bb0', 'attachEnergy:ad1:bb0', 'attachEnergy:ad2:bb0', 'confirm:false']);
-    const r2 = step(board(), [attack, choose('bb0'), choose('bb1'), attach('ad1', 'bb0')]);
-    expect(legal(r2)).toEqual(['attachEnergy:ad0:bb1', 'attachEnergy:ad2:bb1', 'confirm:false']);
-    const r3 = step(board(), [attack, choose('bb0'), choose('bb1'), attach('ad1', 'bb0'), attach('ad2', 'bb1')]);
+    expect(legal(r)).toEqual(['choose:ad0', 'choose:ad1', 'choose:ad2', 'confirm:false']);
+    const r2 = step(board(), [attack, choose('bb0'), choose('bb1'), choose('ad1')]);
+    expect(legal(r2)).toEqual(['choose:ad0', 'choose:ad2', 'confirm:false']);
+    expect(energyOf(r2, 'bb0')).toEqual(['ad1']);
+    const r3 = step(board(), [attack, choose('bb0'), choose('bb1'), choose('ad1'), choose('ad2')]);
     expect(energyOf(r3, 'bb0')).toEqual(['ad1']);
     expect(energyOf(r3, 'bb1')).toEqual(['ad2']);
     expect(JSON.stringify((r3 as any).pending)).toContain('shuffle');

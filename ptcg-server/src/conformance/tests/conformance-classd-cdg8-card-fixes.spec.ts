@@ -94,9 +94,13 @@ describe('TA-504 Team Rocket\'s Spidops Charging Up attaches by pair', () => {
   it('two Basic Energy in the discard: Charging Up offers attachEnergy{card -> this Spidops} for each, nothing else [TA-504]', () => {
     const s = board(mon('a1', SPIDOPS), [mon('a2', [BELLSPROUT])], { discard: [WATER, GRASS] });
     const paused = menu(s, [USE('a1')]);
-    expect(types(paused)).toEqual(['attachEnergy']);
-    expect(paused.map(a => `${a.card}->${a.target}`).sort()).toEqual(['ax0->a1', 'ax1->a1']);
-    const r = step(s, [USE('a1'), paused.find(a => a.card === 'ax0')] as never);
+    // TA-772 / B.116 (owner 2026-10-23, overrides the CF-5 pairs this cell pinned): "this Pokémon" is the only legal
+    // target, so the target collapses and each card is asked alone, choose {target: card} op attach; a pair onto the
+    // Benched Bellsprout (not this Spidops) is refused.
+    expect(types(paused)).toEqual(['choose']);
+    expect(paused.map(a => `${a.target}:${(a as { op?: string }).op}`).sort()).toEqual(['ax0:attach', 'ax1:attach']);
+    expect(step(s, [USE('a1'), { actor: 'A', type: 'attachEnergy', card: 'ax0', target: 'a2' }] as never).status).toBe('invalidAction');
+    const r = step(s, [USE('a1'), paused.find(a => a.target === 'ax0')] as never);
     expect(r.state.players.A.active!.energy.map(e => e.iid)).toEqual(['ax0']);
     expect(r.state.players.A.discard.map(c => c.iid)).toEqual(['ax1']);
   });

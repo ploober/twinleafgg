@@ -113,6 +113,8 @@ function candidatePairs(prompt: AttachEnergyPrompt, as: Assign[], ctx: IidContex
  *  - (`card` / `dest` / `all`: the same-target steps of B.120, not enabled in this build — TA-769 is held for the owner.)
  *  - TA-770 / B.121 (owner 2026-10-23): a forced single-card attach over the card already picked (Waitress asc-215,
  *    TA-386's prompt over the chosen card) asks only the Pokémon: `single`, choose {target} (op: attach, CF-70).
+ *  - TA-772 / B.116 (owner 2026-10-23): every candidate card has the same single legal target: `collapsed`, the card
+ *    alone as choose {target: card} (op: attach); a pair there is not offered (invalidAction).
  */
 /**
  * The prompt is raised over a card-local list holding the card(s) already picked (Waitress's `chosen` list, TA-386), not
@@ -124,7 +126,7 @@ function isPickedCardList(state: State, list: CardList): boolean {
     || list === p.active || p.bench.some(b => b === list));
 }
 
-type StepMode = 'pairs' | 'card' | 'dest' | 'all' | 'single';
+type StepMode = 'pairs' | 'card' | 'dest' | 'all' | 'single' | 'collapsed';
 function planStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext, state: State):
     { mode: StepMode; pairs: Candidate[]; canStop: boolean } | null {
   if (hasDone(picks)) {
@@ -140,6 +142,16 @@ function planStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext
   if (!canStop && prompt.options.max === 1 && prompt.cardList.cards.length === 1 && cards === 1 && targets > 1
       && isPickedCardList(state, prompt.cardList)) {
     return { mode: 'single', pairs, canStop: false };
+  }
+  // TA-772 / B.116 (owner 2026-10-23, amended; CF-14): every candidate card of this attach step has the same single
+  // legal target ("attach it to this Pokémon", one Benched Pokémon for "your Benched Pokémon in any way you like", the
+  // last Pokémon of a "for each" iteration, the fixed Pokémon of a same-target attach). The target is not a decision:
+  // the card is asked alone, choose {target: card} with op: attach (CF-70), and it goes to that Pokémon. Pairs (CF-5)
+  // stay whenever any candidate has two or more legal targets. Keyed on the step's own target set, not the card, so
+  // every card that reaches AttachEnergyPrompt gets it. A relocation (CF-34 moveEnergy, a candidate already on a
+  // Pokémon) is not an attach and keeps its pairs.
+  if (pairs.length > 0 && targets === 1 && pairs.every(c => c.sourceIid === undefined)) {
+    return { mode: 'collapsed', pairs, canStop };
   }
   return { mode: 'pairs', pairs, canStop };
 }
@@ -249,7 +261,7 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
           ? { type: 'moveEnergy', card: c.energyIid, source: c.sourceIid, target: c.targetIid }
           : { type: 'attachEnergy', card: c.energyIid, target: c.targetIid }, `${c.energyIid}>${c.targetIid}`);
       }
-    } else if (plan.mode === 'card') {
+    } else if (plan.mode === 'card' || plan.mode === 'collapsed') {
       for (const c of plan.pairs) { push({ type: 'choose', target: c.energyIid, op: 'attach' }, c.energyIid); }
     } else {
       // 'dest' / 'all' / 'single': the Pokémon is the only open dimension.
@@ -277,6 +289,15 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       const card = ctx.iidToCard.get(iid);
       if (plan === null || card === undefined) {
         throw new Error(`[conformance] AttachEnergy choose '${iid}' is not offered here`);
+      }
+      if (plan.mode === 'collapsed') {
+        // TA-772 / B.116: the card alone; it goes to the step's one legal target.
+        const index = prompt.cardList.cards.indexOf(card);
+        const c = plan.pairs.find(p => p.index === index);
+        if (c === undefined) {
+          throw new Error(`[conformance] AttachEnergy choose '${iid}' is not a candidate card`);
+        }
+        return { kind: 'assign', to: c.target, index };
       }
       if (plan.mode === 'card') {
         const index = prompt.cardList.cards.indexOf(card);

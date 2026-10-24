@@ -466,7 +466,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       [attack('A-act', 'Turbo Flare')],
     );
     expect(r.status).toBe('awaitingAction');
-    expect(types(r)).toContain('attachEnergy');         // paused inside the search/attach effect
+    expect(types(r)).toContain('choose');               // paused inside the search/attach effect (TA-772 / B.116: one Benched target, the card alone)
     expect(r.state.players.B.active!.damage).toBeGreaterThan(0);   // damage already placed (step F first)
   });
 
@@ -674,7 +674,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
             player({ active: inPlay('B-act', [TANKY]) })),
       [attack('A-act', 'Larimar Rain')]);
     expect(r.status).toBe('awaitingAction');
-    expect(types(r)).toContain('attachEnergy');                 // paused at the attach decision
+    expect(types(r)).toContain('choose');                       // paused at the attach decision (TA-772 / B.116: one target, the card alone)
     const ap = r.state.players.A;
     const visible = [...ap.deck, ...ap.hand, ...ap.discard, ...(ap.transit ?? [])].map(c => c.iid).filter(i => i.startsWith('A-dk'));
     expect(visible.length).toBe(22);                            // pre-fix: only 2 (20 lost in temp)
@@ -1573,7 +1573,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['scr-032'], lapEnergy),
                deck: [{ iid: 'A-d0', printing: 'sve-003' }, { iid: 'A-d1', printing: 'sve-005' }] }),
       player({ active: inPlay('B-act', ['meg-181']) }));
-    const att = (card: string) => ({ actor: 'A' as const, type: 'attachEnergy' as const, card, target: 'A-act' });
+    // TA-772 / B.116: Lapras is the only target, so each card is asked alone (choose {target: card}).
+    const att = (card: string) => ({ actor: 'A' as const, type: 'choose' as const, target: card }) as unknown as NeutralAction;
     const decline = { actor: 'A' as const, type: 'confirm' as const, value: false };
 
     const lapBoth = step(lapBoard(), [attack('A-act', 'Larimar Rain'), att('A-d0'), att('A-d1')]);
@@ -1788,7 +1789,9 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       const r = step(
         board(
           player({ active: inPlay('A-act', ['tef-121'], en('sve-004', 1, 'a')),
-                   bench: [inPlay('A-b1', [benchPrinting])],
+                   // TA-772 / B.116: A-b2 (ssp-132, already Future) keeps two legal targets on every cell, so the
+                   // negative control's pairs are not collapsed to choose {target: card} (one target asks the card alone).
+                   bench: [inPlay('A-b1', [benchPrinting]), inPlay('A-b2', ['ssp-132'])],
                    deck: [{ iid: 'A-d0', printing: 'sve-004' }, { iid: 'A-d1', printing: 'sve-004' }] }),
           player({ active: inPlay('B-act', ['meg-181']) })),
         [attack('A-act', 'Peak Acceleration')]);
@@ -1799,12 +1802,12 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
         .map(a => (a as { target: string }).target))].sort();
     };
     // SUBJECT: the fixed card must now be offered.
-    expect(`scr-071:${futureTargets('scr-071').join(',')}`).toBe('scr-071:A-act,A-b1');
+    expect(`scr-071:${futureTargets('scr-071').join(',')}`).toBe('scr-071:A-act,A-b1,A-b2');
     // POSITIVE control — a card that was ALREADY tagged Future. Without it, a fix that offered every
     // bench slot would pass the subject cell.
-    expect(`ssp-132:${futureTargets('ssp-132').join(',')}`).toBe('ssp-132:A-act,A-b1');
+    expect(`ssp-132:${futureTargets('ssp-132').join(',')}`).toBe('ssp-132:A-act,A-b1,A-b2');
     // NEGATIVE control — a non-Future Pokemon must still be excluded.
-    expect(`asc-004:${futureTargets('asc-004').join(',')}`).toBe('asc-004:A-act');
+    expect(`asc-004:${futureTargets('asc-004').join(',')}`).toBe('asc-004:A-act,A-b2');
   });
 
   it('the Nidoran gender glyph is unspaced, and evolution still resolves [TA-261 dri-114/117]', () => {
@@ -2132,7 +2135,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // (the other two cannot be taken) and no stop is offered — the attach alone reaches the owed shuffle.
     const attached = step(teraBoard(),
       [attack('A-act', 'Prism Charge'),
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-d0', target: 'A-tera' }]);
+       // TA-772 / B.116: the one Tera Pokémon is the only target, so the card is asked alone.
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-d0' } as unknown as NeutralAction]);
     expect(attached.status).toBe('awaitingAction');
     expect(attached.pending!.actor).toBe('system');
     expect(types(attached)).toContain('shuffle');
@@ -2198,16 +2202,25 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
        { actor: 'A' as const, type: 'confirm' as const, value: true }]);
     // THE fix: the only legal attach destination is the evolved Lycanroc ('A-bench'); the unrelated
     // Active Snivy ('A-act') is NEVER offered. Pre-fix `attachTargets` also contained 'A-act'.
-    expect(new Set(attachTargets(offered))).toEqual(new Set(['A-bench']));
-    expect(attachTargets(offered)).not.toContain('A-act');
+    // TA-772 / B.116 (2026-10-24): with one legal target the target collapses, so the menu asks the card alone
+    // (choose {target: card} op attach) and carries no targets; the pre-fix two-target bug would bring the pairs
+    // back (attachTargets non-empty, 'A-act' among them) and accept a pair onto the Active, which is refused here.
+    expect(attachTargets(offered)).toEqual([]);
+    expect((offered.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose')
+      .map(a => (a as { target: string }).target).sort()).toEqual(['A-x0', 'A-x1']);
+    const wrongDest = step(twoMon(),
+      [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-bench' },
+       { actor: 'A' as const, type: 'confirm' as const, value: true },
+       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x0', target: 'A-act' }]);
+    expect(wrongDest.status).toBe('invalidAction');
 
     // Driving both Spiky Energy lands them on the Lycanroc, and NOTHING on the Active — the STATE the
     // card text mandates (pre-fix, driving both onto 'A-act' SUCCEEDED: Active.E=2, Lycanroc.E=0).
     const resolved = step(twoMon(),
       [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-bench' },
        { actor: 'A' as const, type: 'confirm' as const, value: true },
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x0', target: 'A-bench' },
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x1', target: 'A-bench' },
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-x0' } as unknown as NeutralAction,
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-x1' } as unknown as NeutralAction,
        { actor: 'A' as const, type: 'confirm' as const, value: false }]);
     expect(resolved.state.players.A.bench[0].energy.length).toBe(2);   // Lycanroc got both
     expect(resolved.state.players.A.active!.energy.length).toBe(0);    // Active got none
@@ -2223,12 +2236,14 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const soleOffered = step(oneMon,
       [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-act' },
        { actor: 'A' as const, type: 'confirm' as const, value: true }]);
-    expect(new Set(attachTargets(soleOffered))).toEqual(new Set(['A-act']));   // the sole Lycanroc slot
+    // TA-772 / B.116: the sole Lycanroc slot is the only target, so the card is asked alone (no targets on the menu).
+    expect((soleOffered.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose')
+      .map(a => (a as { target: string }).target).sort()).toEqual(['A-x0', 'A-x1']);
     const soleResolved = step(oneMon,
       [{ actor: 'A' as const, type: 'evolve' as const, card: 'A-h0', target: 'A-act' },
        { actor: 'A' as const, type: 'confirm' as const, value: true },
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x0', target: 'A-act' },
-       { actor: 'A' as const, type: 'attachEnergy' as const, card: 'A-x1', target: 'A-act' },
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-x0' } as unknown as NeutralAction,
+       { actor: 'A' as const, type: 'choose' as const, target: 'A-x1' } as unknown as NeutralAction,
        { actor: 'A' as const, type: 'confirm' as const, value: false }]);
     expect(soleResolved.state.players.A.active!.energy.length).toBe(2);
   });
@@ -3122,10 +3137,11 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['twm-025']), hand: [{ iid: 'g0', printing: GRASS }, { iid: 'g1', printing: GRASS }], deck: fillerDeck('A', 3) }),
       player({ active: inPlay('B-act', [RALTS]) }),
     ), [use('Teal Dance')]);
-    // TA-546 (CF-32 / CF-5): the WHICH pick is an attach, so it is offered as attachEnergy{card, target: this Ogerpon}.
-    expect(legal(two).filter(a => a.type === 'attachEnergy').map(a => `${(a as { card?: string }).card}->${a.target}`).sort())
-      .toEqual(['g0->A-act', 'g1->A-act']);
-    expect(legal(two).some(a => a.type === 'choose')).toBe(false);
+    // TA-546 (CF-32 / CF-5) offered the WHICH pick as attachEnergy{card, target: this Ogerpon}; TA-772 / B.116: this
+    // Ogerpon is the only target, so the card is asked alone, choose {target: card} op attach.
+    expect(legal(two).filter(a => a.type === 'choose').map(a => `${a.target}:${(a as { op?: string }).op}`).sort())
+      .toEqual(['g0:attach', 'g1:attach']);
+    expect(legal(two).some(a => a.type === 'attachEnergy')).toBe(false);
     expect(legal(two).some(a => a.type === 'confirm')).toBe(false);
     // Stone Arms, one Fighting: collapsed and attached; two: a WHICH pick, no decline.
     const stoneOne = step(board(
@@ -3138,7 +3154,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['por-043']), hand: [{ iid: 'f0', printing: FIGHT }, { iid: 'f1', printing: FIGHT }] }),
       player({ active: inPlay('B-act', [RALTS]) }),
     ), [use('Stone Arms')]);
-    expect(legal(stoneTwo).filter(a => a.type === 'attachEnergy').length).toBe(2);
+    expect(legal(stoneTwo).filter(a => a.type === 'choose').length).toBe(2);   // TA-772 / B.116: this Pokémon only, the card alone
     expect(legal(stoneTwo).some(a => a.type === 'confirm')).toBe(false);
   });
 
@@ -3159,9 +3175,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     expect(legal(oneE).some(a => a.type === 'choose')).toBe(false);
     const twoE = spid([{ iid: 'd0', printing: GRASS }, { iid: 'd1', printing: FIRE }]);
     // TA-504 (2026-10-06): Charging Up is now an AttachEnergyPrompt, so the WHICH pick surfaces as the CF-5
-    // attachEnergy{card,target} pairs onto Spidops itself, no longer as a bare choose{energy}.
-    expect(legal(twoE).filter(a => a.type === 'attachEnergy').map(a => `${(a as { card?: string }).card}->${a.target}`).sort())
-      .toEqual(['d0->A-act', 'd1->A-act']);
+    // attachEnergy{card,target} pairs onto Spidops itself, no longer as a bare choose{energy}. TA-772 / B.116 (2026-10-24):
+    // Spidops is the only target, so the card is asked alone, choose {target: card} op attach.
+    expect(legal(twoE).filter(a => a.type === 'choose').map(a => `${a.target}:${(a as { op?: string }).op}`).sort())
+      .toEqual(['d0:attach', 'd1:attach']);
     const quill = step(board(
       player({ active: inPlay('A-act', ['cri-005', 'cri-006'], en(GRASS, 1, 'a')), deck: [{ iid: 'k0', printing: GRASS }, { iid: 'k1', printing: WATER }] }),
       player({ active: inPlay('B-act', [RALTS]) }),
@@ -3642,7 +3659,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['asc-026'])], hand: en(FIRE, 2, 'h') }),
       player({ active: inPlay('B-act', [TANKY]) }),
     ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Golden Flame' }] as unknown as NeutralAction[]);
-    expect(hasType(two, 'attachEnergy')).toBe(true);
+    expect(hasType(two, 'choose')).toBe(true);                                  // TA-772 / B.116: this Pokémon only, the card alone
     expect(hasType(two, 'confirm')).toBe(false);                                // no stop at zero picks
     // Overvolt Discharge: one Basic Energy in the discard, Magneton the only [L] -> attach, then KO.
     const ov = step(board(
@@ -3697,7 +3714,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['dri-044'], en(WATER, 1, 'a')),
                deck: [{ iid: 'f0', printing: FIRE }, ...fillerDeck('A', 4)] }),
       player({ active: inPlay('B-act', [TANKY]) }),
-    ), [attack('A-act', 'Fire Kagura'), { actor: 'A', type: 'attachEnergy', card: 'f0', target: 'A-act' } as unknown as NeutralAction]);
+    ), [attack('A-act', 'Fire Kagura'), { actor: 'A', type: 'choose', target: 'f0' } as unknown as NeutralAction]);   // TA-772 / B.116: one target, the card alone
     expect(r.state.players.A.active!.energy.some(c => c.iid === 'f0')).toBe(true);
     expect(r.state.players.A.deck.some(c => c.iid === 'f0')).toBe(false);
     const sh = (r.pending?.legalActions ?? []).find(a => (a as { type: string }).type === 'shuffle') as { deck: string[] } | undefined;
@@ -3804,10 +3821,11 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
                       { iid: 'l0', printing: LIGHT }, { iid: 'l1', printing: LIGHT }, ...fillerDeck('A', 2)] }),
       player({ active: inPlay('B-act', [LATIAS]) }),
     );
-    const attach = (card: string) => ({ actor: 'A', type: 'attachEnergy', card, target: 'A-act' }) as unknown as NeutralAction;
+    // TA-772 / B.116: Joltik (no Bench) is the only target, so each card is asked alone, choose {target: card}.
+    const attach = (card: string) => ({ actor: 'A', type: 'choose', target: card }) as unknown as NeutralAction;
     // after ONE [G] attach the second [G] AND the [L]s are still offered (differentTypes had closed the search here)
     const first = step(b(), [attack('A-act', 'Jolting Charge'), attach('g0')]);
-    const offered = (first.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'attachEnergy').map(a => (a as { card: string }).card);
+    const offered = (first.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose').map(a => (a as { target: string }).target);
     expect(offered).toContain('g1');
     expect(offered).toContain('l0');
     // both caps met -> the search closes to the shuffle with all four attached
@@ -3882,11 +3900,11 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
       player({ active: inPlay('B-act', [LATIAS]) }),
     );
     const r = step(b(), [attack('A-act', 'Pick and Stick')]);
-    expect(hasType(r, 'attachEnergy')).toBe(true);                        // the pick is surfaced…
+    expect(hasType(r, 'choose')).toBe(true);                              // the pick is surfaced… (TA-772 / B.116: no Bench, the card alone)
     expect(hasType(r, 'confirm')).toBe(true);                             // …with its decline
     expect(r.state.players.A.discard.some(c => c.iid === 'A-d0')).toBe(true);  // nothing attached yet
     const att = step(b(), [attack('A-act', 'Pick and Stick'),
-      { actor: 'A', type: 'attachEnergy', card: 'A-d0', target: 'A-act' } as unknown as NeutralAction]);
+      { actor: 'A', type: 'choose', target: 'A-d0' } as unknown as NeutralAction]);
     expect(att.state.players.A.active!.energy.some(c => c.iid === 'A-d0')).toBe(true);
   });
 
@@ -3980,9 +3998,10 @@ describe('Conformance — residual-triage fixes (2026-09-14)', () => {
     );
     const use = { actor: 'A', type: 'useAbility', source: 'A-b', ability: 'Lethargic Charge' } as unknown as NeutralAction;
     const open = step(b(), [use]);
-    expect(hasType(open, 'attachEnergy')).toBe(true);
+    // TA-772 / B.116: the Active is the only target, so the card is asked alone (choose {target: card}).
+    expect(hasType(open, 'choose')).toBe(true);
     expect(hasType(open, 'confirm')).toBe(false);                                  // the attach is mandatory
-    const attach = { actor: 'A', type: 'attachEnergy', card: 'A-h0', target: 'A-act' } as unknown as NeutralAction;
+    const attach = { actor: 'A', type: 'choose', target: 'A-h0' } as unknown as NeutralAction;
     const once = step(b(), [use, attach]);
     expect(once.state.players.A.active!.energy.map(c => c.iid)).toEqual(['A-h0']);
     const twice = step(b(), [use, attach, use]);
