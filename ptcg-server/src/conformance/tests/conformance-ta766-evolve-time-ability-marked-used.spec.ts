@@ -37,8 +37,6 @@ function state(A: PlayerState, B: PlayerState): NeutralState {
     phase: 'main', outcome: 'ongoing', stadium: null, players: { A, B },
   };
 }
-type La = { type: string; target?: string; actor?: string };
-const offered = (r: ReturnType<typeof step>): La[] => (r.pending?.legalActions ?? []) as unknown as La[];
 
 
 const CASES: Array<[string, string, string, string]> = [
