@@ -42,6 +42,10 @@ export class Blissey extends PokemonCard {
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         throw new GameError(GameMessage.BLOCKED_BY_EFFECT);
       }
+      // TA-759 (B.29 rule 1): the Active has no Special Condition to recover from, so the Ability cannot be used.
+      if (player.active.specialConditions.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_POWER);
+      }
       USE_ABILITY_ONCE_PER_TURN(player, this.ABILITY_USED_MARKER, this);
       ABILITY_USED(player, this);
       player.active.clearAllSpecialConditions();

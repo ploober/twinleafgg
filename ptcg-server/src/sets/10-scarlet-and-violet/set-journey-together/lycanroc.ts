@@ -48,6 +48,10 @@ export class Lycanroc extends PokemonCard {
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
+      // TA-759 (B.29 rule 1): no Spiky Energy in the discard pile (public) -> nothing to attach, not offered.
+      if (!player.discard.cards.some(c => c.superType === SuperType.ENERGY && c.name === 'Spiky Energy')) {
+        return state;
+      }
       state = store.prompt(state, new ConfirmPrompt(
         effect.player.id,
         GameMessage.WANT_TO_USE_ABILITY,

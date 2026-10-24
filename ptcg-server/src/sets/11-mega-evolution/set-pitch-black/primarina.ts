@@ -50,6 +50,13 @@ export class Primarina extends PokemonCard {
         return state;
       }
 
+      // TA-759 (B.29 rule 1, #1043): with none of your Pokémon damaged there is nothing to heal, so it is not offered.
+      let anyDamaged = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => { if (cardList.damage > 0) { anyDamaged = true; } });
+      if (!anyDamaged) {
+        return state;
+      }
+
       state = store.prompt(
         state,
         new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY),

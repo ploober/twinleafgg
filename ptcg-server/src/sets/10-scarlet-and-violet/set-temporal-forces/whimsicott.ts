@@ -52,6 +52,11 @@ export class Whimsicott extends PokemonCard {
         return state;
       }
 
+      // TA-759 (B.29 rule 1, #1043): the Active has no damage to heal, so the Ability is not offered.
+      if (player.active.damage === 0) {
+        return state;
+      }
+
       state = store.prompt(state, new ConfirmPrompt(
         player.id,
         GameMessage.WANT_TO_USE_ABILITY,

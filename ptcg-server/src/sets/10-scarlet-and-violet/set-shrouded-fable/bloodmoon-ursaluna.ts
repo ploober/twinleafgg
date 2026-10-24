@@ -1,6 +1,6 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { PowerType, StoreLike, State, StateUtils, GameMessage, ConfirmPrompt, ChooseCardsPrompt, EnergyCard, GameError } from '../../../game';
+import { PowerType, StoreLike, State, StateUtils, GameMessage, ConfirmPrompt, ChooseCardsPrompt, EnergyCard } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
 import {IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
@@ -56,20 +56,21 @@ export class BloodmoonUrsaluna extends PokemonCard {
       if (IS_ABILITY_BLOCKED(store, state, player, this)) {
         return state;
       }
+      // TA-759 (B.29 rule 1): no Basic [F] Energy in the hand -> nothing to attach, so it is not offered (the check
+      // ran after the yes and threw).
+      const hasEnergyInHand = player.hand.cards.some(c => {
+        return c instanceof EnergyCard
+          && c.energyType === EnergyType.BASIC
+          && c.provides.includes(CardType.FIGHTING);
+      });
+      if (!hasEnergyInHand) {
+        return state;
+      }
       state = store.prompt(state, new ConfirmPrompt(
         effect.player.id,
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (wantToUse) {
-
-          const hasEnergyInHand = player.hand.cards.some(c => {
-            return c instanceof EnergyCard
-              && c.energyType === EnergyType.BASIC
-              && c.provides.includes(CardType.FIGHTING);
-          });
-          if (!hasEnergyInHand) {
-            throw new GameError(GameMessage.CANNOT_USE_POWER);
-          }
 
           const cardList = StateUtils.findCardList(state, this);
           if (cardList === undefined) {
