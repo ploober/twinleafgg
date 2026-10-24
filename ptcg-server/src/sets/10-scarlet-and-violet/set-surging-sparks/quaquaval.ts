@@ -58,9 +58,10 @@ export class Quaquaval extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-750 / CF-8: the cost card goes to the bottom of the deck, not the discard pile (TA-704's message).
       state = store.prompt(state, new ChooseCardsPrompt(
         player,
-        GameMessage.CHOOSE_CARD_TO_DISCARD,
+        GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM,
         player.hand,
         {},
         { allowCancel: false, min: 1, max: 1 }

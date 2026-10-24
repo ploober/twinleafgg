@@ -1,4 +1,4 @@
-import { State, StateUtils, StoreLike } from '../../../game';
+import { ChooseCardsPrompt, GameMessage, State, StateUtils, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
@@ -30,16 +30,23 @@ export class Aipom extends PokemonCard {
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
-      const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);
-      const randomCard = opponent.hand.cards[randomIndex];
-
       if (opponent.hand.cards.length === 0) {
         return state;
       }
 
-      SHOW_CARDS_TO_PLAYER(store, state, player, [randomCard]);
-      MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: [randomCard], sourceCard: this, sourceEffect: this.attacks[0] });
-      SHUFFLE_DECK(store, state, opponent);
+      // TA-749 / B.12: the random card is a secret pick (a system pick on the wire), not an inline random draw.
+      state = store.prompt(state, new ChooseCardsPrompt(
+        player, GameMessage.CHOOSE_CARD_TO_SHUFFLE, opponent.hand, {},
+        { allowCancel: false, min: 1, max: 1, isSecret: true },
+      ), cards => {
+        const picked = cards || [];
+        if (picked.length === 0) {
+          return;
+        }
+        SHOW_CARDS_TO_PLAYER(store, state, player, picked);
+        MOVE_CARDS(store, state, opponent.hand, opponent.deck, { cards: picked, sourceCard: this, sourceEffect: this.attacks[0] });
+        SHUFFLE_DECK(store, state, opponent);
+      });
     }
 
     return state;

@@ -1,7 +1,7 @@
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Effect } from '../../../game/store/effects/effect';
-import { State, StateUtils, StoreLike } from '../../../game';
+import { ChooseCardsPrompt, GameMessage, State, StateUtils, StoreLike } from '../../../game';
 import { AFTER_ATTACK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Scraggy extends PokemonCard {
@@ -34,10 +34,14 @@ export class Scraggy extends PokemonCard {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
+      // TA-749 / B.12: the random card is a secret pick (a system pick on the wire), not an inline random draw.
       if (opponent.hand.cards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);
-        const randomCard = opponent.hand.cards[randomIndex];
-        MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: [randomCard], sourceCard: this });
+        state = store.prompt(state, new ChooseCardsPrompt(
+          player, GameMessage.CHOOSE_CARD_TO_DISCARD, opponent.hand, {},
+          { allowCancel: false, min: 1, max: 1, isSecret: true },
+        ), cards => {
+          MOVE_CARDS(store, state, opponent.hand, opponent.discard, { cards: cards || [], sourceCard: this });
+        });
       }
     }
 

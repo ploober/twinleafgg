@@ -68,10 +68,11 @@ export class TeamStarGrunt extends TrainerCard {
         state,
         new ChooseCardsPrompt(
           player,
-          GameMessage.CHOOSE_CARD_TO_DISCARD,
+          // TA-756 / CF-8, CF-14: the Energy goes on top of the deck (not a discard), and the text is not optional.
+          GameMessage.CHOOSE_CARD_TO_DECK,
           target,
           { superType: SuperType.ENERGY },
-          { min: 1, max: 1, allowCancel: true },
+          { min: 1, max: 1, allowCancel: false },
         ),
         (energy) => {
           const cards: CardList[] = (energy || []).map((e) => e.cards);

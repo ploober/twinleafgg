@@ -178,7 +178,7 @@ describe('TA-698 / B.81: a card put on the bottom of the deck and drawn straight
       player({ active: mon('b1', 'asc-004'), deck: cards('bd', Array(4).fill(E.W)), prizes: prizes('bp', 6) }));
     const res = step(initial, [
       { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Up-Tempo' } as never,
-      { actor: 'A', type: 'discard', owner: 'A', target: 'ah0' } as never]);
+      { actor: 'A', type: 'choose', target: 'ah0' } as never]); // TA-750: the cost is a move to the deck bottom, not a discard
     expect(res.state.players.A.hand.map(c => c.iid)).toEqual(['ah1', 'ad0', 'ad1', 'ad2', 'ah0']);
     expect(res.state.players.A.deck).toEqual([]);
     expect(draws(res.events, 'A')).toBe(4);

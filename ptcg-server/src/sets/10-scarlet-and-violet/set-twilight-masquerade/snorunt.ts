@@ -4,6 +4,8 @@ import { StoreLike } from '../../../game/store/store-like';
 import { State } from '../../../game/store/state/state';
 import { Effect } from '../../../game/store/effects/effect';
 import { StateUtils } from '../../../game/store/state-utils';
+import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
+import { GameMessage } from '../../../game/game-message';
 import { AFTER_ATTACK, MOVE_CARD_TO, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
 
 export class Snorunt extends PokemonCard {
@@ -31,18 +33,24 @@ export class Snorunt extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
 
     // Astonish — post-damage hand-disruption rider (family A): the 20 lands first, then the random
-    // reveal-and-shuffle (TA-128). (The random card PICK is self-resolved via Math.random — a separate
-    // CF-31 randomness-declaration concern, not addressed here.)
+    // reveal-and-shuffle (TA-128). TA-749 / B.12: the random card is a secret pick (a system pick on the wire).
     if (AFTER_ATTACK(effect, 0, this)) {
       const player = effect.player;
       const opponent = StateUtils.getOpponent(state, player);
 
       if (opponent.hand.cards.length > 0) {
-        const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);
-        const randomCard = opponent.hand.cards[randomIndex];
-        SHOW_CARDS_TO_PLAYER(store, state, player, [randomCard]);
-        MOVE_CARD_TO(state, randomCard, opponent.deck);
-        SHUFFLE_DECK(store, state, opponent);
+        state = store.prompt(state, new ChooseCardsPrompt(
+          player, GameMessage.CHOOSE_CARD_TO_SHUFFLE, opponent.hand, {},
+          { allowCancel: false, min: 1, max: 1, isSecret: true },
+        ), cards => {
+          const picked = cards || [];
+          if (picked.length === 0) {
+            return;
+          }
+          SHOW_CARDS_TO_PLAYER(store, state, player, picked);
+          MOVE_CARD_TO(state, picked[0], opponent.deck);
+          SHUFFLE_DECK(store, state, opponent);
+        });
       }
     }
 
