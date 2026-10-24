@@ -82,28 +82,32 @@ export class IronThorns extends PokemonCard {
         GameMessage.CARDS_SHOWED_BY_THE_OPPONENT,
         top5), () => {
 
+        // TA-768 / B.119 (owner 2026-10-23, rulebook step F): the reveal and the count come first, the damage next, then
+        // the discard and the shuffle. The five are lifted off the deck (in transit, public, B.80) and placed after the
+        // damage (AttackEffect.afterDamageMoves).
         const deckTop = new CardList();
         MOVE_CARDS(store, state, player.deck, deckTop, { count: 5, sourceCard: this });
 
-        // Discard the revealed Future cards; shuffle the rest back into the deck.
-        const toDiscard = deckTop.cards.filter(c => c.hasTag(CardTag.FUTURE));   // TA-564: every Future card
-        deckTop.moveCardsTo(toDiscard, player.discard);
+        effect.afterDamageMoves.push(() => {
+          // Discard the revealed Future cards; shuffle the rest back into the deck.
+          const toDiscard = deckTop.cards.filter(c => c.hasTag(CardTag.FUTURE));   // TA-564: every Future card
+          deckTop.moveCardsTo(toDiscard, player.discard);
 
-        // TA-251 / B.33: "shuffle THE OTHER cards back" — the revealed cards NOT discarded. If every
-        // revealed card was a Future card (all discarded), there are no "other cards" and the
-        // shuffle is suppressed (#1979). Key on the OBJECT, not the deck: the top5-empty guard above
-        // reds only the empty-DECK cell and never reaches the all-Future-with-stocked-deck path.
-        // rotomancer suppresses here.
-        const otherCards = deckTop.cards.length;
-        MOVE_CARDS(store, state, deckTop, player.deck, { count: deckTop.cards.length, sourceCard: this });
+          // TA-251 / B.33: "shuffle THE OTHER cards back" — the revealed cards NOT discarded. If every
+          // revealed card was a Future card (all discarded), there are no "other cards" and the
+          // shuffle is suppressed (#1979). Key on the OBJECT, not the deck: the top5-empty guard above
+          // reds only the empty-DECK cell and never reaches the all-Future-with-stocked-deck path.
+          // rotomancer suppresses here.
+          const otherCards = deckTop.cards.length;
+          MOVE_CARDS(store, state, deckTop, player.deck, { count: deckTop.cards.length, sourceCard: this });
 
-        if (otherCards === 0) {
-          return state;
-        }
+          if (otherCards === 0) {
+            return;
+          }
 
-        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
-          return state;
+          store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
         });
       });
     }

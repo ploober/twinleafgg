@@ -84,7 +84,8 @@ describe('Conformance — CF-18 reveal: Iron Thorns "Destructo-Press" (first cro
     for (const iid of ['A-d1', 'A-d2', 'A-d3', 'A-d4']) {
       expect(path(iid)).toEqual(['deck>transit', 'transit>deck:any']);
     }
-    expect(path('A-d0')).toEqual(['deck>discardPile']);   // a Future card: discarded, one leg
+    // TA-768 / B.119: a Future card stays in transit through the damage and is discarded after it.
+    expect(path('A-d0')).toEqual(['deck>transit', 'transit>discardPile']);
     expect(path('A-d5')).toEqual([]);   // not revealed, never lifted
   });
 
