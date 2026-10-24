@@ -14,7 +14,7 @@ export class Tyrogue extends PokemonCard {
 
   public attacks = [{
     name: 'Pow-Pow Punching',
-    cost: [C],
+    cost: [],
     damage: 10,
     damageCalculation: '+',
     text: 'Flip a coin until you get tails. This attack does 30 more damage for each heads.'
