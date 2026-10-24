@@ -7810,12 +7810,12 @@
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
         "new PlaceDamageCountersEffect(player, target, 20, this, this.powers[0]),",
-        "{ min: 1, max: 2, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: count, max: count, allowCancel: false, operation: 'placeCounters' },"
       ],
       "absentSignatures": [
         "target.damage += 20;"
       ],
-      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
+      "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it) | 2026-10-23 TA-763 extends it: the pick is exactly 2 (as many as the opponent has, up to 2), so the signature moves to the min/max count line.",
       "fixes": [
         "FX-0032"
       ],
@@ -14248,6 +14248,241 @@
       "note": "TA-748 (2026-10-22): Lucian twm-157 shuffles each hand through a system shuffle (Iono's TA-608 shape: ShuffleDeckPrompt bottom segment per ha",
       "fixes": [
         "FX-0534"
+      ]
+    },
+    {
+      "file": "set-phantasmal-flames/aipom.ts",
+      "signatures": [
+        "player, GameMessage.CHOOSE_CARD_TO_SHUFFLE, opponent.hand, {},"
+      ],
+      "absentSignatures": [
+        "      const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);"
+      ],
+      "note": "TA-749 (2026-10-23): Knock Off asc-134 and Astonish pfl-078 / twm-051 pick the random hand card through a secret ChooseCardsPrompt (a system ",
+      "fixes": [
+        "FX-0536"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/quaquaval.ts",
+      "signatures": [
+        "        GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM,"
+      ],
+      "absentSignatures": [
+        "        GameMessage.CHOOSE_CARD_TO_DISCARD,"
+      ],
+      "note": "TA-750 (2026-10-23): Up-Tempo ssp-052's cost pick uses CHOOSE_CARD_TO_PUT_ON_BOTTOM (TA-704's message), so it is offered as choose {op: moveT",
+      "fixes": [
+        "FX-0537"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/team-star-grunt.ts",
+      "signatures": [
+        "          GameMessage.CHOOSE_CARD_TO_DECK,"
+      ],
+      "absentSignatures": [
+        "          { min: 1, max: 1, allowCancel: true },"
+      ],
+      "note": "TA-756 (2026-10-23): Team Star Grunt svi-195 asks with CHOOSE_CARD_TO_DECK and cannot be cancelled: the Energy it puts on top of the deck is ",
+      "fixes": [
+        "FX-0538"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/mightyena.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) { return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { allowCancel: false });"
+      ],
+      "note": "TA-754 (2026-10-23): Kick Away asc-129 (Mightyena) and Push Down asc-146 (Pawniard) switch the opponent's Active out after the damage (AFTER_",
+      "fixes": [
+        "FX-0540"
+      ]
+    },
+    {
+      "file": "set-ascended-heroes/pawniard.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) { return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { allowCancel: false });"
+      ],
+      "note": "TA-754 (2026-10-23): Push Down asc-146 switches the opponent's Active out after the damage (AFTER_ATTACK)",
+      "fixes": [
+        "FX-0540"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/cramorant.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => DISCARD_ALL_ENERGY_FROM_POKEMON(store, state, effect, this));"
+      ],
+      "note": "TA-755 (2026-10-23): Spit Shot twm-058 (Cramorant) asks the target first and discards its Energy after the damage (B.89; TA-613's Sonic Rippe",
+      "fixes": [
+        "FX-0541"
+      ]
+    },
+    {
+      "file": "set-journey-together/hops-silicobra.ts",
+      "signatures": [
+        "() => { shuffle(); },"
+      ],
+      "note": "TA-757 (2026-10-23): Turf Maker jtg-086 (Hop's Silicobra) shuffles the deck after showing the Stadium it found; the found branch returned bef",
+      "fixes": [
+        "FX-0542"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/eevee.ts",
+      "signatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);"
+      ],
+      "note": "TA-758 (2026-10-23): Colorful Friends mew-133 (Eevee) shows its picks to the opponent before they go to the hand, and Paw-cket Pilfer dri-149",
+      "fixes": [
+        "FX-0543"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-meowth.ts",
+      "signatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, player, [randomCard]);"
+      ],
+      "note": "TA-758 (2026-10-23): Paw-cket Pilfer shows the random card to the attacker before it is shuffled into the deck",
+      "fixes": [
+        "FX-0543"
+      ]
+    },
+    {
+      "file": "set-journey-together/lycanroc.ts",
+      "signatures": [
+        "if (!player.discard.cards.some(c => c.superType === SuperType.ENERGY && c.name === 'Spiky Energy')) {"
+      ],
+      "note": "TA-759 (2026-10-23): Five Abilities are not offered when their operand is empty in public view (B.27 / B.29 rule 1): Spike-Clad jtg-085 / jtg",
+      "fixes": [
+        "FX-0544"
+      ]
+    },
+    {
+      "file": "set-pitch-black/primarina.ts",
+      "signatures": [
+        "player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => { if (cardList.damage > 0) { anyDamaged = true; } });"
+      ],
+      "note": "TA-759 (2026-10-23): Enriching Melody is not offered with none of your Pokémon damaged (B.29 rule 1)",
+      "fixes": [
+        "FX-0544"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/whimsicott.ts",
+      "signatures": [
+        "if (player.active.damage === 0) { return state; }"
+      ],
+      "note": "TA-759 (2026-10-23): Wafting Heal is not offered with the Active undamaged (B.29 rule 1)",
+      "fixes": [
+        "FX-0544"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/bloodmoon-ursaluna.ts",
+      "signatures": [
+        "if (!hasEnergyInHand) { return state; } state = store.prompt(state, new ConfirmPrompt("
+      ],
+      "note": "TA-759 (2026-10-23): Battle-Hardened is not offered with no Basic [F] Energy in hand (B.29 rule 1)",
+      "fixes": [
+        "FX-0544"
+      ]
+    },
+    {
+      "file": "set-scarlet-and-violet/blissey.ts",
+      "signatures": [
+        "if (player.active.specialConditions.length === 0) { throw new GameError(GameMessage.CANNOT_USE_POWER); }"
+      ],
+      "note": "TA-759 (2026-10-23): Busybody Nurse cannot be used with no Special Condition on the Active (B.29 rule 1)",
+      "fixes": [
+        "FX-0544"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/pansage.ts",
+      "signatures": [
+        "{ min: 0, max: 1, allowCancel: false },"
+      ],
+      "absentSignatures": [
+        "{ min: 1, max: 1 },"
+      ],
+      "note": "TA-761 (2026-10-23): Call for Family par-004 (Pansage) and twm-036 (Litwick) offer the stop at the search for a Basic Pokémon (min 0; #903, a",
+      "fixes": [
+        "FX-0545"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/litwick.ts",
+      "signatures": [
+        "{ min: 0, max: 1, allowCancel: false },"
+      ],
+      "note": "TA-761 (2026-10-23): Call for Family twm-036 offers the stop at its search for a Basic Pokémon (#903)",
+      "fixes": [
+        "FX-0545"
+      ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
+      "signatures": [
+        "const count = Math.min(2, inPlay);"
+      ],
+      "note": "TA-763 (2026-10-23): Biting Spree dri-122 / dri-217 / dri-234 / dri-242 (Team Rocket's Crobat ex) picks exactly 2 of the opponent's Pokémon (",
+      "fixes": [
+        "FX-0546"
+      ]
+    },
+    {
+      "file": "set-pitch-black/mega-delphox-ex.ts",
+      "signatures": [
+        "(c) => c instanceof PokemonCard, ).length;"
+      ],
+      "absentSignatures": [
+        "{ superType: SuperType.POKEMON, stage: Stage.BASIC },"
+      ],
+      "note": "TA-764 (2026-10-23): Trick Portal pbl-008 (Mega Delphox ex) offers every Pokémon among the 9 for the Bench, Evolutions included (#1592, #1782",
+      "fixes": [
+        "FX-0547"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/tyrogue.ts",
+      "signatures": [
+        "name: 'Pow-Pow Punching', cost: [],"
+      ],
+      "note": "TA-765 (2026-10-23): Tyrogue meg-071 Pow-Pow Punching has no Energy cost (golden card data: cost []); twinleaf had [C] [TA-765]",
+      "fixes": [
+        "FX-0548"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/hariyama.ts",
+      "signatures": [
+        "ABILITY_USED(player, this); GUST_OPPONENT_BENCHED_POKEMON_FROM_ABILITY("
+      ],
+      "note": "TA-766 (2026-10-23): Heave-Ho Catcher meg-073 (Hariyama) and Cast-Off Shell meg-017 / meg-137 (Ninjask) mark the accepted evolve-time Ability",
+      "fixes": [
+        "FX-0549"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/ninjask.ts",
+      "signatures": [
+        "ABILITY_USED(player, this); SEARCH_YOUR_DECK_FOR_POKEMON_AND_PUT_ONTO_BENCH(store, state, player, { name: 'Shedinja' }"
+      ],
+      "note": "TA-766 (2026-10-23): Cast-Off Shell marks the accepted use (ABILITY_USED)",
+      "fixes": [
+        "FX-0549"
+      ]
+    },
+    {
+      "file": "set-temporal-forces/iron-thorns.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-768 (2026-10-23): Destructo-Press tef-062 (Iron Thorns) does its damage before it discards the Future cards and shuffles the rest back (B.",
+      "fixes": [
+        "FX-0551"
       ]
     }
   ]
