@@ -3,6 +3,7 @@ import { PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { GUST_OPPONENT_BENCHED_POKEMON_FROM_ABILITY } from '../../../game/store/prefabs/effect-of-ability-prefabs';
 import {
+  ABILITY_USED,
   CONFIRMATION_PROMPT,
   IS_ABILITY_BLOCKED,
   JUST_EVOLVED,
@@ -50,6 +51,8 @@ export class Hariyama extends PokemonCard {
 
       CONFIRMATION_PROMPT(store, state, player, (result) => {
         if (result) {
+          // TA-766 (CF-77, TA-531's shape): the accepted "may" is the use; it carries its abilitiesUsedThisTurn label.
+          ABILITY_USED(player, this);
           GUST_OPPONENT_BENCHED_POKEMON_FROM_ABILITY(
             store,
             state,
