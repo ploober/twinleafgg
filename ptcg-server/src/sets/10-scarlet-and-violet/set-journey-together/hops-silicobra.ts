@@ -75,17 +75,20 @@ export class HopsSilicobra extends PokemonCard {
         (cards) => {
           MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
 
+          // TA-757: "Then, shuffle your deck." in both branches (the found branch returned after the reveal).
+          const shuffle = () => store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
+            player.deck.applyOrder(order);
+          });
+
           if (cards.length > 0) {
             return store.prompt(
               state,
               new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_THE_OPPONENT, cards),
-              () => {},
+              () => { shuffle(); },
             );
           }
 
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-            player.deck.applyOrder(order);
-          });
+          return shuffle();
         },
       );
     }
