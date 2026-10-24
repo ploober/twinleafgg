@@ -38,7 +38,8 @@ export class Pansage extends PokemonCard {
         state,
         effect.player,
         { stage: Stage.BASIC },
-        { min: 1, max: 1 },
+        // TA-761 (#903): a search for a category may find nothing, so the pick offers the stop.
+        { min: 0, max: 1, allowCancel: false },
       );
     }
 
