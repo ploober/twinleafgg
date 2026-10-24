@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { SWITCH_OUT_OPPONENT_ACTIVE_POKEMON, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, SWITCH_OUT_OPPONENT_ACTIVE_POKEMON } from '../../../game/store/prefabs/prefabs';
 
 export class Mightyena extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -34,9 +34,10 @@ export class Mightyena extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Kick Away
-    if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, player, { allowCancel: false });
+    // TA-754: the switch is the attack's effect, after its damage (rulebook step F), so the damage lands on the
+    // Defending Pokémon and then it goes to the Bench.
+    if (AFTER_ATTACK(effect, 0, this)) {
+      return SWITCH_OUT_OPPONENT_ACTIVE_POKEMON(store, state, effect.player, { allowCancel: false });
     }
 
     return state;
