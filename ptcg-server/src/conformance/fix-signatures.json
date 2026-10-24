@@ -14484,6 +14484,16 @@
       "fixes": [
         "FX-0551"
       ]
+    },
+    {
+      "file": "conformance/decomposers/attach-energy.ts",
+      "signatures": [
+        "if (pairs.length > 0 && targets === 1 && pairs.every(c => c.sourceIid === undefined)) {"
+      ],
+      "note": "TA-772 (2026-10-24): An in-effect attach whose every candidate card has the same single legal target asks the card alone, choose {target: car",
+      "fixes": [
+        "FX-0553"
+      ]
     }
   ]
 }
