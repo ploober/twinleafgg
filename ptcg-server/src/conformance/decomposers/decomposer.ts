@@ -20,6 +20,9 @@ export type WirePick =
   | { kind: 'target'; target: CardTarget }                 // ChoosePokemon
   | { kind: 'counter'; target: CardTarget }                // PutDamage (one counter)
   | { kind: 'assign'; to: CardTarget; index: number }      // AttachEnergy
+  | { kind: 'energyCard'; index: number }                  // AttachEnergy, B.120: the first card, its Pokémon still open
+  | { kind: 'energyDest'; to: CardTarget }                 // AttachEnergy, B.120: that card's Pokémon
+  | { kind: 'energyAll'; to: CardTarget; indices: number[] } // AttachEnergy, B.120: every (forced) card to the Pokémon
   | { kind: 'transfer'; from: CardTarget; to: CardTarget } // MoveDamage
   | { kind: 'discard'; from: CardTarget; index: number }   // DiscardEnergy
   | { kind: 'move'; from: CardTarget; to: CardTarget; index: number } // MoveEnergy (one transfer)
