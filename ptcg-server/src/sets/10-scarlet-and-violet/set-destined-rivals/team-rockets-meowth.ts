@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardType, CardTag, StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT } from '../../../game/store/prefabs/prefabs';
+import { AFTER_ATTACK, MOVE_CARDS, SHUFFLE_DECK, WAS_ATTACK_USED, MULTIPLE_COIN_FLIPS_PROMPT, SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
 
 export class TeamRocketsMeowth extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -48,6 +48,8 @@ export class TeamRocketsMeowth extends PokemonCard {
       if (opponent.hand.cards.length > 0) {
         const randomIndex = Math.floor(Math.random() * opponent.hand.cards.length);
         const randomCard = opponent.hand.cards[randomIndex];
+        // TA-758: "Your opponent reveals that card": it is shown to the attacker before it is shuffled into the deck.
+        SHOW_CARDS_TO_PLAYER(store, state, player, [randomCard]);
         MOVE_CARDS(store, state, opponent.hand, opponent.deck, {
           cards: [randomCard],
           sourceCard: this,

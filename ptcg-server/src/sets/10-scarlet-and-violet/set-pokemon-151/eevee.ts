@@ -6,8 +6,8 @@ import { State } from '../../../game/store/state/state';
 
 import { StoreLike } from '../../../game/store/store-like';
 import { Effect } from '../../../game/store/effects/effect';
-import { Card, ShuffleDeckPrompt } from '../../../game';
-import {WAS_ATTACK_USED, MOVE_CARDS, SHUFFLE_DECK } from '../../../game/store/prefabs/prefabs';
+import { Card, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import {WAS_ATTACK_USED, MOVE_CARDS, SHUFFLE_DECK, SHOW_CARDS_TO_PLAYER } from '../../../game/store/prefabs/prefabs';
 
 export class Eevee extends PokemonCard {
 
@@ -64,6 +64,9 @@ export class Eevee extends PokemonCard {
         { min: 0, max: 3, allowCancel: true, differentTypes: true }
       ), selected => {
         cards = selected || [];
+
+        // TA-758 (TA-691's shape): "reveal them": the picks are shown to the opponent before they go to the hand.
+        SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);
 
         cards.forEach((card, index) => {
           MOVE_CARDS(store, state, player.deck, player.hand, { cards: [card], sourceCard: this });
