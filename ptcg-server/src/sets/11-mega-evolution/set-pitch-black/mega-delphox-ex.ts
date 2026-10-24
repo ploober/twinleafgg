@@ -60,17 +60,18 @@ export class MegaDelphoxex extends PokemonCard {
       // the public-reveal signal); the player sees it in the pick below.
 
       const openSlots = player.bench.filter((b) => b.cards.length === 0).length;
-      const basicCount = deckTop.cards.filter(
-        (c) => c instanceof PokemonCard && c.stage === Stage.BASIC,
+      // TA-764 (#1592, #1782, #2258, #615): "any number of Pokémon you find there" — any Stage goes onto the Bench.
+      const pokemonCount = deckTop.cards.filter(
+        (c) => c instanceof PokemonCard,
       ).length;
 
-      if (basicCount === 0 || openSlots === 0) {
+      if (pokemonCount === 0 || openSlots === 0) {
         MOVE_CARDS(store, state, deckTop, player.deck, { sourceCard: this });
         SHUFFLE_DECK(store, state, player);
         return state;
       }
 
-      const maxToSelect = Math.min(basicCount, openSlots);
+      const maxToSelect = Math.min(pokemonCount, openSlots);
 
       return store.prompt(
         state,
@@ -78,7 +79,7 @@ export class MegaDelphoxex extends PokemonCard {
           player,
           GameMessage.CHOOSE_CARD_TO_PUT_ONTO_BENCH,
           deckTop,
-          { superType: SuperType.POKEMON, stage: Stage.BASIC },
+          { superType: SuperType.POKEMON },
           { min: 0, max: maxToSelect, allowCancel: false },
         ),
         (selected) => {
