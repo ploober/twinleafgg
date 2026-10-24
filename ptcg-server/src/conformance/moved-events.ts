@@ -30,6 +30,8 @@ interface Board {
   transitVisibility: Map<string, TransitVisibility>;
   /** A lifted card's declared deck end (`destination: {deck, top|bottom}`), when its transit entry has one. */
   transitDeckEnd: Map<string, 'top' | 'bottom'>;
+  /** TA-753: the Prize cards lying face down (nobody has looked at them). */
+  faceDownPrizes: Set<string>;
 }
 
 const PLAYERS: NeutralPlayerId[] = ['A', 'B'];
@@ -47,6 +49,7 @@ export function board(state: NeutralState): Board {
   const deck: Record<NeutralPlayerId, string[]> = { A: [], B: [] };
   const transitVisibility = new Map<string, TransitVisibility>();
   const transitDeckEnd = new Map<string, 'top' | 'bottom'>();
+  const faceDownPrizes = new Set<string>();
   for (const owner of PLAYERS) {
     const p = state.players[owner];
     stackPlaces(owner, 'active', p.active, at);
@@ -55,7 +58,10 @@ export function board(state: NeutralState): Board {
     for (const c of p.deck) { at.set(c.iid, { owner, loc: { zone: 'deck' } }); deck[owner].push(c.iid); }
     for (const c of p.discard) { at.set(c.iid, { owner, loc: { zone: 'discardPile' } }); }
     for (const c of p.lostZone) { at.set(c.iid, { owner, loc: { zone: 'lostZone' } }); }
-    for (const c of p.prizes) { at.set(c.iid, { owner, loc: { zone: 'prizes' } }); }
+    for (const c of p.prizes) {
+      at.set(c.iid, { owner, loc: { zone: 'prizes' } });
+      if (!c.faceUp) { faceDownPrizes.add(c.iid); }
+    }
     for (const c of p.resolving ?? []) { at.set(c.iid, { owner, loc: { zone: 'resolving' } }); }
     for (const c of p.transit ?? []) {
       at.set(c.iid, { owner, loc: { zone: 'transit' } });
@@ -67,7 +73,7 @@ export function board(state: NeutralState): Board {
   if (state.stadium) {
     at.set(state.stadium.iid, { owner: state.stadium.owner, loc: { zone: 'stadium' } });
   }
-  return { at, deck, transitVisibility, transitDeckEnd };
+  return { at, deck, transitVisibility, transitDeckEnd, faceDownPrizes };
 }
 
 function samePlace(a: Place, b: Place): boolean {
@@ -93,6 +99,12 @@ export function visibilityOf(from: Place, to: Place, iid: string, before: Board,
   }
   if (from.loc.zone === 'transit') {
     return before.transitVisibility.get(iid) ?? 'owner';
+  }
+  // TA-753: a face-down pile no one has looked at moving between the deck and the Prizes (Redeemable Ticket jtg-156;
+  // the contract's `deck` -> `prizes` `hidden`). A Prize TAKEN into the hand stays `owner`.
+  if ((from.loc.zone === 'deck' && to.loc.zone === 'prizes' && after.faceDownPrizes.has(iid))
+      || (from.loc.zone === 'prizes' && to.loc.zone === 'deck' && before.faceDownPrizes.has(iid))) {
+    return 'hidden';
   }
   return 'owner';
 }
