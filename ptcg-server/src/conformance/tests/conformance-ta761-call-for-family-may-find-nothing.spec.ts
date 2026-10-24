@@ -10,6 +10,14 @@ import {
  * Mutation guard: min back to 1 on either card -> its cell sees no `confirm {value: false}`.
  */
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'par-004': '[TA-761 par-004]',
+  'par-004 stop': '[TA-761 par-004 stop]',
+  'twm-036': '[TA-761 twm-036]',
+  'twm-036 stop': '[TA-761 twm-036 stop]',
+};
+
 const WATER = 'sve-003', FIRE = 'sve-002', GRASS = 'sve-001', FILLER = 'asc-004';
 
 function markers(): PokemonMarkers {
@@ -50,13 +58,13 @@ for (const [printing, energy] of [['par-004', GRASS], ['twm-036', FIRE]] as cons
     );
     const declare = { actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Call for Family' } as unknown as NeutralAction;
 
-    it(`the pick offers the Basic Pokémon and the stop [TA-761 ${printing}]`, () => {
+    it(`the pick offers the Basic Pokémon and the stop ${CELLS[printing + '']}`, () => {
       const r = step(board(), [declare]);
       const acts = offered(r) as Array<La & { value?: boolean }>;
       expect(acts.some(a => a.target === 'ad0')).toBe(true);
       expect(acts.some(a => a.type === 'confirm' && a.value === false)).toBe(true);
     });
-    it(`the stop: nothing is benched and the deck is shuffled [TA-761 ${printing} stop]`, () => {
+    it(`the stop: nothing is benched and the deck is shuffled ${CELLS[printing + ' stop']}`, () => {
       const r = step(board(), [declare, { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction]);
       expect(r.status).not.toBe('invalidAction');
       expect(r.state.players.A.bench).toEqual([]);

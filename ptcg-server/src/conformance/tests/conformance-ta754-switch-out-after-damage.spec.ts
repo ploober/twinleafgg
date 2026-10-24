@@ -11,6 +11,14 @@ import {
  * Mutation guard: put either card back on WAS_ATTACK_USED -> its cells see the damage on bb1s0.
  */
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'asc-129': '[TA-754 asc-129]',
+  'asc-129 end': '[TA-754 asc-129 end]',
+  'asc-146': '[TA-754 asc-146]',
+  'asc-146 end': '[TA-754 asc-146 end]',
+};
+
 const DARK = 'sve-007', METAL = 'sve-008', FILLER = 'asc-004', WATER = 'sve-003';
 
 function markers(): PokemonMarkers {
@@ -55,14 +63,14 @@ for (const [printing, attack, name, energy, dmg] of CASES) {
     );
     const declare = { actor: 'A', type: 'declareAttack', source: 'a1s0', name: attack } as unknown as NeutralAction;
 
-    it(`at B's new-Active pick the damage is already on b1s0 [TA-754 ${printing}]`, () => {
+    it(`at B's new-Active pick the damage is already on b1s0 ${CELLS[printing + '']}`, () => {
       const r = step(board(), [declare]);
       expect(r.pending).toBeTruthy();
       expect(offered(r).map(a => `${a.type}:${a.target}`).sort()).toEqual(['promoteBench:bb1s0', 'promoteBench:bb2s0']);
       expect(r.state.players.B.active?.stack[0].iid).toBe('b1s0');
       expect(r.state.players.B.active?.damage).toBe(dmg);
     });
-    it(`after B picks bb1s0, b1s0 is Benched with the damage and its Energy, bb1s0 Active undamaged [TA-754 ${printing} end]`, () => {
+    it(`after B picks bb1s0, b1s0 is Benched with the damage and its Energy, bb1s0 Active undamaged ${CELLS[printing + ' end']}`, () => {
       const r = step(board(), [declare, { actor: 'B', type: 'promoteBench', target: 'bb1s0' } as unknown as NeutralAction]);
       const B = r.state.players.B;
       expect(B.active?.stack[0].iid).toBe('bb1s0');

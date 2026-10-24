@@ -16,6 +16,13 @@ import {
 type Moved = Extract<NeutralEvent, { kind: 'moved' }>;
 type Reveal = { kind: 'reveal'; owner: string; cards: string[]; from: string; to: string };
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'dri-149': '[TA-758 dri-149]',
+  'asc-161': '[TA-758 asc-161]',
+  'dri-203': '[TA-758 dri-203]',
+};
+
 const METAL = 'sve-008', WATER = 'sve-003';
 const BELLSPROUT = 'asc-004', GOTHITA = 'pal-090';
 
@@ -83,7 +90,7 @@ describe('TA-758: Colorful Friends (Eevee mew-133) reveals the Pokémon it finds
 describe('TA-758: Paw-cket Pilfer (Team Rocket\'s Meowth) has the opponent reveal the card before it goes into the deck', () => {
   const attack = { actor: 'A', type: 'declareAttack', source: 'a1', name: 'Paw-cket Pilfer' } as never;
   for (const printing of ['dri-149', 'asc-161', 'dri-203']) {
-    it(`B's one hand card: revealed by B, hand > deck public [TA-758 ${printing}]`, () => {
+    it(`B's one hand card: revealed by B, hand > deck public ${CELLS[printing + '']}`, () => {
       const s = game(mon('a1', printing, [{ iid: 'ae1', printing: METAL }]), cards('ad', 6, WATER));
       s.players.B.hand = [{ iid: 'bh1', printing: WATER }];
       const r = step(s, [attack]);

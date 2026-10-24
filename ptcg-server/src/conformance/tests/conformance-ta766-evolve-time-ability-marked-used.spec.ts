@@ -12,6 +12,16 @@ import {
  * Mutation guard: drop ABILITY_USED from either card -> its cell reads [].
  */
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'meg-073': '[TA-766 meg-073]',
+  'meg-073 declined': '[TA-766 meg-073 declined]',
+  'meg-017': '[TA-766 meg-017]',
+  'meg-017 declined': '[TA-766 meg-017 declined]',
+  'meg-137': '[TA-766 meg-137]',
+  'meg-137 declined': '[TA-766 meg-137 declined]',
+};
+
 const WATER = 'sve-003', FILLER = 'asc-004';
 
 function markers(): PokemonMarkers {
@@ -52,12 +62,12 @@ for (const [printing, basic, ability, name] of CASES) {
       player('b', { active: pip([{ iid: 'b1s0', printing: FILLER }]), bench: [pip([{ iid: 'bb1s0', printing: FILLER }])] }),
     );
     const evolve = { actor: 'A', type: 'evolve', card: 'ah0', target: 'a1s0' } as unknown as NeutralAction;
-    it(`accepted: abilitiesUsedThisTurn is [${ability}] [TA-766 ${printing}]`, () => {
+    it(`accepted: abilitiesUsedThisTurn is [${ability}] ${CELLS[printing + '']}`, () => {
       const r = step(board(), [evolve, { actor: 'A', type: 'confirm', value: true } as unknown as NeutralAction]);
       expect(r.status).not.toBe('invalidAction');
       expect(r.state.players.A.active?.markers.abilitiesUsedThisTurn).toEqual([ability]);
     });
-    it(`declined: abilitiesUsedThisTurn stays [] [TA-766 ${printing} declined]`, () => {
+    it(`declined: abilitiesUsedThisTurn stays [] ${CELLS[printing + ' declined']}`, () => {
       const r = step(board(), [evolve, { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction]);
       expect(r.status).not.toBe('invalidAction');
       expect(r.state.players.A.active?.markers.abilitiesUsedThisTurn).toEqual([]);

@@ -17,6 +17,22 @@ import {
  * Mutation guard: drop any one gate -> its "withheld" cell sees the confirm (or the useAbility) again.
  */
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'jtg-085': '[TA-759 jtg-085]',
+  'jtg-085 control': '[TA-759 jtg-085 control]',
+  'jtg-166': '[TA-759 jtg-166]',
+  'jtg-166 control': '[TA-759 jtg-166 control]',
+  'pbl-020': '[TA-759 pbl-020]',
+  'pbl-020 control': '[TA-759 pbl-020 control]',
+  'pbl-088': '[TA-759 pbl-088]',
+  'pbl-088 control': '[TA-759 pbl-088 control]',
+  'sfa-025': '[TA-759 sfa-025]',
+  'sfa-025 control': '[TA-759 sfa-025 control]',
+  'pre-054': '[TA-759 pre-054]',
+  'pre-054 control': '[TA-759 pre-054 control]',
+};
+
 const GRASS = 'sve-001', PSYCHIC = 'sve-005', FIGHTING = 'sve-006', WATER = 'sve-003', FILLER = 'asc-004';
 const SPIKY = 'jtg-159', ROCKRUFF = 'jtg-084', BRIONNE = 'pbl-019', COTTONEE = 'wht-004';
 
@@ -54,12 +70,12 @@ const damaged = (p: PokemonInPlay, d: number): PokemonInPlay => ({ ...p, damage:
 describe('TA-759 — Spike-Clad (Lycanroc) needs a Spiky Energy in the discard pile', () => {
   for (const printing of ['jtg-085', 'jtg-166']) {
     const board = (discard: CardRef[]) => base({ active: pip([{ iid: 'a1s0', printing: ROCKRUFF }]), hand: [{ iid: 'ah0', printing }], discard });
-    it(`empty discard: not offered [TA-759 ${printing}]`, () => {
+    it(`empty discard: not offered ${CELLS[printing + '']}`, () => {
       const r = step(board([]), [evolve]);
       expect(r.status).not.toBe('invalidAction');
       expect(confirmOffered(r)).toBe(false);
     });
-    it(`a Spiky Energy in the discard: offered [TA-759 ${printing} control]`, () => {
+    it(`a Spiky Energy in the discard: offered ${CELLS[printing + ' control']}`, () => {
       expect(confirmOffered(step(board([{ iid: 'adc0', printing: SPIKY }]), [evolve]))).toBe(true);
     });
   }
@@ -68,12 +84,12 @@ describe('TA-759 — Spike-Clad (Lycanroc) needs a Spiky Energy in the discard p
 describe('TA-759 — Enriching Melody (Primarina) needs a damaged Pokémon', () => {
   for (const printing of ['pbl-020', 'pbl-088']) {
     const board = (d: number) => base({ active: pip([{ iid: 'a1s0', printing: BRIONNE }]), bench: [damaged(pip([{ iid: 'ab1s0', printing: FILLER }]), d)], hand: [{ iid: 'ah0', printing }] });
-    it(`no damage in play: not offered [TA-759 ${printing}]`, () => {
+    it(`no damage in play: not offered ${CELLS[printing + '']}`, () => {
       const r = step(board(0), [evolve]);
       expect(r.status).not.toBe('invalidAction');
       expect(confirmOffered(r)).toBe(false);
     });
-    it(`a damaged Benched Pokémon: offered [TA-759 ${printing} control]`, () => {
+    it(`a damaged Benched Pokémon: offered ${CELLS[printing + ' control']}`, () => {
       expect(confirmOffered(step(board(30), [evolve]))).toBe(true);
     });
   }
@@ -95,12 +111,12 @@ describe('TA-759 — Battle-Hardened (Bloodmoon Ursaluna) needs a Basic [F] Ener
   for (const printing of ['sfa-025', 'pre-054']) {
     const board = (hand: CardRef[]) => base({ active: pip([{ iid: 'a1s0', printing: FILLER }]), hand: [{ iid: 'ah0', printing }, ...hand] });
     const bench = { actor: 'A', type: 'benchBasic', card: 'ah0' } as unknown as NeutralAction;
-    it(`Grass and Psychic Energy in hand: not offered [TA-759 ${printing}]`, () => {
+    it(`Grass and Psychic Energy in hand: not offered ${CELLS[printing + '']}`, () => {
       const r = step(board([{ iid: 'ah1', printing: GRASS }, { iid: 'ah2', printing: PSYCHIC }]), [bench]);
       expect(r.status).not.toBe('invalidAction');
       expect(confirmOffered(r)).toBe(false);
     });
-    it(`a Basic [F] Energy in hand: offered [TA-759 ${printing} control]`, () => {
+    it(`a Basic [F] Energy in hand: offered ${CELLS[printing + ' control']}`, () => {
       expect(confirmOffered(step(board([{ iid: 'ah1', printing: FIGHTING }]), [bench]))).toBe(true);
     });
   }

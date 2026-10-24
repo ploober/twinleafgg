@@ -11,6 +11,18 @@ import {
  * Mutation guard: min back to 1 -> the two-Pokémon cell sees the placeCounter pick, the three-Pokémon cell a stop.
  */
 
+/** The spec cell labels, literal so the registry can read them (one per printing and cell). */
+const CELLS: Record<string, string> = {
+  'dri-122': '[TA-763 dri-122]',
+  'dri-122 three': '[TA-763 dri-122 three]',
+  'dri-217': '[TA-763 dri-217]',
+  'dri-217 three': '[TA-763 dri-217 three]',
+  'dri-234': '[TA-763 dri-234]',
+  'dri-234 three': '[TA-763 dri-234 three]',
+  'dri-242': '[TA-763 dri-242]',
+  'dri-242 three': '[TA-763 dri-242 three]',
+};
+
 const WATER = 'sve-003', FILLER = 'asc-004', GOLBAT = 'dri-121';
 
 function markers(): PokemonMarkers {
@@ -54,14 +66,14 @@ for (const printing of ['dri-122', 'dri-217', 'dri-234', 'dri-242']) {
       { actor: 'A', type: 'confirm', value: true },
     ] as unknown as NeutralAction[];
 
-    it(`exactly two: no pick, 2 counters on each [TA-763 ${printing}]`, () => {
+    it(`exactly two: no pick, 2 counters on each ${CELLS[printing + '']}`, () => {
       const r = step(board(1), go);
       expect(r.status).not.toBe('invalidAction');
       expect(offered(r).some(a => a.type === 'placeCounter')).toBe(false);
       expect(r.state.players.B.active?.damage).toBe(20);
       expect(r.state.players.B.bench[0].damage).toBe(20);
     });
-    it(`three: the second pick offers no stop [TA-763 ${printing} three]`, () => {
+    it(`three: the second pick offers no stop ${CELLS[printing + ' three']}`, () => {
       const r = step(board(2), [...go, { actor: 'A', type: 'placeCounter', target: 'b1s0' } as unknown as NeutralAction]);
       expect(r.status).not.toBe('invalidAction');
       const acts = offered(r) as Array<La & { value?: boolean }>;
