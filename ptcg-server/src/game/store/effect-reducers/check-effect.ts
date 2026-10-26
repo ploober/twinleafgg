@@ -523,7 +523,19 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
     knockOutEffects.push(...effects);
     // Only when there IS a KO: a sweep with none must not start waiting on a prompt some earlier step
     // left pending (a retreat's Energy choice, say) — that would be a new sequencing, not a batch.
-    state = store.resolveKnockOutReactions(state, effects);
+    // TA-444 (B.51 MERGE): a victim a reaction creates inside the window joins the set being ordered; recorded here so
+    // the re-collection below does not take it a second time
+    state = store.resolveKnockOutReactions(state, effects, s => {
+      const joined = findKoPokemons(store, s).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
+      const joinedEffects = joined.map(p => {
+        const knockOutEffect = new KnockOutEffect(s.players[p.playerNum], p.cardList);
+        knockOutEffect.viaCheckState = true;
+        return knockOutEffect;
+      });
+      pokemonsToDiscard.push(...joined);
+      knockOutEffects.push(...joinedEffects);
+      return joinedEffects;
+    });
     if (store.hasPrompts()) {
       yield store.waitPrompt(state, () => next());
     }

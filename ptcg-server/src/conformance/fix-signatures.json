@@ -8833,7 +8833,7 @@
       "file": "game/store/store.ts",
       "signatures": [
         "    return probe !== null && (probe.raised || boardDiffers(state, probe.after));",
-        "  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State {"
+        "  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[],"
       ],
       "note": "TA-432 (2026-09-17): CF-38 KO window (reopened on N-0209) / TA-432: KO reactions batched ACROSS victims with per-occurrence candidates carryi",
       "fixes": [
@@ -8855,7 +8855,7 @@
     {
       "file": "game/store/store-like.ts",
       "signatures": [
-        "  resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State;"
+        "  resolveKnockOutReactions(state: State, effects: KnockOutEffect[], collectNew?: (state: State) => KnockOutEffect[]): State;"
       ],
       "note": "TA-432 / CF-38 KO window (2026-09-17): StoreLike.resolveKnockOutReactions — the sweep-level KO reaction batch entry point",
       "fixes": [

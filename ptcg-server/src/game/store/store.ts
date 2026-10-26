@@ -947,27 +947,12 @@ export class Store implements StoreLike {
    * The actor test is `wireVisibleBoardDiffers`, not `boardDiffers`: the KO window has ~131 handlers and
    * many only stamp a marker; a marker is not an effect the player orders.
    */
-  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State {
+  public resolveKnockOutReactions(state: State, effects: KnockOutEffect[],
+    collectNew?: (state: State) => KnockOutEffect[]): State {
     if (effects.length === 0) {
       return state;
     }
-    const inPlay: Card[] = [];
-    for (const player of state.players) {
-      for (const slot of [player.active, ...player.bench]) {
-        slot.cards.forEach(c => inPlay.push(c));
-        slot.tools.forEach(t => inPlay.push(t));
-      }
-    }
-    const actors: SimultaneousActor[] = [];
-    for (const effect of effects) {
-      const subject = effect.target.getPokemons()[0];
-      for (const card of inPlay) {
-        const probe = this.probe(card, state, effect);
-        if (probe !== null && (probe.raised || wireVisibleBoardDiffers(state, probe.after))) {
-          actors.push({ card, effect, subject });
-        }
-      }
-    }
+    const actors = this.knockOutActors(state, effects);
     if (actors.length === 0) {
       return state;
     }
@@ -993,11 +978,47 @@ export class Store implements StoreLike {
     for (const a of actors) {
       (a.effect as KnockOutEffect).resolvedReactors.push(a.card);
     }
-    return this.askResolveNext(state, actors, koWindowDecider);
+    // TA-444 (B.51, MERGE): a Pokémon a reaction Knocks Out while the set is still being ordered joins it — its
+    // reactions are added to the candidates before the next pick (the sweep records its Knock Out, so its discard and
+    // Prize come with the group's).
+    const merge = collectNew === undefined ? undefined : (s: State): SimultaneousActor[] => {
+      const joined = this.knockOutActors(s, collectNew(s));
+      for (const a of joined) {
+        (a.effect as KnockOutEffect).resolvedReactors.push(a.card);
+      }
+      return joined;
+    };
+    return this.askResolveNext(state, actors, koWindowDecider, merge);
+  }
+
+  /** The cards in play whose reaction to one of these Knock Outs would do something (the wire-visible probe). */
+  private knockOutActors(state: State, effects: KnockOutEffect[]): SimultaneousActor[] {
+    const inPlay: Card[] = [];
+    for (const player of state.players) {
+      for (const slot of [player.active, ...player.bench]) {
+        slot.cards.forEach(c => inPlay.push(c));
+        slot.tools.forEach(t => inPlay.push(t));
+      }
+    }
+    const actors: SimultaneousActor[] = [];
+    for (const effect of effects) {
+      const subject = effect.target.getPokemons()[0];
+      for (const card of inPlay) {
+        const probe = this.probe(card, state, effect);
+        if (probe !== null && (probe.raised || wireVisibleBoardDiffers(state, probe.after))) {
+          actors.push({ card, effect, subject });
+        }
+      }
+    }
+    return actors;
   }
 
   /** One pending per pick, re-asked with the remainder (CF-38: not a single permutation). */
-  private askResolveNext(state: State, remaining: SimultaneousActor[], owner: Player): State {
+  private askResolveNext(state: State, remaining: SimultaneousActor[], owner: Player,
+    merge?: (state: State) => SimultaneousActor[]): State {
+    if (merge !== undefined) {
+      remaining = [...remaining, ...merge(state)];
+    }
     if (remaining.length === 0) {
       return state;
     }
@@ -1013,7 +1034,7 @@ export class Store implements StoreLike {
       const index = (typeof choice === 'number' && choice >= 0 && choice < remaining.length) ? choice : 0;
       const picked = remaining[index];
       const rest = remaining.filter((_, i) => i !== index);
-      state = this.runThenContinue(state, picked, rest, owner);
+      state = this.runThenContinue(state, picked, rest, owner, merge);
     });
   }
 
@@ -1042,15 +1063,16 @@ export class Store implements StoreLike {
    */
   private runThenContinue(
     state: State, picked: SimultaneousActor, rest: SimultaneousActor[], owner: Player,
+    merge?: (state: State) => SimultaneousActor[],
   ): State {
     const promptsBefore = this.promptItems.length;
     state = this.callReduceEffect(picked.card, this, state, picked.effect);
     if (this.promptItems.length > promptsBefore) {
       return this.waitPrompt(state, () => {
-        state = this.askResolveNext(state, rest, owner);
+        state = this.askResolveNext(state, rest, owner, merge);
       });
     }
-    return this.askResolveNext(state, rest, owner);
+    return this.askResolveNext(state, rest, owner, merge);
   }
 
   /**

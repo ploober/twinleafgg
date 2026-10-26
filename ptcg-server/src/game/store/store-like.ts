@@ -12,7 +12,7 @@ export interface StoreLike {
   reduceEffect(state: State, effect: Effect): State;
 
   /** CF-38 KO window: resolve the simultaneous reactions to every KO of one sweep before the KOs themselves. */
-  resolveKnockOutReactions(state: State, effects: KnockOutEffect[]): State;
+  resolveKnockOutReactions(state: State, effects: KnockOutEffect[], collectNew?: (state: State) => KnockOutEffect[]): State;
 
   log(state: State, message: GameLog, params?: StateLogParam, client?: number): void;
 
