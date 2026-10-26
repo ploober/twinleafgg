@@ -14494,6 +14494,46 @@
       "fixes": [
         "FX-0553"
       ]
+    },
+    {
+      "file": "conformance/events.ts",
+      "signatures": [
+        "      out.push({ kind: 'countersMoved', source: fell[0], target: rose[0], hp, landed: hp });"
+      ],
+      "note": "TA-774, TA-775 (2026-10-25): Counter moves emit countersMoved {source, target, hp, landed} (no player), one per (source, target) per dispatch, never ",
+      "fixes": [
+        "FX-0554"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/attach-energy.ts",
+      "signatures": [
+        "function sameTargetStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext, state: State): Plan | null {"
+      ],
+      "note": "TA-769 (2026-10-25): Several cards to ONE Pokémon (AttachEnergyPrompt sameTarget, max > 1) ask every card first, with the stop in the same pe",
+      "fixes": [
+        "FX-0555"
+      ]
+    },
+    {
+      "file": "conformance/events.ts",
+      "signatures": [
+        "import { mapDelta, loggedActor } from './event-mapper';"
+      ],
+      "note": "TA-777 (2026-10-25): The eight card-naming event kinds carry no player: the side is the owner of the card they name (B.134, owner 2026-10-25,",
+      "fixes": [
+        "FX-0556"
+      ]
+    },
+    {
+      "file": "set-pitch-black/miraidon.ts",
+      "signatures": [
+        "              sameTarget: true,   // TA-776 (B.120): \"to 1 of your Benched Pokémon\" - both Energy go to the same one"
+      ],
+      "note": "TA-776 (2026-10-25): Photon Cord pbl-028 moves both Energy to ONE Benched Pokémon: its AttachEnergyPrompt gains sameTarget, so a split is ref",
+      "fixes": [
+        "FX-0557"
+      ]
     }
   ]
 }
