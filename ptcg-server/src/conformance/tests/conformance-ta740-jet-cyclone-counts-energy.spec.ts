@@ -39,7 +39,12 @@ function board(grass: number, meganium: boolean): NeutralState {
   } as NeutralState;
 }
 const attack = { actor: 'A', type: 'declareAttack', source: 'a0', name: 'Jet Cyclone' } as never;
-const move = (card: string) => ({ actor: 'A', type: 'moveEnergy', card, source: 'a0', target: 'a1' } as never);
+// TA-769 / B.120 (amended, owner 2026-10-25): the Energy are picked first (choose {target: card}), then the one Benched
+// Pokémon they all go to (choose {target: a1}); not moveEnergy pairs.
+const move = (card: string) => ({ actor: 'A', type: 'choose', target: card } as never);
+const to = (target: string) => ({ actor: 'A', type: 'choose', target } as never);
+const cardOffers = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? [])
+  .filter(a => a.type === 'choose' && String((a as { target?: string }).target).startsWith('ae')).length;
 const stop = { actor: 'A', type: 'confirm', value: false } as never;
 const offers = (r: ReturnType<typeof step>, type: string) => (r.pending?.legalActions ?? []).some(a => a.type === type);
 
@@ -49,19 +54,20 @@ describe('TA-740 Jet Cyclone moves 3 Energy, not 3 cards (B.114)', () => {
     expect(offers(r, 'confirm')).toBe(false);
     r = step(board(3, true), [attack, move('ae0'), move('ae1')]);
     expect(offers(r, 'confirm')).toBe(true);
-    expect(offers(r, 'moveEnergy')).toBe(true);
-    r = step(board(3, true), [attack, move('ae0'), move('ae1'), stop]);
+    expect(cardOffers(r)).toBe(1);
+    r = step(board(3, true), [attack, move('ae0'), move('ae1'), stop, to('a1')]);
     expect(r.state.players.A.active!.energy.map(c => c.iid)).toEqual(['ae2']);
     expect(r.state.players.A.bench[0].energy.map(c => c.iid).sort()).toEqual(['ae0', 'ae1']);
   });
   it('[TA-740 dri-003 three] 3 Basic Grass under Wild Growth: taking the third card moves all 3 (#2205)', () => {
-    const r = step(board(3, true), [attack, move('ae0'), move('ae1'), move('ae2')]);
+    const r = step(board(3, true), [attack, move('ae0'), move('ae1'), move('ae2'), to('a1')]);
     expect(r.state.players.A.active!.energy.length).toBe(0);
     expect(r.state.players.A.bench[0].energy.length).toBe(3);
   });
   it('[TA-740 dri-003 cap] 4 Basic Grass under Wild Growth: never more than 3 cards (#2127)', () => {
-    const r = step(board(4, true), [attack, move('ae0'), move('ae1'), move('ae2')]);
-    expect(offers(r, 'moveEnergy')).toBe(false);
+    const at = step(board(4, true), [attack, move('ae0'), move('ae1'), move('ae2')]);
+    expect(cardOffers(at)).toBe(0);   // only the Pokémon is asked now
+    const r = step(board(4, true), [attack, move('ae0'), move('ae1'), move('ae2'), to('a1')]);
     expect(r.state.players.A.active!.energy.map(c => c.iid)).toEqual(['ae3']);
   });
   it('[TA-740 dri-003 control] 3 Basic Grass without Meganium: no stop before the third card', () => {

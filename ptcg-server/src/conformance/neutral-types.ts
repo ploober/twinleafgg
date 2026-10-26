@@ -665,6 +665,8 @@ export interface DecisionAttrs {
   op?: DecisionOp;
   amount?: number;
   destination?: DecisionDestination;
+  /** B.122 / CF-107 (v0.16.0): the basic iid of the Pokémon a card lands on, where that Pokémon is not asked (B.116). */
+  recipient?: string;
 }
 
 export type LegalAction =

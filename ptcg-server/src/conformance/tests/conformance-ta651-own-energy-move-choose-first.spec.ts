@@ -153,40 +153,57 @@ describe('TA-651 asc-053 Frosmoth Cold Cyclone: choose a [W] Energy first (TA-38
 });
 
 // ---------------------------------------------------------------- Yanmega ex Jet Cyclone
+// TA-769 / B.120 (amended, owner 2026-10-25): "Move 3 Energy from this Pokémon to 1 of your Benched Pokémon" asks the
+// three Energy first (choose {target: card}), then the one Benched Pokémon they all go to (choose {target: pokemon});
+// with one Benched Pokémon it is not asked and each card offer names it (recipient, B.116). The (card, Pokémon) pairs
+// this block pinned before are gone.
+const chooseAct = (target: string) => act({ actor: 'A', type: 'choose', target });
+type Choose = { type: string; target?: string; op?: string; recipient?: string };
+/** choose offers as `target` (with `>recipient` where the offer carries one), sorted. */
+const chooseOffers = (r: ReturnType<typeof step>) => (acts(r) as Choose[]).filter(a => a.type === 'choose')
+  .map(a => `${a.target}${a.recipient ? '>' + a.recipient : ''}`).sort();
 describe('TA-651 Yanmega ex Jet Cyclone: three Energy chosen one at a time, then the damage, then the move', () => {
   const FIVE = [GRASS, GRASS, GRASS, GRASS, GRASS];
   it('dri-003: the first pick is asked before the damage, one Energy per pick [TA-651]', () => {
     const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone')]);
     expect(rejected(r)).toBeUndefined();
-    expect(chooseTargets(r)).toEqual(['a1e0', 'a1e1', 'a1e2', 'a1e3', 'a1e4']);
+    expect(chooseOffers(r)).toEqual(['a1e0', 'a1e1', 'a1e2', 'a1e3', 'a1e4']);
+    expect(moveOffers(r)).toEqual([]);
     expect(dealt(r)).toBe(0);
   });
   it('dri-003: after one pick the other four are offered, the pick is chosen, nothing is damaged [TA-651]', () => {
-    const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), move('a1e0', 'a2')]);
+    const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), chooseAct('a1e0')]);
     expect(rejected(r)).toBeUndefined();
-    expect(chooseTargets(r)).toEqual(['a1e1', 'a1e2', 'a1e3', 'a1e4']);
+    expect(chooseOffers(r)).toEqual(['a1e1', 'a1e2', 'a1e3', 'a1e4']);
     expect(seq(r)).toEqual(['chosen a1e0']);
     expect(activeEnergy(r)).toEqual(['a1e0', 'a1e1', 'a1e2', 'a1e3', 'a1e4']);
   });
-  it('dri-003, two Benched: three chosen, 210, then the three move; nothing is asked after the damage [TA-651]', () => {
-    const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), move('a1e0', 'a3'), move('a1e1', 'a3'), move('a1e2', 'a3')]);
+  it('dri-003, two Benched: three chosen, then the Pokémon, 210, then the three move; nothing is asked after the damage [TA-651]', () => {
+    const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), chooseAct('a1e0'), chooseAct('a1e1'), chooseAct('a1e2'), chooseAct('a3')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r).slice(0, 4)).toEqual(['chosen a1e0', 'chosen a1e1', 'chosen a1e2', 'damaged']);
     expect(dealt(r)).toBe(210);
     expect(moveOffers(r)).toEqual([]);
   });
-  // The first pick fixes the destination ("to 1 of your Benched Pokémon"); the later picks only name the Energy.
-  it('dri-003, two Benched: the first pick fixes the destination, the other two follow it [TA-651]', () => {
-    const r = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), move('a1e1', 'a3')]);
-    expect(moveOffers(r)).toEqual(['a1e0>a3', 'a1e2>a3', 'a1e3>a3', 'a1e4>a3']);
-    const done = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), move('a1e1', 'a3'), move('a1e0', 'a3'), move('a1e2', 'a3')]);
+  it('dri-003, two Benched: the three Energy first, then the one Benched Pokémon they all go to (B.120) [TA-769 dri-003]', () => {
+    const one = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), chooseAct('a1e1')]);
+    expect(chooseOffers(one)).toEqual(['a1e0', 'a1e2', 'a1e3', 'a1e4']);
+    const three = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), chooseAct('a1e1'), chooseAct('a1e0'), chooseAct('a1e2')]);
+    expect(chooseOffers(three)).toEqual(['a2', 'a3']);
+    expect(dealt(three)).toBe(0);
+    const done = step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), chooseAct('a1e1'), chooseAct('a1e0'), chooseAct('a1e2'), chooseAct('a3')]);
     expect(rejected(done)).toBeUndefined();
     expect(energyOn(done, 1)).toEqual(['a1e0', 'a1e1', 'a1e2']);
     expect(energyOn(done, 0)).toEqual([]);
     expect(activeEnergy(done)).toEqual(['a1e3', 'a1e4']);
   });
-  it('dri-003, one Benched: the three chosen Energy move after the 210, the other two stay [TA-651]', () => {
-    const r = step(board('dri-003', FIVE, 1), [attack('Jet Cyclone'), move('a1e0', 'a2'), move('a1e2', 'a2'), move('a1e4', 'a2')]);
+  it('dri-003: a (card, Pokémon) pair is not offered and is refused (B.120) [TA-769 dri-003 pair refused]', () => {
+    expect(step(board('dri-003', FIVE, 2), [attack('Jet Cyclone'), move('a1e0', 'a2')]).status).toBe('invalidAction');
+  });
+  it('dri-003, one Benched: the Pokémon is not asked, each card offer names it; the three move after the 210 [TA-651]', () => {
+    const first = step(board('dri-003', FIVE, 1), [attack('Jet Cyclone')]);
+    expect(chooseOffers(first)).toEqual(['a1e0>a2', 'a1e1>a2', 'a1e2>a2', 'a1e3>a2', 'a1e4>a2']);
+    const r = step(board('dri-003', FIVE, 1), [attack('Jet Cyclone'), chooseAct('a1e0'), chooseAct('a1e2'), chooseAct('a1e4')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r).slice(0, 4)).toEqual(['chosen a1e0', 'chosen a1e2', 'chosen a1e4', 'damaged']);
     expect(seq(r).slice(4).sort()).toEqual(['moved a1e0', 'moved a1e2', 'moved a1e4']);
@@ -196,7 +213,7 @@ describe('TA-651 Yanmega ex Jet Cyclone: three Energy chosen one at a time, then
   for (const printing of ['dri-206', 'dri-228']) {
     it(`${printing}: the first pick is asked before the damage [TA-651]`, () => {
       const r = step(board(printing, FIVE, 1), [attack('Jet Cyclone')]);
-      expect(chooseTargets(r).length).toBe(5);
+      expect(chooseOffers(r).length).toBe(5);
       expect(dealt(r)).toBe(0);
     });
   }

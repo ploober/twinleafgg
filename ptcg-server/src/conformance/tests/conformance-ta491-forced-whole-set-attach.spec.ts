@@ -55,7 +55,10 @@ describe('TA-491 a forced all-N-of-N move collapses', () => {
   });
 
   it('control: three [D] and one Benched Pokemon still surfaces which two move [TA-491 par-121]', () => {
+    // TA-769 / B.120 (amended, owner 2026-10-25), B.116: the one Benched Pokémon is not asked; the three Energy are offered
+    // alone (choose {target: card}), not as moveEnergy pairs.
     const r = step(board([DARK, DARK, DARK], 1), [wheel]);
-    expect(legal(r).filter(a => a.startsWith('moveEnergy')).length).toBe(3);
+    expect(legal(r).filter(a => a.startsWith('moveEnergy')).length).toBe(0);
+    expect(legal(r).filter(a => a.startsWith('choose')).length).toBe(3);
   });
 });

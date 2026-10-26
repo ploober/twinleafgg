@@ -448,6 +448,8 @@ function resolveSelectOptionLabel(legalActions: LegalAction[], action: NeutralAc
  */
 const NOT_ANSWER_FIELDS = new Set(['actor', 'type', 'op', 'amount', 'destination', 'min', 'max', 'step', 'deck',
   'candidates', 'counts', 'label']);
+// B.122 / B.132 (TA-769): `recipient` is a decision attribute an answer may omit, like op / amount / destination.
+NOT_ANSWER_FIELDS.add('recipient');
 
 function present(v: unknown): boolean {
   return v !== undefined && v !== null && v !== '' && !(Array.isArray(v) && v.length === 0);

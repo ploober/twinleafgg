@@ -102,15 +102,17 @@ describe('B.102 / B.103: an attack\'s discard-pile attach is chosen at Step D an
   });
 
   it('paf-075 Motivate, two Basic Energy: nothing moves at the first pick [TA-674]', () => {
-    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), attach('adc0', 'ab2')]);
+    // TA-769 / B.120 (amended, owner 2026-10-25): the cards are picked first (choose {target: card}), then the Pokémon.
+    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), A({ type: 'choose', target: 'adc0' })]);
+    expect(r.status).not.toBe('invalidAction');
     expect(r.events.filter(e => e.kind === 'moved')).toEqual([]);
     expect(r.state.players.A.discard.map(c => c.iid).sort()).toEqual(['adc0', 'adc1']);
   });
 
   it('paf-075 Motivate, both cards: chosen x2, the 20, then both attach [TA-674]', () => {
-    // TA-772 / B.116, B.120: the first card's Pokémon fixes the destination for the second card (one legal target),
-    // so the second pick asks the card alone, choose {target: card}.
-    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), attach('adc0', 'ab2'), A({ type: 'choose', target: 'adc1' })]);
+    // TA-769 / B.120 (amended, owner 2026-10-25): both cards first, then the one Benched Pokémon they go to.
+    const r = step(board('paf-075', 'G', 'RW'), [declare('Motivate'), A({ type: 'choose', target: 'adc0' }),
+      A({ type: 'choose', target: 'adc1' }), A({ type: 'choose', target: 'ab2' })]);
     const ev = attackEvents(r.events);
     expect(chosenCards(ev)).toEqual(['adc0', 'adc1']);
     const firstMove = idx(ev, 'moved');
@@ -169,12 +171,14 @@ describe('TA-676: Transfer Charge attaches to any of your Pokemon, chosen at Ste
 describe('TA-677: Tropic Breeze chooses its Benched Pokemon before the damage, moves after it (B.89 (1))', () => {
   it('pal-007 Tropic Breeze: the destination pick is pended with the Defending Pokemon undamaged [TA-677]', () => {
     const r = step(board('pal-007', 'GGG', ''), [declare('Tropic Breeze')]);
-    expect(r.pending?.legalActions.every(a => a.type === 'moveEnergy')).toBe(true);
+    // TA-769 / B.120 (amended): every Energy is forced ("all"), so only the Benched Pokémon is asked.
+    expect((r.pending?.legalActions ?? []).map(a => `${a.type}:${(a as { target?: string }).target}`).sort())
+      .toEqual(['choose:ab1', 'choose:ab2']);
     expect(attackEvents(r.events).filter(e => e.kind === 'damaged')).toEqual([]);
   });
 
   it('pal-007 Tropic Breeze: the damage, then every Energy moves to the chosen Pokemon; no chosen [TA-677]', () => {
-    const r = step(board('pal-007', 'GGG', ''), [declare('Tropic Breeze'), move('a1e0', 'ab2')]);
+    const r = step(board('pal-007', 'GGG', ''), [declare('Tropic Breeze'), A({ type: 'choose', target: 'ab2' })]);
     const ev = attackEvents(r.events);
     expect(chosenCards(ev)).toEqual([]);
     expect(ev[0]?.kind).toBe('damaged');

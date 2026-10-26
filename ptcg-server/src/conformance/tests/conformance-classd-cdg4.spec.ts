@@ -117,26 +117,25 @@ describe('TA-521 Veluza Fillet Memento moves to ONE Benched Pokémon', () => {
     { active: mon('a1', [VELUZA], [WATER, WATER], 90), bench: [mon('a2', [BONNET]), mon('a3', [BONNET])], hand: [WATER] },
     { active: mon('b1', [STUNFISK], [LIGHTNING]) }, 'B', 4);
   const kick = attack('B', 'b1', 'Pouncing Trap');
-  it('after the first Water Energy goes to a2, the second can go only to a2 [TA-521]', () => {
-    const first = legal(s(), [kick]).find(a => a.type === 'moveEnergy' && a.target === 'a2')!;
-    expect(first).toBeDefined();
-    const next = legal(s(), [kick, first]).filter(a => a.type === 'moveEnergy');
-    expect(next.length).toBeGreaterThan(0);
-    expect(next.every(a => a.target === 'a2')).toBe(true);
+  // TA-769 / B.120 (amended, owner 2026-10-25): the Water Energy are picked first, then the ONE Benched Pokémon they all go
+  // to (it used to be a (card, Pokémon) pair whose Pokémon fixed the second card's).
+  const pick = (target: string): Act => ({ actor: 'A', type: 'choose', target });
+  const targets = (acts: Act[]) => acts.filter(a => a.type === 'choose').map(a => String(a.target)).sort();
+  it('the Energy are asked first, with no (card, Pokémon) pairs [TA-521]', () => {
+    const first = legal(s(), [kick]);
+    expect(first.some(a => a.type === 'moveEnergy')).toBe(false);
+    expect(targets(first)).toEqual(['a1e0', 'a1e1']);
   });
-  it('first Energy to a3: the second is offered only to a3 and both end there [TA-521]', () => {
-    const first = legal(s(), [kick]).find(a => a.type === 'moveEnergy' && a.target === 'a3')!;
-    const seconds = legal(s(), [kick, first]).filter(a => a.type === 'moveEnergy');
-    expect(seconds.map(a => a.target)).toEqual(['a3']);
-    const r = step(s(), [kick, first, seconds[0]] as never);
+  it('both Energy, then a3: the Pokémon is asked once and both end there [TA-521]', () => {
+    expect(targets(legal(s(), [kick, pick('a1e0'), pick('a1e1')]))).toEqual(['a2', 'a3']);
+    const r = step(s(), [kick, pick('a1e0'), pick('a1e1'), pick('a3')] as never);
     const a3 = r.state.players.A.bench.find(p => p.stack.some(c => c.iid === 'a3'))!;
     expect(a3.energy.length).toBe(2);
   });
-  it('control: "up to 2": after the first move the player may stop, one Energy moved [TA-521]', () => {
-    const first = legal(s(), [kick]).find(a => a.type === 'moveEnergy' && a.target === 'a2')!;
-    const stop = legal(s(), [kick, first]).find(a => a.type === 'confirm' && a.value === false);
+  it('control: "up to 2": after the first Energy the player may stop, then the Pokémon; one Energy moved [TA-521]', () => {
+    const stop = legal(s(), [kick, pick('a1e0')]).find(a => a.type === 'confirm' && a.value === false);
     expect(stop).toBeDefined();
-    const r = step(s(), [kick, first, stop] as never);
+    const r = step(s(), [kick, pick('a1e0'), stop, pick('a2')] as never);
     const a2 = r.state.players.A.bench.find(p => p.stack.some(c => c.iid === 'a2'))!;
     expect(a2.energy.length).toBe(1);
   });

@@ -9,47 +9,57 @@ import {
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot } from '../iid-targets';
-import { placeOnPokemon } from '../transit-projection';
+import { placeOnPokemon, liftToTransit } from '../transit-projection';
 import { State } from '../../game/store/state/state';
 import { CardList } from '../../game/store/state/card-list';
 import { IidContext } from '../state-adapter';
 
 type Assign = { to: CardTarget; index: number };
 
-/** The completed (card, Pokémon) assignments of the picks so far, whatever step shape made them (TA-769 / B.120). */
+/**
+ * The completed (card, Pokémon) assignments of the picks so far, whatever step shape made them. TA-769 / B.120 (amended,
+ * owner 2026-10-25): the cards of a same-target attach are picked first (`energyCard`), and the one Pokémon they all go
+ * to (`energyDest`) assigns every one of them.
+ */
 function assignments(picks: WirePick[]): Assign[] {
   const out: Assign[] = [];
-  let card: number | undefined;
+  let held: number[] = [];
   for (const p of realPicks(picks)) {
     if (p.kind === 'assign') { out.push({ to: p.to, index: p.index }); }
-    else if (p.kind === 'energyCard') { card = p.index; }
-    else if (p.kind === 'energyDest' && card !== undefined) { out.push({ to: p.to, index: card }); card = undefined; }
+    else if (p.kind === 'energyCard') { held.push(p.index); }
+    else if (p.kind === 'energyDest') { for (const index of held) { out.push({ to: p.to, index }); } held = []; }
     else if (p.kind === 'energyAll') { for (const index of p.indices) { out.push({ to: p.to, index }); } }
   }
   return out;
 }
 
-/** The first card of a same-target attach, picked and still waiting for its Pokémon (B.120), if any. */
-function openCard(picks: WirePick[]): number | undefined {
-  let card: number | undefined;
+/** The cards of a same-target attach picked so far and still waiting for their Pokémon (TA-769 / B.120), in pick order. */
+function openCards(picks: WirePick[]): number[] {
+  let held: number[] = [];
   for (const p of realPicks(picks)) {
-    if (p.kind === 'energyCard') { card = p.index; } else if (p.kind === 'energyDest') { card = undefined; }
+    if (p.kind === 'energyCard') { held.push(p.index); } else if (p.kind === 'energyDest') { held = []; }
   }
-  return card;
+  return held;
 }
 
 interface Candidate { index: number; energyIid: string; sourceIid?: string; target: CardTarget; targetIid: string }
 
-/** Every legal (card, Pokémon) pair after the assignments `as`, and whether the decision may stop there. */
-function candidatePairs(prompt: AttachEnergyPrompt, as: Assign[], ctx: IidContext, state: State): { pairs: Candidate[]; canStop: boolean } {
+/**
+ * Every legal (card, Pokémon) pair after the assignments `as`, and whether the decision may stop there. `held` (TA-769 /
+ * B.120) are cards already picked whose Pokémon is not chosen yet: they count as used for the card constraints and the
+ * stop, but fix no target.
+ */
+function candidatePairs(prompt: AttachEnergyPrompt, as: Assign[], ctx: IidContext, state: State, held: number[] = []):
+    { pairs: Candidate[]; canStop: boolean } {
   const { min } = prompt.options;
   const player = promptPlayer(state, prompt.playerId);
   const blocked = new Set(prompt.options.blocked);
-  const usedIndices = new Set(as.map(p => p.index));
-  const usedTypes = new Set(as.map(p => primaryEnergyType(prompt.cardList.cards[p.index])));
+  const picked = [...as.map(p => p.index), ...held];
+  const usedIndices = new Set(picked);
+  const usedTypes = new Set(picked.map(i => primaryEnergyType(prompt.cardList.cards[i])));
   const typeCounts = new Map<number, number>();
-  as.forEach(p => {
-    const t = primaryEnergyType(prompt.cardList.cards[p.index]);
+  picked.forEach(i => {
+    const t = primaryEnergyType(prompt.cardList.cards[i]);
     typeCounts.set(t, (typeCounts.get(t) ?? 0) + 1);
   });
   const usedTargetKeys = new Set(as.map(p => targetKey(p.to)));
@@ -103,14 +113,17 @@ function candidatePairs(prompt: AttachEnergyPrompt, as: Assign[], ctx: IidContex
   // B.114 (TA-740): with an Energy requirement the stop also needs the picked cards to provide it.
   const units = prompt.options.energyUnits;
   const energyMet = prompt.options.minEnergy === undefined || units === undefined
-    || as.reduce((sum, p) => sum + (units[p.index] ?? 1), 0) >= prompt.options.minEnergy;
-  return { pairs, canStop: as.length >= min && prompt.options.max > min && energyMet };
+    || picked.reduce((sum, i) => sum + (units[i] ?? 1), 0) >= prompt.options.minEnergy;
+  return { pairs, canStop: picked.length >= min && prompt.options.max > min && energyMet };
 }
 
 /**
  * The shape of the next step:
  *  - `pairs`: one `attachEnergy` / `moveEnergy {card, target}` per legal pair (CF-5, CF-34) — both dimensions open.
- *  - (`card` / `dest` / `all`: the same-target steps of B.120, not enabled in this build — TA-769 is held for the owner.)
+ *  - TA-769 / B.120 (amended, owner 2026-10-25), several cards to ONE Pokémon (`sameTarget`, max > 1; see sameTargetStep):
+ *    `card` asks the cards first (with the stop where the count is "up to"), then `dest` asks the one Pokémon they all go
+ *    to; `all` asks only the Pokémon when every card is forced; `fixed` asks the cards alone when only one Pokémon can
+ *    take them (B.116: the card offers carry op and recipient).
  *  - TA-770 / B.121 (owner 2026-10-23): a forced single-card attach over the card already picked (Waitress asc-215,
  *    TA-386's prompt over the chosen card) asks only the Pokémon: `single`, choose {target} (op: attach, CF-70).
  *  - TA-772 / B.116 (owner 2026-10-23): every candidate card has the same single legal target: `collapsed`, the card
@@ -126,9 +139,86 @@ function isPickedCardList(state: State, list: CardList): boolean {
     || list === p.active || p.bench.some(b => b === list));
 }
 
-type StepMode = 'pairs' | 'card' | 'dest' | 'all' | 'single' | 'collapsed';
-function planStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext, state: State):
-    { mode: StepMode; pairs: Candidate[]; canStop: boolean } | null {
+type StepMode = 'pairs' | 'card' | 'dest' | 'all' | 'fixed' | 'single' | 'collapsed';
+type Plan = { mode: StepMode; pairs: Candidate[]; canStop: boolean; recipient?: string; cards?: number[] };
+
+/** TA-769 / B.120: the shared-decomposer key — several cards to one chosen Pokémon. */
+function isSameTarget(prompt: AttachEnergyPrompt): boolean {
+  return prompt.options.sameTarget === true && prompt.options.max > 1;
+}
+
+/**
+ * TA-769 / B.120 (amended, owner 2026-10-25, supersedes the first-card-then-its-Pokémon order of 2026-10-23): when several
+ * cards go to ONE Pokémon ("Attach up to 2 Basic Energy cards from your discard pile to 1 of your Benched Pokémon",
+ * "Move all Energy from this Pokémon to 1 of your Benched Pokémon"), every card is picked first, with the stop in the
+ * same pending where the count is "up to", then the one Pokémon they all go to: choose {target: pokemon} (op: attach).
+ * A card is offered only while a Pokémon remains that could take it with every card already picked, and only such a
+ * Pokémon is offered. Every card forced (the stop never offered and no more cards than the picks owed: Tropic Breeze's
+ * "all Energy", Jet Cyclone's three of three): the cards are no decision and only the Pokémon is asked (`all`). One
+ * legal Pokémon (B.116): it is not asked; each card offer carries op: attach and recipient, and the card goes to it
+ * (`fixed`). The source of a move from an AttachEnergyPrompt is the prompt's own card list ("this Pokémon"): fixed and
+ * not asked. Keyed on the prompt's shape (sameTarget, max > 1), so every card that raises it gets this.
+ */
+function sameTargetStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext, state: State): Plan | null {
+  if (realPicks(picks).some(p => p.kind === 'energyDest' || p.kind === 'energyAll')) {
+    return null;
+  }
+  const as = assignments(picks);          // `fixed` picks only (the single legal Pokémon)
+  const held = openCards(picks);
+  const closed = hasDone(picks);
+  if (closed && held.length === 0) {
+    return null;
+  }
+  const player = promptPlayer(state, prompt.playerId);
+  // Card legality is per card and per Pokémon: the Pokémon that could take every card of `cards`.
+  const base = candidatePairs(prompt, [], ctx, state).pairs;
+  const destsFor = (cards: number[]): Candidate[] => {
+    const byTarget = new Map<string, Candidate>();
+    for (const c of base) {
+      if (!byTarget.has(targetKey(c.target)) && cards.every(i => base.some(b => b.index === i && targetKey(b.target) === targetKey(c.target)))) {
+        byTarget.set(targetKey(c.target), c);
+      }
+    }
+    return [...byTarget.values()];
+  };
+  const allTargets = destsFor([]);
+  if (allTargets.length === 1) {
+    // B.116: one legal Pokémon — the cards are asked alone and go to it.
+    if (closed || as.length >= prompt.options.max) {
+      return null;
+    }
+    const { pairs, canStop } = candidatePairs(prompt, as, ctx, state);
+    const n = new Set(pairs.map(c => c.index)).size;
+    if (as.length === 0 && !canStop && prompt.options.allowCancel === false && n > 0 && n <= prompt.options.min) {
+      return { mode: 'all', pairs: allTargets, canStop: false, cards: [...new Set(pairs.map(c => c.index))] };
+    }
+    if (pairs.length === 0) {
+      return null;
+    }
+    return { mode: 'fixed', pairs, canStop, recipient: pokemonTargetToIid(state, player, ctx, allTargets[0].target) };
+  }
+  if (!closed && held.length < prompt.options.max) {
+    const { pairs, canStop } = candidatePairs(prompt, [], ctx, state, held);
+    const cards = pairs.filter(c => destsFor([...held, c.index]).length > 0);
+    const n = new Set(cards.map(c => c.index)).size;
+    if (held.length === 0 && !canStop && prompt.options.allowCancel === false && n > 0 && n <= prompt.options.min) {
+      const forced = [...new Set(cards.map(c => c.index))];
+      return { mode: 'all', pairs: destsFor(forced), canStop: false, cards: forced };
+    }
+    if (n > 0) {
+      return { mode: 'card', pairs: cards, canStop };
+    }
+  }
+  if (held.length === 0) {
+    return null;
+  }
+  return { mode: 'dest', pairs: destsFor(held), canStop: false };
+}
+
+function planStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext, state: State): Plan | null {
+  if (isSameTarget(prompt)) {
+    return sameTargetStep(prompt, picks, ctx, state);
+  }
   if (hasDone(picks)) {
     return null;
   }
@@ -240,7 +330,10 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   // means each card has exactly one target (a second target would put the pair count above the cards
   // still to move). Mirrors discard-energy / choose-pokemon.
   collapseWholeSet: (prompt, picks, _state, forcedCount) => {
-    if (prompt.options.allowCancel !== false) {
+    // TA-769 / B.120: a same-target prompt's steps offer cards or Pokémon one dimension at a time, not (card, target)
+    // pairs, so a candidate count says nothing about the cards still owed; its forced shapes collapse step by step
+    // (`all`: only the Pokémon is asked).
+    if (prompt.options.allowCancel !== false || isSameTarget(prompt)) {
       return false;
     }
     const remaining = prompt.options.min - assignments(picks).length;
@@ -261,8 +354,14 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
           ? { type: 'moveEnergy', card: c.energyIid, source: c.sourceIid, target: c.targetIid }
           : { type: 'attachEnergy', card: c.energyIid, target: c.targetIid }, `${c.energyIid}>${c.targetIid}`);
       }
-    } else if (plan.mode === 'card' || plan.mode === 'collapsed') {
-      for (const c of plan.pairs) { push({ type: 'choose', target: c.energyIid, op: 'attach' }, c.energyIid); }
+    } else if (plan.mode === 'card' || plan.mode === 'collapsed' || plan.mode === 'fixed') {
+      // B.116 / B.122: where the Pokémon is not asked (one legal value) the card offer states it (recipient).
+      const recipient = plan.recipient ?? (plan.mode === 'collapsed' && plan.pairs.length > 0 ? plan.pairs[0].targetIid : undefined);
+      for (const c of plan.pairs) {
+        push(recipient === undefined
+          ? { type: 'choose', target: c.energyIid, op: 'attach' }
+          : { type: 'choose', target: c.energyIid, op: 'attach', recipient }, c.energyIid);
+      }
     } else {
       // 'dest' / 'all' / 'single': the Pokémon is the only open dimension.
       for (const c of plan.pairs) { push({ type: 'choose', target: c.targetIid, op: 'attach' }, c.targetIid); }
@@ -299,13 +398,15 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
         }
         return { kind: 'assign', to: c.target, index };
       }
-      if (plan.mode === 'card') {
+      if (plan.mode === 'card' || plan.mode === 'fixed') {
+        // TA-769 / B.120: a card of a same-target attach; its Pokémon is asked after the last card (`card`), or is the
+        // one legal Pokémon (`fixed`, B.116).
         const index = prompt.cardList.cards.indexOf(card);
-        if (!plan.pairs.some(c => c.index === index)) {
+        const c = plan.pairs.find(p => p.index === index);
+        if (c === undefined) {
           throw new Error(`[conformance] AttachEnergy choose '${iid}' is not a candidate card`);
         }
-        const fixed = assignments(picks)[0]?.to;
-        return fixed === undefined ? { kind: 'energyCard', index } : { kind: 'assign', to: fixed, index };
+        return plan.mode === 'fixed' ? { kind: 'assign', to: c.target, index } : { kind: 'energyCard', index };
       }
       const to = resolveAnyPokemonTarget(state, player, card);
       if (!plan.pairs.some(c => targetKey(c.target) === targetKey(to))) {
@@ -315,7 +416,7 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
         return { kind: 'energyDest', to };
       }
       if (plan.mode === 'all') {
-        return { kind: 'energyAll', to, indices: [...new Set(plan.pairs.map(c => c.index))] };
+        return { kind: 'energyAll', to, indices: plan.cards ?? [] };
       }
       return { kind: 'assign', to, index: plan.pairs[0].index };
     }
@@ -366,15 +467,14 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
    *  chosen (Iron Roar with one [M]; Genome Spiral's "Move all"): no stop was offered and no more cards were left
    *  than the picks still owed. */
   pickedCards(prompt, picks, ctx, state) {
-    // TA-769 / B.120: a first card picked before its Pokémon (the destination step still open) is chosen at its pick.
+    // TA-769 / B.120: the cards picked before their Pokémon (the destination step still open) are chosen at their picks.
     const as = assignments(picks);
-    const open = openCard(picks);
-    const indices = [...as.map(p => p.index), ...(open !== undefined ? [open] : [])];
+    const indices = [...as.map(p => p.index), ...openCards(picks)];
     const out: Card[] = [];
     indices.forEach((index, i) => {
       const card = prompt.cardList.cards[index];
       if (card === undefined) { return; }
-      const { pairs, canStop } = candidatePairs(prompt, as.slice(0, i), ctx, state);
+      const { pairs, canStop } = candidatePairs(prompt, [], ctx, state, indices.slice(0, i));
       const cardsLeft = new Set(pairs.map(c => c.index)).size;
       if (!canStop && cardsLeft <= prompt.options.min - i) { return; }
       out.push(card);
@@ -396,6 +496,17 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
       if (iid === undefined) { continue; }
       placeOnPokemon(projected, iid, pokemonTargetToIid(state, player, ctx, p.to));
+    }
+    // TA-769 / B.120: a card picked before its Pokémon is in the player's fingers (B.80): lifted into transit from the
+    // hand (seen by its owner), the discard pile or a Pokémon in play (public). A card of a card-local pile is already in
+    // transit (the detached-pile pass).
+    for (const index of openCards(picks)) {
+      const card = prompt.cardList.cards[index];
+      const iid = card === undefined ? undefined : ctx.cardToIid.get(card);
+      if (card === undefined || iid === undefined) { continue; }
+      const inHand = state.players.some(pl => pl.hand.cards.includes(card));
+      const inPublic = findPokemonSlot(state, card) !== undefined || state.players.some(pl => pl.discard.cards.includes(card));
+      if (inHand || inPublic) { liftToTransit(projected, iid, { visibility: inHand ? 'owner' : 'public' }); }
     }
   },
 
