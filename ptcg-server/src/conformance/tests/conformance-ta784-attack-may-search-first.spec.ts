@@ -5,8 +5,9 @@ import { NeutralState, NeutralAction, PlayerState, PlayerFlags, PokemonInPlay, P
  * TA-784 (B.131, owner 2026-10-25; B.129; #1980): an attack's "You may search your deck …" is a confirm asked at Step D,
  * before the damage. false: the damage, no search, no look, no shuffle. true: the damage, then the search, then the owed
  * shuffle; a search for "a card" must take one (#1980 Shinobi Blade: "You don't have to search, but if you do you must
- * take a card and put it into your hand"; #968: the quantity of cards in the deck is known), an "up to" or "any number"
- * search may stop (B.18). Twinleaf asked nothing: it dealt the damage, then offered the pick with a stop.
+ * take a card and put it into your hand"; #968: the quantity of cards in the deck is known), and so must an untyped "up
+ * to N cards" (#2301: "for any effect that allows you to search your deck ... for any card you want and doesn't specify
+ * what kind, you must choose at least 1"); a typed or "any number" search may stop (B.18). Twinleaf asked nothing: it dealt the damage, then offered the pick with a stop.
  * Mutation guard: drop the ConfirmPrompt -> every "asks first" cell red.
  */
 
@@ -55,29 +56,80 @@ const systemPending = (r: ReturnType<typeof step>) => (r as any).pending?.actor 
 const ASKS = ['A:confirm:false', 'A:confirm:true'];
 const DECK4 = [WATER, WATER, WATER, WATER];
 
-const CARDS: Array<[string, string, string[], string[]]> = [
-  ['twm-106', 'Shinobi Blade', [WATER], DECK4],
-  ['twm-198', 'Shinobi Blade', [WATER], DECK4],
-  ['pbl-034', 'Puppet Pull', [PSYCHIC], DECK4],
-  ['blk-003', 'Command the Grass', [GRASS, GRASS, GRASS, GRASS], DECK4],
-  ['asc-092', 'Roto Call', [WATER], ['asc-092', WATER, WATER, WATER]],
-  ['jtg-068', 'Inviting Flowers', [WATER], ['jtg-066', WATER, WATER, WATER]],
-];
 
 describe('TA-784 — an attack\'s "You may search your deck": the may first, before the damage', () => {
-  for (const [printing, name, energy, deck] of CARDS) {
-    it(`${name} asks the may first, nothing dealt yet [TA-784 ${printing}]`, () => {
-      const r = step(board(printing, energy, deck), [attack(name)]);
-      expect(legal(r)).toEqual(ASKS);
-      expect(r.state.players.B.active!.damage).toBe(0);
-    });
-    it(`${name}: declining deals the damage and neither searches nor shuffles [TA-784 ${printing} declined]`, () => {
-      const r = step(board(printing, energy, deck), [attack(name), no]);
-      expect(systemPending(r)).toBe(false);
-      expect(shuffled(r)).toBe(0);
-      expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
-    });
-  }
+  it('Shinobi Blade asks the may first, nothing dealt yet [TA-784 twm-106]', () => {
+    const r = step(board('twm-106', [WATER], DECK4), [attack('Shinobi Blade')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Shinobi Blade: declining deals the damage and neither searches nor shuffles [TA-784 twm-106 declined]', () => {
+    const deck = DECK4;
+    const r = step(board('twm-106', [WATER], deck), [attack('Shinobi Blade'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
+  it('Shinobi Blade asks the may first, nothing dealt yet [TA-784 twm-198]', () => {
+    const r = step(board('twm-198', [WATER], DECK4), [attack('Shinobi Blade')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Shinobi Blade: declining deals the damage and neither searches nor shuffles [TA-784 twm-198 declined]', () => {
+    const deck = DECK4;
+    const r = step(board('twm-198', [WATER], deck), [attack('Shinobi Blade'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
+  it('Puppet Pull asks the may first, nothing dealt yet [TA-784 pbl-034]', () => {
+    const r = step(board('pbl-034', [PSYCHIC], DECK4), [attack('Puppet Pull')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Puppet Pull: declining deals the damage and neither searches nor shuffles [TA-784 pbl-034 declined]', () => {
+    const deck = DECK4;
+    const r = step(board('pbl-034', [PSYCHIC], deck), [attack('Puppet Pull'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
+  it('Command the Grass asks the may first, nothing dealt yet [TA-784 blk-003]', () => {
+    const r = step(board('blk-003', [GRASS, GRASS, GRASS, GRASS], DECK4), [attack('Command the Grass')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Command the Grass: declining deals the damage and neither searches nor shuffles [TA-784 blk-003 declined]', () => {
+    const deck = DECK4;
+    const r = step(board('blk-003', [GRASS, GRASS, GRASS, GRASS], deck), [attack('Command the Grass'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
+  it('Roto Call asks the may first, nothing dealt yet [TA-784 asc-092]', () => {
+    const r = step(board('asc-092', [WATER], ['asc-092', WATER, WATER, WATER]), [attack('Roto Call')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Roto Call: declining deals the damage and neither searches nor shuffles [TA-784 asc-092 declined]', () => {
+    const deck = ['asc-092', WATER, WATER, WATER];
+    const r = step(board('asc-092', [WATER], deck), [attack('Roto Call'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
+  it('Inviting Flowers asks the may first, nothing dealt yet [TA-784 jtg-068]', () => {
+    const r = step(board('jtg-068', [WATER], ['jtg-066', WATER, WATER, WATER]), [attack('Inviting Flowers')]);
+    expect(legal(r)).toEqual(ASKS);
+    expect(r.state.players.B.active!.damage).toBe(0);
+  });
+  it('Inviting Flowers: declining deals the damage and neither searches nor shuffles [TA-784 jtg-068 declined]', () => {
+    const deck = ['jtg-066', WATER, WATER, WATER];
+    const r = step(board('jtg-068', [WATER], deck), [attack('Inviting Flowers'), no]);
+    expect(systemPending(r)).toBe(false);
+    expect(shuffled(r)).toBe(0);
+    expect(r.state.players.A.deck.map(c => c.iid)).toEqual(deck.map((_, i) => `ad${i}`));
+  });
 
   it('Shinobi Blade, yes: the damage, then a card must be taken (no stop, #1980) [TA-784 twm-106 a card]', () => {
     const r = step(board('twm-106', [WATER], DECK4), [attack('Shinobi Blade'), yes]);
@@ -97,9 +149,8 @@ describe('TA-784 — an attack\'s "You may search your deck": the may first, bef
     const r = step(board('pbl-034', [PSYCHIC], DECK4), [attack('Puppet Pull'), yes]);
     expect(legal(r)).toEqual(['A:choose:ad0', 'A:choose:ad1', 'A:choose:ad2', 'A:choose:ad3']);
   });
-  it('Command the Grass, yes: the "up to 3" pick may stop [TA-784 blk-003 up to]', () => {
+  it('Command the Grass, yes: the untyped "up to 3" takes at least 1 (no stop at the first pick, #2301) [TA-784 blk-003 up to]', () => {
     const r = step(board('blk-003', [GRASS, GRASS, GRASS, GRASS], DECK4), [attack('Command the Grass'), yes]);
-    expect(legal(r)).toContain('A:confirm:false');
-    expect(legal(r)).toContain('A:choose:ad0');
+    expect(legal(r)).toEqual(['A:choose:ad0', 'A:choose:ad1', 'A:choose:ad2', 'A:choose:ad3']);
   });
 });

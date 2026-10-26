@@ -1092,7 +1092,10 @@
         "{ min: count, max: count, allowCancel: false }"
       ],
       "state": "guarding",
-      "note": "2026-10-26: TA-145's single-decision Shinobi Blade signatures removed (B.131 asks the may first: TA-784); the Mirage Barrage TA-390 lines stay"
+      "note": "2026-10-26: TA-145's single-decision Shinobi Blade signatures removed (B.131 asks the may first: TA-784); the Mirage Barrage TA-390 lines stay",
+      "fixes": [
+        "FX-0003"
+      ]
     },
     {
       "file": "set-mega-evolution/cinderace.ts",

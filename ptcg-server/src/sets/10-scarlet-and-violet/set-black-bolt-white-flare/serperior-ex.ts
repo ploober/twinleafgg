@@ -51,10 +51,12 @@ export class Serperiorex extends PokemonCard {
     }
 
     // Command the Grass. TA-784 (B.131, owner 2026-10-25; B.129): "You may search" is a confirm asked first, before the
-    // damage; declining searches, looks at and shuffles nothing. On yes the "up to 3" pick may stop (B.18), then the shuffle.
+    // damage; declining searches, looks at and shuffles nothing. On yes the untyped "up to 3" takes at least 1 (#2301: "for any
+    // effect that allows you to search your deck ... for any card you want and doesn't specify what kind, you must choose at
+    // least 1"), then the shuffle.
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 0, 3));
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 1, 3));
     }
     return state;
   }

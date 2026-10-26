@@ -1643,7 +1643,8 @@ export function MAY_SEARCH_YOUR_DECK(store: StoreLike, state: State, effect: Att
 
 /**
  * TA-784: "search your deck for <up to> N cards and put them into your hand. Then, shuffle your deck." once the search is
- * made. `min` is 1 for "a card" (#1980), 0 for "up to" (B.18); the shuffle fires on an empty deck too (TA-126 / CF-9).
+ * made. `min` is 1 for an untyped search, "a card" or "up to N cards" (#2301, #1980); the shuffle fires on an empty deck
+ * too (TA-126 / CF-9).
  */
 export function SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store: StoreLike, state: State, player: Player, min: number, max: number): void {
   if (player.deck.cards.length === 0) {
