@@ -107,12 +107,13 @@ describe('up-to floor / count-1 may (TA-473, TA-474, OOP-91)', () => {
     expect(legal(r)).not.toContain('A:confirm:false');
   });
 
-  it('Poppy moves from ONE Pokemon to ANOTHER: the second Energy keeps the first move\'s source and target [TA-483 obf-193]', () => {
+  it('Poppy moves from ONE Pokemon to ANOTHER: the second Energy comes from the same source (TA-778 order: source, Energy, destination) [TA-483 obf-193]', () => {
     const b = poppyBoard([mon('a1', 'twm-118', [WATER]), mon('a2', 'twm-118')]);
     b.players.A.active!.energy.push({ iid: 'a0e1', printing: LIGHTNING });
-    const first = act({ actor: 'A', type: 'moveEnergy', source: 'a0', card: 'a0e0', target: 'a1' });
-    const r = step(b, [poppy, first]);
-    expect(legal(r)).toEqual(['A:confirm:false', 'A:moveEnergy:a0e1:a1']);
-    expect(energyOn(r, 'a1')).toEqual(['a1e0', 'a0e0']);
+    const choose = (target: string) => act({ actor: 'A', type: 'choose', target });
+    const r = step(b, [poppy, choose('a0'), choose('a0e0')]);
+    expect(legal(r)).toEqual(['A:choose:a0e1', 'A:confirm:false']);
+    const done = step(b, [poppy, choose('a0'), choose('a0e0'), choose('a0e1'), choose('a1')]);
+    expect(energyOn(done, 'a1').sort()).toEqual(['a0e0', 'a0e1', 'a1e0']);
   });
 });

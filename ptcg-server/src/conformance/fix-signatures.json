@@ -9605,9 +9605,9 @@
     {
       "file": "set-obsidian-flames/poppy.ts",
       "signatures": [
-        "        { min: 1, max: 1, allowCancel: false }"
+        "          { min: 1, max: 2, allowCancel: false, blocked: notEnergy }"
       ],
-      "note": "OOP-91, TA-483 (2026-09-29): OOP-91 + TA-483: Poppy obf-193 - first move exactly 1 (Trainer 'up to 2' floors at 1, #2301), optional second pinned to ",
+      "note": "OOP-91, TA-483 (2026-09-29): OOP-91 + TA-483: Poppy obf-193 - first move exactly 1 (Trainer 'up to 2' floors at 1, #2301), optional second pinned to  | 2026-10-26: signature re-recorded to the TA-778 line (source, Energy, destination); the min-1 floor survives",
       "fixes": [
         "FX-0347"
       ],

@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { CardTarget, EnergyCard, GameError, MoveEnergyPrompt, Player, PlayerType, SlotType, StateUtils } from '../../../game';
+import { Card, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, EnergyCard, GameError, Player, PlayerType, SlotType } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Poppy extends TrainerCard {
@@ -77,49 +77,66 @@ export class Poppy extends TrainerCard {
 
       // OOP-91 / B.18 (#2301): a Trainer's "move up to 2" is 1..2; canPlay guarantees an Energy and a second
       // Pokemon, so the first move is always possible and owed.
-      // TA-483: "from 1 of your Pokemon to another of your Pokemon" is ONE source and ONE target, so the optional
-      // second Energy is pinned to the first move's source and target.
-      return store.prompt(state, new MoveEnergyPrompt(
-        effect.player.id,
-        GameMessage.MOVE_ENERGY_CARDS,
+      // TA-778 (B.120 amended, owner 2026-10-25): "from 1 of your Pokemon to another of your Pokemon" asks the source,
+      // then up to 2 of its Energy, then another Pokemon (the source is never a destination). Replaces TA-483's two
+      // MoveEnergyPrompts, which asked (Energy, source, target) and fixed the destination with the first move.
+      const noEnergy: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, t) => {
+        if (!list.cards.some(c => c.superType === SuperType.ENERGY)) {
+          noEnergy.push(t);
+        }
+      });
+      return store.prompt(state, new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.CHOOSE_POKEMON,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { superType: SuperType.ENERGY },
-        { min: 1, max: 1, allowCancel: false }
-      ), transfers => {
-        if (!transfers || transfers.length === 0) {
+        { min: 1, max: 1, allowCancel: false, blocked: noEnergy }
+      ), sources => {
+        const source = (sources || [])[0];
+        if (!source) {
           return state;
         }
-        const first = transfers[0];
-        const source = StateUtils.getTarget(state, player, first.from);
-        const target = StateUtils.getTarget(state, player, first.to);
-        MOVE_CARDS(store, state, source, target, { cards: [first.card], sourceCard: this });
-
-        if (!source.cards.some(c => c.superType === SuperType.ENERGY)) {
-          return state;
-        }
-        const blockedFrom: CardTarget[] = [];
-        const blockedTo: CardTarget[] = [];
-        player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, t) => {
-          if (list !== source) {
-            blockedFrom.push(t);
+        const toDestination = (cards: Card[]): State => {
+          if (cards.length === 0) {
+            return state;
           }
-          if (list !== target) {
-            blockedTo.push(t);
+          const isSource: CardTarget[] = [];
+          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, t) => {
+            if (list === source) {
+              isSource.push(t);
+            }
+          });
+          return store.prompt(state, new ChoosePokemonPrompt(
+            player.id,
+            GameMessage.CHOOSE_POKEMON_TO_ATTACH_CARDS,
+            PlayerType.BOTTOM_PLAYER,
+            [SlotType.ACTIVE, SlotType.BENCH],
+            { min: 1, max: 1, allowCancel: false, blocked: isSource }
+          ), targets => {
+            const target = (targets || [])[0];
+            if (target) {
+              MOVE_CARDS(store, state, source, target, { cards, sourceCard: this });
+            }
+          });
+        };
+        const energy = source.cards.filter(c => c.superType === SuperType.ENERGY);
+        if (energy.length === 1) {
+          return toDestination(energy);   // SR-3: a single Energy with a floor of 1 is forced, not asked
+        }
+        const notEnergy: number[] = [];
+        source.cards.forEach((c, index) => {
+          if (c.superType !== SuperType.ENERGY) {
+            notEnergy.push(index);
           }
         });
-        return store.prompt(state, new MoveEnergyPrompt(
-          effect.player.id,
+        return store.prompt(state, new ChooseCardsPrompt(
+          player,
           GameMessage.MOVE_ENERGY_CARDS,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.ACTIVE, SlotType.BENCH],
+          source,
           { superType: SuperType.ENERGY },
-          { min: 0, max: 1, allowCancel: false, blockedFrom, blockedTo }
-        ), second => {
-          for (const transfer of second || []) {
-            MOVE_CARDS(store, state, source, target, { cards: [transfer.card], sourceCard: this });
-          }
-        });
+          { min: 1, max: 2, allowCancel: false, blocked: notEnergy }
+        ), selected => toDestination(selected || []));
       });
     }
 
