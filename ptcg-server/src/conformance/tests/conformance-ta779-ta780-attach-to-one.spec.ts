@@ -60,35 +60,36 @@ function energyOn(r: ReturnType<typeof step>, iid: string): string[] {
   return slot ? slot.energy.map(e => e.iid).sort() : [];
 }
 
-const cases: [string, string, string, string, string[]][] = [
-  // printing, attack, attacker Energy, discard Energy, the Pokémon offered
-  ['pal-065', 'Magnetic Charge', LIGHTNING, LIGHTNING, ['A:choose:ab1', 'A:choose:ab2']],
-  ['par-029', 'Flare Bringer', FIRE, FIRE, ['A:choose:a1', 'A:choose:ab1', 'A:choose:ab2']],
-  ['svp-057', 'Flare Bringer', FIRE, FIRE, ['A:choose:a1', 'A:choose:ab1', 'A:choose:ab2']],
-];
-
-for (const [printing, name, own, disc, pokemon] of cases) {
+// The cell labels are literal (the registry links each one): [first, second, pokemon, pair refused].
+function suite(printing: string, name: string, own: string, disc: string, pokemon: string[], cells: string[]) {
   describe(`TA-779 — ${name} ${printing}: every card, then the one Pokémon`, () => {
     const b = () => board(mon('a1', printing, [own, own]), [mon('ab1', FILLER), mon('ab2', FILLER)], [disc, disc, disc]);
-    it(`first pending: the cards and the stop, no pairs [TA-779 ${printing}]`, () => {
+    it(`first pending: the cards and the stop, no pairs ${cells[0]}`, () => {
       expect(legal(step(b(), [attack(name)]))).toEqual(['A:choose:adc0', 'A:choose:adc1', 'A:choose:adc2', 'A:confirm:false']);
     });
-    it(`after one card: the others and the stop [TA-779 ${printing} second]`, () => {
+    it(`after one card: the others and the stop ${cells[1]}`, () => {
       expect(legal(step(b(), [attack(name), choose('adc0')]))).toEqual(['A:choose:adc1', 'A:choose:adc2', 'A:confirm:false']);
     });
-    it(`after two: the one Pokémon, and both land on it [TA-779 ${printing} pokemon]`, () => {
+    it(`after two: the one Pokémon, and both land on it ${cells[2]}`, () => {
       expect(legal(step(b(), [attack(name), choose('adc0'), choose('adc2')]))).toEqual(pokemon);
       const r = step(b(), [attack(name), choose('adc0'), choose('adc2'), choose('ab2')]);
       expect(r.status).not.toBe('invalidAction');
       expect(energyOn(r, 'ab2')).toEqual(['adc0', 'adc2']);
       expect(energyOn(r, 'ab1')).toEqual([]);
     });
-    it(`a pair is refused [TA-779 ${printing} pair refused]`, () => {
+    it(`a pair is refused ${cells[3]}`, () => {
       const r = step(b(), [attack(name), act({ actor: 'A', type: 'attachEnergy', card: 'adc0', target: 'ab1' })]);
       expect(r.status).toBe('invalidAction');
     });
   });
 }
+
+suite('pal-065', 'Magnetic Charge', LIGHTNING, LIGHTNING, ['A:choose:ab1', 'A:choose:ab2'],
+  ['[TA-779 pal-065]', '[TA-779 pal-065 second]', '[TA-779 pal-065 pokemon]', '[TA-779 pal-065 pair refused]']);
+suite('par-029', 'Flare Bringer', FIRE, FIRE, ['A:choose:a1', 'A:choose:ab1', 'A:choose:ab2'],
+  ['[TA-779 par-029]', '[TA-779 par-029 second]', '[TA-779 par-029 pokemon]', '[TA-779 par-029 pair refused]']);
+suite('svp-057', 'Flare Bringer', FIRE, FIRE, ['A:choose:a1', 'A:choose:ab1', 'A:choose:ab2'],
+  ['[TA-779 svp-057]', '[TA-779 svp-057 second]', '[TA-779 svp-057 pokemon]', '[TA-779 svp-057 pair refused]']);
 
 describe('TA-780 — Philippe cri-079: 1..2 Basic [M] Energy first, then one of your [M] Pokémon', () => {
   const play = act({ actor: 'A', type: 'playSupporter', card: 'ah0' });
