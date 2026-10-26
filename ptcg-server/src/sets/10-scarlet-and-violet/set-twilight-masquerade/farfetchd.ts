@@ -1,5 +1,6 @@
 import {
   ChooseCardsPrompt,
+  ConfirmPrompt,
   PowerType,
   ShuffleDeckPrompt,
   State,
@@ -65,32 +66,35 @@ export class Farfetchd extends PokemonCard {
         return state;
       }
 
-      state = store.prompt(state, new ChooseCardsPrompt(
-        player,
-        GameMessage.CHOOSE_CARD_TO_HAND,
-        player.deck,
-        { superType: SuperType.TRAINER, trainerType: TrainerType.TOOL },
-        { min: 0, max: 1, allowCancel: false }
-      ), cards => {
-
-        let benchSlot = 0;
-        player.bench.forEach((cardList, index) => {
-          if (cardList.getPokemonCard() === this) {
-            benchSlot = index;
-          }
-        });
-
-        if (cards[0] instanceof TrainerCard) {
-          MOVE_CARDS(store, state, player.deck, player.bench[benchSlot], { cards: [cards[0]], sourceCard: this });
-          player.bench[benchSlot].tools.push(cards[0]);
-          // state = store.reduceEffect(state, new AttachPokemonToolEffect(player, cards[0] as TrainerCard, player.bench[benchSlot]));
+      // TA-760 (B.131): "you may search your deck" is asked first; declining searches nothing and shuffles nothing.
+      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {
+        if (!wantToUse) {
+          return state;
         }
+        return store.prompt(state, new ChooseCardsPrompt(
+          player,
+          GameMessage.CHOOSE_CARD_TO_HAND,
+          player.deck,
+          { superType: SuperType.TRAINER, trainerType: TrainerType.TOOL },
+          { min: 0, max: 1, allowCancel: false }
+        ), cards => {
 
-        state = store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
-          player.deck.applyOrder(order);
+          let benchSlot = 0;
+          player.bench.forEach((cardList, index) => {
+            if (cardList.getPokemonCard() === this) {
+              benchSlot = index;
+            }
+          });
+
+          if (cards[0] instanceof TrainerCard) {
+            MOVE_CARDS(store, state, player.deck, player.bench[benchSlot], { cards: [cards[0]], sourceCard: this });
+            player.bench[benchSlot].tools.push(cards[0]);
+          }
+
+          return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+            player.deck.applyOrder(order);
+          });
         });
-
-        return state;
       });
     }
     return state;
