@@ -15,21 +15,34 @@ const ACTIONS = [{"actor": "A", "type": "declareAttack", "source": "a1s0", "name
 const sources = (r: ReturnType<typeof step>) =>
   r.pending!.legalActions.filter(a => a.type === 'choose').map(a => (a as { target: string }).target).sort();
 
-describe('TA-724 move-damage: a Pokémon that received a counter in this move is offered as a source', () => {
+describe('TA-724 / TA-783 move-damage: a Pokémon that only received a counter in this move is not a source (B.126)', () => {
   it('[TA-724 twm-082 control] before any transfer only the damaged Active is a source', () => {
     const r = step(BOARD, ACTIONS.slice(0, ACTIONS.length - 1));
     expect(sources(r)).toEqual(['b1s0']);
   });
 
-  it('[TA-724 twm-082] after b1s0 > bb1s0 both are sources, and moving the counter back is applied', () => {
+  it('[TA-783 twm-082] after b1s0 > bb1s0 only b1s0 is a source; bb1s0 is only planned to receive (B.126)', () => {
     const r = step(BOARD, ACTIONS);
     // TA-767 / B.118 (owner 2026-10-23): an attack's counter moves are applied after the last pick, so the board between
     // the picks still shows the counter on the Active (B.80 (5)'s moved board no longer holds for an attack's moves).
+    // B.126 (owner 2026-10-25) supersedes TA-724's ask: a source has counters at the start of the effect, less those
+    // already planned to leave it; a Pokémon only planned to receive counters is not a source.
     expect(r.state.players.B.bench[0].damage).toBe(0);
-    expect(sources(r)).toEqual(['b1s0', 'bb1s0']);
+    expect(sources(r)).toEqual(['b1s0']);
     const back = step(BOARD, [...ACTIONS, { actor: 'A', type: 'choose', target: 'bb1s0' } as unknown as NeutralAction]);
-    expect(back.state.players.B.active!.damage).toBe(30);
-    expect(back.state.players.B.bench[0].damage).toBe(0);
+    expect(back.status).toBe('invalidAction');
+  });
+
+  it('[TA-783 twm-082 own counters] a Pokémon that had a counter and received one gives up only its own one (B.126)', () => {
+    const board = JSON.parse(JSON.stringify(BOARD)) as NeutralState;
+    board.players.B.active!.damage = 30;
+    board.players.B.bench[0].damage = 10;
+    const hack = [{ actor: 'A', type: 'declareAttack', source: 'a1s0', name: 'Strange Hacking' },
+      { actor: 'A', type: 'choose', target: 'b1s0' }] as unknown as NeutralAction[];
+    // each source's one destination is the other Pokémon, so the placement collapses (CF-14)
+    expect(sources(step(board, hack))).toEqual(['b1s0', 'bb1s0']);
+    const once = step(board, [...hack, { actor: 'A', type: 'choose', target: 'bb1s0' } as unknown as NeutralAction]);
+    expect(sources(once)).toEqual(['b1s0']);
   });
 });
 

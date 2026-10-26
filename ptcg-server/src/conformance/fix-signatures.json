@@ -13639,17 +13639,6 @@
       "state": "guarding"
     },
     {
-      "file": "conformance/decomposers/move-damage.ts",
-      "signatures": [
-        "        movedFrom.set(to, (movedFrom.get(to) ?? 0) - COUNTER);"
-      ],
-      "note": "TA-724 (2026-10-20): move-damage source step counts counters moved onto a Pokémon earlier in the same move (Strange Hacking twm-082) [TA-724]",
-      "fixes": [
-        "FX-0509"
-      ],
-      "state": "ours-only"
-    },
-    {
       "file": "conformance/driver.ts",
       "signatures": [
         "      const offered = mainMenu === null || mainMenu.actor !== action.actor || offersAction(mainMenu.legalActions, action);"

@@ -106,14 +106,12 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
       // that produced a phantom pending (`choose{target=B.active}` + a decline) where rotomancer
       // correctly presents no decision at all: nothing can be moved, so per CF-33 there is nothing to
       // decide. Reading real damage collapses it via the driver's existing zero-candidate auto-complete.
-      // TA-724 / B.80 (5): the board between the picks is defined, so a source's movable counters are its damage as
-      // projected after the transfers so far — less what moved off it, plus what moved onto it.
+      // TA-783 (B.126, owner 2026-10-25; supersedes TA-724's ask): a source's movable counters are those on it at the start
+      // of the effect, less the counters already planned to leave it; a counter planned to arrive does not make it a source.
       const movedFrom = new Map<string, number>();
       transfers.forEach(t => {
         const from = targetKey(t.from);
-        const to = targetKey(t.to);
         movedFrom.set(from, (movedFrom.get(from) ?? 0) + COUNTER);
-        movedFrom.set(to, (movedFrom.get(to) ?? 0) - COUNTER);
       });
       // TA-242: a source is only offerable if SOME destination exists for it. `enumerateTargets`
       // answers "who may give up a counter", and the TA-124 fix above made that answer honest about
