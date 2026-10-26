@@ -6,7 +6,8 @@ import {
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 import { StateUtils } from '../../game';
-import { adjustDamage } from '../transit-projection';
+import { IidContext } from '../state-adapter';
+import { State } from '../../game/store/state/state';
 
 const COUNTER = 10;
 
@@ -28,6 +29,16 @@ function pairTransfers(rp: WirePick[]): Array<{ from: CardTarget; to: CardTarget
     });
   }
   return transfers;
+}
+
+/** TA-774 (B.123): a DamageTransfer[] answer as one (source, target) basic-iid pair per counter (CF-60). */
+export function counterMoveIids(playerId: number, transfers: DamageTransfer[] | null | undefined, ctx: IidContext, state: State):
+    Array<{ source: string; target: string }> {
+  const player = promptPlayer(state, playerId);
+  return (transfers ?? []).map(t => ({
+    source: pokemonTargetToIid(state, player, ctx, t.from),
+    target: pokemonTargetToIid(state, player, ctx, t.to),
+  }));
 }
 
 export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
@@ -178,27 +189,18 @@ export const moveDamageDecomposer: PromptDecomposer<MoveDamagePrompt> = {
   },
 
   /**
-   * B.80: a `placeCounter` (destination) pick moves one counter from the last `choose`d source at once — except for an
-   * attack's counter moves. TA-767 / B.118 (owner 2026-10-23, B.98 extended to MOVES): an attack chooses every move
-   * first, and the counters move after the last pick or the stop, all at once (the engine applies the transfers when
-   * the prompt resolves); the board between the picks shows none of them. The attack is the one whose damage step has
-   * not started (`preDamageAttack`, B.82), asked of its attacker.
+   * TA-767 / B.118 (owner 2026-10-23, B.98 extended to MOVES), B.133 (owner 2026-10-25: every effect that moves counters,
+   * an Ability as well as an attack): the effect chooses every move first, and the counters move after the last pick or
+   * the stop, all at once (the engine applies the transfers when the prompt resolves); the board between the picks shows
+   * none of them. (Before B.133 only an attack's moves were held; a non-attack move was projected at its pick, B.80.)
    */
-  fixupProjection(prompt, picks, ctx, state, projected) {
-    const pre = (state as unknown as { preDamageAttack?: { player?: { id: number } } }).preDamageAttack;
-    if (pre?.player !== undefined && pre.player.id === prompt.playerId) {
-      return;
-    }
-    const player = promptPlayer(state, prompt.playerId);
-    let source: CardTarget | undefined;
-    for (const p of realPicks(picks) as Array<{ kind: string; target: CardTarget }>) {
-      if (p.kind === 'target') {
-        source = p.target;
-      } else if (p.kind === 'counter' && source !== undefined) {
-        adjustDamage(projected, pokemonTargetToIid(state, player, ctx, source), -10);
-        adjustDamage(projected, pokemonTargetToIid(state, player, ctx, p.target), 10);
-      }
-    }
+  fixupProjection() {
+    return;
+  },
+
+  /** TA-774 (B.123): one (source, target) per transferred counter, for the close's countersMoved. */
+  movedCounters(prompt, wire, ctx, state) {
+    return counterMoveIids(prompt.playerId, wire as DamageTransfer[], ctx, state);
   },
 
   assemble(_prompt, picks): DamageTransfer[] {

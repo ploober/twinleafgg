@@ -903,6 +903,9 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   MoveDamageCountersEffect.observed = (who: unknown): void => {
     if (game.store.state.players.some(p => p === who)) { countersMoved = true; }
   };
+  // TA-774 (B.123): the counter moves a decomposed answer asks for (one (source, target) per counter), set just before
+  // that answer is dispatched; the dispatch's event derivation emits countersMoved from them and the board diff.
+  let counterMoves: Array<{ source: string; target: string }> | undefined;
 
   // B.81: a switch is an ordering point. The engine calls CardList.legCut once an Active / Bench swap completes;
   // the legs up to that board are derived then, and the dispatch's board diff runs on from it. Live identity only.
@@ -931,6 +934,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     }
     const beforeLogs = game.state.logs.length;
     const beforeDraws = drawOps.length;
+    const moves = counterMoves;   // TA-774: this dispatch's own; never carried into a later one
+    counterMoves = undefined;
     liftedOffDeck.clear();
     deckPuts.clear();
     attachPuts.clear();   // TA-708
@@ -991,7 +996,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const draws = drawOps.splice(beforeDraws);
     const derivedAt = events.length;   // TA-708: this dispatch's derived events start here
     events.push(...deriveEvents(beforeState, afterState, game.state.logs.slice(beforeLogs), turnCarry, beforeNames, allNames,
-      draws, countersMoved));
+      draws, countersMoved, moves));
     countersMoved = false;
     // B.81 / CF-92: one `moved` per card whose place changed in this dispatch (moved-events.ts).
     // TA-591: a card shown by a ShowCardsPrompt still open at the end of this dispatch was revealed by it — the
@@ -1374,6 +1379,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
             if (e !== undefined) { events.push(e); }
           }
         }
+        // TA-774 (B.123): the counters this answer moves, for the dispatch's countersMoved.
+        counterMoves = dec.movedCounters?.(prompt, result === null ? [] : wire, game.ctx, game.state);
         dispatchAndCollect(() => game.store.dispatch(new ResolvePromptAction(prompt.id, result)));
         accum = [];
         continue; // the callback may have raised the next prompt

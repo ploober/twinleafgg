@@ -7,14 +7,7 @@ import {
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 import { StateUtils } from '../../game';
-import { adjustDamage } from '../transit-projection';
-import { Card } from '../../game/store/card/card';
-import { State } from '../../game/store/state/state';
-import { Player } from '../../game/store/state/player';
-import { Store } from '../../game/store/store';
-import { MoveDamageCountersEffect, PlaceDamageCountersEffect } from '../../game/store/effects/game-effects';
-import { deepClone } from '../../utils/utils';
-import { ConformanceStoreHandler } from '../conformance-store-handler';
+import { counterMoveIids } from './move-damage';
 
 const COUNTER = 10;
 
@@ -155,70 +148,22 @@ export const removeDamageDecomposer: PromptDecomposer<RemoveDamagePrompt> = {
   },
 
   /**
-   * B.80: a `placeCounter` (destination) pick moves one counter from the last `choose`d source at once.
-   *
-   * TA-618: the board shows what the engine WILL do with that counter, so the engine is asked, on a clone, in the order
-   * the one caller (Munkidori twm-095 Adrena-Brain) applies a transfer at the close: a prevented MoveDamageCountersEffect
-   * moves nothing; otherwise the source loses the counter and a PlaceDamageCountersEffect places it, and a prevented
-   * placement (Battle Cage pfl-085 on a Benched Pokemon) leaves it on nobody -- #2257 "they just vanish from play".
-   * The clone accumulates the transfers, so each pick is asked against the board the earlier ones left.
+   * B.133 (owner 2026-10-25; B.118 reaches Abilities): Adrena-Brain twm-095 chooses every move first, and the counters
+   * move together when the prompt resolves (the engine applies the transfers in its callback); the board between the
+   * picks shows none of them. This used to project each counter at its pick (B.80), asking the engine on a clone whether
+   * it would land (TA-618: Battle Cage pfl-085 keeps it off a Benched Pokemon); the close is now the only place the
+   * counters move, and the engine itself decides there.
    */
-  fixupProjection(prompt, picks, ctx, state, projected) {
-    const player = promptPlayer(state, prompt.playerId);
-    const probe = placementProbe(state, player);
-    let source: CardTarget | undefined;
-    for (const p of realPicks(picks) as Array<{ kind: string; target: CardTarget }>) {
-      if (p.kind === 'target') {
-        source = p.target;
-      } else if (p.kind === 'counter' && source !== undefined) {
-        const verdict = probe(source, p.target);
-        if (verdict.removed) {
-          adjustDamage(projected, pokemonTargetToIid(state, player, ctx, source), -COUNTER);
-        }
-        if (verdict.placed) {
-          adjustDamage(projected, pokemonTargetToIid(state, player, ctx, p.target), COUNTER);
-        }
-      }
-    }
+  fixupProjection() {
+    return;
+  },
+
+  /** TA-774 (B.123): one (source, target) per transferred counter, for the close's countersMoved. */
+  movedCounters(prompt, wire, ctx, state) {
+    return counterMoveIids(prompt.playerId, wire as DamageTransfer[], ctx, state);
   },
 
   assemble(_prompt, picks): DamageTransfer[] {
     return pairTransfers(realPicks(picks));
   },
 };
-
-/**
- * TA-618: a dry run of one transfer on a CLONED store (the legal-actions probe idiom), never the live game. The
- * placement's `source` is the transferring player's Active Pokemon: the prompt does not carry the Ability's Pokemon, and
- * every in-tree handler that reads a PlaceDamageCountersEffect's source (Battle Cage pfl-085, Hide-n-Sneak) asks only
- * that it is in play and whose it is -- the transferring player's, as for the real source. A probe that throws (a
- * handler reaching a prompt on the clone) answers as before this fix: the counter moves.
- */
-function placementProbe(state: State, player: Player): (from: CardTarget, to: CardTarget) => { removed: boolean; placed: boolean } {
-  let clone: { store: Store; player: Player } | undefined;
-  return (from, to) => {
-    try {
-      if (clone === undefined) {
-        const handler = new ConformanceStoreHandler();
-        const store = new Store(handler);
-        handler.setStore(store);
-        store.state = deepClone(state, [Card]);
-        clone = { store, player: store.state.players[state.players.indexOf(player)] };
-      }
-      const { store, player: p } = clone;
-      const move = new MoveDamageCountersEffect(p);
-      store.state = store.reduceEffect(store.state, move);
-      if (move.preventDefault) {
-        return { removed: false, placed: false };
-      }
-      const src = StateUtils.getTarget(store.state, p, from);
-      src.damage = Math.max(0, src.damage - COUNTER);
-      const dest = StateUtils.getTarget(store.state, p, to);
-      const place = new PlaceDamageCountersEffect(p, dest, COUNTER, p.active.getPokemonCard());
-      store.state = store.reduceEffect(store.state, place);
-      return { removed: true, placed: !place.preventDefault };
-    } catch {
-      return { removed: true, placed: true };
-    }
-  };
-}

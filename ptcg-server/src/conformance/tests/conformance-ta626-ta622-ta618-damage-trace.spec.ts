@@ -140,18 +140,24 @@ function munkidoriBoard(): NeutralState {
 const adrena = { actor: 'A', type: 'useAbility', source: 'a1', ability: 'Adrena-Brain' } as never;
 
 describe('TA-618: a moved counter Battle Cage keeps off the Bench is never projected there', () => {
-  it('pick to the protected Benched Pokémon: A loses the counter, the Bench stays at 0 (#2257) [TA-618]', () => {
+  // B.133 (owner 2026-10-25, B.118 reaches Abilities): Adrena-Brain chooses every move first and the counters move
+  // together at the close, so the pause shows none of them (it used to project each at its pick); the close cell below
+  // still holds TA-618 (the Bench stays at 0).
+  it('pick to the protected Benched Pokémon: nothing moves at the pause, the Bench stays at 0 (B.133) [TA-618]', () => {
     const r = step(munkidoriBoard(), [adrena, place('bb1')]);
     expect(r.pending?.actor).toBe('A');
-    expect(r.state.players.A.active?.damage).toBe(20);
+    expect(r.state.players.A.active?.damage).toBe(30);
     expect(r.state.players.B.bench[0].damage).toBe(0);
     expect(sums(r.events, 'damaged')).toEqual({});
   });
 
-  it('control: pick to the Active (not protected) moves the counter there [TA-618]', () => {
+  it('control: pick to the Active (not protected): held at the pause (B.133), moved at the close [TA-618]', () => {
     const r = step(munkidoriBoard(), [adrena, place('b1')]);
-    expect(r.state.players.A.active?.damage).toBe(20);
-    expect(r.state.players.B.active?.damage).toBe(10);
+    expect(r.state.players.A.active?.damage).toBe(30);
+    expect(r.state.players.B.active?.damage).toBe(0);
+    const c = step(munkidoriBoard(), [adrena, place('b1'), { actor: 'A', type: 'confirm', value: false } as never]);
+    expect(c.state.players.A.active?.damage).toBe(20);
+    expect(c.state.players.B.active?.damage).toBe(10);
   });
 
   it('close agrees with the pause: Bench 0, A 20 [TA-618]', () => {

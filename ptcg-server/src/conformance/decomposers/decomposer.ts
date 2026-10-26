@@ -105,6 +105,12 @@ export interface PromptDecomposer<P extends Prompt<any> = Prompt<any>> {
    * one per placement). Called after `fixupProjection` with the same picks; `projected` is the fixed-up board.
    */
   pauseEvents?(prompt: P, picks: WirePick[], ctx: IidContext, state: State, projected: NeutralState): NeutralEvent[];
+  /**
+   * TA-774 (B.123): the damage-counter moves the assembled answer `wire` asks for, one entry per counter, as (source,
+   * target) basic iids, read just before the prompt resolves. The driver hands them to the dispatch's event derivation,
+   * which emits countersMoved per (source, target) from what the board shows left and arrived.
+   */
+  movedCounters?(prompt: P, wire: unknown, ctx: IidContext, state: State): Array<{ source: string; target: string }>;
 }
 
 // ── shared helpers ─────────────────────────────────────────────────────────

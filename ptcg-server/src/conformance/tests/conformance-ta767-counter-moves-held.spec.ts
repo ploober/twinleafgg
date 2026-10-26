@@ -8,7 +8,7 @@ import {
  * first and the counters move after the last pick or the stop, all at once. Strange Hacking twm-082 (Alakazam) and
  * Damage Collection tef-107 (Sableye): the engine already applies the transfers when the prompt resolves, but the
  * adapter's mid-pick projection moved each counter at its pick (B.80's projection, which B.118 overrides for an attack).
- * The counter-move event kind B.118 also asks for is not in the contract yet: nothing is emitted for it here.
+ * The counter-move event B.118 also asks for (countersMoved, contract 0.16.0) is TA-774's, asserted in its own spec.
  * Mutation guard: drop the attack hold in move-damage.ts fixupProjection -> the mid-pick cells see the counters moved.
  */
 

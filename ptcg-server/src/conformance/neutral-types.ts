@@ -601,6 +601,10 @@ export type NeutralEvent =
   // `healed` (event-vocabulary standardization 2026-09-02): the inverse of `damaged` — hp removed from
   // `target` (basic iid, CF-60). Compared summed per (player,target) per step, exactly like `damaged`.
   | { kind: 'healed'; target: string; hp: number }
+  // TA-774 (contract 0.16.0, B.123 / CF-106): damage counters moved from `source` to `target` (basic iids, CF-60): `hp`
+  // taken off the source, `landed` put on the target (0 when the target is protected from the effect). One per
+  // (source, target) per step; never a damaged / healed. No player (B.134).
+  | { kind: 'countersMoved'; source: string; target: string; hp: number; landed: number }
   | { kind: 'turnStarted'; player: NeutralPlayerId }
   | { kind: 'turnEnded'; player: NeutralPlayerId }
   | { kind: 'shuffled'; player: NeutralPlayerId; zone: 'deck' | 'hand' | 'prizes' }
