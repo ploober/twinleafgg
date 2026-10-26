@@ -116,6 +116,7 @@ export class Miraidon extends PokemonCard {
               allowCancel: false,
               min: minMove,
               max: 2,
+              sameTarget: true,   // TA-776 (B.120): "to 1 of your Benched Pokémon" - both Energy go to the same one
             },
           ),
           (transfers) => {
