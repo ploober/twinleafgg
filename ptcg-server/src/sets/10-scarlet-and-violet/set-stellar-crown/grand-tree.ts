@@ -66,46 +66,20 @@ function* useStadium(
     throw new GameError(GameMessage.CANNOT_PLAY_THIS_CARD);
   }
 
-  let targets: PokemonCardList[] = [];
-  yield store.prompt(
-    state,
-    new ChoosePokemonPrompt(
-      player.id,
-      GameMessage.CHOOSE_POKEMON_TO_EVOLVE,
-      PlayerType.BOTTOM_PLAYER,
-      [SlotType.BENCH, SlotType.ACTIVE],
-      { min: 1, max: 1, allowCancel: false, blocked: blocked2 },
-    ),
-    (selection) => {
-      targets = selection || [];
-      next();
-    },
-  );
-
-  if (targets.length === 0) {
-    SHUFFLE_DECK(store, state, player);
-    return state; // canceled by user
-  }
-
-  const target = targets[0];
-  const pokemonCard = target.getPokemonCard();
-  if (pokemonCard === undefined) {
-    return state; // invalid target?
-  }
-
-  const targetPlayedTurnEffect = new CheckPokemonPlayedTurnEffect(player, target);
-  store.reduceEffect(state, targetPlayedTurnEffect);
-  if (
-    pokemonCard.stage !== Stage.BASIC ||
-    targetPlayedTurnEffect.pokemonPlayedTurn === state.turn
-  ) {
-    return state;
-  }
+  // TA-781 (B.128, owner 2026-10-25): the search comes first and may find nothing; the Pokémon to evolve is asked after
+  // the card is found, and only when more than one of the player's Pokémon can take it.
+  const eligible: PokemonCardList[] = [];
+  player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
+    if (!blocked2.some(b => b.player === target.player && b.slot === target.slot && b.index === target.index)) {
+      eligible.push(list);
+    }
+  });
+  const eligibleNames = eligible.map(list => list.getPokemonCard()!.name);
 
   // Blocking pokemon cards, that cannot be valid evolutions
   const blocked: number[] = [];
   player.deck.cards.forEach((card, index) => {
-    if (card instanceof PokemonCard && card.evolvesFrom !== pokemonCard.name) {
+    if (card instanceof PokemonCard && (card.stage !== Stage.STAGE_1 || !eligibleNames.includes(card.evolvesFrom))) {
       blocked.push(index);
     }
   });
@@ -117,7 +91,7 @@ function* useStadium(
       player,
       GameMessage.CHOOSE_CARD_TO_EVOLVE,
       player.deck,
-      { superType: SuperType.POKEMON, stage: Stage.STAGE_1, evolvesFrom: pokemonCard.name },
+      { superType: SuperType.POKEMON, stage: Stage.STAGE_1 },
       { min: 0, max: 1, allowCancel: false, blocked },
     ),
     (selected) => {
@@ -130,6 +104,34 @@ function* useStadium(
   if (cards.length === 0) {
     SHUFFLE_DECK(store, state, player);
     return state;
+  }
+
+  const found = cards[0] as PokemonCard;
+  const takers = eligible.filter(list => list.getPokemonCard()!.name === found.evolvesFrom);
+  let target = takers[0];
+  if (takers.length > 1) {
+    const notTakers: CardTarget[] = [];
+    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, t) => {
+      if (!takers.includes(list)) {
+        notTakers.push(t);
+      }
+    });
+    let targets: PokemonCardList[] = [];
+    yield store.prompt(
+      state,
+      new ChoosePokemonPrompt(
+        player.id,
+        GameMessage.CHOOSE_POKEMON_TO_EVOLVE,
+        PlayerType.BOTTOM_PLAYER,
+        [SlotType.BENCH, SlotType.ACTIVE],
+        { min: 1, max: 1, allowCancel: false, blocked: notTakers },
+      ),
+      (selection) => {
+        targets = selection || [];
+        next();
+      },
+    );
+    target = targets[0] || takers[0];
   }
 
   const evolution = cards[0] as PokemonCard;
