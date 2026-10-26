@@ -1,13 +1,10 @@
-import { Card } from '../../../game/store/card/card';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { TrainerType, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 import { GameError } from '../../../game/game-error';
 import { GameMessage } from '../../../game/game-message';
-import { StoreLike, State, Player } from '../../../game';
+import { StoreLike, State, Player, AttachEnergyPrompt, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
-import { ChoosePokemonPrompt } from '../../../game/store/prompts/choose-pokemon-prompt';
 import { WAS_TRAINER_USED } from '../../../game/store/prefabs/trainer-prefabs';
 import { CheckPokemonTypeEffect } from '../../../game/store/effects/check-effects';
 import { CardTarget, PlayerType, SlotType } from '../../../game/store/actions/play-card-action';
@@ -93,47 +90,26 @@ export class Philippe extends TrainerCard {
         }
       });
 
+      // TA-780 (B.120 amended; B.18 / #2301): every card first — a Trainer's "up to 2" is 1..2 — then the one [M] Pokémon
+      // they all go to (sameTarget); non-[M] Pokémon are not offered.
       return store.prompt(
         state,
-        new ChoosePokemonPrompt(
+        new AttachEnergyPrompt(
           player.id,
-          GameMessage.CHOOSE_POKEMON_TO_ATTACH_CARDS,
+          GameMessage.ATTACH_ENERGY_CARDS,
+          player.discard,
           PlayerType.BOTTOM_PLAYER,
           [SlotType.ACTIVE, SlotType.BENCH],
-          { min: 1, max: 1, allowCancel: false, blocked },
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+          { allowCancel: false, min: 1, max: Math.min(2, basicMetalInDiscard.length), sameTarget: true,
+            blocked: discardBlocked, blockedTo: blocked },
         ),
-        (targets) => {
-          if (!targets || targets.length === 0) return state;
-
-          const target = targets[0];
-          const checkType = new CheckPokemonTypeEffect(target);
-          store.reduceEffect(state, checkType);
-          if (!checkType.cardTypes.includes(CardType.METAL)) {
-            return state;
-          }
-
-          return store.prompt(
-            state,
-            new ChooseCardsPrompt(
-              player,
-              GameMessage.CHOOSE_CARD_TO_ATTACH,
-              player.discard,
-              { superType: SuperType.ENERGY },
-              {
-                min: 0,
-                max: Math.min(2, basicMetalInDiscard.length),
-                allowCancel: false,
-                blocked: discardBlocked,
-              },
-            ),
-            (selected: Card[]) => {
-              const cards = selected || [];
-              cards.forEach((card) => {
-                MOVE_CARDS(store, state, player.discard, target, { cards: [card], sourceCard: this });
-              });
-              return state;
-            },
-          );
+        (transfers) => {
+          (transfers || []).forEach((transfer) => {
+            const target = StateUtils.getTarget(state, player, transfer.to);
+            MOVE_CARDS(store, state, player.discard, target, { cards: [transfer.card], sourceCard: this });
+          });
+          return state;
         },
       );
     }

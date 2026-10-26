@@ -53,7 +53,8 @@ export class ChiYu extends PokemonCard {
         PlayerType.BOTTOM_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fire Energy' },
-        { allowCancel: false, min: 0, max: 2 }
+        // TA-779: "to 1 of your Pokémon": both cards go to one Pokémon (B.120).
+        { allowCancel: false, min: 0, max: 2, sameTarget: true }
       ), transfers => {
         transfers = transfers || [];
         // cancelled by user

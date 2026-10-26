@@ -13072,7 +13072,7 @@
     {
       "file": "set-paldea-evolved/magnemite.ts",
       "signatures": [
-        "        { allowCancel: false, min: 0, max: 2 }"
+        "        { allowCancel: false, min: 0, max: 2, sameTarget: true }"
       ],
       "note": "TA-678, TA-679 (2026-10-09): Magnetic Charge pal-065 offers its stop; Techno Turbo obf-079 offers none and asks nothing with no Benched Pokemon [TA-6",
       "fixes": [
