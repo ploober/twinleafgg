@@ -26,6 +26,8 @@ export interface CopyAttackFromListOptions {
   maxRetries?: number;
   /** Player who chooses the attack (default: attacking player). */
   promptPlayerId?: number;
+  /** TA-762 (B.125): "you may choose an attack": the choice offers the decline (needs allowCancel). */
+  mayDecline?: boolean;
 }
 
 export function findPokemonCardForAttack(
@@ -81,7 +83,7 @@ function isAttackLockedNextTurn(player: Player, attack: Attack): boolean {
   return (player.active.cannotUseAttacksNextTurn || []).includes(attack.name);
 }
 
-function* copyAttackFromPokemonListGenerator(
+export function* copyAttackFromPokemonListGenerator(
   next: Function,
   store: StoreLike,
   state: State,
@@ -97,6 +99,7 @@ function* copyAttackFromPokemonListGenerator(
     blocked = [],
     maxRetries = 1,
     promptPlayerId,
+    mayDecline = false,
   } = options;
 
   if (pokemonCards.length === 0) {
@@ -116,6 +119,7 @@ function* copyAttackFromPokemonListGenerator(
       new ChooseAttackPrompt(promptPlayerId ?? player.id, GameMessage.CHOOSE_ATTACK_TO_COPY, pokemonCards, {
         allowCancel,
         blocked: promptBlocked,
+        mayDecline,
       }),
       (result: Attack | null) => {
         selected = result;

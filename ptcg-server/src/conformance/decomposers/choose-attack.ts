@@ -44,8 +44,8 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
   // completed one.
   next(prompt, picks, ctx, state) {
     const rp = realPicks(picks) as Array<{ index: number; attack: string }>;
-    if (rp.length >= 2) {
-      return null; // Pokémon (step 1) and attack (step 2) both chosen
+    if (rp.length >= 2 || picks.some(p => p.kind === 'done')) {
+      return null; // Pokémon (step 1) and attack (step 2) both chosen, or the decline (TA-762)
     }
     const blocked = new Set(prompt.options.blocked.map(b => `${b.index}:${b.attack}`));
 
@@ -64,6 +64,10 @@ export const chooseAttackDecomposer: PromptDecomposer<ChooseAttackPrompt> = {
       }
       if (legalActions.length === 0) {
         return null;
+      }
+      // TA-762 (B.125): a "you may choose" copy offers the decline beside the Pokémon (CF-4), not as a separate may.
+      if (prompt.options.mayDecline && prompt.options.allowCancel) {
+        legalActions.push({ type: 'endChoice' } as LegalAction);
       }
       return buildPending(prompt, state, legalActions);
     }

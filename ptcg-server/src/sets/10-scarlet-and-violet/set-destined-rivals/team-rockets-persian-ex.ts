@@ -5,7 +5,52 @@ import {ADD_CONFUSION_TO_PLAYER_ACTIVE,
   AFTER_ATTACK,
   SHUFFLE_DECK,
   WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
-import { COPY_ATTACK_FROM_POKEMON_LIST } from '../../../game/store/prefabs/copy-attack-prefabs';
+import { copyAttackFromPokemonListGenerator } from '../../../game/store/prefabs/copy-attack-prefabs';
+
+// TA-762 (B.125, owner 2026-10-25): "You may choose an attack from a Pokémon you find there" is the Pokémon (then its
+// attack, B.55) with the decline beside them; the ten revealed cards stay out of the deck (transit, B.80) through the
+// choice and the copied attack, and only then go back and are shuffled.
+function* haughtyOrder(next: Function, store: StoreLike, state: State, effect: AttackEffect,
+  self: PokemonCard): IterableIterator<State> {
+  const player = effect.player;
+  const opponent = StateUtils.getOpponent(state, player);
+
+  // TA-131: declarable even if the opponent's deck is empty (rulebook p.20) — the reveal whiffs.
+  const opponentTop10 = new CardList();
+  MOVE_CARDS(store, state, opponent.deck, opponentTop10, { count: Math.min(10, opponent.deck.cards.length), sourceCard: self });
+  const toppedPokemon = opponentTop10.cards.filter(
+    (card) => card.superType === SuperType.POKEMON,
+  ) as PokemonCard[];
+
+  yield store.prompt(
+    state,
+    [
+      new ShowCardsPrompt(player.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, { allowCancel: false }),
+      new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, { allowCancel: false }),
+    ],
+    () => next(),
+  );
+
+  if (toppedPokemon.length > 0) {
+    yield* copyAttackFromPokemonListGenerator(next, store, state, effect, toppedPokemon, {
+      allowCancel: true,
+      mayDecline: true,
+      maxRetries: 3,
+    });
+  }
+
+  // TA-166 / CF-9 put-back boundary: with an empty deck nothing is revealed and nothing goes back, so there is NO
+  // shuffle. #2377 (April 2026 rulebook update; #1022 and #1968 reversed the same day): "you do not shuffle since you
+  // are not putting any cards back into the deck." CF-9's unconditional shuffle governs a deck SEARCH (#2171) and does
+  // not reach a put-back. NOTE: zero CANDIDATES is not zero CARDS — revealing ten cards none of which has a copyable
+  // attack still puts ten back, so that board DOES shuffle.
+  const putBack = opponentTop10.cards.length;
+  MOVE_CARDS(store, state, opponentTop10, opponent.deck, { sourceCard: self });
+  if (putBack > 0) {
+    SHUFFLE_DECK(store, state, opponent);
+  }
+  return state;
+}
 
 export class TeamRocketsPersianex extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -41,49 +86,8 @@ export class TeamRocketsPersianex extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const player = effect.player;
-      const opponent = StateUtils.getOpponent(state, player);
-
-      // TA-131: declarable even if the opponent's deck is empty (rulebook p.20) — the reveal whiffs.
-      const opponentTop10 = new CardList();
-      MOVE_CARDS(store, state, opponent.deck, opponentTop10, { count: Math.min(10, opponent.deck.cards.length), sourceCard: this });
-      const toppedPokemon = opponentTop10.cards.filter(
-        (card) => card.superType === SuperType.POKEMON,
-      ) as PokemonCard[];
-
-      store.prompt(
-        state,
-        [
-          new ShowCardsPrompt(player.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, {
-            allowCancel: false,
-          }),
-          new ShowCardsPrompt(opponent.id, GameMessage.CARDS_SHOWED_BY_EFFECT, opponentTop10.cards, {
-            allowCancel: false,
-          }),
-        ],
-        (results) => {
-          // TA-166 / CF-9 put-back boundary: with an empty deck nothing is revealed and nothing goes
-          // back, so there is NO shuffle. #2377 (April 2026 rulebook update; #1022 and #1968 reversed
-          // the same day): "you do not shuffle since you are not putting any cards back into the
-          // deck." CF-9's unconditional shuffle governs a deck SEARCH (#2171) and does not reach a
-          // put-back. NOTE: zero CANDIDATES is not zero CARDS — revealing ten cards none of which has
-          // a copyable attack still puts ten back, so that board DOES shuffle.
-          const putBack = opponentTop10.cards.length;
-          MOVE_CARDS(store, state, opponentTop10, opponent.deck, { sourceCard: this });
-          if (putBack > 0) {
-            SHUFFLE_DECK(store, state, opponent);
-          }
-        },
-      );
-
-      if (toppedPokemon.length === 0) {
-        return state;
-      }
-
-      return COPY_ATTACK_FROM_POKEMON_LIST(store, state, effect as AttackEffect, toppedPokemon, {
-        allowCancel: true,
-        maxRetries: 3,
-      });
+      const generator = haughtyOrder(() => generator.next(), store, state, effect as AttackEffect, this);
+      return generator.next().value;
     }
 
     if (AFTER_ATTACK(effect, 1, this)) {

@@ -11,6 +11,8 @@ export interface ChooseAttackOptions {
   allowCancel: boolean;
   blockedMessage: GameMessage;
   blocked: { index: number; attack: string }[];
+  /** TA-762 (B.125): the printed text says "you may choose", so declining is a choice offered beside the options. */
+  mayDecline: boolean;
 }
 
 export type ChooseAttackResultType = { index: number, attack: string };
@@ -33,7 +35,8 @@ export class ChooseAttackPrompt extends Prompt<Attack> {
     this.options = Object.assign({}, {
       allowCancel: false,
       blockedMessage: GameMessage.NOT_ENOUGH_ENERGY,
-      blocked: []
+      blocked: [],
+      mayDecline: false
     }, options);
 
   }
