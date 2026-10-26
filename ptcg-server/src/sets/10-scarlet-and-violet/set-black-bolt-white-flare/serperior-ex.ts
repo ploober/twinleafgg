@@ -1,6 +1,6 @@
 import { PokemonCard, Stage, CardType, StoreLike, State, CardTag, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, IS_ABILITY_BLOCKED, SEARCH_DECK_FOR_CARDS_TO_HAND } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, IS_ABILITY_BLOCKED, MAY_SEARCH_YOUR_DECK, SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Serperiorex extends PokemonCard {
@@ -50,18 +50,11 @@ export class Serperiorex extends PokemonCard {
       }
     }
 
-    // Grass Order attack
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // Command the Grass. TA-784 (B.131, owner 2026-10-25; B.129): "You may search" is a confirm asked first, before the
+    // damage; declining searches, looks at and shuffles nothing. On yes the "up to 3" pick may stop (B.18), then the shuffle.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      SEARCH_DECK_FOR_CARDS_TO_HAND(
-        store,
-        state,
-        player,
-        this,
-        {},
-        { min: 0, max: 3, allowCancel: false },
-        this.attacks[0],
-      );
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 0, 3));
     }
     return state;
   }

@@ -9,6 +9,8 @@ import { ChoosePokemonPrompt } from '../../game/store/prompts/choose-pokemon-pro
 import { ResolvePromptAction } from '../../game/store/actions/resolve-prompt-action';
 import { ShuffleDeckPrompt } from '../../game/store/prompts/shuffle-prompt';
 import { ChooseCardsPrompt } from '../../game/store/prompts/choose-cards-prompt';
+import { ConfirmPrompt } from '../../game/store/prompts/confirm-prompt';
+import { WaitPrompt } from '../../game/store/prompts/wait-prompt';
 import { SuperType } from '../../game/store/card/card-types';
 import { GamePhase } from '../../game/store/state/state';
 import { KnockOutEffect } from '../../game/store/effects/game-effects';
@@ -144,6 +146,16 @@ describe('TA-582: live arbiter never resolves a ShuffleDeckPrompt ahead of an op
     const { handler, store, state, player } = build('Greninja ex TWM', 'Water Energy SVE');
 
     store.dispatch(new AttackAction(player.id, 'Shinobi Blade'));
+
+    // TA-784 (B.131): the may is asked first; yes opens the search after the damage.
+    const may = state.prompts.find(p => p instanceof ConfirmPrompt && p.result === undefined);
+    expect(may).toBeDefined();
+    store.dispatch(new ResolvePromptAction(may!.id, true));
+    // the attack's animation wait (no arbiter answers it here), then the damage; the search opens after it
+    const wait = state.prompts.find(p => p instanceof WaitPrompt && p.result === undefined);
+    if (wait !== undefined) {
+      store.dispatch(new ResolvePromptAction(wait.id, true));
+    }
 
     // Only the pick is open; the arbiter has nothing to jump ahead to.
     const pick = openPick(state);

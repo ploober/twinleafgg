@@ -920,12 +920,13 @@
       "file": "set-twilight-masquerade/greninja-ex.ts",
       "signatures": [
         "if (WAS_ATTACK_USED(effect, 0, this)) {",
-        "state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);"
+        "return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 1, 1));"
       ],
       "state": "guarding",
       "fixes": [
         "FX-0209"
-      ]
+      ],
+      "note": "TA-83 re-recorded 2026-10-26 (TA-784, B.131 / B.129): the 170 is dealt before the search because the search now runs after the damage (AttackEffect.afterDamageMoves), not by applying the damage early"
     },
     {
       "file": "set-twilight-masquerade/luxray-ex.ts",
@@ -1087,13 +1088,11 @@
     {
       "file": "set-twilight-masquerade/greninja-ex.ts",
       "signatures": [
-        "const shuffle = (s: State): State =>",
-        "{ min: 0, max: 1, allowCancel: false }",
-        "TA-145 / CF-32 may-gate: there is ONE decision here, not two",
         "const count = Math.min(2, available);",
         "{ min: count, max: count, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "note": "2026-10-26: TA-145's single-decision Shinobi Blade signatures removed (B.131 asks the may first: TA-784); the Mirage Barrage TA-390 lines stay"
     },
     {
       "file": "set-mega-evolution/cinderace.ts",
@@ -8201,13 +8200,6 @@
       "file": "game/store/effects/effect-of-attack-effects.ts",
       "signatures": [
         "wasActive: this.target === this.opponent.active, // TA-366"
-      ],
-      "state": "guarding"
-    },
-    {
-      "file": "set-pitch-black/banette.ts",
-      "signatures": [
-        "{ min: 0, max: 1, allowCancel: false },"
       ],
       "state": "guarding"
     },

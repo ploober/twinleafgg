@@ -4,7 +4,7 @@ import { StoreLike, State, GameMessage, Card, ChooseCardsPrompt, ShuffleDeckProm
 import { Effect } from '../../../game/store/effects/effect';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
-import { WAS_ATTACK_USED, SHUFFLE_DECK} from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, SHUFFLE_DECK, MAY_SEARCH_YOUR_DECK } from '../../../game/store/prefabs/prefabs';
 
 function* useRotocall(next: Function, store: StoreLike, state: State,
   effect: AttackEffect): IterableIterator<State> {
@@ -102,9 +102,13 @@ export class Rotom extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Rotocall attack
+    // TA-784 (B.131, owner 2026-10-25): "You may search" is a confirm asked first; declining searches, looks at and
+    // shuffles nothing. On yes the search (its "any number" pick may stop), then the shuffle.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const generator = useRotocall(() => generator.next(), store, state, effect);
-      return generator.next().value;
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => {
+        const generator = useRotocall(() => generator.next(), store, state, effect);
+        generator.next();
+      });
     }
 
     // Gadget Show attack

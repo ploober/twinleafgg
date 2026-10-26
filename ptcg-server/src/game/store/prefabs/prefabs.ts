@@ -1628,6 +1628,39 @@ export function SHUFFLE_BOTTOM_OF_DECK(store: StoreLike, state: State, player: P
   });
 }
 
+/**
+ * TA-784 (B.131, owner 2026-10-25; B.129): an attack's "You may search your deck …" is a confirm asked at Step D, before
+ * the damage. On yes, `search` (the search and its owed shuffle) runs after the damage (AttackEffect.afterDamageMoves);
+ * on no, nothing is searched, looked at or shuffled.
+ */
+export function MAY_SEARCH_YOUR_DECK(store: StoreLike, state: State, effect: AttackEffect, search: () => void): State {
+  return store.prompt(state, new ConfirmPrompt(effect.player.id, GameMessage.WANT_TO_USE_EFFECT_OF_ATTACK), wantToSearch => {
+    if (wantToSearch) {
+      effect.afterDamageMoves.push(search);
+    }
+  });
+}
+
+/**
+ * TA-784: "search your deck for <up to> N cards and put them into your hand. Then, shuffle your deck." once the search is
+ * made. `min` is 1 for "a card" (#1980), 0 for "up to" (B.18); the shuffle fires on an empty deck too (TA-126 / CF-9).
+ */
+export function SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store: StoreLike, state: State, player: Player, min: number, max: number): void {
+  if (player.deck.cards.length === 0) {
+    SHUFFLE_DECK(store, state, player);
+    return;
+  }
+  store.prompt(
+    state,
+    new ChooseCardsPrompt(player, GameMessage.CHOOSE_CARD_TO_HAND, player.deck, {},
+      { min: Math.min(min, player.deck.cards.length), max, allowCancel: false }),
+    (cards) => {
+      player.deck.moveCardsTo(cards ?? [], player.hand);
+      SHUFFLE_DECK(store, state, player);
+    },
+  );
+}
+
 export function SHUFFLE_DECK(store: StoreLike, state: State, player: Player): State {
   return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
     player.deck.applyOrder(order);

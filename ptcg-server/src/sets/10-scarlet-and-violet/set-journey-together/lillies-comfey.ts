@@ -14,7 +14,7 @@ import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonFromDeckEffect } from '../../../game/store/effects/play-card-effects';
 import { AfterAttackEffect } from '../../../game/store/effects/game-phase-effects';
 import { PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND } from '../../../game/store/prefabs/attack-effects';
-import { WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MAY_SEARCH_YOUR_DECK } from '../../../game/store/prefabs/prefabs';
 
 function* useCallForFamily(
   next: Function,
@@ -110,9 +110,13 @@ export class LilliesComfey extends PokemonCard {
   public fullName: string = "Lillie's Comfey JTG";
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
+    // TA-784 (B.131, owner 2026-10-25): "You may search" is a confirm asked first; declining searches, looks at and
+    // shuffles nothing. On yes the search (its "any number" pick may stop), then the shuffle.
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      const generator = useCallForFamily(() => generator.next(), store, state, effect);
-      return generator.next().value;
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => {
+        const generator = useCallForFamily(() => generator.next(), store, state, effect);
+        generator.next();
+      });
     }
 
     // Fade Out — "Put this Pokémon and all attached cards into your hand." Runs after damage

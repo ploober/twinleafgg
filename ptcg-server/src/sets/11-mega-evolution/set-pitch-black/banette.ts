@@ -2,7 +2,7 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType } from '../../../game/store/card/card-types';
 import { PowerType, StoreLike, State } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, SEARCH_DECK_FOR_CARDS_TO_HAND } from '../../../game/store/prefabs/prefabs';
+import { WAS_ATTACK_USED, MAY_SEARCH_YOUR_DECK, SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE } from '../../../game/store/prefabs/prefabs';
 import { reduceHideNSneak } from './hide-n-sneak';
 
 export class Banette extends PokemonCard {
@@ -41,22 +41,12 @@ export class Banette extends PokemonCard {
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     reduceHideNSneak(store, state, effect, this);
 
-    // TA-369 (CF-32 may-gate, the TA-145 remedy now that PBL is in-pool): "You may search…" is the
-    // zero-take on the pick itself, not a hand-rolled confirm gate — and a DECLINED search is a
-    // search that happened, which is what owes the "Then, shuffle" (the prefab shuffles
-    // unconditionally; the old gate's decline skipped it).
-    if (AFTER_ATTACK(effect, 0, this)) {
+    // TA-784 (B.131, owner 2026-10-25; B.129): "You may search" is a confirm asked first, before the 80; declining searches,
+    // looks at and shuffles nothing (this reverses TA-369's single decision, the pick with a stop). On yes the search for
+    // "a card" must take one (#1980), then the shuffle.
+    if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
-      SEARCH_DECK_FOR_CARDS_TO_HAND(
-        store,
-        state,
-        player,
-        this,
-        {},
-        { min: 0, max: 1, allowCancel: false },
-        effect,
-      );
-      return state;
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 1, 1));
     }
 
     return state;

@@ -77,7 +77,9 @@ export class Gumshoos extends PokemonCard {
       ), selected => {
         const cards = selected || [];
         if (cards.length > 0) {
-          MOVE_CARDS(store, state, player.deck, player.hand, { count: 1, sourceCard: this });
+          // TA-785 (B.130, owner 2026-10-25): a switch with the top card is not a draw (only a printed "draw" is); the top
+          // card is moved by identity, not as a positional take, which the conformance layer reads as a draw (TA-593).
+          MOVE_CARDS(store, state, player.deck, player.hand, { cards: player.deck.cards.slice(0, 1), sourceCard: this });
           const index = player.hand.cards.indexOf(cards[0]);
           if (index !== -1) {
             player.hand.cards.splice(index, 1);

@@ -1,13 +1,13 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, CardTag } from '../../../game/store/card/card-types';
-import { StoreLike, Card, State, ChooseCardsPrompt, ChoosePokemonPrompt, PlayerType, SlotType, ShuffleDeckPrompt, StateUtils } from '../../../game';
+import { StoreLike, Card, State, ChoosePokemonPrompt, PlayerType, SlotType, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 
 import { DiscardCardsEffect, PutDamageEffect } from '../../../game/store/effects/attack-effects';
 import { GameMessage } from '../../../game/game-message';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 import { ChooseEnergyPrompt } from '../../../game/store/prompts/choose-energy-prompt';
-import { DAMAGE_OPPONENT_POKEMON, WAS_ATTACK_USED, APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS } from '../../../game/store/prefabs/prefabs';
+import { DAMAGE_OPPONENT_POKEMON, WAS_ATTACK_USED, MAY_SEARCH_YOUR_DECK, SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE } from '../../../game/store/prefabs/prefabs';
 
 export class Greninjaex extends PokemonCard {
   protected _tags = [CardTag.POKEMON_ex, CardTag.POKEMON_TERA];
@@ -46,48 +46,12 @@ export class Greninjaex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      // TA-83: apply the 170 base damage before the optional search rider (rulebook Step F; #543/#649).
-      state = APPLY_ATTACK_DAMAGE_BEFORE_EFFECTS(store, state, effect);
-
-      // TA-97: the search is "you may" (optional) — never block the attack; the 170 always lands
-      // (was: throw CANNOT_USE_POWER, #1106/#1458).
-      //
-      // TA-145 / CF-32 may-gate: there is ONE decision here, not two. The compendium is explicit that
-      // *"since the contents of the deck are unknown you can also voluntarily fail to find one or
-      // more"*, so the count already spans zero — which means declining IS taking zero at the card
-      // pick set (min 0 + the CF-4 stop), and a separate preceding ConfirmPrompt is a node carrying no
-      // independent decision. The old shape was worse than redundant: having answered "yes" you were
-      // then forced to find (min 1), so a player who wanted to look without disturbing their hand
-      // could not decline. rotomancer emits the single-decision form, and Command the Grass `blk-003`
-      // already does on this side via SEARCH_DECK_FOR_CARDS_TO_HAND with min 0 — this card was the
-      // last hand-rolled holdout. (The prefab is deliberately NOT reused here: it bails out on an
-      // empty deck, which would drop the trailing shuffle below.)
-      //
-      // TA-126 / CF-9 preserved: "Then, shuffle your deck" ALWAYS fires — after a take, after a
-      // zero-take, and on an empty deck (nothing to find, but the shuffle still occurs; rotomancer
-      // emits the `shuffled` event there and the cross-engine re-fuzz flagged us for omitting it).
-      const shuffle = (s: State): State =>
-        store.prompt(s, new ShuffleDeckPrompt(player.id), (order) => {
-          player.deck.applyOrder(order);
-        });
-      if (player.deck.cards.length === 0) {
-        state = shuffle(state);
-      } else {
-        state = store.prompt(
-          state,
-          new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_HAND,
-            player.deck,
-            {},
-            { min: 0, max: 1, allowCancel: false },
-          ),
-          (cards) => {
-            player.deck.moveCardsTo(cards ?? [], player.hand);
-            return shuffle(state);
-          },
-        );
-      }
+      // TA-784 (B.131, owner 2026-10-25; B.129): "You may search" is a confirm asked first, before the 170; declining
+      // searches, looks at and shuffles nothing (this reverses TA-145's single decision, the pick with a stop). On yes
+      // the search runs after the damage, and a search for "a card" must take one (#1980: "You don't have to search,
+      // but if you do you must take a card and put it into your hand"). TA-126 / CF-9: the shuffle still fires on an
+      // empty deck.
+      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 1, 1));
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
