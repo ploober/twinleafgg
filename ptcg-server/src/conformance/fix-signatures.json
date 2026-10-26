@@ -14613,6 +14613,26 @@
       "fixes": [
         "FX-0564"
       ]
+    },
+    {
+      "file": "game/store/store.ts",
+      "signatures": [
+        "    const merge = collectNew === undefined ? undefined : (s: State): SimultaneousActor[] => {"
+      ],
+      "note": "TA-444 (2026-10-26): A Pokémon a Knock Out reaction Knocks Out while the set is still being ordered joins it: its reactions are added to the ",
+      "fixes": [
+        "FX-0566"
+      ]
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "      const joined = findKoPokemons(store, s).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));"
+      ],
+      "note": "TA-444 (2026-10-26): B.51 MERGE: the sweep records a reaction-created victim so it joins the set being ordered",
+      "fixes": [
+        "FX-0566"
+      ]
     }
   ]
 }
