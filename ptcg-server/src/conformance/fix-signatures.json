@@ -14628,6 +14628,26 @@
       "fixes": [
         "FX-0566"
       ]
+    },
+    {
+      "file": "set-pitch-black/banette.ts",
+      "signatures": [
+        "      return MAY_SEARCH_YOUR_DECK(store, state, effect, () => SEARCH_YOUR_DECK_TO_HAND_THEN_SHUFFLE(store, state, player, 1, 1));"
+      ],
+      "note": "TA-784 (2026-10-26): An attack's 'You may search your deck' asks the may first, before the damage; on yes the search runs after the damage (a",
+      "fixes": [
+        "FX-0567"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/gumshoos.ts",
+      "signatures": [
+        "          MOVE_CARDS(store, state, player.deck, player.hand, { cards: player.deck.cards.slice(0, 1), sourceCard: this });"
+      ],
+      "note": "TA-785 (2026-10-26): Evidence Gathering meg-110's switch with the top card is not a draw: the top card is moved by identity, not as a positio",
+      "fixes": [
+        "FX-0568"
+      ]
     }
   ]
 }
