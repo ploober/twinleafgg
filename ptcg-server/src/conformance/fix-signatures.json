@@ -14544,6 +14544,26 @@
       "fixes": [
         "FX-0558"
       ]
+    },
+    {
+      "file": "set-paradox-rift/chi-yu.ts",
+      "signatures": [
+        "        { allowCancel: false, min: 0, max: 2, sameTarget: true }"
+      ],
+      "note": "TA-779 (2026-10-26): Magnetic Charge pal-065 and Flare Bringer par-029 / svp-057 send both Energy to ONE Pokémon (AttachEnergyPrompt sameTarg",
+      "fixes": [
+        "FX-0559"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/philippe.ts",
+      "signatures": [
+        "          { allowCancel: false, min: 1, max: Math.min(2, basicMetalInDiscard.length), sameTarget: true,"
+      ],
+      "note": "TA-780 (2026-10-26): Philippe cri-079 / cri-110 asks 1..2 Basic [M] Energy from the discard first (a Trainer's 'up to' is 1..2), then one [M]",
+      "fixes": [
+        "FX-0560"
+      ]
     }
   ]
 }
