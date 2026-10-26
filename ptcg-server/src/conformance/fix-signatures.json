@@ -14614,6 +14614,16 @@
       "fixes": [
         "FX-0561"
       ]
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "  const everyonePrizedOut = state.players.every(p => p.prizes.every(pr => pr.cards.length === 0));"
+      ],
+      "note": "TA-782 (2026-10-26): When every player is prized out in one Knock Out window, the owed promotions (non-turn player first) are asked before th",
+      "fixes": [
+        "FX-0564"
+      ]
     }
   ]
 }
