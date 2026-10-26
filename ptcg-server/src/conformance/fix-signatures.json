@@ -14564,6 +14564,56 @@
       "fixes": [
         "FX-0560"
       ]
+    },
+    {
+      "file": "set-destined-rivals/team-rockets-persian-ex.ts",
+      "signatures": [
+        "    yield* copyAttackFromPokemonListGenerator(next, store, state, effect, toppedPokemon, {"
+      ],
+      "note": "TA-762 (2026-10-26): Haughty Order dri-150 / dri-219 / svp-218 offers the stop beside the Pokémon to copy from (ChooseAttackPrompt mayDecline",
+      "fixes": [
+        "FX-0561"
+      ]
+    },
+    {
+      "file": "set-twilight-masquerade/farfetchd.ts",
+      "signatures": [
+        "      return store.prompt(state, new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY), wantToUse => {"
+      ],
+      "note": "TA-760 (2026-10-26): Impromptu Carrier twm-132 asks its 'you may search' first (ConfirmPrompt): false searches and shuffles nothing; true sea",
+      "fixes": [
+        "FX-0562"
+      ]
+    },
+    {
+      "file": "set-stellar-crown/grand-tree.ts",
+      "signatures": [
+        "  const takers = eligible.filter(list => list.getPokemonCard()!.name === found.evolvesFrom);"
+      ],
+      "note": "TA-781 (2026-10-26): Grand Tree scr-136 searches for the Stage 1 first (min 0: it may find nothing), then asks which Pokémon evolves only whe",
+      "fixes": [
+        "FX-0563"
+      ]
+    },
+    {
+      "file": "game/store/prefabs/copy-attack-prefabs.ts",
+      "signatures": [
+        "export function* copyAttackFromPokemonListGenerator("
+      ],
+      "note": "TA-762 (2026-10-26): Haughty Order runs the copy as one generator (exported) and a printed you-may-choose offers the decline (mayDecline)",
+      "fixes": [
+        "FX-0561"
+      ]
+    },
+    {
+      "file": "game/store/prompts/choose-attack-prompt.ts",
+      "signatures": [
+        "  mayDecline: boolean;"
+      ],
+      "note": "TA-762 (2026-10-26): Haughty Order runs the copy as one generator (exported) and a printed you-may-choose offers the decline (mayDecline)",
+      "fixes": [
+        "FX-0561"
+      ]
     }
   ]
 }
