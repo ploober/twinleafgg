@@ -255,9 +255,16 @@ describe('TA-577: a Knock Out made by a Knock Out reaction joins the same group'
       { actor: 'B', type: 'takePrize', index: 0 } as never,
       { actor: 'A', type: 'takePrize', index: 0 } as never,
       { actor: 'A', type: 'takePrize', index: 0 } as never];
-    const end = step(BOARD, takeAll);
-    expect(end.state.players.B.prizes).toEqual([]);
-    expect(end.state.players.A.prizes).toEqual([]);
+    const taken = step(BOARD, takeAll);
+    expect(taken.state.players.B.prizes).toEqual([]);
+    expect(taken.state.players.A.prizes).toEqual([]);
+    // B.127 (owner 2026-10-25, #2036; TA-782): both players took their last Prize in this window, so the owed promotions
+    // (B, then A) are asked before the game is decided; nothing they could trigger here, so the race still ties.
+    expect(taken.state.outcome).toBe('ongoing');
+    expect(((taken as any).pending.legalActions as Array<{ type: string; target?: string }>).map(a => `${a.type}:${a.target}`))
+      .toEqual(['promoteBench:bb1']);
+    const end = step(BOARD, [...takeAll, { actor: 'B', type: 'promoteBench', target: 'bb1' } as never,
+      { actor: 'A', type: 'promoteBench', target: 'ab0' } as never]);
     expect(end.state.outcome).toBe('tie');
   });
 

@@ -622,7 +622,11 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
   // `bench.length` (slots are pre-allocated).
   const noPokemonInPlay = state.players.some(p =>
     p.active.cards.length === 0 && !p.bench.some(b => b.cards.length > 0));
-  if (prizesAlreadyTaken || noPokemonInPlay) {
+  // TA-782 (B.127, owner 2026-10-25: "always promote"; #2036 "All effects have to finish resolving before the winner is
+  // determined"): when BOTH players took their last Prize in this window, every owed promotion is asked first (the
+  // non-turn player, then the turn player), so an effect a promotion triggers can still change the result.
+  const everyonePrizedOut = state.players.every(p => p.prizes.every(pr => pr.cards.length === 0));
+  if ((prizesAlreadyTaken && !everyonePrizedOut) || noPokemonInPlay) {
     return checkWinner(store, state, onComplete);
   }
 
