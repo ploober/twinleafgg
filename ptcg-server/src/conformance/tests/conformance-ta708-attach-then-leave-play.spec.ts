@@ -79,7 +79,7 @@ describe('TA-708 an Energy attached to a Pokémon that leaves play in the same s
     expect(r.events.some(e => e.kind === 'ko')).toBe(true);
     const at = attaches(r);
     expect(at.length).toBe(1);
-    expect(at[0].player).toBe('A');
+    expect(at[0].player).toBeUndefined();   // B.134: no player (a1s0 names the side)
     expect(at[0].pokemon).toBe('a1s0');
     expect(legsOf(r, 'adc1')).toEqual(['discardPile>bench:a1s0', 'bench:a1s0>discardPile']);
   });

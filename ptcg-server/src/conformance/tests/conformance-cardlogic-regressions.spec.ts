@@ -1318,10 +1318,10 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       ({ actor: 'system' as const, type: 'flip' as const, face });
 
     const heads = step(start(), [attack('A-act', 'Thump-Thump Boom'), flip('heads')]);
-    expect(heads.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(true);
+    expect(heads.events.some(e => e.kind === 'ko' && e.target === 'B-act')).toBe(true);   // B.134: the iid names the side
 
     const tails = step(start(), [attack('A-act', 'Thump-Thump Boom'), flip('tails')]);
-    expect(tails.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(false);
+    expect(tails.events.some(e => e.kind === 'ko' && e.target === 'B-act')).toBe(false);
   });
 
   it('heads means heads — the flip-mapping control that convicted the CARD, not the driver [TA-241 control]', () => {
@@ -3238,7 +3238,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', ['meg-142'], en(WATER, 1, 'a')), bench: [inPlay('A-b0', [TANKY])] }),
       player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
     ), [attack('A-act', 'Bring Down')]);
-    expect(r.events.some(e => e.kind === 'ko' && e.player === 'B')).toBe(true);
+    expect(r.events.some(e => e.kind === 'ko' && e.target === 'B-b0')).toBe(true);   // B.134: B's Ralts, by its iid
     expect(r.state.players.B.discard.some(c => c.printing === 'sit-067')).toBe(true);    // RALTS in B's discard
     expect(r.state.players.A.discard.some(c => c.printing === 'sit-067')).toBe(false);
     expect(r.pending?.actor).toBe('A');                                                    // A takes the prize
@@ -3666,7 +3666,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['ssp-059'])], discard: en(LIGHT2, 1, 'd') }),
       player({ active: inPlay('B-act', [TANKY]) }),
     ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Overvolt Discharge' }] as unknown as NeutralAction[]);
-    expect(ov.events.some(e => e.kind === 'ko' && e.player === 'A')).toBe(true);
+    expect(ov.events.some(e => e.kind === 'ko' && e.target === 'A-b0')).toBe(true);   // B.134: Magneton, by its iid
     expect(ov.pending?.actor).toBe('B');
   });
 

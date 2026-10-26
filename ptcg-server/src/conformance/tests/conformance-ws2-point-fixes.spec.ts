@@ -204,6 +204,6 @@ describe('WS2 point-fix repros', () => {
     );
     expect(res.state.players.A.discard.some(c => c.iid === 'A-act')).toBe(true);   // self-discard happened
     expect(res.state.players.B.active!.damage).toBe(250);                          // 250 landed on B
-    expect(res.events.filter(e => e.kind === 'ko' && (e as { player: string }).player === 'A')).toEqual([]);
+    expect(res.events.filter(e => e.kind === 'ko' && (e as { target: string }).target === 'A-act')).toEqual([]);   // B.134: the iid names the side
   });
 });

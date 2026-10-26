@@ -85,9 +85,9 @@ describe('Conformance — ChoosePrizePrompt decomposer (non-terminal KO)', () =>
     // `printing` (cid, the PROJECTED set-number id) — not the engine-private iid — preceded by the
     // lethal `damaged` on it.
     const koPrinting = toPrinting(getCardByName('Ralts SIT'));
-    expect(res.events.some(e => e.kind === 'damaged' && e.player === 'B'
+    expect(res.events.some(e => e.kind === 'damaged'
       && basicPrintingByIid(res.state, (e as { target?: string }).target) === koPrinting && e.hp > 0)).toBe(true);
-    expect(res.events.some(e => e.kind === 'ko' && e.player === 'B'
+    expect(res.events.some(e => e.kind === 'ko'
       && basicPrintingByIid(res.state, (e as { target?: string }).target) === koPrinting)).toBe(true);
   });
 

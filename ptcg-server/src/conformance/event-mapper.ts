@@ -46,16 +46,27 @@ function actor(log: StateLog): NeutralPlayerId {
   return name;
 }
 
+/**
+ * B.134 (owner 2026-10-25): `evolved` / `energyAttached` / `toolAttached` carry no `player` on the wire (the side is the
+ * owner of the Pokémon they name). The log's actor is still what `resolvePokemonIids` (events.ts) keys its name -> iid
+ * queues on, so it is kept here, beside the event and off it.
+ */
+export const loggedActor = new WeakMap<NeutralEvent, NeutralPlayerId>();
+function byActor(ev: NeutralEvent, who: NeutralPlayerId): NeutralEvent {
+  loggedActor.set(ev, who);
+  return ev;
+}
+
 export function mapLog(log: StateLog): NeutralEvent | undefined {
   switch (log.message) {
     case GameLog.LOG_PLAYER_PLAYS_BASIC_POKEMON:
       return { kind: 'benchedBasic', player: actor(log), card: str(log, 'card') };
     case GameLog.LOG_PLAYER_EVOLVES_POKEMON:
-      return { kind: 'evolved', player: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
+      return byActor({ kind: 'evolved', card: str(log, 'card'), pokemon: str(log, 'pokemon') }, actor(log));
     case GameLog.LOG_PLAYER_ATTACHES_CARD:
-      return { kind: 'energyAttached', player: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
+      return byActor({ kind: 'energyAttached', card: str(log, 'card'), pokemon: str(log, 'pokemon') }, actor(log));
     case GameLog.LOG_PLAYER_PLAYS_TOOL:
-      return { kind: 'toolAttached', player: actor(log), card: str(log, 'card'), pokemon: str(log, 'pokemon') };
+      return byActor({ kind: 'toolAttached', card: str(log, 'card'), pokemon: str(log, 'pokemon') }, actor(log));
     // The played-from-hand family (event-vocabulary standardization 2026-09-02). Each is an existing
     // engine log carrying {name, card}; the specific kind carries more than the retired generic
     // `cardPlayed`. Observed tier — pinned, not diffed — so `card` stays the display name here.

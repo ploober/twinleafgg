@@ -44,7 +44,7 @@ describe('TA-412 / CF-73 — energyAttached is derived from the state diff for e
     const after = board(player({ active: inPlay('a1', [{ iid: 'a1e0', printing: FIRE }]) }), player());
     const evs = attached(deriveEvents(before, after, [], undefined, undefined, NAMES));
     expect(evs.length).toBe(1);
-    expect(evs[0]).toEqual({ kind: 'energyAttached', player: 'A', card: 'Fire Energy', pokemon: 'a1' });
+    expect(evs[0]).toEqual({ kind: 'energyAttached', card: 'Fire Energy', pokemon: 'a1' });   // B.134: no player
   });
 
   it('does NOT double-emit when the attach was already logged (the manual / AttachEnergyEffect path)', () => {
@@ -77,7 +77,7 @@ describe('TA-413 / CF-73 — toolAttached is derived from the state diff for eff
     const after = board(player({ active: inPlay('a1', [], [{ iid: 'a1t0', printing: TOOL }]) }), player());
     const evs = toolAttached(deriveEvents(before, after, [], undefined, undefined, NAMES));
     expect(evs.length).toBe(1);
-    expect(evs[0]).toEqual({ kind: 'toolAttached', player: 'A', card: 'Defiance Band', pokemon: 'a1' });
+    expect(evs[0]).toEqual({ kind: 'toolAttached', card: 'Defiance Band', pokemon: 'a1' });   // B.134: no player
   });
 
   it('does NOT double-emit toolAttached when the attach was already logged (normal playTool)', () => {

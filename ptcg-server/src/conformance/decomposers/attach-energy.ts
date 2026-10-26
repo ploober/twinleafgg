@@ -8,7 +8,7 @@ import {
   PromptDecomposer, WirePick, realPicks, hasDone, buildPending, END_CHOICE,
   matchesFilter, primaryEnergyType, enumerateTargets, targetKey
 } from './decomposer';
-import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot, playerIdToActor } from '../iid-targets';
+import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget, findPokemonSlot } from '../iid-targets';
 import { placeOnPokemon } from '../transit-projection';
 import { State } from '../../game/store/state/state';
 import { CardList } from '../../game/store/state/card-list';
@@ -410,12 +410,11 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
   pauseEvents(prompt, picks, ctx, state) {
     if ((prompt as { deferredMove?: boolean }).deferredMove) { return []; }
     const player = promptPlayer(state, prompt.playerId);
-    const actor = playerIdToActor(state, prompt.playerId);
     const out: NeutralEvent[] = [];
     for (const p of assignments(picks)) {
       const card = prompt.cardList.cards[p.index];
       if (card === undefined || findPokemonSlot(state, card) !== undefined) { continue; }
-      out.push({ kind: 'energyAttached', player: actor, card: card.name, pokemon: pokemonTargetToIid(state, player, ctx, p.to) });
+      out.push({ kind: 'energyAttached', card: card.name, pokemon: pokemonTargetToIid(state, player, ctx, p.to) });   // B.134: no player
     }
     return out;
   },

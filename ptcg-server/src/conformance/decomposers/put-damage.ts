@@ -195,7 +195,7 @@ export const putDamageDecomposer: PromptDecomposer<PutDamagePrompt> = {
       const iid = pokemonTargetToIid(state, player, ctx, p.target);
       const at = findPip(projected, iid);
       if (at !== undefined) {
-        out.push({ kind: 'damaged', player: at.owner, target: iid, hp: unit });
+        out.push({ kind: 'damaged', target: iid, hp: unit });   // B.134: no player
       }
     }
     return out;

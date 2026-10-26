@@ -592,12 +592,15 @@ export type NeutralAction =
 export type NeutralEvent =
   // ── COMPARED (OpenAPI `Event`) — diffed cross-engine ──
   | { kind: 'draw'; player: NeutralPlayerId; count: number }
-  | { kind: 'damaged'; player: NeutralPlayerId; target: string; hp: number } // target = basic iid (CF-60); hp = net HP this step
-  | { kind: 'ko'; player: NeutralPlayerId; target: string }                  // target = basic iid (CF-60)
+  // B.134 (owner 2026-10-25, v0.16.1): an event states each fact once. The eight kinds that name a card (damaged, ko,
+  // healed, countersMoved, energyAttached, toolAttached, evolved, promotedFromBench) carry no `player`: the side is the
+  // owner of the card they name. Every other kind keeps `player`; moved / chosen keep `owner`.
+  | { kind: 'damaged'; target: string; hp: number } // target = basic iid (CF-60); hp = net HP this step
+  | { kind: 'ko'; target: string }                                           // target = basic iid (CF-60)
   | { kind: 'mulliganRevealed'; player: NeutralPlayerId; hand: string[] }     // CF-84: one per mulligan, the revealed iids
   // `healed` (event-vocabulary standardization 2026-09-02): the inverse of `damaged` — hp removed from
   // `target` (basic iid, CF-60). Compared summed per (player,target) per step, exactly like `damaged`.
-  | { kind: 'healed'; player: NeutralPlayerId; target: string; hp: number }
+  | { kind: 'healed'; target: string; hp: number }
   | { kind: 'turnStarted'; player: NeutralPlayerId }
   | { kind: 'turnEnded'; player: NeutralPlayerId }
   | { kind: 'shuffled'; player: NeutralPlayerId; zone: 'deck' | 'hand' | 'prizes' }
@@ -620,13 +623,13 @@ export type NeutralEvent =
   | { kind: 'chosen'; owner: NeutralPlayerId; card: string; origin: Location; visibility: TransitVisibility }
   // ── SHARED-OBSERVED + informational trace — pinned, NOT diffed (`player`, not `actor`) ──
   | { kind: 'benchedBasic'; player: NeutralPlayerId; card: string }
-  | { kind: 'evolved'; player: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'energyAttached'; player: NeutralPlayerId; card: string; pokemon: string }
-  | { kind: 'toolAttached'; player: NeutralPlayerId; card: string; pokemon: string }
+  | { kind: 'evolved'; card: string; pokemon: string }            // B.134: no player
+  | { kind: 'energyAttached'; card: string; pokemon: string }     // B.134: no player
+  | { kind: 'toolAttached'; card: string; pokemon: string }       // B.134: no player
   | { kind: 'itemPlayed'; player: NeutralPlayerId; card: string }
   | { kind: 'supporterPlayed'; player: NeutralPlayerId; card: string }
   | { kind: 'stadiumPlayed'; player: NeutralPlayerId; card: string }
-  | { kind: 'promotedFromBench'; player: NeutralPlayerId; pokemon: string } // forced KO-replacement promote; pokemon = basic iid
+  | { kind: 'promotedFromBench'; pokemon: string } // B.134: no player; forced KO-replacement promote; pokemon = basic iid
   | { kind: 'attackUsed'; player: NeutralPlayerId; attack: string }  // CF-57: `player`, pinned
   | { kind: 'retreated'; player: NeutralPlayerId; to: string }       // `to` = the newly-promoted Active
   | { kind: 'abilityUsed'; player: NeutralPlayerId; ability: string }

@@ -1080,11 +1080,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       }
       for (const [key, n] of owed) {
         const e = firstOf.get(key)!;
-        const logged = events.slice(derivedAt).filter(x => x.kind === 'energyAttached' && x.player === e.player
+        const logged = events.slice(derivedAt).filter(x => x.kind === 'energyAttached'
           && (x as { pokemon?: string }).pokemon === e.pokemon && (x as { card?: string }).card === e.card).length;
         const ko = events.findIndex((x, i) => i >= derivedAt && x.kind === 'ko' && (x as { target?: string }).target === e.pokemon);
         const add: NeutralEvent[] = Array.from({ length: Math.max(0, n - logged) },
-          () => ({ kind: 'energyAttached', player: e.player, card: e.card, pokemon: e.pokemon }));
+          () => ({ kind: 'energyAttached', card: e.card, pokemon: e.pokemon }));   // B.134: no player (the Pokemon names the side)
         if (ko >= 0) { events.splice(ko, 0, ...add); } else { events.push(...add); }
       }
     }

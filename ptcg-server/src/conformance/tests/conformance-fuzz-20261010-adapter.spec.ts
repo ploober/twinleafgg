@@ -129,27 +129,27 @@ describe('TA-696: Inferno Fandango wht-013 emits energyAttached in the step of e
   const attach = (card: string, target: string) => ({ actor: 'A', type: 'attachEnergy', card, target } as never);
   const stop = { actor: 'A', type: 'confirm', value: false } as never;
   const attached = (events: NeutralEvent[]) => events.filter(e => e.kind === 'energyAttached')
-    .map(e => `${(e as { player: string }).player} ${(e as { pokemon: string }).pokemon}`);
+    .map(e => (e as { pokemon: string }).pokemon);   // B.134: no player (the Pokémon names the side)
 
   it('after the first attach (the loop still open): the Energy is on Emboar, its leg is there, and so is energyAttached [TA-696]', () => {
     const res = step(initial(), [fandango, attach('ah0', 'a1')]);
     expect([...new Set(res.pending?.legalActions.map(a => a.type))].sort()).toEqual(['attachEnergy', 'confirm']);
     expect((res.state.players.A.active?.energy ?? []).map(c => c.iid)).toContain('ah0');
     expect(legs(res.events, 'ah0')).toEqual(['A.hand>active:a1:energy']);
-    expect(attached(res.events)).toEqual(['A a1']);
+    expect(attached(res.events)).toEqual(['a1']);
   });
 
   it('two attaches, one to the Bench: two energyAttached, each on its own Pokemon [TA-696]', () => {
     const res = step(initial(), [fandango, attach('ah0', 'a1'), attach('ah1', 'ab1')]);
-    expect(attached(res.events)).toEqual(['A a1', 'A ab1']);
+    expect(attached(res.events)).toEqual(['a1', 'ab1']);
   });
 
   it('at the close nothing is emitted twice: one energyAttached per attach [TA-696]', () => {
     const one = step(initial(), [fandango, attach('ah0', 'a1'), stop]);
     expect(one.pending?.actor).toBe('A');
-    expect(attached(one.events)).toEqual(['A a1']);
+    expect(attached(one.events)).toEqual(['a1']);
     const two = step(initial(), [fandango, attach('ah0', 'a1'), attach('ah1', 'ab1'), stop]);
-    expect(attached(two.events)).toEqual(['A a1', 'A ab1']);
+    expect(attached(two.events)).toEqual(['a1', 'ab1']);
   });
 });
 

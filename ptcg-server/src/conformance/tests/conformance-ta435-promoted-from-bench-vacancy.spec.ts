@@ -34,7 +34,7 @@ function state(A: PlayerState, B: PlayerState): NeutralState {
   };
 }
 const promotes = (evs: ReturnType<typeof deriveEvents>) =>
-  evs.filter(e => (e as { kind: string }).kind === 'promotedFromBench') as unknown as Array<{ player: string; pokemon: string }>;
+  evs.filter(e => (e as { kind: string }).kind === 'promotedFromBench') as unknown as Array<{ pokemon: string }>;
 
 describe('TA-435 promotedFromBench is the vacancy->filled transition, not a switch', () => {
 
@@ -43,7 +43,7 @@ describe('TA-435 promotedFromBench is the vacancy->filled transition, not a swit
     const after = state(player(), player({ active: pip('b_new'), bench: [] }));
     const evs = promotes(deriveEvents(before, after, []));
     expect(evs.length).toBe(1);
-    expect(evs[0]).toEqual({ kind: 'promotedFromBench', player: 'B', pokemon: 'b_new' } as never);
+    expect(evs[0]).toEqual({ kind: 'promotedFromBench', pokemon: 'b_new' } as never);   // B.134: no player
   });
 
   it('2. switch-then-KO (Active occupied -> occupied; the switched-out Active is KO\'d off the Bench) emits NOTHING', () => {

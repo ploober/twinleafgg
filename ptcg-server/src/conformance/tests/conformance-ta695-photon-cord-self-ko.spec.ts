@@ -68,7 +68,7 @@ describe('TA-695 Photon Cord pbl-028 does not fire on a Knock Out by this Pokém
     const r = step(board(), [thunder]);
     const la = r.pending?.legalActions ?? [];
     expect(la.map(a => a.type)).not.toContain('moveEnergy');
-    expect(r.events.some(e => e.kind === 'ko' && (e as { player: string }).player === 'A' && (e as { target: string }).target === 'a1')).toBe(true);
+    expect(r.events.some(e => e.kind === 'ko' && (e as { target: string }).target === 'a1')).toBe(true);
   });
 
   it('Thunder\'s recoil Knocks Miraidon Out: both [L] go to the discard pile with it, none to the Bencher [TA-695]', () => {
