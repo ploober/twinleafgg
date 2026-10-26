@@ -14534,6 +14534,16 @@
       "fixes": [
         "FX-0557"
       ]
+    },
+    {
+      "file": "set-obsidian-flames/poppy.ts",
+      "signatures": [
+        "      // TA-778 (B.120 amended, owner 2026-10-25): \"from 1 of your Pokemon to another of your Pokemon\" asks the source,"
+      ],
+      "note": "TA-778 (2026-10-26): Poppy asks the source Pokémon, then 1..2 of its Energy (a single Energy forced), then another Pokémon, instead of (Energ",
+      "fixes": [
+        "FX-0558"
+      ]
     }
   ]
 }
