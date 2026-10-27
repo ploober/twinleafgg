@@ -1,7 +1,7 @@
 import { PokemonCard, State, StoreLike } from '../../../game';
 import { CardType, Stage } from '../../../game/store/card/card-types';
 import { Effect } from '../../../game/store/effects/effect';
-import { AFTER_ATTACK, DRAW_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { DRAW_CARDS, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND } from '../../../game/store/prefabs/attack-effects';
 
 export class Aipom extends PokemonCard {
@@ -38,7 +38,7 @@ export class Aipom extends PokemonCard {
     }
 
     // Hand Trick
-    if (AFTER_ATTACK(effect, 1, this)) {
+    if (WAS_ATTACK_USED(effect, 1, this)) {
       PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND(store, state, effect);
       return state;
     }
