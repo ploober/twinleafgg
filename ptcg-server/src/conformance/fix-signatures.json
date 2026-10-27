@@ -14472,7 +14472,7 @@
     {
       "file": "conformance/decomposers/attach-energy.ts",
       "signatures": [
-        "if (pairs.length > 0 && targets === 1 && pairs.every(c => c.sourceIid === undefined)) {"
+        "if (pairs.length > 0 && targets === 1) {"
       ],
       "note": "TA-772 (2026-10-24): An in-effect attach whose every candidate card has the same single legal target asks the card alone, choose {target: car",
       "fixes": [
@@ -14647,6 +14647,16 @@
       "note": "TA-785 (2026-10-26): Evidence Gathering meg-110's switch with the top card is not a draw: the top card is moved by identity, not as a positio",
       "fixes": [
         "FX-0568"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/move-energy.ts",
+      "signatures": [
+        "    const recipient = singleDestination(candidates);"
+      ],
+      "note": "TA-786 (2026-10-26): An Energy move whose every candidate Energy has the same single legal destination asks only the Energy, choose {target: ",
+      "fixes": [
+        "FX-0569"
       ]
     }
   ]
