@@ -58,7 +58,8 @@ function* moveEnergy(
       { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Grass Energy' },
       // TA-359 (B.46): an activated "you may" is decided at useAbility — min 0 surfaced a
       // post-activation decline node the law says must not exist (the gate above guarantees a move).
-      { min: 1, allowCancel: false },
+      // TA-788: "Move a Basic [Grass] Energy" — one per use; "as often as you like" is how more are moved.
+      { min: 1, max: 1, allowCancel: false },
     ),
     (result) => {
       transfers = result || [];

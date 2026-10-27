@@ -5,7 +5,7 @@ import { State } from '../../../game/store/state/state';
 import { StoreLike } from '../../../game/store/store-like';
 import { TrainerCard } from '../../../game/store/card/trainer-card';
 import { SuperType, TrainerType } from '../../../game/store/card/card-types';
-import { Card, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, EnergyCard, GameError, Player, PlayerType, SlotType } from '../../../game';
+import { Card, CardTarget, ChooseCardsPrompt, ChoosePokemonPrompt, EnergyCard, GameError, MoveEnergyPrompt, Player, PlayerType, SlotType, StateUtils } from '../../../game';
 import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class Poppy extends TrainerCard {
@@ -123,6 +123,27 @@ export class Poppy extends TrainerCard {
         const energy = source.cards.filter(c => c.superType === SuperType.ENERGY);
         if (energy.length === 1) {
           return toDestination(energy);   // SR-3: a single Energy with a floor of 1 is forced, not asked
+        }
+        // TA-787 (SR-6): with only one other Pokemon in play the destination is not a choice, so each Energy offer
+        // names it: one move of up to 2 Energy from the chosen source to that Pokemon (the stop after the first).
+        const others: CardTarget[] = [];
+        const isSourceTarget: CardTarget[] = [];
+        player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, t) => {
+          (list === source ? isSourceTarget : others).push(t);
+        });
+        if (others.length === 1) {
+          return store.prompt(state, new MoveEnergyPrompt(
+            player.id,
+            GameMessage.MOVE_ENERGY_CARDS,
+            PlayerType.BOTTOM_PLAYER,
+            [SlotType.ACTIVE, SlotType.BENCH],
+            { superType: SuperType.ENERGY },
+            { min: 1, max: 2, allowCancel: false, blockedFrom: others, blockedTo: isSourceTarget }
+          ), transfers => {
+            for (const transfer of transfers || []) {
+              MOVE_CARDS(store, state, source, StateUtils.getTarget(state, player, transfer.to), { cards: [transfer.card], sourceCard: this });
+            }
+          });
         }
         const notEnergy: number[] = [];
         source.cards.forEach((c, index) => {
