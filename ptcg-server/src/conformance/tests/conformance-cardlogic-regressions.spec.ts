@@ -807,22 +807,22 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       }),
       player({ active: inPlay('B-act', [TANKY]) }),
     );
-    // CF-34: an in-play-source relocation surfaces `moveEnergy{card, source, target}`, not attachEnergy.
+    // TA-786 / SR-6: one Benched Pokémon, so each Energy is offered alone (choose) with recipient A-b0.
     const moveCards = (r: ReturnType<typeof step>): string[] =>
-      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'moveEnergy').map(a => (a as { card: string }).card);
+      (r.pending?.legalActions ?? []).filter(a => (a as { type: string }).type === 'choose').map(a => (a as { target: string }).target);
 
     const menu = step(boardOf(), [attack('A-act', 'Cold Cyclone')]);
     expect(menu.status).toBe('awaitingAction');
     expect(moveCards(menu)).toContain('ae2');   // the Splash Energy is offered as a movable [W] Energy
     expect((menu.pending?.legalActions ?? []).every(a =>
-      (a as { type: string }).type !== 'moveEnergy' || (a as { source?: string }).source === 'A-act')).toBe(true);
+      (a as { type: string }).type !== 'choose' || (a as { recipient?: string }).recipient === 'A-b0')).toBe(true);
 
     // And the full move (Splash + a basic Water, min=max=2) relocates the Splash onto the [W] bench:
     const moved = step(boardOf(), [
       attack('A-act', 'Cold Cyclone'),
-      { actor: 'A', type: 'moveEnergy', card: 'ae2', source: 'A-act', target: 'A-b0' },
-      { actor: 'A', type: 'moveEnergy', card: 'ae0', source: 'A-act', target: 'A-b0' },
-    ]);
+      { actor: 'A', type: 'choose', target: 'ae2' },
+      { actor: 'A', type: 'choose', target: 'ae0' },
+    ] as unknown as NeutralAction[]);
     expect(moved.state.players.A.bench[0].energy.map(e => e.printing)).toContain('bkp-113');
   });
 
@@ -3471,7 +3471,8 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
       player({ active: inPlay('A-act', [RALTS]), bench: [inPlay('A-b0', ['por-019'], en(WATER, 2, 'w'))] }),
       player({ active: inPlay('B-act', [TANKY]) }),
     ), [{ actor: 'A', type: 'useAbility', source: 'A-b0', ability: 'Wash Out' }] as unknown as NeutralAction[]);
-    expect(hasType(two, 'moveEnergy')).toBe(true);                                      // a real pick (which [W])
+    expect(hasType(two, 'choose')).toBe(true);                                          // a real pick (which [W]; TA-786: the card offer)
+    expect(hasType(two, 'moveEnergy')).toBe(false);
     expect(hasType(two, 'confirm')).toBe(false);                                        // …with no zero-stop
   });
 
@@ -3528,13 +3529,23 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     const mv = acts(loop).filter(a => a.type === 'choose');
     expect(mv.length).toBe(3);
     expect(mv.every(a => a.op === 'moveTo' && a.destination === 'hand')).toBe(true);
-    // Structural pair types emit NOTHING (the moveEnergy correction, 604e96a2): Wash Out's move.
+    // Structural pair types emit NOTHING (the moveEnergy correction, 604e96a2); Wash Out's move is no longer one.
     const wash = step(board(
       player({ active: inPlay('A-act', ['por-019'], en(WATER, 1, 'w')), bench: [inPlay('A-b0', [RALTS], en(WATER, 2, 'x'))] }),
       player({ active: inPlay('B-act', [TANKY]) }),
     ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Wash Out' }] as unknown as NeutralAction[]);
-    const me = acts(wash).filter(a => a.type === 'moveEnergy');
-    expect(me.length).toBeGreaterThan(0);
+    // TA-786 / SR-6: Wash Out's one destination is the Active, so its move is the card offer (op + recipient).
+    const wo = acts(wash).filter(a => a.type === 'choose');
+    expect(wo.length).toBe(2);
+    expect(wo.every(a => a.op === 'attach' && a.recipient === 'A-act' && a.destination === undefined)).toBe(true);
+    // A structural pair: Energy Switch svi-173 with two other Pokémon to move to.
+    const sw = step(board(
+      player({ active: inPlay('A-act', [RALTS], en(WATER, 1, 'w')), bench: [inPlay('A-b0', [RALTS]), inPlay('A-b1', [RALTS])],
+        hand: [{ iid: 'es', printing: 'svi-173' }] }),
+      player({ active: inPlay('B-act', [TANKY]) }),
+    ), [{ actor: 'A', type: 'playItem', card: 'es' }] as unknown as NeutralAction[]);
+    const me = acts(sw).filter(a => a.type === 'moveEnergy');
+    expect(me.length).toBe(2);
     expect(me.every(a => a.op === undefined && a.destination === undefined)).toBe(true);
   });
 

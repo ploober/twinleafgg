@@ -85,7 +85,8 @@ const dealt = (r: ReturnType<typeof step>) =>
 /** The pending's offers as `type:card>target` / `type:target` / `type:value`, sorted. */
 function menu(r: ReturnType<typeof step>): string[] {
   return acts(r).map(a => a.type === 'confirm' ? `confirm:${a.value}`
-    : a.type === 'moveEnergy' ? `moveEnergy:${a.card}>${a.target}` : `${a.type}:${a.target}`).sort();
+    : a.type === 'moveEnergy' ? `moveEnergy:${a.card}>${a.target}`
+    : `${a.type}:${a.target}${(a as { recipient?: string }).recipient ? '>' + (a as { recipient?: string }).recipient : ''}`).sort();
 }
 /** chosen / damaged (on b1) / moved (of a b1 Energy), in event order. */
 function seq(r: ReturnType<typeof step>): string[] {
@@ -199,7 +200,7 @@ describe('TA-655 (B.89 (1)): "You may move an Energy from your opponent\'s Activ
   it('svi-026 Eerie Tentacles: yes: then the move (one Benched Pokémon: two offers, no decline) [TA-652]', () => {
     const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles'), yes]);
     expect(rejected(r)).toBeUndefined();
-    expect(menu(r)).toEqual(['moveEnergy:b1e0>b2', 'moveEnergy:b1e1>b2']);
+    expect(menu(r)).toEqual(['choose:b1e0>b2', 'choose:b1e1>b2']);   // TA-786 / SR-6: b2 is the one destination
   });
   it('control: svi-026 Eerie Tentacles with no Energy on the opponent\'s Active: no gate (CF-33), 30 damage [TA-652]', () => {
     const r = step(board('svi-026', [GRASS], []), [attack('Eerie Tentacles')]);

@@ -259,7 +259,9 @@ describe('TA-653 (B.89 (1)) obf-085 Togekiss Power Cyclone', () => {
 describe('TA-653 controls (CF-14 collapses, #570 / #2118)', () => {
   it('control: one Benched Pokémon, two Energy: only the Energy varies, offered with the one destination [TA-653]', () => {
     const r = step(board(['cri-019'], [WATER, WATER], 1), [attack('Reflect Energy')]);
-    expect(moveOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2']);
+    // TA-786 / SR-6: the destination is not asked; each Energy offer names it (recipient), no moveEnergy triple.
+    expect(chosenOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2']);
+    expect(moveOffers(r)).toEqual([]);
     expect(dealt(r)).toBe(0);
   });
   // Togekiss pays Power Cyclone's [C][C] with one Double Turbo Energy (110 - 20 = 90).

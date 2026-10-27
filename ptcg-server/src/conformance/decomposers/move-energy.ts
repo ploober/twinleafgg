@@ -9,6 +9,8 @@ import {
 } from './decomposer';
 import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../iid-targets';
 import { placeOnPokemon } from '../transit-projection';
+import { IidContext } from '../state-adapter';
+import { State } from '../../game/store/state/state';
 
 /**
  * MoveEnergyPrompt: relocate an attached Energy from one Pokemon to another. Each transfer is a single
@@ -95,46 +97,25 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     }
 
     const player = promptPlayer(state, prompt.playerId);
-    const pickedKeys = new Set(rp.map(p => `${targetKey(p.from)}-${p.index}`));
-    const blockedBySource = new Map<string, Set<number>>();
-    for (const entry of prompt.options.blockedMap) {
-      blockedBySource.set(targetKey(entry.source), new Set(entry.blocked));
-    }
-
-    const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
-    const dests = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedTo);
+    const candidates = transferCandidates(prompt, rp, ctx, state);
     const legalActions: LegalAction[] = [];
-
-    for (const source of sources) {
-      const list = StateUtils.getTarget(state, player, source);
-      const sourceKey = targetKey(source);
-      const blockedIdx = blockedBySource.get(sourceKey) ?? new Set<number>();
-      for (let i = 0; i < list.cards.length; i++) {
-        const card = list.cards[i];
-        if (card.superType !== SuperType.ENERGY || blockedIdx.has(i)) {
-          continue;
-        }
-        if (!matchesFilter(card, prompt.filter)) {
-          continue;
-        }
-        if (pickedKeys.has(`${sourceKey}-${i}`)) {
-          continue;
-        }
-        const energyIid = ctx.cardToIid.get(card);
-        if (energyIid === undefined) {
-          continue;
-        }
-        for (const dest of dests) {
-          if (targetKey(dest) === sourceKey) {
-            continue; // a card must move to a DIFFERENT Pokemon
-          }
-          legalActions.push({
-            type: 'moveEnergy',
-            card: energyIid,
-            source: pokemonTargetToIid(state, player, ctx, source),
-            target: pokemonTargetToIid(state, player, ctx, dest),
-          });
-        }
+    // TA-786 / SR-6 (B.116, B.122): every candidate Energy has the same single legal destination (N's Plan's Active,
+    // Energy Switch with one other Pokémon): the destination is not asked. Each Energy is offered alone, choose {target:
+    // Energy, op, recipient: the destination}; the triples stay while two or more destinations are legal.
+    const recipient = singleDestination(candidates);
+    if (recipient !== undefined) {
+      const recipientIid = pokemonTargetToIid(state, player, ctx, recipient);
+      for (const c of candidates) {
+        legalActions.push({ type: 'choose', target: c.energyIid, op: 'attach', recipient: recipientIid });
+      }
+    } else {
+      for (const c of candidates) {
+        legalActions.push({
+          type: 'moveEnergy',
+          card: c.energyIid,
+          source: pokemonTargetToIid(state, player, ctx, c.source),
+          target: pokemonTargetToIid(state, player, ctx, c.dest),
+        });
       }
     }
 
@@ -147,9 +128,20 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     return buildPending(prompt, state, legalActions);
   },
 
-  toPick(prompt, action, ctx, state) {
+  toPick(prompt, action, ctx, state, picks = []) {
     if (action.type === 'endChoice') {
       return { kind: 'done' };
+    }
+    if (action.type === 'choose') {
+      // TA-786 / SR-6: the Energy alone; it goes to the step's one legal destination.
+      const rp = realPicks(picks) as Array<{ from: CardTarget; to: CardTarget; index: number }>;
+      const candidates = transferCandidates(prompt, rp, ctx, state);
+      const to = singleDestination(candidates);
+      const c = candidates.find(x => x.energyIid === action.target);
+      if (to === undefined || c === undefined) {
+        throw new Error(`[conformance] MoveEnergy choose '${action.target}' is not offered here`);
+      }
+      return { kind: 'move', from: c.source, to, index: c.index };
     }
     if (action.type !== 'moveEnergy') {
       throw new Error(`[conformance] MoveEnergy expected 'moveEnergy', got '${action.type}'`);
@@ -195,7 +187,7 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
       if (card === undefined) { return; }
       const offered = moveEnergyDecomposer.next(prompt, rp.slice(0, i) as WirePick[], ctx, state)?.legalActions ?? [];
       const canStop = offered.some(a => a.type === 'endChoice');
-      const cardsLeft = new Set(offered.filter(a => a.type !== 'endChoice').map(a => (a as { card?: string }).card)).size;
+      const cardsLeft = new Set(offered.filter(a => a.type !== 'endChoice').map(a => (a as { card?: string; target?: string }).card ?? (a as { target?: string }).target)).size;
       if (!canStop && cardsLeft <= prompt.options.min - i) { return; }
       out.push(card);
     });
@@ -219,3 +211,55 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
       .map(p => ({ from: p.from, to: p.to, index: p.index }));
   },
 };
+
+type Transfer = { energyIid: string; source: CardTarget; index: number; dest: CardTarget };
+
+/**
+ * The legal (Energy, destination) transfers of the next pick. Mirrors the simple-bot `MoveEnergyPromptResolver`:
+ * `slots`+`playerType` define BOTH the source and destination Pokemon set. Sources drop `blockedFrom`, per-source
+ * `blockedMap` indices, non-`filter` cards and the Energy already picked; destinations drop `blockedTo` and the
+ * transfer's own source (a card must move to a DIFFERENT Pokemon).
+ */
+function transferCandidates(prompt: MoveEnergyPrompt, rp: Array<{ from: CardTarget; index: number }>, ctx: IidContext,
+  state: State): Transfer[] {
+  const player = promptPlayer(state, prompt.playerId);
+  const pickedKeys = new Set(rp.map(p => `${targetKey(p.from)}-${p.index}`));
+  const blockedBySource = new Map<string, Set<number>>();
+  for (const entry of prompt.options.blockedMap) {
+    blockedBySource.set(targetKey(entry.source), new Set(entry.blocked));
+  }
+  const sources = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedFrom);
+  const dests = enumerateTargets(state, player, prompt.playerType, prompt.slots, prompt.options.blockedTo);
+  const out: Transfer[] = [];
+  for (const source of sources) {
+    const list = StateUtils.getTarget(state, player, source);
+    const sourceKey = targetKey(source);
+    const blockedIdx = blockedBySource.get(sourceKey) ?? new Set<number>();
+    for (let i = 0; i < list.cards.length; i++) {
+      const card = list.cards[i];
+      if (card.superType !== SuperType.ENERGY || blockedIdx.has(i) || !matchesFilter(card, prompt.filter)
+          || pickedKeys.has(`${sourceKey}-${i}`)) {
+        continue;
+      }
+      const energyIid = ctx.cardToIid.get(card);
+      if (energyIid === undefined) {
+        continue;
+      }
+      for (const dest of dests) {
+        if (targetKey(dest) !== sourceKey) {
+          out.push({ energyIid, source, index: i, dest });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/** TA-786 / SR-6: the one destination every candidate transfer shares, or undefined (none, or two or more). */
+function singleDestination(candidates: Transfer[]): CardTarget | undefined {
+  if (candidates.length === 0) {
+    return undefined;
+  }
+  const key = targetKey(candidates[0].dest);
+  return candidates.every(c => targetKey(c.dest) === key) ? candidates[0].dest : undefined;
+}

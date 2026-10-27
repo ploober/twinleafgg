@@ -59,7 +59,7 @@ const no = act({ actor: 'A', type: 'confirm', value: false });
 
 function legal(r: ReturnType<typeof step>): string[] {
   const p = (r as any).pending;
-  return p ? p.legalActions.map((a: any) => [a.actor, a.type, a.card, a.target, a.value].filter(x => x !== undefined && x !== null).join(':')).sort() : [];
+  return p ? p.legalActions.map((a: any) => [a.actor, a.type, a.card, a.target, a.recipient, a.value].filter(x => x !== undefined && x !== null).join(':')).sort() : [];
 }
 function energyOn(r: ReturnType<typeof step>, iid: string): string[] {
   const A = r.state.players.A;
@@ -90,6 +90,6 @@ describe('TA-475 Exp. Share may-gate', () => {
     const r = step(board(2), [pouncingTrap, order]);
     expect(legal(r)).toEqual(['A:confirm:false', 'A:confirm:true']);
     const r2 = step(board(2), [pouncingTrap, order, yes]);
-    expect(legal(r2)).toEqual(['A:moveEnergy:a1e0:a2', 'A:moveEnergy:a1e1:a2']);
+    expect(legal(r2)).toEqual(['A:choose:a1e0:a2', 'A:choose:a1e1:a2']);   // TA-786 / SR-6: recipient a2, the holder
   });
 });

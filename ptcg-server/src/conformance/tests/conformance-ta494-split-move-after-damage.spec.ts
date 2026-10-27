@@ -152,7 +152,7 @@ describe('TA-494 pbl-061 Shieldon Smithereen Smash: the Energy is discarded afte
 describe('TA-494 obf-085 Togekiss Power Cyclone: its own Energy moves after the damage (B.82)', () => {
   const TOGEKISS = ['obf-083', 'obf-084', 'obf-085'];
   const s = (energy: string[]) => board(mon('a1', TOGEKISS, energy), [mon('a2', [DONDOZO])], mon('b1', [BIG]));
-  const move = (card: string) => act({ actor: 'A', type: 'moveEnergy', card, source: 'a1', target: 'a2' });
+  const move = (card: string) => act({ actor: 'A', type: 'choose', target: card });   // TA-786 / SR-6: a2 is the one destination
   it('moving the Double Turbo Energy: its 20 less still applies, 90 damage [TA-494 obf-085]', () => {
     const r = step(s([DTE]), [attack('Power Cyclone')]); // one Energy, one Benched: forced
     expect(rejected(r)).toBeUndefined();
@@ -163,10 +163,12 @@ describe('TA-494 obf-085 Togekiss Power Cyclone: its own Energy moves after the 
     expect(evs(r).filter(e => e.kind === 'chosen').map(e => e.card)).toEqual([]);
   });
   // TA-653 / B.89 (1): the Energy and its Benched Pokémon are one joint moveEnergy pick before the damage (TA-494's shape,
-  // restored; TA-651 had split off the destination to after the damage). One Benched Pokémon here: two offers.
+  // restored; TA-651 had split off the destination to after the damage). One Benched Pokémon here: two offers, each the
+  // Energy alone with recipient a2 (TA-786 / SR-6).
   it('control: the choice is asked before the damage, then 110 and the move [TA-494 obf-085]', () => {
     const r0 = step(s([GRASS, GRASS]), [attack('Power Cyclone')]);
-    expect(acts(r0).filter(a => a.type === 'moveEnergy').length).toBe(2);
+    expect(acts(r0).filter(a => a.type === 'choose' && (a as { recipient?: string }).recipient === 'a2').length).toBe(2);
+    expect(acts(r0).filter(a => a.type === 'moveEnergy').length).toBe(0);
     expect(dealt(r0.events, 'b1')).toBe(0);
     const r = step(s([GRASS, GRASS]), [attack('Power Cyclone'), move('a1e1')]);
     expect(dealt(r.events, 'b1')).toBe(110);

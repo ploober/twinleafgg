@@ -119,7 +119,7 @@ describe('TA-651 cri-019 Keldeo Reflect Energy: choose the Energy (and its desti
 // ---------------------------------------------------------------- Mega Gengar ex Void Gale
 describe('TA-651 Mega Gengar ex Void Gale: choose the Energy, then the damage, then the move', () => {
   it('pfl-056, one Benched: chosen, 230, then the Energy moves (destination forced) [TA-651]', () => {
-    const r = step(board('pfl-056', [DARK, DARK], 1), [attack('Void Gale'), move('a1e0', 'a2')]);
+    const r = step(board('pfl-056', [DARK, DARK], 1), [attack('Void Gale'), chooseAct('a1e0')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r)).toEqual(['chosen a1e0', 'damaged', 'moved a1e0']);
     expect(dealt(r)).toBe(230);
@@ -128,7 +128,8 @@ describe('TA-651 Mega Gengar ex Void Gale: choose the Energy, then the damage, t
   for (const printing of ['pfl-056', 'asc-125', 'asc-269', 'asc-284']) {
     it(`${printing}: the Energy is asked before the damage [TA-651]`, () => {
       const r = step(board(printing, [DARK, DARK], 1), [attack('Void Gale')]);
-      expect(chooseTargets(r)).toEqual(['a1e0', 'a1e1']);
+      expect(chooseOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2']);   // TA-786 / SR-6: one Benched Pokémon, the recipient
+      expect(moveOffers(r)).toEqual([]);
       expect(dealt(r)).toBe(0);
     });
   }
@@ -139,11 +140,11 @@ describe('TA-651 asc-053 Frosmoth Cold Cyclone: choose a [W] Energy first (TA-38
   it('asc-053: Legacy Energy and the Water are offered before the damage, the Fire is not [TA-651]', () => {
     const r = step(board('asc-053', [LEGACY, WATER, FIRE], 1), [attack('Cold Cyclone')]);
     expect(rejected(r)).toBeUndefined();
-    expect(chooseTargets(r)).toEqual(['a1e0', 'a1e1']);
+    expect(chooseOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2']);   // TA-786 / SR-6: one Benched Pokémon, the recipient
     expect(dealt(r)).toBe(0);
   });
   it('asc-053: choosing Legacy Energy: chosen, 90, then it moves to the Bench [TA-651]', () => {
-    const r = step(board('asc-053', [LEGACY, WATER, FIRE], 1), [attack('Cold Cyclone'), move('a1e0', 'a2')]);
+    const r = step(board('asc-053', [LEGACY, WATER, FIRE], 1), [attack('Cold Cyclone'), chooseAct('a1e0')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r)).toEqual(['chosen a1e0', 'damaged', 'moved a1e0']);
     expect(dealt(r)).toBe(90);
@@ -222,7 +223,7 @@ describe('TA-651 Yanmega ex Jet Cyclone: three Energy chosen one at a time, then
 // ---------------------------------------------------------------- Volcanion ex Scorching Cyclone
 describe('TA-651 Volcanion ex Scorching Cyclone: choose the Energy, then the damage, then the move', () => {
   it('jtg-031, one Benched: chosen, 160 (x2 Weakness), then the Energy moves [TA-651]', () => {
-    const r = step(board('jtg-031', [FIRE, FIRE, FIRE], 1), [attack('Scorching Cyclone'), move('a1e2', 'a2')]);
+    const r = step(board('jtg-031', [FIRE, FIRE, FIRE], 1), [attack('Scorching Cyclone'), chooseAct('a1e2')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r)).toEqual(['chosen a1e2', 'damaged', 'moved a1e2']);
     expect(dealt(r)).toBe(320);   // 160, Venusaur ex is weak to [R]
@@ -231,7 +232,7 @@ describe('TA-651 Volcanion ex Scorching Cyclone: choose the Energy, then the dam
   for (const printing of ['jtg-031', 'jtg-171', 'jtg-182']) {
     it(`${printing}: the Energy is asked before the damage [TA-651]`, () => {
       const r = step(board(printing, [FIRE, FIRE, FIRE], 1), [attack('Scorching Cyclone')]);
-      expect(chooseTargets(r)).toEqual(['a1e0', 'a1e1', 'a1e2']);
+      expect(chooseOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2', 'a1e2>a2']);   // TA-786 / SR-6
       expect(dealt(r)).toBe(0);
     });
   }
@@ -240,7 +241,7 @@ describe('TA-651 Volcanion ex Scorching Cyclone: choose the Energy, then the dam
 // ---------------------------------------------------------------- Iron Thorns ex Volt Cyclone
 describe('TA-651 Iron Thorns ex Volt Cyclone: choose the Energy, then the damage, then the move', () => {
   it('twm-077: moving the Double Turbo Energy: chosen, its 20 less still applies (120), then it moves [TA-651]', () => {
-    const r = step(board('twm-077', [LIGHTNING, DTE], 1), [attack('Volt Cyclone'), move('a1e1', 'a2')]);
+    const r = step(board('twm-077', [LIGHTNING, DTE], 1), [attack('Volt Cyclone'), chooseAct('a1e1')]);
     expect(rejected(r)).toBeUndefined();
     expect(seq(r)).toEqual(['chosen a1e1', 'damaged', 'moved a1e1']);
     expect(dealt(r)).toBe(120);
@@ -249,7 +250,7 @@ describe('TA-651 Iron Thorns ex Volt Cyclone: choose the Energy, then the damage
   for (const printing of ['twm-077', 'pre-032', 'twm-196']) {
     it(`${printing}: the Energy is asked before the damage [TA-651]`, () => {
       const r = step(board(printing, [LIGHTNING, LIGHTNING, LIGHTNING], 1), [attack('Volt Cyclone')]);
-      expect(chooseTargets(r)).toEqual(['a1e0', 'a1e1', 'a1e2']);
+      expect(chooseOffers(r)).toEqual(['a1e0>a2', 'a1e1>a2', 'a1e2>a2']);   // TA-786 / SR-6
       expect(dealt(r)).toBe(0);
     });
   }

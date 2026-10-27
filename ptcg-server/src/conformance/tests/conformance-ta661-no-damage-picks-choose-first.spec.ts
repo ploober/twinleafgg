@@ -22,7 +22,10 @@ const DUCKLETT_TWO: NeutralState = {"schemaVersion": "0.1", "format": "unlimited
 
 describe('TA-661: no-damage attacks choose first, recorded chosen (B.89 (5), B.93)', () => {
   it('Slight Shift: chosen, then moved [TA-661]', () => {
-    const r = step(ELGYEM, [atk('Slight Shift'), { actor: 'A', type: 'moveEnergy', card: 'b1e0', source: 'b1', target: 'b2' } as never]);
+    // TA-786 / SR-6: b2 is the one destination, so each Energy is offered alone with recipient b2.
+    expect(legal(step(ELGYEM, [atk('Slight Shift')])).map(a => `${a.type} ${a.target}>${a.recipient}`).sort())
+      .toEqual(['choose b1e0>b2', 'choose b1e1>b2']);
+    const r = step(ELGYEM, [atk('Slight Shift'), { actor: 'A', type: 'choose', target: 'b1e0' } as never]);
     expect(evs(r)).toEqual(['chosen b1e0', 'moved b1e0']);
   });
   it('Fully Singe: chosen, then discarded [TA-661]', () => {

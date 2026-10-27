@@ -144,13 +144,15 @@ describe('TA-645 under B.89: the pick of the opponent\'s Energy is asked before 
     expect(dealt(r0, 'b1')).toBe(0);
     const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles'), act({ actor: 'A', type: 'confirm', value: true })]);
     expect(rejected(r)).toBeUndefined();
-    expect(acts(r).some(a => a.type === 'moveEnergy')).toBe(true);
+    // TA-786 / SR-6: b2 is the one destination, so the Energy is offered alone with recipient b2.
+    expect(acts(r).filter(a => a.type === 'choose').map(a => `${a.target}>${(a as { recipient?: string }).recipient}`).sort())
+      .toEqual(['b1e0>b2', 'b1e1>b2']);
     expect(dealt(r, 'b1')).toBe(0);
     expect(energyOf(r, 'active')).toEqual(['b1e0', 'b1e1']);
   });
   it('svi-026 Eerie Tentacles: chosen, then the damage, then the Energy to the Bench [TA-645 svi-026]', () => {
     const r = step(board('svi-026', [GRASS]), [attack('Eerie Tentacles'), act({ actor: 'A', type: 'confirm', value: true }),
-      act({ actor: 'A', type: 'moveEnergy', card: 'b1e1', source: 'b1', target: 'b2' })]);
+      act({ actor: 'A', type: 'choose', target: 'b1e1' })]);
     expect(rejected(r)).toBeUndefined();
     expect(order(r, ['b1e'])).toEqual(['d', 'm']);
     expect(chosen(r).map(e => e.card)).toEqual(['b1e1']);

@@ -60,7 +60,8 @@ function board(): NeutralState {
 
 const PLAY = { actor: 'A', type: 'playItem', card: 'ah4' } as unknown as NeutralAction;
 const PROMOTE = { actor: 'A', type: 'promoteBench', target: 'ab1' } as unknown as NeutralAction;
-const MOVE = { actor: 'A', type: 'moveEnergy', card: 'ae20', source: 'a1', target: 'ab1' } as unknown as NeutralAction;
+// TA-786 / SR-6: ab1 is the one destination, so the Energy is offered alone (choose, recipient ab1).
+const MOVE = { actor: 'A', type: 'choose', target: 'ae20' } as unknown as NeutralAction;
 const STOP = { actor: 'A', type: 'confirm', value: false } as unknown as NeutralAction;
 
 type Moved = Extract<NeutralEvent, { kind: 'moved' }>;
@@ -82,13 +83,15 @@ describe('TA-700 Scramble Switch ssp-186: the switch is projected (and its legs 
     expect(A.bench[0].energy.map(c => c.iid)).withContext('the Energy rode with the old Active to the Bench').toEqual(['ae20']);
   });
 
-  it('the pending offers moveEnergy {ae20, source a1, target ab1} and the stop, not a choose over A.active [TA-700 ssp-186]', () => {
+  // TA-786 / SR-6: the one destination is the new Active, so the Energy is offered alone with recipient ab1 (not the
+  // moveEnergy triple, and not TA-700's old choose addressed on A.active with no recipient).
+  it('the pending offers choose {ae20, recipient ab1} and the stop, no moveEnergy [TA-700 ssp-186] [TA-786 ssp-186]', () => {
     const res = step(board(), [PLAY, PROMOTE]);
-    const actions = (res.pending?.legalActions ?? []) as Array<{ type: string; card?: string; source?: string; target?: string; value?: boolean }>;
-    expect(actions.filter(a => a.type === 'moveEnergy').map(a => ({ card: a.card, source: a.source, target: a.target })))
-      .toEqual([{ card: 'ae20', source: 'a1', target: 'ab1' }]);
+    const actions = (res.pending?.legalActions ?? []) as Array<{ type: string; target?: string; recipient?: string; value?: boolean }>;
+    expect(actions.filter(a => a.type === 'choose').map(a => ({ target: a.target, recipient: a.recipient })))
+      .toEqual([{ target: 'ae20', recipient: 'ab1' }]);
     expect(actions.some(a => a.type === 'confirm' && a.value === false)).withContext('"any amount" includes none').toBe(true);
-    expect(actions.some(a => a.type === 'choose')).toBe(false);
+    expect(actions.some(a => a.type === 'moveEnergy')).toBe(false);
   });
 
   it('the switch\'s moved legs are emitted at the pending: ab1 bench -> active, a1 active -> bench, ae20 riding active:a1 -> bench:a1 (B.81) [TA-700 ssp-186]', () => {
@@ -102,7 +105,7 @@ describe('TA-700 Scramble Switch ssp-186: the switch is projected (and its legs 
     const res = step(board(), [PLAY, PROMOTE, MOVE]);
     expect(res.status).toBe('awaitingAction');
     expect(res.pending?.actor).toBe('A');
-    expect((res.pending?.legalActions ?? []).some(a => a.type === 'moveEnergy')).toBe(false);
+    expect((res.pending?.legalActions ?? []).some(a => a.type === 'moveEnergy' || a.type === 'choose')).toBe(false);
     const A = res.state.players.A;
     expect(A.active?.stack[0].iid).toBe('ab1');
     expect(A.active?.energy.map(c => c.iid)).toEqual(['ae20']);

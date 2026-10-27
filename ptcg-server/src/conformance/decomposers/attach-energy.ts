@@ -127,7 +127,8 @@ function candidatePairs(prompt: AttachEnergyPrompt, as: Assign[], ctx: IidContex
  *  - TA-770 / B.121 (owner 2026-10-23): a forced single-card attach over the card already picked (Waitress asc-215,
  *    TA-386's prompt over the chosen card) asks only the Pokémon: `single`, choose {target} (op: attach, CF-70).
  *  - TA-772 / B.116 (owner 2026-10-23): every candidate card has the same single legal target: `collapsed`, the card
- *    alone as choose {target: card} (op: attach); a pair there is not offered (invalidAction).
+ *    alone as choose {target: card} (op: attach); a pair there is not offered (invalidAction). TA-786 / SR-6: a move
+ *    of an Energy already on a Pokémon too (the moveEnergy triple is not offered).
  */
 /**
  * The prompt is raised over a card-local list holding the card(s) already picked (Waitress's `chosen` list, TA-386), not
@@ -238,9 +239,10 @@ function planStep(prompt: AttachEnergyPrompt, picks: WirePick[], ctx: IidContext
   // last Pokémon of a "for each" iteration, the fixed Pokémon of a same-target attach). The target is not a decision:
   // the card is asked alone, choose {target: card} with op: attach (CF-70), and it goes to that Pokémon. Pairs (CF-5)
   // stay whenever any candidate has two or more legal targets. Keyed on the step's own target set, not the card, so
-  // every card that reaches AttachEnergyPrompt gets it. A relocation (CF-34 moveEnergy, a candidate already on a
-  // Pokémon) is not an attach and keeps its pairs.
-  if (pairs.length > 0 && targets === 1 && pairs.every(c => c.sourceIid === undefined)) {
+  // every card that reaches AttachEnergyPrompt gets it. TA-786 / SR-6: a relocation (CF-34, a candidate already on a
+  // Pokémon: Power Cyclone obf-085 with one Benched Pokémon) is the same shape; its source is the prompt's own card
+  // list, fixed and not asked, so the card offer replaces the moveEnergy triple there too.
+  if (pairs.length > 0 && targets === 1) {
     return { mode: 'collapsed', pairs, canStop };
   }
   return { mode: 'pairs', pairs, canStop };

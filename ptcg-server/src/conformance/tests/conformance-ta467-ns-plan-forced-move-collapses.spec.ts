@@ -41,7 +41,10 @@ function board(benchEnergy: number): NeutralState {
     phase: 'main', outcome: 'ongoing', stadium: null, players: { A, B } };
 }
 const play = { actor: 'A', type: 'playSupporter', card: 'np' } as unknown as NeutralAction;
-const hasMove = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []).some(a => a.type === 'moveEnergy');
+// TA-786 / SR-6: N's Plan's one destination is the Active, so an Energy pick is offered as choose {target: Energy,
+// recipient}; the moveEnergy triple only while two or more destinations are legal. Either is a move pick.
+const hasMove = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []).some(a => a.type === 'moveEnergy'
+  || (a.type === 'choose' && (a as { recipient?: string }).recipient !== undefined));
 
 describe('TA-467 N\'s Plan forced single move collapses (CF-14)', () => {
   it('one Energy on one bencher: the move is applied, no moveEnergy pending [TA-467 blk-083]', () => {
