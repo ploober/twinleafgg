@@ -6484,7 +6484,7 @@
       "file": "set-mega-evolution/mega-venusaur-ex.ts",
       "signatures": [
         "  if (!pokemonWithEnergy || pokemonInPlay < 2) {",
-        "{ min: 1, allowCancel: false },"
+        "{ min: 1, max: 1, allowCancel: false },"
       ],
       "note": "TA-213/B.27 — an activated Ability whose prescribed action has NO legal operand on the board was still offered, because legal-actions.ts probes by throw-only dry run and these cards did not throw. Rulings #49/#75/#2109 (public knowledge that the effect has no legal target), #1043 (a heal needs at least 10 damage to heal), #2306 (an Ability that \"won't do anything\" may not be used). Removing the guard reverts it. Here: the old guard checked only for a SOURCE; with one Pokemon in play there is no DESTINATION to move the Energy to.",
       "fixes": [
@@ -14657,6 +14657,36 @@
       "note": "TA-786 (2026-10-26): An Energy move whose every candidate Energy has the same single legal destination asks only the Energy, choose {target: ",
       "fixes": [
         "FX-0569"
+      ]
+    },
+    {
+      "file": "set-obsidian-flames/poppy.ts",
+      "signatures": [
+        "        if (others.length === 1) {"
+      ],
+      "note": "TA-787 (2026-10-26): Poppy with only one other Pokémon in play moves up to 2 Energy from the chosen source in one MoveEnergyPrompt, so each E",
+      "fixes": [
+        "FX-0570"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/mega-venusaur-ex.ts",
+      "signatures": [
+        "      // TA-788: \"Move a Basic [Grass] Energy\" — one per use; \"as often as you like\" is how more are moved."
+      ],
+      "note": "TA-788 (2026-10-26): Mega Venusaur ex Solar Transfer moves one Basic [Grass] Energy per use (MoveEnergyPrompt max 1); more are moved by using",
+      "fixes": [
+        "FX-0571"
+      ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "signatures": [
+        "            if (s.list.tools.length === 0 && trainerProbeAccepts(state, player, card, s)) {"
+      ],
+      "note": "TA-789 (2026-10-26): The Trainer menu probes a Tool onto each target it could be attached to; probed onto the Active alone, a Tool was withhe",
+      "fixes": [
+        "FX-0572"
       ]
     }
   ]
