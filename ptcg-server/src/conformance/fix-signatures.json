@@ -14168,17 +14168,6 @@
       ]
     },
     {
-      "file": "set-majestic-dawn/aipom.ts",
-      "signatures": [
-        "    if (AFTER_ATTACK(effect, 1, this)) {\n      PUT_THIS_POKEMON_AND_ALL_ATTACHED_CARDS_INTO_YOUR_HAND"
-      ],
-      "note": "2026-10-22 merge: upstream added Aipom MD calling the AfterAttackEffect prefab from WAS_ATTACK_USED; guarded by AFTER_ATTACK like every other caller (TA-128).",
-      "state": "guarding",
-      "fixes": [
-        "FX-0532"
-      ]
-    },
-    {
       "file": "game/store/effect-reducers/retreat-effect.ts",
       "signatures": [
         "    { min: 1, max: 1, allowCancel: true, blocked: [] }\n  );\n  prompt.skipSwitchLog = true;"
