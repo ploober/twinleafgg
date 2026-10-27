@@ -14733,6 +14733,16 @@
         "FX-0572"
       ],
       "state": "ours-only"
+    },
+    {
+      "file": "game/store/prefabs/shared-attack-prefabs.ts",
+      "signatures": [
+        "effect.afterDamageMoves.push(() => {"
+      ],
+      "note": "TA-790 (2026-10-26): Bug Out's discard and shuffle-back wait for the damage: the revealed cards are held in transit and placed through Attack",
+      "fixes": [
+        "FX-0573"
+      ]
     }
   ]
 }
