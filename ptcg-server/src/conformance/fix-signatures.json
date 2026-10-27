@@ -2387,7 +2387,10 @@
         "public hp: number = 100;"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "absorbed",
+      "fixes": [
+        "FX-0205"
+      ]
     },
     {
       "file": "set-ex-ruby-and-sapphire/grovyle.ts",
@@ -2467,7 +2470,10 @@
         "name: 'Cursed Alloy',"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "absorbed",
+      "fixes": [
+        "FX-0150"
+      ]
     },
     {
       "file": "set-majestic-dawn/darkrai.ts",
@@ -3612,7 +3618,7 @@
         "public evolvesFrom = 'Magikarp';"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-22 merge: upstream c51047b6c moved the class to set-team-rocket (TR 8; CEL now a reprint of it); the evolvesFrom line moved with it — retargeted, not reapplied",
-      "state": "guarding",
+      "state": "absorbed",
       "fixes": [
         "FX-0532"
       ]
@@ -4389,7 +4395,7 @@
         "new PlaceDamageCountersEffect(player, cardList, 20, this, this.powers[0]),"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
-      "state": "absorbed",
+      "state": "guarding",
       "fixes": [
         "FX-0440"
       ]
@@ -6949,7 +6955,7 @@
         "new PlaceDamageCountersEffect( abilityOwner, effect.target, 20, this, this.powers[0], ),",
         "return MOVE_AN_ENERGY_FROM_OPPONENTS_ACTIVE_TO_THEIR_BENCH_CHOOSE_FIRST(store, state, effect, this);"
       ],
-      "state": "absorbed",
+      "state": "guarding",
       "note": "retargeted 2026-10-06 (B.89 / TA-655: the signed line evolved into the Step-D call) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
         "FX-0440"
@@ -7034,7 +7040,10 @@
       "absentSignatures": [
         "name: 'Super Psy',"
       ],
-      "state": "guarding"
+      "state": "absorbed",
+      "fixes": [
+        "FX-0278"
+      ]
     },
     {
       "file": "set-chaos-rising/keldeo.ts",
@@ -7821,7 +7830,7 @@
       "fixes": [
         "FX-0032"
       ],
-      "state": "absorbed"
+      "state": "guarding"
     },
     {
       "file": "set-perfect-order/aurorus.ts",
@@ -7920,7 +7929,7 @@
       "fixes": [
         "FX-0029"
       ],
-      "state": "absorbed"
+      "state": "guarding"
     },
     {
       "file": "set-black-bolt-white-flare/antique-plume-fossil.ts",
@@ -8778,7 +8787,7 @@
       "fixes": [
         "FX-0299"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-black-bolt-white-flare/emboar.ts",
@@ -9055,7 +9064,7 @@
       "fixes": [
         "FX-0321"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-chaos-rising/phantump.ts",
@@ -9910,7 +9919,7 @@
       "fixes": [
         "FX-0355"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-mega-evolution/kirlia.ts",
@@ -9987,7 +9996,7 @@
       "fixes": [
         "FX-0360"
       ],
-      "state": "guarding"
+      "state": "absorbed"
     },
     {
       "file": "set-pokemon-151/weezing.ts",
@@ -13795,7 +13804,8 @@
       "note": "TA-735 (2026-10-21): Ho-Oh cri-010, Kingdra ex sfa-012, Duskull pre-035 put the revived Pokemon onto the Bench via PlayPokemonFromDiscardEffe",
       "fixes": [
         "FX-0521"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-shrouded-fable/kingdra-ex.ts",
@@ -13827,7 +13837,8 @@
       "note": "TA-736 (2026-10-21): events: a Pokemon that enters play already damaged emits damaged for that damage [TA-736]",
       "fixes": [
         "FX-0522"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "game/store/prefabs/prefabs.ts",
@@ -13837,7 +13848,8 @@
       "note": "TA-737 (2026-10-21): Bench-entry Abilities obey Ability locks: IS_ABILITY_BLOCKED judges the card being played where it is going (the store r",
       "fixes": [
         "FX-0523"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-scarlet-and-violet/hawlucha.ts",
@@ -13847,7 +13859,8 @@
       "note": "TA-737 (FX-0523): Hawlucha svi-118 asks the lock before offering; bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0523"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/legacy-energy.ts",
@@ -13857,7 +13870,8 @@
       "note": "TA-741 (2026-10-21): Legacy Energy twm-167 applies only to a Knock Out by damage from an attack (attackDamagedOnTurn), not to an effect Knock",
       "fixes": [
         "FX-0524"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-chaos-rising/delphox.ts",
@@ -13867,7 +13881,8 @@
       "note": "TA-738 (2026-10-21): 'For each Energy attached' counts Energy provided (StateUtils.getProvidesUnitCount), not provides.length: Team Rocket's ",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "absorbed"
     },
     {
       "file": "set-phantasmal-flames/jumbo-ice.ts",
@@ -13877,7 +13892,8 @@
       "note": "TA-739 (2026-10-21): Jumbo Ice Cream pfl-091 / cri-109 counts the Energy provided (Wild Growth: 2 Basic Grass = 4) in canPlay and in the heal | 2026-10-22 merge (take upstream, re-apply ours): re-applied onto upstream's refactored code; signature retargeted",
       "fixes": [
         "FX-0526"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-perfect-order/rosas-encouragement.ts",
@@ -13887,7 +13903,8 @@
       "note": "TA-742 (2026-10-21): Rosa's Encouragement por-084 restricts the attach TARGET to Stage 2 (blockedTo), not the Energy cards; 'up to 2' on a Tr",
       "fixes": [
         "FX-0527"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-scarlet-and-violet/magnezone-ex.ts",
@@ -13897,7 +13914,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-surging-sparks/rotom.ts",
@@ -13907,7 +13925,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-temporal-forces/rabsca.ts",
@@ -13917,7 +13936,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/alakazam.ts",
@@ -13927,7 +13947,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/kadabra.ts",
@@ -13937,7 +13958,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/phione.ts",
@@ -13947,7 +13969,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-chaos-rising/deoxys.ts",
@@ -13957,7 +13980,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/tinkaton.ts",
@@ -13967,7 +13991,8 @@
       "note": "TA-738 (FX-0525): counts Energy provided (getProvidesUnitCount); bulk-registered 2026-10-21; validated present@HEAD absent@merge-base",
       "fixes": [
         "FX-0525"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-journey-together/hops-dubwool.ts",
@@ -13988,7 +14013,8 @@
       "note": "TA-740 (2026-10-22): 'Move N Energy' counts Energy, not cards (B.114): MOVE_ENERGY_FROM_THIS_POKEMON_TO_BENCH_CHOOSE_FIRST asks between the f",
       "fixes": [
         "FX-0529"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-paldean-fates/moonlight-hill.ts",
@@ -13998,7 +14024,8 @@
       "note": "TA-744 (2026-10-22): Moonlit Hill paf-081 discards the only Basic Psychic Energy in hand without a pick, then heals (CF-14) [TA-744]",
       "fixes": [
         "FX-0530"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-paldea-evolved/great-ball.ts",
@@ -14011,7 +14038,8 @@
       "note": "TA-745 (2026-10-22): Great Ball pal-183 stays resolving until its shuffle is done, then goes to the discard pile (B.80) [TA-745]",
       "fixes": [
         "FX-0531"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-destined-rivals/spikemuth-gym.ts",
@@ -14208,7 +14236,8 @@
       "note": "TA-746 (2026-10-22): An attack's damage counters are not an effect of an Ability: PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES treats a PlaceDamage",
       "fixes": [
         "FX-0533"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/lucian.ts",
@@ -14221,7 +14250,8 @@
       "note": "TA-748 (2026-10-22): Lucian twm-157 shuffles each hand through a system shuffle (Iono's TA-608 shape: ShuffleDeckPrompt bottom segment per ha",
       "fixes": [
         "FX-0534"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-phantasmal-flames/aipom.ts",
@@ -14234,7 +14264,8 @@
       "note": "TA-749 (2026-10-23): Knock Off asc-134 and Astonish pfl-078 / twm-051 pick the random hand card through a secret ChooseCardsPrompt (a system ",
       "fixes": [
         "FX-0536"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-surging-sparks/quaquaval.ts",
@@ -14247,7 +14278,8 @@
       "note": "TA-750 (2026-10-23): Up-Tempo ssp-052's cost pick uses CHOOSE_CARD_TO_PUT_ON_BOTTOM (TA-704's message), so it is offered as choose {op: moveT",
       "fixes": [
         "FX-0537"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-scarlet-and-violet/team-star-grunt.ts",
@@ -14260,7 +14292,8 @@
       "note": "TA-756 (2026-10-23): Team Star Grunt svi-195 asks with CHOOSE_CARD_TO_DECK and cannot be cancelled: the Energy it puts on top of the deck is ",
       "fixes": [
         "FX-0538"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-ascended-heroes/mightyena.ts",
@@ -14270,7 +14303,8 @@
       "note": "TA-754 (2026-10-23): Kick Away asc-129 (Mightyena) and Push Down asc-146 (Pawniard) switch the opponent's Active out after the damage (AFTER_",
       "fixes": [
         "FX-0540"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-ascended-heroes/pawniard.ts",
@@ -14280,7 +14314,8 @@
       "note": "TA-754 (2026-10-23): Push Down asc-146 switches the opponent's Active out after the damage (AFTER_ATTACK)",
       "fixes": [
         "FX-0540"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/cramorant.ts",
@@ -14290,7 +14325,8 @@
       "note": "TA-755 (2026-10-23): Spit Shot twm-058 (Cramorant) asks the target first and discards its Energy after the damage (B.89; TA-613's Sonic Rippe",
       "fixes": [
         "FX-0541"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-journey-together/hops-silicobra.ts",
@@ -14300,7 +14336,8 @@
       "note": "TA-757 (2026-10-23): Turf Maker jtg-086 (Hop's Silicobra) shuffles the deck after showing the Stadium it found; the found branch returned bef",
       "fixes": [
         "FX-0542"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-pokemon-151/eevee.ts",
@@ -14310,7 +14347,8 @@
       "note": "TA-758 (2026-10-23): Colorful Friends mew-133 (Eevee) shows its picks to the opponent before they go to the hand, and Paw-cket Pilfer dri-149",
       "fixes": [
         "FX-0543"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-destined-rivals/team-rockets-meowth.ts",
@@ -14320,7 +14358,8 @@
       "note": "TA-758 (2026-10-23): Paw-cket Pilfer shows the random card to the attacker before it is shuffled into the deck",
       "fixes": [
         "FX-0543"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-journey-together/lycanroc.ts",
@@ -14330,7 +14369,8 @@
       "note": "TA-759 (2026-10-23): Five Abilities are not offered when their operand is empty in public view (B.27 / B.29 rule 1): Spike-Clad jtg-085 / jtg",
       "fixes": [
         "FX-0544"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-pitch-black/primarina.ts",
@@ -14340,7 +14380,8 @@
       "note": "TA-759 (2026-10-23): Enriching Melody is not offered with none of your Pokémon damaged (B.29 rule 1)",
       "fixes": [
         "FX-0544"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-temporal-forces/whimsicott.ts",
@@ -14350,7 +14391,8 @@
       "note": "TA-759 (2026-10-23): Wafting Heal is not offered with the Active undamaged (B.29 rule 1)",
       "fixes": [
         "FX-0544"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-shrouded-fable/bloodmoon-ursaluna.ts",
@@ -14360,7 +14402,8 @@
       "note": "TA-759 (2026-10-23): Battle-Hardened is not offered with no Basic [F] Energy in hand (B.29 rule 1)",
       "fixes": [
         "FX-0544"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-scarlet-and-violet/blissey.ts",
@@ -14370,7 +14413,8 @@
       "note": "TA-759 (2026-10-23): Busybody Nurse cannot be used with no Special Condition on the Active (B.29 rule 1)",
       "fixes": [
         "FX-0544"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-paradox-rift/pansage.ts",
@@ -14383,7 +14427,8 @@
       "note": "TA-761 (2026-10-23): Call for Family par-004 (Pansage) and twm-036 (Litwick) offer the stop at the search for a Basic Pokémon (min 0; #903, a",
       "fixes": [
         "FX-0545"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/litwick.ts",
@@ -14393,7 +14438,8 @@
       "note": "TA-761 (2026-10-23): Call for Family twm-036 offers the stop at its search for a Basic Pokémon (#903)",
       "fixes": [
         "FX-0545"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
@@ -14403,7 +14449,8 @@
       "note": "TA-763 (2026-10-23): Biting Spree dri-122 / dri-217 / dri-234 / dri-242 (Team Rocket's Crobat ex) picks exactly 2 of the opponent's Pokémon (",
       "fixes": [
         "FX-0546"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-pitch-black/mega-delphox-ex.ts",
@@ -14416,7 +14463,8 @@
       "note": "TA-764 (2026-10-23): Trick Portal pbl-008 (Mega Delphox ex) offers every Pokémon among the 9 for the Bench, Evolutions included (#1592, #1782",
       "fixes": [
         "FX-0547"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/tyrogue.ts",
@@ -14426,7 +14474,8 @@
       "note": "TA-765 (2026-10-23): Tyrogue meg-071 Pow-Pow Punching has no Energy cost (golden card data: cost []); twinleaf had [C] [TA-765]",
       "fixes": [
         "FX-0548"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/hariyama.ts",
@@ -14436,7 +14485,8 @@
       "note": "TA-766 (2026-10-23): Heave-Ho Catcher meg-073 (Hariyama) and Cast-Off Shell meg-017 / meg-137 (Ninjask) mark the accepted evolve-time Ability",
       "fixes": [
         "FX-0549"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/ninjask.ts",
@@ -14446,7 +14496,8 @@
       "note": "TA-766 (2026-10-23): Cast-Off Shell marks the accepted use (ABILITY_USED)",
       "fixes": [
         "FX-0549"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-temporal-forces/iron-thorns.ts",
@@ -14456,7 +14507,8 @@
       "note": "TA-768 (2026-10-23): Destructo-Press tef-062 (Iron Thorns) does its damage before it discards the Future cards and shuffles the rest back (B.",
       "fixes": [
         "FX-0551"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "conformance/decomposers/attach-energy.ts",
@@ -14466,7 +14518,8 @@
       "note": "TA-772 (2026-10-24): An in-effect attach whose every candidate card has the same single legal target asks the card alone, choose {target: car",
       "fixes": [
         "FX-0553"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "conformance/events.ts",
@@ -14476,7 +14529,8 @@
       "note": "TA-774, TA-775 (2026-10-25): Counter moves emit countersMoved {source, target, hp, landed} (no player), one per (source, target) per dispatch, never ",
       "fixes": [
         "FX-0554"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "conformance/decomposers/attach-energy.ts",
@@ -14486,7 +14540,8 @@
       "note": "TA-769 (2026-10-25): Several cards to ONE Pokémon (AttachEnergyPrompt sameTarget, max > 1) ask every card first, with the stop in the same pe",
       "fixes": [
         "FX-0555"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "conformance/events.ts",
@@ -14496,7 +14551,8 @@
       "note": "TA-777 (2026-10-25): The eight card-naming event kinds carry no player: the side is the owner of the card they name (B.134, owner 2026-10-25,",
       "fixes": [
         "FX-0556"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "set-pitch-black/miraidon.ts",
@@ -14506,7 +14562,8 @@
       "note": "TA-776 (2026-10-25): Photon Cord pbl-028 moves both Energy to ONE Benched Pokémon: its AttachEnergyPrompt gains sameTarget, so a split is ref",
       "fixes": [
         "FX-0557"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-obsidian-flames/poppy.ts",
@@ -14516,7 +14573,8 @@
       "note": "TA-778 (2026-10-26): Poppy asks the source Pokémon, then 1..2 of its Energy (a single Energy forced), then another Pokémon, instead of (Energ",
       "fixes": [
         "FX-0558"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-paradox-rift/chi-yu.ts",
@@ -14526,7 +14584,8 @@
       "note": "TA-779 (2026-10-26): Magnetic Charge pal-065 and Flare Bringer par-029 / svp-057 send both Energy to ONE Pokémon (AttachEnergyPrompt sameTarg",
       "fixes": [
         "FX-0559"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-chaos-rising/philippe.ts",
@@ -14536,7 +14595,8 @@
       "note": "TA-780 (2026-10-26): Philippe cri-079 / cri-110 asks 1..2 Basic [M] Energy from the discard first (a Trainer's 'up to' is 1..2), then one [M]",
       "fixes": [
         "FX-0560"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-destined-rivals/team-rockets-persian-ex.ts",
@@ -14546,7 +14606,8 @@
       "note": "TA-762 (2026-10-26): Haughty Order dri-150 / dri-219 / svp-218 offers the stop beside the Pokémon to copy from (ChooseAttackPrompt mayDecline",
       "fixes": [
         "FX-0561"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-twilight-masquerade/farfetchd.ts",
@@ -14556,7 +14617,8 @@
       "note": "TA-760 (2026-10-26): Impromptu Carrier twm-132 asks its 'you may search' first (ConfirmPrompt): false searches and shuffles nothing; true sea",
       "fixes": [
         "FX-0562"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-stellar-crown/grand-tree.ts",
@@ -14566,7 +14628,8 @@
       "note": "TA-781 (2026-10-26): Grand Tree scr-136 searches for the Stage 1 first (min 0: it may find nothing), then asks which Pokémon evolves only whe",
       "fixes": [
         "FX-0563"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "game/store/prefabs/copy-attack-prefabs.ts",
@@ -14576,7 +14639,8 @@
       "note": "TA-762 (2026-10-26): Haughty Order runs the copy as one generator (exported) and a printed you-may-choose offers the decline (mayDecline)",
       "fixes": [
         "FX-0561"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "game/store/prompts/choose-attack-prompt.ts",
@@ -14586,7 +14650,8 @@
       "note": "TA-762 (2026-10-26): Haughty Order runs the copy as one generator (exported) and a printed you-may-choose offers the decline (mayDecline)",
       "fixes": [
         "FX-0561"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -14596,7 +14661,8 @@
       "note": "TA-782 (2026-10-26): When every player is prized out in one Knock Out window, the owed promotions (non-turn player first) are asked before th",
       "fixes": [
         "FX-0564"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "game/store/store.ts",
@@ -14606,7 +14672,8 @@
       "note": "TA-444 (2026-10-26): A Pokémon a Knock Out reaction Knocks Out while the set is still being ordered joins it: its reactions are added to the ",
       "fixes": [
         "FX-0566"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -14616,7 +14683,8 @@
       "note": "TA-444 (2026-10-26): B.51 MERGE: the sweep records a reaction-created victim so it joins the set being ordered",
       "fixes": [
         "FX-0566"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-pitch-black/banette.ts",
@@ -14626,7 +14694,8 @@
       "note": "TA-784 (2026-10-26): An attack's 'You may search your deck' asks the may first, before the damage; on yes the search runs after the damage (a",
       "fixes": [
         "FX-0567"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/gumshoos.ts",
@@ -14636,7 +14705,8 @@
       "note": "TA-785 (2026-10-26): Evidence Gathering meg-110's switch with the top card is not a draw: the top card is moved by identity, not as a positio",
       "fixes": [
         "FX-0568"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "conformance/decomposers/move-energy.ts",
@@ -14646,7 +14716,8 @@
       "note": "TA-786 (2026-10-26): An Energy move whose every candidate Energy has the same single legal destination asks only the Energy, choose {target: ",
       "fixes": [
         "FX-0569"
-      ]
+      ],
+      "state": "ours-only"
     },
     {
       "file": "set-obsidian-flames/poppy.ts",
@@ -14656,7 +14727,8 @@
       "note": "TA-787 (2026-10-26): Poppy with only one other Pokémon in play moves up to 2 Energy from the chosen source in one MoveEnergyPrompt, so each E",
       "fixes": [
         "FX-0570"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "set-mega-evolution/mega-venusaur-ex.ts",
@@ -14666,7 +14738,8 @@
       "note": "TA-788 (2026-10-26): Mega Venusaur ex Solar Transfer moves one Basic [Grass] Energy per use (MoveEnergyPrompt max 1); more are moved by using",
       "fixes": [
         "FX-0571"
-      ]
+      ],
+      "state": "guarding"
     },
     {
       "file": "conformance/legal-actions.ts",
@@ -14676,7 +14749,8 @@
       "note": "TA-789 (2026-10-26): The Trainer menu probes a Tool onto each target it could be attached to; probed onto the Active alone, a Tool was withhe",
       "fixes": [
         "FX-0572"
-      ]
+      ],
+      "state": "ours-only"
     }
   ]
 }
