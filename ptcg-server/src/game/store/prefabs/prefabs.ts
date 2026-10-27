@@ -1176,6 +1176,20 @@ export interface TakeXPrizesOptions extends TakeSpecificPrizesOptions {
   };
 }
 
+/**
+ * Credit `count` Prize cards to the player's per-turn tally (`prizesTakenThisTurn`, rotated into `prizesTakenLastTurn`
+ * when that player's turn ends). Only a take made during the taker's OWN turn counts: a Prize taken during the opponent's
+ * turn (their Pokémon Knocked Out by its own recoil) or at Pokémon Checkup, which is between turns, was not taken
+ * "during their last turn" (compendium #1184; Okidogi asc-122 Settle the Score and every other reader of the tally).
+ * The cumulative `prizesTaken` is not affected.
+ */
+export function COUNT_PRIZE_TAKEN_THIS_TURN(state: State, player: Player, count: number): void {
+  if (state.phase === GamePhase.BETWEEN_TURNS || state.players[state.activePlayer] !== player) {
+    return;
+  }
+  player.prizesTakenThisTurn += count;
+}
+
 export function TAKE_SPECIFIC_PRIZES(
   store: StoreLike,
   state: State,
@@ -1221,7 +1235,7 @@ export function TAKE_SPECIFIC_PRIZES(
         if (destination === player.hand) {
           // If the destination is the hand, we've "taken" a prize
           player.prizesTaken += 1;
-          player.prizesTakenThisTurn += 1;
+          COUNT_PRIZE_TAKEN_THIS_TURN(state, player, 1);
           prizesTakenCount += 1;
         }
       }

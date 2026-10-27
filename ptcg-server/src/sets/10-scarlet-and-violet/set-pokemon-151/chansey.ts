@@ -4,7 +4,7 @@ import { StoreLike, State, GameMessage, PowerType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { DrawPrizesEffect } from '../../../game/store/effects/game-effects';
 import { CoinFlipEffect } from '../../../game/store/effects/play-card-effects';
-import {CONFIRMATION_PROMPT, GET_PLAYER_BENCH_SLOTS, IS_ABILITY_BLOCKED, TAKE_SPECIFIC_PRIZES, TAKE_X_PRIZES, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {CONFIRMATION_PROMPT, GET_PLAYER_BENCH_SLOTS, IS_ABILITY_BLOCKED, TAKE_SPECIFIC_PRIZES, TAKE_X_PRIZES, MOVE_CARDS, COUNT_PRIZE_TAKEN_THIS_TURN } from '../../../game/store/prefabs/prefabs';
 import { CardList } from '../../../game/store/state/card-list';
 import { GameStatsTracker } from '../../../game/store/game-stats-tracker';
 
@@ -86,7 +86,7 @@ export class Chansey extends PokemonCard {
     // open. It counts as taken now, once, whichever way the reaction goes (the card: "this still counts as a
     // Prize card taken"). It used to be counted only when it landed, so the open reaction read 0 taken (TA-592).
     player.prizesTaken += 1;
-    player.prizesTakenThisTurn += 1;
+    COUNT_PRIZE_TAKEN_THIS_TURN(state, player, 1);
     GameStatsTracker.trackPrizeTaken(player, 1);
 
     // Ask player if they want to use the ability
