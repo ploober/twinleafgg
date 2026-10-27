@@ -14753,6 +14753,16 @@
       "fixes": [
         "FX-0574"
       ]
+    },
+    {
+      "file": "game/store/prefabs/prefabs.ts",
+      "signatures": [
+        "export function COUNT_PRIZE_TAKEN_THIS_TURN(state: State, player: Player, count: number): void {"
+      ],
+      "note": "TA-792 (2026-10-27): A Prize counts toward the per-turn tally only when the taker is the turn player and it is not Pokémon Checkup: Okidogi's",
+      "fixes": [
+        "FX-0575"
+      ]
     }
   ]
 }
