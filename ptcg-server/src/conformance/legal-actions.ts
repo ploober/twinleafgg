@@ -150,11 +150,15 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
       // Final gate: dry-run on a clone, the Trainer analog of `attackProbeAccepts` / TA-14's ability
       // probe. Cards whose play gate lives as a `throw` inside their own reduceEffect are invisible to
       // every static check above. TA-248.
-      if (!trainerProbeAccepts(state, player, card)) { continue; }
+      // TA-789: a Tool's probe needs its target. Probed onto the Active alone, a Tool was withheld from every Benched
+      // Pokemon as soon as the Active held one (one Tool per Pokemon), so each target is probed on its own.
+      if (card.trainerType !== TrainerType.TOOL && !trainerProbeAccepts(state, player, card)) { continue; }
       switch (card.trainerType) {
         case TrainerType.TOOL:
           for (const s of own) {
-            if (s.list.tools.length === 0) { out.push({ type: 'attachTool', card: iid, target: s.iid }); }
+            if (s.list.tools.length === 0 && trainerProbeAccepts(state, player, card, s)) {
+              out.push({ type: 'attachTool', card: iid, target: s.iid });
+            }
           }
           break;
         case TrainerType.ITEM:
@@ -442,7 +446,8 @@ function attachEnergyProbeAccepts(state: State, player: Player, card: EnergyCard
   }
 }
 
-function trainerProbeAccepts(state: State, player: Player, card: TrainerCard): boolean {
+/** TA-789: a Tool is probed onto the slot it would be attached to (`slot`); every other Trainer onto the Active. */
+function trainerProbeAccepts(state: State, player: Player, card: TrainerCard, slot?: OwnSlot): boolean {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
   const handler = new ConformanceStoreHandler();
@@ -450,7 +455,9 @@ function trainerProbeAccepts(state: State, player: Player, card: TrainerCard): b
   handler.setStore(probe);
   probe.state = deepClone(state, [Card]);
   const cloned = probe.state.players[state.players.indexOf(player)];
-  const target = { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 };
+  const target = slot === undefined || slot.benchIndex === null
+    ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
+    : { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index: slot.benchIndex };
   try {
     probe.dispatchProbe(new PlayCardAction(cloned.id, handIndex, target));
     return true;
