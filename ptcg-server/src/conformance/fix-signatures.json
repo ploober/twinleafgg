@@ -7037,9 +7037,6 @@
         "public setNumber = '86';",
         "name: 'Super Psy Bolt',"
       ],
-      "absentSignatures": [
-        "name: 'Super Psy',"
-      ],
       "state": "absorbed",
       "fixes": [
         "FX-0278"
@@ -7823,9 +7820,6 @@
         "new PlaceDamageCountersEffect(player, target, 20, this, this.powers[0]),",
         "{ min: count, max: count, allowCancel: false, operation: 'placeCounters' },"
       ],
-      "absentSignatures": [
-        "target.damage += 20;"
-      ],
       "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it) | 2026-10-23 TA-763 extends it: the pick is exactly 2 (as many as the opponent has, up to 2), so the signature moves to the min/max count line.",
       "fixes": [
         "FX-0032"
@@ -7864,9 +7858,6 @@
       "file": "set-stellar-crown/cradily.ts",
       "signatures": [
         "if ([SpecialCondition.BURNED, SpecialCondition.CONFUSED, SpecialCondition.POISONED].every(c => already.includes(c))) {"
-      ],
-      "absentSignatures": [
-        "{ message: GameMessage.SPECIAL_CONDITION_ASLEEP, value: SpecialCondition.ASLEEP },"
       ],
       "note": "TA-343 (2026-09-01): Selective Slime withheld when the opponent's Active already carries all three conditions (#2014); the phantom Asleep option removed — the choice is exactly Burned/Confused/Poisoned.",
       "fixes": [
@@ -7907,9 +7898,6 @@
         "&& player.marker.hasMarker(player.DAMAGE_DEALT_MARKER);",
         "effect.source.moveCardsTo(stack, player.hand);"
       ],
-      "absentSignatures": [
-        "if (opponent.marker.hasMarker(opponent.DAMAGE_DEALT_MARKER)) {"
-      ],
       "note": "TA-209 — a PASSIVE ability carried useWhenInPlay:true, putting a no-op `useAbility` in legalActions that rotomancer never offered. Same fix as TA-77/TA-78. Re-adding the flag reverts it.",
       "fixes": [
         "FX-0080"
@@ -7921,9 +7909,6 @@
       "signatures": [
         "new PlaceDamageCountersEffect(player, targets[0], 20, this, this.powers[0]),",
         "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
-      ],
-      "absentSignatures": [
-        "target.damage += 20;"
       ],
       "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
@@ -14031,9 +14016,6 @@
       "file": "set-paldea-evolved/great-ball.ts",
       "signatures": [
         "          MOVE_CARDS(store, state, temp, player.deck, { sourceCard: this });\n        }\n\n        if (chosenCards.length > 0) {"
-      ],
-      "absentSignatures": [
-        "MOVE_CARDS(store, state, player.supporter, player.discard, { cards: [this], sourceCard: this });"
       ],
       "note": "TA-745 (2026-10-22): Great Ball pal-183 stays resolving until its shuffle is done, then goes to the discard pile (B.80) [TA-745]",
       "fixes": [
