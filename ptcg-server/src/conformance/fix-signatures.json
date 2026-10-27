@@ -14743,6 +14743,16 @@
       "fixes": [
         "FX-0573"
       ]
+    },
+    {
+      "file": "set-twilight-masquerade/community-center.ts",
+      "signatures": [
+        "if (cardList.damage > 0 && !IS_STADIUM_EFFECT_BLOCKED(store, state, player, cardList, this)) {"
+      ],
+      "note": "TA-791 (2026-10-27): Community Center is refused, and not offered, when none of the player's Pokémon is damaged: a Stadium whose actions woul",
+      "fixes": [
+        "FX-0574"
+      ]
     }
   ]
 }
