@@ -45,7 +45,7 @@ const settleDamage = (r: ReturnType<typeof step>) => {
 };
 
 describe('Okidogi Settle the Score: only Prizes the opponent took during their own last turn', () => {
-  it('B KOs A\'s Active with an attack on B\'s turn: counted, 140 [okidogi asc-122 on-turn]', () => {
+  it('B KOs A\'s Active with an attack on B\'s turn: counted, 140 [TA-792 asc-122 on-turn]', () => {
     const b = board(4, 'B', side('a', mon('a1', BELLSPROUT, 50), [okidogi()]), side('b', mon('b1', GOTHITA, 0, [GRASS]), [mon('b2', KINGAMBIT)]));
     const pre = [act({ actor: 'B', type: 'declareAttack', source: 'b1', name: 'Pound' }), prize('B'), promote];
     const r0 = step(b, pre);
@@ -53,7 +53,7 @@ describe('Okidogi Settle the Score: only Prizes the opponent took during their o
     const r = step(b, [...pre, settle]);
     expect(settleDamage(r)).toBe(110); // Gothita resists Fighting: 140 - 30
   });
-  it('B took its Prize during A\'s turn (Minccino\'s recoil KO): not counted, 80 [okidogi asc-122 off-turn]', () => {
+  it('B took its Prize during A\'s turn (Minccino\'s recoil KO): not counted, 80 [TA-792 asc-122 off-turn]', () => {
     const b = board(3, 'A', side('a', mon('a1', MINCCINO, 60, [GRASS]), [okidogi()]), side('b', mon('b1', KINGAMBIT), []));
     const pre = [act({ actor: 'A', type: 'declareAttack', source: 'a1', name: 'Take Down' }), prize('B'), promote,
       act({ actor: 'B', type: 'endTurn' })];
@@ -62,7 +62,7 @@ describe('Okidogi Settle the Score: only Prizes the opponent took during their o
     expect(r0.state.players.B.flags.prizesTakenLastTurn).toBe(0);
     expect(settleDamage(step(b, [...pre, settle]))).toBe(80);
   });
-  it('B took its Prize at Pokémon Checkup (A\'s Active Poisoned out): not counted, 80 [okidogi asc-122 checkup]', () => {
+  it('B took its Prize at Pokémon Checkup (A\'s Active Poisoned out): not counted, 80 [TA-792 asc-122 checkup]', () => {
     const a1 = mon('a1', BELLSPROUT, 50);
     a1.conditions = ['poisoned'] as PokemonInPlay['conditions'];
     const b = board(4, 'B', side('a', a1, [okidogi()]), side('b', mon('b1', KINGAMBIT), []));
