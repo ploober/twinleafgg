@@ -24,12 +24,22 @@ export class CommunityCenter extends TrainerCard {
         throw new GameError(GameMessage.CANNOT_USE_STADIUM);
       }
 
+      // TA-791 (B.31, Advanced Rulebook I.B-04): a Stadium can't be used if its actions would not change the game
+      // state, so with none of the player's Pokémon damaged the use is refused (and not offered), as for
+      // Celebratory Fanfare (TA-589).
+      const healable: typeof player.active[] = [];
       player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
-        if (IS_STADIUM_EFFECT_BLOCKED(store, state, player, cardList, this)) {
-          return;
+        if (cardList.damage > 0 && !IS_STADIUM_EFFECT_BLOCKED(store, state, player, cardList, this)) {
+          healable.push(cardList);
         }
-        store.reduceEffect(state, new HealEffect(player, cardList, 10));
       });
+      if (healable.length === 0) {
+        throw new GameError(GameMessage.CANNOT_USE_STADIUM);
+      }
+
+      for (const cardList of healable) {
+        store.reduceEffect(state, new HealEffect(player, cardList, 10));
+      }
     }
 
     return state;
