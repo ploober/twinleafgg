@@ -1,7 +1,7 @@
 import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
 import { GameMessage } from '../../../game/game-message';
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
-import { Stage, CardType } from '../../../game/store/card/card-types';
+import { Stage, CardType, SuperType, EnergyType } from '../../../game/store/card/card-types';
 import { State } from '../../../game/store/state/state';
 
 import { StoreLike } from '../../../game/store/store-like';
@@ -20,7 +20,7 @@ export class Wartortle extends PokemonCard {
     name: 'Free Diving',
     cost: [W],
     damage: 0,
-    text: 'Put up to 3 [W] Energy cards from your discard pile into your hand.'
+    text: 'Put up to 3 Basic [W] Energy cards from your discard pile into your hand.'
   },
   {
     name: 'Spinning Attack',
@@ -43,9 +43,8 @@ export class Wartortle extends PokemonCard {
         player,
         GameMessage.CHOOSE_CARD_TO_HAND,
         player.discard,
-        {
-          cardType: [CardType.WATER]
-        },
+        // TA-793: "Basic [Water] Energy cards" — not a Water Pokémon, not another Energy.
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
         {
           min: 0,
           max: 3
