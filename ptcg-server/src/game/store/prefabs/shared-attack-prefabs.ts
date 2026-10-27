@@ -1,7 +1,8 @@
 import { Card, State, StateUtils, StoreLike } from '../..';
 import { PokemonCard } from '../card/pokemon-card';
 import { AttackEffect } from '../effects/game-effects';
-import { SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from './prefabs';
+import { CardList } from '../state/card-list';
+import { MOVE_CARDS, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK } from './prefabs';
 
 // =============================================================================
 // Bug Out constants
@@ -61,17 +62,24 @@ export function BUG_OUT(
 
   effect.damage = BUG_OUT_DAMAGE_PER_POKEMON * bugOutPokemon.length;
 
-  // TA-557: "Then, shuffle any revealed Pokémon back into your deck. Discard the other cards." EVERY revealed
-  // Pokémon goes back, whether or not it has Bug Out (only the damage counts Bug Out); only non-Pokémon are discarded.
-  const revealedPokemon = revealed.filter(card => card instanceof PokemonCard);
-  revealedPokemon.forEach(card => player.deck.cards.push(card));
-  revealed
-    .filter(card => !revealedPokemon.includes(card))
-    .forEach(card => player.discard.cards.push(card));
-  // TA-397(a): the shuffle's object is the set of revealed Pokemon; with none revealed there is nothing to
-  // shuffle back (§B.33 row 2, #1979).
-  if (revealedPokemon.length > 0) {
-    SHUFFLE_DECK(store, state, player);
-  }
+  // TA-790 / SR-7 (B.119, rulebook step F): the reveal and the count come first, the damage next, then the discard and
+  // the shuffle, as for Destructo-Press. The revealed cards wait in transit (public, B.80) and are placed after the
+  // damage (AttackEffect.afterDamageMoves).
+  const revealedCards = new CardList();
+  revealedCards.cards = revealed;
+
+  effect.afterDamageMoves.push(() => {
+    // TA-557: "Then, shuffle any revealed Pokémon back into your deck. Discard the other cards." EVERY revealed
+    // Pokémon goes back, whether or not it has Bug Out (only the damage counts Bug Out); only non-Pokémon are discarded.
+    const revealedPokemon = revealedCards.cards.filter(card => card instanceof PokemonCard);
+    const others = revealedCards.cards.filter(card => !revealedPokemon.includes(card));
+    MOVE_CARDS(store, state, revealedCards, player.discard, { cards: others });
+    MOVE_CARDS(store, state, revealedCards, player.deck, { cards: revealedPokemon });
+    // TA-397(a): the shuffle's object is the set of revealed Pokemon; with none revealed there is nothing to
+    // shuffle back (§B.33 row 2, #1979).
+    if (revealedPokemon.length > 0) {
+      SHUFFLE_DECK(store, state, player);
+    }
+  });
 }
 
