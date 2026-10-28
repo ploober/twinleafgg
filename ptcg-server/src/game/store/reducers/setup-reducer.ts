@@ -39,6 +39,26 @@ function isStartingPokemonCandidate(state: State, c: Card): boolean {
   return false;
 }
 
+/**
+ * TA-464: a card that is not a Basic Pokémon but "may be put face down as your Active Pokémon / in the Active Spot" when
+ * setting up (Cinderace meg-028, Talonflame sts-096, Luxray crz-044, Snorlax Doll par-175: PLAY_DURING_SETUP) may fill
+ * ONLY the Active Spot — never the Bench.
+ */
+export function isActiveOnlySetupCard(c: Card): boolean {
+  return c.tags.includes(CardTag.PLAY_DURING_SETUP) && !(c instanceof PokemonCard && c.stage === Stage.BASIC);
+}
+
+/** The setup placement pick: the first card chosen goes to the Active Spot, the rest to the Bench (TA-464). */
+class ChooseStartingPokemonsPrompt extends ChooseCardsPrompt {
+  public validate(result: Card[] | null): boolean {
+    if (!super.validate(result)) {
+      return false;
+    }
+    const activePlaced = this.player.active.cards.length > 0;
+    return result === null || result.every((c, i) => !isActiveOnlySetupCard(c) || (i === 0 && !activePlaced));
+  }
+}
+
 /** After sandbox hand edits during setup, recompute Choose Starting Pokémon blocked indices. */
 export function refreshStartingPokemonPromptBlocked(state: State, player: Player): void {
   for (const prompt of state.prompts) {
@@ -95,6 +115,7 @@ function putStartingPokemonsAndPrizes(player: Player, cards: Card[], state: Stat
 
 // Helper: Alternative setup where players start with 13 cards and choose prizes (4 for Pre-Release, 6 otherwise)
 function* alternativeSetupGame(next: Function, store: StoreLike, state: State): IterableIterator<State> {
+  let compensationDrawn: Card[] = [];   // TA-466
   const player = state.players[0];
   const opponent = state.players[1];
   const chooseCardsOptions = { min: 1, max: 6, allowCancel: false };
@@ -215,11 +236,12 @@ function* alternativeSetupGame(next: Function, store: StoreLike, state: State): 
         { allowCancel: false }
       ), choice => {
         const numCardsToDraw = options[choice].value;
+        compensationDrawn = player.deck.cards.slice(0, numCardsToDraw);
         player.deck.moveTo(player.hand, numCardsToDraw);
         next();
       });
       // After drawing, allow player to place any new Basics onto their Bench
-      yield* allowExtraBenchPlacement(player, chooseCardsOptions, state, store, next);
+      yield* allowExtraBenchPlacement(player, compensationDrawn, state, store, next);
     }
   } else if (!playerHasBasic && opponentHasBasic) {
     // Opponent sets up
@@ -261,11 +283,12 @@ function* alternativeSetupGame(next: Function, store: StoreLike, state: State): 
         { allowCancel: false }
       ), choice => {
         const numCardsToDraw = options[choice].value;
+        compensationDrawn = opponent.deck.cards.slice(0, numCardsToDraw);
         opponent.deck.moveTo(opponent.hand, numCardsToDraw);
         next();
       });
       // After drawing, allow opponent to place any new Basics onto their Bench
-      yield* allowExtraBenchPlacement(opponent, chooseCardsOptions, state, store, next);
+      yield* allowExtraBenchPlacement(opponent, compensationDrawn, state, store, next);
     }
   } else {
     // Both have Basics, proceed with normal setup for both
@@ -367,6 +390,41 @@ function* alternativeSetupSinglePlayer(player: Player, chooseCardsOptions: any, 
 }
 
 export function* setupGame(next: Function, store: StoreLike, state: State): IterableIterator<State> {
+  // TA-465: players already placed by accepting a may-starter at the mulligan check (their setupSinglePlayer is skipped).
+  const placed = new Set<Player>();
+  let compensationDrawn: Card[] = [];
+  // TA-465 (#139): a hand whose only starters are "you may put it face down in the Active Spot" cards decides here: put
+  // one in the Active Spot (placed now, with Prizes) or decline — and then the hand has no Basic and mulligans.
+  function* hasStarter(p: Player): Generator<State, boolean, any> {
+    if (placed.has(p)) {
+      return true;
+    }
+    const vanilla = p.hand.cards.some(c => isStartingPokemonCandidate(state, c) && !isActiveOnlySetupCard(c));
+    if (vanilla) {
+      return true;
+    }
+    if (!p.hand.cards.some(c => isActiveOnlySetupCard(c))) {
+      return false;
+    }
+    const blocked: number[] = [];
+    p.hand.cards.forEach((c, index) => {
+      if (!isActiveOnlySetupCard(c)) {
+        blocked.push(index);
+      }
+    });
+    let chosen: Card[] = [];
+    yield store.prompt(state, new ChooseStartingPokemonsPrompt(p, GameMessage.CHOOSE_STARTING_POKEMONS,
+      p.hand, {}, { min: 0, max: 1, allowCancel: false, blocked }), choice => {
+      chosen = choice || [];
+      next();
+    });
+    if (chosen.length === 0) {
+      return false;
+    }
+    putStartingPokemonsAndPrizes(p, chosen, state);
+    placed.add(p);
+    return true;
+  }
   // Check if alternative setup rule is enabled
   if (state.rules.alternativeSetup) {
     return yield* alternativeSetupGame(next, store, state);
@@ -420,8 +478,8 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
   });
 
   // 3. Mulligan logic
-  let playerHasBasic = handHasStartingPokemon(state, player);
-  let opponentHasBasic = handHasStartingPokemon(state, opponent);
+  let playerHasBasic = (yield* hasStarter(player));
+  let opponentHasBasic = (yield* hasStarter(opponent));
 
   // Track mulligan hands for each player
   const playerMulliganHands: Card[][] = [];
@@ -447,14 +505,16 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
       opponent.deck.moveTo(opponent.hand, 7);
       next();
     });
-    playerHasBasic = handHasStartingPokemon(state, player);
-    opponentHasBasic = handHasStartingPokemon(state, opponent);
+    playerHasBasic = (yield* hasStarter(player));
+    opponentHasBasic = (yield* hasStarter(opponent));
   }
 
   // 5. If only one player has a Basic, that player sets up, the other continues to mulligan
   if (playerHasBasic && !opponentHasBasic) {
     // Player sets up
-    yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
+    if (!placed.has(player)) {
+      yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
+    }
     // Opponent continues to mulligan until they have a Basic
     while (!opponentHasBasic) {
       opponentMulliganHands.push([...opponent.hand.cards]);
@@ -465,10 +525,12 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
         opponent.deck.moveTo(opponent.hand, 7);
         next();
       });
-      opponentHasBasic = handHasStartingPokemon(state, opponent);
+      opponentHasBasic = (yield* hasStarter(opponent));
     }
     // Opponent sets up
-    yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    if (!placed.has(opponent)) {
+      yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    }
     // Show both players' mulligan hands: opponent's first, then player's
     if (opponentMulligans > 0) {
       yield store.prompt(state, new ShowMulliganPrompt(player.id, GameMessage.SETUP_OPPONENT_NO_BASIC, opponentMulliganHands, { allowCancel: false }), () => next());
@@ -492,15 +554,18 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
         { allowCancel: false }
       ), choice => {
         const numCardsToDraw = options[choice].value;
+        compensationDrawn = player.deck.cards.slice(0, numCardsToDraw);
         player.deck.moveTo(player.hand, numCardsToDraw);
         next();
       });
       // After drawing, allow player to place any new Basics onto their Bench
-      yield* allowExtraBenchPlacement(player, chooseCardsOptions, state, store, next);
+      yield* allowExtraBenchPlacement(player, compensationDrawn, state, store, next);
     }
   } else if (!playerHasBasic && opponentHasBasic) {
     // Opponent sets up
-    yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    if (!placed.has(opponent)) {
+      yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    }
     // Player continues to mulligan until they have a Basic
     while (!playerHasBasic) {
       playerMulliganHands.push([...player.hand.cards]);
@@ -511,10 +576,12 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
         player.deck.moveTo(player.hand, 7);
         next();
       });
-      playerHasBasic = handHasStartingPokemon(state, player);
+      playerHasBasic = (yield* hasStarter(player));
     }
     // Player sets up
-    yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
+    if (!placed.has(player)) {
+      yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
+    }
     // Show both players' mulligan hands: player's first, then opponent's
     if (playerMulligans > 0) {
       yield store.prompt(state, new ShowMulliganPrompt(opponent.id, GameMessage.SETUP_OPPONENT_NO_BASIC, playerMulliganHands, { allowCancel: false }), () => next());
@@ -538,16 +605,21 @@ export function* setupGame(next: Function, store: StoreLike, state: State): Iter
         { allowCancel: false }
       ), choice => {
         const numCardsToDraw = options[choice].value;
+        compensationDrawn = opponent.deck.cards.slice(0, numCardsToDraw);
         opponent.deck.moveTo(opponent.hand, numCardsToDraw);
         next();
       });
       // After drawing, allow opponent to place any new Basics onto their Bench
-      yield* allowExtraBenchPlacement(opponent, chooseCardsOptions, state, store, next);
+      yield* allowExtraBenchPlacement(opponent, compensationDrawn, state, store, next);
     }
   } else {
     // Both have Basics, proceed with normal setup for both
-    yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
-    yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    if (!placed.has(player)) {
+      yield* setupSinglePlayer(player, chooseCardsOptions, state, store, next);
+    }
+    if (!placed.has(opponent)) {
+      yield* setupSinglePlayer(opponent, chooseCardsOptions, state, store, next);
+    }
     // Show both players' mulligan hands when either mulliganed
     if (playerMulligans > 0 || opponentMulligans > 0) {
       if (playerMulliganHands.length > 0) {
@@ -586,7 +658,7 @@ function* setupSinglePlayer(player: Player, chooseCardsOptions: any, state: Stat
       blocked.push(index);
     }
   });
-  yield store.prompt(state, new ChooseCardsPrompt(player, GameMessage.CHOOSE_STARTING_POKEMONS,
+  yield store.prompt(state, new ChooseStartingPokemonsPrompt(player, GameMessage.CHOOSE_STARTING_POKEMONS,
     player.hand, {}, { ...chooseCardsOptions, blocked }), choice => {
     putStartingPokemonsAndPrizes(player, choice, state);
     next();
@@ -594,19 +666,21 @@ function* setupSinglePlayer(player: Player, chooseCardsOptions: any, state: Stat
 }
 
 // Helper: Allow extra Bench placement after drawing extra cards
-function* allowExtraBenchPlacement(player: Player, chooseCardsOptions: any, state: State, store: StoreLike, next: Function) {
+function* allowExtraBenchPlacement(player: Player, drawn: Card[], state: State, store: StoreLike, next: Function) {
   // Find new Basics in hand that are not already in play
   const inPlayIds = new Set<number>();
   player.bench.forEach(list => list.cards.forEach(c => inPlayIds.add(c.id)));
   player.active.cards.forEach(c => inPlayIds.add(c.id));
   const newBasics = player.hand.cards
     .map((c, idx) => ({ c, idx }))
-    .filter(({ c }) => isStartingPokemonCandidate(state, c) && !inPlayIds.has(c.id));
+    // TA-466 (B.67; Rulebook mulligan step 3 "If any of THOSE cards are Basic Pokémon"): only the cards just drawn,
+    // and never an Active-only setup card (TA-464).
+    .filter(({ c }) => drawn.includes(c) && isStartingPokemonCandidate(state, c) && !isActiveOnlySetupCard(c) && !inPlayIds.has(c.id));
   if (newBasics.length > 0) {
     const blocked = player.hand.cards.map((c, idx) => newBasics.some(nb => nb.idx === idx) ? -1 : idx).filter(idx => idx !== -1);
     // Use CHOOSE_STARTING_POKEMONS as fallback prompt message
     yield store.prompt(state, new ChooseCardsPrompt(player, GameMessage.CHOOSE_STARTING_POKEMONS,
-      player.hand, {}, { min: 0, max: newBasics.length, allowCancel: false, blocked }), choice => {
+      player.hand, {}, { min: 0, max: Math.min(newBasics.length, player.bench.filter(b => b.cards.length === 0).length), allowCancel: false, blocked }), choice => {
       // Place any chosen new Basics onto the Bench
       for (const card of choice) {
         const emptyBench = player.bench.find(b => b.cards.length === 0);

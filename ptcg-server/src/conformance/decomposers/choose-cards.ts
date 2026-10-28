@@ -10,6 +10,7 @@ import { PromptDecomposer, realPicks, hasDone, buildPending, END_CHOICE, matches
 import { playerIdToActor } from '../iid-targets';
 import { liftToTransit, placeInDiscard } from '../transit-projection';
 import { State } from '../../game/store/state/state';
+import { isActiveOnlySetupCard } from '../../game/store/reducers/setup-reducer';
 
 /**
  * TA-204 / SD-14: would adding `candidate` to the already-picked set violate a constraint that
@@ -381,6 +382,11 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
           // (setup-reducer putStartingPokemonsAndPrizes); the compensation pass (allowExtraBenchPlacement)
           // reuses this message with the Active already placed, so every pick there is a Bench pick.
           const toActive = rp.length === 0 && prompt.player.active.cards.length === 0;
+          // TA-464: an Active-only setup card (Cinderace meg-028 "you may put it face down in the Active Spot") is
+          // never a Bench pick — the engine's placement prompt refuses it there too.
+          if (!toActive && isActiveOnlySetupCard(card)) {
+            continue;
+          }
           legalActions.push({ type: 'choose', target: iid, op: 'moveTo', destination: toActive ? 'active' : 'bench' } as LegalAction);
         } else if (prompt.message === GameMessage.CHOOSE_CARD_TO_PUT_ON_BOTTOM) {
           // TA-704 / CF-70: a pick the text puts on the bottom of a deck (Energy Swatter por-073: "put it on the
