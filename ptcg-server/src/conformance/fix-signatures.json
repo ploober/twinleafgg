@@ -14773,6 +14773,46 @@
       "fixes": [
         "FX-0576"
       ]
+    },
+    {
+      "file": "set-pitch-black/dark-bell.ts",
+      "signatures": [
+        "    return [player.active, opponent.active].some((active) => {"
+      ],
+      "note": "TA-794 (2026-10-27): Dark Bell is playable only if some Active Pokémon is neither [D] nor already Confused [TA-794]",
+      "fixes": [
+        "FX-0577"
+      ]
+    },
+    {
+      "file": "set-pitch-black/hide-n-sneak.ts",
+      "signatures": [
+        "    if (effect instanceof EffectOfAbilityEffect && effect.power.abilityLock) {"
+      ],
+      "note": "TA-795 (2026-10-27): Hide 'n' Sneak prevents an opponent's Ability lock aimed at its Pokémon without consulting that lock, so Midnight Flutte",
+      "fixes": [
+        "FX-0578"
+      ]
+    },
+    {
+      "file": "set-surging-sparks/annihilape.ts",
+      "signatures": [
+        "      // #2427: the opponent's Knock Out is an effect of this attack that Mist Energy prevents. Judge it while Annihilape"
+      ],
+      "note": "TA-796 (2026-10-27): Destined Fight judges the opponent's Knock Out while Annihilape is still the attack's source, so Mist Energy prevents it",
+      "fixes": [
+        "FX-0579"
+      ]
+    },
+    {
+      "file": "set-pitch-black/miraidon.ts",
+      "signatures": [
+        "      if (effect.target !== player.active && effect.target.attackDamagedWhileActiveOnTurn !== state.turn) {"
+      ],
+      "note": "TA-797 (2026-10-27): Photon Cord applies when the attack's damage found Miraidon in the Active Spot, even after Push Down switched it out; ne",
+      "fixes": [
+        "FX-0580"
+      ]
     }
   ]
 }
