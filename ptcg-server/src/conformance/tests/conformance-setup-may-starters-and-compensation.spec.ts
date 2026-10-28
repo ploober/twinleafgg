@@ -33,22 +33,27 @@ type Offer = { type: string; target?: string; destination?: string; value?: bool
 const offers = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []) as unknown as Offer[];
 
 describe('Setup: may-starters and the compensation Bench pick', () => {
-  // TA-464 board: A's opening 7 holds Bellsprout a0 and Cinderace a1; B holds a Bellsprout.
-  const A464 = deck('a', [BELLSPROUT, CINDERACE, ...fill(18)]);
+  // TA-464 board: A's opening 7 holds Bellsprout a0, Cinderace a1 and Bellsprout a2; B holds a Bellsprout. The second
+  // Bellsprout keeps A's Bench pick open after the Active, so "Cinderace is not offered for the Bench" is asked of A's
+  // own pending (with one Basic the pick would close and the check would read B's pending — vacuous).
+  const A464 = deck('a', [BELLSPROUT, CINDERACE, BELLSPROUT, ...fill(17)]);
   const B464 = deck('b', [BELLSPROUT, ...fill(19)]);
   const DEAL464 = [flip('heads'), confirm('A', true), inOrder(A464), inOrder(B464)];
 
   it('Cinderace is offered as the Active [TA-464 meg-028 active-ok]', () => {
     const r = step(preDeal(A464, B464), DEAL464);
-    expect(offers(r).filter(o => o.type === 'choose').map(o => [o.target, o.destination])).toEqual([['a0', 'active'], ['a1', 'active']]);
+    expect(offers(r).filter(o => o.type === 'choose').map(o => [o.target, o.destination])).toEqual([['a0', 'active'], ['a1', 'active'], ['a2', 'active']]);
   });
   it('after a Basic goes Active, Cinderace is not offered for the Bench [TA-464 meg-028 menu]', () => {
     const r = step(preDeal(A464, B464), [...DEAL464, choose('A', 'a0')]);
+    expect(r.pending?.actor).toBe('A');
+    expect(offers(r).some(o => o.target === 'a2' && o.destination === 'bench')).toBe(true);
     expect(offers(r).some(o => o.target === 'a1')).toBe(false);
   });
   it('choosing Cinderace for the Bench is refused [TA-464 meg-028 exec]', () => {
     const r = step(preDeal(A464, B464), [...DEAL464, choose('A', 'a0'), choose('A', 'a1')]);
     expect(r.status).toBe('invalidAction');
+    expect(r.index).toBe(5);
   });
 
   // TA-465 board: A's opening 7 holds Cinderace and no Basic; B holds a Bellsprout.
