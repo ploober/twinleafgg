@@ -17,6 +17,7 @@ import {
 import { PowerType } from '../../../game/store/card/pokemon-types';
 import { StateUtils } from '../../../game/store/state-utils';
 import { PREVENT_EFFECTS_OF_OPPONENTS_ABILITIES } from '../../../game/store/prefabs/effect-of-ability-prefabs';
+import { EffectOfAbilityEffect } from '../../../game/store/effects/game-effects';
 import { IS_ABILITY_BLOCKED } from '../../../game/store/prefabs/prefabs';
 
 /** Pokémon cards in discard whose Ability name is Hide 'n' Sneak (used by Sinistcha line / Spiritomb / Dhelmise). */
@@ -87,6 +88,12 @@ export function reduceHideNSneak(
     const owner = StateUtils.findOwner(state, target);
     if (!StateUtils.isPokemonInPlay(owner, self)) {
       return false;
+    }
+    // #2426: "Hide 'n' Sneak takes precedence over Midnight Fluttering." An opponent's Ability lock aimed at this
+    // Pokémon is itself an effect of an opponent's Ability done to it, so Hide 'n' Sneak prevents it — asking here
+    // whether that same lock has switched Hide 'n' Sneak off would be circular, and the lock would always win.
+    if (effect instanceof EffectOfAbilityEffect && effect.power.abilityLock) {
+      return true;
     }
     if (IS_ABILITY_BLOCKED(store, state, owner, self, hideNSneakPower)) {
       return false;
