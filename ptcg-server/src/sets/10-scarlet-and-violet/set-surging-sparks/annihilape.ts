@@ -39,8 +39,11 @@ export class Annihilape extends PokemonCard {
 
     // Destined Fight
     if (WAS_ATTACK_USED(effect, 1, this)) {
-      KNOCK_OUT_PLAYERS_ACTIVE_POKEMON(store, state, effect);
+      // #2427: the opponent's Knock Out is an effect of this attack that Mist Energy prevents. Judge it while Annihilape
+      // is still the attack's source (protections test the attacking Pokémon), then Knock Out Annihilape. Both are
+      // recorded for the same sweep, so the Prize order is unchanged.
       KNOCK_OUT_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+      KNOCK_OUT_PLAYERS_ACTIVE_POKEMON(store, state, effect);
     }
 
     return state;
