@@ -14813,6 +14813,36 @@
       "fixes": [
         "FX-0580"
       ]
+    },
+    {
+      "file": "game/store/reducers/setup-reducer.ts",
+      "signatures": [
+        "export function isActiveOnlySetupCard(c: Card): boolean {"
+      ],
+      "note": "TA-464 (2026-10-27): A 'you may put it face down in the Active Spot' setup card fills only the Active Spot, never the Bench (position-aware p",
+      "fixes": [
+        "FX-0581"
+      ]
+    },
+    {
+      "file": "game/store/reducers/setup-reducer.ts",
+      "signatures": [
+        "  function* hasStarter(p: Player): Generator<State, boolean, any> {"
+      ],
+      "note": "TA-465 (2026-10-27): A hand whose only starters are may-cards chooses at the mulligan check: put one in the Active Spot, or decline and mulli",
+      "fixes": [
+        "FX-0582"
+      ]
+    },
+    {
+      "file": "game/store/reducers/setup-reducer.ts",
+      "signatures": [
+        "    .filter(({ c }) => drawn.includes(c) && isStartingPokemonCandidate(state, c) && !isActiveOnlySetupCard(c) && !inPlayIds.has(c.id));"
+      ],
+      "note": "TA-466 (2026-10-27): The compensation Bench pick offers only the Basics just drawn for the opponent's extra mulligans (B.67) [TA-466]",
+      "fixes": [
+        "FX-0583"
+      ]
     }
   ]
 }
