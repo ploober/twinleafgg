@@ -17,30 +17,17 @@ export class DarkBell extends TrainerCard {
   public text: string = 'Both Active non-[D] Pokémon are now Confused.';
 
   public canPlay(store: StoreLike, state: State, player: Player): boolean {
+    // TA-794 / #2418: "You cannot play the card if there are no valid targets." A valid target is an Active Pokémon that
+    // is not [D] and not already Confused; both [D], both Confused, or one of each leaves none.
     const opponent = StateUtils.getOpponent(state, player);
-    const actives = [player.active, opponent.active];
-
-    const bothConfused = actives.every(
-      (active) =>
-        active.cards.length > 0 && active.specialConditions.includes(SpecialCondition.CONFUSED),
-    );
-    if (bothConfused) {
-      return false;
-    }
-
-    const bothDark = actives.every((active) => {
-      if (active.cards.length === 0) {
+    return [player.active, opponent.active].some((active) => {
+      if (active.cards.length === 0 || active.specialConditions.includes(SpecialCondition.CONFUSED)) {
         return false;
       }
       const checkType = new CheckPokemonTypeEffect(active);
       store.reduceEffect(state, checkType);
-      return checkType.cardTypes.includes(CardType.DARK);
+      return !checkType.cardTypes.includes(CardType.DARK);
     });
-    if (bothDark) {
-      return false;
-    }
-
-    return true;
   }
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
