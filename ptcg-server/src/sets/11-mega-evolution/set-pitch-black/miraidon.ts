@@ -69,7 +69,9 @@ export class Miraidon extends PokemonCard {
     if (effect instanceof KnockOutEffect && effect.target.cards.includes(this)) {
       const player = effect.player;
 
-      if (effect.target !== player.active) {
+      // TA-797 / #2400: "in the Active Spot" is where the attack's damage found it. Push Down switches the damaged
+      // Miraidon to the Bench before the Knock Out, and Photon Cord still applies.
+      if (effect.target !== player.active && effect.target.attackDamagedWhileActiveOnTurn !== state.turn) {
         return state;
       }
 
@@ -98,7 +100,7 @@ export class Miraidon extends PokemonCard {
         // whenever a move is actually possible (an eligible Energy AND a Benched Pokémon to receive it).
         // With nothing to move, the floor stays 0 (the effect provably does nothing; do not deadlock).
         const eligibleCount = activeCopy.cards.length - blocked.length;
-        const benchCount = player.bench.filter((b) => b.cards.length > 0).length;
+        const benchCount = player.bench.filter((b) => b.cards.length > 0 && b !== effect.target).length;
         const minMove = eligibleCount > 0 && benchCount > 0 ? 1 : 0;
 
         return store.prompt(
@@ -117,6 +119,10 @@ export class Miraidon extends PokemonCard {
               min: minMove,
               max: 2,
               sameTarget: true,   // TA-776 (B.120): "to 1 of your Benched Pokémon" - both Energy go to the same one
+              // TA-797 / #2400: "you cannot move the Energy onto itself" — Miraidon may be on the Bench after Push Down.
+              blockedTo: player.bench
+                .map((b, index) => (b === effect.target ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.BENCH, index } : undefined))
+                .filter((t): t is { player: PlayerType; slot: SlotType; index: number } => t !== undefined),
             },
           ),
           (transfers) => {

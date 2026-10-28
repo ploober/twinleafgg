@@ -28,6 +28,9 @@ function applyPutDamage(store: StoreLike, state: State, effect: PutDamageEffect)
 
   if (damage > 0) {
     target.attackDamagedOnTurn = state.turn;   // TA-573: the KO cause is per Pokémon
+    if (StateUtils.findOwner(state, target).active === target) {
+      target.attackDamagedWhileActiveOnTurn = state.turn;   // TA-797
+    }
     store.log(state, GameLog.LOG_PLAYER_DEALS_DAMAGE, {
       name: sourceOwner.name,
       damage: damage,

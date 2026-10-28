@@ -72,6 +72,8 @@ export class PokemonCardList extends CardList {
 
   /** TA-573: the turn on which attack damage was last put on this Pokémon (-1: never) — a KO's cause is per Pokémon. */
   public attackDamagedOnTurn: number = -1;
+  /** TA-797: the turn on which attack damage was put on this Pokémon while it was its owner's Active (-1: never). Travels with the Pokémon if the attack then switches it out (Push Down; #2400). */
+  public attackDamagedWhileActiveOnTurn: number = -1;
   /**
    * TA-563: Knocked Out by an effect ("the Attacking Pokémon is Knocked Out") from inside a Knock Out reaction. The
    * checkState sweep's re-collect treats the slot as Knocked Out, so it joins the SAME Knock Out group (TA-577): every

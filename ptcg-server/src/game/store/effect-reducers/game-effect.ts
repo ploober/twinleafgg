@@ -121,6 +121,7 @@ function resetEmptyPokemonSlot(slot: PokemonCardList): void {
   slot.clearEffects();
   slot.damage = 0;
   slot.attackDamagedOnTurn = -1;
+  slot.attackDamagedWhileActiveOnTurn = -1;
   slot.knockedOutByEffect = false;
   slot.hp = 0;
   slot.specialConditions = [];
