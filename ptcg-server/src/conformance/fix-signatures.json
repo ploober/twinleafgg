@@ -14763,6 +14763,16 @@
       "fixes": [
         "FX-0575"
       ]
+    },
+    {
+      "file": "set-pokemon-151/wartortle.ts",
+      "signatures": [
+        "{ superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },"
+      ],
+      "note": "TA-793 (2026-10-27): Wartortle's Free Diving takes only Basic Water Energy cards from the discard (it filtered on the Water type alone and of",
+      "fixes": [
+        "FX-0576"
+      ]
     }
   ]
 }
