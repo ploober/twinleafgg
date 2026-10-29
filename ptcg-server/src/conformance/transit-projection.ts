@@ -116,7 +116,11 @@ export function liftToTransit(projected: NeutralState, iid: string,
   const p = projected.players[taken.owner];
   const prev = taken.transit;
   const origin = fields.origin ?? prev?.origin ?? (taken.location.zone === 'transit' ? undefined : taken.location);
-  const entry: TransitRef = { iid: taken.ref.iid, printing: taken.ref.printing, visibility: fields.visibility };
+  // TA-811: selecting a face-up card does not hide it while its destination is pending.
+  // Infer this in the shared helper so both partial picks and completed selections agree.
+  const publicOrigin = origin !== undefined && ['active', 'bench', 'discardPile', 'lostZone'].includes(origin.zone);
+  const visibility = publicOrigin ? 'public' : fields.visibility;
+  const entry: TransitRef = { iid: taken.ref.iid, printing: taken.ref.printing, visibility };
   if (origin !== undefined) { entry.origin = { ...origin }; }
   const destination = fields.destination ?? prev?.destination;
   if (destination !== undefined) { entry.destination = { ...destination }; }

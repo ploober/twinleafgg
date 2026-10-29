@@ -1369,10 +1369,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // so this still reports the SOURCE zone a within-resolution search relocates from (TA-373 intact).
         actionStartZones = snapshotZones();
         // B.80: remember a completed SEARCH (a non-discard, non-secret ChooseCards over a settled deck or
-        // discard pile) so a later pause in this step can project its still-in-zone selections in transit.
+        // discard pile), or an attached-card selection, so later decisions retain the held cards (TA-811).
         if (prompt instanceof ChooseCardsPrompt && Array.isArray(result) && result.length > 0
-            && !isDiscardPick(prompt) && prompt.options.isSecret !== true
-            && (prompt.cards.zoneTag === 'deck' || prompt.cards.zoneTag === 'discard')) {
+            && !isDiscardPick(prompt) && prompt.options.isSecret !== true && !prompt.deferredMove
+            && (prompt.cards.zoneTag === 'deck' || prompt.cards.zoneTag === 'discard'
+              || prompt.cards instanceof PokemonCardList)) {
           completedSearches.push({ cards: result as Card[], source: prompt.cards });
         }
         // B.82 / CF-93: the picks of an attack's pre-damage Energy choice (the engine marked it deferredMove) are
