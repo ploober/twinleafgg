@@ -14,35 +14,36 @@ function envoy(r: StepResponse): boolean {
 }
 describe('Shadowy Envoy after a real Janine play', () => {
   it('draws to eight after Janine resolves [TA-807 sfa-029]', () => {
-    const q=request('shadowy-envoy');const r=step(q.initialState,q.actions);main(r,4);
+    const q=request('shadowy-envoy');const r=step(q.initialState,q.actions);main(r,q.actions.length);
     expect(r.state.players.A.hand.length).toBe(8);
     expect(r.state.players.A.active!.markers.abilitiesUsedThisTurn).toContain('Shadowy Envoy');
   });
   it('withholds the ability before Janine is played [TA-807 no-Janine]', () => {
     const q=request('shadowy-envoy'); expect(envoy(step(q.initialState,[]))).toBe(false);
-    expect(step(q.initialState,[q.actions[3]]).status).toBe('invalidAction');
+    expect(step(q.initialState,[q.actions[q.actions.length - 1]]).status).toBe('invalidAction');
   });
   it('still allows the ability after a legal empty search [TA-807 failed-search]', () => {
-    const q=request('shadowy-envoy');const actions: NeutralAction[]=[q.actions[0],{actor:'A',type:'confirm',value:false},
-      {actor:'system',type:'shuffle',order:q.initialState.players.A.deck.map(c=>c.iid)},q.actions[3]];
-    const r=step(q.initialState,actions);main(r,4);expect(r.state.players.A.hand.length).toBe(8);
+    const q=request('shadowy-envoy');const actions: NeutralAction[]=[...q.actions.slice(0,3),{actor:'A',type:'confirm',value:false},
+      {actor:'system',type:'shuffle',order:q.initialState.players.A.deck.map(c=>c.iid)},q.actions[q.actions.length - 1]];
+    const r=step(q.initialState,actions);main(r,q.actions.length);expect(r.state.players.A.hand.length).toBe(8);
   });
   it('does not offer a draw with eight cards already in hand [TA-807 hand-limit]', () => {
     const q=request('shadowy-envoy');for(let i=0;i<8;i++)q.initialState.players.A.hand.push({iid:'extra'+i,printing:'sve-003'});
-    const r=step(q.initialState,q.actions.slice(0,3));main(r,3);expect(r.state.players.A.hand.length).toBe(8);
+    const r=step(q.initialState,q.actions.slice(0,-1));main(r,q.actions.length - 1);expect(r.state.players.A.hand.length).toBe(8);
     expect(envoy(r)).toBe(false);expect(step(q.initialState,q.actions).status).toBe('invalidAction');
   });
   it('refuses a second use after the hand drops below eight [TA-807 once-per-turn]', () => {
     const q=request('shadowy-envoy');const actions: NeutralAction[]=[...q.actions,{actor:'A',type:'attachEnergy',card:'ad1',target:'a0'}];
-    const r=step(q.initialState,actions);main(r,5);expect(r.state.players.A.hand.length).toBe(7);expect(envoy(r)).toBe(false);
-    expect(step(q.initialState,[...actions,q.actions[3]]).status).toBe('invalidAction');
+    const r=step(q.initialState,actions);main(r,q.actions.length + 1);expect(r.state.players.A.hand.length).toBe(7);expect(envoy(r)).toBe(false);
+    expect(step(q.initialState,[...actions,q.actions[q.actions.length - 1]]).status).toBe('invalidAction');
   });
   it('clears both markers so a fresh Janine play works next turn [TA-807 next-turn]', () => {
     const q=request('shadowy-envoy');q.initialState.players.A.deck[1].printing='sfa-059';q.initialState.players.A.deck[2].printing='svi-194';
     const actions: NeutralAction[]=[...q.actions,{actor:'A',type:'endTurn'},{actor:'B',type:'endTurn'},
       {actor:'A',type:'playItem',card:'ad2'},{actor:'A',type:'promoteBench',target:'ab2'},
       {actor:'A',type:'playSupporter',card:'ad1'},
-      {actor:'system',type:'shuffle',order:q.initialState.players.A.deck.slice(10).map(c=>c.iid)},q.actions[3]];
+      {actor:'A',type:'choose',target:'a0'},{actor:'A',type:'confirm',value:false},
+      {actor:'system',type:'shuffle',order:q.initialState.players.A.deck.slice(10).map(c=>c.iid)},q.actions[q.actions.length - 1]];
     const r=step(q.initialState,actions);main(r,actions.length);expect(r.state.players.A.hand.length).toBe(8);
     expect(r.state.players.A.bench.some(b=>b.stack.some(c=>c.iid==='a0')&&b.markers.abilitiesUsedThisTurn.includes('Shadowy Envoy'))).toBe(true);
   });

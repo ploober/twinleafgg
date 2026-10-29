@@ -1,4 +1,4 @@
-import { Attack, CardType, EnergyType, PlayerType, PokemonCard, Power, PowerType, SlotType, Stage, State, StoreLike, Weakness, SuperType } from '../../../game';
+import { Attack, CardTarget, CardType, EnergyType, PlayerType, PokemonCard, Power, PowerType, SlotType, Stage, State, StoreLike, Weakness, SuperType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { ATTACH_ENERGY_PROMPT, DISCARD_ALL_ENERGY_FROM_POKEMON, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 
@@ -32,15 +32,16 @@ export class Pawmot extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     if (WAS_POWER_USED(effect, 0, this)) {
-      const blocked: number[] = [];
+      // TA-812: block other Pokemon, never deck indices that happen to match their positions.
+      const blockedTo: CardTarget[] = [];
       effect.player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
         if (card !== this)
-          blocked.push(target.index);
+          blockedTo.push(target);
       });
       return ATTACH_ENERGY_PROMPT(
         store, state, effect.player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE, SlotType.BENCH],
         { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Lightning Energy' },
-        { min: 0, max: 1, allowCancel: false, blocked },
+        { min: 0, max: 1, allowCancel: false, blockedTo },
       );
     }
 

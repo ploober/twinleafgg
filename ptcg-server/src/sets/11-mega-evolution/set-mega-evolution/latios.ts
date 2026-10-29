@@ -2,8 +2,9 @@ import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, SuperType } from '../../../game/store/card/card-types';
 import { PowerType, StoreLike, State, GameMessage, PlayerType, SlotType, StateUtils, MoveEnergyPrompt, ConfirmPrompt, CardTarget, Card } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { MovedToActiveEffect } from '../../../game/store/effects/game-effects';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
-import {MOVED_TO_ACTIVE_THIS_TURN, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ABILITY_USED, IS_ABILITY_BLOCKED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 import { PokemonCardList } from '../../../game/store/state/pokemon-card-list';
 
 export class Latios extends PokemonCard {
@@ -39,17 +40,21 @@ export class Latios extends PokemonCard {
   private LUSTER_ASSIST_MARKER = 'LUSTER_ASSIST_MARKER';
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
-    const player = StateUtils.findOwner(state, StateUtils.findCardList(state, this));
+    const cardList = StateUtils.findCardList(state, this);
+    if (!(cardList instanceof PokemonCardList)) { return state; }
+    const player = StateUtils.findOwner(state, cardList);
     if (player === undefined) {
       return state;
     }
-    const activePokemon = player.active.getPokemonCard();
-
-    // The active must be Mega Latias ex (twinleaf card name 'Mega Latias ex') freshly moved to Active this
-    // turn. The prior literal 'M Latias-EX' matched no card, so the trigger never fired — the ability was
-    // dead (and only "reachable" via the spurious useWhenInPlay menu offering, which did nothing either).
-    if (activePokemon && activePokemon.name === 'Mega Latias ex' && MOVED_TO_ACTIVE_THIS_TURN(player, activePokemon)) {
-      if (!player.marker.hasMarker(this.LUSTER_ASSIST_MARKER, this)) {
+    // A movement event is a single opportunity. Checking the lasting turn marker
+    // on every effect queues duplicate confirmations and reopens a declined use.
+    if (effect instanceof MovedToActiveEffect && effect.player === player
+      && state.players[state.activePlayer] === player
+      && effect.pokemonCard === player.active.getPokemonCard()
+      && effect.pokemonCard.name === 'Mega Latias ex'
+      && !IS_ABILITY_BLOCKED(store, state, player, this)) {
+      if (!player.marker.hasMarker(this.LUSTER_ASSIST_MARKER, this)
+        && !cardList.abilitiesUsedThisTurn.includes(this.powers[0].name)) {
 
         let hasEnergyOnBench = false;
         player.bench.forEach((b: PokemonCardList) => {
@@ -65,6 +70,7 @@ export class Latios extends PokemonCard {
           ), wantToUse => {
             if (wantToUse) {
               player.marker.addMarker(this.LUSTER_ASSIST_MARKER, this);
+              ABILITY_USED(player, this);
 
               const blockedFrom: CardTarget[] = [{ player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }];
               const blockedTo: CardTarget[] = [];

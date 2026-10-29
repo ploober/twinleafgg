@@ -611,7 +611,7 @@
     {
       "file": "set-mega-evolution/latios.ts",
       "signatures": [
-        "activePokemon.name === 'Mega Latias ex'"
+        "effect.pokemonCard.name === 'Mega Latias ex'"
       ],
       "state": "guarding"
     },

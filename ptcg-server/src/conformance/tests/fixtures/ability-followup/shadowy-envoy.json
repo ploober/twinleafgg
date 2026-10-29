@@ -417,9 +417,18 @@
     },
     {
       "actor": "A",
-      "type": "attachEnergy",
-      "card": "ad0",
+      "type": "choose",
       "target": "ab1"
+    },
+    {
+      "actor": "A",
+      "type": "confirm",
+      "value": false
+    },
+    {
+      "actor": "A",
+      "type": "choose",
+      "target": "ad0"
     },
     {
       "actor": "system",

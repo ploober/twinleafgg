@@ -14,12 +14,13 @@ import { Effect } from '../../../game/store/effects/effect';
 import { TrainerEffect } from '../../../game/store/effects/play-card-effects';
 import {
   AttachEnergyPrompt,
+  ChoosePokemonPrompt,
+  ShuffleDeckPrompt,
   GameError,
   Player,
-  StateUtils,
   pokemonHasCardType,
 } from '../../../game';
-import { SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class JaninesSecretTechnique extends TrainerCard {
   protected _trainerType: TrainerType = TrainerType.SUPPORTER;
@@ -91,49 +92,45 @@ export class JaninesSecretTechnique extends TrainerCard {
         }
       });
 
-      // return store.prompt(state, new ChoosePokemonPrompt(
-      //   player.id,
-      //   GameMessage.ATTACH_ENERGY_TO_BENCH,
-      //   PlayerType.BOTTOM_PLAYER,
-      //   [SlotType.BENCH, SlotType.ACTIVE],
-      //   { min: 0, max: 2, blocked: blocked2 }
-      // ), chosen => {
-
-      //   chosen.forEach(target => {
-
-      state = store.prompt(
-        state,
-        new AttachEnergyPrompt(
-          player.id,
-          GameMessage.ATTACH_ENERGY_TO_ACTIVE,
-          player.deck,
-          PlayerType.BOTTOM_PLAYER,
-          [SlotType.BENCH, SlotType.ACTIVE],
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Darkness Energy' },
-          { allowCancel: false, min: 0, max: 2, blockedTo: blocked2, differentTargets: true },
-        ),
-        (transfers) => {
-          transfers = transfers || [];
-
-          if (transfers.length === 0) {
-            SHUFFLE_DECK(store, state, player);
+      // Choose the public recipients before searching the hidden deck. Each
+      // recipient gets a separate search and may legitimately find no Energy.
+      return store.prompt(state, new ChoosePokemonPrompt(
+        player.id, GameMessage.ATTACH_ENERGY_TO_BENCH,
+        PlayerType.BOTTOM_PLAYER, [SlotType.ACTIVE, SlotType.BENCH],
+        { min: 1, max: 2, allowCancel: false, blocked: blocked2 }
+      ), chosen => {
+        const recipients = chosen || [];
+        let attachedToActive = false;
+        const search = (index: number): void => {
+          if (index === recipients.length) {
+            store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+              player.deck.applyOrder(order);
+              if (attachedToActive) {
+                player.active.addSpecialCondition(SpecialCondition.POISONED);
+              }
+            });
             return;
           }
-
-          for (const transfer of transfers) {
-            const target = StateUtils.getTarget(state, player, transfer.to);
-            MOVE_CARDS(store, state, player.deck, target, {
-              cards: [transfer.card],
-              sourceCard: this,
-            });
-
-            if (target == player.active) {
-              player.active.addSpecialCondition(SpecialCondition.POISONED);
+          const recipient = recipients[index];
+          const blockedTo: CardTarget[] = [];
+          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, card, target) => {
+            if (list !== recipient) { blockedTo.push(target); }
+          });
+          store.prompt(state, new AttachEnergyPrompt(
+            player.id, GameMessage.ATTACH_ENERGY_TO_ACTIVE, player.deck,
+            PlayerType.BOTTOM_PLAYER, [SlotType.ACTIVE, SlotType.BENCH],
+            { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Darkness Energy' },
+            { min: 0, max: 1, allowCancel: false, blockedTo }
+          ), transfers => {
+            for (const transfer of transfers || []) {
+              MOVE_CARDS(store, state, player.deck, recipient, { cards: [transfer.card], sourceCard: this });
+              attachedToActive ||= recipient === player.active;
             }
-          }
-          SHUFFLE_DECK(store, state, player);
-        },
-      );
+            search(index + 1);
+          });
+        };
+        search(0);
+      });
     }
     return state;
   }
