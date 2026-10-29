@@ -1,8 +1,8 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, EnergyType, Stage } from '../../../game/store/card/card-types';
-import { EnergyCard, State, StoreLike, pokemonHasCardType } from '../../../game';
+import { ChooseCardsPrompt, EnergyCard, GameMessage, State, StateUtils, StoreLike, pokemonHasCardType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
-import { SEARCH_DECK_FOR_CARDS_TO_HAND, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
+import { MOVE_CARDS, SHOW_CARDS_TO_PLAYER, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Heatmor extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -45,20 +45,19 @@ export class Heatmor extends PokemonCard {
           blocked.push(index);
         }
       });
-      SEARCH_DECK_FOR_CARDS_TO_HAND(
-        store,
-        state,
-        effect.player,
-        this,
-        {},
-        {
-          min: 0,
-          max: 3,
-          allowCancel: false,
-          blocked,
-        },
-        this.attacks[0],
-      );
+      // TA-801: the union filter is expressed by blocked indices, but the printed
+      // reveal is still mandatory even though the prompt's field filter is empty.
+      if (player.deck.cards.length === 0) {
+        SHUFFLE_DECK(store, state, player);
+        return state;
+      }
+      return store.prompt(state, new ChooseCardsPrompt(player, GameMessage.CHOOSE_CARD_TO_HAND,
+        player.deck, {}, { min: 0, max: 3, allowCancel: false, blocked }), selected => {
+        const cards = selected || [];
+        SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);
+        MOVE_CARDS(store, state, player.deck, player.hand, { cards, sourceCard: this, sourceEffect: this.attacks[0] });
+        SHUFFLE_DECK(store, state, player);
+      });
     }
 
     return state;

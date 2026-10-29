@@ -73,7 +73,6 @@ export class Drakloak extends PokemonCard {
         throw new GameError(GameMessage.POWER_ALREADY_USED);
       }
 
-      const deckBottom = new CardList();
       const deckTop = new CardList();
       MOVE_CARDS(store, state, player.deck, deckTop, { count: 2, sourceCard: this });
 
@@ -102,8 +101,7 @@ export class Drakloak extends PokemonCard {
         });
 
         MOVE_CARDS(store, state, deckTop, player.hand, { cards: selected, sourceCard: this });
-        MOVE_CARDS(store, state, deckTop, deckBottom, { sourceCard: this });
-        MOVE_CARDS(store, state, deckBottom, player.deck, { sourceCard: this });
+        MOVE_CARDS(store, state, deckTop, player.deck, { cards: deckTop.cards.slice(), toBottom: true, sourceCard: this });
         return state;
       });
     }

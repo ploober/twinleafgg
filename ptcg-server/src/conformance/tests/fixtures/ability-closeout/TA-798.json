@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "0.1",
+  "initialState": {
+    "schemaVersion": "0.1",
+    "format": "unlimited",
+    "turn": 4,
+    "activePlayer": "A",
+    "firstPlayer": "A",
+    "phase": "main",
+    "outcome": "ongoing",
+    "players": {
+      "A": {
+        "active": {
+          "stack": [
+            {
+              "iid": "a0",
+              "printing": "twm-128"
+            },
+            {
+              "iid": "a1",
+              "printing": "twm-129"
+            }
+          ],
+          "energy": [
+            {
+              "iid": "ae0",
+              "printing": "sve-001"
+            },
+            {
+              "iid": "ae1",
+              "printing": "sve-001"
+            },
+            {
+              "iid": "ae2",
+              "printing": "sve-001"
+            },
+            {
+              "iid": "ae3",
+              "printing": "sve-002"
+            },
+            {
+              "iid": "ae4",
+              "printing": "sve-002"
+            },
+            {
+              "iid": "ae5",
+              "printing": "sve-002"
+            },
+            {
+              "iid": "ae6",
+              "printing": "sve-003"
+            },
+            {
+              "iid": "ae7",
+              "printing": "sve-003"
+            },
+            {
+              "iid": "ae8",
+              "printing": "sve-003"
+            },
+            {
+              "iid": "ae9",
+              "printing": "sve-004"
+            },
+            {
+              "iid": "ae10",
+              "printing": "sve-004"
+            },
+            {
+              "iid": "ae11",
+              "printing": "sve-004"
+            },
+            {
+              "iid": "ae12",
+              "printing": "sve-005"
+            },
+            {
+              "iid": "ae13",
+              "printing": "sve-005"
+            },
+            {
+              "iid": "ae14",
+              "printing": "sve-005"
+            },
+            {
+              "iid": "ae15",
+              "printing": "sve-006"
+            },
+            {
+              "iid": "ae16",
+              "printing": "sve-006"
+            },
+            {
+              "iid": "ae17",
+              "printing": "sve-006"
+            },
+            {
+              "iid": "ae18",
+              "printing": "sve-007"
+            },
+            {
+              "iid": "ae19",
+              "printing": "sve-007"
+            },
+            {
+              "iid": "ae20",
+              "printing": "sve-007"
+            },
+            {
+              "iid": "ae21",
+              "printing": "sve-008"
+            },
+            {
+              "iid": "ae22",
+              "printing": "sve-008"
+            },
+            {
+              "iid": "ae23",
+              "printing": "sve-008"
+            }
+          ],
+          "tools": [],
+          "damage": 0,
+          "conditions": [],
+          "poisonDamagePerTurn": 10,
+          "markers": {
+            "playedOnTurn": 1,
+            "movedToActiveOnTurn": -1,
+            "damageTakenThisTurn": 0,
+            "abilitiesUsedThisTurn": [],
+            "cannotAttackNextTurn": false
+          },
+          "faceDown": false
+        },
+        "bench": [],
+        "hand": [],
+        "deck": [
+          {
+            "iid": "ad0",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad1",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad2",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad3",
+            "printing": "sve-003"
+          }
+        ],
+        "discard": [],
+        "lostZone": [],
+        "prizes": [
+          {
+            "iid": "ap0",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap1",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap2",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap3",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap4",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap5",
+            "printing": "sve-003",
+            "faceUp": false
+          }
+        ],
+        "flags": {
+          "supporterPlayedThisTurn": false,
+          "energyAttachedThisTurn": false,
+          "stadiumPlayedThisTurn": false,
+          "retreatedThisTurn": false,
+          "cardsPlayedThisTurn": 0,
+          "prizesTakenThisTurn": 0,
+          "prizesTakenLastTurn": 0,
+          "vstarUsed": false
+        }
+      },
+      "B": {
+        "active": {
+          "stack": [
+            {
+              "iid": "b0",
+              "printing": "asc-004"
+            }
+          ],
+          "energy": [],
+          "tools": [],
+          "damage": 0,
+          "conditions": [],
+          "poisonDamagePerTurn": 10,
+          "markers": {
+            "playedOnTurn": 1,
+            "movedToActiveOnTurn": -1,
+            "damageTakenThisTurn": 0,
+            "abilitiesUsedThisTurn": [],
+            "cannotAttackNextTurn": false
+          },
+          "faceDown": false
+        },
+        "bench": [],
+        "hand": [],
+        "deck": [
+          {
+            "iid": "bd0",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd1",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd2",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd3",
+            "printing": "sve-003"
+          }
+        ],
+        "discard": [],
+        "lostZone": [],
+        "prizes": [
+          {
+            "iid": "bp0",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp1",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp2",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp3",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp4",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp5",
+            "printing": "sve-003",
+            "faceUp": false
+          }
+        ],
+        "flags": {
+          "supporterPlayedThisTurn": false,
+          "energyAttachedThisTurn": false,
+          "stadiumPlayedThisTurn": false,
+          "retreatedThisTurn": false,
+          "cardsPlayedThisTurn": 0,
+          "prizesTakenThisTurn": 0,
+          "prizesTakenLastTurn": 0,
+          "vstarUsed": false
+        }
+      }
+    },
+    "activeEffects": []
+  },
+  "actions": [
+    {
+      "actor": "A",
+      "type": "useAbility",
+      "source": "a0",
+      "ability": "Recon Directive"
+    },
+    {
+      "actor": "A",
+      "type": "choose",
+      "target": "ad0"
+    },
+    {
+      "actor": "A",
+      "type": "endTurn"
+    },
+    {
+      "actor": "B",
+      "type": "endTurn"
+    },
+    {
+      "actor": "A",
+      "type": "useAbility",
+      "source": "a0",
+      "ability": "Recon Directive"
+    },
+    {
+      "actor": "A",
+      "type": "choose",
+      "target": "ad3"
+    }
+  ]
+}

@@ -790,6 +790,17 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // replay projects goes through `seen`; a card the engine's own board no longer holds in transit leaves the set after
   // the dispatch that placed it.
   const publicInTransit = new Set<string>();
+  // TA-802: an already observed show must not reveal a card again at acknowledgement
+  // after its move into the deck has correctly ended the original reveal's visibility.
+  const observedShows = new WeakSet<object>();
+  const rememberShow = (prompt: ShowCardsPrompt): void => {
+    if (observedShows.has(prompt)) { return; }
+    observedShows.add(prompt);
+    for (const card of prompt.cards) {
+      const iid = game.ctx.cardToIid.get(card);
+      if (iid !== undefined) { revealedSince.add(iid); publicInTransit.add(iid); }
+    }
+  };
   const seen = (board: NeutralState): NeutralState => {
     if (publicInTransit.size === 0) { return board; }
     for (const who of ['A', 'B'] as const) {
@@ -1006,10 +1017,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // it into your hand"), so its leg is `public` though the reveal event is captured at the ack, one dispatch later.
     for (const p of game.state.prompts) {
       if (p.result === undefined && p.type === 'Show cards') {
-        for (const c of (p as ShowCardsPrompt).cards) {
-          const iid = game.ctx.cardToIid.get(c);
-          if (iid !== undefined) { revealedSince.add(iid); publicInTransit.add(iid); }
-        }
+        rememberShow(p as ShowCardsPrompt);
       }
     }
     // A starved dispatch may have rolled back past its cuts: then the single before/after diff is the trace.
@@ -1230,11 +1238,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
           // TA-605: a repeat is no new event, but the cards are still being shown: a card that moves at this ack
           // (Haughty Order puts the ten back at the second audience's) is identifiable by both players. Every shown card
           // counts, including the public ones B.97 leaves out of the event.
-          for (const c of (prompt as ShowCardsPrompt).cards) {
-            const iid = game.ctx.cardToIid.get(c);
-            // TA-701: a shown card still held after the ack is public in transit until it is placed.
-            if (iid !== undefined) { revealedSince.add(iid); publicInTransit.add(iid); }
-          }
+          rememberShow(prompt as ShowCardsPrompt);
         }
         // CF-84: the engine shows each player's mulligan hands in a pair of prompts (the owner's own view,
         // SETUP_PLAYER_NO_BASIC, and the opponent's). Emit one `mulliganRevealed` per hand, from the owner's

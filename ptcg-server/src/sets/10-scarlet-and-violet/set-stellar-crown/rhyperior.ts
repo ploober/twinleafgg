@@ -52,7 +52,7 @@ export class Rhyperior extends PokemonCard {
     // Attack 1: Drill Run
     // Ref: set-furious-fists/tyrunt.ts (Crunch)
     if (WAS_ATTACK_USED(effect, 0, this)) {
-      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect);
+      DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);
     };
 
     return state;
