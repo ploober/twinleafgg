@@ -77,11 +77,16 @@ export class Crobat extends PokemonCard {
           if (cards.length === 0) return state;
           const deckTop = new CardList();
           MOVE_CARDS(store, state, player.deck, deckTop, { cards: cards, sourceCard: this });
+          // B.81: the printed destination is known while this private pick waits for the shuffle.
+          cards.forEach(card => CardList.transit.set(card, {
+            origin: 'deck', destination: 'deckTop', visibility: 'owner'
+          }));
           return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
             player.deck.applyOrder(order);
             if (order === null) return state;
             deckTop.applyOrder(order);
             deckTop.moveToTopOfDestination(player.deck);
+            cards.forEach(card => CardList.transit.delete(card));
             return state;
           });
         },
