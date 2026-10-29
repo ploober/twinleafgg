@@ -15117,6 +15117,16 @@
         "FX-0590"
       ],
       "note": "Exploration closeout: printed recipient order, event-scoped optional use and typed counter placement."
+    },
+    {
+      "file": "set-chaos-rising/crobat.ts",
+      "signatures": [
+        "origin: 'deck', destination: 'deckTop', visibility: 'owner'"
+      ],
+      "note": "TA-816 (2026-10-29): Declare the private Crobat deck-top destination while shuffling",
+      "fixes": [
+        "FX-0591"
+      ]
     }
   ]
 }
