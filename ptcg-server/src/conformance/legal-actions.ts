@@ -84,7 +84,11 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
     if (card.superType === SuperType.POKEMON && card instanceof PokemonCard) {
       if (handPlayVerbFor(card) === 'benchBasic') {
         if (!playable.has(card.id)) { continue; }
-        if (hasBenchSpace) { out.push({ type: 'benchBasic', card: iid }); }
+        // TA-809: static playability does not propagate opposing PlayPokemonEffect locks.
+        const benchIndex = player.bench.findIndex(b => b.cards.length === 0);
+        if (hasBenchSpace && pokemonPlayProbeAccepts(state, player, card, benchIndex)) {
+          out.push({ type: 'benchBasic', card: iid });
+        }
       } else {
         // Evolutions are NOT gated on playableCardIds — the same call already made for trainers
         // above, and for the same reason. `CAN_PLAY_POKEMON_CARD` (which fills playableCardIds)
@@ -114,7 +118,7 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
         for (const s of own) {
           const top = s.list.getPokemonCard();
           if (!top || top.name !== card.evolvesFrom) { continue; }
-          if (evolveProbeAccepts(state, player, card, s)) {
+          if (pokemonPlayProbeAccepts(state, player, card, s.benchIndex)) {
             out.push({ type: 'evolve', card: iid, target: s.iid });
           }
         }
@@ -397,11 +401,10 @@ function attackProbeAccepts(state: State, player: Player, attackName: string): b
  * rewrites during the same dispatch — see the call site. Throw-only: B.29 endorses "can the
  * prescribed ACTION be carried out" and warns off state-diff inertness tests.
  */
-function evolveProbeAccepts(state: State, player: Player, card: PokemonCard, slot: OwnSlot): boolean {
+function pokemonPlayProbeAccepts(state: State, player: Player, card: PokemonCard, benchIndex: number | null): boolean {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
   const playerIndex = state.players.indexOf(player);
-  const benchIndex = slot.benchIndex;
   const handler = new ConformanceStoreHandler();
   const probe = new Store(handler);
   handler.setStore(probe);

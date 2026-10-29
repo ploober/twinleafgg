@@ -87,6 +87,8 @@ export class PutDamageEffect extends AbstractAttackEffect implements Effect {
   public damageIncreased = true;
   public wasKnockedOutFromFullHP: boolean = false;
   public surviveOnTenHPReason: undefined | string = undefined;
+  /** TA-808: resolve an Ability survival coin at the damage application boundary. */
+  public surviveOnTenHPCoinFlipReason: undefined | string = undefined;
   public weaknessApplied: boolean = false;
 
   private nonstackingDamageReducers: string[] = [];

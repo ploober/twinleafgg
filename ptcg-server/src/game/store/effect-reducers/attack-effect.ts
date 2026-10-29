@@ -24,6 +24,22 @@ function applyPutDamage(store: StoreLike, state: State, effect: PutDamageEffect)
   }
 
   const damage = Math.max(0, effect.damage);
+  // TA-808: resolve Ability survival after damage modifiers/prevention, before the
+  // damage lands. Existing Endure-like protection resolves first and can avert the KO.
+  const survivalAbility = effect.surviveOnTenHPCoinFlipReason;
+  if (survivalAbility !== undefined && effect.surviveOnTenHPReason === undefined
+    && state.phase === GamePhase.ATTACK && damage > 0) {
+    effect.surviveOnTenHPCoinFlipReason = undefined;
+    const owner = StateUtils.findOwner(state, target);
+    const hp = new CheckHpEffect(owner, target);
+    state = store.reduceEffect(state, hp);
+    if (target.damage + damage >= hp.hp) {
+      return COIN_FLIP_PROMPT(store, state, owner, heads => {
+        if (heads) { effect.surviveOnTenHPReason = survivalAbility; }
+        applyPutDamage(store, state, effect);
+      });
+    }
+  }
   target.damage += damage;
 
   if (damage > 0) {
@@ -50,9 +66,9 @@ function applyPutDamage(store: StoreLike, state: State, effect: PutDamageEffect)
     }
 
     if (effect.surviveOnTenHPReason !== undefined) {
-      const checkHpEffect = new CheckHpEffect(effect.player, target);
+      const checkHpEffect = new CheckHpEffect(targetOwner, target);
       state = store.reduceEffect(state, checkHpEffect);
-      if (target.damage > checkHpEffect.hp) {
+      if (target.damage >= checkHpEffect.hp) {
         store.log(state, GameLog.LOG_SURVIVES_ON_TEN_HP, {
           pokemon: targetCard.name,
           reason: effect.surviveOnTenHPReason,
@@ -159,7 +175,7 @@ export function attackReducer(store: StoreLike, state: State, effect: Effect): S
     if (surviveOpts !== null
       && effect.surviveOnTenHPReason === undefined
       && state.phase === GamePhase.ATTACK) {
-      const checkHpPreview = new CheckHpEffect(effect.player, target);
+      const checkHpPreview = new CheckHpEffect(StateUtils.findOwner(state, target), target);
       state = store.reduceEffect(state, checkHpPreview);
       const wouldKo = target.damage + Math.max(0, effect.damage) >= checkHpPreview.hp;
       const fullHpOk = !surviveOpts.requireFullHp || target.damage === 0;
