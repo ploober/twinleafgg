@@ -1,10 +1,10 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { CardType, EnergyType, Stage, SuperType } from '../../../game/store/card/card-types';
-import { Card, ChooseCardsPrompt, GameError, GameMessage, PowerType, State, StateUtils, StoreLike } from '../../../game';
+import { CardTarget, GameError, GameMessage, PlayerType, PowerType, SlotType, State, StoreLike } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import {ABILITY_USED, MULTIPLE_COIN_FLIPS_PROMPT, SHUFFLE_DECK, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {ABILITY_USED, ATTACH_ENERGY_PROMPT, MULTIPLE_COIN_FLIPS_PROMPT, WAS_ATTACK_USED, WAS_POWER_USED } from '../../../game/store/prefabs/prefabs';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
 
 export class Heliolisk extends PokemonCard {
@@ -44,7 +44,6 @@ export class Heliolisk extends PokemonCard {
     // Frilled Generator
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
-      const cardList = StateUtils.findCardList(state, this);
       const blocked: number[] = [];
 
       if (!player.playedCanari) {
@@ -66,22 +65,16 @@ export class Heliolisk extends PokemonCard {
       player.marker.addMarker(this.FRILLED_GENERATOR_MARKER, this);
       ABILITY_USED(player, this);
 
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.deck,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-          { min: 0, max: 2, allowCancel: false, blocked },
-        ),
-        (cards: Card[]) => {
-          cards = cards || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, player.deck, cardList, { cards: cards, sourceCard: this });
-          }
-          SHUFFLE_DECK(store, state, player);
-        },
+      // TA-817: the Energy choice is an attachment to this Pokemon, including at each pick.
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (_list, card, target) => {
+        if (card !== this) { blockedTo.push(target); }
+      });
+      return ATTACH_ENERGY_PROMPT(
+        store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK,
+        [SlotType.ACTIVE, SlotType.BENCH],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { min: 0, max: 2, allowCancel: false, blocked, blockedTo },
       );
     }
 

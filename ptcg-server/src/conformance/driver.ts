@@ -465,6 +465,10 @@ function offersAction(legalActions: LegalAction[], action: NeutralAction): boole
       return false;
     }
     const offered = la as unknown as { [k: string]: unknown };
+    // TA-818 / B.132: recipient may be omitted, but a supplied value must match this offer.
+    if (submitted.recipient != null && submitted.recipient !== offered.recipient) {
+      return false;
+    }
     // TA-662 / B.95: every field the offered entry carries, with the same value (it replaced TA-205's per-verb
     // identity table, which let `owner`, `name` and `moveEnergy.source` be omitted or wrong).
     for (const [k, v] of Object.entries(offered)) {
