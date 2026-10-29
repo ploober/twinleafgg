@@ -14959,6 +14959,97 @@
       "fixes": [
         "FX-0586"
       ]
+    },
+    {
+      "file": "game/store/effects/attack-effects.ts",
+      "signatures": [
+        "public surviveOnTenHPCoinFlipReason: undefined | string = undefined;"
+      ],
+      "note": "TA-808, TA-809 (2026-10-29): Align Basic play legality and Tenacious Body survival timing",
+      "fixes": [
+        "FX-0587"
+      ]
+    },
+    {
+      "file": "set-black-bolt-white-flare/heatmor.ts",
+      "signatures": [
+        "SHOW_CARDS_TO_PLAYER(store, state, StateUtils.getOpponent(state, player), cards);"
+      ],
+      "note": "TA-798, TA-799, TA-800, TA-801, TA-802 (2026-10-29): Preserve attack damage order, Energy choices, reveals and deck-entry visibility",
+      "fixes": [
+        "FX-0588"
+      ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "signatures": [
+        "if (hasBenchSpace && pokemonPlayProbeAccepts(state, player, card, benchIndex)) {"
+      ],
+      "fixes": [
+        "FX-0587"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "set-ascended-heroes/mega-hawlucha-ex.ts",
+      "signatures": [
+        "effect.surviveOnTenHPCoinFlipReason = this.powers[0].name;"
+      ],
+      "fixes": [
+        "FX-0587"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "game/store/effect-reducers/attack-effect.ts",
+      "signatures": [
+        "const survivalAbility = effect.surviveOnTenHPCoinFlipReason;",
+        "if (target.damage >= checkHpEffect.hp) {"
+      ],
+      "fixes": [
+        "FX-0587"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "if (observedShows.has(prompt)) { return; }"
+      ],
+      "fixes": [
+        "FX-0588"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "set-twilight-masquerade/drakloak.ts",
+      "signatures": [
+        "MOVE_CARDS(store, state, deckTop, player.deck, { cards: deckTop.cards.slice(), toBottom: true, sourceCard: this });"
+      ],
+      "fixes": [
+        "FX-0588"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "set-stellar-crown/rhydon.ts",
+      "signatures": [
+        "if (AFTER_ATTACK(effect, 0, this)) {"
+      ],
+      "fixes": [
+        "FX-0588"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "set-stellar-crown/rhyperior.ts",
+      "signatures": [
+        "DISCARD_AN_ENERGY_FROM_OPPONENTS_ACTIVE_POKEMON(store, state, effect, undefined, 1, true);"
+      ],
+      "fixes": [
+        "FX-0588"
+      ],
+      "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
     }
   ]
 }
