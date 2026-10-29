@@ -14902,6 +14902,40 @@
       ],
       "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
       "state": "guarding"
+    },
+    {
+      "file": "game/store/effects/check-effects.ts",
+      "signatures": [
+        "export class CheckPokemonToolCapacityEffect implements Effect {"
+      ],
+      "note": "TA-211, TA-803, TA-804, TA-805, TA-806 (2026-10-29): Enforce Excited Heal partners, shared Fan Call use and dynamic Multi Adapter Tool capacity",
+      "fixes": [
+        "FX-0584"
+      ]
+    },
+    {
+      "file": "conformance/legal-actions.ts",
+      "absentSignatures": [
+        "if (player.marker.markers.some(m => m.source === pokemon)) { continue; }"
+      ],
+      "note": "TA-807: prerequisite markers are not spent-use markers; the native ability probe enforces actual legality.",
+      "state": "guarding"
+    },
+    {
+      "file": "set-shrouded-fable/crobat.ts",
+      "signatures": [
+        "REMOVE_MARKER_AT_END_OF_TURN(effect, this.SHADOWY_ENVOY_MARKER, this);"
+      ],
+      "note": "TA-807: clear spent use at the turn boundary.",
+      "state": "guarding"
+    },
+    {
+      "file": "set-chaos-rising/cobalion-ex.ts",
+      "signatures": [
+        "if (!hasMetalOrAnyEnergy) { return state; } state = store.prompt("
+      ],
+      "note": "TA-810: public source eligibility is checked before the optional offer.",
+      "state": "guarding"
     }
   ]
 }

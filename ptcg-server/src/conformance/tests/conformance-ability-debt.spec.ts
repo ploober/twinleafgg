@@ -22,13 +22,13 @@ function offers(r: StepResponse, type: string): boolean {
 
 describe('Ability debt: TA-211 / TA-803–806', () => {
   for (const id of ['AF-001', 'AF-003']) {
-    it(id + ': attaches the second Tool after benching or directly from import', () => {
+    it(id + ': attaches the second Tool after benching or directly from import [TA-211 pfl-029]', () => {
       const q = request(id), r = run(id); main(r, q.actions.length);
       expect(r.state.players.A.bench[0].tools.map(t => t.iid).sort()).toEqual(['abt2', 'ah1']);
       expect(r.state.players.A.hand.some(c => c.iid === 'ah1')).toBe(false);
     });
   }
-  it('rejects a third Tool, even with two providers', () => {
+  it('rejects a third Tool, even with two providers [TA-211 pfl-029]', () => {
     const q = request('AF-003'), a = q.initialState.players.A;
     a.bench[1].stack = [{iid: 'ab2', printing: 'pfl-029'}];
     a.bench[0].tools.push({iid: 'extra', printing: 'meg-166'});
@@ -70,7 +70,7 @@ describe('Ability debt: TA-211 / TA-803–806', () => {
     const r = step(q.initialState, q.actions); main(r, q.actions.length);
     expect(r.state.players.A.active!.tools.length).toBe(2);
   });
-  it('heals with a Benched Grass Mega partner', () => {
+  it('heals with a Benched Grass Mega partner [TA-803 pfl-007]', () => {
     const r = run('AF-002'); main(r, 1); expect(r.state.players.A.active!.damage).toBe(0);
   });
   it('also heals with an Active Grass Mega partner', () => {
@@ -89,12 +89,12 @@ describe('Ability debt: TA-211 / TA-803–806', () => {
       expect(step(q.initialState, q.actions).status).toBe('invalidAction');
     });
   }
-  it('projects Fan Call as used while its search is still pending', () => {
+  it('projects Fan Call as used while its search is still pending [TA-806 scr-118]', () => {
     const r = run('reservation'); expect(r.applied).toBe(1);
     expect(r.state.players.A.active!.markers.abilitiesUsedThisTurn).toContain('Fan Call');
     expect(r.pending!.legalActions.some(a => a.type === 'choose')).toBe(true);
   });
-  it('consumes Fan Call on an empty search for every copy', () => {
+  it('consumes Fan Call on an empty search for every copy [TA-805 scr-118]', () => {
     const q = request('empty-search-shared-limit'), r = run('empty-search-shared-limit'); main(r,q.actions.length);
     expect((r.pending!.legalActions as Array<{ability?:string}>).some(a => a.ability === 'Fan Call')).toBe(false);
     for (const source of ['a0','ab1']) {

@@ -20,7 +20,7 @@ describe('Multi Adapter loss consequences', () => {
     expect(r.applied).toBe(2);expect(r.pending!.descriptor).toBe('main');
     expect(r.state.players.A.bench[0].tools.map(c=>c.iid)).toEqual(['abt2']);
   });
-  it('requires cleanup when the last provider returns to the hand', () => {
+  it('requires cleanup when the last provider returns to the hand [TA-804 pfl-029]', () => {
     const q=request('AF-003'), a=q.initialState.players.A;
     a.bench[0].tools.push({iid:'extra',printing:'meg-166'});a.hand.push({iid:'turo',printing:'par-171'});
     const actions: NeutralAction[]=[{type:'playSupporter',actor:'A',card:'turo'},{type:'choose',actor:'A',target:'a0'}];

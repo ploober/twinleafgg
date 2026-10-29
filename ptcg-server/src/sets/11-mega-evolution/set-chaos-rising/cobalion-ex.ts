@@ -49,6 +49,44 @@ export class Cobalionex extends PokemonCard {
         return state;
       }
 
+      // TA-810: other Pokemon's attached Energy is public. With no eligible
+      // source, Metal Road cannot do anything and must not offer a confirmation.
+      const blockedFrom: CardTarget[] = [];
+      const blockedTo: CardTarget[] = [];
+      const blockedMap: {
+        source: CardTarget;
+        blocked: number[];
+      }[] = [];
+
+      let hasMetalOrAnyEnergy = false;
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
+        if (cardList === player.active) {
+          blockedFrom.push(target);
+          return;
+        }
+        blockedTo.push(target);
+
+        // Block cards that do NOT provide Metal or any type
+        const blocked: number[] = [];
+        cardList.cards.forEach((c, index) => {
+          const providesMetalOrAny =
+            c instanceof EnergyCard &&
+            (c.provides.includes(CardType.METAL) || c.provides.includes(CardType.ANY));
+          if (!providesMetalOrAny) {
+            blocked.push(index);
+          } else {
+            hasMetalOrAnyEnergy = true;
+          }
+        });
+        if (blocked.length > 0) {
+          blockedMap.push({ source: target, blocked });
+        }
+      });
+
+      if (!hasMetalOrAnyEnergy) {
+        return state;
+      }
+
       state = store.prompt(
         state,
         new ConfirmPrompt(player.id, GameMessage.WANT_TO_USE_ABILITY),
@@ -74,42 +112,6 @@ export class Cobalionex extends PokemonCard {
             return state;
           }
           ABILITY_USED(player, this); // TA-455: the accepted "may" is the commit
-
-          const blockedFrom: CardTarget[] = [];
-          const blockedTo: CardTarget[] = [];
-          const blockedMap: {
-            source: CardTarget;
-            blocked: number[];
-          }[] = [];
-
-          let hasMetalOrAnyEnergy = false;
-          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, card, target) => {
-            if (cardList === player.active) {
-              blockedFrom.push(target);
-              return;
-            }
-            blockedTo.push(target);
-
-            // Block cards that do NOT provide Metal or Any (Colorless)
-            const blocked: number[] = [];
-            cardList.cards.forEach((c, index) => {
-              const providesMetalOrAny =
-                c instanceof EnergyCard &&
-                (c.provides.includes(CardType.METAL) || c.provides.includes(CardType.ANY));
-              if (!providesMetalOrAny) {
-                blocked.push(index);
-              } else {
-                hasMetalOrAnyEnergy = true;
-              }
-            });
-            if (blocked.length > 0) {
-              blockedMap.push({ source: target, blocked });
-            }
-          });
-
-          if (!hasMetalOrAnyEnergy) {
-            return state;
-          }
 
           return store.prompt(
             state,

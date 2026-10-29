@@ -86,7 +86,7 @@ export class Crobat extends PokemonCard {
     }
 
     REMOVE_MARKER_AT_END_OF_TURN(effect, this.PLAY_JANINES_SECRET_ART_MARKER, this);
-    REMOVE_MARKER_AT_END_OF_TURN(effect, this.PLAY_JANINES_SECRET_ART_MARKER, this);
+    REMOVE_MARKER_AT_END_OF_TURN(effect, this.SHADOWY_ENVOY_MARKER, this);
 
     if (WAS_ATTACK_USED(effect, 0, this)) {
       YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_POISIONED(store, state, effect, 20);
