@@ -15127,6 +15127,26 @@
       "fixes": [
         "FX-0591"
       ]
+    },
+    {
+      "file": "set-ascended-heroes/heliolisk.ts",
+      "signatures": [
+        "{ min: 0, max: 2, allowCancel: false, blocked, blockedTo },"
+      ],
+      "note": "TA-817 (2026-10-29): Attach each Frilled Generator selection to Heliolisk",
+      "fixes": [
+        "FX-0592"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "if (submitted.recipient != null && submitted.recipient !== offered.recipient) {"
+      ],
+      "note": "TA-818 (2026-10-29): Reject attachment answers with a contradictory recipient",
+      "fixes": [
+        "FX-0593"
+      ]
     }
   ]
 }
