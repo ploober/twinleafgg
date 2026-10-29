@@ -613,7 +613,11 @@
       "signatures": [
         "effect.pokemonCard.name === 'Mega Latias ex'"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0590"
+      ],
+      "note": "TA-78 trigger-name guard retained inside TA-814 movement-event condition; linked by FX-0590."
     },
     {
       "file": "set-ascended-heroes/camerupt.ts",
