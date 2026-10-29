@@ -10,6 +10,8 @@ import { KnockOutEffect, MovedToActiveEffect } from '../effects/game-effects';
 import { TAKE_SPECIFIC_PRIZES, MOVE_CARDS, COIN_FLIP_PROMPT } from '../prefabs/prefabs';
 import { ChoosePokemonPrompt } from '../prompts/choose-pokemon-prompt';
 import { ChoosePrizePrompt } from '../prompts/choose-prize-prompt';
+import { ChooseCardsPrompt } from '../prompts/choose-cards-prompt';
+import { CheckPokemonToolCapacityEffect } from '../effects/check-effects';
 import { ShuffleDeckPrompt } from '../prompts/shuffle-prompt';
 import { setupGame } from '../reducers/setup-reducer';
 import { CardList } from '../state/card-list';
@@ -512,69 +514,102 @@ export function* executeCheckState(next: Function, store: StoreLike, state: Stat
   // belongs to the SAME group — all Knocked Out Pokémon are discarded together and both players take Prizes
   // (Advanced Rulebook KO steps 3-4; a race both win ties, B.51) — so the victims are re-collected after the
   // reactions, and the new ones' reactions resolved in turn, until no new victim appears.
-  let fresh = findKoPokemons(store, state);
-  while (fresh.length > 0) {
-    const effects = fresh.map(p => {
-      const knockOutEffect = new KnockOutEffect(state.players[p.playerNum], p.cardList);
-      knockOutEffect.viaCheckState = true;
-      return knockOutEffect;
-    });
-    pokemonsToDiscard.push(...fresh);
-    knockOutEffects.push(...effects);
-    // Only when there IS a KO: a sweep with none must not start waiting on a prompt some earlier step
-    // left pending (a retreat's Energy choice, say) — that would be a new sequencing, not a batch.
-    // TA-444 (B.51 MERGE): a victim a reaction creates inside the window joins the set being ordered; recorded here so
-    // the re-collection below does not take it a second time
-    state = store.resolveKnockOutReactions(state, effects, s => {
-      const joined = findKoPokemons(store, s).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
-      const joinedEffects = joined.map(p => {
-        const knockOutEffect = new KnockOutEffect(s.players[p.playerNum], p.cardList);
+  // A discarded HP Tool can cause a further KO. Collect that consequence in
+  // this sweep before Prizes/promotions, without processing previous KOs twice.
+  let processedKos = 0;
+  let toolsDiscarded: boolean;
+  let checkTableStateEffect: CheckTableStateEffect;
+  do {
+    toolsDiscarded = false;
+    let fresh = findKoPokemons(store, state).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
+    while (fresh.length > 0) {
+      const effects = fresh.map(p => {
+        const knockOutEffect = new KnockOutEffect(state.players[p.playerNum], p.cardList);
         knockOutEffect.viaCheckState = true;
         return knockOutEffect;
       });
-      pokemonsToDiscard.push(...joined);
-      knockOutEffects.push(...joinedEffects);
-      return joinedEffects;
-    });
-    if (store.hasPrompts()) {
-      yield store.waitPrompt(state, () => next());
-    }
-    fresh = findKoPokemons(store, state).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
-  }
-  for (let i = 0; i < pokemonsToDiscard.length; i++) {
-    const pokemonToDiscard = pokemonsToDiscard[i];
-    const knockOutEffect = knockOutEffects[i];
-    pokemonToDiscard.cardList.knockedOutByEffect = false;
-    state = store.reduceEffect(state, knockOutEffect);
-
-    if (store.hasPrompts()) {
-      yield store.waitPrompt(state, () => next());
-    }
-
-    if (knockOutEffect.preventDefault === false) {
-      const opponentIndex = pokemonToDiscard.playerNum === 0 ? 1 : 0;
-      const defaultDestination = state.players[opponentIndex].hand;
-      const destination = knockOutEffect.prizeDestination || defaultDestination;
-
-      let group = prizeGroups[opponentIndex].find(g => g.destination === destination);
-      if (!group) {
-        group = { destination, count: 0 };
-        prizeGroups[opponentIndex].push(group);
+      pokemonsToDiscard.push(...fresh);
+      knockOutEffects.push(...effects);
+      // Only when there IS a KO: a sweep with none must not start waiting on a prompt some earlier step
+      // left pending (a retreat's Energy choice, say) — that would be a new sequencing, not a batch.
+      // TA-444 (B.51 MERGE): a victim a reaction creates inside the window joins the set being ordered; recorded here so
+      // the re-collection below does not take it a second time
+      state = store.resolveKnockOutReactions(state, effects, s => {
+        const joined = findKoPokemons(store, s).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
+        const joinedEffects = joined.map(p => {
+          const knockOutEffect = new KnockOutEffect(s.players[p.playerNum], p.cardList);
+          knockOutEffect.viaCheckState = true;
+          return knockOutEffect;
+        });
+        pokemonsToDiscard.push(...joined);
+        knockOutEffects.push(...joinedEffects);
+        return joinedEffects;
+      });
+      if (store.hasPrompts()) {
+        yield store.waitPrompt(state, () => next());
       }
-      group.count += knockOutEffect.prizeCount;
+      fresh = findKoPokemons(store, state).filter(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList));
     }
-  }
+    for (; processedKos < pokemonsToDiscard.length; processedKos++) {
+      const pokemonToDiscard = pokemonsToDiscard[processedKos];
+      const knockOutEffect = knockOutEffects[processedKos];
+      pokemonToDiscard.cardList.knockedOutByEffect = false;
+      state = store.reduceEffect(state, knockOutEffect);
 
-  // Check table state and handle bench size after KOs
-  const checkTableStateEffect = new CheckTableStateEffect([5, 5]);
-  store.reduceEffect(state, checkTableStateEffect);
-  state.players.forEach(player => {
-    player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
-      if (cardList.cannotBeSpecialConditionedNextTurn && cardList.specialConditions.length > 0) {
-        cardList.clearAllSpecialConditions();
+      if (store.hasPrompts()) {
+        yield store.waitPrompt(state, () => next());
       }
+
+      if (knockOutEffect.preventDefault === false) {
+        const opponentIndex = pokemonToDiscard.playerNum === 0 ? 1 : 0;
+        const defaultDestination = state.players[opponentIndex].hand;
+        const destination = knockOutEffect.prizeDestination || defaultDestination;
+
+        let group = prizeGroups[opponentIndex].find(g => g.destination === destination);
+        if (!group) {
+          group = { destination, count: 0 };
+          prizeGroups[opponentIndex].push(group);
+        }
+        group.count += knockOutEffect.prizeCount;
+      }
+    }
+
+    // Check table state and handle bench size after KOs
+    checkTableStateEffect = new CheckTableStateEffect([5, 5]);
+    store.reduceEffect(state, checkTableStateEffect);
+    state.players.forEach(player => {
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, cardList => {
+        if (cardList.cannotBeSpecialConditionedNextTurn && cardList.specialConditions.length > 0) {
+          cardList.clearAllSpecialConditions();
+        }
+      });
     });
-  });
+    // TA-804: the last Multi Adapter provider may have left play or become
+    // suppressed. The owner chooses the excess Tools before play resumes.
+    for (const player of state.players) {
+      for (const target of [player.active, ...player.bench]) {
+        if (!target.getPokemonCard()?.name.includes('Rotom')) { continue; }
+        const capacity = new CheckPokemonToolCapacityEffect(player, target);
+        store.reduceEffect(state, capacity);
+        const excess = target.tools.length - capacity.capacity;
+        if (excess <= 0) { continue; }
+        const tools = new CardList();
+        tools.cards = target.tools.slice();
+        tools.isPublic = true;
+        state = store.prompt(state, new ChooseCardsPrompt(
+          player, GameMessage.CHOOSE_CARD_TO_DISCARD, tools, {},
+          { min: excess, max: excess, allowCancel: false }
+        ), selected => {
+          target.moveCardsTo(selected || [], player.discard);
+          toolsDiscarded = true;
+        });
+        if (store.hasPrompts()) {
+          yield store.waitPrompt(state, () => next());
+        }
+      }
+    }
+  } while (toolsDiscarded && findKoPokemons(store, state)
+    .some(p => !pokemonsToDiscard.some(q => q.cardList === p.cardList)));
   handleBenchSizeChange(store, state, checkTableStateEffect.benchSizes);
   if (store.hasPrompts()) {
     yield store.waitPrompt(state, () => next());

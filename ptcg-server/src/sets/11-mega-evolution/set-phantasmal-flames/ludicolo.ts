@@ -49,7 +49,9 @@ export class Ludicolo extends PokemonCard {
     if (WAS_POWER_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const hasMegaEvolutionPokemonInPlay = player.active.cards.some((c) => {
+      // TA-803: only the top Pokemon of each in-play stack can qualify.
+      const hasMegaEvolutionPokemonInPlay = [player.active, ...player.bench].some((slot) => {
+        const c = slot.getPokemonCard();
         return (
           c instanceof PokemonCard &&
           c.hasTag(CardTag.POKEMON_ex) &&

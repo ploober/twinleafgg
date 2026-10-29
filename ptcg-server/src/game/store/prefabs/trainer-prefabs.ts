@@ -1,3 +1,4 @@
+import { CheckPokemonToolCapacityEffect } from '../effects/check-effects';
 import { GameError } from '../../game-error';
 import { GameMessage } from '../../game-message';
 import { Card } from '../card/card';
@@ -243,8 +244,10 @@ export function CAN_PLAY_TRAINER_CARD(
         // Cards with canPlay (e.g. tools that attach to opponent's Pokemon) use that instead
         if (!trainerCard.canPlay) {
           let canAttachTool = false;
-          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList, pokemonCard, target) => {
-            if (Array.isArray(cardList.tools) && cardList.tools.length < pokemonCard.maxTools) {
+          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (cardList) => {
+            const capacity = new CheckPokemonToolCapacityEffect(player, cardList);
+            store.reduceEffect(state, capacity);
+            if (cardList.tools.length < capacity.capacity) {
               canAttachTool = true;
             }
           });

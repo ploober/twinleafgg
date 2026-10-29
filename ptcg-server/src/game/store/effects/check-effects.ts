@@ -11,6 +11,7 @@ import { CardList } from '../state/card-list';
 
 export enum CheckEffects {
   CHECK_HP_EFFECT = 'CHECK_HP_EFFECT',
+  CHECK_POKEMON_TOOL_CAPACITY_EFFECT = 'CHECK_POKEMON_TOOL_CAPACITY_EFFECT',
   CHECK_PRIZES_COUNT_EFFECT = 'CHECK_PRIZE_COUNT_EFFECT',
   CHECK_POKEMON_STATS_EFFECT = 'CHECK_POKEMON_STATS_EFFECT',
   CHECK_POKEMON_POWERS_EFFECT = 'CHECK_POKEMON_POWERS_EFFECT',
@@ -25,6 +26,17 @@ export enum CheckEffects {
   CHECK_PRIZES_DESTINATION_EFFECT = 'CHECK_PRIZES_DESTINATION_EFFECT',
   CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT = 'CHECK_SPECIAL_CONDITION_REMOVAL_EFFECT',
   CHECK_GUST_BLOCK_EFFECT = 'CHECK_GUST_BLOCK_EFFECT'
+}
+
+/** Current Tool allowance; queried without mutating shared card definitions. */
+export class CheckPokemonToolCapacityEffect implements Effect {
+  readonly type = CheckEffects.CHECK_POKEMON_TOOL_CAPACITY_EFFECT;
+  public preventDefault = false;
+  public capacity: number;
+
+  constructor(public player: Player, public target: PokemonCardList) {
+    this.capacity = target.getPokemonCard()?.maxTools ?? 1;
+  }
 }
 
 export class CheckPokemonPowersEffect implements Effect {

@@ -70,6 +70,9 @@ export class FanRotom extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       } else {
 
+        // TA-805/806: announcement consumes the shared use, including a failed search.
+        player.usedFanCall = true;
+
         let pokemons = 0;
 
         const blocked: number[] = [];
@@ -106,7 +109,6 @@ export class FanRotom extends PokemonCard {
             )], () => {
 
               MOVE_CARDS(store, state, player.deck, player.hand, { cards: cards, sourceCard: this });
-              player.usedFanCall = true;
             });
           }
           return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {

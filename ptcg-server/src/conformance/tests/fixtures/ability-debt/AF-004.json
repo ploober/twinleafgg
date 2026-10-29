@@ -1,0 +1,404 @@
+{
+  "schemaVersion": "0.1",
+  "initialState": {
+    "schemaVersion": "0.1",
+    "turn": 5,
+    "activePlayer": "B",
+    "firstPlayer": "B",
+    "phase": "main",
+    "outcome": "ongoing",
+    "players": {
+      "A": {
+        "active": {
+          "stack": [
+            {
+              "iid": "a0",
+              "printing": "pfl-029"
+            }
+          ],
+          "energy": [],
+          "tools": [],
+          "damage": 170,
+          "conditions": [],
+          "poisonDamagePerTurn": 10,
+          "markers": {
+            "playedOnTurn": 1,
+            "movedToActiveOnTurn": -1,
+            "damageTakenThisTurn": 0,
+            "abilitiesUsedThisTurn": [],
+            "cannotAttackNextTurn": false
+          }
+        },
+        "bench": [
+          {
+            "stack": [
+              {
+                "iid": "ab1",
+                "printing": "scr-118"
+              }
+            ],
+            "energy": [],
+            "tools": [
+              {
+                "iid": "abt1",
+                "printing": "meg-166"
+              },
+              {
+                "iid": "abt2",
+                "printing": "asc-186"
+              }
+            ],
+            "damage": 0,
+            "conditions": [],
+            "poisonDamagePerTurn": 10,
+            "markers": {
+              "playedOnTurn": 1,
+              "movedToActiveOnTurn": -1,
+              "damageTakenThisTurn": 0,
+              "abilitiesUsedThisTurn": [],
+              "cannotAttackNextTurn": false
+            }
+          },
+          {
+            "stack": [
+              {
+                "iid": "ab2",
+                "printing": "asc-004"
+              }
+            ],
+            "energy": [],
+            "tools": [],
+            "damage": 0,
+            "conditions": [],
+            "poisonDamagePerTurn": 10,
+            "markers": {
+              "playedOnTurn": 1,
+              "movedToActiveOnTurn": -1,
+              "damageTakenThisTurn": 0,
+              "abilitiesUsedThisTurn": [],
+              "cannotAttackNextTurn": false
+            }
+          }
+        ],
+        "hand": [],
+        "deck": [
+          {
+            "iid": "ad0",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad1",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad2",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad3",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad4",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad5",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad6",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad7",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad8",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad9",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad10",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad11",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad12",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad13",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad14",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "ad15",
+            "printing": "sve-003"
+          }
+        ],
+        "discard": [],
+        "lostZone": [],
+        "prizes": [
+          {
+            "iid": "ap0",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap1",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap2",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap3",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap4",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "ap5",
+            "printing": "sve-003",
+            "faceUp": false
+          }
+        ],
+        "flags": {
+          "supporterPlayedThisTurn": false,
+          "energyAttachedThisTurn": false,
+          "stadiumPlayedThisTurn": false,
+          "retreatedThisTurn": false,
+          "cardsPlayedThisTurn": 0,
+          "prizesTakenThisTurn": 0,
+          "prizesTakenLastTurn": 0,
+          "prizesTaken": 0,
+          "vstarUsed": false
+        }
+      },
+      "B": {
+        "active": {
+          "stack": [
+            {
+              "iid": "b0",
+              "printing": "asc-004"
+            }
+          ],
+          "energy": [
+            {
+              "iid": "be0",
+              "printing": "sve-001"
+            }
+          ],
+          "tools": [],
+          "damage": 0,
+          "conditions": [],
+          "poisonDamagePerTurn": 10,
+          "markers": {
+            "playedOnTurn": 1,
+            "movedToActiveOnTurn": -1,
+            "damageTakenThisTurn": 0,
+            "abilitiesUsedThisTurn": [],
+            "cannotAttackNextTurn": false
+          }
+        },
+        "bench": [
+          {
+            "stack": [
+              {
+                "iid": "bb1",
+                "printing": "asc-004"
+              }
+            ],
+            "energy": [],
+            "tools": [],
+            "damage": 0,
+            "conditions": [],
+            "poisonDamagePerTurn": 10,
+            "markers": {
+              "playedOnTurn": 1,
+              "movedToActiveOnTurn": -1,
+              "damageTakenThisTurn": 0,
+              "abilitiesUsedThisTurn": [],
+              "cannotAttackNextTurn": false
+            }
+          },
+          {
+            "stack": [
+              {
+                "iid": "bb2",
+                "printing": "asc-004"
+              }
+            ],
+            "energy": [],
+            "tools": [],
+            "damage": 0,
+            "conditions": [],
+            "poisonDamagePerTurn": 10,
+            "markers": {
+              "playedOnTurn": 1,
+              "movedToActiveOnTurn": -1,
+              "damageTakenThisTurn": 0,
+              "abilitiesUsedThisTurn": [],
+              "cannotAttackNextTurn": false
+            }
+          }
+        ],
+        "hand": [],
+        "deck": [
+          {
+            "iid": "bd0",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd1",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd2",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd3",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd4",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd5",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd6",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd7",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd8",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd9",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd10",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd11",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd12",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd13",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd14",
+            "printing": "sve-003"
+          },
+          {
+            "iid": "bd15",
+            "printing": "sve-003"
+          }
+        ],
+        "discard": [],
+        "lostZone": [],
+        "prizes": [
+          {
+            "iid": "bp0",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp1",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp2",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp3",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp4",
+            "printing": "sve-003",
+            "faceUp": false
+          },
+          {
+            "iid": "bp5",
+            "printing": "sve-003",
+            "faceUp": false
+          }
+        ],
+        "flags": {
+          "supporterPlayedThisTurn": false,
+          "energyAttachedThisTurn": false,
+          "stadiumPlayedThisTurn": false,
+          "retreatedThisTurn": false,
+          "cardsPlayedThisTurn": 0,
+          "prizesTakenThisTurn": 0,
+          "prizesTakenLastTurn": 0,
+          "prizesTaken": 0,
+          "vstarUsed": false
+        }
+      }
+    },
+    "activeEffects": [],
+    "format": "unlimited"
+  },
+  "actions": [
+    {
+      "type": "declareAttack",
+      "actor": "B",
+      "source": "b0",
+      "name": "Vine Slap"
+    },
+    {
+      "type": "takePrize",
+      "actor": "B",
+      "index": 0
+    },
+    {
+      "type": "takePrize",
+      "actor": "B",
+      "index": 1
+    },
+    {
+      "type": "promoteBench",
+      "actor": "A",
+      "target": "ab1"
+    }
+  ]
+}

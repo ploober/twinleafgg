@@ -5575,9 +5575,10 @@
     {
       "file": "set-phantasmal-flames/rotom-ex.ts",
       "signatures": [
-        "if (effect instanceof CheckTableStateEffect) { // CheckTableStateEffect.player is not populated on the post-KO cleanup pass // (check-effect.ts dispatches `new CheckTableStateEffect([5, 5])` with no player),"
+        "if (effect instanceof CheckPokemonToolCapacityEffect) {",
+        "StateUtils.isPokemonInPlay(player, this)"
       ],
-      "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
+      "note": "TA-113 retained by TA-211/804: Tool capacity now uses an explicit owner query; post-KO CheckTableStateEffect no longer dereferences an unset player.",
       "state": "guarding"
     },
     {
@@ -14726,7 +14727,7 @@
     {
       "file": "conformance/legal-actions.ts",
       "signatures": [
-        "            if (s.list.tools.length === 0 && trainerProbeAccepts(state, player, card, s)) {"
+        "            if (s.list.tools.length < capacity.capacity && trainerProbeAccepts(state, player, card, s)) {"
       ],
       "note": "TA-789 (2026-10-26): The Trainer menu probes a Tool onto each target it could be attached to; probed onto the Active alone, a Tool was withhe",
       "fixes": [
@@ -14843,6 +14844,64 @@
       "fixes": [
         "FX-0583"
       ]
+    },
+    {
+      "file": "set-stellar-crown/fan-rotom.ts",
+      "signatures": [
+        "player.usedFanCall = true; let pokemons = 0;"
+      ],
+      "note": "TA-805/806: reserve shared Fan Call use before search.",
+      "state": "guarding"
+    },
+    {
+      "file": "set-phantasmal-flames/ludicolo.ts",
+      "signatures": [
+        "[player.active, ...player.bench].some((slot) => { const c = slot.getPokemonCard();"
+      ],
+      "note": "TA-803: any in-play top Pokemon can qualify.",
+      "state": "guarding"
+    },
+    {
+      "file": "set-phantasmal-flames/rotom-ex.ts",
+      "signatures": [
+        "effect.target.getPokemonCard()?.name.includes('Rotom')",
+        "effect.capacity = Math.max(effect.capacity, 2);"
+      ],
+      "note": "TA-211/804: dynamic non-stacking Tool capacity.",
+      "state": "guarding"
+    },
+    {
+      "file": "game/store/effect-reducers/check-effect.ts",
+      "signatures": [
+        "const excess = target.tools.length - capacity.capacity;",
+        "target.moveCardsTo(selected || [], player.discard);"
+      ],
+      "note": "TA-804: owner chooses excess Tools after capacity loss.",
+      "state": "guarding"
+    },
+    {
+      "file": "game/store/effect-reducers/play-trainer-effect.ts",
+      "signatures": [
+        "if (target.tools.length >= capacity.capacity) {"
+      ],
+      "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
+      "state": "guarding"
+    },
+    {
+      "file": "game/store/prefabs/trainer-prefabs.ts",
+      "signatures": [
+        "const capacity = new CheckPokemonToolCapacityEffect(player, cardList);"
+      ],
+      "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
+      "state": "guarding"
+    },
+    {
+      "file": "game/store/effects/check-effects.ts",
+      "signatures": [
+        "export class CheckPokemonToolCapacityEffect implements Effect {"
+      ],
+      "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
+      "state": "guarding"
     }
   ]
 }

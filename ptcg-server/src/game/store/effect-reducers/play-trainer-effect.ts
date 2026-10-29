@@ -1,3 +1,4 @@
+import { CheckPokemonToolCapacityEffect } from '../effects/check-effects';
 import {
   AttachPokemonToolEffect, TrainerEffect, PlaySupporterEffect,
   PlayItemEffect, PlayStadiumEffect
@@ -165,7 +166,9 @@ export function playTrainerReducer(store: StoreLike, state: State, effect: Effec
     if (pokemonCard === undefined) {
       throw new GameError(GameMessage.INVALID_TARGET);
     }
-    if (effect.target.tools.length >= pokemonCard.maxTools) {
+    const capacity = new CheckPokemonToolCapacityEffect(targetOwner!, target);
+    store.reduceEffect(state, capacity);
+    if (target.tools.length >= capacity.capacity) {
       throw new GameError(GameMessage.POKEMON_TOOL_ALREADY_ATTACHED);
     }
     if (player.cannotPlayToolCards) {

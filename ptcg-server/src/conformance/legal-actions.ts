@@ -25,7 +25,7 @@ import { StateUtils } from '../game/store/state-utils';
 import { StoreLike } from '../game/store/store-like';
 import {
   CheckPokemonAttacksEffect, CheckAttackCostEffect, CheckRetreatCostEffect,
-  CheckProvidedEnergyEffect, CheckPokemonPowersEffect
+  CheckProvidedEnergyEffect, CheckPokemonPowersEffect, CheckPokemonToolCapacityEffect
 } from '../game/store/effects/check-effects';
 import { ImportedGame, IidContext } from './state-adapter';
 import { LegalAction, PendingDecision, NeutralPlayerId } from './neutral-types';
@@ -156,7 +156,9 @@ function handMenu(store: StoreLike, state: State, player: Player, ctx: IidContex
       switch (card.trainerType) {
         case TrainerType.TOOL:
           for (const s of own) {
-            if (s.list.tools.length === 0 && trainerProbeAccepts(state, player, card, s)) {
+            const capacity = new CheckPokemonToolCapacityEffect(player, s.list);
+            store.reduceEffect(state, capacity);
+            if (s.list.tools.length < capacity.capacity && trainerProbeAccepts(state, player, card, s)) {
               out.push({ type: 'attachTool', card: iid, target: s.iid });
             }
           }
