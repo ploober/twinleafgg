@@ -5579,7 +5579,10 @@
         "StateUtils.isPokemonInPlay(player, this)"
       ],
       "note": "TA-113 retained by TA-211/804: Tool capacity now uses an explicit owner query; post-KO CheckTableStateEffect no longer dereferences an unset player.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "set-phantasmal-flames/sableye.ts",
@@ -14851,7 +14854,10 @@
         "player.usedFanCall = true; let pokemons = 0;"
       ],
       "note": "TA-805/806: reserve shared Fan Call use before search.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "set-phantasmal-flames/ludicolo.ts",
@@ -14859,7 +14865,10 @@
         "[player.active, ...player.bench].some((slot) => { const c = slot.getPokemonCard();"
       ],
       "note": "TA-803: any in-play top Pokemon can qualify.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "set-phantasmal-flames/rotom-ex.ts",
@@ -14868,7 +14877,10 @@
         "effect.capacity = Math.max(effect.capacity, 2);"
       ],
       "note": "TA-211/804: dynamic non-stacking Tool capacity.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "game/store/effect-reducers/check-effect.ts",
@@ -14877,7 +14889,10 @@
         "target.moveCardsTo(selected || [], player.discard);"
       ],
       "note": "TA-804: owner chooses excess Tools after capacity loss.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "game/store/effect-reducers/play-trainer-effect.ts",
@@ -14885,7 +14900,10 @@
         "if (target.tools.length >= capacity.capacity) {"
       ],
       "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "game/store/prefabs/trainer-prefabs.ts",
@@ -14893,7 +14911,10 @@
         "const capacity = new CheckPokemonToolCapacityEffect(player, cardList);"
       ],
       "note": "TA-211/804: one current-state Tool capacity query for native attachment, playability and cleanup.",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0584"
+      ]
     },
     {
       "file": "game/store/effects/check-effects.ts",
