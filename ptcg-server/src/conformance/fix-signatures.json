@@ -15070,6 +15070,49 @@
         "FX-0589"
       ],
       "note": "TA-811: completed attached-card selections remain in transit through the destination choice; deferred pre-damage choices are excluded."
+    },
+    {
+      "file": "set-scarlet-and-violet/pawmot.ts",
+      "signatures": [
+        "blockedTo.push(target);"
+      ],
+      "note": "TA-812, TA-813, TA-814, TA-815 (2026-10-29): Correct exploration target choices and optional trigger timing",
+      "fixes": [
+        "FX-0590"
+      ]
+    },
+    {
+      "file": "set-shrouded-fable/janines-secret-technique.ts",
+      "signatures": [
+        "const recipients = chosen || [];",
+        "search(index + 1);"
+      ],
+      "fixes": [
+        "FX-0590"
+      ],
+      "note": "Exploration closeout: printed recipient order, event-scoped optional use and typed counter placement."
+    },
+    {
+      "file": "set-mega-evolution/latios.ts",
+      "signatures": [
+        "if (effect instanceof MovedToActiveEffect && effect.player === player",
+        "&& !cardList.abilitiesUsedThisTurn.includes(this.powers[0].name)) {",
+        "ABILITY_USED(player, this);"
+      ],
+      "fixes": [
+        "FX-0590"
+      ],
+      "note": "Exploration closeout: printed recipient order, event-scoped optional use and typed counter placement."
+    },
+    {
+      "file": "set-paldea-evolved/meowscarada-ex.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+      ],
+      "fixes": [
+        "FX-0590"
+      ],
+      "note": "Exploration closeout: printed recipient order, event-scoped optional use and typed counter placement."
     }
   ]
 }
