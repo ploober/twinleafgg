@@ -15050,6 +15050,26 @@
         "FX-0588"
       ],
       "note": "Ability/wire closeout 2026-10-29; behavior controls in the closeout specs."
+    },
+    {
+      "file": "conformance/transit-projection.ts",
+      "signatures": [
+        "const visibility = publicOrigin ? 'public' : fields.visibility;"
+      ],
+      "note": "TA-811 (2026-10-29): Keep public attached-card selections held until placement",
+      "fixes": [
+        "FX-0589"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "|| prompt.cards instanceof PokemonCardList)) {"
+      ],
+      "fixes": [
+        "FX-0589"
+      ],
+      "note": "TA-811: completed attached-card selections remain in transit through the destination choice; deferred pre-damage choices are excluded."
     }
   ]
 }
