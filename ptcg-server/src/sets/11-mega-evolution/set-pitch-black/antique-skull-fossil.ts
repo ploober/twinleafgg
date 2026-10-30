@@ -104,7 +104,8 @@ export class AntiqueSkullFossil extends TrainerCard {
         try {
           store.reduceEffect(
             state,
-            new PowerEffect(targetPlayer, this.powers[0], this as unknown as PokemonCard),
+            // TA-829: probe the passive Ability, not the manual-discard Trainer power.
+            new PowerEffect(targetPlayer, this.powers[1], this as unknown as PokemonCard),
           );
         } catch {
           return state;
