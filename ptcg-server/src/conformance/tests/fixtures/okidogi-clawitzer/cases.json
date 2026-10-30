@@ -44442,6 +44442,10 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [
@@ -44920,6 +44924,10 @@
       "checks": [
         [
           "state.players.A.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -45409,6 +45417,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -45909,6 +45921,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -46403,6 +46419,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -46889,6 +46911,10 @@
       "checks": [
         [
           "state.players.A.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -47386,6 +47412,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -47894,6 +47924,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -48387,6 +48421,12 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [],
@@ -48893,6 +48933,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -49380,6 +49426,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -49866,6 +49918,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -50352,6 +50410,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -50846,6 +50910,12 @@
               "iid": "en0",
               "printing": "sve-003"
             }
+          ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
           ]
         ]
       ],
@@ -51366,6 +51436,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -51883,6 +51959,12 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -52433,6 +52515,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -52950,6 +53036,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -53424,6 +53516,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -53903,6 +53999,10 @@
       "checks": [
         [
           "state.players.B.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -54392,6 +54492,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -54892,6 +54996,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -55386,6 +55494,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -55872,6 +55986,10 @@
       "checks": [
         [
           "state.players.B.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -56369,6 +56487,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -56877,6 +56999,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -57370,6 +57496,12 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [],
@@ -57876,6 +58008,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -58363,6 +58501,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -58849,6 +58993,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -59335,6 +59485,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -59829,6 +59985,12 @@
               "iid": "en0",
               "printing": "sve-003"
             }
+          ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
           ]
         ]
       ],
@@ -60349,6 +60511,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -60866,6 +61034,12 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -61416,6 +61590,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -61933,6 +62111,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -62407,6 +62591,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -62886,6 +63074,10 @@
       "checks": [
         [
           "state.players.A.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -63375,6 +63567,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -63875,6 +64071,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -64369,6 +64569,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -64855,6 +65061,10 @@
       "checks": [
         [
           "state.players.A.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -65352,6 +65562,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -65860,6 +66074,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -66353,6 +66571,12 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [],
@@ -66859,6 +67083,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -67346,6 +67576,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -67832,6 +68068,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -68318,6 +68560,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -68812,6 +69060,12 @@
               "iid": "en0",
               "printing": "sve-003"
             }
+          ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
           ]
         ]
       ],
@@ -69332,6 +69586,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -69849,6 +70109,12 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -70399,6 +70665,10 @@
         [
           "state.players.A.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -70916,6 +71186,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -71390,6 +71666,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -71869,6 +72149,10 @@
       "checks": [
         [
           "state.players.B.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -72358,6 +72642,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -72858,6 +73146,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -73352,6 +73644,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -73838,6 +74136,10 @@
       "checks": [
         [
           "state.players.B.transit",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -74335,6 +74637,10 @@
         ],
         [
           "pokemon.a0.energy",
+          []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
           []
         ]
       ],
@@ -74843,6 +75149,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -75336,6 +75646,12 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [],
@@ -75842,6 +76158,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -76329,6 +76651,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -76815,6 +77143,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -77301,6 +77635,12 @@
         [
           "pokemon.a0.energy",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": []
@@ -77795,6 +78135,12 @@
               "iid": "en0",
               "printing": "sve-003"
             }
+          ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
           ]
         ]
       ],
@@ -78315,6 +78661,12 @@
               "printing": "sve-003"
             }
           ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -78832,6 +79184,12 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
+          ]
         ]
       ],
       "absent": [
@@ -79382,6 +79740,10 @@
         [
           "state.players.B.transit",
           []
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          []
         ]
       ],
       "absent": [],
@@ -79898,6 +80260,12 @@
               "iid": "en1",
               "printing": "sve-003"
             }
+          ]
+        ],
+        [
+          "pokemon.a0.markers.abilitiesUsedThisTurn",
+          [
+            "Fall Back to Reload"
           ]
         ]
       ],

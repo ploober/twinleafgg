@@ -27,7 +27,7 @@ function value(result: StepResponse, key: string): unknown {
   for (const part of parts) { current = current?.[part]; }
   return current;
 }
-describe('Okidogi and Clawitzer [TA-821 sfa-036] [TA-821 meg-141] [TA-822 sfa-036] [TA-823 meg-038] [TA-824 meg-141] [TA-825 meg-141]', () => {
+describe('Okidogi and Clawitzer [TA-821 sfa-036] [TA-821 meg-141] [TA-822 sfa-036] [TA-823 meg-038] [TA-824 meg-141] [TA-825 meg-141] [TA-826 meg-038] [TA-826 meg-141]', () => {
   for (const cell of cases) {
     it(cell.id, () => {
       const r = step(cell.request.initialState, cell.request.actions);

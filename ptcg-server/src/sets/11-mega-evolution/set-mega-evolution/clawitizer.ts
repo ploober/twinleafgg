@@ -1,7 +1,7 @@
 import { PokemonCard, Stage, CardType, PowerType, State, StoreLike, ConfirmPrompt, GameMessage, SuperType, EnergyCard, EnergyType, GameError, CardTarget, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { MovedFromActiveToBenchEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import {DISCARD_ALL_ENERGY_FROM_POKEMON, MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, ATTACH_ENERGY_PROMPT } from '../../../game/store/prefabs/prefabs';
+import {DISCARD_ALL_ENERGY_FROM_POKEMON, MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, ATTACH_ENERGY_PROMPT, ABILITY_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Clawitizer extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -85,6 +85,7 @@ export class Clawitizer extends PokemonCard {
           if (card !== this) { blockedTo.push(target); }
         });
         player.marker.addMarker(this.ABILITY_USED_MARKER, this);
+        ABILITY_USED(player, this);
         return ATTACH_ENERGY_PROMPT(
           store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.HAND,
           [SlotType.ACTIVE, SlotType.BENCH],
