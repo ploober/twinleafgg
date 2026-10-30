@@ -15147,6 +15147,36 @@
       "fixes": [
         "FX-0593"
       ]
+    },
+    {
+      "file": "set-shrouded-fable/bloodmoon-ursaluna.ts",
+      "signatures": [
+        "{ min: 1, max: 2, allowCancel: false, blocked, blockedTo },"
+      ],
+      "note": "TA-819, TA-820 (2026-10-29): Project self-attachments and require the accepted Ability minimum",
+      "fixes": [
+        "FX-0594"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/deoxys.ts",
+      "signatures": [
+        "return ATTACH_ENERGY_PROMPT( store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE],"
+      ],
+      "note": "TA-819 (2026-10-29): self-attachment choices expose the recipient and place each pick; the deck attachment prefab supplies the owed shuffle.",
+      "fixes": [
+        "FX-0594"
+      ]
+    },
+    {
+      "file": "set-chaos-rising/quilladin.ts",
+      "signatures": [
+        "return ATTACH_ENERGY_PROMPT( store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE],"
+      ],
+      "note": "TA-819 (2026-10-29): self-attachment choices expose the recipient and place each pick; the deck attachment prefab supplies the owed shuffle.",
+      "fixes": [
+        "FX-0594"
+      ]
     }
   ]
 }
