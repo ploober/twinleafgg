@@ -8061,9 +8061,9 @@
       "signatures": [
         "{ min: 0, max: 1, allowCancel: false, blocked },",
         "const damageEffect = new DealDamageEffect(effect, effect.damage);",
-        "return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {"
+        "return ATTACH_ENERGY_PROMPT( store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE],"
       ],
-      "note": "TA-350 sibling (2026-09-01): a DECK search may always fail to find (#903) — min 0, so the CHOOSE_CARD_TO_ATTACH CF-14 collapse (now allow-listed in choose-cards.ts) can never fire off hidden deck contents. TA-351 (2026-09-01): the 20 lands BEFORE the search pauses (TA-66 shape; standing fuzz-baseline row), the search is always performed (B.43, no deck-content gate) and 'Then, shuffle' runs whether or not it found (#2303).",
+      "note": "TA-350 sibling (2026-09-01): a DECK search may always fail to find (#903) — min 0, so the CHOOSE_CARD_TO_ATTACH CF-14 collapse (now allow-listed in choose-cards.ts) can never fire off hidden deck contents. TA-351 (2026-09-01): the 20 lands BEFORE the search pauses (TA-66 shape; standing fuzz-baseline row), the search is always performed (B.43, no deck-content gate) and 'Then, shuffle' runs whether or not it found (#2303). TA-819 (2026-10-29): the deck-source attachment prefab now supplies the same owed shuffle; damage-first and fail-to-find signatures remain.",
       "fixes": [
         "FX-0026"
       ],

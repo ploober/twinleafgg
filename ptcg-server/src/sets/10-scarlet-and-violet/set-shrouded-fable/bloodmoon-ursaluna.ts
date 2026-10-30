@@ -1,9 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { PowerType, StoreLike, State, StateUtils, GameMessage, ConfirmPrompt, ChooseCardsPrompt, EnergyCard } from '../../../game';
+import { PowerType, StoreLike, State, StateUtils, GameMessage, ConfirmPrompt, EnergyCard, CardTarget, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
-import {IS_ABILITY_BLOCKED, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ATTACH_ENERGY_PROMPT, IS_ABILITY_BLOCKED, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class BloodmoonUrsaluna extends PokemonCard {
 
@@ -72,23 +72,25 @@ export class BloodmoonUrsaluna extends PokemonCard {
       ), wantToUse => {
         if (wantToUse) {
 
-          const cardList = StateUtils.findCardList(state, this);
-          if (cardList === undefined) {
-            return state;
-          }
-
-          return store.prompt(state, new ChooseCardsPrompt(
-            player,
-            GameMessage.CHOOSE_CARD_TO_ATTACH,
-            player.hand,
-            { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },
-            { min: 0, max: 2, allowCancel: false }
-          ), cards => {
-            cards = cards || [];
-            if (cards.length > 0) {
-              MOVE_CARDS(store, state, player.hand, cardList, { cards: cards, sourceCard: this });
+          // TA-819: attach to this newly played Pokemon, including at each intermediate pick.
+          const blockedTo: CardTarget[] = [];
+          player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (_list, card, target) => {
+            if (card !== this) { blockedTo.push(target); }
+          });
+          const blocked: number[] = [];
+          player.hand.cards.forEach((card, index) => {
+            if (!(card instanceof EnergyCard && card.energyType === EnergyType.BASIC
+                && card.provides.includes(CardType.FIGHTING))) {
+              blocked.push(index);
             }
           });
+          return ATTACH_ENERGY_PROMPT(
+            store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.HAND,
+            [SlotType.ACTIVE, SlotType.BENCH],
+            { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+            // TA-820: declining happens before this prompt; accepting requires at least one attachment.
+            { min: 1, max: 2, allowCancel: false, blocked, blockedTo },
+          );
         }
       });
     }

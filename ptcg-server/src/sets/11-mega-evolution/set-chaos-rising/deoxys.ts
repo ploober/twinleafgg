@@ -1,10 +1,9 @@
 import { PokemonCard } from '../../../game/store/card/pokemon-card';
 import { Stage, CardType, EnergyType, SuperType } from '../../../game/store/card/card-types';
-import { Card, GameMessage, StoreLike, State, StateUtils } from '../../../game';
+import { PlayerType, SlotType, StoreLike, State, StateUtils } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { CheckProvidedEnergyEffect } from '../../../game/store/effects/check-effects';
-import {WAS_ATTACK_USED, SHUFFLE_DECK, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
-import { ChooseCardsPrompt } from '../../../game/store/prompts/choose-cards-prompt';
+import { ATTACH_ENERGY_PROMPT, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { EnergyCard } from '../../../game/store/card/energy-card';
 
 export class Deoxys extends PokemonCard {
@@ -40,7 +39,6 @@ export class Deoxys extends PokemonCard {
 
   public reduceEffect(store: StoreLike, state: State, effect: Effect): State {
     // Attack 1: Genome Charge
-    // Ref: set-sword-and-shield/pikachu.ts (ChooseCardsPrompt from deck for energy, attach, shuffle)
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
@@ -53,25 +51,11 @@ export class Deoxys extends PokemonCard {
         }
       });
 
-      store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.deck,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
-          { min: 0, max: 2, allowCancel: false, blocked },
-        ),
-        (cards: Card[]) => {
-          cards = cards || [];
-          if (cards.length > 0) {
-            const cardList = StateUtils.findCardList(state, this);
-            if (cardList) {
-              MOVE_CARDS(store, state, player.deck, cardList, { cards: cards, sourceCard: this });
-            }
-          }
-          SHUFFLE_DECK(store, state, player);
-        },
+      // TA-819: the attacking Pokemon is the sole recipient; place each Energy at its pick.
+      return ATTACH_ENERGY_PROMPT(
+        store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { min: 0, max: 2, allowCancel: false, blocked },
       );
     }
 

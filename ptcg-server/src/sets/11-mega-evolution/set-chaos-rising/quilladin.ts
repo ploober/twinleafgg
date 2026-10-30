@@ -4,12 +4,11 @@ import {
   PokemonCard,
   StoreLike,
   State,
-  ChooseCardsPrompt,
-  GameMessage,
-  ShuffleDeckPrompt,
+  PlayerType,
+  SlotType,
 } from '../../../game';
 import { EnergyCard } from '../../../game/store/card/energy-card';
-import { SHUFFLE_DECK, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import { ATTACH_ENERGY_PROMPT, SHUFFLE_DECK, WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 import { DealDamageEffect } from '../../../game/store/effects/attack-effects';
 
 export class Quilladin extends PokemonCard {
@@ -67,29 +66,11 @@ export class Quilladin extends PokemonCard {
         else if (c.energyType !== EnergyType.BASIC) blocked.push(i);
         else if (!c.provides.includes(G)) blocked.push(i);
       });
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.deck,
-          { superType: SuperType.ENERGY },
-          // TA-350 (sibling): a DECK search may always fail to find (#903) — `min: 0`, so the pick is
-          // never "forced" and CHOOSE_CARD_TO_ATTACH's CF-14 collapse (choose-cards.ts) cannot fire
-          // off hidden deck contents. rotomancer keeps the decline on this exact board.
-          { min: 0, max: 1, allowCancel: false, blocked },
-        ),
-        (selected) => {
-          const cards = selected || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, player.deck, player.active, { cards: [cards[0]], sourceCard: this });
-          }
-          // "Then, shuffle your deck." follows the performed search whether or not it found (#2303,
-          // B.44's wording test) — TA-351.
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-            player.deck.applyOrder(order);
-          });
-        },
+      // TA-819: name the attacker as recipient. TA-350/351 still allow a failed search and owe the shuffle.
+      return ATTACH_ENERGY_PROMPT(
+        store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.DECK, [SlotType.ACTIVE],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC },
+        { min: 0, max: 1, allowCancel: false, blocked },
       );
     }
     return state;
