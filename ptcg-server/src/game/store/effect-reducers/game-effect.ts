@@ -679,7 +679,8 @@ function* usePower(next: Function, store: StoreLike, state: State, effect: UsePo
   // run the end-of-turn clear (EndTurnEffect logs LOG_PLAYER_ENDS_TURN first); the turn number advances only once its
   // prompt resolves. The use belonged to the turn that ended, so nothing is marked.
   const turnEnded = state.logs.some(l => l.id > lastLogId && l.message === GameLog.LOG_PLAYER_ENDS_TURN);
-  if (/once during your turn/i.test(power.text ?? '') && !turnEnded) {
+  // TA-830: first-turn limits also reserve a once-per-turn use at announcement.
+  if (/once during your (?:first )?turn/i.test(power.text ?? '') && !turnEnded) {
     const slot = StateUtils.findCardList(state, card);
     if (slot instanceof PokemonCardList) {
       slot.addBoardEffect(BoardEffect.ABILITY_USED);

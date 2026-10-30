@@ -15,6 +15,7 @@ import {
 } from '../../../game';
 import { EndTurnEffect } from '../../../game/store/effects/game-phase-effects';
 import { PlayPokemonEffect } from '../../../game/store/effects/play-card-effects';
+import { CardTarget } from '../../../game/store/actions/play-card-action';
 import {THIS_POKEMON_CANNOT_ATTACK_NEXT_TURN, WAS_ATTACK_USED, WAS_POWER_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
 
 export class SandyShocksex extends PokemonCard {
@@ -91,6 +92,12 @@ export class SandyShocksex extends PokemonCard {
         throw new GameError(GameMessage.CANNOT_USE_POWER);
       }
 
+      // TA-831: the printed recipient is this exact Pokemon, in either slot.
+      const source = StateUtils.findCardList(state, this);
+      const blockedTo: CardTarget[] = [];
+      player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (list, _card, target) => {
+        if (list !== source) { blockedTo.push(target); }
+      });
       state = store.prompt(
         state,
         new AttachEnergyPrompt(
@@ -100,13 +107,17 @@ export class SandyShocksex extends PokemonCard {
           PlayerType.BOTTOM_PLAYER,
           [SlotType.BENCH, SlotType.ACTIVE],
           { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Fighting Energy' },
-          { allowCancel: false, min: 1, max: 1 },
+          { allowCancel: false, min: 1, max: 1, blockedTo },
         ),
         (transfers) => {
           transfers = transfers || [];
           // cancelled by user
           if (transfers.length === 0) {
             return state;
+          }
+          // Native callers also enforce the recipient before any card moves.
+          if (transfers.some(transfer => StateUtils.getTarget(state, player, transfer.to) !== source)) {
+            throw new GameError(GameMessage.INVALID_PROMPT_RESULT);
           }
           for (const transfer of transfers) {
             const target = StateUtils.getTarget(state, player, transfer.to);

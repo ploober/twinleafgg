@@ -9309,9 +9309,9 @@
     {
       "file": "game/store/effect-reducers/game-effect.ts",
       "signatures": [
-        "  if (/once during your turn/i.test(power.text ?? '') && !turnEnded) {"
+        "  if (/once during your (?:first )?turn/i.test(power.text ?? '') && !turnEnded) {"
       ],
-      "note": "TA-453 (2026-09-20): usePower flags the slot ABILITY_USED after the card PowerEffect returns without throwing when the power text says \"Once ",
+      "note": "TA-453 (2026-09-20): usePower flags the slot ABILITY_USED after the card PowerEffect returns without throwing when the power text says \"Once  | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
         "FX-0323"
       ],
@@ -9320,9 +9320,9 @@
     {
       "file": "conformance/legal-actions.ts",
       "signatures": [
-        "    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {"
+        "    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your (?:first )?turn/i.test(power.text ?? '')) {"
       ],
-      "note": "TA-454 (2026-09-20): abilitiesUsedLabels reads the ABILITY_USED slot flag directly for a power printed \"Once during your turn\" (the flag is a",
+      "note": "TA-454 (2026-09-20): abilitiesUsedLabels reads the ABILITY_USED slot flag directly for a power printed \"Once during your turn\" (the flag is a | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
         "FX-0324"
       ],
@@ -9485,9 +9485,9 @@
     {
       "file": "game/store/prefabs/prefabs.ts",
       "signatures": [
-        "        if (/once during your turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {"
+        "        if (/once during your (?:first )?turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {"
       ],
-      "note": "TA-459 / B.58 (2026-09-20): ABILITY_USED remembers the triggered use BY NAME on the slot.",
+      "note": "TA-459 / B.58 (2026-09-20): ABILITY_USED remembers the triggered use BY NAME on the slot. | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
         "FX-0328"
       ],
@@ -10345,13 +10345,11 @@
     {
       "file": "set-pokemon-151/starmie.ts",
       "signatures": [
-        "if (!placeCounters.preventDefault) {",
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
+        "if (!placeCounters.preventDefault) {"
       ],
       "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
-        "FX-0377",
-        "FX-0599"
+        "FX-0377"
       ],
       "state": "absorbed"
     },
@@ -10383,13 +10381,11 @@
     {
       "file": "set-paldean-fates/starmie.ts",
       "signatures": [
-        "if (!placeCounters.preventDefault) {",
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
+        "if (!placeCounters.preventDefault) {"
       ],
       "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
-        "FX-0377",
-        "FX-0599"
+        "FX-0377"
       ],
       "state": "absorbed"
     },
@@ -15382,6 +15378,38 @@
       "fixes": [
         "FX-0599"
       ]
+    },
+    {
+      "file": "set-pitch-black/antique-skull-fossil.ts",
+      "signatures": [
+        "new PowerEffect(targetPlayer, this.powers[1], this as unknown as PokemonCard),"
+      ],
+      "note": "TA-829 (2026-10-30): Keep Spiny Skull retaliation separate from manual Fossil discard",
+      "fixes": [
+        "FX-0600"
+      ]
+    },
+    {
+      "file": "set-pokemon-151/starmie.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
+      ],
+      "fixes": [
+        "FX-0599"
+      ],
+      "note": "CF-70 fixed quantity: retain the exact FX-0599 anchor separately from the absorbed TA-570 behavior (FX-0377).",
+      "state": "guarding"
+    },
+    {
+      "file": "set-paldean-fates/starmie.ts",
+      "signatures": [
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
+      ],
+      "fixes": [
+        "FX-0599"
+      ],
+      "note": "CF-70 fixed quantity: retain the exact FX-0599 anchor separately from the absorbed TA-570 behavior (FX-0377).",
+      "state": "guarding"
     }
   ]
 }

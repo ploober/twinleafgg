@@ -229,7 +229,7 @@ export function ABILITY_USED(player: Player, card: PokemonCard) {
       // TA-459 / B.58: remember the use BY NAME on the Pokémon (survives evolution, #798) — the card's
       // printed once-per-turn powers; every in-pool card that calls this has exactly one.
       for (const power of card.powers) {
-        if (/once during your turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {
+        if (/once during your (?:first )?turn/i.test(power.text ?? '') && !cardList.abilitiesUsedThisTurn.includes(power.name)) {
           cardList.abilitiesUsedThisTurn.push(power.name);
         }
       }

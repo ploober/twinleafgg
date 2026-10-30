@@ -732,7 +732,7 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
   for (const card of slot.getPokemons()) {
     for (const power of card.powers) {
       if (power.powerType !== PowerType.ABILITY && power.powerType !== PowerType.POKEPOWER) { continue; }
-      if (/once during your turn/i.test(power.text ?? '') && slot.abilitiesUsedThisTurn.includes(power.name) && !out.includes(power.name)) {
+      if (/once during your (?:first )?turn/i.test(power.text ?? '') && slot.abilitiesUsedThisTurn.includes(power.name) && !out.includes(power.name)) {
         out.push(power.name);
       }
     }
@@ -748,7 +748,7 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
       // (TA-457), and a declined trigger is not a use (compendium #43, Burning Road). A from-hand
       // activation (Klinklang scr-101 Emergency Rotation, useFromHand) sets no state and is not
       // derived here.
-      if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {
+      if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your (?:first )?turn/i.test(power.text ?? '')) {
         out.push(power.name);
       }
       continue;
@@ -758,7 +758,7 @@ export function abilitiesUsedLabels(state: State, player: Player, slot: PokemonC
     // "Once during your turn" — read it directly. The counterfactual probe below is refused for
     // PHASE reasons while an attack is resolving (Morpeko twm-072 read [Snack Seek] at its own pick and
     // [] at the attack cost pick two actions later), so it stays for marker-keyed cards only.
-    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your turn/i.test(power.text ?? '')) {
+    if (slot.boardEffect.includes(BoardEffect.ABILITY_USED) && /once during your (?:first )?turn/i.test(power.text ?? '')) {
       out.push(power.name);
       continue;
     }
