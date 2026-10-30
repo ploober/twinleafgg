@@ -15218,6 +15218,16 @@
       "fixes": [
         "FX-0596"
       ]
+    },
+    {
+      "file": "set-mega-evolution/clawitizer.ts",
+      "signatures": [
+        "|| usedSlot?.abilitiesUsedThisTurn.includes(this.powers[0].name)) {"
+      ],
+      "note": "TA-827 (2026-10-29): Keep movement-triggered once-per-turn use across exported board reload",
+      "fixes": [
+        "FX-0597"
+      ]
     }
   ]
 }
