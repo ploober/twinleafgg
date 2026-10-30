@@ -1,7 +1,7 @@
-import { PokemonCard, Stage, CardType, PowerType, State, StoreLike, StateUtils, ConfirmPrompt, GameMessage, ChooseCardsPrompt, SuperType, EnergyCard, EnergyType, GameError } from '../../../game';
+import { PokemonCard, Stage, CardType, PowerType, State, StoreLike, ConfirmPrompt, GameMessage, SuperType, EnergyCard, EnergyType, GameError, CardTarget, PlayerType, SlotType } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
 import { MovedFromActiveToBenchEffect, PowerEffect } from '../../../game/store/effects/game-effects';
-import {DISCARD_ALL_ENERGY_FROM_POKEMON, MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {DISCARD_ALL_ENERGY_FROM_POKEMON, MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN, REMOVE_MARKER_AT_END_OF_TURN, WAS_ATTACK_USED, ATTACH_ENERGY_PROMPT } from '../../../game/store/prefabs/prefabs';
 
 export class Clawitizer extends PokemonCard {
   public stage: Stage = Stage.STAGE_1;
@@ -68,7 +68,6 @@ export class Clawitizer extends PokemonCard {
         GameMessage.WANT_TO_USE_ABILITY,
       ), wantToUse => {
         if (!wantToUse) {
-          player.marker.addMarker(this.ABILITY_USED_MARKER, this);
           return;
         }
 
@@ -81,22 +80,17 @@ export class Clawitizer extends PokemonCard {
           throw new GameError(GameMessage.CANNOT_USE_POWER);
         }
 
-        const cardList = StateUtils.findCardList(state, this);
-
-        player.marker.addMarker(this.ABILITY_USED_MARKER, this);
-
-        return store.prompt(state, new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.hand,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
-          { min: 0, max: 2, allowCancel: false }
-        ), cards => {
-          cards = cards || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, player.hand, cardList, { cards: cards, sourceCard: this });
-          }
+        const blockedTo: CardTarget[] = [];
+        player.forEachPokemon(PlayerType.BOTTOM_PLAYER, (_list, card, target) => {
+          if (card !== this) { blockedTo.push(target); }
         });
+        player.marker.addMarker(this.ABILITY_USED_MARKER, this);
+        return ATTACH_ENERGY_PROMPT(
+          store, state, player, PlayerType.BOTTOM_PLAYER, SlotType.HAND,
+          [SlotType.ACTIVE, SlotType.BENCH],
+          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Water Energy' },
+          { min: 1, max: 2, allowCancel: false, blockedTo },
+        );
       });
     }
 

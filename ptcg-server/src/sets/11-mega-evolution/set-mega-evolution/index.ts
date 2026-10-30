@@ -1,3 +1,4 @@
+import { Clawitizer } from './clawitizer';
 
 import { Card } from '../../../game/store/card/card';
 import { Abra } from './abra';
@@ -187,6 +188,7 @@ export const setMegaEvolution: Card[] = [
   new Ivysaur2MEG(),
   new Ninjask2MEG(),
   new Snover2MEG(),
+  new Clawitizer(),
   new Clawitizer2MEG(),
   new Inteleon2MEG(),
   new Houndstone2MEG(),

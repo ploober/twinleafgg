@@ -10,15 +10,18 @@ import {
 import {
   StoreLike,
   State,
-  StateUtils,
-  ChooseCardsPrompt,
+  AttachEnergyPrompt,
+  PlayerType,
+  SlotType,
+  EnergyCard,
   GameMessage,
   ShuffleDeckPrompt,
 } from '../../../game';
 import { Effect } from '../../../game/store/effects/effect';
+import { AttachEnergyEffect } from '../../../game/store/effects/play-card-effects';
 import { AttackEffect } from '../../../game/store/effects/game-effects';
 import { AddSpecialConditionsEffect } from '../../../game/store/effects/attack-effects';
-import {WAS_ATTACK_USED, MOVE_CARDS } from '../../../game/store/prefabs/prefabs';
+import {WAS_ATTACK_USED } from '../../../game/store/prefabs/prefabs';
 
 export class Okidogiex extends PokemonCard {
   public stage: Stage = Stage.BASIC;
@@ -55,36 +58,28 @@ export class Okidogiex extends PokemonCard {
     if (WAS_ATTACK_USED(effect, 0, this)) {
       const player = effect.player;
 
-      const cardList = StateUtils.findCardList(state, this);
-      if (cardList === undefined) {
-        return state;
-      }
-
-      return store.prompt(
-        state,
-        new ChooseCardsPrompt(
-          player,
-          GameMessage.CHOOSE_CARD_TO_ATTACH,
-          player.deck,
-          { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Darkness Energy' },
-          { min: 0, max: 2, allowCancel: false },
-        ),
-        (cards) => {
-          cards = cards || [];
-          if (cards.length > 0) {
-            MOVE_CARDS(store, state, player.deck, cardList, { cards: cards, sourceCard: this });
-
-            const specialConditionEffect = new AddSpecialConditionsEffect(effect, [
-              SpecialCondition.POISONED,
-            ]);
-            specialConditionEffect.target = effect.player.active;
-            store.reduceEffect(state, specialConditionEffect);
+      const attacker = player.active;
+      return store.prompt(state, new AttachEnergyPrompt(
+        player.id, GameMessage.ATTACH_ENERGY_CARDS, player.deck,
+        PlayerType.BOTTOM_PLAYER, [SlotType.ACTIVE],
+        { superType: SuperType.ENERGY, energyType: EnergyType.BASIC, name: 'Darkness Energy' },
+        { min: 0, max: 2, allowCancel: false },
+      ), transfers => {
+        let attached = false;
+        for (const transfer of transfers || []) {
+          store.reduceEffect(state, new AttachEnergyEffect(player, transfer.card as EnergyCard, attacker));
+          attached = attached || attacker.cards.includes(transfer.card);
+        }
+        // The printed shuffle completes before the conditional Poison instruction.
+        return store.prompt(state, new ShuffleDeckPrompt(player.id), order => {
+          player.deck.applyOrder(order);
+          if (attached) {
+            const poison = new AddSpecialConditionsEffect(effect, [SpecialCondition.POISONED]);
+            poison.target = attacker;
+            store.reduceEffect(state, poison);
           }
-          return store.prompt(state, new ShuffleDeckPrompt(player.id), (order) => {
-            player.deck.applyOrder(order);
-          });
-        },
-      );
+        });
+      });
     }
 
     if (WAS_ATTACK_USED(effect, 1, this)) {
