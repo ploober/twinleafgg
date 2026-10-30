@@ -43,3 +43,23 @@ describe('Transformation Tome replacement metadata uses the actual receiver [CF-
   });
  }
 });
+
+describe('Pending decision actor ownership [TA-832 prompt actor]', () => {
+ for (const actor of ['A', 'B'] as const) {
+  it('rejects another player stopping '+actor+"'s optional search", () => {
+   const q=JSON.parse(fs.readFileSync(path.join(__dirname,'fixtures/four-followups/ditto-start.json'),'utf8'));
+   if (actor==='B') {
+    [q.initialState.players.A,q.initialState.players.B]=[q.initialState.players.B,q.initialState.players.A];
+    q.initialState.activePlayer='B';q.initialState.firstPlayer='A';q.actions[0].actor='B';
+   }
+   const before=step(q.initialState,q.actions);
+   expect(before.pending!.actor).toBe(actor);
+   expect(before.pending!.legalActions.some(a=>a.type==='confirm' && a.value===false)).toBe(true);
+   const rejected=step(q.initialState,[...q.actions,{type:'confirm',actor:actor==='A'?'B':'A',value:false}]);
+   expect(rejected.status).toBe('invalidAction');expect(rejected.applied).toBe(q.actions.length);
+   expect(rejected.state).toEqual(before.state);expect(rejected.events).toEqual(before.events);
+   const accepted=step(q.initialState,[...q.actions,{type:'confirm',actor,value:false}]);
+   expect(accepted.applied).toBe(q.actions.length+1);
+  });
+ }
+});

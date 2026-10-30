@@ -15433,6 +15433,36 @@
       "fixes": [
         "FX-0601"
       ]
+    },
+    {
+      "file": "set-chaos-rising/transformation-tome.ts",
+      "signatures": [
+        "destination: inPlayList === player.active ? 'active' : 'bench'"
+      ],
+      "note": "CF-70 (2026-10-30): CF-70 Transformation Tome replacement choices declare actual receiver slots",
+      "fixes": [
+        "FX-0602"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "if (nextAction.actor !== sub.actor) {"
+      ],
+      "note": "TA-832 (2026-10-30): Reject prompt answers from another wire actor",
+      "fixes": [
+        "FX-0603"
+      ]
+    },
+    {
+      "file": "conformance/driver.ts",
+      "signatures": [
+        "if (nextAction.actor !== sub.actor) {"
+      ],
+      "note": "TA-832 (2026-10-30): Reject prompt answers from another wire actor",
+      "fixes": [
+        "FX-0603"
+      ]
     }
   ]
 }
