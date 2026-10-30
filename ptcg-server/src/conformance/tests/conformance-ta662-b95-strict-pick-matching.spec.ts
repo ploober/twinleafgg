@@ -6,8 +6,8 @@ import {
 /**
  * TA-662 / B.95 (owner 2026-10-07, confirmed): an action matches an advertised legalAction only if it carries every
  * field that entry carries, each with the same value; leaving one out, or giving a different value, makes the action
- * not offered: invalidAction (CF-12). CF-70's op / amount / destination (a registered gate) are not compared here;
- * neither is a template-only field. CF-38's subject is (both engines carry it).
+ * not offered: invalidAction (CF-12). B.132 allows omitted decision attributes but supplied declared values must agree;
+ * template-only fields remain outside answer identity. CF-38's subject is (both engines carry it).
  *
  * Board: Crunch dri-132 ("Discard an Energy from your opponent's Active Pokémon.") against B's Active b1 with two
  * Energy, so the discard pick is a real choice: discard {owner B, target b1e0 | b1e1}.
@@ -68,8 +68,9 @@ describe('TA-662 / B.95: a pick must carry every field the offered entry carries
     expect(r.status).toBe('invalidAction');
   });
 
-  it('a gated field (CF-70 destination) is not compared: a different value is not a reason to refuse [TA-662]', () => {
+  it('B.132 rejects a supplied destination contradicting the declared discard pile [TA-828]', () => {
     const r = step(BOARD, [crunch, discard({ owner: 'B', target: 'b1e0', destination: 'hand' })]);
-    expect(r.status).not.toBe('invalidAction');
+    expect(r.status).toBe('invalidAction');
+    expect(r.applied).toBe(1);
   });
 });

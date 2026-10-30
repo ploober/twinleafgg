@@ -441,8 +441,7 @@ function resolveSelectOptionLabel(legalActions: LegalAction[], action: NeutralAc
 
 /**
  * TA-662 / B.95 (owner 2026-10-07): the fields of an offered entry an answer need not repeat. CF-70's `op` / `amount` /
- * `destination` (a registered gate, contract 0.15.0: only twinleaf's templates carry them, so B.95 left them to the
- * gate work), template-only descriptions (`enterNumber`'s `min` / `max` / `step`, `shuffle`'s `deck`, `playItem`'s
+ * `destination` (B.132 permits omission; supplied declared values are checked below), template-only descriptions (`enterNumber`'s `min` / `max` / `step`, `shuffle`'s `deck`, `playItem`'s
  * `candidates` / `counts`), and `label`, which CF-59 lets an answer give instead of `option` (compared below when both
  * carry it). CF-38's `subject` IS compared: both engines carry it on `resolveNext`.
  */
@@ -468,6 +467,12 @@ function offersAction(legalActions: LegalAction[], action: NeutralAction): boole
     // TA-818 / B.132: recipient may be omitted, but a supplied value must match this offer.
     if (submitted.recipient != null && submitted.recipient !== offered.recipient) {
       return false;
+    }
+    // TA-828 / B.132: omission is allowed; a supplied declared consequence must agree.
+    for (const key of ['op', 'amount', 'destination']) {
+      if (submitted[key] != null && offered[key] != null && submitted[key] !== offered[key]) {
+        return false;
+      }
     }
     // TA-662 / B.95: every field the offered entry carries, with the same value (it replaced TA-205's per-verb
     // identity table, which let `owner`, `name` and `moveEnergy.source` be omitted or wrong).
