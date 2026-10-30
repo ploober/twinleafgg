@@ -43,7 +43,11 @@ export class Clawitizer extends PokemonCard {
       state.players[state.activePlayer] === effect.player &&
       MOVED_FROM_ACTIVE_TO_BENCH_THIS_TURN(effect.player, this)
     ) {
-      if (player.marker.hasMarker(this.ABILITY_USED_MARKER, this)) {
+      // TA-827: exported once-per-turn labels must also gate movement triggers after reload.
+      const usedSlot = player.active.getPokemonCard() === this
+        ? player.active : player.bench.find(slot => slot.getPokemonCard() === this);
+      if (player.marker.hasMarker(this.ABILITY_USED_MARKER, this)
+        || usedSlot?.abilitiesUsedThisTurn.includes(this.powers[0].name)) {
         return state;
       }
 

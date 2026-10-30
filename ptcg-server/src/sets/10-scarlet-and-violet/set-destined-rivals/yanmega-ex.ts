@@ -68,7 +68,11 @@ export class Yanmegaex extends PokemonCard {
       state.players[state.activePlayer] === effect.player &&
       MOVED_TO_ACTIVE_THIS_TURN(effect.player, this)
     ) {
-      if (player.marker.hasMarker(this.BUZZ_BOOST_MARKER, this)) {
+      // TA-827: exported once-per-turn labels must also gate movement triggers after reload.
+      const usedSlot = player.active.getPokemonCard() === this
+        ? player.active : player.bench.find(slot => slot.getPokemonCard() === this);
+      if (player.marker.hasMarker(this.BUZZ_BOOST_MARKER, this)
+        || usedSlot?.abilitiesUsedThisTurn.includes(this.powers[0].name)) {
         return state;
       }
 
