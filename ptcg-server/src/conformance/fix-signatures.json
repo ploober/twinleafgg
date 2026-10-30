@@ -1586,7 +1586,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-legends-awakened/azelf-lv-x.ts",
@@ -1601,7 +1604,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 4, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-stormfront/gengar.ts",
@@ -1616,7 +1622,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-triumphant/haunter.ts",
@@ -1624,7 +1633,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-dragons-exalted/drifblim.ts",
@@ -1632,7 +1644,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-dragons-exalted/drifloon-2.ts",
@@ -1640,7 +1655,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-plasma-freeze/yamask.ts",
@@ -1648,7 +1666,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-fates-collide/alakazam-ex.ts",
@@ -1656,7 +1677,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-fates-collide/bronzong-break.ts",
@@ -1678,7 +1702,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-cosmic-eclipse/duskull.ts",
@@ -1686,7 +1713,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-cosmic-eclipse/mimikyu.ts",
@@ -1694,7 +1724,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: count, max: count, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-cosmic-eclipse/trevenant.ts",
@@ -1702,7 +1735,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-crimson-invasion/gastly.ts",
@@ -1710,7 +1746,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-guardians-rising/gothita.ts",
@@ -1718,7 +1757,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-lost-thunder/giratina.ts",
@@ -1727,7 +1769,10 @@
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 2, allowCancel: false },",
         "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-team-up/hoopa-gx.ts",
@@ -1742,7 +1787,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-unified-minds/alolan-raichu.ts",
@@ -1757,7 +1805,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-astral-radiance/drifblim.ts",
@@ -1765,7 +1816,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-chilling-reign/galarian-rapidash-v.ts",
@@ -1780,7 +1834,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 5, min: max, max, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-crown-zenith/zeraora-vstar.ts",
@@ -1795,7 +1852,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false },"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-evolving-skies/wobbuffet.ts",
@@ -1810,7 +1870,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-fusion-strike/starmie.ts",
@@ -1832,7 +1895,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 2, min: Math.min(2, maxTargets), max: 2, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-silver-tempest/reuniclus.ts",
@@ -1840,7 +1906,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, min: targetsToChoose, max: targetsToChoose, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-destined-rivals/arboliva-ex.ts",
@@ -1857,7 +1926,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 9, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-obsidian-flames/vespiquen-ex.ts",
@@ -1883,7 +1955,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-twilight-masquerade/sinistcha-ex.ts",
@@ -1900,7 +1975,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 6, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-ascended-heroes/spectrier.ts",
@@ -1908,7 +1986,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 12, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-delta-reign/sableye.ts",
@@ -1916,7 +1997,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 5, allowCancel: false },"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-best-of-game/dark-ivysaur.ts",
@@ -1931,7 +2015,10 @@
         "operation: 'placeCounters'",
         "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-shrouded-fable/seadra.ts",
@@ -4310,7 +4397,10 @@
         "{ min: count, max: count, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-drowzee.ts",
@@ -4343,7 +4433,10 @@
         "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-destined-rivals/team-rockets-koffing.ts",
@@ -6310,7 +6403,8 @@
       ],
       "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters'",
       "fixes": [
-        "FX-0089"
+        "FX-0089",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -6370,7 +6464,8 @@
       ],
       "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters' (sibling of dusknoir.ts; missed on first registration)",
       "fixes": [
-        "FX-0089"
+        "FX-0089",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -6422,7 +6517,8 @@
       ],
       "note": "TA-196/CF-32 — Cursed Blast PLACES damage counters, so the wire verb must be `placeCounter`, not the generic `choose`. The prompt MESSAGE cannot carry this (CHOOSE_POKEMON_TO_DAMAGE serves both \"put N counters on it\" and \"do N damage to it\"), so only the card can declare the operation; `options.operation` has ZERO readers in game/ and is wire-only.",
       "fixes": [
-        "FX-0081"
+        "FX-0081",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -6433,7 +6529,8 @@
       ],
       "note": "TA-196/CF-32 — Cursed Blast PLACES damage counters, so the wire verb must be `placeCounter`, not the generic `choose`. The prompt MESSAGE cannot carry this (CHOOSE_POKEMON_TO_DAMAGE serves both \"put N counters on it\" and \"do N damage to it\"), so only the card can declare the operation; `options.operation` has ZERO readers in game/ and is wire-only.",
       "fixes": [
-        "FX-0081"
+        "FX-0081",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -7148,7 +7245,8 @@
       ],
       "note": "TA-288 / §B.38 2026-08-19: the fix MOVES `effect.damage += 80` out of the prefab's onEnergyMoved callback, so the discriminating change is a relocation, not a new statement — the comment is the only line that exists post-fix and not pre-fix.",
       "fixes": [
-        "FX-0070"
+        "FX-0070",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -7864,7 +7962,8 @@
       ],
       "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it) | 2026-10-23 TA-763 extends it: the pick is exactly 2 (as many as the opponent has, up to 2), so the signature moves to the min/max count line.",
       "fixes": [
-        "FX-0032"
+        "FX-0032",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -7954,7 +8053,8 @@
       ],
       "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
-        "FX-0029"
+        "FX-0029",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -8684,7 +8784,10 @@
       "signatures": [
         "{ allowCancel: false, min: 1, max: 1, operation: 'placeCounters', amount: 5 },"
       ],
-      "state": "guarding"
+      "state": "guarding",
+      "fixes": [
+        "FX-0599"
+      ]
     },
     {
       "file": "set-pitch-black/spiritomb.ts",
@@ -10247,7 +10350,8 @@
       ],
       "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
-        "FX-0377"
+        "FX-0377",
+        "FX-0599"
       ],
       "state": "absorbed"
     },
@@ -10284,7 +10388,8 @@
       ],
       "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
-        "FX-0377"
+        "FX-0377",
+        "FX-0599"
       ],
       "state": "absorbed"
     },
@@ -12601,7 +12706,8 @@
       ],
       "note": "TA-642 (2026-10-06): Team Rocket's Venture Bomb dri-179's heads pick declares placeCounters, so the adapter offers placeCounter (CF-32), not choose.",
       "fixes": [
-        "FX-0433"
+        "FX-0433",
+        "FX-0599"
       ],
       "state": "guarding"
     },
@@ -15150,7 +15256,8 @@
         "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 3 },"
       ],
       "fixes": [
-        "FX-0590"
+        "FX-0590",
+        "FX-0599"
       ],
       "note": "Exploration closeout: printed recipient order, event-scoped optional use and typed counter placement."
     },
@@ -15271,7 +15378,10 @@
         "{ min: 0, max: count, allowCancel: false, blocked, maxTools, maxItems, operation: 'moveTo', destination: 'hand' },"
       ],
       "state": "guarding",
-      "note": "CF-70: explicit producer consequence metadata, protected alongside independent wire assertions."
+      "note": "CF-70: explicit producer consequence metadata, protected alongside independent wire assertions.",
+      "fixes": [
+        "FX-0599"
+      ]
     }
   ]
 }
