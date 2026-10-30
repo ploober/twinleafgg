@@ -393,7 +393,9 @@ export const chooseCardsDecomposer: PromptDecomposer<ChooseCardsPrompt> = {
           // bottom of their deck"). Every raiser of this message bottoms the chosen card.
           legalActions.push({ type: 'choose', target: iid, op: 'moveTo', destination: 'deckBottom' } as LegalAction);
         } else {
-          legalActions.push({ type: 'choose', target: iid });
+          legalActions.push({ type: 'choose', target: iid,
+            ...(prompt.options.operation ? { op: prompt.options.operation,
+              ...(prompt.options.destination ? { destination: prompt.options.destination } : {}) } : {}) });
         }
       }
     }

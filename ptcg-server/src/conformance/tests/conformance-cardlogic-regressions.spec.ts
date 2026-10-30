@@ -3497,14 +3497,14 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // The attributes are GATED on the wire (compared only where both engines emit them), so this cell
     // is the only place the EMIT itself is asserted. Each row is one emitter class:
     const acts = (r: ReturnType<typeof step>) => (r.pending?.legalActions ?? []) as Array<Record<string, unknown>>;
-    // choose-pokemon, declared `operation: 'placeCounters'` → op only (no printed count on the prompt).
+    // A fixed single-target placement declares the printed six counters independently of target count.
     const shuriken = step(board(
       player({ active: inPlay('A-act', ['cri-022']), hand: [{ iid: 'w0', printing: WATER }] }),
       player({ active: inPlay('B-act', [TANKY]), bench: [inPlay('B-b0', [RALTS])] }),
     ), [{ actor: 'A', type: 'useAbility', source: 'A-act', ability: 'Mortal Shuriken' }] as unknown as NeutralAction[]);
     const pc = acts(shuriken).filter(a => a.type === 'placeCounter');
     expect(pc.length).toBeGreaterThan(0);
-    expect(pc.every(a => a.op === 'placeCounters' && a.amount === undefined && a.destination === undefined)).toBe(true);
+    expect(pc.every(a => a.op === 'placeCounters' && a.amount === 6 && a.destination === undefined)).toBe(true);
     // choose-cards discard (Mortal Shuriken's Basic [W] with TWO in hand → a real pick) → discard + discardPile.
     const twoWater = step(board(
       player({ active: inPlay('A-act', ['cri-022']), hand: [{ iid: 'w0', printing: WATER }, { iid: 'w1', printing: WATER }] }),
@@ -3537,7 +3537,7 @@ describe('Conformance — card-logic fix regression guards (all-time backfill)',
     // TA-786 / SR-6: Wash Out's one destination is the Active, so its move is the card offer (op + recipient).
     const wo = acts(wash).filter(a => a.type === 'choose');
     expect(wo.length).toBe(2);
-    expect(wo.every(a => a.op === 'attach' && a.recipient === 'A-act' && a.destination === undefined)).toBe(true);
+    expect(wo.every(a => a.op === 'moveTo' && a.recipient === 'A-act' && a.destination === undefined)).toBe(true);
     // A structural pair: Energy Switch svi-173 with two other Pokémon to move to.
     const sw = step(board(
       player({ active: inPlay('A-act', [RALTS], en(WATER, 1, 'w')), bench: [inPlay('A-b0', [RALTS]), inPlay('A-b1', [RALTS])],

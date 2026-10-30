@@ -14,6 +14,9 @@ export { matchesPromptFilter } from './prompt-card-filter';
 export const ChooseCardsPromptType = 'Choose cards';
 
 export interface ChooseCardsOptions {
+  /** A producer-declared consequence of selection; selection count is not an amount. */
+  operation?: 'reveal' | 'moveTo';
+  destination?: 'hand';
   min: number;
   max: number;
   allowCancel: boolean;

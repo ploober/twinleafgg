@@ -69,7 +69,7 @@ export class TeamRocketsCrobatex extends PokemonCard {
             PlayerType.TOP_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
             // CF-32: "put 2 damage counters on each" is counter PLACEMENT — the wire verb is placeCounter.
-            { min: count, max: count, allowCancel: false, operation: 'placeCounters' },
+            { min: count, max: count, allowCancel: false, operation: 'placeCounters', amount: 2 },
           ),
           (selected) => {
             const targets = selected || [];

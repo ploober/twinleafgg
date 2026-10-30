@@ -71,7 +71,7 @@ function* playCard(
       GameMessage.CHOOSE_ONE_ITEM_AND_ONE_TOOL_TO_HAND,
       player.deck,
       {},
-      { min: 0, max: count, allowCancel: false, blocked, maxTools, maxItems },
+      { min: 0, max: count, allowCancel: false, blocked, maxTools, maxItems, operation: 'moveTo', destination: 'hand' },
     ),
     (selected) => {
       cards = selected || [];

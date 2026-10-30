@@ -38,7 +38,7 @@ export class TeamRocketsVentureBomb extends TrainerCard {
               GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
               PlayerType.TOP_PLAYER,
               [SlotType.ACTIVE, SlotType.BENCH],
-              { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' }, // TA-642: CF-32 placeCounter
+              { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 }, // TA-642: CF-32 placeCounter
             ),
             (selected) => {
               const targets = selected || [];

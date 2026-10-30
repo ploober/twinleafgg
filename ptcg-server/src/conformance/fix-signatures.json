@@ -1583,7 +1583,8 @@
     {
       "file": "set-ex-unseen-forces/smoochum.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1597,7 +1598,8 @@
     {
       "file": "set-mysterious-treasures/gabite.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 4, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1611,42 +1613,48 @@
     {
       "file": "set-triumphant/gastly.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-triumphant/haunter.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-dragons-exalted/drifblim.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-dragons-exalted/drifloon-2.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-plasma-freeze/yamask.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-fates-collide/alakazam-ex.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1667,49 +1675,57 @@
     {
       "file": "set-phantom-forces/gengar-ex.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-cosmic-eclipse/duskull.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-cosmic-eclipse/mimikyu.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: count, max: count, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-cosmic-eclipse/trevenant.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-crimson-invasion/gastly.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-guardians-rising/gothita.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-lost-thunder/giratina.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 2, allowCancel: false },",
+        "{ operation: 'placeCounters', amount: 4, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1723,7 +1739,8 @@
     {
       "file": "set-unbroken-bonds/misdreavus.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1737,14 +1754,16 @@
     {
       "file": "set-unified-minds/yveltal.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-astral-radiance/drifblim.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1758,7 +1777,8 @@
     {
       "file": "set-chilling-reign/shadow-rider-calyrex-v.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 5, min: max, max, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1772,7 +1792,8 @@
     {
       "file": "set-evolving-skies/medicham-v.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false },"
       ],
       "state": "guarding"
     },
@@ -1786,7 +1807,8 @@
     {
       "file": "set-fusion-strike/hoopa-v.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1807,14 +1829,16 @@
     {
       "file": "set-lost-origin/spectrier.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 2, min: Math.min(2, maxTargets), max: 2, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-silver-tempest/reuniclus.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, min: targetsToChoose, max: targetsToChoose, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1830,7 +1854,8 @@
     {
       "file": "set-obsidian-flames/ninetales.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 9, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1855,7 +1880,8 @@
     {
       "file": "set-paradox-rift/yamask.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 3, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -1871,21 +1897,24 @@
     {
       "file": "set-ascended-heroes/mismagius.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 6, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-ascended-heroes/spectrier.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 12, allowCancel: false }"
       ],
       "state": "guarding"
     },
     {
       "file": "set-delta-reign/sableye.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 5, allowCancel: false },"
       ],
       "state": "guarding"
     },
@@ -1899,7 +1928,8 @@
     {
       "file": "set-pcg-p-promotional-cards/rotas-weavile.ts",
       "signatures": [
-        "operation: 'placeCounters'"
+        "operation: 'placeCounters'",
+        "{ operation: 'placeCounters', amount: 1, min: 1, max: 1, allowCancel: false }"
       ],
       "state": "guarding"
     },
@@ -4276,7 +4306,8 @@
     {
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
-        "name: 'Biting Spree',"
+        "name: 'Biting Spree',",
+        "{ min: count, max: count, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
       "state": "guarding"
@@ -4308,7 +4339,8 @@
     {
       "file": "set-destined-rivals/team-rockets-golbat.ts",
       "signatures": [
-        "import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';"
+        "import { YOUR_OPPPONENTS_ACTIVE_POKEMON_IS_NOW_CONFUSED } from '../../../game/store/prefabs/attack-effects';",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "bulk-registered 2026-08-01; validated present@HEAD absent@merge-base",
       "state": "guarding"
@@ -6273,7 +6305,8 @@
     {
       "file": "set-shrouded-fable/dusknoir.ts",
       "signatures": [
-        "If you use this Ability, this Pokémon is Knocked Out.'"
+        "If you use this Ability, this Pokémon is Knocked Out.'",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 13 },"
       ],
       "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters'",
       "fixes": [
@@ -6332,7 +6365,8 @@
     {
       "file": "set-shrouded-fable/dusclops.ts",
       "signatures": [
-        "If you use this Ability, this Pokémon is Knocked Out.'"
+        "If you use this Ability, this Pokémon is Knocked Out.'",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 5 },"
       ],
       "note": "TA-194 data — KO gate is 'if you USE this Ability', not 'if you placed counters' (sibling of dusknoir.ts; missed on first registration)",
       "fixes": [
@@ -6384,7 +6418,7 @@
     {
       "file": "set-shrouded-fable/dusknoir.ts",
       "signatures": [
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 13 },"
       ],
       "note": "TA-196/CF-32 — Cursed Blast PLACES damage counters, so the wire verb must be `placeCounter`, not the generic `choose`. The prompt MESSAGE cannot carry this (CHOOSE_POKEMON_TO_DAMAGE serves both \"put N counters on it\" and \"do N damage to it\"), so only the card can declare the operation; `options.operation` has ZERO readers in game/ and is wire-only.",
       "fixes": [
@@ -6395,7 +6429,7 @@
     {
       "file": "set-shrouded-fable/dusclops.ts",
       "signatures": [
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 5 },"
       ],
       "note": "TA-196/CF-32 — Cursed Blast PLACES damage counters, so the wire verb must be `placeCounter`, not the generic `choose`. The prompt MESSAGE cannot carry this (CHOOSE_POKEMON_TO_DAMAGE serves both \"put N counters on it\" and \"do N damage to it\"), so only the card can declare the operation; `options.operation` has ZERO readers in game/ and is wire-only.",
       "fixes": [
@@ -7110,7 +7144,7 @@
       "signatures": [
         "            // the +80 lands on ACCEPT, not on the Energy actually moving. Hanging it off",
         "// TA-401 / B.46: using the Ability IS the decision; the discard that follows carries no",
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 6 },"
       ],
       "note": "TA-288 / §B.38 2026-08-19: the fix MOVES `effect.damage += 80` out of the prefab's onEnergyMoved callback, so the discriminating change is a relocation, not a new statement — the comment is the only line that exists post-fix and not pre-fix.",
       "fixes": [
@@ -7826,7 +7860,7 @@
       "file": "set-destined-rivals/team-rockets-crobat-ex.ts",
       "signatures": [
         "new PlaceDamageCountersEffect(player, target, 20, this, this.powers[0]),",
-        "{ min: count, max: count, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: count, max: count, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "TA-341 (2026-09-01): Biting Spree — the target prompt is nested inside the CONFIRMATION_PROMPT callback (a decline no longer prompts), and the counters go through PutDamageCountersEffect so Luminous Wing-class protectors intercept them (SD-26 source half). CF-32: the target prompt declares operation 'placeCounters' so the wire verb is placeCounter (found by the 2026-09-01 re-fuzz). | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it) | 2026-10-23 TA-763 extends it: the pick is exactly 2 (as many as the opponent has, up to 2), so the signature moves to the min/max count line.",
       "fixes": [
@@ -7916,7 +7950,7 @@
       "file": "set-destined-rivals/team-rockets-golbat.ts",
       "signatures": [
         "new PlaceDamageCountersEffect(player, targets[0], 20, this, this.powers[0]),",
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "TA-347 (2026-09-01): Sneaky Bite — target prompt nested inside the CONFIRMATION_PROMPT (a decline no longer places), counters via PutDamageCountersEffect (SD-26), placeCounters operation (CF-32). TA-341's shape one stage down; found by the targeted re-fuzz. | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
@@ -8648,7 +8682,7 @@
     {
       "file": "set-pitch-black/annihilape.ts",
       "signatures": [
-        "{ allowCancel: false, min: 1, max: 1, operation: 'placeCounters' },"
+        "{ allowCancel: false, min: 1, max: 1, operation: 'placeCounters', amount: 5 },"
       ],
       "state": "guarding"
     },
@@ -10208,7 +10242,8 @@
     {
       "file": "set-pokemon-151/starmie.ts",
       "signatures": [
-        "if (!placeCounters.preventDefault) {"
+        "if (!placeCounters.preventDefault) {",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "TA-570 (2026-10-04): Starmie mew-121 / paf-119 Mysterious Comet places its 2 counters through PlaceDamageCountersEffect (Ability protection a | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
@@ -10244,7 +10279,8 @@
     {
       "file": "set-paldean-fates/starmie.ts",
       "signatures": [
-        "if (!placeCounters.preventDefault) {"
+        "if (!placeCounters.preventDefault) {",
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },"
       ],
       "note": "TA-570 (2026-10-04): Mysterious Comet places through PlaceDamageCountersEffect (paf-119 reprint) | 2026-10-22 merge (take upstream, re-apply ours): absorbed upstream (same behaviour in upstream's code; signature points at it)",
       "fixes": [
@@ -12561,7 +12597,7 @@
     {
       "file": "set-destined-rivals/team-rockets-venture-bomb.ts",
       "signatures": [
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' }, // TA-642: CF-32 placeCounter"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 }, // TA-642: CF-32 placeCounter"
       ],
       "note": "TA-642 (2026-10-06): Team Rocket's Venture Bomb dri-179's heads pick declares placeCounters, so the adapter offers placeCounter (CF-32), not choose.",
       "fixes": [
@@ -15111,7 +15147,7 @@
     {
       "file": "set-paldea-evolved/meowscarada-ex.ts",
       "signatures": [
-        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },"
+        "{ min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 3 },"
       ],
       "fixes": [
         "FX-0590"
@@ -15228,6 +15264,14 @@
       "fixes": [
         "FX-0597"
       ]
+    },
+    {
+      "file": "set-scarlet-and-violet/arven.ts",
+      "signatures": [
+        "{ min: 0, max: count, allowCancel: false, blocked, maxTools, maxItems, operation: 'moveTo', destination: 'hand' },"
+      ],
+      "state": "guarding",
+      "note": "CF-70: explicit producer consequence metadata, protected alongside independent wire assertions."
     }
   ]
 }

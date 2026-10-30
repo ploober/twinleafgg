@@ -106,7 +106,7 @@ export const moveEnergyDecomposer: PromptDecomposer<MoveEnergyPrompt> = {
     if (recipient !== undefined) {
       const recipientIid = pokemonTargetToIid(state, player, ctx, recipient);
       for (const c of candidates) {
-        legalActions.push({ type: 'choose', target: c.energyIid, op: 'attach', recipient: recipientIid });
+        legalActions.push({ type: 'choose', target: c.energyIid, op: 'moveTo', recipient: recipientIid });
       }
     } else {
       for (const c of candidates) {

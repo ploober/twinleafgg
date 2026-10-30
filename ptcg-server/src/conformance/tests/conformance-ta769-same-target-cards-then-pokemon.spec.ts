@@ -91,7 +91,7 @@ describe('TA-769 — Motivate paf-075: the cards (and the stop), then the one Be
 describe('TA-769 — Tropic Breeze pal-007: every Energy forced, so only the Pokémon is asked', () => {
   const b = (n = 2) => board({ active: mon('a1', 'pal-007', cards('a1e', 3, GRASS)), bench: bench(n) });
   it('first pending: choose {target: pokemon} only [TA-769 pal-007]', () => {
-    expect(offers(step(b(), [declare('Tropic Breeze')]))).toEqual(['choose:ab1:attach', 'choose:ab2:attach']);
+    expect(offers(step(b(), [declare('Tropic Breeze')]))).toEqual(['choose:ab1:moveTo', 'choose:ab2:moveTo']);
   });
   it('ab2: all three Energy move there [TA-769 pal-007 moved]', () => {
     const r = step(b(), [declare('Tropic Breeze'), choose('ab2')]);

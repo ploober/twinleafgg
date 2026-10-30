@@ -61,7 +61,7 @@ export class Dusclops extends PokemonCard {
         [SlotType.BENCH, SlotType.ACTIVE],
         // TA-196/CF-32: same declaration as its evolution Dusknoir sfa-020 -- Cursed Blast PLACES
         // counters, so the wire verb is `placeCounter` rather than the generic `choose`.
-        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 5 },
       ), selected => {
         const targets = selected || [];
 

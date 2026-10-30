@@ -65,7 +65,7 @@ export class Spectrier extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { operation: 'placeCounters', min: Math.min(2, maxTargets), max: 2, allowCancel: false }
+        { operation: 'placeCounters', amount: 2, min: Math.min(2, maxTargets), max: 2, allowCancel: false }
       ), selected => {
         const targets = selected || [];
         for (const target of targets) {

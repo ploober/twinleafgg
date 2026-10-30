@@ -44,7 +44,7 @@ export class Haunter extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { operation: 'placeCounters', min: 1, max: 1, allowCancel: false }
+        { operation: 'placeCounters', amount: 2, min: 1, max: 1, allowCancel: false }
       ), selected => {
         const targets = selected || [];
         targets.forEach(target => {

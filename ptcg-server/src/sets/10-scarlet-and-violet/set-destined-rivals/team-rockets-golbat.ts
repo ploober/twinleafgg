@@ -61,7 +61,7 @@ export class TeamRocketsGolbat extends PokemonCard {
             PlayerType.TOP_PLAYER,
             [SlotType.ACTIVE, SlotType.BENCH],
             // CF-32: "put 2 damage counters" is counter PLACEMENT — the wire verb is placeCounter.
-            { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+            { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },
           ),
           (selected) => {
             const targets = selected || [];

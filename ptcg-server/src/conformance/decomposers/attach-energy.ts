@@ -360,13 +360,16 @@ export const attachEnergyDecomposer: PromptDecomposer<AttachEnergyPrompt> = {
       // B.116 / B.122: where the Pokémon is not asked (one legal value) the card offer states it (recipient).
       const recipient = plan.recipient ?? (plan.mode === 'collapsed' && plan.pairs.length > 0 ? plan.pairs[0].targetIid : undefined);
       for (const c of plan.pairs) {
+        const op = c.sourceIid !== undefined ? 'moveTo' : 'attach';
         push(recipient === undefined
-          ? { type: 'choose', target: c.energyIid, op: 'attach' }
-          : { type: 'choose', target: c.energyIid, op: 'attach', recipient }, c.energyIid);
+          ? { type: 'choose', target: c.energyIid, op }
+          : { type: 'choose', target: c.energyIid, op, recipient }, c.energyIid);
       }
     } else {
       // 'dest' / 'all' / 'single': the Pokémon is the only open dimension.
-      for (const c of plan.pairs) { push({ type: 'choose', target: c.targetIid, op: 'attach' }, c.targetIid); }
+      for (const c of plan.pairs) {
+        push({ type: 'choose', target: c.targetIid, op: c.sourceIid !== undefined ? 'moveTo' : 'attach' }, c.targetIid);
+      }
     }
     if (plan.canStop && plan.mode !== 'dest') {
       legalActions.push(END_CHOICE);

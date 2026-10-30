@@ -137,7 +137,7 @@ export class Meowscaradaex extends PokemonCard {
               GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
               PlayerType.TOP_PLAYER,
               [SlotType.BENCH],
-              { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+              { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 3 },
             ),
             (selected) => {
               const targets = selected || [];

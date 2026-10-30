@@ -55,7 +55,7 @@ export class ShadowRiderCalyrexV extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
         PlayerType.TOP_PLAYER,
         [SlotType.BENCH, SlotType.ACTIVE],
-        { operation: 'placeCounters', min: max, max, allowCancel: false }
+        { operation: 'placeCounters', amount: 5, min: max, max, allowCancel: false }
       ), selected => {
         const targets = selected || [];
         targets.forEach(target => {

@@ -54,7 +54,7 @@ export class Dusknoir extends PokemonCard {
         // verb is `placeCounter`, not the generic `choose`. The message cannot carry this --
         // CHOOSE_POKEMON_TO_DAMAGE is used for both "put N counters on it" and "do N damage to it" --
         // so only this card can declare it.
-        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 13 },
       ), selected => {
         const targets = selected || [];
 

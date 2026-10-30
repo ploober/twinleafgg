@@ -77,7 +77,7 @@ export class AlakazamEx extends PokemonCard {
               GameMessage.CHOOSE_POKEMON_TO_DAMAGE,
               PlayerType.TOP_PLAYER,
               [SlotType.BENCH],
-              { operation: 'placeCounters', allowCancel: false }
+              { operation: 'placeCounters', amount: 3, allowCancel: false }
             ), targets => {
               if (!targets || targets.length === 0) {
                 return;

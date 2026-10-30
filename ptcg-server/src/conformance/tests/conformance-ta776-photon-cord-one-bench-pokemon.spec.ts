@@ -60,11 +60,11 @@ describe('TA-776 — Photon Cord pbl-028: both Energy go to ONE Benched Pokémon
   it('the Energy cards are asked first, not (card, Pokémon) pairs [TA-776 pbl-028]', () => {
     const r = step(koBoard(), [pound]);
     expect(r.pending?.actor).toBe('A');
-    expect(offers(r)).toEqual(['choose:ae0:attach', 'choose:ae1:attach']);
+    expect(offers(r)).toEqual(['choose:ae0:moveTo', 'choose:ae1:moveTo']);
   });
   it('both cards, then the one Pokémon: both land on it [TA-776 pbl-028 same]', () => {
     const r = step(koBoard(), [pound, chooseA('ae0'), chooseA('ae1')]);
-    expect(offers(r)).toEqual(['choose:ab1:attach', 'choose:ab2:attach']);
+    expect(offers(r)).toEqual(['choose:ab1:moveTo', 'choose:ab2:moveTo']);
     const done = step(koBoard(), [pound, chooseA('ae0'), chooseA('ae1'), chooseA('ab2')]);
     expect(on(done, 1)).toEqual(['ae0', 'ae1']);
     expect(on(done, 0)).toEqual([]);

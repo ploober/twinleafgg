@@ -55,7 +55,7 @@ export class Starmie extends PokemonCard {
         PlayerType.TOP_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
         // TA-527: a counter placement (contract verb placeCounter), not a bare target pick.
-        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters' },
+        { min: 1, max: 1, allowCancel: false, operation: 'placeCounters', amount: 2 },
       ), selected => {
         const targets = selected || [];
         if (targets.length === 0) {

@@ -82,7 +82,7 @@ export class Annihilape extends PokemonCard {
           PlayerType.TOP_PLAYER,
           [SlotType.BENCH],
           // TA-407 / CF-32: this pick PLACES counters, so the wire verb is `placeCounter`.
-          { allowCancel: false, min: 1, max: 1, operation: 'placeCounters' },
+          { allowCancel: false, min: 1, max: 1, operation: 'placeCounters', amount: 5 },
         ),
         (picked) => {
           if (!picked || picked.length === 0) {
