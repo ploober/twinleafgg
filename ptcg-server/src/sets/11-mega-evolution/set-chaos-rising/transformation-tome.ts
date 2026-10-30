@@ -94,7 +94,9 @@ export class TransformationTome extends TrainerCard {
               GameMessage.CHOOSE_CARD_TO_PUT_ONTO_BENCH,
               player.discard,
               { superType: SuperType.POKEMON, stage: Stage.BASIC },
-              { min: 1, max: 1, allowCancel: false },
+              // CF-70: replacement occupies the receiver's actual slot, not the prompt message's Bench hint.
+              { min: 1, max: 1, allowCancel: false,
+                operation: 'moveTo', destination: inPlayList === player.active ? 'active' : 'bench' },
             ),
             (discardSelected) => {
               const fromDiscard = discardSelected || [];

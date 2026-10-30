@@ -1465,6 +1465,12 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
         // decomposer's take-immediately fix-up (CF-1).
         return { events, pending: toWirePending(sub), applied: cursor.i, midPrompt: { prompt, picks: accum, decided: accum.filter(p => !forcedPicks.has(p as object)) }, completedSearches };
       }
+      // CF-12: a decision belongs to its advertised actor, including an optional stop.
+      // The native prompt resolves by prompt id, so it cannot enforce the wire actor for us.
+      if (nextAction.actor !== sub.actor) {
+        cursor.i++;
+        throw new GameError(GameMessage.ILLEGAL_ACTION);
+      }
       // TA-590: a pause the replay runs through: the search's picks so far are in transit here.
       liftPausedSearchPicks(prompt, accum);
       // R1 (next-action-completes): if the next action is not one of this decision's pick types and

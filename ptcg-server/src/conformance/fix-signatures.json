@@ -9313,7 +9313,8 @@
       ],
       "note": "TA-453 (2026-09-20): usePower flags the slot ABILITY_USED after the card PowerEffect returns without throwing when the power text says \"Once  | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
-        "FX-0323"
+        "FX-0323",
+        "FX-0601"
       ],
       "state": "guarding"
     },
@@ -9324,7 +9325,8 @@
       ],
       "note": "TA-454 (2026-09-20): abilitiesUsedLabels reads the ABILITY_USED slot flag directly for a power printed \"Once during your turn\" (the flag is a | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
-        "FX-0324"
+        "FX-0324",
+        "FX-0601"
       ],
       "state": "ours-only"
     },
@@ -9489,7 +9491,8 @@
       ],
       "note": "TA-459 / B.58 (2026-09-20): ABILITY_USED remembers the triggered use BY NAME on the slot. | TA-830: expand the same executable reservation/label guard to first-turn wording; prior ordinary-turn behavior is preserved.",
       "fixes": [
-        "FX-0328"
+        "FX-0328",
+        "FX-0601"
       ],
       "state": "guarding"
     },
@@ -15410,6 +15413,26 @@
       ],
       "note": "CF-70 fixed quantity: retain the exact FX-0599 anchor separately from the absorbed TA-570 behavior (FX-0377).",
       "state": "guarding"
+    },
+    {
+      "file": "game/store/effect-reducers/game-effect.ts",
+      "signatures": [
+        "if (/once during your (?:first )?turn/i.test(power.text ?? '') && !turnEnded) {"
+      ],
+      "note": "TA-830, TA-831 (2026-10-30): Reserve first-turn Ability uses and constrain Magnetic Absorption",
+      "fixes": [
+        "FX-0601"
+      ]
+    },
+    {
+      "file": "set-paradox-rift/sandy-shocks-ex.ts",
+      "signatures": [
+        "if (transfers.some(transfer => StateUtils.getTarget(state, player, transfer.to) !== source)) {"
+      ],
+      "note": "TA-831: exact native recipient check before any card moves; UI restrictions alone are insufficient.",
+      "fixes": [
+        "FX-0601"
+      ]
     }
   ]
 }
