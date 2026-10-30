@@ -15208,6 +15208,16 @@
       "fixes": [
         "FX-0595"
       ]
+    },
+    {
+      "file": "set-mega-evolution/clawitizer.ts",
+      "signatures": [
+        "ABILITY_USED(player, this);"
+      ],
+      "note": "TA-826 (2026-10-29): Record the committed Clawitzer Ability use in exported state",
+      "fixes": [
+        "FX-0596"
+      ]
     }
   ]
 }
