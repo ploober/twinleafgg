@@ -15177,6 +15177,37 @@
       "fixes": [
         "FX-0594"
       ]
+    },
+    {
+      "file": "set-shrouded-fable/okidogi-ex.ts",
+      "signatures": [
+        "attached = attached || attacker.cards.includes(transfer.card);"
+      ],
+      "note": "TA-821, TA-822, TA-823, TA-824, TA-825 (2026-10-29): Correct Okidogi and Clawitzer attachment resolution and use tracking",
+      "fixes": [
+        "FX-0595"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/clawitizer.ts",
+      "signatures": [
+        "{ min: 1, max: 2, allowCancel: false, blockedTo }",
+        "if (!wantToUse) { return; }"
+      ],
+      "note": "TA-821/824/825: self attachment after acceptance requires one, and decline preserves the use.",
+      "fixes": [
+        "FX-0595"
+      ]
+    },
+    {
+      "file": "set-mega-evolution/index.ts",
+      "signatures": [
+        "new Clawitizer(),"
+      ],
+      "note": "TA-823: register the existing base printing alongside its reprint.",
+      "fixes": [
+        "FX-0595"
+      ]
     }
   ]
 }
