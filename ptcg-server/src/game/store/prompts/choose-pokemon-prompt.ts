@@ -19,8 +19,8 @@ export interface ChoosePokemonOptions {
    * target selection, so a card only sets it when the pick is really the front half of a typed
    * operation — `'placeCounters'` for "put N damage counters on 1 of your opponent's Pokémon".
    */
-  operation?: TargetOperation;
-  /** Literal quantity applied to each chosen target: counters for placeCounters, HP for damage.
+  operation?: TargetOperation | 'heal';
+  /** Literal quantity applied to each chosen target: counters for placeCounters, HP for damage/healing.
    * Omit for computed quantities and distributions; this is unrelated to min/max target count. */
   amount?: number;
 }

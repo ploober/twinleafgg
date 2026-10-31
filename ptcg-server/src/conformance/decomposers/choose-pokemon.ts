@@ -26,7 +26,8 @@ import { promptPlayer, pokemonTargetToIid, resolveAnyPokemonTarget } from '../ii
  *   which effect it will apply (`PutCountersEffect` vs `PutDamageEffect`). Declaring it on the prompt
  *   moves that existing engine-side distinction earlier, to where the adapter can see it.
  *
- * Everything else is a bare target selection with no typed verb in the vocabulary (heal, attach,
+ * Other operations retain the generic choose verb; explicitly declared healing carries op:heal.
+ * Undeclared target selections (attach,
  * evolve, pick-up, and the damage picks), and stays the generic `choose{target}`.
  */
 /** The contract verb naming what this prompt's pick does to the Pokémon it picks (CF-32). */
@@ -157,7 +158,8 @@ export const choosePokemonDecomposer: PromptDecomposer<ChoosePokemonPrompt> = {
     // redundant, and the action table specs `owner` for `discard` alone).
     // CF-70: quantities are explicit producer metadata, never inferred from a verb or target count.
     const op = prompt.options.operation === 'placeCounters' ? 'placeCounters'
-      : prompt.options.operation === 'dealDamage' ? 'dealDamage' : undefined;
+      : prompt.options.operation === 'dealDamage' ? 'dealDamage'
+      : prompt.options.operation === 'heal' ? 'heal' : undefined;
     const legalActions: LegalAction[] = candidates.map(t => (
       { type: verb, target: pokemonTargetToIid(state, player, ctx, t),
         ...(op ? { op, ...(prompt.options.amount !== undefined ? { amount: prompt.options.amount } : {}) } : {}) }

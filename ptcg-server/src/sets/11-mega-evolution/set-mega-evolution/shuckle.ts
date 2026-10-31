@@ -70,7 +70,7 @@ export class Shuckle extends PokemonCard {
         GameMessage.CHOOSE_POKEMON_TO_HEAL,
         PlayerType.BOTTOM_PLAYER,
         [SlotType.ACTIVE, SlotType.BENCH],
-        { allowCancel: false, blocked }
+        { allowCancel: false, blocked, operation: 'heal', amount: 30 }
       ), targets => {
         if (targets && targets.length > 0) {
           const healEffect = new HealEffect(player, targets[0], 30);
