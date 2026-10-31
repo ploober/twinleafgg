@@ -6081,11 +6081,12 @@
     {
       "file": "game/store/prompts/choose-pokemon-prompt.ts",
       "signatures": [
-        "operation?: TargetOperation;"
+        "operation?: TargetOperation | 'heal';"
       ],
-      "note": "lets a reader name what a generic target pick will do",
+      "note": "lets a reader name what a generic target pick will do | CF-70 FX-0604 widens this same explicit operation field to healing; original declaration remains required.",
       "fixes": [
-        "FX-0041"
+        "FX-0041",
+        "FX-0604"
       ],
       "state": "guarding"
     },
