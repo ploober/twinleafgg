@@ -15463,6 +15463,36 @@
       "fixes": [
         "FX-0603"
       ]
+    },
+    {
+      "file": "set-mega-evolution/shuckle.ts",
+      "signatures": [
+        "{ allowCancel: false, blocked, operation: 'heal', amount: 30 }"
+      ],
+      "note": "CF-70 (2026-10-30): Declare fixed healing on Fermented Juice choices",
+      "fixes": [
+        "FX-0604"
+      ]
+    },
+    {
+      "file": "game/store/prompts/choose-pokemon-prompt.ts",
+      "signatures": [
+        "operation?: TargetOperation | 'heal';"
+      ],
+      "note": "CF-70: explicit healing consequence type; does not infer metadata from message names.",
+      "fixes": [
+        "FX-0604"
+      ]
+    },
+    {
+      "file": "conformance/decomposers/choose-pokemon.ts",
+      "signatures": [
+        ": prompt.options.operation === 'heal' ? 'heal' : undefined;"
+      ],
+      "note": "CF-70: project an explicitly declared heal without inventing a quantity.",
+      "fixes": [
+        "FX-0604"
+      ]
     }
   ]
 }

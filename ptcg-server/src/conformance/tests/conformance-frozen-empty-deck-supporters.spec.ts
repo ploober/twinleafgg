@@ -3,6 +3,7 @@ import * as path from 'path';
 import { step } from '../driver';
 import { importState } from '../state-adapter';
 import { PokemonCard } from '../../game/store/card/pokemon-card';
+import { PlayCardAction, PlayerType, SlotType } from '../../game/store/actions/play-card-action';
 
 describe('Frozen empty-deck Supporter boundaries [B.41 TA-308 TA-461 frozen controls]', () => {
   const cases = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/next-four/empty-deck-supporters.json'), 'utf8'));
@@ -21,6 +22,9 @@ describe('Frozen empty-deck Supporter boundaries [B.41 TA-308 TA-461 frozen cont
         const trainer: any = player.hand.cards.find(c => c.set.toLowerCase() === q.printing.split('-')[0]
           && Number(c.setNumber) === Number(q.printing.split('-')[1]));
         expect(trainer).toBeDefined(); expect(trainer.canPlay(game.store, game.state, player)).toBe(expected);
+        const nativePlay = () => game.store.dispatch(new PlayCardAction(player.id, player.hand.cards.indexOf(trainer),
+          { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }));
+        if (expected) { expect(nativePlay).not.toThrow(); } else { expect(nativePlay).toThrow(); }
         if (q.printing === 'ssp-190') { expect(player.hand.cards.some(c => c instanceof PokemonCard)).toBe(true); }
         const before = step(q.initialState, []);
         const iid = q.initialState.players.A.hand.find((c: any) => c.printing === q.printing).iid;
