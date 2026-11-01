@@ -31,7 +31,8 @@ import { StateLog, StateLogParam } from './state/state-log';
 import { StoreHandler } from './store-handler';
 import { StoreLike } from './store-like';
 import { generateId } from '../../utils/utils';
-import { legacyStateSnapshots, SnapshotSite, StateSnapshotBackend } from './state-snapshot';
+import { legacyStateSnapshots, conformanceLegacyStateSnapshots, graphStateSnapshots, SnapshotSite, StateSnapshotBackend } from './state-snapshot';
+import { canSkipReactionProbe, ReactionFilterMode, recordReactionFilterSkipped, recordReactionFilterVerified } from './reaction-filter';
 import { ResolveNextPrompt, ResolveNextCandidate } from './prompts/resolve-next-prompt';
 import { CardList } from './state/card-list';
 import { attackReducer } from './effect-reducers/attack-effect';
@@ -218,8 +219,11 @@ export class Store implements StoreLike {
   private trainerPromptSources = new Map<number, ResolvingTrainerSource>();
 
   private readonly snapshots: StateSnapshotBackend;
-  constructor(private handler: StoreHandler, options: { snapshotBackend?: StateSnapshotBackend } = {}) {
+  private static readonly reactionProbeReducer = Store.prototype.callReduceEffect;
+  private readonly reactionFilter: ReactionFilterMode;
+  constructor(private handler: StoreHandler, options: { snapshotBackend?: StateSnapshotBackend; reactionFilter?: ReactionFilterMode } = {}) {
     this.snapshots = options.snapshotBackend ?? legacyStateSnapshots;
+    this.reactionFilter = options.reactionFilter ?? 'off';
   }
 
   public snapshot(state: State = this.state, site: SnapshotSite = 'rollback'): State {
@@ -239,7 +243,7 @@ export class Store implements StoreLike {
   public captureReplayBookkeeping(): { logId: number } | undefined {
     const known = new Set(['handler', 'currentState', 'probeInventory', 'promptItems', 'waitItems', 'logId',
       'calculatingPlayability', 'resolvingTrainer', 'trainerPromptSources', 'snapshots', 'probing',
-      'probeRaisedPrompt', 'probeDispatched', 'playing']);
+      'probeRaisedPrompt', 'probeDispatched', 'playing', 'reactionFilter']);
     if (Object.keys(this).some(key => !known.has(key))) { return undefined; }
     return this.replayBoundaryReason() === undefined ? { logId: this.logId } : undefined;
   }
@@ -1149,6 +1153,16 @@ export class Store implements StoreLike {
    * `probeWouldAct` so the KO window can apply a narrower diff to `after` (see `wireVisibleBoardDiffers`).
    */
   private probe(card: Card, state: State, effect: Effect): { raised: boolean; dispatched: boolean; after: State } | null {
+    const auditedNoOp = this.reactionFilter !== 'off'
+      && (this.snapshots === legacyStateSnapshots || this.snapshots === conformanceLegacyStateSnapshots || this.snapshots === graphStateSnapshots)
+      && Object.getPrototypeOf(this) === Store.prototype
+      && !Object.prototype.hasOwnProperty.call(this, 'callReduceEffect')
+      && Object.getOwnPropertyDescriptor(Store.prototype, 'callReduceEffect')?.value === Store.reactionProbeReducer
+      && canSkipReactionProbe(card, effect);
+    if (auditedNoOp && this.reactionFilter === 'on') {
+      recordReactionFilterSkipped();
+      return { raised: false, dispatched: false, after: state };
+    }
     // 🚨 IDENTITY THAT LIVES ON A CARD MUST SURVIVE THE CLONE, AND `Card` IN THE IGNORE LIST IS NOT
     // ENOUGH TO GIVE IT THAT. `deepClone` treats a `Card` as opaque and never walks into it, so
     // `this.attacks[0]` is the SAME object on both sides -- but the identical Attack reached through
@@ -1195,6 +1209,10 @@ export class Store implements StoreLike {
     } catch {
       // A handler that throws is doing what several of them do to decline (the `ToolEffect` stub in
       // `handy-fan.ts` is caught by the CARD, but a lock can throw past it). Not acting.
+      if (auditedNoOp && this.reactionFilter === 'verify') {
+        recordReactionFilterVerified(false);
+        throw new Error('Reaction filter verification failed: audited no-op declined');
+      }
       return null;
     } finally {
       raised = this.probeRaisedPrompt;
@@ -1204,6 +1222,11 @@ export class Store implements StoreLike {
       this.probeDispatched = outerDispatched;
       this.promptItems.length = promptItemsBefore;
       this.logId = logIdBefore;
+    }
+    if (auditedNoOp && this.reactionFilter === 'verify') {
+      const matches = !raised && !dispatched && !boardDiffers(state, after) && !wireVisibleBoardDiffers(state, after);
+      recordReactionFilterVerified(matches);
+      if (!matches) { throw new Error('Reaction filter verification failed: audited no-op changed observable behavior'); }
     }
     return { raised, dispatched, after };
   }

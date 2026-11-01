@@ -1,5 +1,6 @@
 import { conformanceSnapshotBackend } from '../conformance-store';
 import { replayCheckpointMode } from '../replay-checkpoints';
+import { reactionFilterMode } from '../../game/store/reaction-filter';
 import * as cluster from 'cluster';
 import * as os from 'os';
 import * as express from 'express';
@@ -26,6 +27,7 @@ import { ClusterReadiness } from './cluster-readiness';
  */
 conformanceSnapshotBackend(); // Reject invalid backend configuration before forking/listening.
 replayCheckpointMode();
+reactionFilterMode();
 const quiet = process.env.CONFORMANCE_QUIET === '1';
 const workers = Number(process.env.CONFORMANCE_WORKERS) || 1;
 let initializedAtMs: number;

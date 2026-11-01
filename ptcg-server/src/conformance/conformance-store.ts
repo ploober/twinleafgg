@@ -1,6 +1,7 @@
 import { Store } from '../game/store/store';
 import { ConformanceStoreHandler } from './conformance-store-handler';
 import { conformanceLegacyStateSnapshots, graphStateSnapshots, StateSnapshotBackend } from '../game/store/state-snapshot';
+import { reactionFilterMode } from '../game/store/reaction-filter';
 
 export function conformanceSnapshotBackend(): StateSnapshotBackend {
   const mode = process.env.CONFORMANCE_STATE_SNAPSHOTS ?? 'legacy';
@@ -10,7 +11,7 @@ export function conformanceSnapshotBackend(): StateSnapshotBackend {
 }
 
 export function createConformanceStore(handler = new ConformanceStoreHandler()): Store {
-  const store = new Store(handler, { snapshotBackend: conformanceSnapshotBackend() });
+  const store = new Store(handler, { snapshotBackend: conformanceSnapshotBackend(), reactionFilter: reactionFilterMode() });
   handler.setStore(store);
   return store;
 }

@@ -5,6 +5,7 @@ import { UnknownSetError } from '../cards';
 import { UnsupportedFormatError } from '../formats';
 import { conformanceSnapshotBackend } from '../conformance-store';
 import { replayCheckpointMode } from '../replay-checkpoints';
+import { reactionFilterMode } from '../../game/store/reaction-filter';
 
 /**
  * A standalone Express app for the conformance API (design §5, M6): a pure function of the request
@@ -22,6 +23,7 @@ import { replayCheckpointMode } from '../replay-checkpoints';
 export function createConformanceApp(): express.Application {
   conformanceSnapshotBackend();
   replayCheckpointMode();
+  reactionFilterMode();
   const app = express();
   app.use(json({ limit: '8mb' })); // states/logs can be large; generous but bounded
 
