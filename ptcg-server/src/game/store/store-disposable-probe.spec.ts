@@ -7,19 +7,121 @@ import { GameMessage } from '../game-message';
 import * as setup from './reducers/setup-reducer';
 import * as checks from './effect-reducers/check-effect';
 import * as utils from '../../utils/utils';
+import { Card } from './card/card';
+import { StateLog } from './state/state-log';
+import { GameLog } from '../game-message';
+import { graphStateSnapshots, StateSnapshotBackend } from './state-snapshot';
 
 const outer: Action = { type: 'outer-probe-test' };
 const inner: Action = { type: 'inner-probe-test' };
 
-function fixture() {
+function fixture(snapshotBackend?: StateSnapshotBackend) {
   const handler = { onStateChange: (state: State) => { store.state = state; } };
-  const store = new Store(handler);
+  const store = new Store(handler, { snapshotBackend });
   return store;
 }
 
 describe('Store disposable probe dispatch', () => {
   beforeEach(() => {
     spyOn(checks, 'checkState').and.callFake((_store: StoreLike, state: State) => state);
+  });
+
+  for (const backend of [undefined, graphStateSnapshots]) {
+    it(`preserves attack identity through the Store reaction path (${backend?.name ?? 'legacy'})`, () => {
+      const store = fixture(backend);
+      const attack = { name: 'identity-sensitive reaction' };
+      const card = Object.assign(Object.create(Card.prototype), {
+        attacks: [attack], reduceEffect: (_store: StoreLike, state: State, effect: any) => {
+          if (effect.attack === attack) { state.turn++; }
+          return state;
+        }
+      });
+      const original = new State();
+      const result = (store as any).probe(card, original, { attack });
+      expect(result).not.toBeNull();
+      expect(result.after.turn).toBe(1);
+      expect(original.turn).toBe(0);
+    });
+  }
+
+  it('captures card values at dispatch entry and consumes a graph inventory only once', () => {
+    const store = fixture(graphStateSnapshots);
+    const source: any = new State();
+    const first = Object.assign(Object.create(Card.prototype), { used: false });
+    const later = Object.assign(Object.create(Card.prototype), { used: false });
+    source.fixture = [first];
+    store.setProbeSnapshot(source, true);
+    first.used = true; // Values must be captured now, not when the snapshot was made.
+    spyOn(setup, 'setupPhaseReducer').and.callFake((_store: StoreLike, state: State) => {
+      first.used = false; later.used = true; return state;
+    });
+    store.dispatchProbe(outer);
+    expect(first.used).toBe(true);
+    later.used = false;
+    (store.state as any).fixture.push(later);
+    store.dispatchProbe(outer); // The consumed inventory must not miss the newly inserted Card.
+    expect(later.used).toBe(false);
+  });
+
+  it('invalidates the inventory for external state assignment and prepared snapshots', () => {
+    const store = fixture(graphStateSnapshots);
+    store.setProbeSnapshot(new State(), true);
+    const replacement: any = new State();
+    const card = Object.assign(Object.create(Card.prototype), { used: false });
+    replacement.fixture = [card]; store.state = replacement;
+    spyOn(setup, 'setupPhaseReducer').and.callFake((_store: StoreLike, state: State) => { card.used = true; return state; });
+    store.dispatchProbe(outer);
+    expect(card.used).toBe(false);
+    store.setProbeSnapshot(new State(), false);
+    (store.state as any).fixture = [card];
+    store.dispatchProbe(outer);
+    expect(card.used).toBe(false);
+  });
+
+  for (const fails of [false, true]) {
+    it(`restores shared card scalars through cyclic and sparse graphs after ${fails ? 'failure' : 'success'}`, () => {
+      const store = fixture();
+      const card = Object.assign(Object.create(Card.prototype), {
+        used: false, count: 2, label: 'before', optional: undefined, nullable: null,
+      });
+      const nested: any = { cards: [card, , card] };
+      nested.self = nested;
+      (store.state as any).probeFixture = nested;
+      const failure = new Error('probe rejected');
+      spyOn(setup, 'setupPhaseReducer').and.callFake((_store: StoreLike, state: State) => {
+        Object.assign(card, { used: true, count: 99, label: 'during', optional: 1, nullable: 1 });
+        if (fails) { throw failure; }
+        return state;
+      });
+      if (fails) {
+        expect(() => store.dispatchProbe(outer)).toThrow(failure);
+      } else {
+        store.dispatchProbe(outer);
+      }
+      expect(card.used).toBe(false);
+      expect(card.count).toBe(2);
+      expect(card.label).toBe('before');
+      expect(card.optional).toBeUndefined();
+      expect(card.nullable).toBeNull();
+    });
+  }
+
+  it('keeps append-only shared history isolated from a disposable probe', () => {
+    const original = new State();
+    const history = new StateLog(GameLog.LOG_PLAYER_ENDS_TURN, { name: 'A' });
+    Object.freeze(history.params);
+    Object.freeze(history);
+    original.logs.push(history);
+    const store = fixture();
+    store.state = utils.deepClone(original, [Card, StateLog]);
+    spyOn(setup, 'setupPhaseReducer').and.callFake((_store: StoreLike, state: State) => {
+      state.logs.push(new StateLog(GameLog.LOG_PLAYER_ENDS_TURN, { name: 'B' }));
+      return state;
+    });
+    store.dispatchProbe(outer);
+    expect(store.state.logs.length).toBe(2);
+    expect(store.state.logs[0]).toBe(history);
+    expect(original.logs).toEqual([history]);
   });
 
   it('keeps ordinary dispatch rollback after a partial mutation', () => {

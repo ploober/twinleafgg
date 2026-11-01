@@ -6,6 +6,7 @@ import { matchesCardFilter } from '../card/card-filter';
 import { EnergyType, SuperType, TrainerType } from '../card/card-types';
 import { EnergyCard } from '../card/energy-card';
 import { TrainerCard } from '../card/trainer-card';
+import { recordSnapshotSource } from '../snapshot-provenance';
 
 export enum StadiumDirection {
   UP = 'up',
@@ -43,6 +44,7 @@ export class CardList {
     const tag = this.zoneTag ?? this.fromZoneTag;
     if (tag === undefined) { return; }
     destination.fromZoneTag = tag;
+    if (recordSnapshotSource(this, destination)) { return; }
     const ref = this.zoneTag !== undefined ? this : (this as unknown as { fromZoneRef?: CardList }).fromZoneRef;
     Object.defineProperty(destination, 'fromZoneRef', { value: ref, enumerable: false, configurable: true, writable: true });
   }
@@ -82,6 +84,19 @@ export class CardList {
    */
   public static readonly deckEnd = new WeakMap<Card, 'top' | 'bottom'>();
   private static deckStampSeq = 0;
+
+  /** Restore per-Card conformance provenance without rewinding the process-wide ordering clock. */
+  public static restoreReplayCardMetadata(card: Card, value: {
+    deckStamp?: number; transit?: { origin: string; destination?: string; visibility: 'public' | 'owner' | 'hidden'; order?: number };
+    deckEnd?: 'top' | 'bottom';
+  }): void {
+    if (value.deckStamp !== undefined) {
+      CardList.deckStamp.set(card, value.deckStamp);
+      CardList.deckStampSeq = Math.max(CardList.deckStampSeq, value.deckStamp + 1);
+    }
+    if (value.transit !== undefined) { CardList.transit.set(card, value.transit); }
+    if (value.deckEnd !== undefined) { CardList.deckEnd.set(card, value.deckEnd); }
+  }
 
   /**
    * TA-593 (conformance; inert for gameplay — unset outside the conformance driver). Called once per POSITIONAL

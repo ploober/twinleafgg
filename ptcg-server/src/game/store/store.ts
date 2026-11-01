@@ -30,7 +30,8 @@ import { State, GamePhase } from './state/state';
 import { StateLog, StateLogParam } from './state/state-log';
 import { StoreHandler } from './store-handler';
 import { StoreLike } from './store-like';
-import { generateId, deepClone } from '../../utils/utils';
+import { generateId } from '../../utils/utils';
+import { legacyStateSnapshots, SnapshotSite, StateSnapshotBackend } from './state-snapshot';
 import { ResolveNextPrompt, ResolveNextCandidate } from './prompts/resolve-next-prompt';
 import { CardList } from './state/card-list';
 import { attackReducer } from './effect-reducers/attack-effect';
@@ -174,7 +175,7 @@ export function wireVisibleBoardDiffers(a: State, b: State): boolean {
 const CHECK_EFFECT_TYPES: ReadonlySet<string> = new Set<string>(Object.values(CheckEffects));
 
 /** Every Card reachable from `root`, with its own scalar fields as they are now; the returned function puts them back. */
-function snapshotCardScalars(root: unknown): () => void {
+function snapshotCardScalars(root: unknown, inventory?: ReadonlyArray<Card>): () => void {
   const seen = new Set<unknown>();
   const saved: Array<[Card, Record<string, unknown>]> = [];
   const walk = (v: unknown): void => {
@@ -182,17 +183,19 @@ function snapshotCardScalars(root: unknown): () => void {
     seen.add(v);
     if (v instanceof Card) {
       const fields: Record<string, unknown> = {};
-      for (const [k, x] of Object.entries(v)) {
+      for (const k of Object.keys(v)) {
+        const x = (v as unknown as Record<string, unknown>)[k];
         if (x === null || x === undefined || (typeof x !== 'object' && typeof x !== 'function')) { fields[k] = x; }
       }
       saved.push([v, fields]);
       return;
     }
-    for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-      if (k !== 'logs') { walk(x); }
+    // Avoid allocating an [entry, value] tuple for every field on every probe.
+    for (const k of Object.keys(v as object)) {
+      if (k !== 'logs') { walk((v as Record<string, unknown>)[k]); }
     }
   };
-  walk(root);
+  if (inventory === undefined) { walk(root); } else { inventory.forEach(walk); }
   return () => { for (const [card, fields] of saved) { Object.assign(card, fields); } };
 }
 
@@ -200,7 +203,10 @@ export class Store implements StoreLike {
 
   //private effectHistory: Effect[] = [];
 
-  public state: State = new State();
+  private currentState: State = new State();
+  private probeInventory?: { state: State; cards: ReadonlyArray<Card> };
+  public get state(): State { return this.currentState; }
+  public set state(value: State) { this.probeInventory = undefined; this.currentState = value; }
   private promptItems: PromptItem[] = [];
   private waitItems: (() => void)[] = [];
   private logId: number = 0;
@@ -211,9 +217,49 @@ export class Store implements StoreLike {
   /** Prompt ids created by the resolving trainer. Not serialized. */
   private trainerPromptSources = new Map<number, ResolvingTrainerSource>();
 
-  constructor(private handler: StoreHandler) { }
+  private readonly snapshots: StateSnapshotBackend;
+  constructor(private handler: StoreHandler, options: { snapshotBackend?: StateSnapshotBackend } = {}) {
+    this.snapshots = options.snapshotBackend ?? legacyStateSnapshots;
+  }
+
+  public snapshot(state: State = this.state, site: SnapshotSite = 'rollback'): State {
+    return this.snapshots.capture(state, undefined, site).state;
+  }
+
+  /** Internal replay diagnostics: no callbacks may cross a checkpoint boundary. */
+  public replayBoundaryReason(): string | undefined {
+    if (this.promptItems.length > 0) { return 'prompt-continuation'; }
+    if (this.waitItems.length > 0) { return 'wait-continuation'; }
+    if (this.calculatingPlayability || this.probing || this.probeInventory !== undefined) { return 'active-probe'; }
+    if (this.playing.length > 0) { return 'playing-continuation'; }
+    if (this.resolvingTrainer !== undefined || this.trainerPromptSources.size > 0) { return 'trainer-continuation'; }
+    return undefined;
+  }
+
+  public captureReplayBookkeeping(): { logId: number } | undefined {
+    const known = new Set(['handler', 'currentState', 'probeInventory', 'promptItems', 'waitItems', 'logId',
+      'calculatingPlayability', 'resolvingTrainer', 'trainerPromptSources', 'snapshots', 'probing',
+      'probeRaisedPrompt', 'probeDispatched', 'playing']);
+    if (Object.keys(this).some(key => !known.has(key))) { return undefined; }
+    return this.replayBoundaryReason() === undefined ? { logId: this.logId } : undefined;
+  }
+
+  public restoreReplayBookkeeping(value: { logId: number }): void {
+    if (this.replayBoundaryReason() !== undefined || !Number.isSafeInteger(value.logId) || value.logId < 0) {
+      throw new Error('Invalid quiescent replay bookkeeping');
+    }
+    this.logId = value.logId;
+  }
+
+  /** Internal menu workflow: consume only before any preparation or structural mutation. */
+  public setProbeSnapshot(source: State, inventorySafe: boolean = false): void {
+    const captured = this.snapshots.capture(source, undefined, 'menu');
+    this.state = captured.state;
+    if (inventorySafe && captured.cards) { this.probeInventory = { state: this.state, cards: captured.cards }; }
+  }
 
   public dispatch(action: Action, clientRoleId?: number): State {
+    this.probeInventory = undefined;
     return this.dispatchWithRollback(action, clientRoleId, true);
   }
 
@@ -226,7 +272,9 @@ export class Store implements StoreLike {
     // TA-730: the clone shares the Card instances with the real board (deepClone skips Card), so a card that arms a
     // field on itself when an attack is used (Comfey jtg-068 Fade Out, Finizen obf-060 Valiant Evolution) kept it
     // armed after a menu probe, and its next real attack ran the probed one's effect. Restore the scalars.
-    const restore = snapshotCardScalars(this.state);
+    const inventory = this.probeInventory;
+    this.probeInventory = undefined;
+    const restore = snapshotCardScalars(this.state, inventory?.state === this.state ? inventory.cards : undefined);
     try {
       return this.dispatchWithRollback(action, undefined, false);
     } finally {
@@ -620,7 +668,7 @@ export class Store implements StoreLike {
     // after creation, so they're shared (not deep-cloned) — the backup's `logs` array keeps the
     // pre-action entries and drops any appended during a rolled-back action, without paying to clone
     // the (unbounded, per-turn-growing) log history on every action.
-    const stateBackup: State | undefined = rollback ? deepClone(state, [Card, StateLog]) : undefined;
+    const stateBackup: State | undefined = rollback ? this.snapshot(state, 'rollback') : undefined;
     this.promptItems.length = 0;
 
     try {
@@ -1101,7 +1149,6 @@ export class Store implements StoreLike {
    * `probeWouldAct` so the KO window can apply a narrower diff to `after` (see `wireVisibleBoardDiffers`).
    */
   private probe(card: Card, state: State, effect: Effect): { raised: boolean; dispatched: boolean; after: State } | null {
-    const refMap = new Map<object, object>();
     // 🚨 IDENTITY THAT LIVES ON A CARD MUST SURVIVE THE CLONE, AND `Card` IN THE IGNORE LIST IS NOT
     // ENOUGH TO GIVE IT THAT. `deepClone` treats a `Card` as opaque and never walks into it, so
     // `this.attacks[0]` is the SAME object on both sides -- but the identical Attack reached through
@@ -1118,11 +1165,9 @@ export class Store implements StoreLike {
     // files that write to `effect.attack.*` all do so in `CheckAttackCost`/attack-declaration
     // branches, none of which a probe of an `AfterDamageEffect` can enter.
     const attackOfEffect = (effect as unknown as { attack?: object }).attack;
-    if (attackOfEffect) {
-      refMap.set(attackOfEffect, attackOfEffect);
-    }
-    const probeState: State = deepClone(state, [Card, StateLog], refMap);
-    const probeEffect: Effect = deepClone(effect, [Card, StateLog], refMap);
+    const captured = this.snapshots.capture(state, effect, 'reaction', attackOfEffect ? [attackOfEffect] : []);
+    const probeState = captured.state;
+    const probeEffect = captured.effect;
     // No third clone for the before-image: `state` IS it. `probeState` was cloned FROM `state` and
     // only the clone is mutated, so comparing the run result against the original graph is the same
     // comparison for a third of the allocation. `Card` instances are shared across both graphs

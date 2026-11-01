@@ -3,6 +3,8 @@ import { json } from 'body-parser';
 import { handleStep, handleCapabilities, handleCards, BadRequestError, UnsupportedSchemaVersionError } from './handlers';
 import { UnknownSetError } from '../cards';
 import { UnsupportedFormatError } from '../formats';
+import { conformanceSnapshotBackend } from '../conformance-store';
+import { replayCheckpointMode } from '../replay-checkpoints';
 
 /**
  * A standalone Express app for the conformance API (design §5, M6): a pure function of the request
@@ -18,6 +20,8 @@ import { UnsupportedFormatError } from '../formats';
  * The error body is the contract `Error` shape: `{ error: <string code>, message }`.
  */
 export function createConformanceApp(): express.Application {
+  conformanceSnapshotBackend();
+  replayCheckpointMode();
   const app = express();
   app.use(json({ limit: '8mb' })); // states/logs can be large; generous but bounded
 

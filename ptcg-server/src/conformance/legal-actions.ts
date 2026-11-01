@@ -3,15 +3,13 @@ import { PokemonCard } from '../game/store/card/pokemon-card';
 import { TrainerCard } from '../game/store/card/trainer-card';
 import { EnergyCard } from '../game/store/card/energy-card';
 import { GameError } from '../game/game-error';
-import { Store } from '../game/store/store';
 import {
   UseAbilityAction as UseAbilityGameAction, AttackAction as AttackGameAction,
   UseStadiumAction as UseStadiumGameAction, RetreatAction as RetreatGameAction
 } from '../game/store/actions/game-actions';
 import { ResolvePromptAction } from '../game/store/actions/resolve-prompt-action';
 import { CardTarget, PlayerType, SlotType, PlayCardAction } from '../game/store/actions/play-card-action';
-import { deepClone } from '../utils/utils';
-import { ConformanceStoreHandler } from './conformance-store-handler';
+import { createConformanceStore } from './conformance-store';
 import { atOnceWireSpec } from './at-once';
 import {
   SuperType, TrainerType, Stage, SpecialCondition, BoardEffect, CardType, EnergyType
@@ -364,10 +362,9 @@ function attackUnlocked(state: State, source: PokemonCardList, attack: Attack): 
  * clone) gets the benefit of the doubt and the move is offered, as with the ability probe.
  */
 function attackProbeAccepts(state: State, player: Player, attackName: string): boolean {
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  // Like Store's rollback snapshots, copy the log array but share its append-only entries.
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[state.players.indexOf(player)];
   try {
     probe.dispatchProbe(new AttackGameAction(cloned.id, attackName));
@@ -405,10 +402,8 @@ function pokemonPlayProbeAccepts(state: State, player: Player, card: PokemonCard
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
   const playerIndex = state.players.indexOf(player);
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[playerIndex];
   const target = benchIndex === null
     ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
@@ -435,10 +430,8 @@ function attachEnergyProbeAccepts(state: State, player: Player, card: EnergyCard
   if (handIndex === -1) { return true; }
   const playerIndex = state.players.indexOf(player);
   const benchIndex = slot.benchIndex;
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[playerIndex];
   const target = benchIndex === null
     ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
@@ -455,10 +448,8 @@ function attachEnergyProbeAccepts(state: State, player: Player, card: EnergyCard
 function trainerProbeAccepts(state: State, player: Player, card: TrainerCard, slot?: OwnSlot): boolean {
   const handIndex = player.hand.cards.indexOf(card);
   if (handIndex === -1) { return true; }
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[state.players.indexOf(player)];
   const target = slot === undefined || slot.benchIndex === null
     ? { player: PlayerType.BOTTOM_PLAYER, slot: SlotType.ACTIVE, index: 0 }
@@ -549,10 +540,8 @@ function retreatMenu(store: StoreLike, state: State, player: Player): LegalActio
 }
 
 function retreatProbeAccepts(state: State, player: Player, nativeSlot: number): boolean {
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[state.players.indexOf(player)];
   try {
     probe.dispatchProbe(new RetreatGameAction(cloned.id, nativeSlot));
@@ -567,7 +556,7 @@ function retreatProbeAccepts(state: State, player: Player, nativeSlot: number): 
  * `reduceEffect` (e.g. Lunar Cycle's "if you have Solrock in play" / "a Basic [F] Energy in hand")
  * — invisible to any static enumeration, so without probing the menu offers moves the engine then
  * rejects (a §10.3 contract violation the fuzzer flags as "rejected its own legalAction").
- * `deepClone(state, [Card])` preserves Card instances, so the source card locates the same slot on
+ * `deepClone(state, [Card, StateLog])` preserves Card instances, so the source card locates the same slot on
  * the clone. A GameError rejection = not offered; any other throw (e.g. the effect reaching a coin
  * flip with no provider installed) gets the benefit of the doubt and the move is offered.
  */
@@ -585,10 +574,8 @@ interface ProbeOutcome { accepted: boolean; reason?: string }
  */
 function abilityProbeOutcome(state: State, player: Player, ability: string, sourceCard: PokemonCard,
   prepare?: (cloned: State) => void): ProbeOutcome {
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, prepare === undefined);
   if (prepare !== undefined) { prepare(probe.state); }
   const cloned = probe.state.players[state.players.indexOf(player)];
   let target: CardTarget | undefined;
@@ -839,10 +826,8 @@ function zoneFingerprint(state: State): string {
  * card moved / a Pokemon's damage or conditions changed.
  */
 function stadiumProbeAccepts(state: State, player: Player): boolean {
-  const handler = new ConformanceStoreHandler();
-  const probe = new Store(handler);
-  handler.setStore(probe);
-  probe.state = deepClone(state, [Card]);
+  const probe = createConformanceStore();
+  probe.setProbeSnapshot(state, true);
   const cloned = probe.state.players[state.players.indexOf(player)];
   const before = zoneFingerprint(probe.state);
   const logsBefore = probe.state.logs.length;

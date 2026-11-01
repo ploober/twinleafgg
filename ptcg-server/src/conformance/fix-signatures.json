@@ -7293,10 +7293,10 @@
         "    if (this.probing) {",
         "    const wasProbing = this.probing;",
         "    return probe !== null && (probe.raised || boardDiffers(state, probe.after));",
-        "      refMap.set(attackOfEffect, attackOfEffect);",
+        "    const captured = this.snapshots.capture(state, effect, 'reaction', attackOfEffect ? [attackOfEffect] : []);",
         "      return this.waitPrompt(state, () => {"
       ],
-      "note": "TA-292 / CF-38 / B.40 2026-08-20: simultaneous after-damage effects were resolved on propagateEffect's `superType` sort -- an arbitrary order that, where two effects compete for one resource, decided WHICH PRINTED EFFECT HAPPENED and never showed the player the choice. Line 1-2 are the dispatch into the batch path; delete them and the engine silently reverts to the sort. Line 3 is the probe's prompt short-circuit -- WITHOUT IT a probe enqueues the prompt it was only supposed to detect AND runs the handler's continuation, where dri-125 Team Rocket's Koffing shuffles. Line 4 is the SAVE of the probe flag -- assigning `false` on the way out instead would hand a nested probe's caller a live store, and a probed handler that deals damage can raise another AfterDamageEffect. Line 5 is the two-part `would act` signal: a prompt-only test misses twm-158 Lucky Helmet, which draws via deck.moveTo with no prompt, so the deck-competing pairs would never batch. Guards: ta292-por-017-twm-150-simultaneous-batch-order-decides-a-zone (abilityEffect branch -> discard), ta292-por-017-twm-150-cardtexteffect-first-... (the OTHER branch -> bench, which is what proves the decision is real), and ta292-negative-control-por-017-alone-... (one effect must raise NO decision). Mutation-tested both ways: disabling the dispatch reds the two positive cells and leaves the control green; prompting on a one-effect batch reds the control and 10 other scenarios. || TA-298 2026-08-21: the `refMap.set(attackOfEffect, ...)` line keeps the effect's ATTACK object identical across the probe clone. `deepClone` never walks into a `Card`, so `this.attacks[0]` is the original object while the same Attack reached through `effect.attack` is cloned -- so every handler gating on `effect.attack === this.attacks[N]` reported \"I would not act\". Deleting this line silently under-reports the batch's actors (tef-040 Croconaw is the live in-pool carrier) and no scenario reddens, because the legacy path runs the same handlers anyway: the cost is a LOST PROMPT, not a lost effect. || TA-300 2026-08-21: the `waitPrompt` line in `runThenContinue` is what makes the ORDER the player picked the order the effects APPLY in. `prompt()` enqueues and returns, so without it the next candidate runs immediately and any SYNCHRONOUS handler (twm-158 Lucky Helmet's deck.moveTo) beats a prompt-driven one (por-017 Shell Spikes, dri-125 Smog Signals) whatever was picked -- the decision is offered and then ignored. 10 of the 14 in-pool after-damage responders are synchronous, so this is the COMMON shape; TA-292's own guards are prompt x prompt and stay green without it.",
+      "note": "TA-292 / CF-38 / B.40 2026-08-20: simultaneous after-damage effects were resolved on propagateEffect's `superType` sort -- an arbitrary order that, where two effects compete for one resource, decided WHICH PRINTED EFFECT HAPPENED and never showed the player the choice. Line 1-2 are the dispatch into the batch path; delete them and the engine silently reverts to the sort. Line 3 is the probe's prompt short-circuit -- WITHOUT IT a probe enqueues the prompt it was only supposed to detect AND runs the handler's continuation, where dri-125 Team Rocket's Koffing shuffles. Line 4 is the SAVE of the probe flag -- assigning `false` on the way out instead would hand a nested probe's caller a live store, and a probed handler that deals damage can raise another AfterDamageEffect. Line 5 is the two-part `would act` signal: a prompt-only test misses twm-158 Lucky Helmet, which draws via deck.moveTo with no prompt, so the deck-competing pairs would never batch. Guards: ta292-por-017-twm-150-simultaneous-batch-order-decides-a-zone (abilityEffect branch -> discard), ta292-por-017-twm-150-cardtexteffect-first-... (the OTHER branch -> bench, which is what proves the decision is real), and ta292-negative-control-por-017-alone-... (one effect must raise NO decision). Mutation-tested both ways: disabling the dispatch reds the two positive cells and leaves the control green; prompting on a one-effect batch reds the control and 10 other scenarios. || TA-298 2026-08-21: the `refMap.set(attackOfEffect, ...)` line keeps the effect's ATTACK object identical across the probe clone. `deepClone` never walks into a `Card`, so `this.attacks[0]` is the original object while the same Attack reached through `effect.attack` is cloned -- so every handler gating on `effect.attack === this.attacks[N]` reported \"I would not act\". Deleting this line silently under-reports the batch's actors (tef-040 Croconaw is the live in-pool carrier) and no scenario reddens, because the legacy path runs the same handlers anyway: the cost is a LOST PROMPT, not a lost effect. || TA-300 2026-08-21: the `waitPrompt` line in `runThenContinue` is what makes the ORDER the player picked the order the effects APPLY in. `prompt()` enqueues and returns, so without it the next candidate runs immediately and any SYNCHRONOUS handler (twm-158 Lucky Helmet's deck.moveTo) beats a prompt-driven one (por-017 Shell Spikes, dri-125 Smog Signals) whatever was picked -- the decision is offered and then ignored. 10 of the 14 in-pool after-damage responders are synchronous, so this is the COMMON shape; TA-292's own guards are prompt x prompt and stay green without it. || 2026-10-31 state snapshot refactor: anchor moved to the equivalent backend call; Store reaction identity and scalar-restoration regression tests protect the behavior.",
       "fixes": [
         "FX-0272"
       ],
@@ -12991,9 +12991,9 @@
     {
       "file": "conformance/driver.ts",
       "signatures": [
-        "const liftedOffDeck = new Map<Card, Player>();"
+        "const liftedOffDeck = resume?.liftedOffDeck ?? new Map<Card, Player>();"
       ],
-      "note": "TA-665 (2026-10-07): cards lifted off the top of a deck into a closure pile and back by the end of the dispatch emit deck > transit > deck le",
+      "note": "TA-665 (2026-10-07): cards lifted off the top of a deck into a closure pile and back by the end of the dispatch emit deck > transit > deck le Replay checkpoint refactor: the same initialized tracking container is restored from ReplayFrame when resuming; protection and fix IDs are unchanged.",
       "fixes": [
         "FX-0450"
       ],
@@ -13478,9 +13478,9 @@
     {
       "file": "conformance/driver.ts",
       "signatures": [
-        "const deckPuts = new Map<Card, { player: Player; end: 'top' | 'bottom' }>();"
+        "const deckPuts = resume?.deckPuts ?? new Map<Card, { player: Player; end: 'top' | 'bottom' }>();"
       ],
-      "note": "TA-698 (2026-10-11): B.81: a card put into the deck and out of it again inside one dispatch keeps its deck stop (hand > deck:bottom, deck > h",
+      "note": "TA-698 (2026-10-11): B.81: a card put into the deck and out of it again inside one dispatch keeps its deck stop (hand > deck:bottom, deck > h Replay checkpoint refactor: the same initialized tracking container is restored from ReplayFrame when resuming; protection and fix IDs are unchanged.",
       "fixes": [
         "FX-0484"
       ],
@@ -13522,9 +13522,9 @@
     {
       "file": "conformance/driver.ts",
       "signatures": [
-        "const publicInTransit = new Set<string>();"
+        "const publicInTransit = resume?.publicInTransit ?? new Set<string>();"
       ],
-      "note": "TA-701 (2026-10-11): A card a show has revealed is public in transit until it is placed (publicInTransit, applied to every projected board an",
+      "note": "TA-701 (2026-10-11): A card a show has revealed is public in transit until it is placed (publicInTransit, applied to every projected board an Replay checkpoint refactor: the same initialized tracking container is restored from ReplayFrame when resuming; protection and fix IDs are unchanged.",
       "fixes": [
         "FX-0488"
       ],
@@ -13868,9 +13868,9 @@
     {
       "file": "game/store/store.ts",
       "signatures": [
-        "    const restore = snapshotCardScalars(this.state);"
+        "    const restore = snapshotCardScalars(this.state, inventory?.state === this.state ? inventory.cards : undefined);"
       ],
-      "note": "TA-730 (2026-10-20): A probe restores the scalar fields of the shared Card instances; Comfey jtg-068 Fade Out keyed on the attack [TA-730]",
+      "note": "TA-730 (2026-10-20): A probe restores the scalar fields of the shared Card instances; Comfey jtg-068 Fade Out keyed on the attack [TA-730] || 2026-10-31 state snapshot refactor: anchor moved to the equivalent backend call; Store reaction identity and scalar-restoration regression tests protect the behavior.",
       "fixes": [
         "FX-0515"
       ],

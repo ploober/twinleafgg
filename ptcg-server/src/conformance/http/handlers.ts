@@ -1,4 +1,4 @@
-import { step } from '../driver';
+import { executeConformanceStep } from '../replay-checkpoints';
 import { resolveFormat, UnsupportedFormatError } from '../formats';
 import { StepResponse, NeutralState, NeutralAction, NeutralCardList, SCHEMA_VERSION } from '../neutral-types';
 import { buildCapabilities, CapabilitiesResponse } from '../capabilities';
@@ -66,7 +66,7 @@ export function handleStep(body: unknown): StepResponse {
   if (initialState.phase === 'setup') {
     assertPreDeal(initialState);
   }
-  return step(initialState, actions);
+  return executeConformanceStep(initialState, actions);
 }
 
 /**

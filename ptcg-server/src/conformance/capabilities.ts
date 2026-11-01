@@ -69,6 +69,9 @@ const ENGINE_BUILD: string = (() => {
   }
 })();
 
+/** Internal cache namespace identifies the running process's code, not a changing checkout. */
+export function runtimeBuildIdentity(): string { return ENGINE_BUILD; }
+
 /**
  * CF-23: every card this engine can INSTANTIATE via `/v1/step` — the full loaded registry. This is
  * the catalog: `capabilities.sets` counts + the `/v1/cards/{code}` listings, guaranteed consistent

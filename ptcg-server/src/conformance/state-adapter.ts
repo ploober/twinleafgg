@@ -1,3 +1,5 @@
+import { hasSnapshotSource, snapshotSourceMatches } from '../game/store/snapshot-provenance';
+import { createConformanceStore } from './conformance-store';
 import { Card } from '../game/store/card/card';
 import { resolveFormat } from './formats';
 import { PokemonCard } from '../game/store/card/pokemon-card';
@@ -406,8 +408,7 @@ export function importState(initial: NeutralState): ImportedGame {
   const importer = new Importer(ctx);
 
   const handler = new ConformanceStoreHandler();
-  const store = new Store(handler);
-  handler.setStore(store);
+  const store = createConformanceStore(handler);
 
   const state = new State();
   state.phase = PHASE_IMPORT[initial.phase];
@@ -748,22 +749,14 @@ function promptTempPile(prompt: Prompt<unknown>): CardList | undefined {
 function detachedTransitCards(state: State, ctx: IidContext): TransitRef[][] {
   const out: TransitRef[][] = state.players.map(() => []);
   if (state.prompts.length === 0) { return out; }
-  const sameList = (a: object | undefined, b: object): boolean => {
-    for (let x: object | null = a ?? null; x !== null && x !== Object.prototype; x = Object.getPrototypeOf(x)) {
-      if (x === b) { return true; }
-    }
-    for (let y: object | null = b; y !== null && y !== Object.prototype; y = Object.getPrototypeOf(y)) {
-      if (y === a) { return true; }
-    }
-    return false;
-  };
   for (const prompt of state.prompts) {
     const pile = promptTempPile(prompt);
     if (pile === undefined) { continue; }
     const promptOwner = state.players.findIndex(p => p.id === prompt.playerId);
     if (promptOwner === -1) { continue; }
     const zoneOrigin = locationOfTag(pile.fromZoneTag);
-    const ref = (pile as unknown as { fromZoneRef?: object }).fromZoneRef;
+    const sameList = (_ref: unknown, zone: object): boolean => snapshotSourceMatches(pile, zone);
+    const ref = hasSnapshotSource(pile) ? pile : undefined;
     // B.81: a pile lifted off a Pokémon (fromZoneTag `inPlay`) names the stack and the role — the source list
     // is the PokemonCardList itself, so its section and basic are readable.
     let stack: { section: 'active' | 'bench'; basic: string } | undefined;

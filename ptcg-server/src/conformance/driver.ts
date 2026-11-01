@@ -1,6 +1,5 @@
+import { observeReplay, measureReplay, replayObservation } from './replay-observer';
 import { Card } from '../game/store/card/card';
-import { StateLog } from '../game/store/state/state-log';
-import { deepClone } from '../utils/utils';
 import { GameError } from '../game/game-error';
 import { GameMessage } from '../game/game-message';
 import { Player } from '../game/store/state/player';
@@ -752,16 +751,40 @@ function chosenEvent(game: ImportedGame, card: Card): NeutralEvent | undefined {
   return undefined;
 }
 
-function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
-  const events: NeutralEvent[] = [];
-  const cursor = { i: 0 };          // shared with the flip provider below
-  let accum: WirePick[] = [];
+export interface ReplayFrame {
+  events: NeutralEvent[]; cursor: { i: number }; accum: WirePick[]; forcedPicks: Set<object>;
+  completedSearches: Array<{ cards: Card[]; source: CardList }>; turnCarry: TurnCarry;
+  revealedSince: Set<string>; cursorAtLastDispatch: number; publicInTransit: Set<string>;
+  observedShows: Set<object>; deckLegsAtWait: MovedEvent[];
+  held: Map<Card, { iid: string; source: CardList; legs: NeutralEvent[] }>;
+  drawOps: Array<{ player: NeutralPlayerId; count: number }>; liftedOffDeck: Map<Card, Player>;
+  deckPuts: Map<Card, { player: Player; end: 'top' | 'bottom' }>;
+  attachPuts: Map<Card, { player: Player; basic: string; section: 'active' | 'bench' }>;
+  countersMoved: boolean; counterMoves?: Array<{ source: string; target: string }>;
+  segment?: { start: NeutralState; legs: NeutralEvent[] };
+  actionStartZones: Map<Card, string>; revealedThisAction: Set<string>;
+}
+export interface ReplayResume { game: ImportedGame; frame: ReplayFrame; }
+export interface ReplayCheckpointSession {
+  restore(): ReplayResume | undefined;
+  prepare(): void;
+  wantsCapture(applied: number): boolean;
+  capture(game: ImportedGame, frame: ReplayFrame): void;
+}
+
+function runLoop(game: ImportedGame, actions: NeutralAction[], resume?: ReplayFrame, checkpoint?: ReplayCheckpointSession): LoopResult {
+  const events: NeutralEvent[] = resume?.events ?? [];
+  const cursor = resume?.cursor ?? { i: 0 };          // shared with the flip provider below
+  let accum: WirePick[] = resume?.accum ?? [];
   // TA-660 / B.93: picks the adapter applied with no pending (CF-14 collapses): not decisions, so never `chosen`.
-  const forcedPicks = new WeakSet<object>();
-  const completedSearches: Array<{ cards: Card[]; source: CardList }> = [];
+  const forcedPicks = resume?.forcedPicks ?? new Set<object>();
+  const completedSearches: Array<{ cards: Card[]; source: CardList }> = resume?.completedSearches ?? [];
   // (Removed 2026-07-24, TA-129/CF-12: `turnEndedBy` tracked the actor whose turn was auto-ended by
   // their own declareAttack, so the driver could absorb that player's redundant trailing `endTurn`.
   // CF-12 deprecates that leniency — the action is not offered and must reject. See the dispatch loop.)
+
+  let actionStartZones = resume?.actionStartZones ?? new Map<Card, string>();
+  let revealedThisAction = resume?.revealedThisAction ?? new Set<string>();
 
   // The system actor's inline coin source: consume the next `flip` action from the same cursor the
   // loop walks, so inline flips (CoinFlipEffect) and the loop stay aligned in log order.
@@ -779,15 +802,15 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   });
 
   // Cross-batch turn-boundary memory for the deferred `turnEnded` (TA-2/TA-8) — one per replay.
-  const turnCarry: TurnCarry = {};
+  const turnCarry: TurnCarry = resume?.turnCarry ?? {};
 
   // B.81: the cards a `reveal` named since the last CLIENT action — their next leg is `public`.
   // TA-690: the memory used to end at every dispatch, but the loop's own dispatches (a show's ack, a CF-14 collapse, a
   // forced shuffle) are no pause: a hand revealed by Thieving Swipe and put under the deck by the collapsed one-card
   // pick moves `public`, while the same pick made at a surfaced pending is a new action and moves `owner` (rotomancer
   // on both, 2026-10-11). The memory is cleared when a dispatch starts after the cursor moved (below).
-  const revealedSince = new Set<string>();
-  let cursorAtLastDispatch = -1;
+  const revealedSince = resume?.revealedSince ?? new Set<string>();
+  let cursorAtLastDispatch = resume?.cursorAtLastDispatch ?? -1;
   // TA-713 / B.109 (owner 2026-10-17): a revealed card put into a deck is hidden information again. Its leg into the deck
   // is public; the memory ends there, so its next leg out of the deck (a draw) is owner unless an effect reveals it then.
   const concealInDeck = (legs: NeutralEvent[]): void => {
@@ -798,10 +821,10 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // is the leg that finally places it; the pile projection's default (`owner`, a look) is wrong for it. Every board this
   // replay projects goes through `seen`; a card the engine's own board no longer holds in transit leaves the set after
   // the dispatch that placed it.
-  const publicInTransit = new Set<string>();
+  const publicInTransit = resume?.publicInTransit ?? new Set<string>();
   // TA-802: an already observed show must not reveal a card again at acknowledgement
   // after its move into the deck has correctly ended the original reveal's visibility.
-  const observedShows = new WeakSet<object>();
+  const observedShows = resume?.observedShows ?? new Set<object>();
   const rememberShow = (prompt: ShowCardsPrompt): void => {
     if (observedShows.has(prompt)) { return; }
     observedShows.add(prompt);
@@ -820,7 +843,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     return board;
   };
   // B.87 / TA-643: deck legs of a dispatch that ended at an auto-acknowledged wait (see dispatchAndCollect).
-  let deckLegsAtWait: MovedEvent[] = [];
+  let deckLegsAtWait: MovedEvent[] = resume?.deckLegsAtWait ?? [];
 
   // TA-590 (B.80 §5 / §8, B.81 §6): a search pick is lifted into transit AT THE PICK. step() projects that at a pause
   // (the decomposer's fix-up) and closes the trace with its leg, but a replay that ran on past the pause skipped the
@@ -830,7 +853,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // until the engine takes it out of the deck. Its lift leg is emitted at the pause, every dispatch's legs are
   // derived between overlaid boards, and the reveal names it `from: transit`. Nothing changes for a search completed
   // by the action that made its only pick: it never pauses, and both engines read deck -> hand, from: deck.
-  const held = new Map<Card, { iid: string; source: CardList; legs: NeutralEvent[] }>();
+  const held = resume?.held ?? new Map<Card, { iid: string; source: CardList; legs: NeutralEvent[] }>();
   const isDeckSearch = (prompt: Prompt<any>): prompt is ChooseCardsPrompt => prompt instanceof ChooseCardsPrompt
     && !isDiscardPick(prompt) && prompt.options.isSecret !== true && prompt.cards.zoneTag === 'deck';
   const overlay = (board: NeutralState): NeutralState => {
@@ -875,8 +898,8 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
 
   // TA-593: every positional take from a player's own deck into that player's own hand is a draw. Live identity
   // only (a probe's cloned lists never match), cleared when the loop ends; a dispatch that throws drops its draws.
-  const drawOps: Array<{ player: NeutralPlayerId; count: number }> = [];
-  const liftedOffDeck = new Map<Card, Player>();
+  const drawOps: Array<{ player: NeutralPlayerId; count: number }> = resume?.drawOps ?? [];
+  const liftedOffDeck = resume?.liftedOffDeck ?? new Map<Card, Player>();
   CardList.topTake = (from: CardList, to: CardList, count: number): void => {
     const players = game.store.state.players;
     for (let i = 0; i < players.length; i++) {
@@ -897,7 +920,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
 
   // TA-698 (B.81): every put of cards into a settled deck this dispatch, with its end (CardList.deckPut). Live identity
   // only; cleared per dispatch. A card out of that deck again when the dispatch ends made a stop the board diff cannot see.
-  const deckPuts = new Map<Card, { player: Player; end: 'top' | 'bottom' }>();
+  const deckPuts = resume?.deckPuts ?? new Map<Card, { player: Player; end: 'top' | 'bottom' }>();
   CardList.deckPut = (deck: CardList, cards: Card[], end: 'top' | 'bottom'): void => {
     const p = game.store.state.players.find(pl => pl.deck === deck);
     if (p === undefined) { return; }
@@ -907,7 +930,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   // TA-708 (B.81): every Energy put onto a Pokemon in play this dispatch, with that Pokemon's basic iid and section.
   // Live identity only; cleared per dispatch. An Energy off every Pokemon again when the dispatch ends (its Pokemon was
   // Knocked Out in the same step) was attached and left, which the board diff cannot see.
-  const attachPuts = new Map<Card, { player: Player; basic: string; section: 'active' | 'bench' }>();
+  const attachPuts = resume?.attachPuts ?? new Map<Card, { player: Player; basic: string; section: 'active' | 'bench' }>();
   CardList.attachPut = (slot: CardList, cards: Card[]): void => {
     const p = game.store.state.players.find(pl => pl.active === slot || pl.bench.includes(slot as PokemonCardList));
     if (p === undefined) { return; }
@@ -921,17 +944,17 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
 
   // TA-664 (#1995, #2257): a counter moved off a Pokemon is not healed, even when its placement is prevented and it
   // vanishes (Adrena-Brain under Battle Cage). Live identity only (a probe's clone constructs the effect too).
-  let countersMoved = false;
+  let countersMoved = resume?.countersMoved ?? false;
   MoveDamageCountersEffect.observed = (who: unknown): void => {
     if (game.store.state.players.some(p => p === who)) { countersMoved = true; }
   };
   // TA-774 (B.123): the counter moves a decomposed answer asks for (one (source, target) per counter), set just before
   // that answer is dispatched; the dispatch's event derivation emits countersMoved from them and the board diff.
-  let counterMoves: Array<{ source: string; target: string }> | undefined;
+  let counterMoves: Array<{ source: string; target: string }> | undefined = resume?.counterMoves;
 
   // B.81: a switch is an ordering point. The engine calls CardList.legCut once an Active / Bench swap completes;
   // the legs up to that board are derived then, and the dispatch's board diff runs on from it. Live identity only.
-  let segment: { start: NeutralState; legs: NeutralEvent[] } | undefined;
+  let segment: { start: NeutralState; legs: NeutralEvent[] } | undefined = resume?.segment;
   // TA-704 / B.81: the deck end the engine's placement declared for a card (CardList.deckEnd), for a leg into an
   // empty deck, where the board alone cannot say top from bottom.
   const declaredEnd = (iid: string): 'top' | 'bottom' | undefined => {
@@ -980,7 +1003,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // answer and restore it on that throw. The replay ends at a rejection, so the restored store is only projected.
     // A FlipStarvation is not a rejection and keeps what committed (see below).
     const answerBackup: State | undefined = game.store.state.prompts.some(p => p.result === undefined)
-      ? deepClone(game.store.state, [Card, StateLog]) : undefined;
+      ? game.store.snapshot(game.store.state, 'prompt-answer') : undefined;
     try {
       fire();
     } catch (err) {
@@ -1207,11 +1230,11 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
   function loop(): LoopResult {
   // TA-373: source-zone snapshot for `reveal.from`, refreshed at each top-level action (below) so a
   // search-then-reveal reports the card's pre-search zone, not where it landed.
-  let actionStartZones = snapshotCardZones(game.state);
+  if (resume === undefined) { actionStartZones = snapshotCardZones(game.state); }
   // TA-591: the cards a `reveal` already named in this top-level action. A card shows the same cards once to EACH
   // player (Haughty Order dri-150: one ShowCardsPrompt per audience); in a 2-player game that is ONE public reveal,
   // and the second show (cards now in a temp list) read the wrong owner.
-  let revealedThisAction = new Set<string>();
+
   for (;;) {
     // TA-669 (B.80): a completed search holds its pick in transit only while the card has stayed in the searched zone.
     // One that left it (Sonar's discard-pile pick went to the hand) and came back (played, then discarded) is settled.
@@ -1223,6 +1246,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     const prompt = game.state.prompts.find(p => p.result === undefined);
 
     if (prompt !== undefined) {
+      replayObservation()?.boundary(game, cursor.i, 'unresolved-prompt');
       // 'Order cards' ("put these cards back in any order", e.g. Fortunate Eye's top-5 peek) is now a
       // real externalized decision — the `orderCardsDecomposer` surfaces it as a `choose`-per-position
       // sequence and re-homes the in-flight temp pile via its `fixupProjection` (TA-81 / §B.6). It is
@@ -1536,6 +1560,23 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       continue;
     }
 
+    const observation = replayObservation();
+    if (observation !== undefined || checkpoint !== undefined) {
+      const reason = game.state.winner !== GameWinner.NONE ? 'terminal'
+        : accum.length > 0 || held.size > 0 || completedSearches.length > 0 || deckLegsAtWait.length > 0
+          || segment !== undefined || counterMoves !== undefined ? 'unfinished-driver-work'
+        : game.store.replayBoundaryReason();
+      observation?.boundary(game, cursor.i, reason);
+      if (reason === undefined && checkpoint?.wantsCapture(cursor.i)) {
+        measureReplay('checkpoint-capture', () => checkpoint.capture(game, {
+          events, cursor, accum, forcedPicks, completedSearches, turnCarry, revealedSince,
+          cursorAtLastDispatch, publicInTransit, observedShows, deckLegsAtWait, held,
+          drawOps, liftedOffDeck, deckPuts, attachPuts, countersMoved, counterMoves,
+          segment, actionStartZones, revealedThisAction,
+        }));
+      }
+    }
+
     // no open prompt
     // CF-35 (TA-146): once the match is over, nothing further can be APPLIED. Stop here with `applied`
     // frozen at the terminal transition and leave any surplus actions unconsumed — that is precisely what
@@ -1608,7 +1649,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
       // The engine still sees the action first, so a refusal it would make anyway keeps its own reason
       // (notEnoughEnergy, alreadyAttachedEnergy, …); only an action it ACCEPTS is refused here, and step() rebuilds
       // the board from the prefix (the TA-639 path), because the Store rolls back only an action that throws.
-      const mainMenu = topLevelMenu(game);
+      const mainMenu = measureReplay('menu', () => topLevelMenu(game));
       const offered = mainMenu === null || mainMenu.actor !== action.actor || offersAction(mainMenu.legalActions, action);
       dispatchAndCollect(() => dispatchAction(game, action));
       if (!offered) {
@@ -1619,7 +1660,7 @@ function runLoop(game: ImportedGame, actions: NeutralAction[]): LoopResult {
     // Quiescent: no open prompt and the log is exhausted. In an ongoing main phase, surface the
     // active player's top-level menu (M5); otherwise (gameOver, or a non-main boundary) there is
     // nothing to choose.
-    const menu = topLevelMenu(game);
+    const menu = measureReplay('menu', () => topLevelMenu(game));
     return { events, pending: menu ? toWirePending(menu) : null, applied: cursor.i };
   }
   }
@@ -1639,7 +1680,7 @@ export function applyActions(game: ImportedGame, actions: NeutralAction[]): Neut
 
 /** Project the current twinleaf state of an imported game to the neutral observable schema. */
 export function projectGame(game: ImportedGame): NeutralState {
-  return projectState(game.state, game.ctx);
+  return measureReplay('projection', () => projectState(game.state, game.ctx));
 }
 
 /**
@@ -1661,18 +1702,34 @@ function startSetup(game: ImportedGame): void {
 }
 
 export function step(initial: NeutralState, actions: NeutralAction[]): StepResponse {
-  const game = importState(initial);
+  return observeReplay(initial, actions, () => stepUnobserved(initial, actions));
+}
+
+/** Internal entry; HTTP checkpoint execution supplies a session, the reference step never does. */
+export function stepWithReplaySession(initial: NeutralState, actions: NeutralAction[], checkpoint: ReplayCheckpointSession): StepResponse {
+  return observeReplay(initial, actions, () => stepUnobserved(initial, actions, checkpoint));
+}
+
+function stepUnobserved(initial: NeutralState, actions: NeutralAction[], checkpoint?: ReplayCheckpointSession): StepResponse {
+  const restored = checkpoint === undefined ? undefined : measureReplay('checkpoint-restore', () => checkpoint.restore());
+  const game = restored?.game ?? measureReplay('import', () => importState(initial));
+  checkpoint?.prepare();
   if (initial.phase === 'setup') {
     startSetup(game); // validated as the pre-deal state by handlers.ts
   }
-  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard, publicInTransit, notOffered } = runLoop(game, actions);
+  const result = measureReplay('replay', () => runLoop(game, actions, restored?.frame, checkpoint));
+  return measureReplay('response', () => finishStep(game, initial, actions, result));
+}
+
+function finishStep(game: ImportedGame, initial: NeutralState, actions: NeutralAction[], result: LoopResult): StepResponse {
+  const { events, pending, applied, rejection, midPrompt, completedSearches, traceBoard, publicInTransit, notOffered } = result;
   if (rejection !== undefined && applied < actions.length
       && (notOffered === true || game.state.prompts.some(p => p.result === undefined))) {
     // TA-639: refused at a pause. `applied` names the prefix the response stands on, so its board and trace are that
     // prefix's response: the open decision's fix-ups (CF-1 / B.80: picks already made read as applied) and the
     // pause's own events and moved legs (TA-622, B.81), which the rolled-back store below cannot rebuild (its picks
     // live adapter-side). The prefix replays without the refused action, so it pauses where this one was refused.
-    const prefix = step(initial, actions.slice(0, applied));
+    const prefix = measureReplay('rejection-replay', () => step(initial, actions.slice(0, applied)));
     if (prefix.status !== 'invalidAction') {
       return {
         schemaVersion: SCHEMA_VERSION, status: 'invalidAction', applied, index: applied,
